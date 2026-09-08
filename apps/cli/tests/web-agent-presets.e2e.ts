@@ -219,10 +219,10 @@ describe('the shipped Web composition', () => {
     }
   })
 
-  it('supplies both shipped presets, and only those, from the system root', async () => {
+  it('supplies the shipped presets, and only those, from the system root', async () => {
     const listed = await ctx.agentPresets.list()
 
-    expect(listed.map(preset => preset.id).sort()).toEqual(['cordis', 'minimal', 'ptc', 'standard'])
+    expect(listed.map(preset => preset.id).sort()).toEqual(['academic', 'cordis', 'minimal', 'ptc', 'standard'])
     expect(listed.every(preset => preset.trust === 'system')).toBe(true)
     expect(ctx.agentPresets.defaultId).toBe('standard')
   })
@@ -245,6 +245,38 @@ describe('the shipped Web composition', () => {
         'workflow', 'write',
       ])
       expect(ctx.commands.find(handle.agent, 'goal')).toBeDefined()
+    } finally {
+      await handle.dispose()
+    }
+  })
+
+  it('composes the academic research preset with its narrow tool and skill set', async () => {
+    const handle = await ctx.agents.create({
+      sessionId: SessionId(`preset-academic-${randomUUID()}`),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'academic').then(() => undefined),
+    })
+
+    try {
+      const tools = toolNames(ctx, handle.agent)
+      expect(tools).toEqual(expect.arrayContaining([
+        'ask_user_question',
+        'edit',
+        'exit_plan_mode',
+        'read',
+        'read_image',
+        'skill',
+        'web_fetch',
+        'web_search',
+        'write',
+      ]))
+      expect(tools).not.toEqual(expect.arrayContaining([
+        'bash',
+        'pwsh',
+        'subagent',
+        'workflow',
+      ]))
+      expect((await ctx.skills.list({ scope: handle.agent })).map(skill => skill.name))
+        .toContain('academic-insight-report')
     } finally {
       await handle.dispose()
     }
@@ -956,7 +988,7 @@ describe('a composition that configures its own preset roots', () => {
     ])
 
     const listed = await rootsCtx.agentPresets.list()
-    expect(listed.map(preset => preset.id).sort()).toEqual(['cordis', 'minimal', 'ptc', 'standard', 'team-spec'])
+    expect(listed.map(preset => preset.id).sort()).toEqual(['academic', 'cordis', 'minimal', 'ptc', 'standard', 'team-spec'])
     expect(listed.every(preset => preset.broken === undefined)).toBe(true)
     // The shipped root comes first: a configured directory claiming a shipped
     // id is shadowed, never the other way around.

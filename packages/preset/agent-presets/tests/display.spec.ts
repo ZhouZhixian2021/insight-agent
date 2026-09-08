@@ -16,6 +16,13 @@ describe('presetDisplayText', () => {
     })
   })
 
+  it('resolves the shipped academic preset through its dictionary keys', () => {
+    expect(presetDisplayText({ id: 'academic', trust: 'system', name: '学术洞察' }, t)).toEqual({
+      name: 't:presetAcademicName',
+      description: 't:presetAcademicDescription',
+    })
+  })
+
   it('keeps user-authored metadata untranslated', () => {
     expect(presetDisplayText({ id: 'mine', trust: 'user', name: '我的模式', description: '自述' }, t))
       .toEqual({ name: '我的模式', description: '自述' })

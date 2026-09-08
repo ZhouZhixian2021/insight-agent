@@ -27,6 +27,8 @@ export interface PlanProjection {
 export interface PlanUnitState {
   /** Logged plan mode. */
   active: boolean
+  /** Whether the session log contains an explicit plan-mode selection. */
+  hasSelection: boolean
   /** The selection's target mode; null when no selection is outstanding. */
   wanted: boolean | null
   /** The latest plan command awaiting its paired settlement. */

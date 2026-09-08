@@ -5,4 +5,5 @@
   - menuitem "PTC mode Full coding agent without the workflow tool; other tools are exposed through the PTC mode SDK so the model can combine multi-step operations in one TypeScript program."
   - menuitem "Minimal mode Two-tool coding agent with persistent bash and str_replace_editor."
   - menuitem "Creator mode Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, plugin experiments, and preset-authoring guidance."
+  - menuitem "Academic insight Research agent for technical frontiers that finds and verifies papers, then produces an evidence-traceable structured report."
   - menuitem "Refusing mode Resolves, then refuses to start."

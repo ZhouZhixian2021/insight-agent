@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-唯一必需的配置是 agent 规划期间遵循的引导文本；添加任何其他内容都会在加载时失败。
+引导文本为必填项。当使用该组合的每个新会话都应自动规划首个请求时，请设置 `initialActive: true`。当部署需要对未打开计划评审就停止的模型回复进行重试时，请设置 `missingExitRetries`；未知字段会在加载时失败。
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -41,11 +41,15 @@ kind: "package-reference"
     section: |
       You are in plan mode. Explore and design before presenting the complete
       plan through exit_plan_mode.
+    initialActive: true
+    missingExitRetries: 1
 ```
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `section` | 必填 | 计划模式激活时作为 `plan:policy` 提示词段落渲染的引导 |
+| `initialActive` | `false` | 在新会话的首个模型请求前进入计划模式 |
+| `missingExitRetries` | `0` | 模型未调用 `exit_plan_mode` 就停止后，同一轮次内最多发送的提醒数 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-plan-mode)是每个受支持字段及其 JSDoc 的穷尽式真源。
 
@@ -54,11 +58,13 @@ kind: "package-reference"
 
 输入 `/plan` 进入计划模式，或输入 `/plan <message>` 连同一条指令一起进入——该消息会成为你在计划引导下的下一条请求。输入 `/plan off` 直接离开计划模式；它还会取消尚未生效的计划模式进入。
 
+设置 `initialActive: true` 后，未使用过的新会话会在首个请求前进入计划模式，无需输入 `/plan`，也不会增加切换通知。已有明确日志选择或请求头会阻止该初始化，因此恢复的会话和已经离开计划模式的会话不会自动重新进入。
+
 你可以在 `/plan` 消息中附带图片与通用文件，它们按选择顺序随指令一起提交。带附件的 `/plan off` 会在模式变更前被拒绝，因此草稿和附件卡仍可继续使用。`/plan` 命令在支持斜杠命令的界面中可用，例如 Web 客户端。
 
 ### 经评审的退出
 
-agent 完成计划后，会以 markdown 形式、从标题开头书写计划并调用 `exit_plan_mode`。你评审该计划的原文，选择 `Approve` 离开计划模式，或选择 `Keep planning` 带反馈把 agent 送回去。
+agent 完成计划后，会以 markdown 形式、从标题开头书写计划并调用 `exit_plan_mode`。你评审该计划的原文，选择 `Approve` 离开计划模式，或选择 `Keep planning` 带反馈把 agent 送回去。若 `missingExitRetries` 为正且模型在计划模式仍激活时停止，本包最多发送该配置次数的同轮提醒，要求模型通过工具提交计划。
 
 选择 `Keep planning`（可附自由文本反馈）会让 agent 回去修订计划；关闭评审改为发言，则告知 agent 等待你的下一条消息。若没有可用的交互评审，`exit_plan_mode` 无法运行，你仍可用 `/plan off` 离开计划模式。
 
@@ -90,7 +96,7 @@ agent 完成计划后，会以 markdown 形式、从标题开头书写计划并�
 
 ### 退出工具
 
-`exit_plan_mode` 在计划模式未激活时仍保持注册，因此进入或离开只改变提示词段落，绝不改变请求的工具目录。经批准的评审会记录一个静默的待生效退出，由下一个被接受的轮内 pre-step 追加，当前这批工具调用剩余部分仍保留计划引导。缺少用户交互通道，或评审等待期间服务重载，调用都会失败关闭，`/plan off` 仍是手动退路。
+`exit_plan_mode` 在计划模式未激活时仍保持注册，因此进入或离开只改变提示词段落，绝不改变请求的工具目录。经批准的评审会记录一个静默的待生效退出，由下一个被接受的轮内 pre-step 追加，当前这批工具调用剩余部分仍保留计划引导。缺少用户交互通道，或评审等待期间服务重载，调用都会失败关闭，`/plan off` 仍是手动退路。配置的缺失退出提醒会作为插件来源的模型输入记录到日志，并用 `agent/turn-stopping` 在同一轮次续行；每个会话的计数在下一轮开始时重置。
 
 ### 会话投影单元
 
@@ -163,11 +169,11 @@ You are in plan mode. Explore and design before presenting the complete plan thr
 
 #### 模型看到什么
 
-[`exit_plan_mode` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-plan-mode) 在两种状态下均可用；在计划模式之外执行会失败，而计划模式内经批准的评审返回规范的 `{ approved: true }` 值，并渲染既有的确认文本。拒绝仍是携带评审反馈的失败调用，放弃评审则是一次指明用户接手的失败调用。
+[`exit_plan_mode` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-plan-mode) 在两种状态下均可用；在计划模式之外执行会失败，而计划模式内经批准的评审返回规范的 `{ approved: true }` 值，并渲染既有的确认文本。拒绝仍是携带评审反馈的失败调用，放弃评审则是一次指明用户接手的失败调用。`missingExitRetries` 大于零时，未调用评审工具就停止会追加一条已记录提醒，要求模型把完整计划放入工具参数而不是普通 assistant 文本。
 
 #### Token 影响
 
-稳定 schema 的成本取决于 ToolRuntime mode，每次传入的 plan 参数与评审结果都会保留在对话历史中。
+稳定 schema 的成本取决于 ToolRuntime mode，每次传入的 plan 参数与评审结果都会保留在对话历史中。每次配置的缺失退出重试会增加一条提醒和一次模型请求，最多达到每轮限制。
 
 #### KV Cache 影响
 
@@ -181,8 +187,8 @@ You are in plan mode. Explore and design before presenting the complete plan thr
 这些限制描述计划模式在哪些情况下不符合你的预期，或需要额外的注意。它们是当前包约束，不是路线图。
 
 - **引导而非强制**——计划模式只通过文本约束；需要强制限制的部署要分别配置沙箱模式与审批策略。
+- **有界评审恢复**——missingExitRetries 可以触发另一次同轮回复，但耗尽配置次数的模型仍可能结束而不打开评审。
 - **待生效选择只存在于进程内**——某轮最后一个被接受的 pre-step 之后作出的选择，若进程在另一个被接受的轮内 pre-step 之前退出就会丢失；UI 必须重新应用它。
-- **没有创建时 plan 选项**——fork 的 agent 继承已记录的计划状态，新 spawn 的 agent 则从未激活开始。
 - **存活的子级无法打开评审**——由另一个存活 agent 所有的子级调用 `exit_plan_mode` 会失败，并被要求把尚未解决的决策包含进最终结果；仅有持久化 fork 谱系并不能阻止恢复为运行时根的会话打开该评审。
 - **只有一个专用评审渲染器**——只有 Web UI 具备 `plan-review` 呈现；其他交互提供方通过其通用选项流程呈现同一请求。
 

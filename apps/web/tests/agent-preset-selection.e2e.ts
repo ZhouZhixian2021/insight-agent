@@ -260,6 +260,7 @@ describe('web e2e: agent-preset selection', () => {
     // the id alone never said what a preset does.
     expect(snapshot).toContain('Minimal mode')
     expect(snapshot).toContain('Creator mode')
+    expect(snapshot).toContain('Academic insight')
     await page.keyboard.press('Escape')
   })
 
