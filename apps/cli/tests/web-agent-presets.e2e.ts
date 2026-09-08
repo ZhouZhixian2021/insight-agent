@@ -261,6 +261,7 @@ describe('the shipped Web composition', () => {
       expect(tools).toEqual(expect.arrayContaining([
         'ask_user_question',
         'edit',
+        'exit_plan_mode',
         'read',
         'read_image',
         'skill',

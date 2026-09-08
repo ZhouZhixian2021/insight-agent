@@ -33,7 +33,7 @@ Choose plan mode when the agent should explore and design before executing and y
 
 ### Minimal configuration
 
-The only required configuration is the guidance text the agent follows while planning; anything else you add fails at load.
+The guidance text is required. Set `initialActive: true` when every fresh session using this composition should plan its first request automatically. Set `missingExitRetries` when a deployment should retry a model response that stops without opening plan review; unknown fields fail at load.
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -41,11 +41,15 @@ The only required configuration is the guidance text the agent follows while pla
     section: |
       You are in plan mode. Explore and design before presenting the complete
       plan through exit_plan_mode.
+    initialActive: true
+    missingExitRetries: 1
 ```
 
 | Field | Default | Meaning |
 |---|---|---|
 | `section` | required | Guidance rendered as the `plan:policy` prompt section while plan mode is active |
+| `initialActive` | `false` | Enter plan mode before a fresh session's first model request |
+| `missingExitRetries` | `0` | Maximum same-turn reminders after the model stops without calling `exit_plan_mode` |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-plan-mode) is the exhaustive source for every accepted field and its JSDoc.
 
@@ -54,11 +58,13 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 Type `/plan` to enter plan mode, or `/plan <message>` to enter with an instruction — the message becomes your next request under plan guidance. Type `/plan off` to leave plan mode directly; it also cancels a plan-mode entry that has not taken effect yet.
 
+With `initialActive: true`, an untouched session enters before its first request without requiring `/plan` or adding a switch notice. An explicit logged selection or an existing request header suppresses this initialization, so resumed sessions and sessions that already left plan mode do not re-enter automatically.
+
 You can attach images and generic files to a `/plan` message, and they are included with your instruction in selection order. `/plan off` with attachments is rejected before the mode changes, so the draft and cards remain available. The `/plan` command is available wherever slash commands are supported, such as the Web client.
 
 ### The reviewed exit
 
-When the agent has a finished plan, it calls `exit_plan_mode` with the plan written as markdown and starting with a heading. You review that exact plan and choose `Approve` to leave plan mode, or `Keep planning` to send the agent back with feedback.
+When the agent has a finished plan, it calls `exit_plan_mode` with the plan written as markdown and starting with a heading. You review that exact plan and choose `Approve` to leave plan mode, or `Keep planning` to send the agent back with feedback. If `missingExitRetries` is positive and the model stops while plan mode remains active, the package sends at most that many same-turn reminders to submit the plan through the tool.
 
 Choosing `Keep planning` (optionally with free-text feedback) sends the agent back to revise the plan; closing the review to type a message instead tells the agent to wait for your next message. If no interactive review is available, `exit_plan_mode` cannot run and you can still leave plan mode with `/plan off`.
 
@@ -90,7 +96,7 @@ The command child activates only when a commands service is composed. It maps ba
 
 ### The exit tool
 
-`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape.
+`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape. A configured missing-exit reminder is logged as plugin-sourced model input and uses `agent/turn-stopping` to continue the same turn; its per-session count resets when the next turn starts.
 
 ### Session projection unit
 
@@ -163,11 +169,11 @@ The user block is append-only conversation growth. Entering or leaving plan mode
 
 #### What the model sees
 
-The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback, and a dismissed review a failed call naming the user's takeover.
+The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback, and a dismissed review a failed call naming the user's takeover. With `missingExitRetries` above zero, stopping without a review call adds a logged reminder that tells the model to place the complete plan in the tool argument instead of ordinary assistant text.
 
 #### Token effect
 
-The stable schema is paid according to ToolRuntime mode, and each plan argument and review result remains in conversation history.
+The stable schema is paid according to ToolRuntime mode, and each plan argument and review result remains in conversation history. Each configured missing-exit retry adds one reminder and one model request, up to the per-turn limit.
 
 #### KV Cache effect
 
@@ -181,8 +187,8 @@ Mode transitions do not change the tool catalog; plan arguments and review resul
 These limits describe when plan mode does not behave as you might expect or needs extra care. They are current package constraints, not a roadmap.
 
 - **Guidance, not enforcement** — plan mode restrains through text only; deployments that need enforced restrictions configure sandbox mode and approval policy independently.
+- **Bounded review recovery** — missingExitRetries can prompt another same-turn response, but a model that exhausts the configured limit can still end without opening review.
 - **Pending selections are process-local** — a selection made after the turn's final accepted pre-step is lost if the process exits before another accepted in-turn pre-step; the UI must reapply it.
-- **No creation-time plan option** — forked agents inherit logged plan state, while newly spawned agents begin inactive.
 - **Live children cannot open the review** — a child owned by another live agent fails the `exit_plan_mode` call and is told to include the unresolved decision in its final result; durable fork lineage alone does not prevent a session resumed as a runtime root from opening the review.
 - **One specialized review renderer** — only the Web UI has a `plan-review` presentation; another interaction provider presents the same request through its generic option flow.
 

@@ -23,14 +23,18 @@ The only append point while an agent is running is a prepended `agent/pre-step` 
 interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 ```
 
-A missing, blank, or non-string `section` and any unknown key fail at plugin load rather than being ignored. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
+A missing, blank, or non-string `section`, a non-boolean `initialActive`, an invalid `missingExitRetries`, and any unknown key fail at plugin load rather than being ignored. `initialActive` defaults to `false`; when true, prompt assembly queues plan mode for an untouched session and the first accepted pre-step records it before the request header. An existing plan selection or request header suppresses initialization, so resume and later requests never re-enter automatically. `missingExitRetries` defaults to `0` and accepts a non-negative safe integer. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
 
 ## The exit tool and the `/plan` command
 
-[`exit_plan_mode`](../tool-catalog.md#deepseek-aidsh-plan-mode) stays registered while plan mode is inactive, so entering or leaving plan mode changes only the prompt section, never the request tool catalog; execution outside plan mode fails. In plan mode it requires a complete markdown plan starting with a `#` heading and presents it for review through the [user-questions seam](user-questions.md). Approval returns `{ approved: true }` and records a silent (non-narrated) pending exit that is appended at the next accepted in-turn pre-step. Plan guidance therefore remains active for the rest of the assistant's current tool batch, and the tool result itself reports the transition. Keep-planning is a failed call carrying the user's feedback, so the model revises and presents again; a missing interaction channel and a service reload during review also fail the call rather than silently leaving plan mode.
+[`exit_plan_mode`](../tool-catalog.md#deepseek-aidsh-plan-mode) stays registered while plan mode is inactive, so entering or leaving plan mode changes only the prompt section, never the request tool catalog; execution outside plan mode fails. In plan mode it requires a complete markdown plan starting with a `#` heading and presents it for review through the [user-questions seam](user-questions.md). Approval returns `{ approved: true }` and records a silent (non-narrated) pending exit that is appended at the next accepted in-turn pre-step. Plan guidance therefore remains active for the rest of the assistant's current tool batch, and the tool result itself reports the transition. Keep-planning is a failed call carrying the user's feedback, so the model revises and presents again; a missing interaction channel and a service reload during review also fail the call rather than silently leaving plan mode. When `missingExitRetries` is positive, a model that stops while plan mode remains active receives a logged plugin reminder and another same-turn step, up to the configured limit.
 
 When [`ctx.commands`](commands.md) is composed, the plugin registers `/plan [off|message]`: bare `/plan` selects plan mode, any other non-empty message selects it and then submits the text through `agent.steer()` so it becomes the next step's ordinary logged user message under plan guidance, and the exact argument `off` selects inactive, which also cancels a pending entry before it is appended and becomes visible to a request.
 

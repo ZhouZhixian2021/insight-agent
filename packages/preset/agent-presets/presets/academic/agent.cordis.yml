@@ -35,6 +35,26 @@
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
 
+- id: planning
+  name: cordis:group
+  group: true
+  isolate:
+    planMode: true
+  config:
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        initialActive: true
+        missingExitRetries: 1
+        section: |
+              You are planning an academic insight research task. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Build a decision-complete Research Brief and execution plan before conducting the full literature review or drafting the final report.
+
+              Load the academic-insight-report skill and read its Research Brief template. You may run a small, non-mutating preliminary search to resolve terminology, aliases, relevant venues, likely evidence availability, and scope feasibility. Do not perform the full review, create or edit report files, or present substantive findings as the final report before approval.
+
+              Specify the topic and aliases, research questions, publication window and publication types, inclusion and exclusion rules, audience and depth, local materials, source and evidence requirements, analysis method, report format, stopping criteria, and explicit assumptions. Resolve discoverable facts with reads and preliminary searches. Ask one concise question only when a user-owned choice would materially change the research result.
+
+              When ready, put the complete Research Brief and execution plan inside the plan argument of exit_plan_mode as markdown starting with a # title. Do not announce the plan, summarize it, or place it in ordinary assistant text: the user can review only the plan argument. Make exit_plan_mode the only and final output of that response. If the user keeps planning, revise the plan from their feedback and present it again. After approval, execute the approved scope from the next step and produce the evidence-traceable report.
+
 - id: compaction
   name: cordis:group
   group: true

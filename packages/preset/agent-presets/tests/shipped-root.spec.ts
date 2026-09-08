@@ -141,6 +141,17 @@ describe('the shipped preset root', () => {
     }
   })
 
+  it('starts new academic sessions in Research Brief plan mode', async () => {
+    const entries = await shippedEntries('academic')
+    const planMode = findEntry(entries, 'plan-mode')
+    expect(planMode?.config).toEqual(expect.objectContaining({
+      initialActive: true,
+      missingExitRetries: 1,
+    }))
+    expect((planMode?.config as { section?: unknown } | undefined)?.section)
+      .toEqual(expect.stringContaining('Research Brief'))
+  })
+
   it('omits the general workflow tool only from PTC while retaining Ralph infrastructure', async () => {
     const ptc = await shippedEntries('ptc')
     expect(findEntry(ptc, 'tool-workflow')?.disabled).toBe(true)

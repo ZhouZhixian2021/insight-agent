@@ -7,6 +7,10 @@ description: Research a technical field's academic frontier and produce an evide
 
 Produce a direction-level academic insight report whose conclusions remain traceable to the papers that support them. The report is the deliverable; the paper list is its evidence, not its organizing principle.
 
+## Plan before research
+
+While plan mode is active, read [references/research-brief.md](references/research-brief.md) and use it to prepare the complete Research Brief and execution plan. A small preliminary search may clarify terminology and feasibility, but do not conduct the full review or draft the final report before approval. Put the complete plan in the `plan` argument of `exit_plan_mode` without an ordinary-text preamble; after approval, execute the approved scope exactly and disclose any necessary deviation.
+
 ## Establish the scope
 
 Identify the technology, research questions, publication window, included publication types, audience, and desired depth. Ask one concise clarification only when a missing choice would materially change retrieval or the report. State assumptions when the user leaves a non-critical choice open.

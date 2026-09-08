@@ -1573,6 +1573,10 @@ Requires: `tools` · `systemPrompt` · `sessionProjections`
 export interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 ```
 

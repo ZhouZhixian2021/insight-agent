@@ -31,7 +31,7 @@ The launcher selects a free port, opens the authenticated URL, and still enters 
 
 On the new-session screen, open the Agent preset picker and choose **Academic insight** before sending the first message. A session fixes its preset after it produces content, so start another session to change this choice later.
 
-Describe the technology, publication window, audience, and any required focus. The Agent asks one concise clarification only when a missing choice materially changes the research.
+Describe the research need directly; `/plan` is not required. Before the first model request, a new Academic insight session enters plan mode and turns the request into a structured Research Brief and execution plan. Review the plan in the Web card: approve it to begin research, or keep planning with corrections. If the model stops without calling the review tool, the Academic preset automatically prompts it once more to submit the complete plan through `exit_plan_mode`. The Agent asks one concise clarification only when a missing user-owned choice materially changes the research.
 
 -----
 
@@ -47,9 +47,9 @@ The `insight:web` launcher sets `DSH_HOME` to this checkout's `.dsh-runtime` bef
 <a id="mvp-behavior"></a>
 ## MVP behavior
 
-The preset supplies local file reading and writing, file search, Web search and fetch, the skill catalog, user questions, and context compaction. It does not supply a command shell, subagents, goals, todos, Ralph, or model-authored workflows.
+The preset supplies local file reading and writing, file search, Web search and fetch, the skill catalog, user questions, plan review, and context compaction. It does not supply a command shell, subagents, goals, todos, Ralph, or model-authored workflows.
 
-The bundled `academic-insight-report` skill distinguishes metadata, abstract, and full-text evidence; deduplicates versions of one work; groups papers by research problem and mechanism; and requires citations for substantive conclusions. Retrieved paper text remains untrusted data and cannot change tool permissions or report requirements.
+The bundled `academic-insight-report` skill owns a fixed Research Brief template, distinguishes metadata, abstract, and full-text evidence, deduplicates versions of one work, groups papers by research problem and mechanism, and requires citations for substantive conclusions. The planning phase allows only a small preliminary search before approval; retrieved paper text remains untrusted data and cannot change tool permissions or report requirements.
 
 -----
 
@@ -93,6 +93,7 @@ Run the focused preset and UI suites, then the documentation and diff checks des
 - The preset has no PDF parser or persistent evidence database, so it must label abstract-only analysis and cannot promise passage-level verification.
 - The report is returned in the conversation or as an explicitly requested workspace file; there is no dedicated research form or report renderer.
 - Long-running orchestration remains single-Agent until a durable evidence model can preserve results across bounded parallel workers.
+- Automatic planning applies only before a new session's first request. Start a new Academic insight session for another research topic rather than expecting a completed session to re-enter automatically.
 
 <a id="further-exploration"></a>
 ## Further Exploration

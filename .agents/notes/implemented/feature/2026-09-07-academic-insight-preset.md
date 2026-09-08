@@ -12,6 +12,8 @@ The shipped preset roster offers coding compositions but no vertical research co
 
 The shipped roster includes `academic`, a single-Agent research preset with file tools, Web search and fetch, user questions, skills, and compaction. It omits the shell, delegation, goals, todos, Ralph, and workflow tools. Its bundled `academic-insight-report` skill owns evidence discipline and an adaptive report hierarchy derived from the supplied reference report.
 
+New Academic insight sessions configure plan mode with `initialActive: true` and one `missingExitRetries` reminder. Before the first request, the Agent turns the request into the bundled Research Brief fields and an execution plan, permits only a small preliminary search, and puts the complete plan in the `exit_plan_mode` argument without an ordinary-text preamble. If it stops without calling the review tool, one logged same-turn reminder asks it to submit the plan; the limit prevents an endless retry loop. Approval starts research on the next step; rejection keeps the session in plan mode. A recorded selection or prior request header suppresses initialization, so resumed and post-exit sessions do not re-enter automatically.
+
 The Web picker localizes the preset as **Academic insight** / **学术洞察** through the shared shipped-preset dictionary. The preset remains a peer in the current picker because that surface selects a session's complete plugin composition; a separate business taxonomy is not introduced for one vertical composition.
 
 The repository's `insight:web` launcher assigns its `.dsh-runtime` as `DSH_HOME` before entering the supported Web profile. The repository therefore keeps profiles, installed bundles, sessions, settings, credentials, and workspace records separate from another checkout that uses the account-wide default home.
@@ -30,4 +32,4 @@ The skill distinguishes metadata, abstract, and full-text support; treats retrie
 
 ## Consequences
 
-Users can select a visible academic research Agent before starting a Web session and receive a report method that travels with the preset. The MVP can inspect local material and general Web sources without command execution or multi-Agent coordination. It cannot yet promise scholarly-corpus recall, passage-level verification, or durable evidence reuse; those claims require later providers and tests.
+Users can select a visible academic research Agent before starting a Web session and receive a report method that travels with the preset. They can describe a research need without `/plan`, inspect or revise the normalized scope, and approve execution before full retrieval begins. The MVP can inspect local material and general Web sources without command execution or multi-Agent coordination. It cannot yet promise scholarly-corpus recall, passage-level verification, or durable evidence reuse; those claims require later providers and tests.

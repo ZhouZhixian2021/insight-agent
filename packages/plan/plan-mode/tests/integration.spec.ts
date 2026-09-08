@@ -7,7 +7,7 @@ import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import PlanModeController from '@deepseek-ai/dsh-plan-mode'
+import PlanModeController, { type PlanModeConfig } from '@deepseek-ai/dsh-plan-mode'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../core/agent-loop/tests/mock-adapter.ts'
 
 const PLAN_CONFIG = { section: 'Test plan mode instructions.' }
@@ -20,7 +20,7 @@ const PLAN_CONFIG = { section: 'Test plan mode instructions.' }
  * Only the model is mocked; the loop, the session log, and the plugin are
  * real.
  */
-async function harness(adapter: MockAdapter): Promise<Context> {
+async function harness(adapter: MockAdapter, config: PlanModeConfig = PLAN_CONFIG): Promise<Context> {
   const ctx = new Context()
   await ctx.plugin(LlmRuntime)
   await ctx.plugin(SessionStore)
@@ -29,7 +29,7 @@ async function harness(adapter: MockAdapter): Promise<Context> {
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(AgentRegistry)
   await ctx.plugin(AgentLoop, { agents: [] })
-  await ctx.plugin(PlanModeController, PLAN_CONFIG)
+  await ctx.plugin(PlanModeController, config)
   ctx.llm.registerAdapter(['mock'], adapter)
   for (const name of ['read', 'write']) {
     ctx.tools.register(defineContentToolFixture({
@@ -73,6 +73,72 @@ function findEvent<T extends SessionEvent['type']>(
 }
 
 describe('plan mode through the agent loop', () => {
+  it('configured initial plan mode shapes the first request without a command', async () => {
+    const adapter = new MockAdapter([textResponse('A plan ready for review.')])
+    const ctx = await harness(adapter, { ...PLAN_CONFIG, initialActive: true })
+    const agent = await ctx.agentLoop.create(SessionId('it-plan-initial'), { provider: 'mock', model: 'mock' })
+
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'research the topic' }], source: { kind: 'user' } }))
+    await waitForIdle(ctx, agent)
+
+    const log = agent.session.snapshotEvents()
+    const planMode = findEvent(log, 'plan/mode')
+    const header = findEvent(log, 'request/header')
+    expect(planMode.data.active).toBe(true)
+    expect(planMode.seq).toBeLessThan(header.seq)
+    expect(header.data.reason).toBe('initial')
+    expect(header.data.header.system).toContain(PLAN_CONFIG.section)
+    expect(log.some(event => event.type === 'command/run')).toBe(false)
+    expect(log.some(event => event.type === 'user/message' && event.data.source.kind === 'plugin')).toBe(false)
+  })
+
+  it('retries a bounded number of times when an active plan ends without review', async () => {
+    const adapter = new MockAdapter([
+      textResponse('The plan follows.'),
+      textResponse('Still no review call.'),
+    ])
+    const ctx = await harness(adapter, {
+      ...PLAN_CONFIG,
+      initialActive: true,
+      missingExitRetries: 1,
+    })
+    const agent = await ctx.agentLoop.create(SessionId('it-plan-missing-exit'), { provider: 'mock', model: 'mock' })
+
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'research the topic' }], source: { kind: 'user' } }))
+    await waitForIdle(ctx, agent)
+
+    expect(adapter.requests).toHaveLength(2)
+    expect(JSON.stringify(adapter.requests[1]?.messages)).toContain(
+      'Plan mode is still active because you stopped without calling exit_plan_mode.',
+    )
+    const reminders = agent.session.snapshotEvents().filter(event =>
+      event.type === 'user/message'
+      && event.data.source.kind === 'plugin'
+      && event.data.source.plugin === 'plan-mode')
+    expect(reminders).toHaveLength(1)
+    expect(planActive(ctx, agent)).toBe(true)
+  })
+
+  it('does not retry after the turn already called the review tool', async () => {
+    const adapter = new MockAdapter([
+      toolCallResponse('call-review', 'exit_plan_mode', { plan: '# Review plan\n\nComplete.' }),
+      textResponse('The review channel was unavailable.'),
+    ])
+    const ctx = await harness(adapter, {
+      ...PLAN_CONFIG,
+      initialActive: true,
+      missingExitRetries: 1,
+    })
+    const agent = await ctx.agentLoop.create(SessionId('it-plan-review-attempted'), { provider: 'mock', model: 'mock' })
+
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'research the topic' }], source: { kind: 'user' } }))
+    await waitForIdle(ctx, agent)
+
+    expect(adapter.requests).toHaveLength(2)
+    expect(agent.session.snapshotEvents().filter(event =>
+      event.type === 'user/message' && event.data.source.kind === 'plugin')).toEqual([])
+  })
+
   it('a pre-turn set() makes the FIRST header plan-shaped, and a non-shell call is guidance-constrained only', async () => {
     const adapter = new MockAdapter([
       toolCallResponse('call-1', 'write', {}, 'Writing during plan.'),

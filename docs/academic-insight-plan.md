@@ -24,8 +24,8 @@ Status legend: ✅ available in the MVP; 🔵 recommended next-stage capability;
 ```mermaid
 flowchart TB
     U["业务用户 / Business users<br/>研究人员 · 管理者 / Researchers · Managers"] --> UI["✅ Web 学术洞察入口 / Academic insight entry<br/>选择预设 · 输入需求 · 查看报告"]
-    UI --> BRIEF["🔵 Research Brief 规范化 / Normalization<br/>主题 · 时间范围 · 读者 · 重点问题<br/>本地资料 · 来源要求 · 交付格式"]
-    BRIEF --> PLAN["🔵 研究规划与任务编排 / Research planning<br/>问题拆解 · 检索策略 · 预算控制<br/>停止条件 · 人工确认"]
+    UI --> BRIEF["✅ Research Brief 规范化 / Normalization<br/>主题 · 时间范围 · 读者 · 重点问题<br/>本地资料 · 来源要求 · 交付格式"]
+    BRIEF --> PLAN["✅ 首请求计划与审核 / First-request planning<br/>问题拆解 · 预检索 · 停止条件<br/>人工修改 · 批准后执行"]
 
     subgraph SOURCE["来源接入层 / Source access"]
         LOCAL["✅ 本地资料 / Local material<br/>ziliao · 用户文件"]
@@ -145,7 +145,7 @@ flowchart TB
 #### Current reading
 
 - The MVP gives users a selectable Academic insight preset, isolated runtime data, local and general-Web evidence access, evidence-level labeling, version deduplication guidance, direction-level analysis, and a traceable Markdown report structure.
-- The main delivery gap is a normalized Research Brief and a durable evidence pipeline. Without them, retrieval quality and report consistency depend too much on the wording of each request.
+- M1 now provides a fixed Research Brief, automatic first-request plan mode, and human approval before execution. Its remaining acceptance gap is a recorded real-model Web scenario; the main product gap after that is the durable evidence pipeline.
 - Scholarly providers and full-text parsing increase evidence quality only after metadata, deduplication, source locations, and evidence records have stable representations.
 - Bounded multi-agent execution remains a later optimization because parallel workers need the durable evidence model before their findings can merge safely.
 
@@ -154,7 +154,7 @@ flowchart TB
 | Milestone | Outcome | Included work | Acceptance signal | Dependency |
 |---|---|---|---|---|
 | M0 — Runnable MVP | A user can select Academic insight and receive a structured, source-linked report. | Preset, localized picker, report skill, local files, general Web tools, isolated `DSH_HOME`. | Focused preset, UI, launcher, and documentation checks pass. | None. |
-| M1 — Stable research input | Short and detailed requests resolve to the same explicit research specification when their intent is equivalent. | Research Brief fields, defaults, validation, one material clarification, visible confirmation. | A recorded scenario shows normalized scope, time range, audience, focus, source requirements, and output format. | M0. |
+| M1 — Stable research input (implementation complete) | Short and detailed requests resolve to the same explicit research specification when their intent is equivalent. | Fixed Research Brief, automatic first-request plan mode, one material clarification, visible review, and approved execution boundary. | Focused lifecycle and preset tests pass; a recorded real-model Web scenario remains required. | M0. |
 | M2 — Evidence pipeline | Each material conclusion can point to a normalized, deduplicated evidence record and an inspected source location. | Scholarly providers, metadata model, PDF/HTML extraction, Evidence Card, source provenance. | DOI and preprint versions merge correctly; metadata-, abstract-, and full-text-only claims remain distinguishable. | M1. |
 | M3 — Decision-ready report | Researchers and managers receive consistent analysis with explicit confidence and review results. | Paper comparison, trend/conflict/gap analysis, citation and claim checks, figures, executive brief, DOCX/PDF output. | A benchmark topic passes source validity, claim–evidence, coverage, numerical review, and human approval criteria. | M2. |
 | M4 — Reusable research platform | Teams can retain, refresh, review, and integrate research assets across topics. | Evidence library, scheduled monitoring, report versions, team review, business API, bounded multi-agent work. | A repeated topic reuses prior evidence, identifies new material, preserves review history, and exposes approved output. | M3. |

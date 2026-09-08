@@ -63,6 +63,10 @@ export const EXIT_PLAN_MODE = 'exit_plan_mode'
 export interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 
 /** The review question's id, echoed in the answer this tool reads. */
@@ -73,6 +77,10 @@ const APPROVE_LABEL = 'Approve'
 
 /** The review question's keep-planning option label. */
 const KEEP_PLANNING_LABEL = 'Keep planning'
+
+const MISSING_EXIT_REMINDER = 'Plan mode is still active because you stopped without calling exit_plan_mode. '
+  + 'Do not announce or summarize a plan in ordinary assistant text. Continue planning if needed, then call '
+  + 'exit_plan_mode with the complete markdown plan; make that call the only and final output of the response.'
 
 const EXIT_DESCRIPTION
   = 'Use only in plan mode. Present your plan for the user\'s review and, on approval, leave plan mode. '
@@ -96,7 +104,7 @@ function firstHeading(plan: string): string | undefined {
  * @param config Raw plugin config.
  * @returns A detached validated config.
  */
-export function resolveConfig(config: PlanModeConfig): PlanModeConfig {
+export function resolveConfig(config: PlanModeConfig): Required<PlanModeConfig> {
   const section = (config as Partial<PlanModeConfig>).section
   if (typeof section !== 'string') {
     throw new Error('PlanModeConfig needs a string `section`')
@@ -104,15 +112,28 @@ export function resolveConfig(config: PlanModeConfig): PlanModeConfig {
   if (section.trim() === '') {
     throw new Error('PlanModeConfig needs a non-empty `section`')
   }
-  const unknown = Object.keys(config).filter(key => key !== 'section')
-  if (unknown.length > 0) {
-    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section }`)
+  const configuredInitialActive = (config as Partial<PlanModeConfig>).initialActive
+  if (configuredInitialActive !== undefined && typeof configuredInitialActive !== 'boolean') {
+    throw new Error('PlanModeConfig needs a boolean `initialActive` when provided')
   }
-  return { section }
+  const initialActive = configuredInitialActive ?? false
+  const configuredMissingExitRetries = (config as Partial<PlanModeConfig>).missingExitRetries
+  if (configuredMissingExitRetries !== undefined
+    && (!Number.isSafeInteger(configuredMissingExitRetries) || configuredMissingExitRetries < 0)) {
+    throw new Error('PlanModeConfig needs a non-negative safe integer `missingExitRetries` when provided')
+  }
+  const missingExitRetries = configuredMissingExitRetries ?? 0
+  const unknown = Object.keys(config)
+    .filter(key => key !== 'section' && key !== 'initialActive' && key !== 'missingExitRetries')
+  if (unknown.length > 0) {
+    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section, initialActive?, missingExitRetries? }`)
+  }
+  return { section, initialActive, missingExitRetries }
 }
 
 const planUnitStateSchema: ZodType<PlanUnitState> = zod.object({
   active: zod.boolean(),
+  hasSelection: zod.boolean(),
   wanted: zod.boolean().nullable(),
   running: zod.object({
     commandId: zod.string() as unknown as ZodType<CommandId>,
@@ -130,14 +151,14 @@ const planProjectionSchema: ZodType<PlanProjection> = zod.object({
 /** Projection of logged plan selections and committed mode. */
 export const planProjectionDefinition = {
   key: 'plan',
-  stateVersion: 3,
+  stateVersion: 4,
   stateSchema: planUnitStateSchema,
-  init: () => ({ active: false, wanted: null, running: null, activeAtLastHeader: null }),
+  init: () => ({ active: false, hasSelection: false, wanted: null, running: null, activeAtLastHeader: null }),
   apply: (state, event) => {
     if (event.type === 'command/run' && event.data.name === 'plan') {
       if (event.data.args === undefined) return state
       const wanted = event.data.args.trim() !== 'off'
-      return { ...state, running: { commandId: event.data.commandId, wanted } }
+      return { ...state, hasSelection: true, running: { commandId: event.data.commandId, wanted } }
     }
     if (event.type === 'command/done' && event.data.commandId === state.running?.commandId) {
       const wanted = event.data.kind === 'success' && state.running.wanted !== state.active
@@ -146,7 +167,7 @@ export const planProjectionDefinition = {
       return { ...state, wanted, running: null }
     }
     if (event.type === 'plan/mode') {
-      return { ...state, active: event.data.active, wanted: null }
+      return { ...state, active: event.data.active, hasSelection: true, wanted: null }
     }
     if (event.type === 'request/header') {
       return { ...state, activeAtLastHeader: state.active }
@@ -173,6 +194,15 @@ export class PlanModeController extends Service {
   /** Validated deployment-owned guidance. */
   private readonly section: string
 
+  /** Whether fresh sessions enter plan mode before their first request. */
+  private readonly initialActive: boolean
+
+  /** Maximum same-turn reminders after a model stops without opening review. */
+  private readonly missingExitRetries: number
+
+  /** Reminder count for the current turn of each session. */
+  private readonly missingExitAttempts = new WeakMap<Session, { turn: number; count: number }>()
+
   /**
    * Latest selection per session awaiting the next accepted in-turn pre-step.
    * `narrate` is true for user selections and false for the exit tool, whose
@@ -182,7 +212,10 @@ export class PlanModeController extends Service {
 
   constructor(ctx: Context, config: PlanModeConfig = { section: '' }) {
     super(ctx, 'planMode')
-    this.section = resolveConfig(config).section
+    const resolved = resolveConfig(config)
+    this.section = resolved.section
+    this.initialActive = resolved.initialActive
+    this.missingExitRetries = resolved.missingExitRetries
     let disposed = false
     // Pre-step is outside Session.append publication, so it can append the
     // log-only mode event inside an open turn without re-entering the session.
@@ -208,11 +241,29 @@ export class PlanModeController extends Service {
     })
     ctx.effect(() => () => { disposed = true }, 'dsh-plan-mode: close service lifetime')
 
+    ctx.on('agent/turn-stopping', ({ agent, turn }) => {
+      const pending = this.pendingIntents.get(agent.session)
+      if (this.missingExitRetries === 0
+        || !(pending?.active ?? this.loggedActive(agent.session))
+        || this.calledExitInTurn(agent.session, turn)) return
+      const prior = this.missingExitAttempts.get(agent.session)
+      const count = prior?.turn === turn ? prior.count : 0
+      if (count >= this.missingExitRetries) return
+      this.missingExitAttempts.set(agent.session, { turn, count: count + 1 })
+      agent.steer(createUserMessage({
+        content: [{ type: 'text', text: MISSING_EXIT_REMINDER }],
+        source: {
+          kind: 'plugin', plugin: 'plan-mode', form: 'notice', summary: MISSING_EXIT_REMINDER,
+        },
+      }))
+    })
+
     ctx.systemPrompt.section({
       name: 'plan:policy',
       order: ctx.systemPrompt.getSectionOrder('PLAN_POLICY'),
       text: (context) => {
         if (context.agent === undefined) return ''
+        this.ensureInitialMode(context.agent.session)
         const pending = this.pendingIntents.get(context.agent.session)
         return (pending?.active ?? this.loggedActive(context.agent.session)) ? this.section : ''
       },
@@ -359,8 +410,24 @@ export class PlanModeController extends Service {
     }))
   }
 
+  /** Whether this turn already reached the structured review operation. */
+  private calledExitInTurn(session: Session, turn: number): boolean {
+    return session.snapshotEvents().some(event => event.type === 'tool/call'
+      && event.data.turn === turn && event.data.name === EXIT_PLAN_MODE)
+  }
+
   private loggedActive(session: Session): boolean {
     return this.planState(session).active
+  }
+
+  /** Queue the configured first-request mode only for an untouched session. */
+  private ensureInitialMode(session: Session): void {
+    const state = this.planState(session)
+    if (!this.initialActive
+      || this.pendingIntents.has(session)
+      || state.hasSelection
+      || state.activeAtLastHeader !== null) return
+    this.pendingIntents.set(session, { active: true, narrate: false })
   }
 
   private hasOpenTurn(session: Session): boolean {
@@ -421,6 +488,11 @@ export class PlanModeController extends Service {
     // No open turn: commit now. Delete only after append succeeds so a
     // failed durable write leaves the selection retryable, not dropped.
     if (active === this.loggedActive(session)) {
+      const state = this.planState(session)
+      if (pending !== undefined && this.initialActive
+        && !state.hasSelection && state.activeAtLastHeader === null) {
+        session.append('plan/mode', { active })
+      }
       this.pendingIntents.delete(session)
       return 'cancelled'
     }
