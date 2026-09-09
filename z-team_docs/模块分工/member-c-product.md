@@ -25,4 +25,8 @@
 - 不直接修改来源 Provider；缺少字段时向 B 提交接口需求。
 - 专用页面只消费已确认的工作流状态和业务接口，不复制后端逻辑。
 
+## 接口需求与协作材料
+
+- [学术分析模块接口需求说明](academic-analysis-interface-requirements.md)：提交给 A、B 审核的证据输入、结论关联、趋势与冲突分析、引用置信度及评测需求草案。
+
 返回[学术洞察模块总览](academic-module-ownership.md)。
