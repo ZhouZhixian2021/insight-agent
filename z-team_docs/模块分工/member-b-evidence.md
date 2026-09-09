@@ -26,4 +26,8 @@
 - 证据字段必须邀请 C 审核，确保能够支持分析与报告。
 - 不负责最终趋势结论、报告措辞或专用 Web 页面。
 
+## 接口需求与协作材料
+
+- [学术检索与证据模块接口需求说明](academic-retrieval-evidence-interface-requirements.md)：提交给 A、C 审核的论文标识、版本关联、证据字段、失败结果及 Provider 扩展需求草案。
+
 返回[学术洞察模块总览](academic-module-ownership.md)。
