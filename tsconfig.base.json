@@ -230,9 +230,11 @@
       // util/ folders are role-named without the util- prefix their npm names carry,
       // so these aliases stay hand-written like dsh-util-crypto above.
       "@deepseek-ai/dsh-util-time": ["./packages/util/time/src"],
-      // academic/model is intentionally domain-qualified at the npm boundary,
-      // so its alias stays hand-written instead of colliding as dsh-model.
+      // academic/* packages are intentionally domain-qualified at the npm
+      // boundary, so their aliases stay hand-written instead of colliding as
+      // dsh-<dir>.
       "@deepseek-ai/dsh-academic-model": ["./packages/academic/model/src"],
+      "@deepseek-ai/dsh-academic-source-openalex": ["./packages/academic/source-openalex/src"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

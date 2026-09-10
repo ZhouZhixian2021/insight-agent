@@ -25,6 +25,7 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 | 包 | 职责 | ctx 键 |
 |---|---|---|
 | [`model`](model/README.zh.md) | 共享标识符、记录、结果状态与纯模型辅助函数 | 无服务键 |
+| [`source-openalex`](source-openalex/README.zh.md) | 将 OpenAlex 记录转换为共享学术模型 | 无服务键 |
 
 -----
 

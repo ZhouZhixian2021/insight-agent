@@ -25,6 +25,7 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | Package | Role | ctx key |
 |---|---|---|
 | [`model`](model/README.md) | Shared identifiers, records, result states, and pure model helpers | no service key |
+| [`source-openalex`](source-openalex/README.md) | OpenAlex record translation into the shared academic model | no service key |
 
 -----
 
