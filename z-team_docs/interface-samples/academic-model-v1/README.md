@@ -1,50 +1,52 @@
-# Academic Model v1 固定接口样例
+# Academic Model v1 fixed interface samples
 
-## 状态与用途
+English | [中文](README.zh.md)
 
-| 项目 | 内容 |
+## Status and purpose
+
+| Item | Value |
 |---|---|
-| 负责人 | A，`ZhouZhixian2021` |
-| 状态 | 文档级固定样例，不是已发布 API 或运行时夹具 |
-| 数据性质 | 完全虚构，不代表真实论文、来源或检索结果 |
-| 源码影响 | 无；样例只位于 `z-team_docs/` |
+| Owner | A, `ZhouZhixian2021` |
+| Status | Documentation-level fixed samples, not a published API or runtime fixture |
+| Data | Entirely fictional; does not represent real papers, sources, or retrieval results |
+| Source impact | None; the samples exist only in `z-team_docs/` |
 
-本目录用固定 JSON 验证成员 B 的检索与证据输出能否直接支持成员 C 的跨论文分析。字段名以 [Academic Model v1 设计基线](../../模块分工/academic-model-v1-design.md)和[字段规范](../../模块分工/academic-model-v1-field-reference.md)为依据；字段语义已经确认，但尚未发布为源码 API。
+This directory uses fixed JSON to verify that member B's retrieval and evidence output can directly support member C's cross-paper analysis. Field names follow the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md) and [field reference](../../模块分工/academic-model-v1-field-reference.md); the field semantics are confirmed but are not a published source API.
 
-## 文件
+## Files
 
-- [`b-retrieval-evidence.sample.json`](b-retrieval-evidence.sample.json)：模拟 B 输出的 Research Brief、检索运行、论文、版本、证据、Evidence Card、覆盖统计和逐项失败。
-- [`c-analysis.sample.json`](c-analysis.sample.json)：模拟 C 直接引用 B 的稳定 ID 形成 Claim、Claim–Evidence 关联和评测结果。
-- [`claim-freshness.sample.json`](claim-freshness.sample.json)：模拟证据版本变化后，旧 Claim 在使用时被判定为 `stale`。
+- [`b-retrieval-evidence.sample.json`](b-retrieval-evidence.sample.json): simulates B's Research Brief, retrieval run, papers, versions, evidence, Evidence Card, coverage statistics, and item-level failures.
+- [`c-analysis.sample.json`](c-analysis.sample.json): simulates C using stable IDs from B to create Claims, Claim–Evidence relations, and evaluation results.
+- [`claim-freshness.sample.json`](claim-freshness.sample.json): simulates an old Claim becoming `stale` when its evidence version changes.
 
-## 样例覆盖
+## Sample coverage
 
-1. 一个 `AcademicWorkId` 同时关联预印本和正式发表版本，避免重复计数。
-2. `canonicalVersionId` 指向正式版，但全文不可访问时，Evidence Record 明确记录实际使用的预印本版本。
-3. Evidence Record 分别覆盖 `fulltext`、`abstract` 和 `metadata`，并同时表达原文、结构化陈述或缺失原因。
-4. 检索运行返回 `partial_success`，成功项与正文不可访问失败同时保留。
-5. B 为单篇论文生成 Evidence Card，C 只消费 Card 和 Evidence Record 做跨论文分析。
-6. C 的 Claim 通过稳定 ID 关联支持、反对或背景证据，并保存分析时使用的证据版本。
-7. Claim 使用前比较证据版本；版本不一致时不得进入最终报告。
-8. `EvidenceCard` 固定包含 `researchQuestions`、`methods`、`datasets`、`metrics`、`findings` 和 `limitations` 六个分区；没有受证据支持的条目时使用空数组。
-9. `Availability<T>` 固定使用五种状态；包装层只保存 `status`、`value`、`reason` 或 `failureId`，字段自身的数据全部放入 `value`。
+1. One `AcademicWorkId` links a preprint and a published version so the system does not count the work twice.
+2. `canonicalVersionId` points to the published version, while the Evidence Record identifies the preprint version actually used when the full text is unavailable.
+3. Evidence Records cover `fulltext`, `abstract`, and `metadata`, and express source text, sourced statements, or missing-data reasons.
+4. A retrieval run returns `partial_success` and retains successful items together with a full-text-access failure.
+5. B creates an Evidence Card for each paper; C consumes only the Card and Evidence Records for cross-paper analysis.
+6. C's Claim links supporting, opposing, or background evidence through stable IDs and records the evidence versions used during analysis.
+7. The system compares evidence versions before using a Claim; a mismatch prevents the Claim from entering the final report.
+8. `EvidenceCard` always contains the six `researchQuestions`, `methods`, `datasets`, `metrics`, `findings`, and `limitations` sections; a section without evidence-supported items uses an empty array.
+9. `Availability<T>` always uses five states; the wrapper stores only `status`, `value`, `reason`, or `failureId`, while all field-specific data remains inside `value`.
 
-## 已确认的字段规则
+## Confirmed field rules
 
-样例不使用 `null` 代替核心字段的缺失状态；空数组表示已经确认没有受证据支持的该类条目。字段规范已经确认以下规则：
+The samples do not use `null` in place of a core field's missing-data state; an empty array means the system confirmed that the section has no evidence-supported items. The field reference confirms these rules:
 
-- `SourceLocator` 使用 `kind` 区分六种定位类型，并绑定 `WorkVersionId` 和可用的内容哈希。
-- `ProviderFailure.category`、`retryable` 和 `retryAfter` 共同控制失败分类和重试判断。
-- 论文部分日期使用 `PartialDate`；运行、审核和评估时间使用完整 UTC ISO 8601 时间。
-- Session 保存 Brief、运行和模型可见快照；证据对象进入 Evidence Store；大型原文进入独立文件存储。
+- `SourceLocator` uses `kind` to distinguish six locator types and binds a `WorkVersionId` and an available content hash.
+- `ProviderFailure.category`, `retryable`, and `retryAfter` jointly determine failure classification and retry handling.
+- Partial paper dates use `PartialDate`; run, review, and evaluation times use complete UTC ISO 8601 timestamps.
+- Sessions store Briefs, runs, and model-visible snapshots; evidence objects enter the Evidence Store; large source texts enter separate file storage.
 
-## 验证标准
+## Verification criteria
 
-- 三个文件必须能被标准 JSON 解析器读取。
-- C 样例引用的每个 `academicWorkId`、`workVersionId` 和 `evidenceId` 必须存在于 B 样例。
-- 同一个 `AcademicWorkId` 的多个版本只能计为一个研究工作。
-- `metadata` 证据不得支持实验结果或方法细节。
-- `partial_success` 必须同时包含成功 ID 和逐项失败。
-- freshness 样例中的版本不一致必须得到 `stale`，且 `mayEnterFinalReport` 必须为 `false`。
+- A standard JSON parser must parse all three files.
+- Every `academicWorkId`, `workVersionId`, and `evidenceId` referenced by C's sample must exist in B's sample.
+- Multiple versions of one `AcademicWorkId` count as one research work.
+- `metadata` evidence must not support experimental results or method details.
+- `partial_success` must contain successful IDs and item-level failures.
+- A version mismatch in the freshness sample must produce `stale`, and `mayEnterFinalReport` must be `false`.
 
-返回 [Academic Model v1 设计基线](../../模块分工/academic-model-v1-design.md)。
+Return to the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md).
