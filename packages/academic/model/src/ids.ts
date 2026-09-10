@@ -39,27 +39,47 @@ export function createResearchBriefId(): ResearchBriefId {
   return brandString<ResearchBriefId>(randomUUID())
 }
 
-/** @returns A new evidence-record identity. */
+/**
+ * Creates a random internal identity for one evidence record.
+ *
+ * @returns A new evidence-record identity.
+ */
 export function createEvidenceId(): EvidenceId {
   return brandString<EvidenceId>(randomUUID())
 }
 
-/** @returns A new evidence-card identity. */
+/**
+ * Creates a random internal identity for one evidence card.
+ *
+ * @returns A new evidence-card identity.
+ */
 export function createEvidenceCardId(): EvidenceCardId {
   return brandString<EvidenceCardId>(randomUUID())
 }
 
-/** @returns A new identity for one evidence-card item. */
+/**
+ * Creates a random internal identity for one evidence-card item.
+ *
+ * @returns A new identity for one evidence-card item.
+ */
 export function createEvidenceCardItemId(): EvidenceCardItemId {
   return brandString<EvidenceCardItemId>(randomUUID())
 }
 
-/** @returns A new source-locator identity. */
+/**
+ * Creates a random internal identity for one source locator.
+ *
+ * @returns A new source-locator identity.
+ */
 export function createSourceLocatorId(): SourceLocatorId {
   return brandString<SourceLocatorId>(randomUUID())
 }
 
-/** @returns A new immutable evidence-snapshot identity. */
+/**
+ * Creates a random internal identity for one immutable evidence snapshot.
+ *
+ * @returns A new immutable evidence-snapshot identity.
+ */
 export function createEvidenceSnapshotId(): EvidenceSnapshotId {
   return brandString<EvidenceSnapshotId>(randomUUID())
 }
