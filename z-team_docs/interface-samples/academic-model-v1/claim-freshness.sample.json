@@ -1,0 +1,43 @@
+{
+  "sampleSchemaVersion": 1,
+  "sampleId": "academic-model-v1-claim-freshness-001",
+  "synthetic": true,
+  "claimId": "41111111-1111-4111-8111-111111111111",
+  "evidenceSnapshotAtAnalysis": {
+    "evidenceSnapshotId": "snapshot-41111111-1111-4111-8111-111111111111",
+    "schemaVersion": 1,
+    "researchBriefId": "brief-rag-evaluation-001",
+    "researchBriefVersion": 1,
+    "evidenceItems": [
+      {
+        "evidenceId": "31111111-1111-4111-8111-111111111111",
+        "academicWorkId": "11111111-1111-4111-8111-111111111111",
+        "workVersionId": "21111111-1111-4111-8111-111111111111",
+        "contentHash": "sha256:sample-work-1-preprint-v1"
+      },
+      {
+        "evidenceId": "32222222-2222-4222-8222-222222222222",
+        "academicWorkId": "12222222-2222-4222-8222-222222222222",
+        "workVersionId": "22222222-2222-4222-8222-222222222222",
+        "contentHash": "sha256:sample-work-2-abstract-v1"
+      }
+    ],
+    "createdAt": "2026-09-09T01:04:00Z"
+  },
+  "currentEvidenceVersions": [
+    {
+      "evidenceId": "31111111-1111-4111-8111-111111111111",
+      "workVersionId": "21111111-1111-4111-8111-111111111113"
+    },
+    {
+      "evidenceId": "32222222-2222-4222-8222-222222222222",
+      "workVersionId": "22222222-2222-4222-8222-222222222222"
+    }
+  ],
+  "expectedFreshness": {
+    "validity": "stale",
+    "mayEnterFinalReport": false,
+    "reason": "证据 31111111-1111-4111-8111-111111111111 的当前工作版本与分析快照不一致。",
+    "requiredAction": "reanalyze_claim"
+  }
+}
