@@ -3429,6 +3429,7 @@ Abstract service classes — a deployment loads a concrete implementation packag
 Imported as libraries by other packages; a `cordis.yml` cannot load them.
 
 - `@deepseek-ai/dsh-academic-model` ([`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts))
+- `@deepseek-ai/dsh-academic-source-openalex` ([`packages/academic/source-openalex/src/index.ts`](../packages/academic/source-openalex/src/index.ts))
 - `@deepseek-ai/dsh-agent-loop-testkit` ([`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts))
 - `@deepseek-ai/dsh-anonymous-user-id` ([`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts))
 - `@deepseek-ai/dsh-app-boot` ([`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts))
