@@ -67,7 +67,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 
 | 负责人 | 独占范围 | 主要交付 | 必须邀请的审核人 |
 |---|---|---|---|
-| A | 共享类型、工作流、Preset、跨包集成、正式架构文档 | 稳定接口、阶段状态、会话恢复、发布组合 | B 与 C 审核共享类型；相关模块负责人审核集成 |
+| A | 共享类型、工作流、Preset、跨包集成、正式架构文档 | 稳定接口、阶段状态、会话恢复、发布组合 | A 作最终决定；B、C 的需求作为设计输入 |
 | B | 来源、Provider、摄取、去重、证据记录 | 可追溯且标准化的论文证据 | A 审核接口，C 审核分析所需字段 |
 | C | 分析、报告、评测、专用 Web 体验 | 可审核的结论、报告和用户工作流 | A 审核集成，B 审核证据使用 |
 
@@ -77,7 +77,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 
 ## 集成顺序
 
-1. A 先提交共享类型和研究状态接口，B、C共同审核。
+1. A 根据 B、C 已提交的需求确定共享类型和研究状态接口。
 2. B 开发来源到证据的纵向切片，C 使用固定证据夹具并行开发分析、报告和评测。
 3. B、C 的模块 PR 合并后，A 单独完成工作流和 Academic Preset 集成。
 4. 工作流投影稳定后，C 再接入专用 Web 页面。
@@ -86,7 +86,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 
 | 路径 | 默认修改人 | 规则 |
 |---|---|---|
-| `packages/academic/model/**` | A | B、C共同审核，先合并再消费 |
+| `packages/academic/model/**` | A | A 统一决策并先合并，B、C随后消费 |
 | Academic Preset | A | B、C提交配置需求，不并行修改 |
 | `packages/plan/**`、`packages/core/**` | A | 只接受通用能力，不加入 Academic 条件 |
 | 根配置、锁文件和 tsconfig | 当前集成人 | 同一时段只允许一个 PR修改 |
@@ -98,6 +98,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 - [负责人 A：架构与编排](member-a-architecture.md)
 - [负责人 B：检索与证据](member-b-evidence.md)
 - [负责人 C：分析与产品](member-c-product.md)
+- [Academic Model v1 共享数据设计草案](academic-model-v1-design.md)
 - [正式学术洞察架构与交付计划](../../docs/academic-insight-plan.zh.md)
 - [成员与分支登记](../02-成员与分支.md)
 
