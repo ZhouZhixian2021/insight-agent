@@ -32,6 +32,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`api/`](api/README.md) | Remote BFF assembly and Typert RPC gateway |
 | [`typert/`](typert/README.md) | Type graph generation, artifact loading, and runtime registry |
 | [`goal/`](goal/README.md) | Same-session goal persistence and lifecycle |
+| [`academic/`](academic/README.md) | Provider-neutral academic-insight data and capabilities |
 | [`schedule/`](schedule/README.md) | Session-local scheduled follow-ups |
 | [`feedback/`](feedback/README.md) | Human feedback capture and command |
 | [`identity/`](identity/README.md) | Shared anonymous identity |
