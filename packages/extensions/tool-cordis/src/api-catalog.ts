@@ -82,6 +82,25 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'academicSource',
+    summary: 'The academic source access service.',
+    description: 'The academic source access service. Registered as `ctx.academicSource` (one instance per context).\n\nSelection semantics (resolved at execution time, never order-dependent):\n\n- A configured id that is registered and `available()` → that provider.\n- A configured id not registered → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING`.\n- A configured id registered but unavailable → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_UNAVAILABLE`.\n- No id configured, exactly one registered usable provider → that provider.\n- No id configured, multiple usable providers → `ACADEMIC_SOURCE_PROVIDER_AMBIGUOUS`.\n- No id configured, no usable provider → `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE`.',
+    methods: [
+      {
+        signature: 'registerSearchProvider(provider: AcademicSourceProvider): () => void',
+        description: 'Register an academic source provider. Throws AcademicSourceError `ACADEMIC_SOURCE_DUPLICATE_PROVIDER` if its id is already registered. Returns a disposer; disposed with the calling fiber.',
+        parameters: [{ name: 'provider', description: 'the provider; its `id` is the registry key.' }],
+        returns: 'the disposer that unregisters the provider.',
+      },
+      {
+        signature: 'async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>',
+        description: 'Run one scholarly search through the selected provider. Resolves the provider at call time with the selection rules above; throws AcademicSourceError when the capability cannot run. The seam enforces `request.maxResults` on the result: if the provider over-returns, `works[]` is truncated and `truncated` set.',
+        parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
+        returns: 'the provider\'s normalized works, capped to `request.maxResults`.',
+      },
+    ],
+  },
+  {
     key: 'agentDefaultModel',
     summary: 'Owns the default model selection independently of any Host or transport.',
     description: 'Owns the default model selection independently of any Host or transport. The composition entry remains usable without a settings provider; when one is mounted, its user layer is read live.',
@@ -3470,6 +3489,30 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AcademicSourceProvider',
+    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n}',
+  },
+  {
+    name: 'AcademicSourceSearchRequest',
+    declaration: 'export interface AcademicSourceSearchRequest {\n    readonly query: string;\n    readonly maxResults?: number;\n}',
+  },
+  {
+    name: 'AcademicSourceSearchResult',
+    declaration: 'export interface AcademicSourceSearchResult {\n    readonly works: readonly AcademicSourceWork[];\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'AcademicSourceWork',
+    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n}',
+  },
+  {
+    name: 'AcademicWork',
+    declaration: 'export interface AcademicWork {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly title: string;\n    readonly authors: readonly string[];\n    readonly externalIdentifiers: readonly ExternalIdentifier[];\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly canonicalVersionId: WorkVersionId;\n    readonly firstPublicDate: Availability<PartialDate>;\n    readonly publicationStatus: Availability<PublicationStatus>;\n    readonly venue: Availability<string>;\n}',
+  },
+  {
+    name: 'AcademicWorkId',
+    declaration: 'export type AcademicWorkId = Branded<\'AcademicWorkId\'>;',
+  },
+  {
     name: 'AdapterRegistrationHandle',
     declaration: 'export interface AdapterRegistrationHandle {\n    (): void;\n    replace(providers: string[]): void;\n}',
   },
@@ -3688,6 +3731,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AuthorizationStatus',
     declaration: 'export type AuthorizationStatus = \'authorized\' | \'cancelled\';',
+  },
+  {
+    name: 'Availability',
+    declaration: 'export type Availability<T> = {\n    readonly status: \'available\';\n    readonly value: T;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n} | {\n    readonly status: \'not_applicable\';\n    readonly reason: string;\n} | {\n    readonly status: \'not_extracted\';\n    readonly reason?: string;\n} | {\n    readonly status: \'failed\';\n    readonly failureId: FailureId;\n    readonly reason: string;\n};',
   },
   {
     name: 'BackendRegistry',
@@ -4100,6 +4147,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EpochHeader',
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    system?: string;\n    tools?: ToolSchema[];\n}',
+  },
+  {
+    name: 'ExternalIdentifier',
+    declaration: 'export interface ExternalIdentifier {\n    readonly kind: ExternalIdentifierKind;\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly sourceProvider: string;\n}',
+  },
+  {
+    name: 'ExternalIdentifierKind',
+    declaration: 'export type ExternalIdentifierKind = keyof ExternalIdentifierKindMap;',
+  },
+  {
+    name: 'ExternalIdentifierKindMap',
+    declaration: 'export interface ExternalIdentifierKindMap {\n    readonly doi: never;\n    readonly arxiv: never;\n    readonly openalex: never;\n    readonly pubmed: never;\n    readonly provider_record: never;\n}',
+  },
+  {
+    name: 'FailureId',
+    declaration: 'export type FailureId = Branded<\'FailureId\'>;',
   },
   {
     name: 'FiberState',
@@ -4642,6 +4705,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type OptionalSessionSeq = SessionSeq | null;',
   },
   {
+    name: 'PartialDate',
+    declaration: 'export interface PartialDate {\n    readonly iso: string;\n    readonly precision: PartialDatePrecision;\n}',
+  },
+  {
+    name: 'PartialDatePrecision',
+    declaration: 'export type PartialDatePrecision = \'year\' | \'month\' | \'day\';',
+  },
+  {
     name: 'PermissionSelect',
     declaration: 'export interface PermissionSelect {\n    options: PresetOption[];\n    currentValue: string;\n}',
   },
@@ -4738,6 +4809,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PromptSectionOrderName = keyof typeof SECTION_ORDERS;',
   },
   {
+    name: 'ProviderRecordReference',
+    declaration: 'export interface ProviderRecordReference {\n    readonly provider: string;\n    readonly recordId: string;\n}',
+  },
+  {
     name: 'ProviderRequestId',
     declaration: 'export type ProviderRequestId = Branded<\'ProviderRequestId\'>;',
   },
@@ -4752,6 +4827,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PtcDispatchLog',
     declaration: 'export interface PtcDispatchLog {\n    readonly exec: ToolExecution;\n    readonly agent?: Agent;\n    readonly subCallId: ToolCallId;\n    readonly name: string;\n    readonly isError: boolean;\n    readonly content: ContentBlock[];\n}',
+  },
+  {
+    name: 'PublicationStatus',
+    declaration: 'export type PublicationStatus = \'preprint\' | \'accepted\' | \'published\' | \'corrected\' | \'retracted\' | \'unknown\';',
   },
   {
     name: 'ReadFileLine',
@@ -6336,6 +6415,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WorkspaceView',
     declaration: 'export interface WorkspaceView {\n    readonly workspaceId: WorkspaceId;\n    readonly path: string;\n    readonly title: string;\n    readonly sessionIds: readonly SessionId[];\n    readonly createdAt: string;\n    readonly updatedAt: string;\n}',
+  },
+  {
+    name: 'WorkVersion',
+    declaration: 'export interface WorkVersion {\n    readonly schemaVersion: 1;\n    readonly workVersionId: WorkVersionId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly versionType: WorkVersionType;\n    readonly versionLabel: Availability<string>;\n    readonly releaseDate: Availability<PartialDate>;\n    readonly externalIdentifiers: readonly ExternalIdentifier[];\n    readonly sourceRecords: readonly ProviderRecordReference[];\n    readonly contentHash: Availability<string>;\n    readonly supersedesWorkVersionId: WorkVersionId | null;\n    readonly status: WorkVersionStatus;\n}',
+  },
+  {
+    name: 'WorkVersionId',
+    declaration: 'export type WorkVersionId = Branded<\'WorkVersionId\'>;',
+  },
+  {
+    name: 'WorkVersionStatus',
+    declaration: 'export type WorkVersionStatus = \'active\' | \'corrected\' | \'retracted\';',
+  },
+  {
+    name: 'WorkVersionType',
+    declaration: 'export type WorkVersionType = \'preprint\' | \'accepted_manuscript\' | \'version_of_record\' | \'corrected\' | \'retracted\' | \'unknown\';',
   },
 ]
 

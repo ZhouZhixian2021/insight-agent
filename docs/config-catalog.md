@@ -9,6 +9,79 @@ This file is GENERATED from source (`scripts/gen-config-catalog.ts`) and verifie
 
 A `Requires:` line lists the service keys the plugin `inject`s: its `cordis.yml` tree must also load providers for those services. Scope is the harness tier (`packages/`); the vendored cordis plugins a config tree may also load (`hmr`, the console logger, …) are pinned upstream source ([vendoring policy](../vendor/README.md)) and not catalogued here.
 
+<a id="deepseek-aidsh-academic-source"></a>
+
+## `@deepseek-ai/dsh-academic-source`
+
+```ts config-catalog
+/**
+ * Config for the academic source seam. `searchProvider` pins which provider wins
+ * for search; it is optional (a single registered usable provider auto-selects).
+ * Operational overrides such as environment variables must feed this same field
+ * rather than introduce a hidden priority chain.
+ */
+export interface AcademicSourceRuntimeConfig {
+  /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
+  readonly searchProvider?: string
+}
+```
+
+Source: [`packages/academic/source/src/index.ts:46`](../packages/academic/source/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-arxiv"></a>
+
+## `@deepseek-ai/dsh-academic-source-arxiv`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Plugin config (optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** arXiv export API base; `/api/query` is appended. Defaults to `https://export.arxiv.org`. */
+  baseURL?: string
+}
+```
+
+Source: [`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-crossref"></a>
+
+## `@deepseek-ai/dsh-academic-source-crossref`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** Crossref API base; `/works` is appended. Defaults to `https://api.crossref.org`. */
+  baseURL?: string
+  /** Polite-pool contact email sent as the `mailto` query parameter. */
+  mailto?: string
+}
+```
+
+Source: [`packages/academic/source-crossref/src/index.ts:36`](../packages/academic/source-crossref/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-openalex"></a>
+
+## `@deepseek-ai/dsh-academic-source-openalex`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** OpenAlex API base; `/works` is appended. Defaults to `https://api.openalex.org`. */
+  baseURL?: string
+  /** Polite-pool contact email sent as the `mailto` query parameter. */
+  mailto?: string
+  /** Premium-pool API key sent as the `api_key` query parameter. */
+  apiKey?: string
+}
+```
+
+Source: [`packages/academic/source-openalex/src/index.ts:39`](../packages/academic/source-openalex/src/index.ts)
+
 <a id="deepseek-aidsh-acp"></a>
 
 ## `@deepseek-ai/dsh-acp`
@@ -3428,8 +3501,9 @@ Abstract service classes — a deployment loads a concrete implementation packag
 
 Imported as libraries by other packages; a `cordis.yml` cannot load them.
 
+- `@deepseek-ai/dsh-academic-evidence` ([`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts))
+- `@deepseek-ai/dsh-academic-ingestion` ([`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts))
 - `@deepseek-ai/dsh-academic-model` ([`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts))
-- `@deepseek-ai/dsh-academic-source-openalex` ([`packages/academic/source-openalex/src/index.ts`](../packages/academic/source-openalex/src/index.ts))
 - `@deepseek-ai/dsh-agent-loop-testkit` ([`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts))
 - `@deepseek-ai/dsh-anonymous-user-id` ([`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts))
 - `@deepseek-ai/dsh-app-boot` ([`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts))

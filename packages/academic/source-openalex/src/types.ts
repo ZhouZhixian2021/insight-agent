@@ -28,3 +28,8 @@ export interface NormalizedOpenAlexWork {
   readonly academicWork: AcademicWork
   readonly workVersion: WorkVersion
 }
+
+/** Parsed OpenAlex `/works` search response envelope; `results` is optional because a malformed upstream body may omit it. */
+export interface OpenAlexSearchResponse {
+  readonly results?: readonly OpenAlexRawWork[]
+}

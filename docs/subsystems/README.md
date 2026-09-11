@@ -7,6 +7,7 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | Page | Owns |
 |---|---|
 | [academic-insight.md](academic-insight.md) | provider-neutral academic work and version identities, versioned Research Briefs, evidence records, six-section Evidence Cards, and immutable evidence snapshots |
+| [academic-source.md](academic-source.md) | the academic source seam: `AcademicSourceSearchRequest`/`Result`, `AcademicSourceWork`, provider availability, and `AcademicSourceError` |
 | [core.md](core.md) | how `packages/core` controls the agent loop: the package-by-package loop description, agent creation and ownership (`AgentHandle`), the `Agent` handle's delivery/cancellation/interception contracts, and the repo-wide type patterns (`…Map → derived-union`, branded ids) |
 | [llm-streaming.md](llm-streaming.md) | the `packages/llm` conversation types — `Message`/`ContentBlock`, the assembled model request, the `StreamChunk` wire protocol and adapter contract, `BlockAssembler`, and the `LlmAdapter` provider contract |
 | [token-meter.md](token-meter.md) | immutable scalar and positional replay measurements with consumed-log revisions |

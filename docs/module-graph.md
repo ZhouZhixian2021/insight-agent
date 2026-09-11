@@ -107,6 +107,15 @@ flowchart TD
   subgraph group_acp["packages/acp"]
     pkg_acp["acp"]
   end
+  subgraph group_academic["packages/academic"]
+    pkg_academic_evidence["academic-evidence"]
+    pkg_academic_ingestion["academic-ingestion"]
+    pkg_academic_model["academic-model"]
+    pkg_academic_source["academic-source"]
+    pkg_academic_source_arxiv["academic-source-arxiv"]
+    pkg_academic_source_crossref["academic-source-crossref"]
+    pkg_academic_source_openalex["academic-source-openalex"]
+  end
   subgraph group_api["packages/api"]
     pkg_api_gateway["api-gateway"]
     pkg_api_remotes["api-remotes"]
@@ -364,6 +373,8 @@ flowchart TD
   end
   pkg_scope --> pkg_invariants
   pkg_web --> pkg_llm
+  pkg_academic_model --> pkg_brand
+  pkg_academic_model --> pkg_util_crypto
   pkg_attachment --> pkg_brand
   pkg_credentials --> pkg_invariants
   pkg_e2b --> pkg_http_proxy
@@ -405,6 +416,9 @@ flowchart TD
   pkg_web_search_exa --> pkg_web
   pkg_web_search_perplexity --> pkg_launch_environment
   pkg_web_search_perplexity --> pkg_web
+  pkg_academic_evidence --> pkg_academic_model
+  pkg_academic_ingestion --> pkg_academic_model
+  pkg_academic_source --> pkg_academic_model
   pkg_api_remotes --> pkg_scope
   pkg_attachment_local --> pkg_attachment
   pkg_attachment_local --> pkg_home_paths
@@ -425,6 +439,12 @@ flowchart TD
   pkg_spill --> pkg_brand
   pkg_spill --> pkg_llm
   pkg_spill --> pkg_session
+  pkg_academic_source_arxiv --> pkg_academic_model
+  pkg_academic_source_arxiv --> pkg_academic_source
+  pkg_academic_source_crossref --> pkg_academic_model
+  pkg_academic_source_crossref --> pkg_academic_source
+  pkg_academic_source_openalex --> pkg_academic_model
+  pkg_academic_source_openalex --> pkg_academic_source
   pkg_app_boot --> pkg_home_paths
   pkg_app_boot --> pkg_launch_environment
   pkg_app_boot --> pkg_system_prompt
@@ -1242,6 +1262,7 @@ flowchart TD
 | [`typert-registry`](../packages/typert/registry) | `typert` | — |
 | [`scope`](../packages/core/scope) | `core` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`web`](../packages/web/web) | `web` | [`llm`](../packages/llm/llm) |
+| [`academic-model`](../packages/academic/model) | `academic` | [`brand`](../packages/util/brand), [`util-crypto`](../packages/util/crypto) |
 | [`attachment`](../packages/attachment/attachment) | `attachment` | [`brand`](../packages/util/brand) |
 | [`credentials`](../packages/credentials/credentials) | `credentials` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`e2b`](../packages/e2b/e2b) | `e2b` | [`http-proxy`](../packages/util/http-proxy) |
@@ -1263,6 +1284,9 @@ flowchart TD
 | [`web-fetch-http`](../packages/web/web-fetch-http) | `web` | [`http-proxy`](../packages/util/http-proxy), [`timeout`](../packages/util/timeout), [`web`](../packages/web/web) |
 | [`web-search-exa`](../packages/web/web-search-exa) | `web` | [`launch-environment`](../packages/util/launch-environment), [`web`](../packages/web/web) |
 | [`web-search-perplexity`](../packages/web/web-search-perplexity) | `web` | [`launch-environment`](../packages/util/launch-environment), [`web`](../packages/web/web) |
+| [`academic-evidence`](../packages/academic/evidence) | `academic` | [`academic-model`](../packages/academic/model) |
+| [`academic-ingestion`](../packages/academic/ingestion) | `academic` | [`academic-model`](../packages/academic/model) |
+| [`academic-source`](../packages/academic/source) | `academic` | [`academic-model`](../packages/academic/model) |
 | [`api-remotes`](../packages/api/remotes) | `api` | [`scope`](../packages/core/scope) |
 | [`attachment-local`](../packages/attachment/attachment-local) | `attachment` | [`attachment`](../packages/attachment/attachment), [`home-paths`](../packages/util/home-paths) |
 | [`client-file-upload`](../packages/client/file-upload) | `client` | [`scope`](../packages/core/scope) |
@@ -1272,6 +1296,9 @@ flowchart TD
 | [`subprocess-local`](../packages/subprocess/subprocess-local) | `subprocess` | [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`skill-badge`](../packages/skill/skill-badge) | `skill` | [`skill`](../packages/skill/skill) |
 | [`spill`](../packages/spill/spill) | `spill` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
+| [`academic-source-arxiv`](../packages/academic/source-arxiv) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
+| [`academic-source-crossref`](../packages/academic/source-crossref) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
+| [`academic-source-openalex`](../packages/academic/source-openalex) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
 | [`app-boot`](../packages/boot/app-boot) | `boot` | [`home-paths`](../packages/util/home-paths), [`launch-environment`](../packages/util/launch-environment), [`system-prompt`](../packages/core/system-prompt) |
 | [`code-runtime-worker-thread`](../packages/code-runtime/code-runtime-worker-thread) | `code-runtime` | [`code-runtime`](../packages/code-runtime/code-runtime), [`session`](../packages/core/session), [`timeout`](../packages/util/timeout) |
 | [`persona`](../packages/preset/persona) | `preset` | [`system-prompt`](../packages/core/system-prompt) |

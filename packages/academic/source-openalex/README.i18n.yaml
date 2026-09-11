@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/academic/source-openalex/README.md
-README.md: 5afe8a662ab0c297028f638f20950222492dcf79
-README.zh.md: c9a38573edd38d2c5d825cf3a8c1ec21db0c49ac
+README.md: e30da319b7b9d0f69c1b5fdaba61cf15373edc4e
+README.zh.md: 5a3ddf191d96ea1c76558e1ccf15063dbbaf5c31

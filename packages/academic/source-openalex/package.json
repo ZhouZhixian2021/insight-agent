@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-academic-source-openalex",
-  "description": "OpenAlex adapter translating provider records into the shared academic model",
+  "description": "OpenAlex scholarly-source provider (ctx.academicSource) that searches the public /works endpoint and normalizes each record into the shared academic model",
   "version": "0.1.3-alpha.1",
   "publishConfig": { "access": "public" },
   "repository": {
@@ -19,10 +19,15 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^"
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^"
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
   }
 }
