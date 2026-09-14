@@ -1,7 +1,7 @@
 /**
  * Translates one arXiv Atom entry into shared academic-model records. Every arXiv entry is a
- * preprint version: it records no journal venue and carries an `arxiv` external identifier plus
- * an optional `doi` that lets ingestion merge it with the publisher's version.
+ * preprint version: it records no journal venue, preserves the Atom entry's `vN` revision and
+ * update date, and carries an optional DOI that lets ingestion merge it with the publisher's version.
  * @module @deepseek-ai/dsh-academic-source-arxiv/normalize
  */
 
@@ -20,9 +20,14 @@ import type { ArxivRawWork, NormalizedArxivWork } from './types.ts'
 
 const ARXIV_PROVIDER = 'arxiv'
 
-/** Strips the arXiv host and version suffix, leaving the bare archive id. */
+/** Strips the arXiv host, preserving the version suffix of a concrete provider record. */
+function arxivRecordId(id: string): string {
+  return id.replace(/^https?:\/\/arxiv\.org\/abs\//u, '')
+}
+
+/** Drops the version suffix so every revision contributes the same work-level key. */
 function normalizeArxivId(id: string): string {
-  return id.replace(/^https?:\/\/arxiv\.org\/abs\//u, '').replace(/v\d+$/u, '')
+  return arxivRecordId(id).replace(/v\d+$/u, '')
 }
 
 /** Folds the DOI to a lowercase bare form for cross-provider comparison. */
@@ -30,12 +35,12 @@ function normalizeDoi(doi: string): string {
   return doi.trim().replace(/^https:\/\/doi\.org\//u, '').toLowerCase()
 }
 
-/** Reads the `<published>` timestamp as a day-precision date. */
-function partialDateFrom(raw: ArxivRawWork): Availability<PartialDate> {
-  if (raw.published !== null && raw.published.length >= 10) {
-    return { status: 'available', value: { iso: raw.published.slice(0, 10), precision: 'day' } }
+/** Reads an Atom timestamp as a day-precision date. */
+function partialDateFrom(value: string | null, reason: string): Availability<PartialDate> {
+  if (value !== null && value.length >= 10) {
+    return { status: 'available', value: { iso: value.slice(0, 10), precision: 'day' } }
   }
-  return { status: 'unknown', reason: 'arXiv entry carries no publication timestamp.' }
+  return { status: 'unknown', reason }
 }
 
 /** Builds the work-level external identifiers carried by one entry. */
@@ -71,7 +76,15 @@ function publicationStatus(): Availability<PublicationStatus> {
 export function normalizeArxivWork(raw: ArxivRawWork): NormalizedArxivWork {
   const academicWorkId = createAcademicWorkId()
   const workVersionId = createWorkVersionId()
-  const date = partialDateFrom(raw)
+  const firstPublicDate = partialDateFrom(raw.published, 'arXiv entry carries no publication timestamp.')
+  const recordId = arxivRecordId(raw.id)
+  const version = recordId.match(/v\d+$/u)?.[0]
+  const versionIdentifier: ExternalIdentifier = {
+    kind: 'arxiv',
+    normalizedValue: recordId,
+    originalValue: raw.id,
+    sourceProvider: ARXIV_PROVIDER,
+  }
   const academicWork: AcademicWork = {
     schemaVersion: 1,
     academicWorkId,
@@ -80,7 +93,7 @@ export function normalizeArxivWork(raw: ArxivRawWork): NormalizedArxivWork {
     externalIdentifiers: externalIdentifiersFrom(raw),
     workVersionIds: [workVersionId],
     canonicalVersionId: workVersionId,
-    firstPublicDate: date,
+    firstPublicDate,
     publicationStatus: publicationStatus(),
     venue: { status: 'unknown', reason: 'arXiv entry names no journal venue.' },
   }
@@ -89,10 +102,12 @@ export function normalizeArxivWork(raw: ArxivRawWork): NormalizedArxivWork {
     workVersionId,
     academicWorkId,
     versionType: 'preprint',
-    versionLabel: { status: 'unknown', reason: 'arXiv entries do not carry a version label.' },
-    releaseDate: date,
-    externalIdentifiers: [],
-    sourceRecords: [{ provider: ARXIV_PROVIDER, recordId: normalizeArxivId(raw.id) }],
+    versionLabel: version === undefined
+      ? { status: 'unknown', reason: 'arXiv entry id carries no version suffix.' }
+      : { status: 'available', value: version },
+    releaseDate: partialDateFrom(raw.updated ?? raw.published, 'arXiv entry carries no update or publication timestamp.'),
+    externalIdentifiers: [versionIdentifier],
+    sourceRecords: [{ provider: ARXIV_PROVIDER, recordId }],
     contentHash: { status: 'not_extracted', reason: 'Fulltext content hashing arrives with the evidence increment.' },
     supersedesWorkVersionId: null,
     status: 'active',

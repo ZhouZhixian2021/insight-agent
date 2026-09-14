@@ -14,10 +14,10 @@ Status: implemented
 
 `@deepseek-ai/dsh-academic-ingestion`（`packages/academic/ingestion`）是一个纯库。它拥有去重、版本合并与规范版本选择；索引是调用方传入传出的不可变值，因此持久映射与持久化留待后续增量。
 
-1. **精确键**是记录携带的每个外部标识符的 `externalIdentifierDedupKey`（DOI、arXiv、OpenAlex、PubMed、提供方记录）。任何碰撞都意味着同一成果。
-2. **模糊键**折叠规范化后的标题、第一作者与年份。模糊碰撞会作为 `suspected_duplicate` 上报，绝不自动合并，符合「无标识符则不自动合并」规则。
+1. **精确键**是记录携带的每个外部标识符的 `externalIdentifierDedupKey`（DOI、arXiv、OpenAlex、PubMed、提供方记录）。任何碰撞都意味着同一成果；当不同键桥接已有身份时，保留索引中最早的身份并把其他身份合并进去。
+2. **模糊键**折叠规范化后的标题、第一作者与年份。模糊碰撞会作为 `suspected_duplicate` 上报并以独立身份保留，符合「无标识符则不自动合并」规则。
 3. **稳定身份**：新成果获得全新的 `createAcademicWorkId()`；索引把其携带的每个精确键映射到该 id，因此后续共享任一标识符的记录会合并进同一 id。以改变的规则重跑也无法改写索引中已分配的 id。
-4. **合并**把每个版本重新指向已分配的成果身份，合并外部标识符，并调和成果：规范版本所属的记录拥有标题、作者、发表状态与场所；`workVersionIds` 取并集；`firstPublicDate` 取最早可用日期。
+4. **合并**把每个版本重新指向已分配的成果身份，合并外部标识符，并调和成果：规范版本所属的记录拥有标题、作者、发表状态与场所；`workVersionIds` 取并集；`firstPublicDate` 取最早可用日期。重复的提供方/记录 id 复用已存版本，不追加提供方新生成的 id。
 5. **规范版本**在非撤回版本中优先 `version_of_record` > `corrected` > `accepted_manuscript` > `preprint`，同类型按更晚发布日期、再按摄取顺序决定；仅当无其他版本时撤回版本才作为候选。
 
 该库消费 `IngestRecord`（一对 `{ academicWork, workVersion }`），其结构与来源 seam 的 `AcademicSourceWork` 相同，因此提供方输出无需依赖 `dsh-academic-source` 即可流入。
@@ -33,7 +33,7 @@ Status: implemented
 
 ## 索引与审计
 
-`IngestIndex` 持有 `byExactKey`（外部标识符键 → `AcademicWorkId`）、`byFuzzyKey`（模糊键 → `AcademicWorkId`）与 `records`（`AcademicWorkId` → 按摄取顺序排列的贡献记录）。`ingestWorks(index, records)` 返回更新后的索引、去重后的 `works` 与重新指向身份的 `versions`，以及 `IngestAudit`，其条目为 `new_work`、`merged_version` 或 `suspected_duplicate`。
+`IngestIndex` 持有 `byExactKey`（外部标识符键 → `AcademicWorkId`）、`byFuzzyKey`（模糊键 → `AcademicWorkId`）与 `records`（`AcademicWorkId` → 按摄取顺序排列的贡献记录）。`ingestWorks(index, records)` 返回更新后的索引、去重后的 `works` 与重新指向身份的 `versions`，以及 `IngestAudit`，其条目为 `new_work`、`merged_work`、`merged_version` 或 `suspected_duplicate`。
 
 ## 曾考虑的替代方案
 
@@ -55,7 +55,7 @@ Status: implemented
 
 **模糊匹配是建议性的。** 一批中仅共享模糊键的版本保持分离，直到精确标识符把它们关联，或人工确认疑似重复。
 
-**身份按索引追加。** 分配 id 从不改写更早的 id；后续改变模糊规范化可以重新标记疑似重复，但无法拆分或重排已合并的成果。
+**最早的精确关联身份胜出。** 后续精确证据可以合并先前分离的身份，`merged_work` 记录每个被移除的身份；仅有模糊匹配绝不重排成果身份。
 
 **无持久化。** 索引驻留内存；持久化、持久映射记录与合并审计字段需单独确认设计。
 

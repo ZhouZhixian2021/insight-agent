@@ -1,7 +1,7 @@
 /**
  * Source-locator construction: mints one `SourceLocator` variant from its construction input,
  * defaulting optional fields to `null` and validating that a full-text locator carries a
- * non-negative position or page.
+ * ordered, non-negative position or page.
  * @module @deepseek-ai/dsh-academic-evidence/locator
  */
 
@@ -14,8 +14,8 @@ import type { SourceLocatorInput } from './types.ts'
 /**
  * Builds a source locator from its construction input, minting the locator identity and
  * setting `schemaVersion`. Optional `contentHash`, `printedPage`, `sectionTitle`, `title`,
- * and `pdfPage` default to `null`; a full-text locator with a negative page or character
- * range is rejected.
+ * and `pdfPage` default to `null`; a negative page or position and a reversed character range
+ * are rejected.
  *
  * @param input - the locator's kind-specific fields.
  * @returns the built locator with a fresh identity.
@@ -38,6 +38,12 @@ export function createSourceLocator(input: SourceLocatorInput): SourceLocator {
     case 'abstract':
       assertNonNegative('characterStart', input.characterStart)
       assertNonNegative('characterEnd', input.characterEnd)
+      if (input.characterStart > input.characterEnd) {
+        throw new EvidenceError(
+          'source locator field "characterStart" must not exceed "characterEnd"',
+          'EVIDENCE_INVALID_LOCATOR',
+        )
+      }
       return {
         kind: 'abstract',
         sourceLocatorId,
@@ -71,6 +77,7 @@ export function createSourceLocator(input: SourceLocatorInput): SourceLocator {
         paragraphNumber: input.paragraphNumber,
       }
     case 'table':
+      if (input.pdfPage !== undefined && input.pdfPage !== null) assertNonNegative('pdfPage', input.pdfPage)
       return {
         kind: 'table',
         sourceLocatorId,
@@ -83,6 +90,7 @@ export function createSourceLocator(input: SourceLocatorInput): SourceLocator {
         printedPage: input.printedPage ?? null,
       }
     case 'figure':
+      if (input.pdfPage !== undefined && input.pdfPage !== null) assertNonNegative('pdfPage', input.pdfPage)
       return {
         kind: 'figure',
         sourceLocatorId,

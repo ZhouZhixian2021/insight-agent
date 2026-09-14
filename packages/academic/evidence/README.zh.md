@@ -1,5 +1,5 @@
 ---
-description: "学术证据：来源定位、证据记录与证据卡片的构造，并带有等级-定位校验。"
+description: "使用调用方提供的语义抽取，把可定位的论文内容构造成可追溯证据记录和六分区证据卡片。"
 kind: "package-library"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-`dsh-academic-evidence` 从共享学术模型构造来源定位、证据记录与证据卡片，铸造身份并强制执行类型系统无法表达的约束：记录的证据等级必须与其定位类型匹配。它是库，不是 Cordis 服务或插件，也不执行检索、抽取或模型调用。
+`dsh-academic-evidence` 把可定位的摘要或全文片段转换成已验证的来源定位、证据记录与六分区证据卡片。调用方提供语义生成器，本库核对每段引文确实存在于来源内容中，并强制版本与证据等级一致。它是库，不是 Cordis 服务或插件；检索、模型路由和持久请求记录仍由调用工作流负责。
 
 ## 目录
 
@@ -24,7 +24,17 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-检索增量先从检索到的材料构造定位，再构造一条按 id 引用该定位的记录，最后构造一张把记录归入六个分区的卡片。
+调用 `extractEvidenceFromContent()` 时传入论文片段与语义生成器。生成器接收抽取指令、关注问题、可定位片段和取消信号；生成器必须先校验任何外部模型输出，再返回有类型的草稿。
+
+```text
+const result = await extractEvidenceFromContent({
+  academicWorkId, workVersionId, sourceProvider, sourceUrl, retrievedAt,
+  contentHash, extractionMethod, focusQuestions,
+  segments: [{ text: paragraph, locator: { kind: 'paragraph', paragraphNumber: 4 } }],
+}, generator)
+```
+
+结果包含 `sourceLocators`、`evidenceRecords` 和一张 `evidenceCard`。每段引文必须逐字存在于所引用的片段中；无效索引、不存在的引文和空内容会在不可追溯证据进入分析前以 `EvidenceError` 失败。当调用方已有经过验证的证据时，仍可使用底层构造函数：
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -39,7 +49,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
   methods: [], datasets: [], metrics: [], findings: [], limitations: [] })
 ```
 
-当记录等级与定位不一致、陈述或来源字段为空、或卡片条目未引用任何证据时，构造会以 `EvidenceError` 清晰地失败。
+当定位范围无效、记录版本或等级与定位不一致、陈述或来源字段为空、或卡片条目未引用任何证据时，构造会以 `EvidenceError` 清晰地失败。
 
 -----
 
@@ -48,11 +58,14 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 
 | 导出 | 角色 |
 |---|---|
+| `extractEvidenceFromContent()` | 执行语义抽取、核验逐字引文，并构造单篇论文的记录与卡片。 |
 | `createSourceLocator()` | 构造六种定位变体之一，附带全新身份。 |
-| `createEvidenceRecord()` | 构造记录，校验等级-定位配对与非空字段。 |
+| `createEvidenceRecord()` | 构造记录，校验定位版本、等级与非空字段。 |
 | `createEvidenceCard()` | 构造卡片，附带全新条目身份并逐条校验。 |
 | `SourceLocatorInput` | 六种构造输入，每种定位类型一个。 |
 | `EvidenceRecordInput` / `EvidenceCardInput` | 记录与卡片的构造输入。 |
+| `EvidenceExtractionInput` / `EvidenceExtractionResult` | 可定位论文输入与已验证的单篇论文结果。 |
+| `EvidenceGenerator` / `EvidenceDraft` | 调用方拥有的语义生成器及其有类型输出。 |
 | `EvidenceError` | 携带稳定 `code` 的类型化构造失败。 |
 
 -----
@@ -60,7 +73,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 <a id="model-experience"></a>
 ## 模型体验
 
-间接通过把证据记录与卡片渲染进模型可见上下文的分析或报告消费方体现；本库不贡献任何提示词或 schema。
+间接通过调用方提供的生成器应用抽取指令，并由分析或报告消费方呈现生成的记录与卡片；调用工作流负责模型选择、请求记录和输出校验。
 
 #### KV Cache 影响
 
@@ -70,8 +83,9 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **无抽取**——本库从调用方提供的陈述与片段构造记录；产生它们的检索/全文抽取是后续增量。
-- **无片段-哈希存在性规则**——记录校验等级/定位/来源，但不要求 `abstract`/`fulltext` 有 `available` 片段、或 `fulltext` 有哈希；这些规则等待抽取增量。
+- **无检索或内置模型传输**——调用方提供可定位文本与语义生成器，因此工作流继续拥有 Provider 选择和模型可见请求记录。
+- **每个生成的卡片条目只引用一条记录**——每个抽取条目引用同一草稿产生的记录；多片段综合需要以后增加草稿引用字段。
+- **底层构造函数仍然宽松**——直接调用 `createEvidenceRecord()` 可以提供不可用片段或哈希；`extractEvidenceFromContent()` 始终产生可用片段与哈希。
 - **无运行报告**——构造记录或卡片不记录任何 `RetrievalRun` 或覆盖统计。
 
 <a id="dev-note"></a>
@@ -84,4 +98,4 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 
 </details>
 
-**运行时不变量：** 不发布配套。这个纯库不拥有事件流或可变运行时数据；聚焦单元测试固定定位构造、等级-定位校验、空字段拒绝与卡片条目校验。
+**运行时不变量：** 不发布配套。这个纯库不拥有事件流或可变运行时数据；聚焦单元测试固定逐字引文核验、抽取组装、定位构造、版本/等级校验、空字段拒绝与卡片条目校验。

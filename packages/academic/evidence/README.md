@@ -1,5 +1,5 @@
 ---
-description: "Academic evidence: source-locator, evidence-record, and evidence-card construction with level-locator validation."
+description: "Build traceable evidence records and six-section evidence cards from locatable paper content with caller-supplied semantic extraction."
 kind: "package-library"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-academic-evidence` constructs source locators, evidence records, and evidence cards from the shared academic model, minting identities and enforcing the invariant the type system cannot express: a record's evidence level must match its locator kind. It is a library, not a Cordis service or plugin, and performs no retrieval, extraction, or model calls.
+`dsh-academic-evidence` turns locatable abstract or full-text segments into verified source locators, evidence records, and a six-section evidence card. The caller supplies a semantic generator, while the library verifies every quoted excerpt against its source and enforces version and evidence-level consistency. It is a library, not a Cordis service or plugin; retrieval, model routing, and durable request logging remain with the calling workflow.
 
 ## Table of Contents
 
@@ -24,7 +24,17 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-The retrieval increment builds a locator from retrieved material, then a record that references it by id, then a card that groups records into its six sections.
+Call `extractEvidenceFromContent()` with paper segments and a semantic generator. The generator receives the extraction instruction, focus questions, locatable segments, and cancellation signal; it returns typed drafts after validating any external model output.
+
+```text
+const result = await extractEvidenceFromContent({
+  academicWorkId, workVersionId, sourceProvider, sourceUrl, retrievedAt,
+  contentHash, extractionMethod, focusQuestions,
+  segments: [{ text: paragraph, locator: { kind: 'paragraph', paragraphNumber: 4 } }],
+}, generator)
+```
+
+The result contains `sourceLocators`, `evidenceRecords`, and one `evidenceCard`. Each excerpt must occur exactly in its referenced segment; invalid indexes, absent quotes, and empty content fail with `EvidenceError` before untraceable evidence reaches analysis. The lower-level constructors remain available when a caller already owns verified evidence:
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -39,7 +49,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
   methods: [], datasets: [], metrics: [], findings: [], limitations: [] })
 ```
 
-Construction fails loud with an `EvidenceError` when a record's level and locator disagree, a statement or provenance field is empty, or a card item cites no evidence.
+Construction fails loud with an `EvidenceError` when a locator has an invalid range, a record's version or level disagrees with its locator, a statement or provenance field is empty, or a card item cites no evidence.
 
 -----
 
@@ -48,11 +58,14 @@ Construction fails loud with an `EvidenceError` when a record's level and locato
 
 | Export | Role |
 |---|---|
+| `extractEvidenceFromContent()` | Runs semantic extraction, verifies exact excerpts, and builds one paper's records and card. |
 | `createSourceLocator()` | Builds one of the six locator variants with a fresh identity. |
-| `createEvidenceRecord()` | Builds a record, validating the level-locator pairing and non-empty fields. |
+| `createEvidenceRecord()` | Builds a record, validating locator version, level, and non-empty fields. |
 | `createEvidenceCard()` | Builds a card with fresh item identities and per-item validation. |
 | `SourceLocatorInput` | The six construction inputs, one per locator kind. |
 | `EvidenceRecordInput` / `EvidenceCardInput` | The record and card construction inputs. |
+| `EvidenceExtractionInput` / `EvidenceExtractionResult` | Locatable paper input and the verified single-paper result. |
+| `EvidenceGenerator` / `EvidenceDraft` | Caller-owned semantic generation and its typed output. |
 | `EvidenceError` | Typed construction failure carrying a stable `code`. |
 
 -----
@@ -60,7 +73,7 @@ Construction fails loud with an `EvidenceError` when a record's level and locato
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through the analysis or report consumer that renders evidence records and cards into model-visible context; this library contributes no prompt or schema of its own.
+Indirectly, through the caller-provided generator that applies the extraction instruction and the analysis or report consumer that renders the resulting records and cards; the calling workflow owns model selection, request logging, and output validation.
 
 #### KV Cache effect
 
@@ -70,8 +83,9 @@ No direct invalidation; the consumer owns record ordering and serialization into
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **No extraction** — the library constructs records from caller-supplied statements and excerpts; the retrieval/full-text extraction that produces them is a later increment.
-- **No excerpt-hash presence rules** — the record validates level/locator/provenance but does not require an `available` excerpt for `abstract`/`fulltext` or a hash for `fulltext`; those rules await the extraction increment.
+- **No retrieval or built-in model transport** — the caller supplies locatable text and a semantic generator so the workflow keeps provider selection and model-visible request logging.
+- **One record per generated card item** — each extracted item cites the record produced from the same draft; multi-excerpt synthesis requires a later draft reference field.
+- **Low-level constructors remain permissive** — direct `createEvidenceRecord()` calls may supply unavailable excerpts or hashes; `extractEvidenceFromContent()` always produces available excerpts and hashes.
 - **No run reporting** — constructing a record or card records no `RetrievalRun` or coverage statistics.
 
 <a id="dev-note"></a>
@@ -84,4 +98,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion is published. This pure library owns no event stream or mutable runtime data; focused unit tests pin locator construction, level-locator validation, empty-field rejection, and card-item validation.
+**Runtime invariant:** No companion is published. This pure library owns no event stream or mutable runtime data; focused unit tests pin exact-excerpt verification, extraction assembly, locator construction, version/level validation, empty-field rejection, and card-item validation.

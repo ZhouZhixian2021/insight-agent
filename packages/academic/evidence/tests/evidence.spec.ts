@@ -41,8 +41,42 @@ describe('createSourceLocator', () => {
     expect(locator.paragraphNumber).toBe(3)
   })
 
+  it('builds page, table, and figure locators with their optional fields', () => {
+    expect(createSourceLocator({
+      kind: 'page_section',
+      workVersionId,
+      contentHash: 'sha256:page',
+      sectionTitle: 'Results',
+      pdfPage: 2,
+      printedPage: '1',
+    })).toMatchObject({ kind: 'page_section', contentHash: 'sha256:page', printedPage: '1' })
+    expect(createSourceLocator({ kind: 'page_section', workVersionId, sectionTitle: 'Methods', pdfPage: 1 }))
+      .toMatchObject({ kind: 'page_section', printedPage: null })
+    expect(createSourceLocator({ kind: 'table', workVersionId, tableNumber: '1' }))
+      .toMatchObject({ kind: 'table', title: null, pdfPage: null, printedPage: null })
+    expect(createSourceLocator({
+      kind: 'figure',
+      workVersionId,
+      figureNumber: '1',
+      title: 'Architecture',
+      pdfPage: 3,
+      printedPage: '2',
+    })).toMatchObject({ kind: 'figure', title: 'Architecture', pdfPage: 3, printedPage: '2' })
+    expect(createSourceLocator({ kind: 'figure', workVersionId, figureNumber: '2' }))
+      .toMatchObject({ kind: 'figure', title: null, pdfPage: null, printedPage: null })
+  })
+
   it('rejects a negative character range', () => {
     expect(() => createSourceLocator({ kind: 'abstract', workVersionId, characterStart: -1, characterEnd: 5 }))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_LOCATOR' }))
+  })
+
+  it('rejects a reversed character range and negative optional pages', () => {
+    expect(() => createSourceLocator({ kind: 'abstract', workVersionId, characterStart: 6, characterEnd: 5 }))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_LOCATOR' }))
+    expect(() => createSourceLocator({ kind: 'table', workVersionId, tableNumber: '1', pdfPage: -1 }))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_LOCATOR' }))
+    expect(() => createSourceLocator({ kind: 'figure', workVersionId, figureNumber: '1', pdfPage: -1 }))
       .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_LOCATOR' }))
   })
 })
@@ -90,6 +124,17 @@ describe('createEvidenceRecord', () => {
   it('rejects a level-locator mismatch', () => {
     expect(() => createEvidenceRecord({ ...base, level: 'metadata', sourceLocator: locator('paragraph') }))
       .toThrow(expect.objectContaining({ code: 'EVIDENCE_LEVEL_LOCATOR_MISMATCH' }))
+  })
+
+  it('rejects a locator for another work version', () => {
+    const sourceLocator = createSourceLocator({
+      kind: 'abstract',
+      workVersionId: createWorkVersionId(),
+      characterStart: 0,
+      characterEnd: 10,
+    })
+    expect(() => createEvidenceRecord({ ...base, level: 'abstract', sourceLocator }))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_VERSION_LOCATOR_MISMATCH' }))
   })
 
   it('rejects an empty statement', () => {

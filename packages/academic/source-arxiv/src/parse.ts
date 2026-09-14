@@ -25,6 +25,7 @@ interface ParsedEntry {
   readonly id?: string
   readonly title?: string | { readonly '#text'?: string }
   readonly published?: string
+  readonly updated?: string
   readonly author?: ParsedAuthor | ParsedAuthor[]
   readonly doi?: string | { readonly '#text'?: string }
 }
@@ -60,6 +61,7 @@ function mapEntry(entry: ParsedEntry): ArxivRawWork {
     title: textOf(entry.title) ?? '',
     authors: authors.map(author => author.name).filter((name): name is string => (name ?? '').trim().length > 0),
     published: entry.published ?? null,
+    updated: entry.updated ?? null,
     doi: textOf(entry.doi),
   }
 }

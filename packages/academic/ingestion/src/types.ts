@@ -49,6 +49,13 @@ export type IngestAuditEntry =
     readonly workVersionId: WorkVersionId
   }
   | {
+    /** An exact-identifier bridge consolidated a later identity into this retained identity. */
+    readonly kind: 'merged_work'
+    readonly academicWorkId: AcademicWorkId
+    /** The later identity removed from the index. */
+    readonly mergedAcademicWorkId: AcademicWorkId
+  }
+  | {
     readonly kind: 'suspected_duplicate'
     readonly academicWorkId: AcademicWorkId
     readonly existingAcademicWorkId: AcademicWorkId

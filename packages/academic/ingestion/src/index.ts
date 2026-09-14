@@ -36,8 +36,8 @@ export function createIngestIndex(): IngestIndex {
 
 /**
  * Deduplicates one batch of provider records into the index. Exact external-identifier
- * collisions merge into one work; a title/author/year collision without a shared identifier
- * is reported as a suspected duplicate and never auto-merged; anything else starts a new work.
+ * collisions merge into one work, including identities bridged by different exact keys; a
+ * title/author/year collision without a shared identifier is reported and retained separately.
  *
  * @param index - the current deduplication state (empty from {@link createIngestIndex}).
  * @param records - the provider records to ingest, in order.
@@ -51,15 +51,22 @@ export function ingestWorks(index: IngestIndex, records: readonly IngestRecord[]
 
   for (const record of records) {
     const keys = dedupKeys(record.academicWork)
-    const exactWorkId = firstExactMatch(keys.exact, byExactKey)
+    const matchedWorkIds = exactMatches(keys.exact, byExactKey)
+    const [exactWorkId, ...duplicateWorkIds] = [...recordsByWork.keys()].filter(workId => matchedWorkIds.has(workId))
     if (exactWorkId !== undefined) {
+      for (const duplicateWorkId of duplicateWorkIds) {
+        mergeWorkIdentity(exactWorkId, duplicateWorkId, byExactKey, byFuzzyKey, recordsByWork, entries)
+      }
       mergeVersion(exactWorkId, record, keys.exact, keys.fuzzy, byExactKey, byFuzzyKey, recordsByWork, entries)
       continue
     }
     if (keys.fuzzy !== null && byFuzzyKey.has(keys.fuzzy)) {
+      const workId = createAcademicWorkId()
+      recordsByWork.set(workId, [record])
+      for (const key of keys.exact) byExactKey.set(key, workId)
       entries.push({
         kind: 'suspected_duplicate',
-        academicWorkId: record.academicWork.academicWorkId,
+        academicWorkId: workId,
         existingAcademicWorkId: byFuzzyKey.get(keys.fuzzy) as AcademicWorkId,
         reason: 'title/author/year matches an already-ingested work without a shared external identifier',
       })
@@ -83,19 +90,38 @@ export function ingestWorks(index: IngestIndex, records: readonly IngestRecord[]
   }
 }
 
-/** The first exact-key collision in the index, if any. */
-function firstExactMatch(
+/** Every distinct work identity matched by the record's exact keys. */
+function exactMatches(
   keys: readonly ExternalIdentifierDedupKey[],
   byExactKey: ReadonlyMap<ExternalIdentifierDedupKey, AcademicWorkId>,
-): AcademicWorkId | undefined {
+): ReadonlySet<AcademicWorkId> {
+  const matches = new Set<AcademicWorkId>()
   for (const key of keys) {
     const workId = byExactKey.get(key)
-    if (workId !== undefined) return workId
+    if (workId !== undefined) matches.add(workId)
   }
-  return undefined
+  return matches
 }
 
-/** Appends one record's version to an existing work and registers its keys. */
+/** Consolidates a second exact-match identity into the first and rewires every index key. */
+function mergeWorkIdentity(
+  workId: AcademicWorkId,
+  duplicateWorkId: AcademicWorkId,
+  byExactKey: Map<ExternalIdentifierDedupKey, AcademicWorkId>,
+  byFuzzyKey: Map<string, AcademicWorkId>,
+  recordsByWork: Map<AcademicWorkId, readonly IngestRecord[]>,
+  entries: IngestAuditEntry[],
+): void {
+  const existing = recordsByWork.get(workId) as readonly IngestRecord[]
+  const duplicate = recordsByWork.get(duplicateWorkId) as readonly IngestRecord[]
+  recordsByWork.set(workId, [...existing, ...duplicate.filter(record => matchingVersion(existing, record) === undefined)])
+  recordsByWork.delete(duplicateWorkId)
+  for (const [key, id] of byExactKey) if (id === duplicateWorkId) byExactKey.set(key, workId)
+  for (const [key, id] of byFuzzyKey) if (id === duplicateWorkId) byFuzzyKey.set(key, workId)
+  entries.push({ kind: 'merged_work', academicWorkId: workId, mergedAcademicWorkId: duplicateWorkId })
+}
+
+/** Registers one record's keys and appends its version unless provider provenance repeats one already stored. */
 function mergeVersion(
   workId: AcademicWorkId,
   record: IngestRecord,
@@ -106,10 +132,24 @@ function mergeVersion(
   recordsByWork: Map<AcademicWorkId, readonly IngestRecord[]>,
   entries: IngestAuditEntry[],
 ): void {
-  const existing = recordsByWork.get(workId) ?? []
-  const alreadyPresent = existing.some(item => item.workVersion.workVersionId === record.workVersion.workVersionId)
-  if (!alreadyPresent) recordsByWork.set(workId, [...existing, record])
+  const existing = recordsByWork.get(workId) as readonly IngestRecord[]
+  const matchedVersion = matchingVersion(existing, record)
+  if (matchedVersion === undefined) recordsByWork.set(workId, [...existing, record])
   for (const key of exactKeys) byExactKey.set(key, workId)
   if (fuzzyKey !== null && !byFuzzyKey.has(fuzzyKey)) byFuzzyKey.set(fuzzyKey, workId)
-  entries.push({ kind: 'merged_version', academicWorkId: workId, workVersionId: record.workVersion.workVersionId })
+  entries.push({
+    kind: 'merged_version',
+    academicWorkId: workId,
+    workVersionId: matchedVersion?.workVersion.workVersionId ?? record.workVersion.workVersionId,
+  })
+}
+
+/** Finds a record that repeats an internal id or provider-owned version record. */
+function matchingVersion(records: readonly IngestRecord[], record: IngestRecord): IngestRecord | undefined {
+  return records.find(existing => (
+    existing.workVersion.workVersionId === record.workVersion.workVersionId
+    || existing.workVersion.sourceRecords.some(left => record.workVersion.sourceRecords.some(
+      right => left.provider === right.provider && left.recordId === right.recordId,
+    ))
+  ))
 }
