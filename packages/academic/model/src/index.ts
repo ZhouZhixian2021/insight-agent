@@ -7,6 +7,8 @@ export type {
   Available,
   BriefApproval,
   ClaimId,
+  ClaimAssessmentId,
+  ClaimEvidenceLinkId,
   DatasetEntry,
   EvidenceCard,
   EvidenceCardId,
@@ -48,6 +50,7 @@ export type {
   ReportTargetLength,
   RequiredEvidenceLevel,
   ResearchBriefId,
+  RetrievalRunId,
   ResearchBrief,
   ResearchQuestionEntry,
   ResearchQuestionType,
@@ -65,14 +68,28 @@ export type {
 } from './types.ts'
 
 export { isAvailable } from './availability.ts'
+export type {
+  ClaimAssessment, ClaimAssessmentStatus, ClaimCategory, ClaimConfidence,
+  ClaimEvidenceLink, ClaimEvidenceRelation, ClaimFreshnessCheck, ClaimFreshnessStatus,
+  ClaimRecord, ClaimValidity,
+} from './claims.ts'
+export { checkClaimFreshness } from './claim-freshness.ts'
+export type { ResearchStage, RetrievalRun } from './retrieval.ts'
+export type { BatchResult, BatchStatus, CoverageSummary, FailureCategory, ProviderFailure } from './results.ts'
+export { createBatchResult, createCoverageSummary } from './results.ts'
 export { externalIdentifierDedupKey } from './external-identifiers.ts'
 export {
   createAcademicWorkId,
+  createClaimId,
+  createClaimAssessmentId,
+  createClaimEvidenceLinkId,
   createEvidenceCardId,
   createEvidenceCardItemId,
   createEvidenceId,
   createEvidenceSnapshotId,
+  createFailureId,
   createResearchBriefId,
+  createRetrievalRunId,
   createSourceLocatorId,
   createWorkVersionId,
 } from './ids.ts'

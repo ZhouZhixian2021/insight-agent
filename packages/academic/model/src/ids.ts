@@ -3,14 +3,56 @@ import { randomUUID } from '@deepseek-ai/dsh-util-crypto'
 
 import type {
   AcademicWorkId,
+  ClaimId,
+  ClaimEvidenceLinkId,
+  ClaimAssessmentId,
   EvidenceCardId,
   EvidenceCardItemId,
   EvidenceId,
   EvidenceSnapshotId,
+  FailureId,
   ResearchBriefId,
+  RetrievalRunId,
   SourceLocatorId,
   WorkVersionId,
 } from './types.ts'
+
+/** Creates an identity for a new analysis conclusion.
+ * @returns A new claim identity; reanalysis does not overwrite the old claim.
+ */
+export function createClaimId(): ClaimId {
+  return brandString<ClaimId>(randomUUID())
+}
+
+/** Creates an identity for one claim-to-evidence relationship.
+ * @returns A new claim-evidence-link identity.
+ */
+export function createClaimEvidenceLinkId(): ClaimEvidenceLinkId {
+  return brandString<ClaimEvidenceLinkId>(randomUUID())
+}
+
+/** Creates an identity for one assessment of a claim.
+ * @returns A new claim-assessment identity.
+ */
+export function createClaimAssessmentId(): ClaimAssessmentId {
+  return brandString<ClaimAssessmentId>(randomUUID())
+}
+
+/**
+ * Creates a random identity shared by a failure record and failed field values.
+ * @returns A new failure identity, independent of provider messages or credentials.
+ */
+export function createFailureId(): FailureId {
+  return brandString<FailureId>(randomUUID())
+}
+
+/**
+ * Creates a random identity for one retrieval run, distinct from its research brief.
+ * @returns A new retrieval-run identity.
+ */
+export function createRetrievalRunId(): RetrievalRunId {
+  return brandString<RetrievalRunId>(randomUUID())
+}
 
 /**
  * Creates a random internal identity for one academic work.

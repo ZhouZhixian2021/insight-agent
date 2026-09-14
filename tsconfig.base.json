@@ -234,6 +234,7 @@
       // boundary, so their aliases stay hand-written instead of colliding as
       // dsh-<dir>.
       "@deepseek-ai/dsh-academic-model": ["./packages/academic/model/src"],
+      "@deepseek-ai/dsh-academic-analysis": ["./packages/academic/analysis/src"],
       "@deepseek-ai/dsh-academic-evidence": ["./packages/academic/evidence/src"],
       "@deepseek-ai/dsh-academic-ingestion": ["./packages/academic/ingestion/src"],
       "@deepseek-ai/dsh-academic-source": ["./packages/academic/source/src"],

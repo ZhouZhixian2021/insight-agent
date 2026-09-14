@@ -132,6 +132,7 @@
     { "path": "./vendor/logger-console" },
     { "path": "./packages/util/brand" },
     { "path": "./packages/academic/model" },
+    { "path": "./packages/academic/analysis" },
     { "path": "./packages/academic/evidence" },
     { "path": "./packages/academic/ingestion" },
     { "path": "./packages/academic/source" },

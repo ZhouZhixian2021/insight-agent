@@ -55,6 +55,16 @@ Academic packages import these types instead of declaring provider-specific subs
 | `EvidenceCard` | Six evidence-backed sections extracted from one immutable work version. |
 | `EvidenceSnapshot` | Immutable set of evidence, work versions, and content hashes used for one brief version. |
 
+`ProviderFailure` records a provider-neutral category, retry eligibility, and an optional absolute UTC retry time. `createFailureId()` creates the identity shared with failed `Availability` values. `createBatchResult()` keeps successful items and failures together: no failures means success even with zero items; items plus failures means partial success; failures without items means failure. It copies the input arrays without cloning their elements.
+
+`CoverageSummary` contains observed counts and coverage limitations. `createCoverageSummary()` rejects counts that are not non-negative safe integers and truncated results without a non-blank limitation. It copies the limitation list and never estimates statistics. `providerBreakdown` is null because per-provider statistics are not supplied. These helpers do not execute retries, parse untrusted JSON, or authorize report publication.
+
+`RetrievalRun` binds one run to an exact research-brief version and preserves executed queries, distinct provider names, included work IDs, coverage, and failures. `createRetrievalRunId()` creates its independent identity. `ResearchStage` has six lifecycle values. Planning, awaiting-approval, and running records have null status and completion time; completed, failed, and cancelled records carry both. Lifecycle and outcome remain separate: completion can have partial success, and cancellation retains successful items. The shared type does not enforce approval, perform transitions, or execute retrieval; those responsibilities belong to the workflow.
+
+`ClaimRecord` retains a conclusion, its scope, explained confidence grade, and immutable evidence snapshot. `ClaimEvidenceLink` distinguishes support, contradiction, and background; `ClaimAssessment` records consumer-produced review with its method and version. Each record has its own branded identity and schema version. Consumers validate link existence and semantic support; the model does not interpret background as proof.
+
+`checkClaimFreshness(claim, currentBrief, currentEvidence)` reads a map of current evidence keyed by EvidenceId. It returns current only when the brief identity/version, evidence identities, work versions, and non-blank content hashes all match. Known differences or a stored stale claim return stale; absent evidence, an empty snapshot, or unavailable hashes return unverifiable. Known changes take precedence while all reasons are retained. The function never rewrites history. Neither stale nor unverifiable may directly enter a final report; current is only a freshness check, not publication approval.
+
 -----
 
 <a id="model-experience"></a>
@@ -72,7 +82,7 @@ No direct invalidation; consumers own record ordering and serialization into pro
 
 - **No hidden normalization** — providers normalize identifier values before requesting a deduplication key; the package does not guess provider-specific rules.
 - **No persisted deduplication map** — the key rule is implemented, but the durable mapping record and merge-audit fields need a separate accepted design.
-- **Later records are absent** — claims, coverage, and batch results remain later member A increments.
+- **No analysis or semantic review** — consumers produce claims, links, and assessments; current evidence does not prove a conclusion.
 - **No durable parser yet** — typed same-process callers need no redundant runtime validation; the persistence increment will validate untrusted JSON at ingress.
 
 <a id="dev-note"></a>

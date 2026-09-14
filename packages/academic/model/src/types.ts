@@ -24,8 +24,17 @@ export type EvidenceSnapshotId = Branded<'EvidenceSnapshotId'>
 /** Stable identity of one report claim. */
 export type ClaimId = Branded<'ClaimId'>
 
+/** Stable identity of one claim-to-evidence relationship. */
+export type ClaimEvidenceLinkId = Branded<'ClaimEvidenceLinkId'>
+
+/** Stable identity of one assessment of a claim. */
+export type ClaimAssessmentId = Branded<'ClaimAssessmentId'>
+
 /** Stable identity of one approved research brief. */
 export type ResearchBriefId = Branded<'ResearchBriefId'>
+
+/** Stable identity of one retrieval run under a particular research-brief version. */
+export type RetrievalRunId = Branded<'RetrievalRunId'>
 
 /** Stable identity of one provider or processing failure. */
 export type FailureId = Branded<'FailureId'>

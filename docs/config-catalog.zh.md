@@ -3502,6 +3502,7 @@ export interface Config {
 
 由其他包作为库导入；`cordis.yml` 无法加载它们。
 
+- `@deepseek-ai/dsh-academic-analysis`（[`packages/academic/analysis/src/index.ts`](../packages/academic/analysis/src/index.ts)）
 - `@deepseek-ai/dsh-academic-evidence`（[`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts)）
 - `@deepseek-ai/dsh-academic-ingestion`（[`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts)）
 - `@deepseek-ai/dsh-academic-model`（[`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts)）

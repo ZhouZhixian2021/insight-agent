@@ -49,6 +49,7 @@ const KIND_TEMPLATES: Readonly<Record<string, string>> = {
  * library; the check re-derives the entry shape so a stale entry fails loud.
  */
 const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
+  'packages/academic/analysis': 'Pure cross-paper input preparation over shared academic evidence records.',
   'packages/academic/model': 'Provider-neutral academic records and pure helpers.',
   'packages/academic/evidence': 'Source-locator, evidence-record, and evidence-card construction; plain function exports.',
   'packages/academic/ingestion': 'Deduplication and version merging over provider-normalized records; plain function exports.',

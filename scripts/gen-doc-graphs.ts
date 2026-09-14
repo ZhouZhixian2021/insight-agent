@@ -99,6 +99,14 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'academicSource',
+    pkg: 'academic-source',
+    title: 'Academic source provider registry',
+    mode: 'seam',
+    implementations: ['academic-source-openalex', 'academic-source-crossref', 'academic-source-arxiv'],
+    note: 'Registers academic search providers, selects one available provider, and caps returned works while preserving truncation metadata.',
+  },
+  {
     key: 'attachments',
     pkg: 'attachment',
     title: 'Durable binary attachment storage',
