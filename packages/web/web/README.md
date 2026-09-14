@@ -50,7 +50,7 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 ### Searching and fetching
 
-`search()` runs one query and returns an optional provider answer plus a list of citeable sources; the service enforces `request.maxResults` by truncating `sources[]` and setting `truncated`. `fetch()` retrieves one URL and returns its final URL, status code, decoded body, and a truncation flag; a non-2xx response is a result, not an error.
+`search()` runs one query and returns an optional provider answer plus a list of citeable sources; the service enforces `request.maxResults` by truncating `sources[]` and setting `truncated`. `fetch()` retrieves one URL and returns its final URL, status code, bounded body, and a truncation flag; HTML/text bodies are decoded strings and PDF bodies remain bytes. A non-2xx response is a result, not an error.
 
 ```text
 // Search the web; sources[] is capped to maxResults:
@@ -109,7 +109,7 @@ The package is built on one deliberate separation:
 
 ### Data model
 
-The request and result types define the normalized vocabulary callers build on — one `Search` pair and one `Fetch` pair — and the exhaustive fields and JSDoc live in [`src/types.ts`](src/types.ts) and the [web subsystem](../../../docs/subsystems/web.md) reference. Two deliberate choices shape them: `WebFetchBody` is a closed union (`html` | `text`) owned here, so adding a kind breaks compilation until every consumer handles it; `WebError` extends `HarnessError` with an open-string `code`, so consumers must tolerate provider-specific values. Source fields stay optional because not every provider returns all of them.
+The request and result types define the normalized vocabulary callers build on — one `Search` pair and one `Fetch` pair — and the exhaustive fields and JSDoc live in [`src/types.ts`](src/types.ts) and the [web subsystem](../../../docs/subsystems/web.md) reference. Two deliberate choices shape them: `WebFetchBody` is a closed union (`html` | `text` | `pdf`) owned here, so adding a kind breaks compilation until every consumer handles it; `WebError` extends `HarnessError` with an open-string `code`, so consumers must tolerate provider-specific values. Source fields stay optional because not every provider returns all of them.
 
 ### Selection flow
 
@@ -151,7 +151,7 @@ These limits define when the service is incomplete on its own. They are current 
 
 - **No observation surface** — there is no provider-change event and no capability-status query; availability is observable only by running a search or fetch and routing the thrown code, and the no-provider failure is the generic `WEB_PROVIDER_UNAVAILABLE` with no per-provider reason enumeration ([Agent Note](../../../.agents/notes/archived/simplification/2026-07-04-drop-unconsumed-web-observation-surface.md)).
 - **Search requests carry only `query` and `maxResults`** — provider-neutral controls (recency, domain filters, regional hints, search depth) are deferred until the backends can honor them ([seam Agent Note](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md)).
-- **`WebFetchBody` has no `pdf` arm** — text-extractable PDF support is named deferred work; the closed union makes adding it a compile-enforced change across the web packages.
+- **PDF is programmatic-only** — `WebFetchBody` carries bounded PDF bytes for consumers such as academic evidence; the model-facing `web_fetch` tool rejects that arm instead of serializing binary into context.
 - **Provider-backed page extraction is out of scope of `fetch()`** — a Firecrawl/Tavily-style `web_extract` capability is deferred rather than widening the fetch operation.
 
 <a id="dev-note"></a>

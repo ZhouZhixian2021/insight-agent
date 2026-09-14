@@ -17,7 +17,7 @@ export {
   ARXIV_PROVIDER_ID,
 } from './provider.ts'
 export type { ArxivProviderOptions } from './provider.ts'
-export { normalizeArxivWork } from './normalize.ts'
+export { arxivFullTextUrls, normalizeArxivWork } from './normalize.ts'
 export { parseArxivFeed } from './parse.ts'
 export type {
   ArxivRawWork,
