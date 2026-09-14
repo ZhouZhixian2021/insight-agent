@@ -174,14 +174,15 @@ RetrievalRun 记录一次按已批准 Brief 执行的检索。成员 A 的工作
 - schemaVersion：RetrievalRun 数据结构版本。
 - researchBriefId 和 researchBriefVersion：本次运行使用的 Brief。
 - stage：六阶段 ResearchStage。
+- status：终结运行的结果状态，取 success、partial_success 或 failed；运行未结束时为 null。结果规则与 BatchResult 相同，独立于 stage；completed 可以对应 partial_success。cancelled 表示流程被取消，status 仍按已取得结果和失败记录计算，不能代替 stage 表达取消。
 - startedAt 和 completedAt：完整 UTC 时间；未完成时 completedAt 为 null。
-- queries：实际执行的查询列表，包括查询文本和执行顺序。
-- providers：实际调用的数据源列表。
+- queries：按实际执行顺序保存的查询文本数组；允许重复查询，数组位置表达顺序。
+- providers：实际调用的数据源名称数组，同一来源只登记一次；逐项错误进入 failures，不使用另一套来源状态枚举。
 - academicWorkIds：去重后纳入本次运行的工作 ID。
 - coverageSummary：本次运行的覆盖统计。
 - failures：本次运行的 ProviderFailure 列表。
 
-ResearchStage 固定为 planning、awaiting_approval、running、completed、failed 和 cancelled。running 内部的检索、证据构建、分析和报告步骤通过独立进度信息表达，不继续增加顶层阶段。
+ResearchStage 固定为 planning、awaiting_approval、running、completed、failed 和 cancelled。前三个阶段的 status、completedAt 均为 null；后三个阶段必须同时提供结果状态和完整 UTC 结束时间，结束时间包含失败或取消发生的时间。startedAt 是运行记录开始时间，规划和等待审核阶段不代表已经执行网络检索。running 内部的检索、证据构建、分析和报告步骤通过独立进度信息表达，不继续增加顶层阶段。
 
 ### 6.2 EvidenceRecord
 
@@ -251,7 +252,7 @@ EvidenceCard 是成员 B 为单篇 WorkVersion 生成的结构化证据摘要。
 - failedOperations：检索、获取或解析失败的操作数。
 - truncated：是否因时间、数量、数据源或权限限制提前截断。
 - limitations：覆盖范围限制的可读说明。
-- providerBreakdown：各数据源分项统计；MVP 可以为 null。
+- providerBreakdown：A5 第一版固定为 null，表示尚未提供分项统计，不表示各来源计数为零；非空结构留待明确消费需求后定义。
 
 成员 B 根据真实运行记录填写，模型不能估算这些数字。truncated 为 true 时 limitations 不能为空。成员 C 和报告层用该记录限制结论强度。
 
@@ -267,7 +268,9 @@ ProviderFailure 字段：
 - retryable：该失败是否值得自动重试。
 - retryAfter：建议重试时间；没有则为 null。
 
-BatchResult<T> 包含 status、items 和 failures。全部成功为 success；部分项目成功为 partial_success；没有有效结果为 failed。配置无效和认证缺失等整体错误应尽早终止。单篇全文不可用不能让其他成功论文作废。自动重试只能依据 retryable 和停止条件执行，不能无限重试。
+BatchResult<T> 包含 schemaVersion、status、items 和 failures。failures 为空时为 success，items 可以为空，表示操作正常完成但没有结果；items 与 failures 均非空时为 partial_success；items 为空且 failures 非空时为 failed。该状态描述返回的数据和错误，不证明检索覆盖完整。配置无效和认证缺失等整体错误应尽早终止。单篇全文不可用不能让其他成功论文作废。自动重试只能依据 retryable 和停止条件执行，不能无限重试。
+
+ProviderFailure 同样携带 schemaVersion。retryAfter 为完整 UTC ISO 8601 时间或 null，不混用秒数；affectedWorkVersionId 为可选 WorkVersionId，标识单篇版本受到的失败影响；检索级失败可以不带该字段。
 
 ## 11. Claim、证据关系与评估
 
@@ -302,6 +305,18 @@ confidence 是可解释等级，不是假装精确的数学概率。
 - assessedAt：完整 UTC 评估时间。
 
 成员 C 负责 Claim、ClaimEvidenceLink 和 ClaimAssessment。EvidenceRecord 的 WorkVersionId 与 Claim 创建时的版本不一致时，Claim 标记为 stale，不能进入报告。重新分析创建新记录，旧记录保留而不原地修改。
+
+### 11.4 Claim 使用前核验
+
+核验函数读取不可变 evidenceSnapshot 和当前证据，不原地修改 Claim 或 Snapshot。ClaimRecord.validity 保留 current、stale 两值；核验结果另用 current、stale、unverifiable 三种状态，并附带原因。unverifiable 表示无法确认内容一致，不表示已经证实证据发生变化。
+
+- 当前 Brief 的 ID 或内容版本不匹配、证据所属 AcademicWork 或 WorkVersion 不匹配、双方可比较的 contentHash 不匹配，均得到 stale。
+- 缺少当前证据、快照没有证据条目、任一必要哈希为空或不可用，得到 unverifiable；两个 null 不能证明内容一致。
+- 所有引用的证据存在，Brief、成果、版本与可比较哈希全部一致，才得到 current；已有 stale Claim 不因比较相同自动恢复。
+- 多条证据同时出现变化与缺失时优先报告 stale，并保留各项原因；只有缺失或不可核验信息时报告 unverifiable。
+- stale 和 unverifiable 都阻止旧 Claim 直接进入最终报告。current 仅表示版本核验通过，不代表语义正确、置信度充分或已经通过人工审核。
+
+历史记录保持不变；重新分析产生新 Claim 和 Snapshot。核验结果是消费时的计算结果，不新增持久化 Claim 状态。
 
 ## 12. EvidenceSnapshot
 

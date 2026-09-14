@@ -96,14 +96,8 @@
       "retrieval augmented generation evaluation evidence traceability"
     ],
     "providers": [
-      {
-        "provider": "sample-openalex",
-        "status": "success"
-      },
-      {
-        "provider": "sample-fulltext",
-        "status": "partial_failure"
-      }
+      "sample-openalex",
+      "sample-fulltext"
     ],
     "startedAt": "2026-09-09T01:01:00Z",
     "completedAt": "2026-09-09T01:03:00Z",
@@ -675,6 +669,69 @@
       "provider": "sample-openalex",
       "recordId": "sample-record-003",
       "url": "https://example.invalid/record-003"
+    }
+  ],
+  "batchResultCases": [
+    {
+      "case": "empty_success",
+      "result": {
+        "schemaVersion": 1,
+        "status": "success",
+        "items": [],
+        "failures": []
+      }
+    },
+    {
+      "case": "only_failures",
+      "result": {
+        "schemaVersion": 1,
+        "status": "failed",
+        "items": [],
+        "failures": [
+          {
+            "schemaVersion": 1,
+            "failureId": "failure-fulltext-003",
+            "provider": "sample-fulltext",
+            "operation": "fetch_fulltext",
+            "category": "fulltext_unavailable",
+            "message": "合成失败：来源没有可访问正文。",
+            "retryable": false,
+            "affectedWorkVersionId": "23333333-3333-4333-8333-333333333333",
+            "retryAfter": null
+          }
+        ]
+      }
+    },
+    {
+      "case": "partial_success",
+      "result": {
+        "schemaVersion": 1,
+        "status": "partial_success",
+        "failures": [
+          {
+            "schemaVersion": 1,
+            "failureId": "failure-fulltext-003",
+            "provider": "sample-fulltext",
+            "operation": "fetch_fulltext",
+            "category": "fulltext_unavailable",
+            "message": "合成失败：来源没有可访问正文。",
+            "retryable": false,
+            "affectedWorkVersionId": "23333333-3333-4333-8333-333333333333",
+            "retryAfter": null
+          }
+        ],
+        "items": [
+          {
+            "evidenceId": "31111111-1111-4111-8111-111111111111"
+          },
+          {
+            "evidenceId": "32222222-2222-4222-8222-222222222222"
+          },
+          {
+            "evidenceId": "33333333-3333-4333-8333-333333333333"
+          }
+        ]
+      }
     }
   ]
 }
