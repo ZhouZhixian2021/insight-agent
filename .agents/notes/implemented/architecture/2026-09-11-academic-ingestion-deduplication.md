@@ -14,10 +14,10 @@ The shared model deliberately stops at the deduplication-key primitive (`externa
 
 `@deepseek-ai/dsh-academic-ingestion` (`packages/academic/ingestion`) is a pure library. It owns deduplication, version merging, and canonical-version selection; the index is an immutable value a caller passes in and out, so the durable mapping and persistence stay later increments.
 
-1. **Exact keys** are the `externalIdentifierDedupKey` of every external identifier a record carries (DOI, arXiv, OpenAlex, PubMed, provider record). Any collision means the same work.
-2. **Fuzzy key** folds normalized title, first author, and year. A fuzzy collision is reported as `suspected_duplicate` and never auto-merged, matching the "do not auto-merge without an identifier" rule.
+1. **Exact keys** are the `externalIdentifierDedupKey` of every external identifier a record carries (DOI, arXiv, OpenAlex, PubMed, provider record). Any collision means the same work; when different keys bridge existing identities, the earliest index identity is retained and the others are consolidated into it.
+2. **Fuzzy key** folds normalized title, first author, and year. A fuzzy collision is reported as `suspected_duplicate` and retained under a separate identity, matching the "do not auto-merge without an identifier" rule.
 3. **Stable identity**: a new work receives a fresh `createAcademicWorkId()`; the index maps every exact key it carries to that id, so a later record sharing any identifier merges into the same id. Re-running with changed dedup rules cannot renumber an id already assigned in the index.
-4. **Merging** re-points every version at the assigned work identity, unions external identifiers, and reconciles the work: the record whose version is canonical owns title, authors, publication status, and venue; `workVersionIds` is the union; `firstPublicDate` is the earliest available date.
+4. **Merging** re-points every version at the assigned work identity, unions external identifiers, and reconciles the work: the record whose version is canonical owns title, authors, publication status, and venue; `workVersionIds` is the union; `firstPublicDate` is the earliest available date. A repeated provider/record id reuses the stored version instead of appending a fresh provider-minted id.
 5. **Canonical version** prefers `version_of_record` > `corrected` > `accepted_manuscript` > `preprint` among non-retracted versions, tie-broken by the later release date and then ingestion order; retracted versions are candidates only when none other exists.
 
 The library consumes `IngestRecord` (a `{ academicWork, workVersion }` pair), which is structurally the source seam's `AcademicSourceWork`, so provider output flows in without a dependency on `dsh-academic-source`.
@@ -33,7 +33,7 @@ Ingestion depends only on the shared model. It defines no Cordis service and no 
 
 ## The index and audit
 
-`IngestIndex` holds `byExactKey` (external-identifier key → `AcademicWorkId`), `byFuzzyKey` (fuzzy key → `AcademicWorkId`), and `records` (`AcademicWorkId` → contributing records in ingestion order). `ingestWorks(index, records)` returns the updated index, the deduplicated `works` and re-pointed `versions`, and an `IngestAudit` whose entries are `new_work`, `merged_version`, or `suspected_duplicate`.
+`IngestIndex` holds `byExactKey` (external-identifier key → `AcademicWorkId`), `byFuzzyKey` (fuzzy key → `AcademicWorkId`), and `records` (`AcademicWorkId` → contributing records in ingestion order). `ingestWorks(index, records)` returns the updated index, the deduplicated `works` and re-pointed `versions`, and an `IngestAudit` whose entries are `new_work`, `merged_work`, `merged_version`, or `suspected_duplicate`.
 
 ## Alternatives considered
 
@@ -55,7 +55,7 @@ Rejected. The interface requirements reserve fuzzy similarity for human confirma
 
 **Fuzzy matches are advisory.** A batch whose versions share only a fuzzy key remains split until an exact identifier links them or a human confirms the suspected duplicate.
 
-**Identity is append-only per index.** Assigning an id never rewrites an earlier one; changing the fuzzy normalization later can re-flag suspected duplicates but cannot split or renumber already-merged works.
+**The earliest exact-linked identity wins.** Later exact evidence can consolidate previously separate identities, and `merged_work` records each removed identity; fuzzy matches alone never renumber a work.
 
 **No durability.** The index lives in memory; persistence, the durable mapping record, and merge-audit fields await a separate accepted design.
 

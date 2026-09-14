@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-academic-source-arxiv` registers the `arxiv` provider with `ctx.academicSource` and searches the public arXiv Atom `/api/query` endpoint. Each entry is normalized at the provider boundary into the shared `AcademicWork`/`WorkVersion` pair as a preprint, carrying an `arxiv` identifier and, when present, a DOI so ingestion can merge it with the publisher's version.
+`dsh-academic-source-arxiv` registers the `arxiv` provider with `ctx.academicSource` and searches the public arXiv Atom `/api/query` endpoint. Each entry becomes a preprint `AcademicWork`/`WorkVersion` pair: the work carries the base arXiv id and optional DOI for merging, while the version retains its `vN` record id, label, and update date.
 
 ## Table of Contents
 

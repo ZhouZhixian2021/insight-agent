@@ -6,6 +6,7 @@ export interface ArxivRawWork {
   readonly title: string
   readonly authors: readonly string[]
   readonly published: string | null
+  readonly updated: string | null
   readonly doi: string | null
 }
 

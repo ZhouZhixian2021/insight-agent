@@ -1,7 +1,7 @@
 /**
  * Evidence-record construction: mints the identity and enforces the invariant the type
- * system cannot express — a record's level must match its locator kind, and its statement and
- * provenance fields must not be empty.
+ * system cannot express — a record and locator must name the same version, the record's level
+ * must match its locator kind, and its statement and provenance fields must not be empty.
  * @module @deepseek-ai/dsh-academic-evidence/record
  */
 
@@ -19,14 +19,20 @@ const LOCATOR_KINDS_BY_LEVEL: Readonly<Record<EvidenceLevel, readonly SourceLoca
 }
 
 /**
- * Builds an evidence record, minting its identity and validating the level-locator pairing
- * and the non-empty statement and provenance fields. The record references the caller-built
- * locator by id.
+ * Builds an evidence record, minting its identity and validating its version and level against
+ * the locator plus its non-empty statement and provenance fields. The record references the
+ * caller-built locator by id.
  *
  * @param input - the record's fields plus its already-built locator.
  * @returns the built evidence record with a fresh identity.
  */
 export function createEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord {
+  if (input.workVersionId !== input.sourceLocator.workVersionId) {
+    throw new EvidenceError(
+      'an evidence record and its source locator must reference the same work version',
+      'EVIDENCE_VERSION_LOCATOR_MISMATCH',
+    )
+  }
   assertLevelMatchesLocator(input.level, input.sourceLocator)
   assertNonEmpty('sourcedStatement', input.sourcedStatement)
   assertNonEmpty('sourceProvider', input.sourceProvider)

@@ -13,7 +13,7 @@ Status: implemented
 两个提供方都是注册进 `ctx.academicSource` 的独立包，镜像 OpenAlex 提供方的结构（规范化器 + 网络提供方 + 命名空间插件）。它们只是在 wire 映射上不同：
 
 1. `@deepseek-ai/dsh-academic-source-crossref` 查询 `GET {base}/works?query=…&rows=…`，并规范化每条 `message.items[]` 项。它唯一的外部标识符是 DOI，折叠为小写裸形式，从而与 OpenAlex、arXiv 的 DOI 键规范化对齐。Crossref `type` 映射到发表状态：`posted-content` → 预印本，元数据类型 → 已发表，其余 → 未知。
-2. `@deepseek-ai/dsh-academic-source-arxiv` 查询 `GET {base}/api/query?search_query=all:…&max_results=…`，并用 `fast-xml-parser` 解析 Atom feed。每条条目都是不记录期刊场所的预印本版本；它的 `arxiv` 标识符剥掉主机与 `vN` 后缀，使同一论文的所有版本以相同方式作为键，而可选的 `arxiv:doi` 成为 `doi` 标识符，因此摄取能把预印本与出版方版本合并。
+2. `@deepseek-ai/dsh-academic-source-arxiv` 查询 `GET {base}/api/query?search_query=all:…&max_results=…`，并用 `fast-xml-parser` 解析 Atom feed。每条条目都是不记录期刊场所的预印本版本；成果级 `arxiv` 标识符剥掉主机与 `vN` 后缀，使所有版本以同一成果为键，而版本保留带后缀的记录 id、`vN` 标签与 Atom `updated` 日期。可选的 `arxiv:doi` 成为成果级 `doi` 标识符，因此摄取能把预印本与出版方版本合并。
 
 DOI 规范化按约定共享，而非通过辅助函数导入共享：每个提供方都小写为相同的裸形式，符合 `externalIdentifierDedupKey` 契约——调用方规范化的值是去重键。
 
@@ -42,7 +42,7 @@ DOI 规范化按约定共享，而非通过辅助函数导入共享：每个提�
 
 **是标识符而非 wire 结构决定合并。** Crossref 只贡献 DOI；arXiv 贡献 `arxiv` id 加可选 DOI。摄取通过 DOI 去重键跨提供方关联记录，因此折叠形式必须完全一致。
 
-**arXiv 仅作预印本。** 它的版本类型与发表状态始终是 `preprint`；出版方版本由另一个提供方到达并借 DOI 合并。
+**arXiv 仅作预印本。** 它的版本类型与发表状态始终是 `preprint`；每次修订都可通过带后缀的 id 寻址，出版方版本由另一个提供方到达并借 DOI 合并。
 
 **一个 XML 解析器依赖。** `fast-xml-parser` 是本提供方使用的唯一受维护解析器；它已在仓库依赖图中，因此不拥有新的原生或手写 XML 代码。
 

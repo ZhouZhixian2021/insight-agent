@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-`dsh-academic-ingestion` 把提供方规范化的 `AcademicWork`/`WorkVersion` 记录去重为稳定的成果身份，并合并它们的版本。它是库，不是 Cordis 服务或插件，也不执行网络请求或模型调用。精确的外部标识符冲突会自动合并；没有共享标识符、仅靠标题/作者/年份碰撞的情况会作为疑似重复上报，绝不自动合并。
+`dsh-academic-ingestion` 把提供方规范化的 `AcademicWork`/`WorkVersion` 记录去重为稳定的成果身份，并合并它们的版本。它是库，不是 Cordis 服务或插件，也不执行网络请求或模型调用。精确的外部标识符冲突会自动合并；没有共享标识符、仅靠标题/作者/年份碰撞的记录会作为疑似重复上报并以独立身份保留。
 
 ## 目录
 
@@ -69,8 +69,7 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 <a id="known-limitations-and-deferred-work"></a>
 
 - **无持久化**——索引在内存中；需要持久化的调用方自行序列化它。持久映射记录与合并审计字段需单独确认设计。
-- **模糊匹配只上报**——标题/作者/年份碰撞会作为 `suspected_duplicate` 上报，绝不自动合并；同一批内仅共享模糊键的版本保持分离。
-- **首个精确键去重**——记录的外部标识符按字段顺序检查，首个碰撞生效；一条会按不同标识符匹配多个成果的记录不会被拆分。
+- **模糊匹配只上报**——标题/作者/年份碰撞会作为 `suspected_duplicate` 上报，绝不自动合并；每条记录都以独立成果身份保留。
 - **`firstPublicDate` 按字典序**——最早可用的 ISO 字符串胜出；混合年/日精度按文本比较，而非解析。
 
 <a id="dev-note"></a>

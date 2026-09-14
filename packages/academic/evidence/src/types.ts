@@ -1,8 +1,8 @@
 /**
- * Vocabulary for the academic evidence library: source-locator construction inputs, the
- * evidence-record construction input, the evidence-card section inputs, and the validation
- * error. It is a library, not a Cordis service or plugin; extraction that fills these records
- * from retrieved material belongs to a later model-facing increment.
+ * Vocabulary for the academic evidence library: source-locator construction inputs,
+ * evidence-record construction, evidence-card sections, single-paper extraction, and
+ * validation failures. It is a library, not a Cordis service or plugin; callers own model
+ * routing and durable request logging.
  * @module @deepseek-ai/dsh-academic-evidence/types
  */
 
@@ -10,6 +10,8 @@ import type {
   AcademicWorkId,
   Availability,
   DatasetEntry,
+  EvidenceCard,
+  EvidenceRecord,
   ExtractionMethod,
   FindingEntry,
   LimitationEntry,
@@ -99,6 +101,69 @@ export interface EvidenceCardInput {
   readonly metrics: readonly Omit<MetricEntry, 'evidenceCardItemId'>[]
   readonly findings: readonly Omit<FindingEntry, 'evidenceCardItemId'>[]
   readonly limitations: readonly Omit<LimitationEntry, 'evidenceCardItemId'>[]
+}
+
+/** Locator metadata attached to one abstract or full-text segment before evidence exists. */
+export type EvidenceContentLocatorInput =
+  | { readonly kind: 'abstract'; readonly characterOffset?: number }
+  | Omit<Extract<SourceLocatorInput, { readonly kind: 'page_section' }>, 'workVersionId' | 'contentHash'>
+  | Omit<Extract<SourceLocatorInput, { readonly kind: 'paragraph' }>, 'workVersionId' | 'contentHash'>
+  | Omit<Extract<SourceLocatorInput, { readonly kind: 'table' }>, 'workVersionId' | 'contentHash'>
+  | Omit<Extract<SourceLocatorInput, { readonly kind: 'figure' }>, 'workVersionId' | 'contentHash'>
+
+/** One locatable piece of an abstract or parsed full text supplied for extraction. */
+export interface EvidenceContentSegment {
+  readonly text: string
+  readonly locator: EvidenceContentLocatorInput
+}
+
+/** One evidence-backed card item proposed by an extraction implementation. */
+export type EvidenceCardItemDraft =
+  | ({ readonly section: 'researchQuestions' } & Omit<ResearchQuestionEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+  | ({ readonly section: 'methods' } & Omit<MethodEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+  | ({ readonly section: 'datasets' } & Omit<DatasetEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+  | ({ readonly section: 'metrics' } & Omit<MetricEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+  | ({ readonly section: 'findings' } & Omit<FindingEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+  | ({ readonly section: 'limitations' } & Omit<LimitationEntry, 'evidenceCardItemId' | 'evidenceIds'>)
+
+/** Structured extraction for one exact excerpt in a source segment. */
+export interface EvidenceDraft {
+  readonly segmentIndex: number
+  readonly sourcedStatement: string
+  readonly verbatimExcerpt: string
+  readonly cardItems: readonly EvidenceCardItemDraft[]
+  readonly qualityNotes?: readonly string[]
+}
+
+/** Model-independent request passed to the caller's extraction implementation. */
+export interface EvidenceGenerationRequest {
+  readonly instruction: string
+  readonly focusQuestions: readonly string[]
+  readonly segments: readonly EvidenceContentSegment[]
+  readonly signal?: AbortSignal
+}
+
+/** Caller-provided semantic extractor; model adapters validate their output before returning it. */
+export type EvidenceGenerator = (request: EvidenceGenerationRequest) => Promise<readonly EvidenceDraft[]>
+
+/** Paper identity, provenance, and locatable content for one extraction call. */
+export interface EvidenceExtractionInput {
+  readonly academicWorkId: AcademicWorkId
+  readonly workVersionId: WorkVersionId
+  readonly sourceProvider: string
+  readonly sourceUrl: string
+  readonly retrievedAt: string
+  readonly contentHash: string
+  readonly extractionMethod: ExtractionMethod
+  readonly focusQuestions?: readonly string[]
+  readonly segments: readonly EvidenceContentSegment[]
+}
+
+/** Traceable records, locators, and the single-paper card produced by one extraction call. */
+export interface EvidenceExtractionResult {
+  readonly sourceLocators: readonly SourceLocator[]
+  readonly evidenceRecords: readonly EvidenceRecord[]
+  readonly evidenceCard: EvidenceCard
 }
 
 /**

@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-academic-source-arxiv` 向 `ctx.academicSource` 注册 `arxiv` 提供方，并搜索公开的 arXiv Atom `/api/query` 端点。每条条目在提供方边界被规范化为共享的 `AcademicWork`/`WorkVersion` 对，作为预印本携带 `arxiv` 标识符，并且（在存在 DOI 时）携带 DOI，因此摄取能把它与出版方的正式版本合并。
+`dsh-academic-source-arxiv` 向 `ctx.academicSource` 注册 `arxiv` 提供方，并搜索公开的 arXiv Atom `/api/query` 端点。每条条目成为预印本 `AcademicWork`/`WorkVersion` 对：成果携带用于合并的 arXiv 基础 id 与可选 DOI，版本保留带 `vN` 的记录 id、标签与更新时间。
 
 ## 目录
 

@@ -31,6 +31,7 @@ interface RecordSpec {
   readonly type?: WorkVersionType
   readonly venue?: string
   readonly status?: WorkVersion['status']
+  readonly sourceRecordId?: string
 }
 
 function makeRecord(spec: RecordSpec): IngestRecord {
@@ -75,7 +76,7 @@ function makeRecord(spec: RecordSpec): IngestRecord {
     versionLabel: { status: 'unknown', reason: 'no label' },
     releaseDate: date,
     externalIdentifiers: [],
-    sourceRecords: [],
+    sourceRecords: spec.sourceRecordId === undefined ? [] : [{ provider: 'test', recordId: spec.sourceRecordId }],
     contentHash: { status: 'not_extracted' },
     supersedesWorkVersionId: null,
     status: spec.status ?? 'active',
@@ -130,6 +131,12 @@ describe('ingestWorks', () => {
     expect(outcome.audit.entries).toEqual([{ kind: 'new_work', academicWorkId: outcome.works[0]?.academicWorkId }])
   })
 
+  it('starts a work without indexing an unavailable fuzzy key', () => {
+    const outcome = ingestWorks(createIngestIndex(), [makeRecord({ title: '' })])
+    expect(outcome.works).toHaveLength(1)
+    expect(outcome.index.byFuzzyKey.size).toBe(0)
+  })
+
   it('merges records that share a DOI into one work with a canonical published version', () => {
     const preprint = makeRecord({ title: 'RAG survey', authors: ['Alice'], doi: '10.0000/rag', type: 'preprint', date: '2024-01-01', openalexId: 'W1' })
     const published = makeRecord({ title: 'RAG survey', authors: ['Alice'], doi: '10.0000/rag', type: 'version_of_record', date: '2024-06-01', openalexId: 'W2' })
@@ -151,12 +158,13 @@ describe('ingestWorks', () => {
 
     const outcome = ingestWorks(createIngestIndex(), [first, second])
 
-    expect(outcome.works).toHaveLength(1)
+    expect(outcome.works).toHaveLength(2)
+    expect(outcome.versions).toHaveLength(2)
     expect(outcome.audit.entries).toEqual([
       { kind: 'new_work', academicWorkId: outcome.works[0]?.academicWorkId },
       {
         kind: 'suspected_duplicate',
-        academicWorkId: second.academicWork.academicWorkId,
+        academicWorkId: outcome.works[1]?.academicWorkId,
         existingAcademicWorkId: outcome.works[0]?.academicWorkId,
         reason: 'title/author/year matches an already-ingested work without a shared external identifier',
       },
@@ -176,5 +184,35 @@ describe('ingestWorks', () => {
       academicWorkId: first.works[0]?.academicWorkId,
       workVersionId: record.workVersion.workVersionId,
     }])
+  })
+
+  it('does not create a version when a provider returns the same record with fresh internal ids', () => {
+    const firstRecord = makeRecord({ title: 'Idempotent provider record', doi: '10.0000/idem', year: 2024, sourceRecordId: 'record-1' })
+    const first = ingestWorks(createIngestIndex(), [firstRecord])
+    const secondRecord = makeRecord({ title: 'Idempotent provider record', doi: '10.0000/idem', year: 2024, sourceRecordId: 'record-1' })
+    const second = ingestWorks(first.index, [secondRecord])
+
+    expect(second.versions).toHaveLength(1)
+    expect(second.versions[0]?.workVersionId).toBe(firstRecord.workVersion.workVersionId)
+    expect(second.audit.entries).toEqual([{
+      kind: 'merged_version',
+      academicWorkId: first.works[0]?.academicWorkId,
+      workVersionId: firstRecord.workVersion.workVersionId,
+    }])
+  })
+
+  it('consolidates works when one record bridges their exact identifiers', () => {
+    const arxiv = makeRecord({ title: 'Preprint', arxivId: '2406.12345', year: 2024 })
+    const published = makeRecord({ title: 'Published', doi: '10.0000/bridge', year: 2024 })
+    const first = ingestWorks(createIngestIndex(), [arxiv, published])
+    const bridge = makeRecord({ title: 'Bridge', doi: '10.0000/bridge', arxivId: '2406.12345', year: 2024 })
+    const second = ingestWorks(first.index, [bridge])
+
+    expect(first.works).toHaveLength(2)
+    expect(second.works).toHaveLength(1)
+    expect(second.works[0]?.academicWorkId).toBe(first.works[0]?.academicWorkId)
+    expect(second.index.records.has(first.works[1]!.academicWorkId)).toBe(false)
+    expect(second.versions).toHaveLength(3)
+    expect(second.audit.entries.map(entry => entry.kind)).toEqual(['merged_work', 'merged_version'])
   })
 })

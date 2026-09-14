@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-academic-ingestion` deduplicates provider-normalized `AcademicWork`/`WorkVersion` records into stable work identities and merges their versions. It is a library, not a Cordis service or plugin, and performs no network requests or model calls. Exact external-identifier collisions merge automatically; a title/author/year collision without a shared identifier is reported as a suspected duplicate and never auto-merged.
+`dsh-academic-ingestion` deduplicates provider-normalized `AcademicWork`/`WorkVersion` records into stable work identities and merges their versions. It is a library, not a Cordis service or plugin, and performs no network requests or model calls. Exact external-identifier collisions merge automatically; a title/author/year collision without a shared identifier is reported and retained as a separate suspected duplicate.
 
 ## Table of Contents
 
@@ -69,8 +69,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 <a id="known-limitations-and-deferred-work"></a>
 
 - **No durability** — the index is in-memory; a caller that needs persistence serializes it. The durable mapping record and merge-audit fields await a separate accepted design.
-- **Fuzzy matches are only flagged** — a title/author/year collision is reported as `suspected_duplicate`, never auto-merged; within one batch, versions that share only a fuzzy key stay separate.
-- **First-match exact dedup** — a record's external identifiers are checked in field order and the first collision wins; a record that would match several works by different identifiers is not split.
+- **Fuzzy matches are only flagged** — a title/author/year collision is reported as `suspected_duplicate`, never auto-merged; each record remains available under a separate work identity.
 - **`firstPublicDate` is lexicographic** — the earliest available ISO string wins; mixed year/day precision is compared as text rather than parsed.
 
 <a id="dev-note"></a>
