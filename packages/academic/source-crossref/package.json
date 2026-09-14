@@ -1,0 +1,33 @@
+{
+  "name": "@deepseek-ai/dsh-academic-source-crossref",
+  "description": "Crossref scholarly-source provider (ctx.academicSource) that searches the public /works endpoint and normalizes each record into the shared academic model",
+  "version": "0.1.3-alpha.1",
+  "publishConfig": { "access": "public" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/academic/source-crossref"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib/index.js", "lib/types/**/*.d.ts"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
+  }
+}

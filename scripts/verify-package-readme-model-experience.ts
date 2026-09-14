@@ -45,6 +45,12 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/academic/model': { kind: 'indirect', reason: 'The library only defines caller-owned academic records; workflow and analysis consumers own model-visible rendering.' },
+  'packages/academic/evidence': { kind: 'indirect', reason: 'The library only constructs caller-owned evidence records and cards; the analysis or report consumer owns model-visible rendering.' },
+  'packages/academic/ingestion': { kind: 'indirect', reason: 'The library only deduplicates and merges caller-owned records; the retrieval or workflow consumer owns model-visible rendering.' },
+  'packages/academic/source': { kind: 'indirect', reason: 'The scholarly-source service delegates model rendering to a future workflow or retrieval consumer; it registers no prompt or schema of its own.' },
+  'packages/academic/source-arxiv': { kind: 'indirect', reason: 'The provider backend delegates model rendering to the future retrieval or workflow consumer; it registers no prompt or schema of its own.' },
+  'packages/academic/source-crossref': { kind: 'indirect', reason: 'The provider backend delegates model rendering to the future retrieval or workflow consumer; it registers no prompt or schema of its own.' },
+  'packages/academic/source-openalex': { kind: 'indirect', reason: 'The provider backend delegates model rendering to the future retrieval or workflow consumer; it registers no prompt or schema of its own.' },
   'packages/attachment/attachment': { kind: 'indirect', reason: 'The storage seam delegates model request rendering to provider adapters.' },
   'packages/attachment/attachment-local': { kind: 'indirect', reason: 'The local backend delegates model request rendering to provider adapters.' },
   'packages/shell/shell': { kind: 'indirect', reason: 'The service interface delegates all model rendering to dsh-tool-bash.' },

@@ -11,6 +11,79 @@
 
 `Requires:` 行列出插件通过 `inject` 注入的服务键：其 `cordis.yml` 树还必须加载这些服务的提供者。范围限定为 harness 层级（`packages/`）；配置树还可能加载的 vendored cordis 插件（`hmr`、控制台日志记录器等）固定为上游源代码（参见 [vendoring policy](../vendor/README.md)），未收录于此目录。
 
+<a id="deepseek-aidsh-academic-source"></a>
+
+## `@deepseek-ai/dsh-academic-source`
+
+```ts config-catalog
+/**
+ * Config for the academic source seam. `searchProvider` pins which provider wins
+ * for search; it is optional (a single registered usable provider auto-selects).
+ * Operational overrides such as environment variables must feed this same field
+ * rather than introduce a hidden priority chain.
+ */
+export interface AcademicSourceRuntimeConfig {
+  /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
+  readonly searchProvider?: string
+}
+```
+
+来源：[`packages/academic/source/src/index.ts:46`](../packages/academic/source/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-arxiv"></a>
+
+## `@deepseek-ai/dsh-academic-source-arxiv`
+
+需要：`academicSource`
+
+```ts config-catalog
+/** Plugin config (optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** arXiv export API base; `/api/query` is appended. Defaults to `https://export.arxiv.org`. */
+  baseURL?: string
+}
+```
+
+来源：[`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-crossref"></a>
+
+## `@deepseek-ai/dsh-academic-source-crossref`
+
+需要：`academicSource`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** Crossref API base; `/works` is appended. Defaults to `https://api.crossref.org`. */
+  baseURL?: string
+  /** Polite-pool contact email sent as the `mailto` query parameter. */
+  mailto?: string
+}
+```
+
+来源：[`packages/academic/source-crossref/src/index.ts:36`](../packages/academic/source-crossref/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-openalex"></a>
+
+## `@deepseek-ai/dsh-academic-source-openalex`
+
+需要：`academicSource`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** OpenAlex API base; `/works` is appended. Defaults to `https://api.openalex.org`. */
+  baseURL?: string
+  /** Polite-pool contact email sent as the `mailto` query parameter. */
+  mailto?: string
+  /** Premium-pool API key sent as the `api_key` query parameter. */
+  apiKey?: string
+}
+```
+
+来源：[`packages/academic/source-openalex/src/index.ts:39`](../packages/academic/source-openalex/src/index.ts)
+
 <a id="deepseek-aidsh-acp"></a>
 
 ## `@deepseek-ai/dsh-acp`
@@ -3429,6 +3502,8 @@ export interface Config {
 
 由其他包作为库导入；`cordis.yml` 无法加载它们。
 
+- `@deepseek-ai/dsh-academic-evidence`（[`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts)）
+- `@deepseek-ai/dsh-academic-ingestion`（[`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts)）
 - `@deepseek-ai/dsh-academic-model`（[`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts)）
 - `@deepseek-ai/dsh-agent-loop-testkit`（[`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts)）
 - `@deepseek-ai/dsh-anonymous-user-id`（[`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts)）
