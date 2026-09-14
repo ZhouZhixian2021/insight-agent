@@ -62,6 +62,6 @@ kind: "package-library"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-根目录工作区登记和构建集成由成员 A 负责，具体见[开发记录](../../../z-team_docs/开发记录/2026-09-14-ykxy11-分析输入准备.md)。
+根 TypeScript 工程和工作区锁文件已包含本包。验证结果和剩余文档集成事项见[开发记录](../../../z-team_docs/开发记录/2026-09-14-ykxy11-分析输入准备.md)。
 
 </details>

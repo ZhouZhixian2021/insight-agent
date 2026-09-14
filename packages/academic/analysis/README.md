@@ -62,6 +62,6 @@ No model request or cache operation occurs in this package.
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Root workspace registration and build integration are assigned to member A in the [development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-分析输入准备.md).
+The root TypeScript projects and workspace lockfile include this package. See the [development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-分析输入准备.md) for validation and remaining documentation integration work.
 
 </details>
