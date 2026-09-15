@@ -35,7 +35,7 @@ kind: "package-reference"
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API 基址；会追加 `/api/query`。 |
 
-提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。
+提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
 
 -----
 
@@ -48,6 +48,7 @@ kind: "package-reference"
 | `ArxivProviderOptions` | 一次搜索使用的已解析端点。 |
 | `parseArxivFeed()` | 把 Atom feed 正文解析为提炼后的条目。 |
 | `normalizeArxivWork()` | 把一条 arXiv 条目转换为成果/版本对。 |
+| `arxivFullTextUrls()` | 从 arXiv id 推导版本对应的 HTML 与 PDF 全文 URL。 |
 | `ArxivRawWork` | 规范化器消费的提炼后 arXiv 条目字段。 |
 
 插件入口还导出 `name`、`inject`、`Config` 与 `apply`。
@@ -70,6 +71,7 @@ kind: "package-reference"
 - **无重试或退避**——每次搜索只发一次请求；`429` 或 `5xx` 会以 `ACADEMIC_SOURCE_PROVIDER_ERROR` 呈现。
 - **无分页**——arXiv 用 `max_results` 限制每次查询；更大的结果集需要基于 `start` 的分页。
 - **一律视为预印本**——arXiv 不暴露正式出版版；该关联通过可选 DOI 建立。
+- **全文解析留在 evidence 包中**——本来源提供方只推导 arXiv URL，不抓取或解析其 HTML/PDF 正文。
 - **`available()` 只看端点**——arXiv 无需密钥。
 
 <a id="dev-note"></a>

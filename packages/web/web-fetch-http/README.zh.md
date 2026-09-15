@@ -1,5 +1,5 @@
 ---
-description: "ctx.web 的匿名公共 HTTP(S) 抓取后端：部署方如何挂载有界、安全的 URL 抓取，含同源重定向与仅文本解码。"
+description: "ctx.web 的匿名公共 HTTP(S) 抓取后端：有界、安全的 URL 抓取，含同源重定向、文本解码与 PDF 字节。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-有了 `dsh-web-fetch-http`，harness 可以通过 web 服务（`ctx.web`）抓取公共 HTTP(S) 页面，并在不发送凭据的情况下获得状态码与有界、解码后的内容。当组合需要 URL 校验、公开地址解析、连接固定、仅同源重定向、字节和字符上限及显式产品 `User-Agent` 时选择它。它把非 2xx 响应作为结果而非错误返回，并拒绝非公开目标、二进制数据与不受支持的内容类型。面向模型的 `web_fetch` 工具位于 `dsh-tool-web`，由它渲染本提供方的正文。
+有了 `dsh-web-fetch-http`，harness 可以通过 web 服务（`ctx.web`）抓取公共 HTTP(S) 资源，并在不发送凭据的情况下获得状态码与有界内容。HTML/文本会被解码；PDF 保留为字节供程序消费方使用。它把非 2xx 响应作为结果而非错误返回，并拒绝非公开目标与不支持的二进制类型。面向模型的 `web_fetch` 工具位于 `dsh-tool-web`，并会有意拒绝 PDF 字节。
 
 ## 目录
 
@@ -52,11 +52,11 @@ kind: "package-reference"
 
 ### 抓取返回什么
 
-成功调用产生 `WebFetchResult`：允许的重定向之后的最终 URL、HTTP 状态码、分类为 `html` 或 `text` 的解码正文，以及 `truncated` 标志。非 2xx 响应是结果而非错误——状态码是被抓取资源状态的一部分；`WebError` 只用于无法安全获取或表示资源的失败。
+成功调用产生 `WebFetchResult`：允许的重定向之后的最终 URL、HTTP 状态码、分类为 `html`、`text` 或 `pdf` 的正文，以及 `truncated` 标志。HTML/文本的 `content` 是已解码字符串；PDF 的 `content` 是 `Uint8Array`。非 2xx 响应是结果而非错误。
 
 ```text
 const page = await ctx.web.fetch({ url: 'https://example.com' })
-// page.body.kind === 'html' | 'text'; page.statusCode === 200 | 404 | ...
+// page.body.kind === 'html' | 'text' | 'pdf'; page.statusCode === 200 | 404 | ...
 ```
 
 ### 传输行为
@@ -81,7 +81,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 
 本包建立在一个分离与一个分层超时之上：
 
-- **安全获取与呈现分离。** 本提供方拥有 URL 校验、公开地址强制规则、连接固定、HTTP 传输、重定向策略、上限、charset 解码与二进制拒绝；`dsh-tool-web` 拥有 HTML→markdown 与截断格式化。非 2xx 响应是数据，不是失败。
+- **安全获取与呈现分离。** 本提供方拥有 URL 校验、公开地址强制规则、连接固定、HTTP 传输、重定向策略、上限、文本解码、PDF 字节保留与其他二进制类型拒绝；消费方拥有解析与呈现。非 2xx 响应是数据，不是失败。
 - **两层超时。** 提供方的 `timeoutMs` 是直接 `ctx.web.fetch()` 调用方的资源兜底；面向模型的工具调用预算属于 `dsh-tool-call-timeout-policy`，由它触发 `exec.signal`。外层截止期限先到时，提供方报告 `WEB_ABORTED`，策略再以 `TOOL_TIMEOUT` 替换；因此 `WEB_FETCH_TIMEOUT` 标识的是提供方预算耗尽的直接服务调用方。
 
 ### 源码地图
@@ -96,7 +96,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 
 ### 读取路径
 
-抓取先校验 URL，只解析一次主机名，结果中只要有非公开地址就拒绝，并把连接固定到已接受地址。每次同源重定向都重复该检查；跨源重定向或非公开目标在接收响应字节前失败。最终响应按 `Content-Type` 分类、依声明的 charset 解码，并在字节上限内读取；解码后的文本再截断到字符上限。
+抓取先校验 URL，只解析一次主机名，结果中只要有非公开地址就拒绝，并把连接固定到已接受地址。每次同源重定向都重复该检查；跨源重定向或非公开目标在接收响应字节前失败。最终响应按 `Content-Type` 分类并在字节上限内读取。HTML/文本按声明的 charset 解码并按字符上限截断；PDF 作为有界字节返回。
 
 </details>
 
@@ -119,7 +119,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 <a id="model-experience"></a>
 ## 模型体验
 
-间接地，通过 `dsh-tool-web`：该工具把本提供方经 `maxBodyChars` 限制的解码文本或由 HTML 转换得到的 markdown 置于抓取结果包装层内，而重定向、标头与传输上限保持隐藏。
+间接地，通过 `dsh-tool-web`：该工具渲染有界文本或由 HTML 转换得到的 markdown。PDF 字节留给学术证据等程序消费方，并由面向模型的工具拒绝。
 
 #### KV Cache 影响
 
@@ -132,7 +132,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 
 这些限制说明提供方何时不安全或不合适。它们是当前包约束。
 
-- **只解码文本内容**——包括 html/xhtml 与 `text/*` 加 JSON/XML 家族；缺少 `Content-Type` 或任何二进制类型都会抛出 `WEB_UNSUPPORTED_CONTENT_TYPE`，可提取文本的 PDF 解码属于明确的延期工作。
+- **此处不解析 PDF**——`application/pdf` 返回有界字节；文本提取与扫描件 OCR 属于消费方。缺少 `Content-Type` 或其他二进制类型会抛出 `WEB_UNSUPPORTED_CONTENT_TYPE`。
 - **charset 只来自 `Content-Type` 标头**（默认 UTF-8）——HTML `<meta charset>` 声明会被忽略；声明但无法识别的 charset 标签会抛出异常，而非回退。
 
 <a id="dev-note"></a>

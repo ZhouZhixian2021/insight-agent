@@ -96,7 +96,7 @@ interface WebFetchResult {
   readonly url: string
   /** HTTP status code of the fetched response. */
   readonly statusCode: number
-  /** Decoded body, classified by content kind. */
+  /** Bounded body, decoded for text kinds and left as bytes for PDF. */
   readonly body: WebFetchBody
   /** True when the provider capped the decoded body. */
   readonly truncated: boolean
@@ -105,8 +105,8 @@ interface WebFetchResult {
 
 ```ts type-equiv
 /**
- * The decoded body of a fetched resource. A CLOSED discriminated union owned by
- * `dsh-web`: the provider decodes the kind and `dsh-tool-web` renders it, so a
+ * The bounded body of a fetched resource. A CLOSED discriminated union owned by
+ * `dsh-web`: the provider decodes text kinds and preserves PDF bytes, so a
  * new kind is a coordinated change across known packages, not a plugin
  * extension. Consumers `switch` on `kind` ending in `default: assertNever(...)`
  * so adding a kind breaks compilation at every consumer until handled. Each arm
@@ -116,6 +116,7 @@ interface WebFetchResult {
 type WebFetchBody =
   | { readonly kind: 'html'; readonly content: string }
   | { readonly kind: 'text'; readonly content: string }
+  | { readonly kind: 'pdf'; readonly content: Uint8Array }
 ```
 
 ## 提供方可用性
@@ -136,7 +137,7 @@ HTTP 提供方会解析每个实际请求，拒绝包括通过当前 DNS64 前�
 
 ## 服务
 
-`WebRuntime` 注册搜索与抓取提供方，以 `WEB_DUPLICATE_PROVIDER` 拒绝重复 id，并在执行时以结构化的选择错误解析提供方。本地抓取后端仅接受 HTTP(S)、拒绝凭证、对每个 hostname 只解析一次、拒绝包含任一非公开 IPv4／IPv6 目的地址或经当前前缀转换到非公开 IPv4 的 NAT64 地址的解析结果、把请求连接固定到已验证地址、对每一次同源重定向跳转重复这些校验、限制重定向次数、字节数、字符数和时间，并解码正文；展示由工具负责。
+`WebRuntime` 注册搜索与抓取提供方，以 `WEB_DUPLICATE_PROVIDER` 拒绝重复 id，并在执行时以结构化的选择错误解析提供方。本地抓取后端仅接受 HTTP(S)、拒绝凭证、校验并固定公开目的地址、限制重定向次数、字节数、字符数和时间、解码 HTML/文本，并保留 PDF 字节；面向模型的展示拒绝 PDF，程序消费方可以解析它。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 

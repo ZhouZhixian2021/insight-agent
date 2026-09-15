@@ -1,6 +1,6 @@
 /**
  * Safe HTTP(S) retrieval for `ctx.web`: validates and pins public IP destinations, follows
- * only same-origin redirects, enforces time and size limits, classifies and decodes text,
+ * only same-origin redirects, enforces time and size limits, decodes text, preserves PDF bytes,
  * and leaves presentation to `@deepseek-ai/dsh-tool-web`. Requests carry no browser cookies
  * or ambient credentials.
  * @module @deepseek-ai/dsh-web-fetch-http/provider
@@ -117,7 +117,7 @@ export class HttpFetchProvider implements WebFetchProvider {
   private async requestOnce(url: URL, signal: AbortSignal) {
     const headers = {
       'user-agent': this.limits.userAgent,
-      'accept': 'text/html,application/xhtml+xml,text/*;q=0.9,application/json;q=0.8',
+      'accept': 'text/html,application/xhtml+xml,application/pdf,text/*;q=0.9,application/json;q=0.8',
     }
     try {
       // A proxied hop skips public-address resolution and pinning: the proxy performs the origin's
@@ -143,13 +143,23 @@ export class HttpFetchProvider implements WebFetchProvider {
     }
   }
 
-  /** Read, byte-cap, classify, and decode the final response body. */
+  /** Read, byte-cap, classify, and decode text or preserve PDF bytes. */
   private async readBody(response: Response, finalUrl: URL, signal: AbortSignal): Promise<WebFetchResult> {
     const contentType = response.headers.get('content-type')
     const kind = classifyContentType(contentType)
     if (kind === undefined) {
       await response.body?.cancel()
       throw new WebError(`unsupported content type "${contentType ?? 'unknown'}"`, 'WEB_UNSUPPORTED_CONTENT_TYPE')
+    }
+
+    if (kind === 'pdf') {
+      const { bytes, truncatedByBytes } = await this.readCapped(response, signal)
+      return {
+        url: finalUrl.toString(),
+        statusCode: response.status,
+        body: { kind: 'pdf', content: bytes },
+        truncated: truncatedByBytes,
+      }
     }
 
     // Resolve the decoder BEFORE reading the body so an unsupported charset

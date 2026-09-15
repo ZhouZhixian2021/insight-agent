@@ -70,6 +70,7 @@ describe('policy helpers', () => {
     expect(classifyContentType('application/xhtml+xml')).toBe('html')
     expect(classifyContentType('text/plain')).toBe('text')
     expect(classifyContentType('application/json')).toBe('text')
+    expect(classifyContentType('application/pdf')).toBe('pdf')
     expect(classifyContentType('image/png')).toBeUndefined()
     expect(classifyContentType(null)).toBeUndefined()
   })
@@ -270,6 +271,12 @@ describe('HttpFetchProvider success', () => {
     handler = (_req, res) => { res.writeHead(200, { 'content-type': 'text/html' }); res.end('<h1>hi</h1>') }
     const result = await provider().fetch({ url: base })
     expect(result.body).toEqual({ kind: 'html', content: '<h1>hi</h1>' })
+  })
+
+  it('fetches a PDF body without decoding its bytes', async () => {
+    handler = (_req, res) => { res.writeHead(200, { 'content-type': 'application/pdf' }); res.end(Buffer.from([0x25, 0x50, 0x44, 0x46])) }
+    const result = await provider().fetch({ url: base })
+    expect(result.body).toEqual({ kind: 'pdf', content: new Uint8Array([0x25, 0x50, 0x44, 0x46]) })
   })
 
   it('uses an explicitly injected validated-address resolver', async () => {

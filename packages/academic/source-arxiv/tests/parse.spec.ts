@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeArxivWork, parseArxivFeed } from '../src/index.ts'
+import { arxivFullTextUrls, normalizeArxivWork, parseArxivFeed } from '../src/index.ts'
 
 const FEED = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
@@ -50,6 +50,18 @@ describe('parseArxivFeed', () => {
 })
 
 describe('normalizeArxivWork', () => {
+  it('derives version-specific HTML and PDF full-text URLs', () => {
+    expect(arxivFullTextUrls('http://arxiv.org/abs/2406.12345v1')).toEqual([
+      'https://arxiv.org/html/2406.12345v1',
+      'https://arxiv.org/pdf/2406.12345v1',
+    ])
+    expect(arxivFullTextUrls('math.GT/0309136')).toEqual([
+      'https://arxiv.org/html/math.GT/0309136',
+      'https://arxiv.org/pdf/math.GT/0309136',
+    ])
+    expect(() => arxivFullTextUrls('../secret')).toThrow('invalid arXiv id')
+  })
+
   it('translates an entry as a preprint with arxiv and doi identifiers', () => {
     const entry = parseArxivFeed(FEED)[0]!
     const { academicWork, workVersion } = normalizeArxivWork(entry)
