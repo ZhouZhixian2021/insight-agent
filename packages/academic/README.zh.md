@@ -25,6 +25,9 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 | 包 | 职责 | ctx 键 |
 |---|---|---|
 | [`model`](model/README.zh.md) | 共享标识符、记录、结果状态与纯模型辅助函数 | 无服务键 |
+| [`analysis`](analysis/README.zh.md) | 证据输入准备与注明论文归属的跨论文对比 | 无服务键 |
+| [`eval`](eval/README.zh.md) | 证据关联与明确语义审核的交付资格检查 | 无服务键 |
+| [`report`](report/README.zh.md) | 经评测的 Markdown 草稿与最终交付检查 | 无服务键 |
 | [`source`](source/README.zh.md) | 学术来源访问 seam：提供方注册表、选择与搜索词汇 | `academicSource` |
 | [`source-openalex`](source-openalex/README.zh.md) | OpenAlex 学术来源提供方，搜索 `/works` 并规范化进共享模型 | 注入 `academicSource` |
 | [`source-crossref`](source-crossref/README.zh.md) | Crossref 学术来源提供方，搜索 `/works` 并规范化进共享模型 | 注入 `academicSource` |

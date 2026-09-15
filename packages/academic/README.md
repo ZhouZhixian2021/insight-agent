@@ -25,6 +25,9 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | Package | Role | ctx key |
 |---|---|---|
 | [`model`](model/README.md) | Shared identifiers, records, result states, and pure model helpers | no service key |
+| [`analysis`](analysis/README.md) | Evidence input preparation and attributed cross-paper comparisons | no service key |
+| [`eval`](eval/README.md) | Evidence integrity and explicit semantic-review eligibility | no service key |
+| [`report`](report/README.md) | Evaluated Markdown drafts and final-delivery checks | no service key |
 | [`source`](source/README.md) | Scholarly-source access seam: provider registry, selection, and search vocabulary | `academicSource` |
 | [`source-openalex`](source-openalex/README.md) | OpenAlex scholarly-source provider searching `/works` and normalizing into the shared model | injects `academicSource` |
 | [`source-crossref`](source-crossref/README.md) | Crossref scholarly-source provider searching `/works` and normalizing into the shared model | injects `academicSource` |

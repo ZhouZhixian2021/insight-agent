@@ -3502,9 +3502,11 @@ Abstract service classes — a deployment loads a concrete implementation packag
 Imported as libraries by other packages; a `cordis.yml` cannot load them.
 
 - `@deepseek-ai/dsh-academic-analysis` ([`packages/academic/analysis/src/index.ts`](../packages/academic/analysis/src/index.ts))
+- `@deepseek-ai/dsh-academic-eval` ([`packages/academic/eval/src/index.ts`](../packages/academic/eval/src/index.ts))
 - `@deepseek-ai/dsh-academic-evidence` ([`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts))
 - `@deepseek-ai/dsh-academic-ingestion` ([`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts))
 - `@deepseek-ai/dsh-academic-model` ([`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts))
+- `@deepseek-ai/dsh-academic-report` ([`packages/academic/report/src/index.ts`](../packages/academic/report/src/index.ts))
 - `@deepseek-ai/dsh-agent-loop-testkit` ([`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts))
 - `@deepseek-ai/dsh-anonymous-user-id` ([`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts))
 - `@deepseek-ai/dsh-app-boot` ([`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts))
@@ -3513,6 +3515,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-brand` ([`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts))
 - `@deepseek-ai/dsh-client-store` ([`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts))
 - `@deepseek-ai/dsh-client-test-runtime` ([`packages/test-support/client-runtime/src/index.ts`](../packages/test-support/client-runtime/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-academic-research` ([`packages/client/ui-academic-research/src/index.ts`](../packages/client/ui-academic-research/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-primitives` ([`packages/client/ui-primitives/src/index.ts`](../packages/client/ui-primitives/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-slots` ([`packages/client/ui-slots/src/index.ts`](../packages/client/ui-slots/src/index.ts))
 - `@deepseek-ai/dsh-client-web` ([`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts))

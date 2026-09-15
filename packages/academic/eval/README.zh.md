@@ -1,0 +1,58 @@
+---
+description: "检查证据关联并结合明确的语义审核，判断报告是否可交付。"
+kind: "package-library"
+---
+
+# @deepseek-ai/dsh-academic-eval
+
+[English](README.md) | 中文
+
+## 概述
+
+检查证据关联并结合明确的语义审核，判断报告是否可交付。
+
+## 目录
+
+- [使用本包](#use-this-package)
+- [模型体验](#model-experience)
+- [已知限制](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
+
+<a id="use-this-package"></a>
+## 使用本包
+
+`evaluateClaims()` — 传入当前研究简报、结论、关联、证据、版本、定位、审核记录和评估时间。函数检查快照与关联集合、当前性、来源、证据等级、预印本策略和最低论文数量。证据缺失或无效会阻止交付。引用有效但缺少匹配的语义审核时返回 needs_review，不自动认定结论成立。审核记录必须由调用方从可信审核人处取得；本函数不认证审核人身份。
+
+本包是无状态函数库，不发布 invariant 伴随模块；自动化测试核验输出关联和失败行为。
+
+<a id="model-experience"></a>
+## 模型体验
+
+### 返回结果
+
+#### 模型看到的内容
+
+`evaluateClaims()` 仅返回数据，不发送模型请求。
+
+#### Token 影响
+
+无直接消耗。消费方负责后续渲染和记录请求。
+
+#### KV Cache 影响
+
+本包不操作模型缓存。
+
+<a id="known-limitations-and-deferred-work"></a>
+## 已知限制与后续工作
+
+- 不提供模型裁判、真实性保证、外部检索或审核人认证。外部输入由其入口负责人完成类型校验。
+
+<a id="dev-note"></a>
+### 开发备注
+
+<details>
+<summary>维护者工作上下文</summary>
+
+固定基准与检查结果见 [中文开发记录](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
+
+</details>

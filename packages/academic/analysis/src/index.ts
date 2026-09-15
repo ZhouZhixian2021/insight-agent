@@ -3,6 +3,8 @@ import type { EvidenceCard, EvidenceCardItem, EvidenceRecord } from '@deepseek-a
 import type { AnalysisInput, AnalysisSection, PreparationIssue, PreparedAnalysisInput, PreparedVersion } from './types.ts'
 
 export type { AnalysisInput, AnalysisSection, PreparationIssue, PreparationIssueCode, PreparedAnalysisInput, PreparedVersion, PreparedWork } from './types.ts'
+export { analyzeEvidence } from './analyze.ts'
+export type { AnalysisResult } from './analyze.ts'
 
 const sections: readonly AnalysisSection[] = ['researchQuestions', 'methods', 'datasets', 'metrics', 'findings', 'limitations']
 
