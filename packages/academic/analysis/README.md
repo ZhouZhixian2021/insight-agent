@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Callers use `prepareAnalysisInput()` to group evidence-card entries by work and actual content version. The result retains accepted entries, supporting records, source locators, and located issues. This pure library performs no search, model requests, persistence, or Claim generation.
+Callers use `prepareAnalysisInput()` to group evidence-card entries by work and actual content version. `analyzeEvidence()` creates attributed cross-paper method and finding comparisons with shared Claim records, evidence links and snapshots. This extractive baseline performs no search, model requests or persistence, and requires semantic review before final delivery.
 
 ## Table of Contents
 
@@ -52,7 +52,7 @@ No model request or cache operation occurs in this package.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- Analysis-local preparation types are not shared Claim or report types. Claim generation and semantic assessment await the shared model's analysis records.
+- Preparation views remain analysis-local. Generated conclusions use A5 Claim records; extractive comparisons do not rank metrics or infer consensus, trends or research gaps.
 - Structural checks do not verify quotations against full source content, compare experimental conditions, enforce an approved Brief, or detect stale evidence against an external store. Missing excerpts remain explicitly limited material.
 - The returned subset is a preparation view, not a replacement producer card or a durable record. Do not persist it under the original card ID as new source evidence.
 

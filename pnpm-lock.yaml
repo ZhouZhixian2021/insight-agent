@@ -586,6 +586,15 @@ importers:
         specifier: workspace:^
         version: link:../../util/brand
 
+  packages/academic/eval:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../model
+
   packages/academic/evidence:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -615,6 +624,24 @@ importers:
       '@deepseek-ai/dsh-util-crypto':
         specifier: workspace:^
         version: link:../../util/crypto
+
+  packages/academic/report:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-analysis':
+        specifier: workspace:^
+        version: link:../analysis
+      '@deepseek-ai/dsh-academic-eval':
+        specifier: workspace:^
+        version: link:../eval
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../model
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:^
+        version: link:../../util/brand
 
   packages/academic/source:
     dependencies:
@@ -1982,6 +2009,24 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
+
+  packages/client/ui-academic-research:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-analysis':
+        specifier: workspace:^
+        version: link:../../academic/analysis
+      '@deepseek-ai/dsh-academic-eval':
+        specifier: workspace:^
+        version: link:../../academic/eval
+      '@deepseek-ai/dsh-academic-report':
+        specifier: workspace:^
+        version: link:../../academic/report
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:^
+        version: link:../../util/brand
 
   packages/client/ui-agent-preset:
     devDependencies:
