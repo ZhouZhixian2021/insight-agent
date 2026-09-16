@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-academic-research",
-  "description": "Academic research client-ui-academic-research",
+  "description": "Web-client surface for the academic research report",
   "version": "0.1.3-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -18,22 +18,33 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "bundle": "tsdown",
+    "watch": "tsdown --watch"
   },
   "files": [
     "lib/index.js",
+    "lib/client.js",
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-report": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-report": "workspace:^",
-    "@deepseek-ai/dsh-academic-analysis": "workspace:^",
-    "@deepseek-ai/dsh-academic-eval": "workspace:^",
-    "@deepseek-ai/dsh-brand": "workspace:^"
+    "@deepseek-ai/dsh-academic-report": "workspace:^"
   }
 }

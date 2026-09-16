@@ -166,6 +166,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Owns append-only Session instances and emits the durable session event feed.',
   },
   {
+    key: 'academicResearchController',
+    pkg: 'api-academic-research-controller',
+    title: 'Host Academic research Remote controller',
+    mode: 'core',
+    note: 'Runs a Session-backed Academic research pass through the generated academicResearch Remote namespace.',
+  },
+  {
     key: 'sessionController',
     pkg: 'api-session-controller',
     title: 'Host Session Remote controller',

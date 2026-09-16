@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { JSDOM } from 'jsdom'
-import { renderResearchPage } from '../src/index.ts'
+import { renderResearchPage } from '../src/client/render.ts'
 import { benchmarkReport } from './fixtures.client.ts'
 
 describe('report page interactions', () => {

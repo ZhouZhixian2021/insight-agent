@@ -47,10 +47,9 @@ Each selected paper can produce one bounded scope-and-evidence request. The work
 
 Each paper is an independent request and does not replay the Session conversation.
 
------
+## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
-## Known Limitations and Deferred Work
 
 - The shipped composition uses arXiv only. OpenAlex and Crossref search adapters exist, but full-text candidate discovery remains source-provider work.
 - One Remote call remains open for the pass. Workflow recovery, progress streaming, persisted run identity, retries, and long-paper chunking are deferred.

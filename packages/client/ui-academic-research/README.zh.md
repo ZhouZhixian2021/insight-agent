@@ -1,6 +1,6 @@
 ---
-description: "生成可独立打开的 HTML 报告页，提供证据导航、搜索和 Markdown 下载。"
-kind: "package-library"
+description: "学术研究报告的 Web 客户端界面：一个客户端插件骨架，内部含 HTML 报告渲染器。"
+kind: "package-reference"
 ---
 
 # @deepseek-ai/dsh-client-ui-academic-research
@@ -21,7 +21,7 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-`renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。本包生成独立文档，不是已经挂载的 Web 客户端插件。
+`renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。浏览器半是插件骨架，该渲染器暂为内部辅助函数，待阶段四的研究界面接入。
 
 本包是无状态函数库，不发布 invariant 伴随模块；自动化测试核验输出关联和失败行为。
 
