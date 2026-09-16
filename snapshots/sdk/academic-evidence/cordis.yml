@@ -1,0 +1,15 @@
+# The shipped sdk-minimal profile owns the tree; this test needs no shell tools.
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    persona: 'Reply ACADEMIC_DONE after the academic fixture completes.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: token-meter
+      name: '@deepseek-ai/dsh-token-meter'
+    - id: academic-model-snapshot
+      name: '../../../packages/academic/workflow/tests/snapshot-plugin.ts'

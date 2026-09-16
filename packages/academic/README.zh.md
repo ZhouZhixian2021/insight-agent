@@ -24,6 +24,7 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 
 | 包 | 职责 | ctx 键 |
 |---|---|---|
+| [`workflow`](workflow/README.zh.md) | 全文到证据的哈希交接与单篇暂停 | 无服务键 |
 | [`model`](model/README.zh.md) | 共享标识符、记录、结果状态与纯模型辅助函数 | 无服务键 |
 | [`analysis`](analysis/README.zh.md) | 证据输入准备与注明论文归属的跨论文对比 | 无服务键 |
 | [`eval`](eval/README.zh.md) | 证据关联与明确语义审核的交付资格检查 | 无服务键 |

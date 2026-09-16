@@ -357,7 +357,7 @@ export function normalizeSessionLog(
     } else if ('time' in record) {
       record.time = 0
     }
-    if ((record.type === 'assistant/message' || record.type === 'assistant/attempt')
+    if ((record.type === 'assistant/message' || record.type === 'assistant/attempt' || record.type === 'academic/evidence-result')
       && record.data !== null && typeof record.data === 'object') {
       const stream = (record.data as { stream?: unknown }).stream
       if (Array.isArray(stream)) {

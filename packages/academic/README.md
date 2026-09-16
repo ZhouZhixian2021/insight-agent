@@ -24,6 +24,7 @@ The academic group owns reusable academic-insight domain types and capabilities.
 
 | Package | Role | ctx key |
 |---|---|---|
+| [`workflow`](workflow/README.md) | Full-text to evidence hash handoff and per-paper pauses | no service key |
 | [`model`](model/README.md) | Shared identifiers, records, result states, and pure model helpers | no service key |
 | [`analysis`](analysis/README.md) | Evidence input preparation and attributed cross-paper comparisons | no service key |
 | [`eval`](eval/README.md) | Evidence integrity and explicit semantic-review eligibility | no service key |

@@ -165,6 +165,6 @@ defineAcpSnapshotSuite({
 <details>
 <summary>维护者的工作上下文——点击展开</summary>
 
-无。
+academic/evidence-result 中的压缩流时钟按内嵌 Assistant 流的规则归一化；请求内容、来源绑定和结果保持不变。
 
 </details>
