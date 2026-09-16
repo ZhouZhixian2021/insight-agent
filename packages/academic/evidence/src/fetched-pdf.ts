@@ -28,6 +28,8 @@ export async function prepareFetchedAcademicPdf(
 
   signal?.throwIfAborted()
   const bytes = new Uint8Array(fetched.body.content)
+  // getDocument transfers the data buffer to pdf.js, detaching this view; hash before parsing.
+  const contentHash = `sha256:${createHash('sha256').update(bytes).digest('hex')}`
   const loading = getDocument({ data: bytes, stopAtErrors: true, verbosity: VerbosityLevel.ERRORS })
   try {
     const document = await loading.promise
@@ -51,7 +53,7 @@ export async function prepareFetchedAcademicPdf(
     return {
       ...provenance,
       sourceUrl: fetched.url,
-      contentHash: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+      contentHash,
       segments,
     }
   } catch (error: unknown) {

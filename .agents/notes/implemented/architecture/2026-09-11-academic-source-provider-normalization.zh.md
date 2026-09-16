@@ -1,4 +1,4 @@
-# Agent Note: 学术来源提供方规范化——Crossref 与 arXiv
+# Agent Note: 学术来源提供方规范化——arXiv
 
 Status: implemented
 
@@ -6,23 +6,19 @@ Status: implemented
 
 ## 问题
 
-学术来源 seam 需要多个提供方，才能证明其词汇是 provider 中立的。Crossref 与 arXiv 在 wire 格式上与 OpenAlex 不同（Crossref 是 JSON，arXiv 是 Atom XML），并且每条记录所代表的内容也不同：Crossref 索引正式出版的作品，arXiv 托管预印本。它们必须产出相同的共享 `AcademicWork`/`WorkVersion` 对，并且——关键在于——产出相同的规范化外部标识符，否则摄取无法跨提供方合并同一成果的记录。
+学术来源 seam 要求每个 Provider 把自己的 wire 响应转换成相同的共享 `AcademicWork`/`WorkVersion` 对和规范化外部标识符。arXiv 通过 Atom XML 提供预印本记录，其中包含带版本的 arXiv id 和可选 DOI，摄取可以据此关联版本。
 
 ## 决策
 
-两个提供方都是注册进 `ctx.academicSource` 的独立包，镜像 OpenAlex 提供方的结构（规范化器 + 网络提供方 + 命名空间插件）。它们只是在 wire 映射上不同：
-
-1. `@deepseek-ai/dsh-academic-source-crossref` 查询 `GET {base}/works?query=…&rows=…`，并规范化每条 `message.items[]` 项。它唯一的外部标识符是 DOI，折叠为小写裸形式，从而与 OpenAlex、arXiv 的 DOI 键规范化对齐。Crossref `type` 映射到发表状态：`posted-content` → 预印本，元数据类型 → 已发表，其余 → 未知。
-2. `@deepseek-ai/dsh-academic-source-arxiv` 查询 `GET {base}/api/query?search_query=all:…&max_results=…`，并用 `fast-xml-parser` 解析 Atom feed。每条条目都是不记录期刊场所的预印本版本；成果级 `arxiv` 标识符剥掉主机与 `vN` 后缀，使所有版本以同一成果为键，而版本保留带后缀的记录 id、`vN` 标签与 Atom `updated` 日期。可选的 `arxiv:doi` 成为成果级 `doi` 标识符，因此摄取能把预印本与出版方版本合并。
+`@deepseek-ai/dsh-academic-source-arxiv` 是注册进 `ctx.academicSource` 的独立包，包含规范化器、网络 Provider 和命名空间插件。它查询 `GET {base}/api/query?search_query=all:…&max_results=…`，并用 `fast-xml-parser` 解析 Atom feed。每条条目都是不记录期刊场所的预印本版本；成果级 `arxiv` 标识符剥掉主机与 `vN` 后缀，使所有版本以同一成果为键，而版本保留带后缀的记录 id、`vN` 标签与 Atom `updated` 日期。可选的 `arxiv:doi` 成为成果级 `doi` 标识符，因此摄取能把预印本与后续全文 Provider 发现的版本合并。
 
 DOI 规范化按约定共享，而非通过辅助函数导入共享：每个提供方都小写为相同的裸形式，符合 `externalIdentifierDedupKey` 契约——调用方规范化的值是去重键。
 
 ## 包拓扑
 
 ```text
-@deepseek-ai/dsh-academic-source  <--registers--  @deepseek-ai/dsh-academic-source-crossref
-        ctx.academicSource                         (id: crossref)
-                                 <--registers--  @deepseek-ai/dsh-academic-source-arxiv
+@deepseek-ai/dsh-academic-source  <--registers--  @deepseek-ai/dsh-academic-source-arxiv
+        ctx.academicSource
                                                   (id: arxiv)
 ```
 
@@ -40,7 +36,7 @@ DOI 规范化按约定共享，而非通过辅助函数导入共享：每个提�
 
 ## 后果
 
-**是标识符而非 wire 结构决定合并。** Crossref 只贡献 DOI；arXiv 贡献 `arxiv` id 加可选 DOI。摄取通过 DOI 去重键跨提供方关联记录，因此折叠形式必须完全一致。
+**是标识符而非 wire 结构决定合并。** arXiv 贡献 `arxiv` id 加可选 DOI。摄取可以通过 DOI 去重键关联后续全文 Provider 的记录，因此折叠形式必须完全一致。
 
 **arXiv 仅作预印本。** 它的版本类型与发表状态始终是 `preprint`；每次修订都可通过带后缀的 id 寻址，出版方版本由另一个提供方到达并借 DOI 合并。
 
@@ -48,6 +44,7 @@ DOI 规范化按约定共享，而非通过辅助函数导入共享：每个提�
 
 ## 延后工作
 
-- 通过 `update-to` 链接的 Crossref 撤回检测。
 - arXiv 基于 `start` 的 `max_results` 之外分页。
 - 若第三个提供方需要的不止 DOI 折叠，则引入共享的标识符规范化辅助函数。
+
+原始决策中的 Crossref 实现已由[纯元数据 Provider 移除决策](../simplification/2026-09-16-remove-metadata-only-academic-providers.zh.md)移除。

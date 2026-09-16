@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { createAcademicWorkId, createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
@@ -46,7 +48,7 @@ describe('academic PDF full text', () => {
   it('extracts page-located text and falls back from unavailable arXiv HTML to PDF', async () => {
     const pdf = onePagePdf('Methods and results from the arXiv PDF.')
     const direct = await prepareFetchedAcademicPdf({ ...base, fetched: fetched(pdf) })
-    expect(direct.contentHash).toMatch(/^sha256:[a-f0-9]{64}$/u)
+    expect(direct.contentHash).toBe(`sha256:${createHash('sha256').update(pdf).digest('hex')}`)
     expect(direct.segments).toEqual([{
       text: 'Methods and results from the arXiv PDF.',
       locator: { kind: 'page_section', sectionTitle: 'PDF page 1', pdfPage: 1 },
@@ -64,6 +66,7 @@ describe('academic PDF full text', () => {
       'https://arxiv.org/pdf/2406.12345v1',
     ])
     expect(result.segments).toEqual(direct.segments)
+    expect(result.contentHash).toBe(direct.contentHash)
   })
 
   it('rejects invalid, truncated, and textless PDFs', async () => {

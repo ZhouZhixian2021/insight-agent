@@ -30,8 +30,6 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | [`eval`](eval/README.md) | Evidence integrity and explicit semantic-review eligibility | no service key |
 | [`report`](report/README.md) | Evaluated Markdown drafts and final-delivery checks | no service key |
 | [`source`](source/README.md) | Scholarly-source access seam: provider registry, selection, and search vocabulary | `academicSource` |
-| [`source-openalex`](source-openalex/README.md) | OpenAlex scholarly-source provider searching `/works` and normalizing into the shared model | injects `academicSource` |
-| [`source-crossref`](source-crossref/README.md) | Crossref scholarly-source provider searching `/works` and normalizing into the shared model | injects `academicSource` |
 | [`source-arxiv`](source-arxiv/README.md) | arXiv scholarly-source provider searching `/api/query` and normalizing into the shared model | injects `academicSource` |
 | [`ingestion`](ingestion/README.md) | Deduplication and version merging over provider-normalized records | no service key |
 | [`evidence`](evidence/README.md) | Source-locator, evidence-record, and evidence-card construction | no service key |

@@ -89,7 +89,7 @@ Run the focused preset and UI suites, then the documentation and diff checks des
 <a id="known-limitations"></a>
 ## Known limitations
 
-- Retrieval uses the existing general Web capability; no OpenAlex, Crossref, Semantic Scholar, arXiv, or PubMed provider is bundled yet.
+- The formal research pass currently searches arXiv only; additional full-text providers are not bundled yet.
 - The preset has no PDF parser or persistent evidence database, so it must label abstract-only analysis and cannot promise passage-level verification.
 - The report is returned in the conversation or as an explicitly requested workspace file; there is no dedicated research form or report renderer.
 - Long-running orchestration remains single-Agent until a durable evidence model can preserve results across bounded parallel workers.

@@ -7,15 +7,13 @@
 ## 拟议负责目录
 
 - `packages/academic/source/`
-- `packages/academic/source-openalex/`
-- `packages/academic/source-crossref/`
 - `packages/academic/source-arxiv/`
 - `packages/academic/ingestion/`
 - `packages/academic/evidence/`
 
 ## 主要交付
 
-- 学术来源接口和 OpenAlex、Crossref、arXiv Provider。
+- 学术来源接口、arXiv Provider 和后续全文来源 Provider。
 - 论文元数据标准化、版本合并和去重。
 - Evidence Record、Evidence Card、来源定位和引用所需字段。
 - 来源失败、限流、缺失数据和重复记录的明确处理结果。

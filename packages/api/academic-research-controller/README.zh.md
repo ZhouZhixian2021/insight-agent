@@ -51,7 +51,7 @@ kind: "package-reference"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- 当前组合只使用 arXiv。OpenAlex 和 Crossref 已有检索适配器，但全文候选地址发现仍属于来源提供方后续工作。
+- 当前组合只使用 arXiv。其他全文来源 Provider 仍属于来源模块的后续工作。
 - 一次 Remote 调用会保持到整轮结束。工作流恢复、进度流、持久运行身份、重试和长论文分段留待后续。
 
 -----

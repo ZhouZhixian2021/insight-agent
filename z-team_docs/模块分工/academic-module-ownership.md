@@ -17,7 +17,7 @@ flowchart TB
         MODEL["academic-model 共享类型"]
     end
     subgraph B["负责人 B：检索与证据"]
-        SOURCE["academic-source"] --> PROVIDERS["OpenAlex / Crossref / arXiv"]
+        SOURCE["academic-source"] --> PROVIDERS["arXiv / CVF / ACL / PMLR"]
         PROVIDERS --> INGEST["academic-ingestion"] --> EVIDENCE["academic-evidence"]
     end
     subgraph C["负责人 C：分析与产品"]
@@ -50,8 +50,6 @@ packages/academic/
 ├── model/                 # A：共享类型、标识符和版本
 ├── workflow/              # A：研究阶段编排与恢复
 ├── source/                # B：学术来源能力接口与消费工具
-├── source-openalex/       # B：OpenAlex Provider
-├── source-crossref/       # B：Crossref Provider
 ├── source-arxiv/          # B：arXiv Provider
 ├── ingestion/             # B：标准化、版本合并与去重
 ├── evidence/              # B：Evidence Record 与 Evidence Card
@@ -101,4 +99,3 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 - [Academic Model v1 共享数据设计草案](academic-model-v1-design.md)
 - [正式学术洞察架构与交付计划](../../docs/academic-insight-plan.zh.md)
 - [成员与分支登记](../02-成员与分支.md)
-

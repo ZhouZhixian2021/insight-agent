@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-学术洞察需要触达多个学术提供方（OpenAlex、Crossref、arXiv，以及后续的 Semantic Scholar、PubMed），而这些提供方的原始响应结构各不相同。工作流或分析消费方必须面向**一个** provider 中立的「搜索学术成果」操作编程，而不是面向每家厂商的 API。把面向模型或面向工作流的契约绑定到某一家厂商，会把该厂商的影子带进每一个下游包；而让每个提供方各自注册自己的操作，又会把 provider 特有的字段泄漏进共享契约。
+学术洞察需要触达原始响应结构不同的学术提供方。工作流或分析消费方必须面向**一个** provider 中立的「搜索学术成果」操作编程，而不是面向每家厂商的 API。把面向模型或面向工作流的契约绑定到某一家厂商，会把该厂商的影子带进每一个下游包；而让每个提供方各自注册自己的操作，又会把 provider 特有的字段泄漏进共享契约。
 
 此外还有提供方选择的问题。`inject: ['academicSource']` 只证明服务存在，不能证明存在可用的来源提供方，也不能在注册了多个提供方时决定由谁胜出。[web seam](2026-06-24-web-capability-seam.zh.md) 为 `search`/`fetch` 构建的同一套选择机制同样适用于此处的 `search`。
 
@@ -15,10 +15,10 @@ Status: implemented
 学术来源是一个遵循[能力 seam Agent Note](2026-06-13-capability-seams.zh.md) 的能力 seam：
 
 1. `@deepseek-ai/dsh-academic-source`（`packages/academic/source`）拥有 `ctx.academicSource`、提供方注册、提供方选择、共享的请求/结果词汇，以及 `AcademicSourceError` 分类体系。
-2. 提供方包实现具体后端并向 `ctx.academicSource` 注册能力，在自己的包边界把记录转换成共享的 `AcademicWork`/`WorkVersion` 模型。`dsh-academic-source-openalex` 是第一个提供方：它搜索公开的 `/works` 端点并规范化每条记录，因此 OpenAlex 专有字段名不会离开该包。
-3. 面向模型的消费方（工具，或工作流/检索增量）稍后到来。这第一个切片只交付 Service Definition；在有提供方注册之前，每次 `search()` 都以 `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` 失败。
+2. 提供方包实现具体后端并向 `ctx.academicSource` 注册能力，在自己的包边界把记录转换成共享的 `AcademicWork`/`WorkVersion` 模型。`dsh-academic-source-arxiv` 搜索公开的 Atom 端点并规范化每条记录，因此 arXiv 专有字段名不会离开该包。
+3. Academic 工作流通过宿主研究 Controller 消费该 seam。在有提供方注册之前，每次 `search()` 都以 `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` 失败。
 
-该 seam 在 v1 仅支持搜索。请求携带 `query` 与可选 `maxResults`；结果是 `works[]`，每一项是一对 `{ academicWork, workVersion }`，外加一个 `truncated` 标记。跨记录版本关联、去重与运行/覆盖统计属于后续增量：共享模型尚未发布 `RetrievalRun`、`CoverageSummary`、`ProviderFailure` 与 `BatchResult`，因此 seam 仅通过 `AcademicSourceError` 呈现失败。
+该 seam 在 v1 仅支持搜索。请求携带 `query` 与可选 `maxResults`；结果是 `works[]`，每一项是一对 `{ academicWork, workVersion }`，外加一个 `truncated` 标记。跨记录版本关联、去重与运行/覆盖统计属于摄取和工作流消费方；seam 通过 `AcademicSourceError` 呈现失败。
 
 ## 包拓扑
 
@@ -27,7 +27,7 @@ Status: implemented
       shared records                                interface (ctx.academicSource)
                                                      ^
                                                      | registers normalized works
-                             @deepseek-ai/dsh-academic-source-openalex (provider)
+                             @deepseek-ai/dsh-academic-source-arxiv (provider)
 ```
 
 Service Definition 只依赖 `dsh-academic-model`、Cordis 与 schemastery（用于 `Config`）。它不导入工具、agent、会话、LLM 或提供方包。提供方依赖 `dsh-academic-source` 与 `dsh-academic-model`；只有 `dsh-academic-source` 拥有 `ctx.academicSource` 键。
@@ -82,9 +82,9 @@ interface AcademicSourceRuntime {
 
 否决。提供方包将拥有共享词汇，并迫使下游包学习后端细节。提供方注册的是能力，不是工具。
 
-### 只从 OpenAlex 提供方派生结果结构
+### 只从 arXiv 提供方派生结果结构
 
-否决。seam 在共享模型之上携带 provider 中立的 `AcademicSourceWork` 对，因此 Crossref 与 arXiv 提供方无需修改 seam 或下游包即可返回相同结构。`dsh-academic-source-openalex` 的转换恰好与该结构一致，但并不定义它。
+否决。seam 在共享模型之上携带 provider 中立的 `AcademicSourceWork` 对，因此新增 Provider 无需修改 seam 或下游包即可返回相同结构。`dsh-academic-source-arxiv` 的转换恰好与该结构一致，但并不定义它。
 
 ### 从 `@deepseek-ai/dsh-llm` 继承 `HarnessError`
 
@@ -94,9 +94,9 @@ interface AcademicSourceRuntime {
 
 **搜索 schema 有意设计得很薄。** 只有 `query` 加 `maxResults`；provider 中立的过滤（`publicationWindow`、成果类型）须在一个有驱动的消费方与多个提供方能诚实支持时才加入。
 
-**尚无可用的运行统计或覆盖报告。** 在共享模型发布这些记录之前，seam 无法记录 `RetrievalRun` 或 `CoverageSummary`；失败仅以 `AcademicSourceError` 形式呈现。
+**运行统计仍由消费方负责。** seam 不记录 `RetrievalRun` 或 `CoverageSummary`；工作流把搜索结果映射到这些记录，而 seam 失败以 `AcademicSourceError` 形式呈现。
 
-**尚无面向模型的工具。** 在消费方交付之前，没有任何东西注册提示词或 schema；该能力只能通过 `ctx.academicSource.search()` 触达。
+**没有独立搜索工具。** Academic 工作流通过宿主研究 Controller 调用 `ctx.academicSource.search()`。
 
 **成果是单版本的。** 每个结果项都是一个全新的成果身份加一个不可变版本；跨记录关联与去重仍是摄取的职责，因此在摄取增量落地前，提供方对重叠记录集的搜索会返回互不相同的身份。
 
@@ -104,4 +104,6 @@ interface AcademicSourceRuntime {
 
 - `query`/`maxResults` 之外的 provider 中立过滤。
 - 按标识符抓取操作（按 DOI 或提供方 id 定位单一成果）。
-- 面向模型的消费方（工具或工作流），负责渲染规范化成果并在工具边界映射 `AcademicSourceError`。
+- 多 Provider 聚合和具备全文能力的新 Provider。
+
+已移除的纯元数据 Provider 及其重新引入条件记录在[Provider 移除决策](../simplification/2026-09-16-remove-metadata-only-academic-providers.zh.md)中。

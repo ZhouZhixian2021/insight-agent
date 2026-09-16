@@ -51,7 +51,7 @@ Each paper is an independent request and does not replay the Session conversatio
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- The shipped composition uses arXiv only. OpenAlex and Crossref search adapters exist, but full-text candidate discovery remains source-provider work.
+- The shipped composition uses arXiv only. Additional full-text source providers remain source-owned work.
 - One Remote call remains open for the pass. Workflow recovery, progress streaming, persisted run identity, retries, and long-paper chunking are deferred.
 
 -----

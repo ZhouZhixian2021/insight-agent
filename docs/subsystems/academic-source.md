@@ -7,7 +7,7 @@ kind: "subsystem"
 
 English | [中文](academic-source.zh.md)
 
-The academic source seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.md) spanning one `ctx.academicSource` service. The Service Definition ([dsh-academic-source](../../packages/academic/source)) owns `ctx.academicSource` and the provider registry; Service Providers (OpenAlex, Crossref, arXiv) and a model-facing Consumer arrive in later increments. Academic source is one optional capability, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
+The academic source seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.md) spanning one `ctx.academicSource` service. The Service Definition ([dsh-academic-source](../../packages/academic/source)) owns `ctx.academicSource` and the provider registry; arXiv supplies the current Service Provider, while the workflow consumes normalized results. Academic source is one optional capability, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
 
 Source: [`packages/academic/source/src/types.ts`](../../packages/academic/source/src/types.ts)
 
