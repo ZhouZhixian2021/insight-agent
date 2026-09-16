@@ -1,0 +1,12 @@
+/** Academic workflow public entry; implementations do not import this barrel. */
+export { extractPaperEvidence } from './paper.ts'
+export { parseEvidenceDrafts } from './parse-evidence.ts'
+export { createModelEvidenceGenerator } from './model.ts'
+export { WorkflowLogError } from './model-errors.ts'
+export type { PaperEvidenceGenerator, EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult } from './model-types.ts'
+export type { PaperEvidenceResult, PaperPause } from './types.ts'
+export { runResearchDraft } from './pipeline.ts'
+export { runModelResearchDraft } from './model-pipeline.ts'
+export { runAcademicResearchDraft } from './entry.ts'
+export type { AcademicResearchDraftRequest, AcademicResearchDraftResult } from './entry.ts'
+export type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, SelectedPaper, PaperProcessingFailure } from './pipeline-types.ts'

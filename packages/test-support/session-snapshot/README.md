@@ -165,6 +165,6 @@ These limits define when the kit needs special care. They are current package co
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-None.
+Compact stream clocks in academic/evidence-result are normalized like embedded Assistant streams; request content, source bindings and outcomes remain intact.
 
 </details>

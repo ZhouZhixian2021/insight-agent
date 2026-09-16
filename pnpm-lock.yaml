@@ -711,6 +711,51 @@ importers:
         specifier: workspace:^
         version: link:../source
 
+  packages/academic/workflow:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-analysis':
+        specifier: workspace:^
+        version: link:../analysis
+      '@deepseek-ai/dsh-academic-evidence':
+        specifier: workspace:^
+        version: link:../evidence
+      '@deepseek-ai/dsh-academic-ingestion':
+        specifier: workspace:^
+        version: link:../ingestion
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../model
+      '@deepseek-ai/dsh-academic-report':
+        specifier: workspace:^
+        version: link:../report
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:^
+        version: link:../source
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:^
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-persistence':
+        specifier: workspace:^
+        version: link:../../session/session-persistence
+      '@deepseek-ai/dsh-session-persistence-jsonl':
+        specifier: workspace:^
+        version: link:../../session/session-persistence-jsonl
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:^
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-token-meter':
+        specifier: workspace:^
+        version: link:../../llm/token-meter
+
   packages/acp/acp:
     dependencies:
       '@agentclientprotocol/sdk':

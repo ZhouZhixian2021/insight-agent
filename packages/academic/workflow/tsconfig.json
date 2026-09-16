@@ -1,0 +1,37 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "references": [
+    { "path": "../../session/session-persistence" },
+    { "path": "../../llm/llm" },
+    { "path": "../../llm/token-meter" },
+    { "path": "../../core/session" },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../model"
+    },
+    {
+      "path": "../evidence"
+    },
+    {
+      "path": "../source"
+    },
+    {
+      "path": "../ingestion"
+    },
+    {
+      "path": "../analysis"
+    },
+    {
+      "path": "../report"
+    }
+  ]
+}
