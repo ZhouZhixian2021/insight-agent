@@ -1628,6 +1628,9 @@ importers:
       '@deepseek-ai/dsh-client-modules':
         specifier: workspace:^
         version: link:../../client/modules
+      '@deepseek-ai/dsh-client-ui-academic-research':
+        specifier: workspace:^
+        version: link:../../client/ui-academic-research
       '@deepseek-ai/dsh-client-ui-agent-preset':
         specifier: workspace:^
         version: link:../../client/ui-agent-preset
@@ -2015,18 +2018,9 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
-      '@deepseek-ai/dsh-academic-analysis':
-        specifier: workspace:^
-        version: link:../../academic/analysis
-      '@deepseek-ai/dsh-academic-eval':
-        specifier: workspace:^
-        version: link:../../academic/eval
       '@deepseek-ai/dsh-academic-report':
         specifier: workspace:^
         version: link:../../academic/report
-      '@deepseek-ai/dsh-brand':
-        specifier: workspace:^
-        version: link:../../util/brand
 
   packages/client/ui-agent-preset:
     devDependencies:
