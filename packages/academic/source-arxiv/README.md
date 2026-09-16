@@ -35,7 +35,7 @@ Load the seam and this provider together; with no other provider registered, `se
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API base; `/api/query` is appended. |
 
-The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`.
+The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
 
 -----
 
@@ -48,6 +48,7 @@ The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_result
 | `ArxivProviderOptions` | The resolved endpoint for one search. |
 | `parseArxivFeed()` | Parses an Atom feed body into distilled entries. |
 | `normalizeArxivWork()` | Translates one arXiv entry into a work/version pair. |
+| `arxivFullTextUrls()` | Derives version-specific HTML and PDF full-text URLs from an arXiv id. |
 | `ArxivRawWork` | The distilled arXiv entry fields the normalizer consumes. |
 
 The plugin entry also exports `name`, `inject`, `Config`, and `apply`.
@@ -70,6 +71,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 - **No retries or backoff** — one request per search; a `429` or `5xx` surfaces as `ACADEMIC_SOURCE_PROVIDER_ERROR`.
 - **No pagination** — arXiv caps a query at `max_results`; larger result sets need `start`-based paging.
 - **Everything is a preprint** — arXiv does not expose the published version; that link arrives through the optional DOI.
+- **Full-text parsing stays in the evidence package** — this source provider derives arXiv URLs but does not fetch or parse their HTML/PDF bodies.
 - **`available()` is endpoint-only** — arXiv requires no key.
 
 <a id="dev-note"></a>

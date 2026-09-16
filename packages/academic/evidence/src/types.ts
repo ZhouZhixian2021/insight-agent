@@ -159,6 +159,38 @@ export interface EvidenceExtractionInput {
   readonly segments: readonly EvidenceContentSegment[]
 }
 
+/** The `ctx.web.fetch()` result fields used by academic full-text preparation. */
+export interface AcademicWebFetchResult {
+  readonly url: string
+  readonly statusCode: number
+  readonly body:
+    | { readonly kind: 'html'; readonly content: string }
+    | { readonly kind: 'text'; readonly content: string }
+    | { readonly kind: 'pdf'; readonly content: Uint8Array }
+  readonly truncated: boolean
+}
+
+/** Paper identity and provenance attached to one fetched full-text response. */
+export interface FetchedAcademicFullTextInput {
+  readonly academicWorkId: AcademicWorkId
+  readonly workVersionId: WorkVersionId
+  readonly sourceProvider: string
+  readonly retrievedAt: string
+  readonly extractionMethod: ExtractionMethod
+  readonly focusQuestions?: readonly string[]
+  /** The unrendered value returned by `ctx.web.fetch()`. */
+  readonly fetched: AcademicWebFetchResult
+}
+
+/** Paper provenance plus ordered candidate URLs for full-text acquisition. */
+export interface AcademicFullTextFetchInput extends Omit<FetchedAcademicFullTextInput, 'fetched'> {
+  /** Candidate URLs in preference order, normally HTML before PDF. */
+  readonly urls: readonly string[]
+}
+
+/** Caller-owned adapter over `ctx.web.fetch()`. */
+export type AcademicWebFetcher = (url: string, signal?: AbortSignal) => Promise<AcademicWebFetchResult>
+
 /** Traceable records, locators, and the single-paper card produced by one extraction call. */
 export interface EvidenceExtractionResult {
   readonly sourceLocators: readonly SourceLocator[]

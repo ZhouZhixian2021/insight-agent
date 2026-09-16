@@ -1,5 +1,5 @@
 ---
-description: "The anonymous public HTTP(S) fetch backend for ctx.web: how deployments mount bounded, safe URL retrieval with same-origin redirects and text-only decoding."
+description: "The anonymous public HTTP(S) fetch backend for ctx.web: bounded, safe URL retrieval with same-origin redirects, decoded text, and PDF bytes."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-With `dsh-web-fetch-http`, the harness can fetch public HTTP(S) pages through the web service (`ctx.web`) and get their status code plus bounded, decoded content without sending credentials. Choose it when a composition needs safe retrieval with URL validation, public-address resolution, connection pinning, same-origin redirects, byte and character caps, and an explicit product `User-Agent`. It returns non-2xx responses as results rather than errors, and rejects non-public destinations, binary data, and unsupported content types. The model-facing `web_fetch` tool lives in `dsh-tool-web`, which renders this provider's bodies.
+With `dsh-web-fetch-http`, the harness can fetch public HTTP(S) resources through the web service (`ctx.web`) and get their status code plus bounded content without sending credentials. HTML/text is decoded; PDF remains bytes for programmatic consumers. It returns non-2xx responses as results rather than errors, and rejects non-public destinations and unsupported binary types. The model-facing `web_fetch` tool lives in `dsh-tool-web` and intentionally rejects PDF bytes.
 
 ## Table of Contents
 
@@ -52,11 +52,11 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 ### What a fetch returns
 
-A successful call yields a `WebFetchResult`: the final URL after allowed redirects, the HTTP status code, a decoded body classified as `html` or `text`, and a `truncated` flag. A non-2xx response is a result, not an error — the status code is part of the fetched resource state; `WebError` is reserved for failures to safely retrieve or represent the resource.
+A successful call yields a `WebFetchResult`: the final URL after allowed redirects, the HTTP status code, a body classified as `html`, `text`, or `pdf`, and a `truncated` flag. HTML/text `content` is a decoded string; PDF `content` is a `Uint8Array`. A non-2xx response is a result, not an error.
 
 ```text
 const page = await ctx.web.fetch({ url: 'https://example.com' })
-// page.body.kind === 'html' | 'text'; page.statusCode === 200 | 404 | ...
+// page.body.kind === 'html' | 'text' | 'pdf'; page.statusCode === 200 | 404 | ...
 ```
 
 ### Transport behavior
@@ -81,7 +81,7 @@ This section explains the design decisions behind the provider; the observable b
 
 The package is built on one separation and one layered timeout:
 
-- **Safe retrieval vs. presentation.** This provider owns URL validation, public-address enforcement, connection pinning, HTTP transport, redirect policy, caps, charset decoding, and binary rejection; `dsh-tool-web` owns HTML→markdown and truncation formatting. A non-2xx response is data, not failure.
+- **Safe retrieval vs. presentation.** This provider owns URL validation, public-address enforcement, connection pinning, HTTP transport, redirect policy, caps, text decoding, PDF byte preservation, and rejection of other binary types; consumers own parsing and presentation. A non-2xx response is data, not failure.
 - **Two timeout layers.** The provider's `timeoutMs` is a resource backstop for direct `ctx.web.fetch()` callers; the model-facing tool-call budget belongs to `dsh-tool-call-timeout-policy`, which arms `exec.signal`. When the outer deadline fires first the provider reports `WEB_ABORTED` and the policy replaces it with `TOOL_TIMEOUT`; `WEB_FETCH_TIMEOUT` therefore identifies a direct service caller whose provider budget elapsed.
 
 ### Source map
@@ -96,7 +96,7 @@ The package is built on one separation and one layered timeout:
 
 ### Read path
 
-A fetch validates the URL, resolves the hostname once, rejects the complete answer set when any address is not public, and pins the connection to the accepted addresses. It repeats that check for each same-origin redirect; a cross-origin redirect or non-public target fails before response bytes are accepted. The final response is classified by `Content-Type`, decoded from its declared charset, and read under the byte cap; the decoded text is then truncated to the character cap.
+A fetch validates the URL, resolves the hostname once, rejects the complete answer set when any address is not public, and pins the connection to the accepted addresses. It repeats that check for each same-origin redirect; a cross-origin redirect or non-public target fails before response bytes are accepted. The final response is classified by `Content-Type` and read under the byte cap. HTML/text is decoded from its declared charset and truncated to the character cap; PDF is returned as capped bytes.
 
 </details>
 
@@ -119,7 +119,7 @@ Read these pages when the package-level contract is not enough. They move from t
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through `dsh-tool-web`, which renders this provider's `maxBodyChars`-bounded decoded text or markdown-shaped HTML under its fetch-result wrapper while redirects, headers, and transport limits remain hidden.
+Indirectly, through `dsh-tool-web`, which renders bounded text or markdown-shaped HTML. PDF bytes are reserved for programmatic consumers such as academic evidence and are rejected by the model-facing tool.
 
 #### KV Cache effect
 
@@ -132,7 +132,7 @@ No direct invalidation; the named consumer owns any request-prefix changes.
 
 These limits define when the provider is unsafe or a poor fit. They are current package constraints.
 
-- **Only textual content decodes** — html/xhtml and `text/*` plus JSON/XML families; a missing `Content-Type` or any binary type throws `WEB_UNSUPPORTED_CONTENT_TYPE`, and text-extractable PDF decoding is named deferred work.
+- **PDF is not parsed here** — `application/pdf` returns bounded bytes; text extraction and scanned-document OCR belong to consumers. A missing `Content-Type` or any other binary type throws `WEB_UNSUPPORTED_CONTENT_TYPE`.
 - **Charset comes only from the `Content-Type` header** (UTF-8 default) — an HTML `<meta charset>` declaration is ignored, and a declared-but-unrecognized charset label throws rather than falling back.
 
 <a id="dev-note"></a>

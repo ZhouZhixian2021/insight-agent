@@ -224,13 +224,14 @@ export interface WebFetchResult {
 export type WebFetchBody =
   | { readonly kind: 'html'; readonly content: string }
   | { readonly kind: 'text'; readonly content: string }
+  | { readonly kind: 'pdf'; readonly content: Uint8Array }
 ```
 
 `WebFetchResult.url` is the final URL after allowed redirects. The request URL is already present in `WebFetchRequest`, so there is no separate `requestedUrl`/`finalUrl` pair.
 
 `WebFetchBody` is a closed discriminated union because body kinds require coordinated changes to the seam, provider, and tool rather than independent plugin extension. Exhaustive switches make a new kind fail compilation at every renderer until handled. Separate object arms leave room for kind-specific fields.
 
-The provider owns safe resource retrieval: URL validation, HTTP transport, redirect policy, timeout, abort propagation, byte caps, charset decoding, content-type classification, and binary rejection. `dsh-tool-web` owns presentation: HTML-to-markdown, HTML-to-text, truncation formatting for the model, and future summaries.
+The provider owns safe resource retrieval: URL validation, HTTP transport, redirect policy, timeout, abort propagation, byte caps, text decoding, content-type classification, PDF byte preservation, and rejection of other binary types. `dsh-tool-web` owns model presentation and rejects PDF before tool-result serialization; academic consumers parse PDF outside model context.
 
 The fetch provider's resource controls:
 
@@ -254,7 +255,7 @@ Tool registration is a minimal stable sync: on plugin startup the `dsh-tool-web`
 
 Provider availability changes affect execution results and diagnostics, not whether the model-facing schema exists. If a product wants no web tools at all, it disables `dsh-tool-web` or the individual web tool in config; if it wants web tools but the backend is misconfigured, the model sees a structured tool error at execution time.
 
-The prompt guidance explains the semantic split — `web_search` for discovery and current information, `web_fetch` when the model needs the content of a specific URL — and the prompt and tool result tell the model to cite relevant URLs with markdown links. Every successful result labels provider-controlled text as external untrusted data. Fetch conversion removes active and hidden HTML content; unsafe conversion returns a fixed omission marker rather than raw HTML.
+The prompt guidance explains the semantic split — `web_search` for discovery and current information, `web_fetch` when the model needs the textual content of a specific URL — and the prompt and tool result tell the model to cite relevant URLs with markdown links. Every successful result labels provider-controlled text as external untrusted data. Fetch conversion removes active and hidden HTML content; unsafe conversion returns a fixed omission marker rather than raw HTML. PDF fetches are programmatic-only and fail the model-facing tool with `WEB_UNSUPPORTED_CONTENT_TYPE`.
 
 The model-facing output is text-first because tool results are `ContentBlock[]`, but the seam outcome stays structured so UI presentation and future adapters do not have to scrape rendered text.
 
@@ -282,7 +283,7 @@ Tool execution lets these errors flow through `ToolRuntime.execute()`, which alr
 
 ## Testing
 
-Each layer is pinned at its own boundary: the registry/selection/truncation/abort contract and the `WebError` codes in `dsh-web`; per-provider request/response mapping over recorded fixtures (Perplexity fixtures include URL-only citations so the optional source fields stay honest) plus a self-skipping with-key smoke per real provider; real local-HTTP behavior in `web-fetch-http`; and enablement-driven registration, structured execution errors, and result formatting through the real tool registry in `dsh-tool-web`. A real-Loader smoke guards the two export shapes ([postmortem 0001](../../../../docs/postmortem/0001-acp-default-export-drops-inject.md)): `dsh-web` is a default-exported service, while the providers and `tool-web` are namespace plugins where a stray `export default` would drop `inject`.
+Each layer is pinned at its own boundary: the registry/selection/truncation/abort contract and the `WebError` codes in `dsh-web`; per-provider request/response mapping over recorded fixtures (Perplexity fixtures include URL-only citations so the optional source fields stay honest) plus a self-skipping with-key smoke per real provider; real local-HTTP behavior, including unchanged PDF bytes, in `web-fetch-http`; and enablement-driven registration, PDF rejection, structured execution errors, and result formatting through the real tool registry in `dsh-tool-web`. A real-Loader smoke guards the two export shapes ([postmortem 0001](../../../../docs/postmortem/0001-acp-default-export-drops-inject.md)): `dsh-web` is a default-exported service, while the providers and `tool-web` are namespace plugins where a stray `export default` would drop `inject`.
 
 ## Alternatives considered
 
@@ -338,7 +339,6 @@ Rejected for the shipped presets. Public-address validation blocks SSRF destinat
 
 ## Deferred work
 
-- A `pdf` `WebFetchBody` kind: the `http` provider decodes text-extractable PDFs (best-effort, capped, `truncated`) into a `{ kind: 'pdf'; content; pageCount? }` arm, and `tool-web` renders it. This is fetch, not `web_extract` — PDF retrieval is a concrete HTTP 200 plus deterministic local decoding, not provider-side extraction of a non-HTTP resource. Adding it is a coordinated change across `dsh-web` (declare the arm), the provider (decode + narrow "binary rejection" to "reject binary except text-extractable PDF"; scanned/image PDFs needing OCR stay out of scope), and `tool-web` (render). The closed `WebFetchBody` union makes the consumer side fail to compile until the new arm is handled.
 - Provider-backed extraction as a separate `web_extract` capability, rather than widening `web_fetch` silently.
 - Provider-neutral search controls beyond `query` and `maxResults`, once Exa and Perplexity can both honor them honestly.
 

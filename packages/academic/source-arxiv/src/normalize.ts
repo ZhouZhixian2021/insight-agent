@@ -25,6 +25,20 @@ function arxivRecordId(id: string): string {
   return id.replace(/^https?:\/\/arxiv\.org\/abs\//u, '')
 }
 
+/**
+ * Return arXiv's preferred HTML and fallback PDF full-text URLs for one record id.
+ *
+ * @param id - a bare arXiv id or canonical abstract URL, optionally versioned.
+ * @returns the version-specific HTML URL followed by its PDF fallback.
+ */
+export function arxivFullTextUrls(id: string): readonly [string, string] {
+  const recordId = arxivRecordId(id)
+  if (!/^(?:[a-z-]+(?:\.[a-z]{2})?\/\d{7}|\d{4}\.\d{4,5})(?:v\d+)?$/iu.test(recordId)) {
+    throw new Error(`invalid arXiv id: ${id}`)
+  }
+  return [`https://arxiv.org/html/${recordId}`, `https://arxiv.org/pdf/${recordId}`]
+}
+
 /** Drops the version suffix so every revision contributes the same work-level key. */
 function normalizeArxivId(id: string): string {
   return arxivRecordId(id).replace(/v\d+$/u, '')

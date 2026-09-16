@@ -96,7 +96,7 @@ interface WebFetchResult {
   readonly url: string
   /** HTTP status code of the fetched response. */
   readonly statusCode: number
-  /** Decoded body, classified by content kind. */
+  /** Bounded body, decoded for text kinds and left as bytes for PDF. */
   readonly body: WebFetchBody
   /** True when the provider capped the decoded body. */
   readonly truncated: boolean
@@ -105,8 +105,8 @@ interface WebFetchResult {
 
 ```ts type-equiv
 /**
- * The decoded body of a fetched resource. A CLOSED discriminated union owned by
- * `dsh-web`: the provider decodes the kind and `dsh-tool-web` renders it, so a
+ * The bounded body of a fetched resource. A CLOSED discriminated union owned by
+ * `dsh-web`: the provider decodes text kinds and preserves PDF bytes, so a
  * new kind is a coordinated change across known packages, not a plugin
  * extension. Consumers `switch` on `kind` ending in `default: assertNever(...)`
  * so adding a kind breaks compilation at every consumer until handled. Each arm
@@ -116,6 +116,7 @@ interface WebFetchResult {
 type WebFetchBody =
   | { readonly kind: 'html'; readonly content: string }
   | { readonly kind: 'text'; readonly content: string }
+  | { readonly kind: 'pdf'; readonly content: Uint8Array }
 ```
 
 ## Provider availability
@@ -136,7 +137,7 @@ The HTTP provider resolves each actual request, rejects non-public answers inclu
 
 ## The service
 
-`WebRuntime` registers search and fetch providers, rejects duplicate ids with `WEB_DUPLICATE_PROVIDER`, and resolves providers at execution time with structured selection errors. The local fetch backend accepts only HTTP(S), rejects credentials, resolves each hostname once, rejects any answer set containing a non-public IPv4 or IPv6 destination or an active-prefix NAT64 translation to non-public IPv4, pins the request connection to the validated addresses, repeats those checks for every same-origin redirect hop, caps redirects, bytes, characters, and time, and decodes the body; the tool owns presentation.
+`WebRuntime` registers search and fetch providers, rejects duplicate ids with `WEB_DUPLICATE_PROVIDER`, and resolves providers at execution time with structured selection errors. The local fetch backend accepts only HTTP(S), rejects credentials, validates and pins public destinations, caps redirects, bytes, characters, and time, decodes HTML/text, and preserves PDF bytes; model-facing presentation rejects PDF while programmatic consumers may parse it.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 

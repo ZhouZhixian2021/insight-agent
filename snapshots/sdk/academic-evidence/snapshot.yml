@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-evidence
+profile: sdk
+composition: sdk-academic-evidence
+recording: authored
+header:
+  class: academic-evidence
+  pin: true

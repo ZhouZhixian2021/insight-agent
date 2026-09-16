@@ -92,6 +92,30 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 
 ## Events
 
+### `academic/*`
+
+<a id="academicevidence-request--log-only"></a>
+
+#### `academic/evidence-request` — log-only
+
+```ts persistence-catalog
+/** Log-only academic extraction input and admission decision before model dispatch. */
+'academic/evidence-request': EvidenceModelRequest
+```
+
+Source: [`packages/academic/workflow/src/model-types.ts:61`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicevidence-result--log-only"></a>
+
+#### `academic/evidence-result` — log-only
+
+```ts persistence-catalog
+/** Log-only academic extraction settlement, including raw model output when available. */
+'academic/evidence-result': EvidenceModelResult
+```
+
+Source: [`packages/academic/workflow/src/model-types.ts:63`](../packages/academic/workflow/src/model-types.ts)
+
 ### `agent/*`
 
 <a id="agentinboxspliced--log-only"></a>

@@ -224,13 +224,14 @@ export interface WebFetchResult {
 export type WebFetchBody =
   | { readonly kind: 'html'; readonly content: string }
   | { readonly kind: 'text'; readonly content: string }
+  | { readonly kind: 'pdf'; readonly content: Uint8Array }
 ```
 
 `WebFetchResult.url` 是允许的重定向之后的最终 URL。请求 URL 已在 `WebFetchRequest` 中，因此没有单独的 `requestedUrl`/`finalUrl` 对。
 
 `WebFetchBody` 是封闭的可辨识联合类型，因为正文类别需要 seam、提供方和工具三方协调变更，而非独立的插件扩展。穷举 switch 使新类别在每个渲染器处编译失败，直到被处理。独立的对象分支为类别特有字段留出空间。
 
-提供方负责安全的资源获取：URL 校验、HTTP 传输、重定向策略、超时、abort 传播、字节上限、字符集解码、内容类型分类和二进制拒绝。`dsh-tool-web` 负责展示：HTML 转 Markdown、HTML 转纯文本、面向模型的截断格式化，以及未来的摘要。
+提供方负责安全的资源获取：URL 校验、HTTP 传输、重定向策略、超时、abort 传播、字节上限、文本解码、内容类型分类、PDF 字节保留与其他二进制类型拒绝。`dsh-tool-web` 负责模型展示，并在工具结果序列化前拒绝 PDF；学术消费方在模型上下文之外解析 PDF。
 
 fetch 提供方的资源控制：
 
@@ -254,7 +255,7 @@ fetch 提供方的资源控制：
 
 提供方可用性变化影响执行结果和诊断信息，而非面向模型的 schema 是否存在。如果产品完全不需要 web 工具，在配置中禁用 `dsh-tool-web` 或单个 web 工具即可；如果需要 web 工具但后端配置有误，模型在执行时看到结构化的工具错误。
 
-提示词引导解释了语义分工——`web_search` 用于发现和获取当前信息，`web_fetch` 用于模型需要特定 URL 内容的场景——提示词和工具结果告诉模型用 Markdown 链接引用相关 URL。每个成功结果都会把提供方控制的文本标记为外部不可信数据。抓取转换会移除主动内容与隐藏 HTML 内容；无法安全转换时返回固定省略标记，而非原始 HTML。
+提示词引导解释了语义分工——`web_search` 用于发现和获取当前信息，`web_fetch` 用于模型需要特定 URL 文本内容的场景——提示词和工具结果告诉模型用 Markdown 链接引用相关 URL。每个成功结果都会把提供方控制的文本标记为外部不可信数据。抓取转换会移除主动内容与隐藏 HTML 内容；无法安全转换时返回固定省略标记，而非原始 HTML。PDF 抓取只供程序消费方使用，面向模型的工具以 `WEB_UNSUPPORTED_CONTENT_TYPE` 失败。
 
 面向模型的输出以文本为先，因为工具结果是 `ContentBlock[]`，但 seam 的产出保持结构化，以便 UI 展示和未来的适配器无需解析渲染后的文本。
 
@@ -282,7 +283,7 @@ fetch 提供方的资源控制：
 
 ## 测试
 
-每一层在自己的边界处固定：`dsh-web` 中的注册/选择/截断/abort 约定与 `WebError` 码；每个提供方基于录制的 fixture（测试前置数据）的请求/响应映射（Perplexity fixture 包含纯 URL 引用，以保持可选 source 字段的诚实性），加上每个真实提供方的自跳过带密钥冒烟测试；`web-fetch-http` 中的真实本地 HTTP 行为；`dsh-tool-web` 中通过真实工具注册表的启用驱动注册、结构化执行错误和结果格式化。一个真实 Loader 冒烟测试守护两种导出形状（[事故复盘（postmortem） 0001](../../../../docs/postmortem/0001-acp-default-export-drops-inject.zh.md)）：`dsh-web` 是默认导出的服务，而提供方和 `tool-web` 是命名空间插件，误加 `export default` 会丢失 `inject`。
+每一层在自己的边界处固定：`dsh-web` 中的注册/选择/截断/abort 约定与 `WebError` 码；每个提供方基于录制的 fixture（测试前置数据）的请求/响应映射（Perplexity fixture 包含纯 URL 引用，以保持可选 source 字段的诚实性），加上每个真实提供方的自跳过带密钥冒烟测试；`web-fetch-http` 中含 PDF 字节不变性的真实本地 HTTP 行为；`dsh-tool-web` 中通过真实工具注册表的启用驱动注册、PDF 拒绝、结构化执行错误和结果格式化。一个真实 Loader 冒烟测试守护两种导出形状（[事故复盘（postmortem） 0001](../../../../docs/postmortem/0001-acp-default-export-drops-inject.zh.md)）：`dsh-web` 是默认导出的服务，而提供方和 `tool-web` 是命名空间插件，误加 `export default` 会丢失 `inject`。
 
 ## 曾考虑的替代方案
 
@@ -340,7 +341,6 @@ fetch 提供方的资源控制：
 
 ## 推迟工作
 
-- `pdf` `WebFetchBody` 类别：`http` 提供方将可文本提取的 PDF 解码（尽力而为、有上限、`truncated`）为 `{ kind: 'pdf'; content; pageCount? }` 分支，`tool-web` 渲染它。这是 fetch 而非 `web_extract`——PDF 获取是具体的 HTTP 200 加确定性的本地解码，不是提供方侧对非 HTTP 资源的提取。添加它是跨 `dsh-web`（声明分支）、提供方（解码 + 将「二进制拒绝」收窄为「拒绝二进制，但可文本提取的 PDF 除外」；需要 OCR 的扫描/图片 PDF 不在范围内）和 `tool-web`（渲染）的协调变更。封闭的 `WebFetchBody` 联合类型使消费方在新分支被处理之前编译失败。
 - 提供方支撑的提取作为独立的 `web_extract` 能力，而非静默扩展 `web_fetch`。
 - `query` 和 `maxResults` 之外的提供方无关搜索控制，待 Exa 和 Perplexity 都能诚实遵守时再添加。
 

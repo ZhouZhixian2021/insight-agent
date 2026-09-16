@@ -224,6 +224,15 @@ describe('fetch formatting', () => {
     expect(out).toContain('Content truncated')
   })
 
+  it('does not render PDF bytes into model-facing output', () => {
+    const out = formatFetchOutput({
+      url: 'https://a.test/paper.pdf', statusCode: 200, truncated: false,
+      body: { kind: 'pdf', content: new Uint8Array([0x25, 0x50, 0x44, 0x46]) },
+    }, NO_CAP)
+    expect(out).toContain('[PDF content omitted: use an academic PDF parser.]')
+    expect(out).not.toContain('37,80,68,70')
+  })
+
   it('caps the complete output and notes truncation, even when markdown escaping expands the body', () => {
     // 1,000 underscores render as 2,000 escaped characters — conversion can
     // outgrow a provider-side body cap, so the bound applies to the output.
@@ -736,6 +745,24 @@ describe('tool-web execution through the real registry', () => {
     // tool-call budget is owned by dsh-tool-call-timeout-policy over exec.signal.
     expect(seen.request).toEqual({ url: 'https://a.test' })
     expect(seen.signal).toBe(controller.signal)
+    await fiber.dispose()
+  })
+
+  it('keeps PDF bytes out of the model-facing web_fetch tool', async () => {
+    const fetchProvider = {
+      id: 'stub-fetch',
+      available: () => true,
+      fetch: (request: { url: string }) => Promise.resolve({
+        url: request.url,
+        statusCode: 200,
+        body: { kind: 'pdf' as const, content: new Uint8Array([0x25, 0x50, 0x44, 0x46]) },
+        truncated: false,
+      }),
+    }
+    const { fiber, call } = await mountTools({ webConfig: { fetchProvider: 'stub-fetch' }, fetchProvider })
+    const out = await call('web_fetch', { url: 'https://a.test/paper.pdf' })
+    expect(out.isError).toBe(true)
+    expect(out.error?.info?.code).toBe('WEB_UNSUPPORTED_CONTENT_TYPE')
     await fiber.dispose()
   })
 
