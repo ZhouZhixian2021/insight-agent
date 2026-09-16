@@ -47,10 +47,9 @@ kind: "package-reference"
 
 各论文独立请求，不重放 Session 对话。
 
------
+## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
-## Known Limitations and Deferred Work
 
 - 当前组合只使用 arXiv。OpenAlex 和 Crossref 已有检索适配器，但全文候选地址发现仍属于来源提供方后续工作。
 - 一次 Remote 调用会保持到整轮结束。工作流恢复、进度流、持久运行身份、重试和长论文分段留待后续。

@@ -1,6 +1,6 @@
 ---
-description: "Render a portable HTML report with evidence navigation, search and Markdown download."
-kind: "package-library"
+description: "Web-client surface for the academic research report: a client plugin skeleton with an internal HTML report renderer."
+kind: "package-reference"
 ---
 
 # @deepseek-ai/dsh-client-ui-academic-research
@@ -21,7 +21,7 @@ Render a portable HTML report with evidence navigation, search and Markdown down
 <a id="use-this-package"></a>
 ## Use this package
 
-`renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This is an artifact renderer, not a mounted Web client plugin.
+`renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. The browser half is a plugin skeleton; this renderer is an internal helper until the phase-4 research surface wires in.
 
 This stateless library publishes no invariant companion; automated tests verify output relationships and failure behavior.
 

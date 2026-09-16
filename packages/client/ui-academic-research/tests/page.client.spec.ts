@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderResearchPage } from '../src/index.ts'
+import { renderResearchPage } from '../src/client/render.ts'
 import { benchmarkReport } from './fixtures.client.ts'
 
 describe('standalone research report viewer', () => {

@@ -51,7 +51,6 @@ const KIND_TEMPLATES: Readonly<Record<string, string>> = {
 const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
   'packages/academic/eval': 'Pure evidence-integrity evaluation and explicit review reconciliation.',
   'packages/academic/report': 'Pure Markdown generation over evaluated academic records.',
-  'packages/client/ui-academic-research': 'Standalone HTML report artifact renderer; no Cordis plugin registration.',
   'packages/academic/workflow': 'Paper-level hash handoff and evidence extraction; no plugin registration.',
   'packages/academic/analysis': 'Pure cross-paper input preparation over shared academic evidence records.',
   'packages/academic/model': 'Provider-neutral academic records and pure helpers.',

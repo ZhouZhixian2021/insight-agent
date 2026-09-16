@@ -323,6 +323,11 @@
     - id: ui-trajectory
       name: '@deepseek-ai/dsh-client-ui-trajectory'
 
+    # Academic research report viewer: a client plugin skeleton whose browser
+    # half is a no-op until the phase-4 research surfaces wire in.
+    - id: ui-academic-research
+      name: '@deepseek-ai/dsh-client-ui-academic-research'
+
 # ── the agent plane moves behind agent presets ─────────────────────────────
 #
 # Every row below composes what ONE agent contributes to the host registries:
