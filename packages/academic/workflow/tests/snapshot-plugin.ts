@@ -14,11 +14,12 @@ class SnapshotAdapter extends LlmAdapter {
     return Promise.resolve({ provider, id: model, name: model, context: { contextWindow: 8192 } })
   }
   override async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
-    yield { type: 'text-delta', index: 0, text: JSON.stringify([{ segmentIndex: 0,
-      sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
-      cardItems: [{ section: 'methods', statement: 'Uses Method X.',
-        methodName: { status: 'available', value: 'Method X' },
-        methodRole: { status: 'available', value: 'proposed' } }] }]) }
+    yield { type: 'text-delta', index: 0, text: JSON.stringify({
+      scope: { status: 'included', reason: 'No approved rule excludes the paper.' }, evidence: [{ segmentIndex: 0,
+        sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
+        cardItems: [{ section: 'methods', statement: 'Uses Method X.',
+          methodName: { status: 'available', value: 'Method X' },
+          methodRole: { status: 'available', value: 'proposed' } }] }] }) }
     yield { type: 'finish', reason: { kind: 'stop' } }
   }
 }
@@ -36,7 +37,8 @@ export function apply(ctx: Context): void {
         sourceProvider: 'fixture', sourceUrl: 'https://example.org/synthetic', retrievedAt: '2026-09-15T00:00:00Z',
         extractionMethod: { method: 'fixture', methodVersion: '1' },
         segments: [{ text: 'Uses Method X.', locator: { kind: 'paragraph', paragraphNumber: 1 } }] },
-      false, createModelEvidenceGenerator(ctx, agent.session, { provider: 'academic-fixture', model: 'fixture', maxTokens: 500 }))
+      false, createModelEvidenceGenerator(ctx, agent.session, { provider: 'academic-fixture', model: 'fixture', maxTokens: 500 }),
+      { inclusionRules: [], exclusionRules: [] })
       assert.equal(result.status, 'extracted')
       if (result.status !== 'extracted') throw new Error('unexpected paper pause')
       assert.equal(result.evidence.evidenceRecords.length, 1)

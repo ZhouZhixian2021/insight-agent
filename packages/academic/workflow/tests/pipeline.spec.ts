@@ -8,9 +8,9 @@ describe('single-pass research draft', () => {
     const { input, adapters } = fixture()
     const generate = adapters.generator
     let first = true
-    adapters.generator = async (request, source) => {
+    adapters.generator = async (request, source, scope) => {
       if (first) { first = false; throw new EvidenceError('input limit', 'EVIDENCE_INPUT_TOO_LARGE') }
-      return generate(request, source)
+      return generate(request, source, scope)
     }
     const result = await runResearchDraft(input, adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
@@ -74,6 +74,17 @@ describe('single-pass research draft', () => {
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(result.report?.evidence).toHaveLength(2)
     expect(records[0]!.workVersion.contentHash.status).toBe('not_extracted')
+  })
+  it('retains a model scope exclusion and omits its evidence from analysis', async () => {
+    const { input, adapters } = fixture()
+    vi.mocked(adapters.generator).mockResolvedValueOnce({
+      scope: { status: 'excluded', reason: 'The paper does not satisfy the approved population rule.' }, evidence: [],
+    })
+    const result = await runResearchDraft(input, adapters)
+    expect(result.papers.map(paper => paper.status)).toEqual(['excluded', 'extracted'])
+    const includedPaper = result.papers[1]
+    expect(includedPaper?.status === 'extracted' && includedPaper.evidence.evidenceRecords).toHaveLength(1)
+    expect(result.report?.limitations.join(' ')).toContain('does not satisfy the approved population rule')
   })
   it('pauses a hash conflict while preserving successful papers and the report limitation', async () => {
     const { input, adapters, records } = fixture()

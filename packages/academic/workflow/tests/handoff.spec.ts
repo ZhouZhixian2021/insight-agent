@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
-import { prepareFetchedAcademicFullText, type EvidenceGenerator } from '@deepseek-ai/dsh-academic-evidence'
-import { extractPaperEvidence } from '../src/index.ts'
+import { prepareFetchedAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
+import { extractPaperEvidence, type PaperEvidenceGenerator } from '../src/index.ts'
+
+const scope = { inclusionRules: [], exclusionRules: [] }
 
 function fixture() {
   const version: WorkVersion = { schemaVersion: 1, academicWorkId: createAcademicWorkId(), workVersionId: createWorkVersionId(),
@@ -12,9 +14,12 @@ function fixture() {
     sourceProvider: 'fixture', retrievedAt: '2026-09-15T00:00:00Z', extractionMethod: { method: 'fixture', methodVersion: '1' },
     fetched: { url: 'https://example.org/paper', statusCode: 200, truncated: false,
       body: { kind: 'html', content: '<article><h2>Methods</h2><p>The method uses reranking.</p></article>' } } })
-  const generator = vi.fn<EvidenceGenerator>(async () => [{ segmentIndex: 0, sourcedStatement: 'The method uses reranking.',
-    verbatimExcerpt: 'The method uses reranking.', cardItems: [{ section: 'methods', statement: 'The method uses reranking.',
-      methodName: { status: 'available', value: 'reranking' }, methodRole: { status: 'available', value: 'proposed' } }] }])
+  const generator = vi.fn<PaperEvidenceGenerator>(async () => ({
+    scope: { status: 'included', reason: 'No approved rule excludes the paper.' },
+    evidence: [{ segmentIndex: 0, sourcedStatement: 'The method uses reranking.',
+      verbatimExcerpt: 'The method uses reranking.', cardItems: [{ section: 'methods', statement: 'The method uses reranking.',
+        methodName: { status: 'available', value: 'reranking' }, methodRole: { status: 'available', value: 'proposed' } }] }],
+  }))
   return { version, parsed, generator }
 }
 
@@ -23,7 +28,7 @@ describe('paper handoff', () => {
     const { version, parsed, generator } = fixture()
     const before = structuredClone(version)
     Object.freeze(version)
-    const result = await extractPaperEvidence(version, parsed, false, generator)
+    const result = await extractPaperEvidence(version, parsed, false, generator, scope)
     expect(result.status).toBe('extracted')
     if (result.status !== 'extracted') throw new Error('unexpected pause')
     expect(version).toEqual(before)
@@ -38,14 +43,14 @@ describe('paper handoff', () => {
   it('reuses an already matching version even with historical evidence', async () => {
     const { version, parsed, generator } = fixture()
     const current: WorkVersion = { ...version, contentHash: { status: 'available', value: parsed.contentHash } }
-    const result = await extractPaperEvidence(current, parsed, true, generator)
+    const result = await extractPaperEvidence(current, parsed, true, generator, scope)
     expect(result.status === 'extracted' && result.version).toBe(current)
   })
   it('retains a conflict and lets the caller process another paper', async () => {
     const a = fixture(), b = fixture()
     a.version = { ...a.version, contentHash: { status: 'available', value: 'sha256:old' } }
     const results = []
-    for (const item of [a, b]) results.push(await extractPaperEvidence(item.version, item.parsed, false, item.generator))
+    for (const item of [a, b]) results.push(await extractPaperEvidence(item.version, item.parsed, false, item.generator, scope))
     expect(results.map(result => result.status)).toEqual(['paused', 'extracted'])
     expect(a.generator).not.toHaveBeenCalled()
     expect(b.generator).toHaveBeenCalledOnce()
@@ -60,20 +65,20 @@ describe('paper handoff', () => {
       academicWorkId: kind === 'work' ? createAcademicWorkId() : parsed.academicWorkId,
       workVersionId: kind === 'version' ? createWorkVersionId() : parsed.workVersionId,
       contentHash: kind === 'empty' ? '  ' : parsed.contentHash }
-    const result = await extractPaperEvidence(current, input, kind === 'history', generator)
+    const result = await extractPaperEvidence(current, input, kind === 'history', generator, scope)
     const reason = kind === 'work' || kind === 'version' ? 'identity_mismatch' : kind === 'empty' ? 'empty_hash' : kind === 'history' ? 'history_requires_review' : 'hash_unavailable'
     expect(result.status === 'paused' && result.pause.reason).toBe(reason)
     expect(generator).not.toHaveBeenCalled()
   })
   it('propagates cancellation without invoking extraction', async () => {
     const { version, parsed, generator } = fixture()
-    await expect(extractPaperEvidence(version, parsed, false, generator, AbortSignal.abort())).rejects.toThrow()
+    await expect(extractPaperEvidence(version, parsed, false, generator, scope, AbortSignal.abort())).rejects.toThrow()
     expect(generator).not.toHaveBeenCalled()
   })
   it('propagates extraction failure without publishing a filled version', async () => {
     const { version, parsed, generator } = fixture()
     generator.mockRejectedValueOnce(new Error('model failed'))
-    await expect(extractPaperEvidence(version, parsed, false, generator)).rejects.toThrow('model failed')
+    await expect(extractPaperEvidence(version, parsed, false, generator, scope)).rejects.toThrow('model failed')
     expect(version.contentHash.status).toBe('not_extracted')
   })
 })

@@ -2,18 +2,29 @@
 import { EvidenceError, type EvidenceDraft, type EvidenceCardItemDraft } from '@deepseek-ai/dsh-academic-evidence'
 import type { Availability } from '@deepseek-ai/dsh-academic-model'
 import { MAX_EVIDENCE_DRAFTS } from './model-limits.ts'
+import type { PaperModelResponse, PaperScopeDecision } from './model-types.ts'
 
 type Reader<T> = (value: unknown, path: string) => T
 
 /**
- * Validates a complete JSON response of at most six entries before returning any evidence drafts.
+ * Validates a complete scope-and-evidence JSON response before returning its evidence drafts.
  * Failed availability requires producer-owned identities and is not accepted from the model.
  * Source index bounds, excerpt matching and semantic review remain downstream checks.
  * @param text - complete model response, without Markdown framing.
- * @returns validated drafts, including an empty array when no evidence was proposed.
+ * @returns validated drafts, including an empty array when no evidence was proposed or the paper was excluded.
  * @throws EvidenceError with EVIDENCE_INVALID_MODEL_OUTPUT for invalid JSON or fields.
  */
 export function parseEvidenceDrafts(text: string): readonly EvidenceDraft[] {
+  return parsePaperModelResponse(text).evidence
+}
+
+/**
+ * Validates one complete scope decision and its evidence drafts.
+ * @param text - complete model response, without Markdown framing.
+ * @returns the validated scope decision and evidence drafts.
+ * @throws EvidenceError with EVIDENCE_INVALID_MODEL_OUTPUT for invalid JSON or fields.
+ */
+export function parsePaperModelResponse(text: string): PaperModelResponse {
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -21,9 +32,19 @@ export function parseEvidenceDrafts(text: string): readonly EvidenceDraft[] {
     // JSON.parse is the only operation here; syntax failures expose no response content.
     return invalid('$', 'expected JSON')
   }
-  const drafts = array(value, '$', draft)
+  const response = object(value, '$', ['scope', 'evidence'])
+  const scope = scopeDecision(response.scope, '$.scope')
+  const drafts = array(response.evidence, '$.evidence', draft)
   if (drafts.length > MAX_EVIDENCE_DRAFTS) invalid('$', `expected at most ${MAX_EVIDENCE_DRAFTS} entries`)
-  return drafts
+  if (scope.status === 'excluded' && drafts.length > 0) invalid('$.evidence', 'expected no evidence for an excluded paper')
+  return { scope, evidence: drafts }
+}
+
+function scopeDecision(value: unknown, path: string): PaperScopeDecision {
+  const item = object(value, path, ['status', 'reason'])
+  const reason = nonempty(item.reason, `${path}.reason`)
+  if (item.status === 'included' || item.status === 'excluded') return { status: item.status, reason }
+  return invalid(`${path}.status`, 'invalid enum value')
 }
 
 function invalid(path: string, message: string): never {

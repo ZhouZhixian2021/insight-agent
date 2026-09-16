@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAcademicWorkId, createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import { extractEvidenceFromContent, type EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
-import { parseEvidenceDrafts } from '../src/index.ts'
+import { parseEvidenceDrafts, parsePaperModelResponse } from '../src/index.ts'
 
 const available = <T>(value: T) => ({ status: 'available' as const, value })
 const absent = { status: 'unknown' as const, reason: 'Not specified in the supplied segment.' }
@@ -19,8 +19,14 @@ const drafts: readonly EvidenceDraft[] = [{ segmentIndex: 0, sourcedStatement: e
     { section: 'limitations', statement: 'Requires labeled examples.', limitationType: available('data') },
   ] }]
 
+const included = { status: 'included' as const, reason: 'The paper satisfies the approved scope.' }
+
+function response(evidence: unknown, scope: unknown = included): string {
+  return JSON.stringify({ scope, evidence })
+}
+
 function reply(patch: Record<string, unknown> = {}): string {
-  return JSON.stringify([{ segmentIndex: 0, sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [], ...patch }])
+  return response([{ segmentIndex: 0, sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [], ...patch }])
 }
 
 function itemReply(item: Record<string, unknown>): string {
@@ -29,11 +35,14 @@ function itemReply(item: Record<string, unknown>): string {
 }
 
 describe('model evidence JSON', () => {
-  it('returns all six card sections using the existing B interface', () => {
-    expect(parseEvidenceDrafts(JSON.stringify(drafts))).toEqual(drafts)
+  it('returns a scope decision and all six card sections using the existing B request interface', () => {
+    expect(parsePaperModelResponse(response(drafts))).toEqual({ scope: included, evidence: drafts })
+    expect(parseEvidenceDrafts(response(drafts))).toEqual(drafts)
   })
-  it('distinguishes no evidence and an uncategorized evidence record from failure', () => {
-    expect(parseEvidenceDrafts(' []\n')).toEqual([])
+  it('distinguishes exclusion, no evidence and an uncategorized evidence record', () => {
+    expect(parsePaperModelResponse(response([], { status: 'excluded', reason: 'Outside the approved population.' })))
+      .toEqual({ scope: { status: 'excluded', reason: 'Outside the approved population.' }, evidence: [] })
+    expect(parseEvidenceDrafts(response([]))).toEqual([])
     expect(parseEvidenceDrafts(reply())[0]?.cardItems).toEqual([])
   })
   it('preserves numeric metric strings and original excerpt whitespace', () => {
@@ -44,7 +53,9 @@ describe('model evidence JSON', () => {
     expect(result[0]?.cardItems[0]).toMatchObject({ value: available('91 ± 2') })
   })
   it.each([
-    '', '```json\n[]\n```', 'Here is the result: []', '[', '{}', 'null', '1', '[null]', '[[]]',
+    '', '```json\n{}\n```', 'Here is the result: {}', '{', '[]', 'null', '1', '{}',
+    response([], null), response([], {}), response([], { status: 'included', reason: '' }),
+    response([], { status: 'other', reason: 'x' }), response([null]), response([[]]),
     reply({ segmentIndex: -1 }), reply({ segmentIndex: 0.5 }), reply({ segmentIndex: '0' }),
     reply({ segmentIndex: 9007199254740992 }), reply({ segmentIndex: undefined }),
     reply({ sourcedStatement: '  ' }), reply({ sourcedStatement: 3 }), reply({ verbatimExcerpt: '' }),
@@ -63,23 +74,23 @@ describe('model evidence JSON', () => {
     itemReply({ evidenceIds: ['invented'] }), itemReply({ evidenceCardItemId: 'invented' }),
     reply({ cardItems: [{ ...drafts[0]!.cardItems[3], value: available(false) }] }),
     reply({ cardItems: [{ ...drafts[0]!.cardItems[3], value: available(1) }] }).replace('"value":1', '"value":1e999'),
+    response(drafts, { status: 'excluded', reason: 'Outside scope.' }),
   ])('rejects an invalid response without returning partial drafts: %s', (text) => {
-    expect(() => parseEvidenceDrafts(text)).toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' }))
+    expect(() => parsePaperModelResponse(text)).toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' }))
   })
   it('rejects the whole array when a later draft is malformed', () => {
-    expect(() => parseEvidenceDrafts(JSON.stringify([...drafts, { segmentIndex: 0 }]))).toThrow()
+    expect(() => parseEvidenceDrafts(response([...drafts, { segmentIndex: 0 }]))).toThrow()
   })
   it('accepts at most six focused drafts from one paper', () => {
     const items = (length: number) => Array.from({ length }, (_, segmentIndex) => ({
       segmentIndex, sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [],
     }))
-    expect(parseEvidenceDrafts(JSON.stringify(items(6)))).toHaveLength(6)
-    expect(() => parseEvidenceDrafts(JSON.stringify(items(7))))
-      .toThrow('$: expected at most 6 entries')
+    expect(parseEvidenceDrafts(response(items(6)))).toHaveLength(6)
+    expect(() => parseEvidenceDrafts(response(items(7)))).toThrow('$: expected at most 6 entries')
   })
   it('reports the field path without echoing untrusted response content', () => {
     expect(() => parseEvidenceDrafts(itemReply({ methodRole: available('private-response-marker') })))
-      .toThrow('$[0].cardItems[0].methodRole.value: invalid enum value')
+      .toThrow('$.evidence[0].cardItems[0].methodRole.value: invalid enum value')
     expect(() => parseEvidenceDrafts('private-response-marker')).toThrow('$: expected JSON')
   })
   it('feeds actual B extraction and leaves source matching under B ownership', async () => {
@@ -87,7 +98,7 @@ describe('model evidence JSON', () => {
       sourceProvider: 'fixture', sourceUrl: 'https://example.org/paper', retrievedAt: '2026-09-15T00:00:00Z',
       contentHash: 'fixture-hash', extractionMethod: { method: 'fixture', methodVersion: '1' },
       segments: [{ text: excerpt, locator: { kind: 'paragraph' as const, paragraphNumber: 1 } }] }
-    const result = await extractEvidenceFromContent(input, async () => parseEvidenceDrafts(JSON.stringify(drafts)))
+    const result = await extractEvidenceFromContent(input, async () => parseEvidenceDrafts(response(drafts)))
     expect(result.evidenceRecords).toHaveLength(1)
     expect(result.evidenceCard.methods[0]?.evidenceIds).toEqual([result.evidenceRecords[0]?.evidenceId])
     await expect(extractEvidenceFromContent(input, async () => parseEvidenceDrafts(reply({ segmentIndex: 1 }))))

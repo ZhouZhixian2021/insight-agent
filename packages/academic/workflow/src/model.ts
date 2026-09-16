@@ -6,10 +6,10 @@ import type { Session, SessionEvent, SessionSeq } from '@deepseek-ai/dsh-session
 import type {} from '@deepseek-ai/dsh-token-meter'
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
-import { parseEvidenceDrafts } from './parse-evidence.ts'
+import { parsePaperModelResponse } from './parse-evidence.ts'
 import { evidenceMessages } from './model-prompt.ts'
 import { WorkflowLogError } from './model-errors.ts'
-import type { EvidenceModelResult, EvidenceModelSource, PaperEvidenceGenerator } from './model-types.ts'
+import type { EvidenceModelResult, EvidenceModelSource, PaperEvidenceGenerator, PaperModelResponse } from './model-types.ts'
 
 /**
  * Bind extraction to a live Session and an explicit model configuration.
@@ -45,7 +45,7 @@ export function createModelEvidenceGenerator(ctx: Context, session: Session, con
     }
   }
 
-  return async (request, parsed) => {
+  return async (request, parsed, scope) => {
     request.signal?.throwIfAborted()
     const source: EvidenceModelSource = {
       academicWorkId: parsed.academicWorkId, workVersionId: parsed.workVersionId, contentHash: parsed.contentHash,
@@ -59,7 +59,7 @@ export function createModelEvidenceGenerator(ctx: Context, session: Session, con
     let status: EvidenceModelResult['status'] = 'failed'
     let errorCode: string | undefined
     let failure: unknown
-    let drafts: ReturnType<typeof parseEvidenceDrafts> | undefined
+    let result: PaperModelResponse | undefined
     try {
       const prepared = await llm.prepareCall(selectedConfig, request.signal)
       request.signal?.throwIfAborted()
@@ -69,7 +69,7 @@ export function createModelEvidenceGenerator(ctx: Context, session: Session, con
         || !Number.isSafeInteger(outputTokens) || outputTokens <= 0) {
         throw new EvidenceError('Model context window and output-token cap are required.', 'EVIDENCE_MODEL_BUDGET_UNKNOWN')
       }
-      const messages = evidenceMessages(request)
+      const messages = evidenceMessages(request, scope)
       const estimatedInputTokens = messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0)
       const oversized = estimatedInputTokens + outputTokens > contextWindow
       const logged = await record(() => session.append('academic/evidence-request', { source, config: prepared.config,
@@ -97,7 +97,7 @@ export function createModelEvidenceGenerator(ctx: Context, session: Session, con
         throw new EvidenceError('Unexpected non-text model output.', 'EVIDENCE_MODEL_UNEXPECTED_CONTENT')
       }
       const text = blocks.filter(block => block.type === 'text').map(block => block.text).join('')
-      drafts = parseEvidenceDrafts(text)
+      result = parsePaperModelResponse(text)
       status = 'validated'
     } catch (error: unknown) {
       if (error instanceof WorkflowLogError) throw error
@@ -110,7 +110,7 @@ export function createModelEvidenceGenerator(ctx: Context, session: Session, con
       ...errorCode === undefined ? {} : { errorCode } }))
     // A cancellation arriving during result persistence still prevents downstream extraction.
     request.signal?.throwIfAborted()
-    if (drafts === undefined) throw failure
-    return drafts
+    if (result === undefined) throw failure
+    return result
   }
 }

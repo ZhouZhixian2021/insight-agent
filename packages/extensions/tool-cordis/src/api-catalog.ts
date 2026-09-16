@@ -82,6 +82,19 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'academicResearchController',
+    summary: 'Host service backing the generated `ctx.remote.academicResearch` namespace.',
+    description: 'Host service backing the generated `ctx.remote.academicResearch` namespace.',
+    methods: [
+      {
+        signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
+        description: 'Run one arXiv-backed research pass while the addressed Agent is idle.',
+        parameters: [{ name: 'request', description: 'approved brief, search query, disclosure, and owning Session.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
+        returns: 'completed or cancelled draft data with its durable Session identity.',
+      },
+    ],
+  },
+  {
     key: 'academicSource',
     summary: 'The academic source access service.',
     description: 'The academic source access service. Registered as `ctx.academicSource` (one instance per context).\n\nSelection semantics (resolved at execution time, never order-dependent):\n\n- A configured id that is registered and `available()` → that provider.\n- A configured id not registered → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING`.\n- A configured id registered but unavailable → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_UNAVAILABLE`.\n- No id configured, exactly one registered usable provider → that provider.\n- No id configured, multiple usable providers → `ACADEMIC_SOURCE_PROVIDER_AMBIGUOUS`.\n- No id configured, no usable provider → `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE`.',
@@ -3489,6 +3502,46 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AcademicClaimAssessmentView',
+    declaration: 'export interface AcademicClaimAssessmentView {\n    readonly schemaVersion: 1;\n    readonly claimAssessmentId: ClaimAssessmentId;\n    readonly claimId: ClaimId;\n    readonly status: \'supported\' | \'partially_supported\' | \'contradicted\' | \'unsupported\' | \'insufficient\';\n    readonly reason: string;\n    readonly method: string;\n    readonly methodVersion: string;\n    readonly assessedEvidenceIds: readonly EvidenceId[];\n    readonly assessedAt: string;\n}',
+  },
+  {
+    name: 'AcademicClaimView',
+    declaration: 'export interface AcademicClaimView {\n    readonly schemaVersion: 1;\n    readonly claimId: ClaimId;\n    readonly text: string;\n    readonly category: \'consensus\' | \'trend\' | \'comparison\' | \'disagreement\' | \'research_gap\' | \'limitation\';\n    readonly scope: string;\n    readonly uncertainty: string | null;\n    readonly confidence: \'high\' | \'medium\' | \'low\' | \'insufficient\';\n    readonly confidenceReasons: readonly string[];\n    readonly evidenceSnapshot: AcademicEvidenceSnapshotView;\n    readonly validity: \'current\' | \'stale\';\n}',
+  },
+  {
+    name: 'AcademicEvaluationView',
+    declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
+  },
+  {
+    name: 'AcademicEvidenceSnapshotItemView',
+    declaration: 'export interface AcademicEvidenceSnapshotItemView {\n    readonly evidenceId: EvidenceId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly contentHash: string | null;\n}',
+  },
+  {
+    name: 'AcademicEvidenceSnapshotView',
+    declaration: 'export interface AcademicEvidenceSnapshotView {\n    readonly schemaVersion: 1;\n    readonly evidenceSnapshotId: EvidenceSnapshotId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly evidenceItems: readonly AcademicEvidenceSnapshotItemView[];\n    readonly createdAt: string;\n}',
+  },
+  {
+    name: 'AcademicEvidenceView',
+    declaration: 'export interface AcademicEvidenceView {\n    readonly schemaVersion: 1;\n    readonly evidenceId: EvidenceId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly level: \'metadata\' | \'abstract\' | \'fulltext\';\n    readonly verbatimExcerpt: Availability<string>;\n    readonly sourcedStatement: string;\n    readonly sourceLocatorId: SourceLocatorId;\n    readonly sourceProvider: string;\n    readonly sourceUrl: string;\n    readonly retrievedAt: string;\n    readonly contentHash: Availability<string>;\n    readonly extractionMethod: ExtractionMethod;\n    readonly qualityNotes: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicPaperResultView',
+    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'AcademicResearchReportView',
+    declaration: 'export interface AcademicResearchReportView {\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicResearchRunRequest',
+    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly brief: ResearchBrief;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
+  },
+  {
+    name: 'AcademicResearchRunValue',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+  },
+  {
     name: 'AcademicSourceProvider',
     declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n}',
   },
@@ -3759,6 +3812,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BrandedNumber',
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
+  },
+  {
+    name: 'BriefApproval',
+    declaration: 'export type BriefApproval = {\n    readonly status: \'pending\';\n} | {\n    readonly status: \'approved\';\n    readonly reviewedBy: string;\n    readonly reviewedAt: string;\n    readonly approvedBriefVersion: number;\n    readonly comment: string | null;\n} | {\n    readonly status: \'revision_requested\';\n    readonly reviewedBy: string;\n    readonly reviewedAt: string;\n    readonly reviewedBriefVersion: number;\n    readonly comment: string;\n};',
+  },
+  {
+    name: 'ClaimAssessmentId',
+    declaration: 'export type ClaimAssessmentId = Branded<\'ClaimAssessmentId\'>;',
+  },
+  {
+    name: 'ClaimId',
+    declaration: 'export type ClaimId = Branded<\'ClaimId\'>;',
   },
   {
     name: 'ClientArtifactBaseline',
@@ -4149,6 +4214,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    system?: string;\n    tools?: ToolSchema[];\n}',
   },
   {
+    name: 'EvidenceId',
+    declaration: 'export type EvidenceId = Branded<\'EvidenceId\'>;',
+  },
+  {
+    name: 'EvidenceRequirements',
+    declaration: 'export interface EvidenceRequirements {\n    readonly minimumIncludedWorks: number;\n    readonly minimumFulltextWorks: number;\n    readonly minimumEvidenceLevel: RequiredEvidenceLevel;\n    readonly requireLocatableEvidence: boolean;\n    readonly allowPreprints: boolean;\n    readonly insufficientEvidencePolicy: InsufficientEvidencePolicy;\n}',
+  },
+  {
+    name: 'EvidenceSnapshotId',
+    declaration: 'export type EvidenceSnapshotId = Branded<\'EvidenceSnapshotId\'>;',
+  },
+  {
     name: 'ExternalIdentifier',
     declaration: 'export interface ExternalIdentifier {\n    readonly kind: ExternalIdentifierKind;\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly sourceProvider: string;\n}',
   },
@@ -4159,6 +4236,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ExternalIdentifierKindMap',
     declaration: 'export interface ExternalIdentifierKindMap {\n    readonly doi: never;\n    readonly arxiv: never;\n    readonly openalex: never;\n    readonly pubmed: never;\n    readonly provider_record: never;\n}',
+  },
+  {
+    name: 'ExtractionMethod',
+    declaration: 'export interface ExtractionMethod {\n    readonly method: string;\n    readonly methodVersion: string;\n}',
   },
   {
     name: 'FailureId',
@@ -4347,6 +4428,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InspectorJsonValue',
     declaration: 'export type InspectorJsonValue = InspectorJsonPrimitive | readonly InspectorJsonValue[] | InspectorJsonObject;',
+  },
+  {
+    name: 'InsufficientEvidencePolicy',
+    declaration: 'export type InsufficientEvidencePolicy = \'continue_with_warning\' | \'stop_for_review\';',
   },
   {
     name: 'InvariantFailure',
@@ -4829,8 +4914,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcDispatchLog {\n    readonly exec: ToolExecution;\n    readonly agent?: Agent;\n    readonly subCallId: ToolCallId;\n    readonly name: string;\n    readonly isError: boolean;\n    readonly content: ContentBlock[];\n}',
   },
   {
+    name: 'PublicationDateBasis',
+    declaration: 'export type PublicationDateBasis = \'published\' | \'first_public_release\';',
+  },
+  {
     name: 'PublicationStatus',
     declaration: 'export type PublicationStatus = \'preprint\' | \'accepted\' | \'published\' | \'corrected\' | \'retracted\' | \'unknown\';',
+  },
+  {
+    name: 'PublicationWindow',
+    declaration: 'export interface PublicationWindow {\n    readonly start: PartialDate | null;\n    readonly end: PartialDate | null;\n    readonly dateBasis: PublicationDateBasis;\n}',
   },
   {
     name: 'ReadFileLine',
@@ -4873,6 +4966,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ReplayEnvelope {\n    response: unknown;\n    blocks?: readonly unknown[];\n}',
   },
   {
+    name: 'ReportRequirements',
+    declaration: 'export interface ReportRequirements {\n    readonly language: string;\n    readonly targetLength: ReportTargetLength;\n    readonly requiredSections: readonly string[];\n    readonly citationStyle: \'numeric\' | \'author_year\';\n    readonly includeEvidenceAppendix: boolean;\n    readonly includeMethodology: boolean;\n    readonly includeLimitations: boolean;\n    readonly includeResearchGaps: boolean;\n}',
+  },
+  {
+    name: 'ReportTargetLength',
+    declaration: 'export interface ReportTargetLength {\n    readonly unit: string;\n    readonly minimum: number | null;\n    readonly maximum: number | null;\n}',
+  },
+  {
     name: 'RequestContext',
     declaration: 'export interface RequestContext {\n    provider: string;\n    model: string;\n    contextWindow?: number;\n}',
   },
@@ -4891,6 +4992,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RequestRunOutcome',
     declaration: 'export type RequestRunOutcome = \'approved\' | \'completed\' | \'rejected\' | \'cancelled\' | \'failed\';',
+  },
+  {
+    name: 'RequiredEvidenceLevel',
+    declaration: 'export type RequiredEvidenceLevel = \'abstract\' | \'fulltext\';',
+  },
+  {
+    name: 'ResearchBrief',
+    declaration: 'export interface ResearchBrief {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly version: number;\n    readonly topic: string;\n    readonly aliases: readonly string[];\n    readonly questions: readonly string[];\n    readonly publicationWindow: PublicationWindow;\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly evidenceRequirements: EvidenceRequirements;\n    readonly targetAudience: string;\n    readonly reportRequirements: ReportRequirements;\n    readonly stopConditions: StopConditions;\n    readonly assumptions: readonly string[];\n    readonly approval: BriefApproval;\n}',
+  },
+  {
+    name: 'ResearchBriefId',
+    declaration: 'export type ResearchBriefId = Branded<\'ResearchBriefId\'>;',
   },
   {
     name: 'ResolvedAlwaysRetryPolicy',
@@ -5621,6 +5734,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SkillViewOptions extends SkillLookupOptions {\n    readonly scope?: ScopeKey | undefined;\n}',
   },
   {
+    name: 'SourceLocatorId',
+    declaration: 'export type SourceLocatorId = Branded<\'SourceLocatorId\'>;',
+  },
+  {
     name: 'SpawnTeammateRequest',
     declaration: 'export interface SpawnTeammateRequest {\n    readonly name: string;\n    readonly description: string;\n    readonly prompt: ContentBlock[];\n    readonly context: \'fresh\' | \'fork\';\n    readonly provider: string;\n    readonly signal: AbortSignal;\n}',
   },
@@ -5643,6 +5760,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SpillSource',
     declaration: 'export interface SpillSource {\n    toolName: string;\n    callId: ToolCallId;\n    label: string;\n}',
+  },
+  {
+    name: 'StopConditions',
+    declaration: 'export interface StopConditions {\n    readonly maximumSearchRounds: number;\n    readonly maximumCandidateWorks: number;\n    readonly maximumIncludedWorks: number;\n    readonly maximumElapsedMinutes: number | null;\n    readonly saturationRounds: number;\n    readonly stopWhenEvidenceRequirementsMet: boolean;\n}',
   },
   {
     name: 'StorageBackend',

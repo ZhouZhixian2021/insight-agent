@@ -1,7 +1,7 @@
 /** Paper-level handoff using existing academic parsing and extraction interfaces. */
 import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import { EvidenceError, extractEvidenceFromContent, type EvidenceExtractionInput } from '@deepseek-ai/dsh-academic-evidence'
-import type { PaperEvidenceGenerator } from './model-types.ts'
+import type { PaperEvidenceGenerator, PaperScopeDecision, PaperScopeRules } from './model-types.ts'
 import type { PaperEvidenceResult, PaperPause } from './types.ts'
 export type { PaperEvidenceResult, PaperPause } from './types.ts'
 
@@ -12,6 +12,7 @@ export type { PaperEvidenceResult, PaperPause } from './types.ts'
  * @param parsed Successful parser output for this paper and version.
  * @param hasHistoricalEvidence Whether this version already has bound historical content or evidence.
  * @param generator Semantic extractor receiving B's request and program-owned parsed provenance.
+ * @param scope Approved natural-language inclusion and exclusion rules.
  * @param signal Optional cancellation forwarded to extraction; cancellation rejects.
  * @returns Extracted evidence and its consistent version, or a located paper pause for caller retention.
  * @throws Propagates cancellation, logging and extraction errors; input-budget excess returns a pause.
@@ -21,6 +22,7 @@ export async function extractPaperEvidence(
   parsed: EvidenceExtractionInput,
   hasHistoricalEvidence: boolean,
   generator: PaperEvidenceGenerator,
+  scope: PaperScopeRules,
   signal?: AbortSignal,
 ): Promise<PaperEvidenceResult> {
   signal?.throwIfAborted()
@@ -43,7 +45,17 @@ export async function extractPaperEvidence(
     current = { ...version, contentHash: { status: 'available', value: parsed.contentHash } }
   }
   try {
-    const evidence = await extractEvidenceFromContent(parsed, request => generator(request, parsed), signal)
+    let decision: PaperScopeDecision | undefined
+    const evidence = await extractEvidenceFromContent(parsed, async (request) => {
+      const response = await generator(request, parsed, scope)
+      decision = response.scope
+      return response.evidence
+    }, signal)
+    if (decision?.status === 'excluded') {
+      return { status: 'excluded', exclusion: { academicWorkId: current.academicWorkId,
+        workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
+        reason: decision.reason } }
+    }
     return { status: 'extracted', version: current, evidence }
   } catch (error: unknown) {
     if (error instanceof EvidenceError && error.code === 'EVIDENCE_INPUT_TOO_LARGE') return pause('input_too_large')
