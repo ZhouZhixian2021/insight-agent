@@ -30,17 +30,17 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标记。调用顺序固定为检索 → 去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
-调用方提供 search、selectPapers、fetcher、generator 和 now。search 可适配 ctx.academicSource.search，fetcher 可适配 ctx.web.fetch；selectPapers 负责批准的日期、范围及纳入排除规则，返回归并版本 ID 与候选地址。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
+调用方提供 search、selectPapers、fetcher、generator 和 now。search 可适配 ctx.academicSource.search，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿、预印本和数量规则；生成器根据获取后的正文复核自然语言纳入与排除规则。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 
-查询结果受 maximumCandidateWorks 与请求上限约束，选择受 maximumIncludedWorks 约束；拒绝未批准、重复论文、未知版本和撤稿等非法选择。哈希冲突返回暂停结果；全文或抽取失败记录论文版本与失败阶段，其他论文继续。报告披露暂停、失败及截断，不把不完整结果标成完整覆盖。
+查询结果受 maximumCandidateWorks 与请求上限约束，选择受 maximumIncludedWorks 约束；拒绝未批准、重复论文、未知版本和撤稿等非法选择。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。报告披露排除、暂停、失败及截断，不把不完整结果标成完整覆盖。
 
 输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成 papers 和 failures，不生成报告；搜索失败向调用方抛出。模型与网络的持久记录、期限取消信号均由调用方负责。
 
-自动多轮检索、重试、跨轮索引恢复、停止条件的饱和判定和达到证据量后的自动停止留待下一阶段；本轮不自动降级摘要、不接主 Web、不交付最终报告。
+自动多轮检索、重试、跨轮索引恢复、停止条件的饱和判定和达到证据量后的自动停止留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用本工作流。
 
 ## 模型回答校验
 
-`parseEvidenceDrafts(text)` 接收最多六项的完整 JSON 数组，返回 B 的 EvidenceDraft 值。返回任何草稿前检查数量限制、六类卡片、必填字段、枚举和 Availability 值。接受空数组和空 cardItems；条目超限、未知字段、编造身份、failed 可用性及格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。错误指出字段位置，不复制模型回答内容。
+`parsePaperModelResponse(text)` 接收一个包含范围决定、原因和最多六项证据的 JSON 对象；`parseEvidenceDrafts(text)` 返回其中的 EvidenceDraft 值。校验要求被排除论文的证据数组为空，并在返回任何草稿前检查数量限制、六类卡片、必填字段、枚举和 Availability 值。接受空证据和空 cardItems；条目超限、未知字段、编造身份、failed 可用性及格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。错误指出字段位置，不复制模型回答内容。
 
 模型没有生产方生成的真实失败 ID，因此拒绝 failed 可用性；缺失信息仍可使用 unknown、not_applicable 和 not_extracted。段落索引范围和原文摘录检查继续由 B 负责。解析本身不验证语义支持、流式输出是否完整或输入预算；调用方必须在解析前拒绝未完整结束的模型输出，并自行持久记录原始回答。该函数不调用模型，也不记录 Session。
 
@@ -48,7 +48,7 @@ runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标�
 
 将 createModelEvidenceGenerator(ctx, session, config) 绑定到具有活动持久化写入器的 Session，并显式传入 LlmCallConfig。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。此处不自行设置模型名、密钥、超时或 token 上限；路由选择及取消/期限由调用方提供。
 
-返回的 PaperEvidenceGenerator 接收 B 的请求及解析来源信息，可直接作为 runResearchDraft 的 generator。既有单参数生成器仍可使用。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源及抽取方法。
+返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
 应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, input, adapters, signal })`。这个稳定入口会在检索或全文获取前检查准确模型路由；没有指定推理强度时默认使用 `low`，调用方明确指定的值保持不变。不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId`，供调用方定位持久化模型记录。
 
@@ -62,7 +62,7 @@ runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标�
 
 #### What the model sees
 
-`createModelEvidenceGenerator()` 将 B 的指令、六栏 JSON 返回要求、研究问题及全部有序正文/定位片段作为无工具请求发送。模型只选择直接回答研究问题的证据，总数最多六条，以一个研究问题为主要依据的证据最多三条，并避免穷举整篇论文。数据集、基准分数、硬件、训练时长及常规超参数只有在直接回答研究问题时才可纳入。请求数据来自不可变的 academic/evidence-request 事件；academic/evidence-result 保留无损压缩流、提供方给出的用量以及 validated/failed/cancelled/skipped 状态。validated 仅代表 JSON 校验通过。这些仅用于记录的事件不进入主对话历史。
+`createModelEvidenceGenerator()` 将 B 的指令、批准的纳入和排除规则、范围决定与六栏 JSON 返回要求、研究问题及全部有序正文/定位片段作为无工具请求发送。模型先记录全文是否符合范围规则及原因；被纳入论文只选择直接回答研究问题的证据，总数最多六条，以一个研究问题为主要依据的证据最多三条，并避免穷举整篇论文。数据集、基准分数、硬件、训练时长及常规超参数只有在直接回答研究问题时才可纳入。请求数据来自不可变的 academic/evidence-request 事件；academic/evidence-result 保留无损压缩流、提供方给出的用量以及 validated/failed/cancelled/skipped 状态。validated 仅代表 JSON 校验通过。这些仅用于记录的事件不进入主对话历史。
 
 #### Token effect
 
@@ -88,7 +88,7 @@ DSH 现有消息估算器计算完整包装后的输入。输入估算加已解�
 
 ## Known Limitations and Deferred Work
 
-- 该库提供单轮草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果，尚不支持完整工作流恢复或证据/卡片身份持久化。主 Web 入口、语义审核、长论文分批及自动重试留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
+- 该库提供单轮草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果，尚不支持完整工作流恢复或证据/卡片身份持久化。长论文分批、自动重试及最终语义审核留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
 
 <a id="dev-note"></a>
 ### 开发备注

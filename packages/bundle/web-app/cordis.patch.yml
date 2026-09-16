@@ -91,6 +91,19 @@
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
 
+    # One Session-backed Academic pass. The first shipped composition pins
+    # arXiv while additional provider acquisition remains source-owned work.
+    - id: academic-source
+      name: '@deepseek-ai/dsh-academic-source'
+      config:
+        searchProvider: arxiv
+
+    - id: academic-source-arxiv
+      name: '@deepseek-ai/dsh-academic-source-arxiv'
+
+    - id: academic-research-controller
+      name: '@deepseek-ai/dsh-api-academic-research-controller'
+
     # Configuration-surface reads and writes over Typert Remote. Each method
     # reports an actionable error when its settings-domain provider is absent.
     - id: settings-controller

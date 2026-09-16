@@ -68,7 +68,8 @@ export async function runResearchDraft(
         retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, signal)
       if (signal?.aborted) return cancelled()
       stage = 'extraction'
-      const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator, signal)
+      const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
+        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, signal)
       papers.push(result)
     } catch (error: unknown) {
       if (error instanceof WorkflowLogError) throw error
@@ -89,6 +90,7 @@ export async function runResearchDraft(
   const analysis = analyzeEvidence(source, brief, assessedAt)
   const limitations = [...analysis.limitations, 'Single search pass; no automatic scope planning, retries or abstract fallback.',
     ...papers.filter(result => result.status === 'paused').map(result => `Paused version ${result.pause.workVersionId}: ${result.pause.reason}.`),
+    ...papers.filter(result => result.status === 'excluded').map(result => `Excluded version ${result.exclusion.workVersionId}: ${result.exclusion.reason}`),
     ...failures.map(failure => `Version ${failure.workVersionId} failed during ${failure.stage}.`)]
   if (search.truncated || search.works.length > maxResults) limitations.push('Search results were truncated; coverage is incomplete.')
   const report = generateReport({ brief, claims: analysis.claims, links: analysis.links,

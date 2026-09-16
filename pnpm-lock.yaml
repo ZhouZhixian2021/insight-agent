@@ -939,6 +939,42 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/api/academic-research-controller:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../../academic/model
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:^
+        version: link:../../academic/source
+      '@deepseek-ai/dsh-academic-source-arxiv':
+        specifier: workspace:^
+        version: link:../../academic/source-arxiv
+      '@deepseek-ai/dsh-academic-workflow':
+        specifier: workspace:^
+        version: link:../../academic/workflow
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:^
+        version: link:../session-controller
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:^
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:^
+        version: link:../../typert/protocol
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:^
+        version: link:../../web/web
+
   packages/api/session-controller:
     dependencies:
       '@deepseek-ai/dsh-brand':
@@ -1650,6 +1686,9 @@ importers:
       '@deepseek-ai/dsh-api-remotes':
         specifier: workspace:^
         version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-academic-research-controller':
+        specifier: workspace:^
+        version: link:../../api/academic-research-controller
       '@deepseek-ai/dsh-api-session-controller':
         specifier: workspace:^
         version: link:../../api/session-controller
@@ -1659,6 +1698,12 @@ importers:
       '@deepseek-ai/dsh-api-workspace-controller':
         specifier: workspace:^
         version: link:../../api/workspace-controller
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:^
+        version: link:../../academic/source
+      '@deepseek-ai/dsh-academic-source-arxiv':
+        specifier: workspace:^
+        version: link:../../academic/source-arxiv
       '@deepseek-ai/dsh-app-boot':
         specifier: workspace:^
         version: link:../../boot/app-boot

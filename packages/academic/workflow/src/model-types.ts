@@ -3,11 +3,29 @@ import type { EvidenceExtractionInput, EvidenceGenerationRequest, EvidenceDraft 
 import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
 
+/** Approved natural-language rules applied to one fetched paper. */
+export interface PaperScopeRules {
+  readonly inclusionRules: readonly string[]
+  readonly exclusionRules: readonly string[]
+}
+
+/** Model decision about whether one fetched paper belongs in the approved scope. */
+export type PaperScopeDecision =
+  | { readonly status: 'included'; readonly reason: string }
+  | { readonly status: 'excluded'; readonly reason: string }
+
+/** One validated model response containing scope review and any extracted evidence. */
+export interface PaperModelResponse {
+  readonly scope: PaperScopeDecision
+  readonly evidence: readonly EvidenceDraft[]
+}
+
 /** A's generator receives program-owned provenance without changing B's request interface. */
 export type PaperEvidenceGenerator = (
   request: EvidenceGenerationRequest,
   source: EvidenceExtractionInput,
-) => Promise<readonly EvidenceDraft[]>
+  scope: PaperScopeRules,
+) => Promise<PaperModelResponse>
 
 /** Program-owned identity of the exact parsed content submitted for extraction. */
 export type EvidenceModelSource = Pick<EvidenceExtractionInput,

@@ -36,8 +36,12 @@ export function draftFixture() {
       sourceProvider: 'fixture', extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })) }),
     fetcher: vi.fn<DraftPipelineAdapters['fetcher']>(async (url) => { events.push(`fetch:${url.at(-1)}`); return { url, statusCode: 200, truncated: false,
       body: { kind: 'html', content: '<article><h2>Methods</h2><p>Uses reranking.</p></article>' } } }),
-    generator: vi.fn<DraftPipelineAdapters['generator']>(async () => { events.push('extract'); return [{ segmentIndex: 0, sourcedStatement: 'Uses reranking.', verbatimExcerpt: 'Uses reranking.',
-      cardItems: [{ section: 'methods', statement: 'Uses reranking.', methodName: { status: 'available', value: 'reranking' }, methodRole: { status: 'available', value: 'proposed' } }] }] }),
+    generator: vi.fn<DraftPipelineAdapters['generator']>(async () => { events.push('extract'); return {
+      scope: { status: 'included', reason: 'The paper addresses the approved comparison.' },
+      evidence: [{ segmentIndex: 0, sourcedStatement: 'Uses reranking.', verbatimExcerpt: 'Uses reranking.',
+        cardItems: [{ section: 'methods', statement: 'Uses reranking.', methodName: { status: 'available', value: 'reranking' },
+          methodRole: { status: 'available', value: 'proposed' } }] }],
+    } }),
     now: () => '2026-09-15T00:01:00Z',
   }
   return { input, adapters, records, events }

@@ -15,7 +15,17 @@ export interface PaperPause {
     | 'input_too_large'
 }
 
+/** One fetched paper excluded by the approved natural-language scope rules. */
+export interface PaperExclusion {
+  readonly academicWorkId: WorkVersion['academicWorkId']
+  readonly workVersionId: WorkVersion['workVersionId']
+  readonly sourceUrl: string
+  readonly retrievedAt: string
+  readonly reason: string
+}
+
 /** Only an extracted result contains a version suitable for downstream analysis. */
 export type PaperEvidenceResult =
   | { readonly status: 'paused'; readonly pause: PaperPause }
+  | { readonly status: 'excluded'; readonly exclusion: PaperExclusion }
   | { readonly status: 'extracted'; readonly version: WorkVersion; readonly evidence: EvidenceExtractionResult }

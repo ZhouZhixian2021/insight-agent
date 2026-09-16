@@ -14,12 +14,14 @@ import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearch
 import { draftFixture } from './pipeline-fixture.ts'
 import { evidenceMessages } from '../src/model-prompt.ts'
 
-const output = JSON.stringify([{ segmentIndex: 0, sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
-  cardItems: [{ section: 'methods', statement: 'Uses Method X.', methodName: { status: 'available', value: 'Method X' },
-    methodRole: { status: 'available', value: 'proposed' } }] }])
+const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
+  { segmentIndex: 0, sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
+    cardItems: [{ section: 'methods', statement: 'Uses Method X.', methodName: { status: 'available', value: 'Method X' },
+      methodRole: { status: 'available', value: 'proposed' } }] }] })
 const script: StreamChunk[] = [{ type: 'text-delta', index: 0, text: output },
   { type: 'usage', usage: { inputTokens: 100, outputTokens: 30 } }, { type: 'finish', reason: { kind: 'stop' } }]
 const config = { provider: 'fixture', model: 'fixture', maxTokens: 500 }
+const scope = { inclusionRules: [], exclusionRules: [] }
 
 class Adapter extends LlmAdapter {
   calls: GenerateOptions[] = []
@@ -79,13 +81,14 @@ async function fixture(writer = true) {
 describe('durable academic model extraction', () => {
   it('scopes the model request to a bounded answer for the supplied focus questions', async () => {
     const f = await fixture()
-    const block = evidenceMessages(f.request)[0]?.content[0]
+    const block = evidenceMessages(f.request, scope)[0]?.content[0]
     if (block?.type !== 'text') throw new Error('missing model-visible evidence instructions')
     const visible = block.text
-    expect(visible).toContain('Select only evidence that directly answers the supplied focusQuestions.')
+    expect(visible).toContain('select only evidence that directly answers the supplied')
     expect(visible).toContain(`Return at most 6 entries total and
 at most 3 entries primarily supporting any one focus question.`)
     expect(visible).toContain('Do not catalogue every extractable statement.')
+    expect(visible).toContain('"inclusionRules":[]')
     expect(visible).toContain('"focusQuestions":["Which method?"]')
   })
   it('runs two parsed papers through the model and B evidence into C evaluated draft', async () => {
@@ -168,7 +171,7 @@ at most 3 entries primarily supporting any one focus question.`)
   it('persists the exact request before dispatch and the lossless stream before returning evidence', async () => {
     const f = await fixture()
     f.adapter.beforeDispatch = async () => { expect((await f.read())[0]?.type).toBe('academic/evidence-request') }
-    const extracted = await extractPaperEvidence(f.version, f.source, false, f.generate)
+    const extracted = await extractPaperEvidence(f.version, f.source, false, f.generate, scope)
     expect(extracted.status).toBe('extracted')
     if (extracted.status !== 'extracted') throw new Error('unexpected paper pause')
     expect(extracted.evidence.evidenceRecords).toHaveLength(1)
@@ -201,37 +204,37 @@ at most 3 entries primarily supporting any one focus question.`)
   })
   it('counts framing and output reserve at the exact admission boundary', async () => {
     const f = await fixture()
-    const tokens = evidenceMessages(f.request).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
+    const tokens = evidenceMessages(f.request, scope).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
     f.adapter.contextWindow = tokens + config.maxTokens
-    await expect(f.generate(f.request, f.source)).resolves.toHaveLength(1)
+    await expect(f.generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' }, evidence: { length: 1 } })
     f.adapter.contextWindow--
-    await expect(f.generate(f.request, f.source)).rejects.toMatchObject({ code: 'EVIDENCE_INPUT_TOO_LARGE' })
+    await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_INPUT_TOO_LARGE' })
     expect(f.adapter.calls).toHaveLength(1)
     expect((await f.read()).at(-1)?.data).toMatchObject({ status: 'skipped', errorCode: 'EVIDENCE_INPUT_TOO_LARGE' })
   })
   it('pauses oversized papers without filling their version hash', async () => {
     const f = await fixture()
     f.adapter.contextWindow = 501
-    expect(await extractPaperEvidence(f.version, f.source, false, f.generate)).toMatchObject({ status: 'paused', pause: { reason: 'input_too_large' } })
+    expect(await extractPaperEvidence(f.version, f.source, false, f.generate, scope)).toMatchObject({ status: 'paused', pause: { reason: 'input_too_large' } })
     expect(f.version.contentHash.status).toBe('not_extracted')
     expect(f.adapter.calls).toHaveLength(0)
   })
   it('records bad JSON without turning it into empty evidence', async () => {
     const f = await fixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: 'not JSON' }, { type: 'finish', reason: { kind: 'stop' } }]
-    await expect(f.generate(f.request, f.source)).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' })
+    await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' })
     expect((await f.read()).at(-1)?.data).toMatchObject({ status: 'failed', errorCode: 'EVIDENCE_INVALID_MODEL_OUTPUT' })
   })
   it.each(['max-tokens', 'tool-calls'] as const)('records and rejects %s despite valid JSON', async (kind) => {
     const f = await fixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: '[]' }, { type: 'finish', reason: { kind } }]
-    await expect(f.generate(f.request, f.source)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_INCOMPLETE' })
+    await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_INCOMPLETE' })
     expect((await f.read()).at(-1)?.data).toMatchObject({ status: 'failed', finish: { kind } })
   })
   it('retains rejected tool chunks without executing them', async () => {
     const f = await fixture()
     f.adapter.script = [{ type: 'block-start', index: 0, blockType: 'tool-call' }, { type: 'finish', reason: { kind: 'tool-calls' } }]
-    await expect(f.generate(f.request, f.source)).rejects.toThrow()
+    await expect(f.generate(f.request, f.source, scope)).rejects.toThrow()
     const event = (await f.read()).at(-1)
     if (event?.type !== 'academic/evidence-result') throw new Error('missing result')
     expect(expandAssistantStream(event.data.stream).map(entry => entry.chunk)).toEqual(f.adapter.script)
@@ -240,14 +243,14 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), controller = new AbortController()
     const flush = f.ctx.sessions.flush.bind(f.ctx.sessions)
     vi.spyOn(f.ctx.sessions, 'flush').mockImplementation(async (session) => { const saved = await flush(session); controller.abort(); return saved })
-    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source)).rejects.toThrow()
+    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source, scope)).rejects.toThrow()
     expect(f.adapter.calls).toHaveLength(0)
     expect((await f.read()).at(-1)?.data).toMatchObject({ status: 'cancelled' })
   })
   it('retains streamed text on cancellation', async () => {
     const f = await fixture(), controller = new AbortController()
     f.adapter.afterChunk = () => { controller.abort() }
-    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source)).rejects.toThrow()
+    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source, scope)).rejects.toThrow()
     const event = (await f.read()).at(-1)
     if (event?.type !== 'academic/evidence-result') throw new Error('missing result')
     expect(event.data.status).toBe('cancelled')
@@ -255,14 +258,14 @@ at most 3 entries primarily supporting any one focus question.`)
   })
   it('does no work for an already-cancelled request', async () => {
     const f = await fixture()
-    await expect(f.generate({ ...f.request, signal: AbortSignal.abort() }, f.source)).rejects.toThrow()
+    await expect(f.generate({ ...f.request, signal: AbortSignal.abort() }, f.source, scope)).rejects.toThrow()
     expect(f.adapter.calls).toHaveLength(0)
     expect(f.session.snapshotEvents()).toEqual([])
   })
   it('records unavailable model capacity as a preparation failure', async () => {
     const f = await fixture()
     f.adapter.contextWindow = undefined
-    await expect(f.generate(f.request, f.source)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_BUDGET_UNKNOWN' })
+    await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_BUDGET_UNKNOWN' })
     expect((await f.read()).at(-1)?.data).toMatchObject({ requestSeq: null, status: 'failed' })
     expect(f.adapter.calls).toHaveLength(0)
   })
@@ -273,12 +276,12 @@ at most 3 entries primarily supporting any one focus question.`)
       if (session.snapshotEvents().at(-1)?.type === `academic/evidence-${phase}`) throw new Error('Disk unavailable')
       return flush(session)
     })
-    await expect(f.generate(f.request, f.source)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
     expect(f.adapter.calls).toHaveLength(phase === 'request' ? 0 : 1)
   })
   it('refuses a persistence listener with no active writer', async () => {
     const f = await fixture(false)
-    await expect(f.generate(f.request, f.source)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
     expect(f.adapter.calls).toHaveLength(0)
   })
   it('refuses missing runtime services at binding time', async () => {
@@ -288,13 +291,13 @@ at most 3 entries primarily supporting any one focus question.`)
   it('gives a storage failure priority over concurrent cancellation', async () => {
     const f = await fixture(), controller = new AbortController()
     vi.spyOn(f.ctx.sessions, 'flush').mockImplementation(async () => { controller.abort(); throw new Error('Disk failure') })
-    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(f.generate({ ...f.request, signal: controller.signal }, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
     expect(f.adapter.calls).toHaveLength(0)
   })
   it('refuses a checkpoint with no participating listener', async () => {
     const f = await fixture()
     vi.spyOn(f.ctx.sessions, 'flush').mockResolvedValue(false)
-    await expect(f.generate(f.request, f.source)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
     expect(f.adapter.calls).toHaveLength(0)
   })
   it('refuses an acknowledged checkpoint whose stored record is missing', async () => {
@@ -305,13 +308,13 @@ at most 3 entries primarily supporting any one focus question.`)
       vi.spyOn(handle, 'read').mockResolvedValue([])
       return handle
     })
-    await expect(f.generate(f.request, f.source)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
     expect(f.adapter.calls).toHaveLength(0)
   })
   it('keeps reasoning in the log while parsing text only', async () => {
     const f = await fixture()
     f.adapter.script = [{ type: 'reasoning-delta', index: 1, text: 'Inspecting evidence.' }, ...script]
-    await expect(f.generate(f.request, f.source)).resolves.toHaveLength(1)
+    await expect(f.generate(f.request, f.source, scope)).resolves.toMatchObject({ evidence: { length: 1 } })
     const event = (await f.read()).at(-1)
     if (event?.type !== 'academic/evidence-result') throw new Error('missing result')
     expect(expandAssistantStream(event.data.stream)[0]?.chunk.type).toBe('reasoning-delta')
@@ -321,6 +324,6 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.script = [{ type: 'block-start', index: 0, blockType: 'tool-call' },
       { type: 'block-end', index: 0, block: { type: 'tool-call', id: ToolCallId('fixture-call'), name: 'never_execute', arguments: '{}' } },
       { type: 'finish', reason: { kind: 'stop' } }]
-    await expect(f.generate(f.request, f.source)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_UNEXPECTED_CONTENT' })
+    await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_UNEXPECTED_CONTENT' })
   })
 })
