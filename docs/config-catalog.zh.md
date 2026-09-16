@@ -3401,6 +3401,7 @@ export interface Config {
 
 - `@deepseek-ai/dsh-acp-app` — 需要 `cmdlineArgs`（[`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts)）
 - `@deepseek-ai/dsh-agent`（[`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts)）
+- `@deepseek-ai/dsh-api-academic-research-controller` — 需要 `academicSource` · `sessionController` · `typert` · `web`（[`packages/api/academic-research-controller/src/index.ts`](../packages/api/academic-research-controller/src/index.ts)）
 - `@deepseek-ai/dsh-api-remotes` — 需要 `typertGateway`（[`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts)）
 - `@deepseek-ai/dsh-api-workspace-controller` — 需要 `typert` · `workspaceRegistry`（[`packages/api/workspace-controller/src/index.ts`](../packages/api/workspace-controller/src/index.ts)）
 - `@deepseek-ai/dsh-authorization` — 需要 `credentials`（[`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts)）
@@ -3508,6 +3509,7 @@ export interface Config {
 - `@deepseek-ai/dsh-academic-ingestion`（[`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts)）
 - `@deepseek-ai/dsh-academic-model`（[`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts)）
 - `@deepseek-ai/dsh-academic-report`（[`packages/academic/report/src/index.ts`](../packages/academic/report/src/index.ts)）
+- `@deepseek-ai/dsh-academic-workflow`（[`packages/academic/workflow/src/index.ts`](../packages/academic/workflow/src/index.ts)）
 - `@deepseek-ai/dsh-agent-loop-testkit`（[`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts)）
 - `@deepseek-ai/dsh-anonymous-user-id`（[`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts)）
 - `@deepseek-ai/dsh-app-boot`（[`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts)）

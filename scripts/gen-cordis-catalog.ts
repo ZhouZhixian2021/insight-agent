@@ -54,6 +54,7 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  academicResearchController: 'academic-insight.md',
   academicSource: 'academic-source.md',
   agentLoop: 'core.md',
   agentDefaultModel: 'core.md',
@@ -240,6 +241,8 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
  * appear on more than one page.
  */
 export const LINK_MAP: Readonly<Record<string, string>> = {
+  AcademicResearchRunRequest: 'academic-insight.md',
+  AcademicResearchRunValue: 'academic-insight.md',
   AcademicSourceProvider: 'academic-source.md',
   AcademicSourceSearchRequest: 'academic-source.md',
   AcademicSourceSearchResult: 'academic-source.md',

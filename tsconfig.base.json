@@ -46,6 +46,8 @@
       "@deepseek-ai/dsh-api-gateway/client": ["./packages/api/gateway/src/client/index.ts"],
       "@deepseek-ai/dsh-api-gateway/types": ["./packages/api/gateway/src/types.ts"],
       "@deepseek-ai/dsh-api-session-controller": ["./packages/api/session-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-academic-research-controller": ["./packages/api/academic-research-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-academic-research-controller/types": ["./packages/api/academic-research-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-session-controller/client": ["./packages/api/session-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-api-session-controller/types": ["./packages/api/session-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-session-controller/remote-events": ["./packages/api/session-controller/src/remote-events.ts"],
@@ -234,6 +236,7 @@
       // boundary, so their aliases stay hand-written instead of colliding as
       // dsh-<dir>.
       "@deepseek-ai/dsh-academic-model": ["./packages/academic/model/src"],
+      "@deepseek-ai/dsh-academic-workflow": ["./packages/academic/workflow/src"],
       "@deepseek-ai/dsh-academic-analysis": ["./packages/academic/analysis/src"],
       "@deepseek-ai/dsh-academic-eval": ["./packages/academic/eval/src"],
       "@deepseek-ai/dsh-academic-report": ["./packages/academic/report/src"],

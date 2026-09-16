@@ -98,6 +98,8 @@ function dirOf(url: string): string {
 }
 
 interface SdkAssertions {
+  /** Shipped SDK runtime profile; the manifest still identifies the SDK transport. */
+  runtimeProfile?: 'sdk' | 'sdk-minimal'
   /** Environment overrides passed to the runtime subprocess. */
   environment?: Readonly<Record<string, string>>
   /** A separate DSH SDK child whose persisted session joins the evidence. */
@@ -118,6 +120,7 @@ interface SdkAssertions {
 }
 
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
+  'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
   'subagent-dsh-sdk-diagnostic': {
     environment: { DSH_TEST_CHILD_PATCH: dshSdkDiagnosticChildPatch },
   },
@@ -322,7 +325,7 @@ async function hydrateReplayFixtures(scenario: CorpusScenario, cwd: string): Pro
   await mkdir(root, { recursive: true })
   return Promise.all((await fixtureFiles(scenario)).map(async (source) => {
     const destination = join(root, basename(source))
-    await writeFile(destination, (await readFile(source, 'utf8')).replaceAll('{{cwd}}', cwd))
+    await writeFile(destination, (await readFile(source, 'utf8')).replaceAll('{{cwd}}', () => JSON.stringify(cwd).slice(1, -1)))
     return destination
   }))
 }
@@ -553,7 +556,7 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   }
 
   const harness = new DeepSeekHarness({
-    profile: 'sdk',
+    profile: assertions.runtimeProfile ?? 'sdk',
     patches,
     dshHome,
     processCwd: cwd,

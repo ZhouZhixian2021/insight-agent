@@ -94,6 +94,30 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 ## 事件
 
+### `academic/*`
+
+<a id="academicevidence-request--log-only"></a>
+
+#### `academic/evidence-request` — log-only
+
+```ts persistence-catalog
+/** Log-only academic extraction input and admission decision before model dispatch. */
+'academic/evidence-request': EvidenceModelRequest
+```
+
+来源：[`packages/academic/workflow/src/model-types.ts:43`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicevidence-result--log-only"></a>
+
+#### `academic/evidence-result` — log-only
+
+```ts persistence-catalog
+/** Log-only academic extraction settlement, including raw model output when available. */
+'academic/evidence-result': EvidenceModelResult
+```
+
+来源：[`packages/academic/workflow/src/model-types.ts:45`](../packages/academic/workflow/src/model-types.ts)
+
 ### `agent/*`
 
 <a id="agentinboxspliced--log-only"></a>
