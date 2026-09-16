@@ -99,11 +99,18 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'academicResearchController',
+    pkg: 'api-academic-research-controller',
+    title: 'Host Academic research Remote controller',
+    mode: 'core',
+    note: 'Owns the Session-backed Academic research Remote operation and delegates retrieval, full-text evidence extraction, and report drafting to the Academic workflow.',
+  },
+  {
     key: 'academicSource',
     pkg: 'academic-source',
     title: 'Academic source provider registry',
     mode: 'seam',
-    implementations: ['academic-source-openalex', 'academic-source-crossref', 'academic-source-arxiv'],
+    implementations: ['academic-source-arxiv'],
     note: 'Registers academic search providers, selects one available provider, and caps returned works while preserving truncation metadata.',
   },
   {

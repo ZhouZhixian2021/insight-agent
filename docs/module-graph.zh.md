@@ -110,15 +110,18 @@ flowchart TD
     pkg_acp["acp"]
   end
   subgraph group_academic["packages/academic"]
+    pkg_academic_analysis["academic-analysis"]
+    pkg_academic_eval["academic-eval"]
     pkg_academic_evidence["academic-evidence"]
     pkg_academic_ingestion["academic-ingestion"]
     pkg_academic_model["academic-model"]
+    pkg_academic_report["academic-report"]
     pkg_academic_source["academic-source"]
     pkg_academic_source_arxiv["academic-source-arxiv"]
-    pkg_academic_source_crossref["academic-source-crossref"]
-    pkg_academic_source_openalex["academic-source-openalex"]
+    pkg_academic_workflow["academic-workflow"]
   end
   subgraph group_api["packages/api"]
+    pkg_api_academic_research_controller["api-academic-research-controller"]
     pkg_api_gateway["api-gateway"]
     pkg_api_remotes["api-remotes"]
     pkg_api_session_controller["api-session-controller"]
@@ -148,6 +151,7 @@ flowchart TD
     pkg_client_locale["client-locale"]
     pkg_client_modules["client-modules"]
     pkg_client_store["client-store"]
+    pkg_client_ui_academic_research["client-ui-academic-research"]
     pkg_client_ui_agent_preset["client-ui-agent-preset"]
     pkg_client_ui_approval["client-ui-approval"]
     pkg_client_ui_attachment["client-ui-attachment"]
@@ -418,6 +422,8 @@ flowchart TD
   pkg_web_search_exa --> pkg_web
   pkg_web_search_perplexity --> pkg_launch_environment
   pkg_web_search_perplexity --> pkg_web
+  pkg_academic_analysis --> pkg_academic_model
+  pkg_academic_eval --> pkg_academic_model
   pkg_academic_evidence --> pkg_academic_model
   pkg_academic_ingestion --> pkg_academic_model
   pkg_academic_source --> pkg_academic_model
@@ -441,12 +447,10 @@ flowchart TD
   pkg_spill --> pkg_brand
   pkg_spill --> pkg_llm
   pkg_spill --> pkg_session
+  pkg_academic_report --> pkg_academic_eval
+  pkg_academic_report --> pkg_academic_model
   pkg_academic_source_arxiv --> pkg_academic_model
   pkg_academic_source_arxiv --> pkg_academic_source
-  pkg_academic_source_crossref --> pkg_academic_model
-  pkg_academic_source_crossref --> pkg_academic_source
-  pkg_academic_source_openalex --> pkg_academic_model
-  pkg_academic_source_openalex --> pkg_academic_source
   pkg_app_boot --> pkg_home_paths
   pkg_app_boot --> pkg_launch_environment
   pkg_app_boot --> pkg_system_prompt
@@ -483,6 +487,7 @@ flowchart TD
   pkg_spill_local --> pkg_spill
   pkg_session_log_export --> pkg_session
   pkg_session_log_export --> pkg_session_persistence
+  pkg_client_ui_academic_research --> pkg_academic_report
   pkg_message_feedback --> pkg_brand
   pkg_message_feedback --> pkg_llm
   pkg_message_feedback --> pkg_session
@@ -924,6 +929,16 @@ flowchart TD
   pkg_acp --> pkg_session_persistence
   pkg_acp --> pkg_token_meter
   pkg_acp --> pkg_user_approval
+  pkg_academic_workflow --> pkg_academic_analysis
+  pkg_academic_workflow --> pkg_academic_evidence
+  pkg_academic_workflow --> pkg_academic_ingestion
+  pkg_academic_workflow --> pkg_academic_model
+  pkg_academic_workflow --> pkg_academic_report
+  pkg_academic_workflow --> pkg_academic_source
+  pkg_academic_workflow --> pkg_llm
+  pkg_academic_workflow --> pkg_session
+  pkg_academic_workflow --> pkg_session_persistence
+  pkg_academic_workflow --> pkg_token_meter
   pkg_api_settings_controller --> pkg_agent_presets
   pkg_api_settings_controller --> pkg_credentials
   pkg_api_settings_controller --> pkg_native_command
@@ -1125,6 +1140,16 @@ flowchart TD
   pkg_subagent_fork_in_process --> pkg_subagent_in_process_driver
   pkg_subagent_spawn_in_process --> pkg_subagent
   pkg_subagent_spawn_in_process --> pkg_subagent_in_process_driver
+  pkg_api_academic_research_controller --> pkg_academic_model
+  pkg_api_academic_research_controller --> pkg_academic_source
+  pkg_api_academic_research_controller --> pkg_academic_source_arxiv
+  pkg_api_academic_research_controller --> pkg_academic_workflow
+  pkg_api_academic_research_controller --> pkg_agent
+  pkg_api_academic_research_controller --> pkg_api_session_controller
+  pkg_api_academic_research_controller --> pkg_llm
+  pkg_api_academic_research_controller --> pkg_session
+  pkg_api_academic_research_controller --> pkg_typert_protocol
+  pkg_api_academic_research_controller --> pkg_web
   pkg_experimental_client_ui_agent_team --> pkg_api_remotes
   pkg_experimental_client_ui_agent_team --> pkg_api_session_controller
   pkg_experimental_client_ui_agent_team --> pkg_client_locale
@@ -1286,6 +1311,8 @@ flowchart TD
 | [`web-fetch-http`](../packages/web/web-fetch-http) | `web` | [`http-proxy`](../packages/util/http-proxy), [`timeout`](../packages/util/timeout), [`web`](../packages/web/web) |
 | [`web-search-exa`](../packages/web/web-search-exa) | `web` | [`launch-environment`](../packages/util/launch-environment), [`web`](../packages/web/web) |
 | [`web-search-perplexity`](../packages/web/web-search-perplexity) | `web` | [`launch-environment`](../packages/util/launch-environment), [`web`](../packages/web/web) |
+| [`academic-analysis`](../packages/academic/analysis) | `academic` | [`academic-model`](../packages/academic/model) |
+| [`academic-eval`](../packages/academic/eval) | `academic` | [`academic-model`](../packages/academic/model) |
 | [`academic-evidence`](../packages/academic/evidence) | `academic` | [`academic-model`](../packages/academic/model) |
 | [`academic-ingestion`](../packages/academic/ingestion) | `academic` | [`academic-model`](../packages/academic/model) |
 | [`academic-source`](../packages/academic/source) | `academic` | [`academic-model`](../packages/academic/model) |
@@ -1298,9 +1325,8 @@ flowchart TD
 | [`subprocess-local`](../packages/subprocess/subprocess-local) | `subprocess` | [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`skill-badge`](../packages/skill/skill-badge) | `skill` | [`skill`](../packages/skill/skill) |
 | [`spill`](../packages/spill/spill) | `spill` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
+| [`academic-report`](../packages/academic/report) | `academic` | [`academic-eval`](../packages/academic/eval), [`academic-model`](../packages/academic/model) |
 | [`academic-source-arxiv`](../packages/academic/source-arxiv) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
-| [`academic-source-crossref`](../packages/academic/source-crossref) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
-| [`academic-source-openalex`](../packages/academic/source-openalex) | `academic` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source) |
 | [`app-boot`](../packages/boot/app-boot) | `boot` | [`home-paths`](../packages/util/home-paths), [`launch-environment`](../packages/util/launch-environment), [`system-prompt`](../packages/core/system-prompt) |
 | [`code-runtime-worker-thread`](../packages/code-runtime/code-runtime-worker-thread) | `code-runtime` | [`code-runtime`](../packages/code-runtime/code-runtime), [`session`](../packages/core/session), [`timeout`](../packages/util/timeout) |
 | [`persona`](../packages/preset/persona) | `preset` | [`system-prompt`](../packages/core/system-prompt) |
@@ -1315,6 +1341,7 @@ flowchart TD
 | [`fs`](../packages/fs/fs) | `fs` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`sandbox`](../packages/sandbox/sandbox) |
 | [`spill-local`](../packages/spill/spill-local) | `spill` | [`spill`](../packages/spill/spill) |
 | [`session-log-export`](../packages/session-query/session-log-export) | `session-query` | [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence) |
+| [`client-ui-academic-research`](../packages/client/ui-academic-research) | `client` | [`academic-report`](../packages/academic/report) |
 | [`message-feedback`](../packages/feedback/message-feedback) | `feedback` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`storage-domain`](../packages/storage/storage-domain), [`typert-protocol`](../packages/typert/protocol) |
 | [`sandbox-local`](../packages/sandbox/sandbox-local) | `sandbox` | [`llm`](../packages/llm/llm), [`sandbox`](../packages/sandbox/sandbox), [`session`](../packages/core/session) |
 | [`session-persistence-jsonl`](../packages/session/session-persistence-jsonl) | `session` | [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence) |
@@ -1404,6 +1431,7 @@ flowchart TD
 | [`plugin-package-inventory-deepseek`](../packages/llm/plugin-package-inventory-deepseek) | `llm` | [`agent`](../packages/core/agent), [`agent-presets`](../packages/preset/agent-presets), [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions), [`session`](../packages/core/session) |
 | [`session-query`](../packages/session-query/session-query) | `session-query` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`session-projection`](../packages/session/session-projection), [`session-projection-cache`](../packages/session/session-projection-cache), [`session-title`](../packages/session/session-title), [`tool-todo`](../packages/todo/tool-todo) |
 | [`acp`](../packages/acp/acp) | `acp` | [`agent`](../packages/core/agent), [`attachment`](../packages/attachment/attachment), [`llm`](../packages/llm/llm), [`mcp-client`](../packages/mcp/mcp-client), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`token-meter`](../packages/llm/token-meter), [`user-approval`](../packages/interaction/user-approval) |
+| [`academic-workflow`](../packages/academic/workflow) | `academic` | [`academic-analysis`](../packages/academic/analysis), [`academic-evidence`](../packages/academic/evidence), [`academic-ingestion`](../packages/academic/ingestion), [`academic-model`](../packages/academic/model), [`academic-report`](../packages/academic/report), [`academic-source`](../packages/academic/source), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`token-meter`](../packages/llm/token-meter) |
 | [`api-settings-controller`](../packages/api/settings-controller) | `api` | [`agent-presets`](../packages/preset/agent-presets), [`credentials`](../packages/credentials/credentials), [`native-command`](../packages/util/native-command), [`session`](../packages/core/session), [`settings`](../packages/settings/settings), [`typert-protocol`](../packages/typert/protocol) |
 | [`web-app`](../packages/bundle/web-app) | `bundle` | [`shell-env`](../packages/shell/shell-env), [`system-prompt`](../packages/core/system-prompt) |
 | [`compaction-tool-result-pruner`](../packages/compaction/compaction-tool-result-pruner) | `compaction` | [`compaction`](../packages/compaction/compaction), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`token-meter`](../packages/llm/token-meter) |
@@ -1432,6 +1460,7 @@ flowchart TD
 | [`workflow-worker-thread`](../packages/workflow/workflow-worker-thread) | `workflow` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent), [`tools`](../packages/core/tools), [`workflow`](../packages/workflow/workflow) |
 | [`subagent-fork-in-process`](../packages/subagent/subagent-fork-in-process) | `subagent` | [`agent`](../packages/core/agent), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent), [`subagent-in-process-driver`](../packages/subagent/subagent-in-process-driver) |
 | [`subagent-spawn-in-process`](../packages/subagent/subagent-spawn-in-process) | `subagent` | [`subagent`](../packages/subagent/subagent), [`subagent-in-process-driver`](../packages/subagent/subagent-in-process-driver) |
+| [`api-academic-research-controller`](../packages/api/academic-research-controller) | `api` | [`academic-model`](../packages/academic/model), [`academic-source`](../packages/academic/source), [`academic-source-arxiv`](../packages/academic/source-arxiv), [`academic-workflow`](../packages/academic/workflow), [`agent`](../packages/core/agent), [`api-session-controller`](../packages/api/session-controller), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol), [`web`](../packages/web/web) |
 | [`experimental-client-ui-agent-team`](../packages/experimental/client-ui-agent-team) | `experimental` | [`api-remotes`](../packages/api/remotes), [`api-session-controller`](../packages/api/session-controller), [`client-locale`](../packages/client/locale), [`client-ui-conversation`](../packages/client/ui-conversation), [`client-ui-primitives`](../packages/client/ui-primitives), [`client-ui-renderer`](../packages/client/ui-renderer), [`client-ui-session`](../packages/client/ui-session), [`client-ui-slots`](../packages/client/ui-slots), [`experimental-agent-team`](../packages/experimental/agent-team), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team) | `experimental` | [`agent`](../packages/core/agent), [`experimental-agent-team`](../packages/experimental/agent-team), [`session`](../packages/core/session), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools) |
 | [`sdk-client`](../packages/sdk/client) | `sdk` | [`llm`](../packages/llm/llm), [`sdk-protocol`](../packages/sdk/protocol), [`session`](../packages/core/session) |

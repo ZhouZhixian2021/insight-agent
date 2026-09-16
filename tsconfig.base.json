@@ -245,8 +245,6 @@
       "@deepseek-ai/dsh-academic-ingestion": ["./packages/academic/ingestion/src"],
       "@deepseek-ai/dsh-academic-source": ["./packages/academic/source/src"],
       "@deepseek-ai/dsh-academic-source-arxiv": ["./packages/academic/source-arxiv/src"],
-      "@deepseek-ai/dsh-academic-source-crossref": ["./packages/academic/source-crossref/src"],
-      "@deepseek-ai/dsh-academic-source-openalex": ["./packages/academic/source-openalex/src"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

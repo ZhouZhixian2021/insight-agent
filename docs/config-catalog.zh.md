@@ -46,44 +46,6 @@ export interface Config {
 
 来源：[`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
 
-<a id="deepseek-aidsh-academic-source-crossref"></a>
-
-## `@deepseek-ai/dsh-academic-source-crossref`
-
-需要：`academicSource`
-
-```ts config-catalog
-/** Plugin config (all optional — `apply` fills the endpoint default). */
-export interface Config {
-  /** Crossref API base; `/works` is appended. Defaults to `https://api.crossref.org`. */
-  baseURL?: string
-  /** Polite-pool contact email sent as the `mailto` query parameter. */
-  mailto?: string
-}
-```
-
-来源：[`packages/academic/source-crossref/src/index.ts:36`](../packages/academic/source-crossref/src/index.ts)
-
-<a id="deepseek-aidsh-academic-source-openalex"></a>
-
-## `@deepseek-ai/dsh-academic-source-openalex`
-
-需要：`academicSource`
-
-```ts config-catalog
-/** Plugin config (all optional — `apply` fills the endpoint default). */
-export interface Config {
-  /** OpenAlex API base; `/works` is appended. Defaults to `https://api.openalex.org`. */
-  baseURL?: string
-  /** Polite-pool contact email sent as the `mailto` query parameter. */
-  mailto?: string
-  /** Premium-pool API key sent as the `api_key` query parameter. */
-  apiKey?: string
-}
-```
-
-来源：[`packages/academic/source-openalex/src/index.ts:39`](../packages/academic/source-openalex/src/index.ts)
-
 <a id="deepseek-aidsh-acp"></a>
 
 ## `@deepseek-ai/dsh-acp`

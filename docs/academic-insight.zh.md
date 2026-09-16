@@ -89,7 +89,7 @@ pnpm run insight:web
 <a id="known-limitations"></a>
 ## 已知限制
 
-- 检索使用现有通用 Web 能力；尚未内置 OpenAlex、Crossref、Semantic Scholar、arXiv 或 PubMed Provider。
+- 正式研究流程当前只搜索 arXiv；其他全文 Provider 尚未内置。
 - 该预设没有 PDF 解析器或持久证据库，因此必须标注仅基于摘要的分析，且不能承诺段落级核验。
 - 报告在会话中返回，或按用户明确要求写入工作区文件；目前没有专用研究表单或报告渲染器。
 - 长时研究仍采用单 Agent，直到持久证据模型能够在有界并行 Worker 之间保存结果。

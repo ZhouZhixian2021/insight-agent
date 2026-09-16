@@ -6,7 +6,7 @@ English | [中文](2026-09-11-academic-source-capability-seam.zh.md)
 
 ## Problem
 
-Academic insight must reach several scholarly providers (OpenAlex, Crossref, arXiv, and later Semantic Scholar, PubMed) whose raw response shapes differ. A workflow or analysis consumer must program against one provider-neutral "search scholarly works" operation, not against each vendor's API. Binding the model-facing or workflow-facing contract to one vendor would chase that vendor into every downstream package, and each provider registering its own operation would leak provider-specific fields into the shared contract.
+Academic insight must reach scholarly providers whose raw response shapes differ. A workflow or analysis consumer must program against one provider-neutral "search scholarly works" operation, not against each vendor's API. Binding the model-facing or workflow-facing contract to one vendor would chase that vendor into every downstream package, and each provider registering its own operation would leak provider-specific fields into the shared contract.
 
 There is also a provider-selection question. `inject: ['academicSource']` proves the service exists; it does not prove a usable source provider exists, and it does not define which provider wins when several are registered. The same selection machinery the [web seam](2026-06-24-web-capability-seam.md) built for `search`/`fetch` applies here for `search`.
 
@@ -15,10 +15,10 @@ There is also a provider-selection question. `inject: ['academicSource']` proves
 Academic source is a capability seam following [the capability-seam Agent Note](2026-06-13-capability-seams.md):
 
 1. `@deepseek-ai/dsh-academic-source` (`packages/academic/source`) owns `ctx.academicSource`, provider registration, provider selection, the shared request/result vocabulary, and the `AcademicSourceError` taxonomy.
-2. Provider packages implement concrete backends and register capabilities with `ctx.academicSource`, translating their own records into the shared `AcademicWork`/`WorkVersion` model at their package boundary. `dsh-academic-source-openalex` is the first provider: it searches the public `/works` endpoint and normalizes each record, so OpenAlex-specific field names never leave the package.
-3. A model-facing consumer (a tool, or the workflow/retrieval increment) arrives later. This first slice ships the Service Definition only; until a provider registers, every `search()` fails with `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE`.
+2. Provider packages implement concrete backends and register capabilities with `ctx.academicSource`, translating their own records into the shared `AcademicWork`/`WorkVersion` model at their package boundary. `dsh-academic-source-arxiv` searches the public Atom endpoint and normalizes each record, so arXiv-specific field names never leave the package.
+3. The Academic workflow consumes the seam through the host research controller. Until a provider registers, every `search()` fails with `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE`.
 
-The seam is search-only for v1. The request carries `query` and an optional `maxResults`; the result is a `works[]` of `{ academicWork, workVersion }` pairs plus a `truncated` flag. Cross-record version linking, deduplication, and run/coverage statistics belong to later increments: `RetrievalRun`, `CoverageSummary`, `ProviderFailure`, and `BatchResult` are not yet published by the shared model, so the seam surfaces failure only through `AcademicSourceError`.
+The seam is search-only for v1. The request carries `query` and an optional `maxResults`; the result is a `works[]` of `{ academicWork, workVersion }` pairs plus a `truncated` flag. Cross-record version linking, deduplication, and run/coverage statistics belong to ingestion and workflow consumers; the seam surfaces failure through `AcademicSourceError`.
 
 ## Package topology
 
@@ -27,7 +27,7 @@ The seam is search-only for v1. The request carries `query` and an optional `max
       shared records                                interface (ctx.academicSource)
                                                      ^
                                                      | registers normalized works
-                             @deepseek-ai/dsh-academic-source-openalex (provider)
+                             @deepseek-ai/dsh-academic-source-arxiv (provider)
 ```
 
 The Service Definition depends only on `dsh-academic-model`, Cordis, and schemastery (for `Config`). It does not import tool, agent, session, LLM, or provider packages. Providers depend on `dsh-academic-source` and `dsh-academic-model`; only `dsh-academic-source` owns the `ctx.academicSource` key.
@@ -82,9 +82,9 @@ Rejected. The tool/workflow package would own provider selection, credentials, r
 
 Rejected. Provider packages would own the shared vocabulary and force downstream packages to learn backend details. Providers register capabilities, not tools.
 
-### Derive the result shape from the OpenAlex provider only
+### Derive the result shape from the arXiv provider only
 
-Rejected. The seam carries the provider-neutral `AcademicSourceWork` pair over the shared model, so Crossref and arXiv providers return the same shape without editing the seam or downstream packages. `dsh-academic-source-openalex`'s translation coincides with that shape but does not define it.
+Rejected. The seam carries the provider-neutral `AcademicSourceWork` pair over the shared model, so additional providers can return the same shape without editing the seam or downstream packages. `dsh-academic-source-arxiv`'s translation coincides with that shape but does not define it.
 
 ### Extend `HarnessError` from `@deepseek-ai/dsh-llm`
 
@@ -94,9 +94,9 @@ Rejected for the academic group. The web/filesystem seams extend it, but those s
 
 **The search schema is deliberately thin.** `query` plus `maxResults` only; provider-neutral filters (`publicationWindow`, work types) are added once a driven consumer and multiple providers can honor them honestly.
 
-**No run statistics or coverage reporting yet.** The seam cannot record `RetrievalRun` or `CoverageSummary` until the shared model publishes those records; failure surfaces as `AcademicSourceError` only.
+**Run statistics remain consumer-owned.** The seam does not record `RetrievalRun` or `CoverageSummary`; the workflow maps search outcomes into those records, while seam failures surface as `AcademicSourceError`.
 
-**No model-facing tool yet.** Until a consumer ships, nothing registers a prompt or schema; the capability is reachable only through `ctx.academicSource.search()`.
+**No standalone search tool.** The Academic workflow calls `ctx.academicSource.search()` through the host research controller.
 
 **Works are single-version.** Each result item is one fresh work identity with one immutable version; cross-record linking and deduplication remain ingestion's responsibility, so a provider search over an overlapping record set returns distinct identities until that increment lands.
 
@@ -104,4 +104,6 @@ Rejected for the academic group. The web/filesystem seams extend it, but those s
 
 - Provider-neutral filters beyond `query`/`maxResults`.
 - A fetch-by-identifier operation (resolving one work by DOI or provider id).
-- The model-facing consumer (tool or workflow) that renders normalized works and maps `AcademicSourceError` at the tool boundary.
+- Multi-provider aggregation and full-text-capable provider additions.
+
+The removed metadata-only providers and their reintroduction condition are recorded in [the provider-removal decision](../simplification/2026-09-16-remove-metadata-only-academic-providers.md).

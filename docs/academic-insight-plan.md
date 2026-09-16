@@ -30,7 +30,7 @@ flowchart TB
     subgraph SOURCE["来源接入层 / Source access"]
         LOCAL["✅ 本地资料 / Local material<br/>ziliao · 用户文件"]
         WEB["✅ 通用 Web / General Web<br/>search · fetch · dsh-web-tools"]
-        SCHOLAR["🔵 学术数据源 / Scholarly providers<br/>OpenAlex · Crossref · arXiv<br/>Semantic Scholar · PubMed"]
+        SCHOLAR["🔵 学术数据源 / Scholarly providers<br/>arXiv · CVF · ACL Anthology · PMLR"]
         FULLTEXT["🔵 全文获取 / Full text<br/>开放 PDF · HTML · 补充材料"]
         MONITOR["◻ 持续监测 / Monitoring<br/>新论文 · 引用变化 · 主题订阅"]
     end
