@@ -244,7 +244,10 @@
       "@deepseek-ai/dsh-academic-evidence": ["./packages/academic/evidence/src"],
       "@deepseek-ai/dsh-academic-ingestion": ["./packages/academic/ingestion/src"],
       "@deepseek-ai/dsh-academic-source": ["./packages/academic/source/src"],
+      "@deepseek-ai/dsh-academic-source-acl": ["./packages/academic/source-acl/src"],
       "@deepseek-ai/dsh-academic-source-arxiv": ["./packages/academic/source-arxiv/src"],
+      "@deepseek-ai/dsh-academic-source-cvf": ["./packages/academic/source-cvf/src"],
+      "@deepseek-ai/dsh-academic-source-pmlr": ["./packages/academic/source-pmlr/src"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

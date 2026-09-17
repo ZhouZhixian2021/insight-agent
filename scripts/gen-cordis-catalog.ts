@@ -243,10 +243,12 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
 export const LINK_MAP: Readonly<Record<string, string>> = {
   AcademicResearchRunRequest: 'academic-insight.md',
   AcademicResearchRunValue: 'academic-insight.md',
+  AcademicSourceFullText: 'academic-source.md',
   AcademicSourceProvider: 'academic-source.md',
   AcademicSourceSearchRequest: 'academic-source.md',
   AcademicSourceSearchResult: 'academic-source.md',
   AcademicSourceWork: 'academic-source.md',
+  WorkVersion: 'academic-insight.md',
   Agent: 'core.md',
   AgentCancelCause: 'core.md',
   AgentFactory: 'core.md',

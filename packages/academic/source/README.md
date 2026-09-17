@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Any academic package can search scholarly providers through `dsh-academic-source` (`ctx.academicSource`) without binding to a vendor's API. Providers plug in as backends, and the service picks one usable provider per search, so callers never track which vendor runs behind a call. The service itself makes no network calls and registers no model-facing tool: a provider must be mounted before search can run, and the retained search uncertainty reasons on the shared `Availability<T>` fields its works carry. One selection policy, one cancellation and error vocabulary, and one configuration surface make "how this harness reaches scholarly sources" a single owner.
+Any academic package can search scholarly providers through `dsh-academic-source` (`ctx.academicSource`) without binding to a vendor's API. Callers can select one provider with `search()` or aggregate every usable provider with `searchAll()`, then resolve ordered full-text candidates from the selected version. The service itself makes no network calls and registers no model-facing tool; providers own transport and source-specific parsing.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ Any academic package can search scholarly providers through `dsh-academic-source
 <a id="use-this-package"></a>
 ## Use this package
 
-A composition that needs scholarly search loads the `dsh-academic-source` service and mounts at least one backend, then calls `ctx.academicSource.search()` directly. The service resolves the backend for each call, so callers never see provider ids unless they configured one.
+A composition that needs scholarly search loads the service and at least one provider. Call `search()` for an explicitly selected backend or `searchAll()` for round-robin aggregation across every usable provider.
 
 Load the service and pin a provider with `searchProvider`, or let a single mounted backend auto-select. The environment variable `$DSH_ACADEMIC_SOURCE_SEARCH_PROVIDER` feeds the same field and is not a separate priority chain.
 
@@ -36,7 +36,7 @@ Load the service and pin a provider with `searchProvider`, or let a single mount
 |---|---|---|
 | `searchProvider` | (unset) | Pinned search provider id; unset auto-selects when exactly one is usable |
 
-`search()` runs one query and returns a list of normalized works; the service enforces `request.maxResults` by truncating `works[]` and setting `truncated`. Calls accept an optional `AbortSignal` forwarded to the provider.
+Both search methods return normalized works and enforce the total `request.maxResults` bound. `resolveFullText()` maps a selected version's source record back to its provider-owned ordered URL candidates. Calls accept an optional `AbortSignal` forwarded to providers.
 
 ### Provider selection
 
@@ -64,12 +64,12 @@ Failures throw `AcademicSourceError` with a stable, machine-routable code; the m
 
 | Export | Role |
 |---|---|
-| `AcademicSourceProvider` | Backend contract: `id`, `available()`, and `search(request, signal)`. |
+| `AcademicSourceProvider` | Backend contract: availability, search, and source-specific full-text URL resolution. |
 | `AcademicSourceSearchRequest` | One scholarly query with an optional `maxResults` bound. |
 | `AcademicSourceSearchResult` | Normalized work/version pairs plus a `truncated` flag. |
 | `AcademicSourceWork` | One provider-neutral `{ academicWork, workVersion }` pair. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
-| `AcademicSourceRuntime` | The `ctx.academicSource` service: registration and selection. |
+| `AcademicSourceRuntime` | Registration, single/all-source search, and full-text resolution. |
 
 The exhaustive signatures live in the [academic source subsystem](../../../docs/subsystems/academic-source.md) reference.
 

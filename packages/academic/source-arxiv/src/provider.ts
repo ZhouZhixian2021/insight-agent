@@ -12,6 +12,7 @@ import type {
   AcademicSourceSearchResult,
 } from '@deepseek-ai/dsh-academic-source'
 import { normalizeArxivWork } from './normalize.ts'
+import { arxivFullTextUrls } from './normalize.ts'
 import { parseArxivFeed } from './parse.ts'
 
 /** Stable id this provider registers under. */
@@ -45,6 +46,10 @@ export class ArxivProvider implements AcademicSourceProvider {
 
   available(): boolean {
     return URL.canParse(this.resolveOptions().baseURL)
+  }
+
+  fullTextUrls(recordId: string): readonly string[] {
+    return arxivFullTextUrls(recordId)
   }
 
   async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {

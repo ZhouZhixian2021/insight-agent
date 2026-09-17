@@ -89,8 +89,8 @@ Run the focused preset and UI suites, then the documentation and diff checks des
 <a id="known-limitations"></a>
 ## Known limitations
 
-- The formal research pass currently searches arXiv only; additional full-text providers are not bundled yet.
-- The preset has no PDF parser or persistent evidence database, so it must label abstract-only analysis and cannot promise passage-level verification.
+- The formal research pass searches arXiv plus the configured CVF, ACL Anthology, and PMLR catalogs; it does not crawl unlisted conference volumes.
+- Evidence is retained only for the current pass; there is no persistent evidence database or reconnect recovery.
 - The report is returned in the conversation or as an explicitly requested workspace file; there is no dedicated research form or report renderer.
 - Long-running orchestration remains single-Agent until a durable evidence model can preserve results across bounded parallel workers.
 - Automatic planning applies only before a new session's first request. Start a new Academic insight session for another research topic rather than expecting a completed session to re-enter automatically.

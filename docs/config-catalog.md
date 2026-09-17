@@ -26,7 +26,25 @@ export interface AcademicSourceRuntimeConfig {
 }
 ```
 
-Source: [`packages/academic/source/src/index.ts:46`](../packages/academic/source/src/index.ts)
+Source: [`packages/academic/source/src/index.ts:55`](../packages/academic/source/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-acl"></a>
+
+## `@deepseek-ai/dsh-academic-source-acl`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Official ACL volume pages searched by this deployment. */
+export interface Config {
+  /** ACL Anthology base used to resolve paper PDFs. */
+  readonly baseURL?: string
+  /** Official ACL Anthology volume pages searched by this provider. */
+  readonly catalogUrls?: string[]
+}
+```
+
+Source: [`packages/academic/source-acl/src/index.ts:18`](../packages/academic/source-acl/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-arxiv"></a>
 
@@ -43,6 +61,40 @@ export interface Config {
 ```
 
 Source: [`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-cvf"></a>
+
+## `@deepseek-ai/dsh-academic-source-cvf`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Official CVF conference pages searched by this deployment. */
+export interface Config {
+  /** Official CVF conference catalog pages searched by this provider. */
+  readonly catalogUrls?: string[]
+}
+```
+
+Source: [`packages/academic/source-cvf/src/index.ts:18`](../packages/academic/source-cvf/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-pmlr"></a>
+
+## `@deepseek-ai/dsh-academic-source-pmlr`
+
+Requires: `academicSource`
+
+```ts config-catalog
+/** Official PMLR volume pages searched by this deployment. */
+export interface Config {
+  /** PMLR base used to resolve paper PDFs. */
+  readonly baseURL?: string
+  /** Official PMLR volume pages searched by this provider. */
+  readonly catalogUrls?: string[]
+}
+```
+
+Source: [`packages/academic/source-pmlr/src/index.ts:18`](../packages/academic/source-pmlr/src/index.ts)
 
 <a id="deepseek-aidsh-acp"></a>
 

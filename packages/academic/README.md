@@ -29,8 +29,11 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | [`analysis`](analysis/README.md) | Evidence input preparation and attributed cross-paper comparisons | no service key |
 | [`eval`](eval/README.md) | Evidence integrity and explicit semantic-review eligibility | no service key |
 | [`report`](report/README.md) | Evaluated Markdown drafts and final-delivery checks | no service key |
-| [`source`](source/README.md) | Scholarly-source access seam: provider registry, selection, and search vocabulary | `academicSource` |
+| [`source`](source/README.md) | Scholarly-source access seam: provider registry, single/all-source search, and full-text resolution | `academicSource` |
 | [`source-arxiv`](source-arxiv/README.md) | arXiv scholarly-source provider searching `/api/query` and normalizing into the shared model | injects `academicSource` |
+| [`source-cvf`](source-cvf/README.md) | CVF Open Access catalog and PDF provider | injects `academicSource` |
+| [`source-acl`](source-acl/README.md) | ACL Anthology catalog and PDF provider | injects `academicSource` |
+| [`source-pmlr`](source-pmlr/README.md) | PMLR catalog and PDF provider | injects `academicSource` |
 | [`ingestion`](ingestion/README.md) | Deduplication and version merging over provider-normalized records | no service key |
 | [`evidence`](evidence/README.md) | Source-locator, evidence-record, and evidence-card construction | no service key |
 

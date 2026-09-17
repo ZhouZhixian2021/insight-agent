@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-任何学术包都可以通过 `dsh-academic-source`（`ctx.academicSource`）搜索学术提供方，而无需绑定任何厂商 API。提供方作为后端接入，服务在每次搜索时挑选一个可用提供方，调用方无需关心背后是哪家厂商。服务本身不发起网络请求，也不注册面向模型的工具：必须先挂载提供方，搜索才能运行；其成果所携带的共享 `Availability<T>` 字段支撑起保留下来的不确定性。一套选择策略、一套取消与错误词汇、一处配置入口，让「这个 harness 如何到达学术来源」只有一个所有者。
+任何学术包都可以通过 `dsh-academic-source`（`ctx.academicSource`）搜索学术 Provider，而无需绑定厂商 API。调用方可以用 `search()` 选择单个 Provider，也可以用 `searchAll()` 聚合所有可用 Provider，再从选中版本解析有序全文候选。服务本身不发起网络请求，也不注册面向模型的工具；网络传输和来源专用解析由 Provider 负责。
 
 ## 目录
 
@@ -24,7 +24,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-需要学术搜索的组合会加载 `dsh-academic-source` 服务并挂载至少一个后端，然后直接调用 `ctx.academicSource.search()`。服务在每次调用时解析后端，因此除非调用方配置了提供方 id，否则永远看不到它。
+需要学术搜索的组合会加载服务并挂载至少一个 Provider。使用 `search()` 运行明确选择的后端，或使用 `searchAll()` 以轮询顺序聚合所有可用 Provider。
 
 加载服务后用 `searchProvider` 固定一个提供方，或让唯一挂载的后端自动选择。环境变量 `$DSH_ACADEMIC_SOURCE_SEARCH_PROVIDER` 填充同一字段，不是独立的优先级链。
 
@@ -36,7 +36,7 @@ kind: "package-reference"
 |---|---|---|
 | `searchProvider` | （未设置） | 固定的搜索提供方 id；未设置时在恰好一个可用时自动选择 |
 
-`search()` 运行一次查询并返回规范化成果列表；服务通过截断 `works[]` 并设置 `truncated` 来强制执行 `request.maxResults`。调用可传入可选的 `AbortSignal`，它会转发给提供方。
+两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
 ### 提供方选择
 
@@ -64,12 +64,12 @@ kind: "package-reference"
 
 | 导出 | 角色 |
 |---|---|
-| `AcademicSourceProvider` | 后端契约：`id`、`available()` 与 `search(request, signal)`。 |
+| `AcademicSourceProvider` | 后端契约：可用性、搜索与来源专用全文 URL 解析。 |
 | `AcademicSourceSearchRequest` | 一次学术查询，带可选 `maxResults` 上限。 |
 | `AcademicSourceSearchResult` | 规范化成果/版本对，外加 `truncated` 标记。 |
 | `AcademicSourceWork` | 一对 provider 中立的 `{ academicWork, workVersion }`。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
-| `AcademicSourceRuntime` | `ctx.academicSource` 服务：注册与选择。 |
+| `AcademicSourceRuntime` | Provider 注册、单源/多源搜索与全文解析。 |
 
 完整签名见[学术来源子系统](../../../docs/subsystems/academic-source.zh.md)参考。
 

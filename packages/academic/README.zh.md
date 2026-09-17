@@ -29,8 +29,11 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 | [`analysis`](analysis/README.zh.md) | 证据输入准备与注明论文归属的跨论文对比 | 无服务键 |
 | [`eval`](eval/README.zh.md) | 证据关联与明确语义审核的交付资格检查 | 无服务键 |
 | [`report`](report/README.zh.md) | 经评测的 Markdown 草稿与最终交付检查 | 无服务键 |
-| [`source`](source/README.zh.md) | 学术来源访问 seam：提供方注册表、选择与搜索词汇 | `academicSource` |
+| [`source`](source/README.zh.md) | 学术来源访问 seam：Provider 注册、单源/多源搜索与全文解析 | `academicSource` |
 | [`source-arxiv`](source-arxiv/README.zh.md) | arXiv 学术来源提供方，搜索 `/api/query` 并规范化进共享模型 | 注入 `academicSource` |
+| [`source-cvf`](source-cvf/README.zh.md) | CVF Open Access 目录与 PDF Provider | 注入 `academicSource` |
+| [`source-acl`](source-acl/README.zh.md) | ACL Anthology 目录与 PDF Provider | 注入 `academicSource` |
+| [`source-pmlr`](source-pmlr/README.zh.md) | PMLR 目录与 PDF Provider | 注入 `academicSource` |
 | [`ingestion`](ingestion/README.zh.md) | 对提供方规范化后的记录进行去重与版本合并 | 无服务键 |
 | [`evidence`](evidence/README.zh.md) | 来源定位、证据记录与证据卡片的构造 | 无服务键 |
 

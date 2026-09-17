@@ -91,8 +91,7 @@
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
 
-    # One Session-backed Academic pass. The first shipped composition pins
-    # arXiv while additional provider acquisition remains source-owned work.
+    # One Session-backed Academic pass across every registered full-text source.
     - id: academic-source
       name: '@deepseek-ai/dsh-academic-source'
       config:
@@ -100,6 +99,29 @@
 
     - id: academic-source-arxiv
       name: '@deepseek-ai/dsh-academic-source-arxiv'
+
+    - id: academic-source-cvf
+      name: '@deepseek-ai/dsh-academic-source-cvf'
+      config:
+        catalogUrls:
+          - https://openaccess.thecvf.com/CVPR2025?day=all
+          - https://openaccess.thecvf.com/ICCV2025?day=all
+          - https://openaccess.thecvf.com/WACV2025?day=all
+
+    - id: academic-source-acl
+      name: '@deepseek-ai/dsh-academic-source-acl'
+      config:
+        catalogUrls:
+          - https://aclanthology.org/2025.acl-long/
+          - https://aclanthology.org/2025.emnlp-main/
+          - https://aclanthology.org/2025.naacl-long/
+
+    - id: academic-source-pmlr
+      name: '@deepseek-ai/dsh-academic-source-pmlr'
+      config:
+        catalogUrls:
+          - https://proceedings.mlr.press/v258/
+          - https://proceedings.mlr.press/v267/
 
     - id: academic-research-controller
       name: '@deepseek-ai/dsh-api-academic-research-controller'

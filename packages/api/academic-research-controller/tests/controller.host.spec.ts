@@ -38,8 +38,15 @@ function harness(options: { busy?: boolean; header?: boolean } = {}) {
   const dispose = (): void => {}
   ctx.provide('typert', { lookups: { configure: () => dispose }, contexts: { configureHost: () => dispose } } as never)
   const search = vi.fn()
+  const resolveFullText = vi.fn((version: { sourceRecords: readonly { provider: string; recordId: string }[] }) => {
+    const record = version.sourceRecords[0]
+    return record === undefined ? null : {
+      sourceProvider: record.provider,
+      urls: [`https://arxiv.org/html/${record.recordId}`, `https://arxiv.org/pdf/${record.recordId}`],
+    }
+  })
   const fetch = vi.fn()
-  ctx.provide('academicSource', { search } as never)
+  ctx.provide('academicSource', { searchAll: search, resolveFullText } as never)
   ctx.provide('web', { fetch } as never)
   const sessionId = SessionId('academic-session')
   const signal = new AbortController().signal
