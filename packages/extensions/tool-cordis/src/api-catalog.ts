@@ -90,7 +90,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
         description: 'Run one multi-source research pass while the addressed Agent is idle.',
         parameters: [{ name: 'request', description: 'search query, disclosure, and the Session containing the approved brief plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
-        returns: 'completed or cancelled draft data with its durable Session identity.',
+        returns: 'completed or cancelled draft data with its observed retrieval run and durable Session identity.',
       },
     ],
   },
@@ -3551,7 +3551,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunValue',
-    declaration: 'export interface AcademicResearchRunValue {\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
   },
   {
     name: 'AcademicSourceFullText',
@@ -5036,6 +5036,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ResumeAgentOptions',
     declaration: 'export interface ResumeAgentOptions {\n    readonly resumeSessionId: SessionId;\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
+  },
+  {
+    name: 'RetrievalRun',
+    declaration: 'export type RetrievalRun = RetrievalRunData & ({\n    readonly stage: \'planning\' | \'awaiting_approval\' | \'running\';\n    readonly status: null;\n    readonly completedAt: null;\n} | {\n    readonly stage: \'completed\' | \'failed\' | \'cancelled\';\n    readonly status: BatchStatus;\n    readonly completedAt: string;\n});',
   },
   {
     name: 'RunnerFailureRule',

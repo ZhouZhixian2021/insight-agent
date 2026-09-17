@@ -5,8 +5,8 @@
 | 项目 | 内容 |
 |---|---|
 | 负责人 | A 维护交接规则，B、C 分别实现自己的模块 |
-| 基线 | `master` 提交 `2a938ba` |
-| 状态 | 已确认的下一轮开发输入；源码接口仍以各自 PR 合并后的声明为准 |
+| 基线 | B 的多来源批次已合并至 `master` 提交 `5633a9a` |
+| 状态 | B 的来源批次与 A 的工作流/Remote 接口已实现；C 接入真实返回 |
 | 范围 | 多来源部分成功、覆盖统计、Remote 返回值与主 Web 展示 |
 
 本交接复用 `BatchResult<T>`、`ProviderFailure`、`CoverageSummary` 和 `RetrievalRun`，不建立新的失败分类、覆盖统计或运行状态体系。B 生产来源事实，A 汇总工作流事实，C 展示浏览器安全结果。
@@ -49,7 +49,7 @@ B 负责把可预期的网络、限流、超时、上游和解析错误转换为
 
 ## C：Web 运行结果
 
-C 按 `AcademicResearchRunValue` 的目标字段开发主 Web。A 后续在现有返回值上增加必有的 `retrievalRun`；其字段与共享 `RetrievalRun` 一致并保持 JSON 安全。C 不从 `papers` 推断 Provider、失败数量或覆盖范围。
+C 按 `AcademicResearchRunValue` 的正式字段开发主 Web。返回值包含必有的 `retrievalRun`；其字段与共享 `RetrievalRun` 一致并保持 JSON 安全。C 不从 `papers` 推断 Provider、失败数量或覆盖范围。
 
 ```ts
 interface AcademicResearchRunValue {
@@ -71,12 +71,12 @@ interface AcademicResearchRunValue {
 - `report.evaluation.status` 独立表示报告质量。`completed` 或检索 `success` 都不等于人工审核通过。
 - `coverageSummary.providerBreakdown` 为 `null`；页面不得渲染虚构的逐来源计数。
 
-固定 Remote 返回见 [`c-academic-research-run.sample.json`](../interface-samples/academic-model-v1/c-academic-research-run.sample.json)。C 可以先用该样例完成运行中、完成、取消、部分成功、失败、报告质量、证据和限制展示。C 不修改 `academic-model`、`academic-source`、`academic-workflow` 或 Controller 类型；正式类型差异由 A 在集成时处理。
+固定 Remote 返回见 [`c-academic-research-run.sample.json`](../interface-samples/academic-model-v1/c-academic-research-run.sample.json)。C 使用该样例完成运行中、完成、取消、部分成功、失败、报告质量、证据和限制展示，再切换到 `ctx.remote.academicResearch.run` 的真实返回。C 不修改 `academic-model`、`academic-source`、`academic-workflow` 或 Controller 类型；接口差异交给 A 处理。
 
-## A：后续集成
+## A：运行汇总与 Remote 投影
 
-B 的批次结果合并后，A 在工作流中构造 `RetrievalRun` 和 `CoverageSummary`，把来源失败与全文或抽取失败合并为运行失败列表，并为 Controller 增加 `retrievalRun` 投影。A 负责更新正式接口测试和文档，再用 B 的真实结果替换 C 的固定夹具。
+A 的工作流直接消费 B 的 `batch.items`、`batch.failures`、Provider、发现数量、截断与限制，构造终态 `RetrievalRun` 和 `CoverageSummary`。来源失败与全文或抽取失败进入统一运行失败列表，Controller 在 `AcademicResearchRunValue` 中返回 JSON 安全的 `retrievalRun`。正式接口测试覆盖成功、部分成功、全部来源失败、论文操作失败、截断与取消。
 
-A 不在本轮加入多轮搜索、自动重试、持久恢复、进度流、逐来源统计或长论文分段。三方合并顺序为：A 的交接材料 → B、C 并行实现 → A 集成与真实 Web 验收。
+A 不在本轮加入多轮搜索、自动重试、持久恢复、进度流、逐来源统计或长论文分段。C 完成页面后，A 使用真实 Remote 返回组织最终 Web 验收。
 
 返回[学术洞察模块总览](academic-module-ownership.md)。

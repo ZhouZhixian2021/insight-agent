@@ -30,11 +30,11 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标记。调用顺序固定为检索 → 去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
-调用方提供 search、selectPapers、fetcher、generator 和 now。search 可适配 ctx.academicSource.search，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿、预印本和数量规则；生成器根据获取后的正文复核自然语言纳入与排除规则。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
+调用方提供 search、selectPapers、fetcher、generator 和 now。search 返回 `ctx.academicSource.searchAll()` 的 `AcademicSourceSearchBatchResult`，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿和预印本规则；其 `PaperSelectionResult` 记录批准的纳入数量上限是否遗漏了另一篇符合条件的论文。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 
-查询结果受 maximumCandidateWorks 与请求上限约束，选择受 maximumIncludedWorks 约束；拒绝未批准、重复论文、未知版本和撤稿等非法选择。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。报告披露排除、暂停、失败及截断，不把不完整结果标成完整覆盖。
+查询结果受 maximumCandidateWorks 与请求上限约束，选择受 maximumIncludedWorks 约束；拒绝未批准、重复论文、未知版本和撤稿等非法选择。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。终态 `RetrievalRun` 合并来源与论文失败、去重及纳入成果数、成功取得全文数、实际调用的 Provider、执行的查询和明确的截断原因。报告披露相同的不完整覆盖观察，不把结果标成完整覆盖。
 
-输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成 papers 和 failures，不生成报告；搜索失败向调用方抛出。模型与网络的持久记录、期限取消信号均由调用方负责。
+输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。模型与网络的持久记录、期限取消信号均由调用方负责。
 
 自动多轮检索、重试、跨轮索引恢复、停止条件的饱和判定和达到证据量后的自动停止留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用本工作流。
 
@@ -50,7 +50,7 @@ runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标�
 
 返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
-应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, input, adapters, signal })`。这个稳定入口会在检索或全文获取前检查准确模型路由；没有指定推理强度时默认使用 `low`，调用方明确指定的值保持不变。不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId`，供调用方定位持久化模型记录。
+应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, input, adapters, signal })`。这个稳定入口会在检索或全文获取前检查准确模型路由；没有指定推理强度时默认使用 `low`，调用方明确指定的值保持不变。不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
 
 `runModelResearchDraft(ctx, session, config, input, adapters, signal)` 继续作为较底层的组合入口。adapters 提供 search、selectPapers、fetcher 和 now；它绑定模型生成器，沿用既有流水线连接 B 的解析/证据和 C 的分析/评测草稿。两个入口都不拥有 Session 生命周期。Brief 批准、选文策略、期限、报告保存和发布仍由调用方负责。
 
@@ -88,7 +88,7 @@ DSH 现有消息估算器计算完整包装后的输入。输入估算加已解�
 
 ## Known Limitations and Deferred Work
 
-- 该库提供单轮草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果，尚不支持完整工作流恢复或证据/卡片身份持久化。长论文分批、自动重试及最终语义审核留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
+- 该库提供单轮草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果；返回的 RetrievalRun、证据/卡片身份及完整工作流状态尚未持久化以供恢复。长论文分批、自动重试及最终语义审核留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
 
 <a id="dev-note"></a>
 ### 开发备注

@@ -2,14 +2,14 @@
 
 ## 基线与范围
 
-2026-09-17 核对远程 master 为 2a938ba，本地个人分支 dev/zhouzhixian2021 已包含相同提交。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索，以及 C 的最小分析、评测、报告和独立渲染器均已合并。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供单轮检索到评测草稿的库级调用链，[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief 并调用该链路。主 Web 研究页面、来源部分失败、覆盖记录、完整工作流恢复及正式 Web 真实模型验收尚未完成。
+2026-09-17 以远程 master 提交 5633a9a 为集成基线。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索和部分成功批次，以及 C 的最小分析、评测、报告和独立渲染器均已接入。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供单轮检索到评测草稿的库级调用链，并生成 RetrievalRun 与 CoverageSummary；[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief，调用该链路并返回 JSON 安全的检索运行。主 Web 研究页面、完整工作流恢复及正式 Web 真实模型验收尚未完成。
 
 ## 调用顺序
 
 | 顺序 | 已有入口与归属 | 输入 → 输出 | A 需要接入的工作 |
 |---|---|---|---|
 | 1. 研究批准 | [model](../../packages/academic/model/src/index.ts)：isExecutableResearchBrief | ResearchBrief → 当前版本是否获准执行 | 从用户需求形成 Brief，记录批准与版本；执行绑定获准版本，修改需求后重新批准。 |
-| 2. 检索 | [source](../../packages/academic/source/src/index.ts)：ctx.academicSource.search | query、maxResults、signal → works、truncated | 将研究问题转换为明确查询；选择提供方，记录实际调用与失败。当前一次调用选择一个提供方，多来源执行由 A 编排。 |
+| 2. 检索 | [source](../../packages/academic/source/src/index.ts)：ctx.academicSource.searchAll | query、maxResults、signal → 多来源 BatchResult、Provider、发现数、截断与限制 | 将研究问题转换为明确查询；消费 B 的来源观察，不从论文数组推断调用与失败。 |
 | 3. 去重与版本归并 | [ingestion](../../packages/academic/ingestion/src/index.ts)：createIngestIndex、ingestWorks | 既有索引、论文与版本对 → index、works、versions、audit | 保留跨批次索引和归并记录；后续使用归并后的身份，不使用提供方临时身份。模糊重复按审计结果处理。 |
 | 4. 取得可定位全文 | [evidence](../../packages/academic/evidence/src/fetch-fulltext.ts)：fetchAcademicFullText | 论文版本、来源信息、有序 urls、fetcher → EvidenceExtractionInput | 从版本资料构造候选地址，适配 ctx.web.fetch，传递取消信号。HTML 优先是候选排列策略，函数按输入顺序尝试。 |
 | 5. 抽取单篇证据 | [evidence](../../packages/academic/evidence/src/extract.ts)：extractEvidenceFromContent | 可定位片段、EvidenceGenerator → sourceLocators、evidenceRecords、evidenceCard | 提供真实模型生成器，校验模型 JSON，记录模型可见输入和结果；原文子串验证不能替代语义审核。 |
@@ -22,12 +22,12 @@
 
 ## 实施前需要解决的接口衔接
 
-第一项采用[全文内容与论文版本交接规则](academic-content-version-handoff.md)的最小接法：A 在首次解析后补齐当前版本的内存副本，沿用现有 B、C 接口；已有哈希冲突时拒绝覆盖。单篇交接已由 [extractPaperEvidence](../../packages/academic/workflow/src/index.ts) 实现，完整批次与持久化尚未接入。
+第一项采用[全文内容与论文版本交接规则](academic-content-version-handoff.md)的最小接法：A 在首次解析后补齐当前版本的内存副本，沿用现有 B、C 接口；已有哈希冲突时拒绝覆盖。单篇交接与单轮批次已由 [runResearchDraft](../../packages/academic/workflow/src/pipeline.ts) 接入，运行、证据与卡片持久化尚未接入。
 
 1. **版本与哈希**：提供方返回的版本可能尚未提取 contentHash，全文解析则产生实际内容哈希。A 与 B 需明确版本记录、EvidenceRecord、SourceLocator 如何指向同一份内容，以及内容变化如何产生后继记录；不能为通过评测而覆盖历史版本或制造哈希。
 2. **生成器与数据校验**：B 已提供 EvidenceGenerator 接口，实际模型适配、JSON 解析校验与模型输入的会话记录由 A 接入；这是实际证据生产的必要前置工作。
-3. **失败与降级**：全文函数全部候选失败时抛出错误，不会自动降级摘要。A 根据批准的最低证据要求决定是否使用摘要，并记录 ProviderFailure；不能把摘要标为全文，也不能清空其他成功论文。取消应停止后续调用并保留完成结果。
-4. **统计与报告**：CoverageSummary、BatchResult、RetrievalRun 已有共享表示，但 C 的 EvaluationInput 当前不接收 CoverageSummary。A 记录真实运行统计、纳入筛选与截断原因；需要报告展示的统计由 A、C 明确传递接口，不能声称当前评测已验证完整检索覆盖。
+3. **失败与降级**：全文函数全部候选失败时不自动降级摘要。A 把来源、全文和抽取失败记录进 RetrievalRun，保留其他成功论文；取消停止后续调用并保留已完成结果。摘要降级继续留待后续。
+4. **统计与报告**：A 已用 CoverageSummary 和 RetrievalRun 记录真实运行统计、纳入筛选与截断原因，并通过 Remote 返回给 C。C 的 EvaluationInput 当前不接收 CoverageSummary，因此报告评测不能声称已验证完整检索覆盖。
 5. **输入限制执行**：查询参数目前只有 query 和 maxResults；时间窗口、范围、停止条件等 Brief 要求不能假定提供方已全部执行。A 列出工作流必须检查的规则，并把无法满足的要求显式拒绝或披露。
 6. **恢复与审核身份**：IngestIndex 包含 Map，不能直接 JSON.stringify 后当作可恢复状态。A6 需定义编码、解析校验和版本策略；语义审核的可信来源、适用证据及重新审核条件需明确。
 
@@ -37,7 +37,7 @@
 
 ### B 向 A 提供的搜索批次
 
-B 后续为多来源搜索结果增加一个来源包拥有的批次结构，字段如下。这个结构复用 `BatchResult<AcademicSourceWork>`，不进入 `academic-model`，因为 `AcademicSourceWork` 属于来源能力。
+B 为多来源搜索结果提供来源包拥有的批次结构，字段如下。这个结构复用 `BatchResult<AcademicSourceWork>`，不进入 `academic-model`，因为 `AcademicSourceWork` 属于来源能力。
 
 | 字段 | 含义 |
 |---|---|
@@ -53,15 +53,15 @@ B 后续为多来源搜索结果增加一个来源包拥有的批次结构，字
 
 A 在工作流结束或取消时建立一条 `RetrievalRun`。`queries` 保存实际执行的查询，`providers` 直接采用 B 的观察，`failures` 合并来源搜索失败和工作流观察到的全文获取或抽取失败。全文与抽取失败必须保留 `affectedWorkVersionId`；日志和浏览器返回不复制凭据或未经清理的异常文本。
 
-`CoverageSummary` 的计数使用以下统一口径：`discoveredRecords` 取 B 的搜索观察；`deduplicatedWorks` 取摄取后的成果数；`includedWorks` 只计算实际进入分析的成果；`availableFulltextWorks` 计算已成功取得全文的成果；当前流程不降级摘要或元数据，因此 `abstractOnlyWorks` 和 `metadataOnlyWorks` 为零；`failedOperations` 等于运行记录中的失败项数。来源截断、来源失败、候选或纳入数量上限都会令覆盖 `truncated` 为 true，并在 `limitations` 中说明原因。
+`CoverageSummary` 的计数使用以下统一口径：`discoveredRecords` 取 B 的搜索观察；`deduplicatedWorks` 取摄取后的成果数；`includedWorks` 只计算实际进入分析的成果；`availableFulltextWorks` 计算已成功取得全文的成果；当前流程不降级摘要或元数据，因此 `abstractOnlyWorks` 和 `metadataOnlyWorks` 为零；`failedOperations` 等于运行记录中的失败项数。来源声明的覆盖限制、来源截断或失败、候选或纳入数量上限都会令覆盖 `truncated` 为 true，并在 `limitations` 中说明原因。
 
 终态 `status` 采用 A5 批处理语义：没有失败为 `success`，存在成功纳入成果和失败为 `partial_success`，没有成功纳入成果且存在失败为 `failed`。正常零结果仍是 `success`。取消通过 `stage: cancelled` 表达，并保留取消前的成功项和失败；`status` 仍只描述已返回成果与失败的组合。
 
 ### A 向 C 提供的浏览器结果
 
-`AcademicResearchRunValue` 后续增加一份 JSON 安全的检索运行投影，至少包含运行 ID、阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 使用该投影显示来源失败、覆盖不足和截断原因，不从论文数组反推调用了哪些 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
+`AcademicResearchRunValue` 包含必有且 JSON 安全的 `retrievalRun`，提供运行 ID、阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 使用该投影显示来源失败、覆盖不足和截断原因，不从论文数组反推调用了哪些 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
 
-本次先固定上述交接，不开始逐来源统计、自动重试、多轮检索、持久恢复或进度流。B 完成搜索批次后，A 再接入 `RetrievalRun`；C 可以同时使用固定投影夹具开发页面，最终以 A 合并的 Remote 类型为准。
+本轮不开始逐来源统计、自动重试、多轮检索、持久恢复或进度流。B 的搜索批次和 A 的 `RetrievalRun` 已接通；C 使用固定投影夹具开发页面，并以 A 的正式 Remote 类型完成真实返回接入。
 
 B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多来源研究运行交接说明](academic-multi-source-run-handoff.md)。
 

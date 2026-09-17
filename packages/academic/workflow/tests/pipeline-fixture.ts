@@ -1,6 +1,7 @@
 /** Shared synthetic research input; external search and HTTP responses are scripted. */
 import { vi } from 'vitest'
-import { createAcademicWorkId, createWorkVersionId, createResearchBriefId, type AcademicWork, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import { createAcademicWorkId, createBatchResult, createWorkVersionId, createResearchBriefId,
+  type AcademicWork, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { DraftPipelineInput, DraftPipelineAdapters } from '../src/index.ts'
 
@@ -30,10 +31,18 @@ export function draftFixture() {
     approval: { status: 'approved', reviewedBy: 'fixture', reviewedAt: '2026-09-15T00:00:00Z', approvedBriefVersion: 1, comment: null },
   } }
   const adapters: { -readonly [K in keyof DraftPipelineAdapters]: DraftPipelineAdapters[K] } = {
-    search: vi.fn<DraftPipelineAdapters['search']>(async () => { events.push('search'); return { works: records, truncated: false } }),
-    selectPapers: vi.fn<DraftPipelineAdapters['selectPapers']>((ingested) => { events.push('select'); return ingested.versions.map(version => ({
-      workVersionId: version.workVersionId, urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`],
-      sourceProvider: 'fixture', extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })) }),
+    search: vi.fn<DraftPipelineAdapters['search']>(async (request) => { events.push('search')
+      const works = request.maxResults === undefined ? records : records.slice(0, request.maxResults)
+      const truncated = works.length < records.length
+      const batch = createBatchResult(works, [])
+      return { works: batch.items, truncated, providers: ['fixture'], discoveredRecords: records.length, batch,
+        limitations: truncated ? [`The aggregate result bound retained ${works.length} of ${records.length} discovered records.`] : [] } }),
+    selectPapers: vi.fn<DraftPipelineAdapters['selectPapers']>((ingested) => { events.push('select'); return {
+      papers: ingested.versions.map(version => ({
+        workVersionId: version.workVersionId, urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`],
+        sourceProvider: 'fixture', extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
+      truncated: false,
+    } }),
     fetcher: vi.fn<DraftPipelineAdapters['fetcher']>(async (url) => { events.push(`fetch:${url.at(-1)}`); return { url, statusCode: 200, truncated: false,
       body: { kind: 'html', content: '<article><h2>Methods</h2><p>Uses reranking.</p></article>' } } }),
     generator: vi.fn<DraftPipelineAdapters['generator']>(async () => { events.push('extract'); return {

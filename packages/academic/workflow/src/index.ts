@@ -12,4 +12,5 @@ export { runAcademicResearchDraft } from './entry.ts'
 export { selectResearchPapers } from './selection.ts'
 export type { PaperCandidateResolver } from './selection.ts'
 export type { AcademicResearchDraftRequest, AcademicResearchDraftResult } from './entry.ts'
-export type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, SelectedPaper, PaperProcessingFailure } from './pipeline-types.ts'
+export type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, PaperSelectionResult, SelectedPaper,
+  PaperProcessingFailure } from './pipeline-types.ts'

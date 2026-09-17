@@ -21,7 +21,7 @@ export interface AcademicResearchDraftRequest {
   readonly signal?: AbortSignal
 }
 
-/** One pipeline result together with the Session that owns its model records. */
+/** One pipeline and retrieval result together with the Session that owns its model records. */
 export interface AcademicResearchDraftResult extends DraftPipelineResult {
   readonly sessionId: SessionId
 }
@@ -31,7 +31,7 @@ export interface AcademicResearchDraftResult extends DraftPipelineResult {
  * Model capability is checked before search or acquisition begins. An omitted
  * reasoning effort becomes `low`; an explicit caller choice is preserved.
  * @param request - complete application-owned dependencies and research input.
- * @returns the draft result and durable model-record Session identity.
+ * @returns the draft and terminal retrieval result with its durable model-record Session identity.
  * @throws when the model route or requested reasoning effort is unsupported,
  * or when the underlying pipeline cannot safely continue.
  */
