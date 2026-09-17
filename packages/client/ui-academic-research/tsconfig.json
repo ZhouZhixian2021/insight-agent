@@ -8,6 +8,8 @@
     "src"
   ],
   "references": [
+    { "path": "../ui-session" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
     {
       "path": "../../../vendor/cordis"
     },

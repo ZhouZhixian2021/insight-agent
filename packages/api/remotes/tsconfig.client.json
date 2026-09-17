@@ -11,6 +11,7 @@
     "src/types.ts"
   ],
   "references": [
+    { "path": "../academic-research-controller" },
     {
       "path": "../../../vendor/cordis"
     },

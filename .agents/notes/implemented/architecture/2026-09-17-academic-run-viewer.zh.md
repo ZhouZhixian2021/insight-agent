@@ -1,27 +1,29 @@
-# Agent Note：固定数据学术运行页面
+# Agent Note：基于真实会话的学术运行页面
 
-状态：已实现
+Status: implemented
 
 [English](2026-09-17-academic-run-viewer.md) | 中文
 
 ## 问题
 
-Academic Remote 尚未提供 A 交接约定的 retrievalRun。请求完成、检索成功和报告审核描述不同事实；只有报告的页面无法呈现部分失败和覆盖限制。
+请求结束、检索成功和报告审核通过是不同事实。Web 入口必须展示正式 AcademicResearchRunValue，不伪造进度，也不混用不同会话的结果。
 
 ## 决策
 
-[客户端插件](../../../../packages/client/ui-academic-research/README.zh.md)在 sidebar.footer.action 注册明确标注合成数据的样例入口。局部 RunValue 组合既有 Remote 结果和共享 RetrievalRun，不修改生产方类型。源码夹具复制交接文件的 expectedValue，一致性测试检测漂移。
+[客户端插件](../../../../packages/client/ui-academic-research/README.zh.md)在 sidebar.footer.action 注册研究表单。框架 useSessions 选择器提供当前已保存会话。表单通过注入回调提交去除首尾空格的查询、synthetic: false 和 AbortSignal；[Remote 集合](../../../../packages/api/remotes/README.zh.md)挂载生成的 Academic 贡献。Controller 负责已审核 Brief 与模型前置条件。
 
-面板接收调用方提供的视图数据和取消回调。样例入口仅切换本地固定场景，不调用 Remote、不模拟进度计时器、不调用模型。运行中只展示等待和取消；返回后分别展示生命周期、检索状态和报告质量，直接读取覆盖统计，分别保留来源和论文处理失败，并在取消后保留已返回成果但不展示报告。providerBreakdown 为 null 时显示未提供。
+每个已挂载的会话表单拥有一个 AbortController。running、error、settled 视图由请求结算驱动。关闭、切换会话或卸载会中止操作，请求身份阻止卸载后的迟到更新。用户取消时中止传输并等待结算；收到最终值则保留返回事实，取消后未收到值则明确提示缺少服务器结果，不伪造报告。样例与场景派生仅保留在测试中。
+
+结果页分别展示运行、检索和质量状态，直接读取覆盖统计，区分来源失败与论文失败。providerBreakdown 为 null 时明确提示不可用。证据导航、搜索与 Markdown 下载消费返回报告。
 
 ## 考虑过的替代方案
 
-调用当前 Remote 后从 papers 补算覆盖统计会虚构来源事实。由 C 修改 Controller 类型会越过生产方职责。两者均留给 A 集成；正式结果符合交接结构后可移除局部适配。
+与 RetrievalRun 临时取交集会重复正式结果已有的字段。生产入口的场景选择器会用虚构结果代替真实运行。将 abort 当作服务器完成会宣称传输尚未返回的事实。
 
 ## 影响
 
-样例页面不提供 Session 持久化、服务器取消或语义审核操作。原独立报告渲染器仍为内部工具。[先前报告基线](2026-09-14-academic-report-slice.zh.md)继续负责分析和评测语义；本决策补充 Web slot 和运行结果展示。
+结果只保留在组件内，关闭或切换会话后清除。入口不提供进度流、自动重试、恢复或审核操作。[报告基线](2026-09-14-academic-report-slice.zh.md)继续负责分析和评测语义。
 
 ## 验证
 
-模块测试覆盖交接一致性、状态分离、空数据与不完整证据、安全文字、筛选、原文 Markdown 下载及插件卸载。无密钥浏览器测试启动实际 Web Loader 组合，操作真实侧栏入口、证据及样例取消。Controller 生成的校验代码运行时需要 zod；补齐遗漏依赖，不改变 Controller 类型或业务行为。
+模块测试覆盖返回结果、结构化错误、取消、重复提交、关闭、会话切换与迟到结算。无密钥浏览器测试启动实际 Web 组合，创建真实会话，经 Remote 验证 Controller 的前置条件错误，不调用模型。该测试验证传输接入，不代表真实来源的完整研究基准。

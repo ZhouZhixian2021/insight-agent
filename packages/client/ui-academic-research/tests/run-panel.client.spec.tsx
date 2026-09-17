@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { Blob as NodeBlob } from 'node:buffer'
 import { RunPanel, downloadMarkdown, type RunPanelProps } from '../src/client/RunPanel.tsx'
-import { ResearchEntry, type ResearchEntryProps } from '../src/client/ResearchEntry.tsx'
-import { sampleRun } from '../src/client/run-sample.ts'
-import { scenarioView, scenarios } from '../src/client/run-scenarios.ts'
+import { sampleRun } from './run-sample.ts'
+import { scenarioView, scenarios } from './run-scenarios.client.ts'
 import { zh, en, type RunKey } from '../src/client/run-locales.ts'
 
 const t: RunPanelProps['t'] = key => zh[key as RunKey]
@@ -48,7 +47,7 @@ describe('fixed research result presentation', () => {
     render(<RunPanel view={{ phase: 'running' }} onCancel={cancel} t={t} />)
     expect(screen.getByRole('status').textContent).toBe('研究运行中')
     expect(screen.queryByText('覆盖统计')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: '取消样例运行' }))
+    fireEvent.click(screen.getByRole('button', { name: '取消研究' }))
     expect(cancel).toHaveBeenCalledOnce()
   })
 
@@ -101,18 +100,6 @@ describe('fixed research result presentation', () => {
     expect(await objects[0]!.text()).toBe('fixed markdown')
     vi.runAllTimers()
     expect(revoke).toHaveBeenCalledWith('blob:test')
-  })
-
-  it('opens the sample dialog, selects a pending case, cancels locally and closes', () => {
-    render(<ResearchEntry {...{ t, wide: true } as ResearchEntryProps} />)
-    fireEvent.click(screen.getByRole('button', { name: '学术研究样例' }))
-    const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByText(/合成固定样例/)).toBeTruthy()
-    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'running' } })
-    fireEvent.click(within(dialog).getByRole('button', { name: '取消样例运行' }))
-    expect(within(dialog).getAllByText('已取消').length).toBeGreaterThan(0)
-    fireEvent.click(within(dialog).getByRole('button', { name: '关闭' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('preserves missing evidence, absent excerpts, non-retryable failures and paper-level failures', () => {

@@ -1,11 +1,14 @@
 /** Academic sample viewer copy; producer text remains verbatim. */
 export const zh = {
-  entry: '学术研究样例', title: '研究运行结果', close: '关闭',
-  disclosure: '合成固定样例 · 未连接真实研究请求。切换场景只改变本地展示。',
+  entry: '学术研究', title: '研究运行结果', close: '关闭',
+  disclosure: '使用当前会话发起研究；关闭页面或切换会话会取消当前请求。',
+  noSession: '请先创建并选择一个已保存的会话。', session: '当前会话', query: '研究查询', start: '开始研究',
+  prerequisite: '请先在当前会话选择模型并完成 Research Brief 的 Plan 审核。研究会调用配置的来源和模型。',
+  cancelling: '正在取消…', cancelledRequest: '请求已取消；未收到服务器最终结果。', requestFailed: '研究请求失败。',
   scenario: '样例场景', running: '研究运行中', cancelled: '已取消', completed: '已完成',
   partial_success: '部分成功', success: '成功', failed: '失败', error: '请求异常',
   ready: '可交付', needs_review: '待审核', blocked: '阻止交付',
-  cancel: '取消样例运行', waiting: '等待结果；当前接口没有服务器进度百分比或阶段流。',
+  cancel: '取消研究', waiting: '等待结果；当前接口没有服务器进度百分比或阶段流。',
   runStatus: '运行状态', retrievalStatus: '检索结果', quality: '报告质量',
   reviewNotice: '运行完成、检索成功和审核通过是不同状态。质量结论以报告评测为准，不据此宣称人工审核通过。',
   noReport: '未返回报告', coverage: '覆盖统计', providers: '实际调用来源',
@@ -36,12 +39,15 @@ export type RunKey = keyof typeof zh
 
 /** English copy with the identical key set. */
 export const en: Record<RunKey, string> = {
-  entry: 'Academic research samples', title: 'Research run results', close: 'Close',
-  disclosure: 'Synthetic fixed samples · No live research request. Scenario selection only changes this local view.',
+  entry: 'Academic research', title: 'Research run results', close: 'Close',
+  disclosure: 'Run research in the current session. Closing this dialog or switching sessions cancels its request.',
+  noSession: 'Create and select a saved session first.', session: 'Current session', query: 'Research query', start: 'Start research',
+  prerequisite: 'Select a model and approve the Research Brief plan in this session first. Research uses the configured sources and model.',
+  cancelling: 'Cancelling…', cancelledRequest: 'Request cancelled; no final server result was received.', requestFailed: 'Research request failed.',
   scenario: 'Sample scenario', running: 'Research running', cancelled: 'Cancelled', completed: 'Completed',
   partial_success: 'Partial success', success: 'Success', failed: 'Failed', error: 'Request error',
   ready: 'Ready for delivery', needs_review: 'Review required', blocked: 'Delivery blocked',
-  cancel: 'Cancel sample run', waiting: 'Waiting for results; no server progress percentage or stage stream is available.',
+  cancel: 'Cancel research', waiting: 'Waiting for results; no server progress percentage or stage stream is available.',
   runStatus: 'Run status', retrievalStatus: 'Retrieval result', quality: 'Report quality',
   reviewNotice: 'Completion, retrieval success and approval are separate. Report evaluation does not by itself establish human approval.',
   noReport: 'No report returned', coverage: 'Coverage', providers: 'Providers called',

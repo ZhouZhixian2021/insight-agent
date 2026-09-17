@@ -828,6 +828,10 @@ importers:
         version: link:../../interaction/user-approval
 
   packages/api/academic-research-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -859,10 +863,6 @@ importers:
       '@deepseek-ai/dsh-web':
         specifier: workspace:^
         version: link:../../web/web
-    dependencies:
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
 
   packages/api/gateway:
     dependencies:
@@ -925,6 +925,9 @@ importers:
       '@deepseek-ai/dsh-agent-presets':
         specifier: workspace:^
         version: link:../../preset/agent-presets
+      '@deepseek-ai/dsh-api-academic-research-controller':
+        specifier: workspace:^
+        version: link:../academic-research-controller
       '@deepseek-ai/dsh-api-gateway':
         specifier: workspace:^
         version: link:../gateway
@@ -2147,6 +2150,9 @@ importers:
       '@deepseek-ai/dsh-api-academic-research-controller':
         specifier: workspace:^
         version: link:../../api/academic-research-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:^
+        version: link:../../api/remotes
       '@deepseek-ai/dsh-client-locale':
         specifier: workspace:^
         version: link:../locale
@@ -2156,6 +2162,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-renderer':
         specifier: workspace:^
         version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:^
+        version: link:../ui-session
       '@deepseek-ai/dsh-client-ui-sidebar':
         specifier: workspace:^
         version: link:../ui-sidebar
