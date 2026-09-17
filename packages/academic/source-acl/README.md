@@ -47,7 +47,7 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The provider reuses the shared catalog fetch, filtering, and normalization helper. Its parser recognizes Anthology paper ids and titles; the provider appends `.pdf` to the validated record id. Deduplication and body parsing remain in `academic-ingestion` and `academic-evidence`.
+The provider reuses the shared catalog fetch, filtering, and normalization helper. Its parser recognizes Anthology paper ids and titles; the provider appends `.pdf` to the validated record id. The provider declares its catalog-only coverage through the `limitations` field, surfaced by `searchAll()`. Deduplication and body parsing remain in `academic-ingestion` and `academic-evidence`.
 
 </details>
 

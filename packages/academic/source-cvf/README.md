@@ -46,7 +46,7 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The provider fetches configured pages through the shared catalog helper. Its parser extracts title links and author/venue text; the provider converts each `/html/*.html` record URL to the corresponding `/papers/*.pdf` URL. Deduplication and body parsing remain in `academic-ingestion` and `academic-evidence`.
+The provider fetches configured pages through the shared catalog helper. Its parser extracts title links and author/venue text; the provider converts each `/html/*.html` record URL to the corresponding `/papers/*.pdf` URL. The provider declares its catalog-only coverage through the `limitations` field, surfaced by `searchAll()`. Deduplication and body parsing remain in `academic-ingestion` and `academic-evidence`.
 
 </details>
 

@@ -47,7 +47,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-Provider 复用共享目录抓取、过滤和规范化助手。专用解析器识别 Anthology 论文 id 与标题；Provider 对已验证的记录 id 追加 `.pdf`。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
+Provider 复用共享目录抓取、过滤和规范化助手。专用解析器识别 Anthology 论文 id 与标题；Provider 对已验证的记录 id 追加 `.pdf`。Provider 通过 `limitations` 字段声明其仅覆盖配置目录的限制，由 `searchAll()` 呈现。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
 
 </details>
 

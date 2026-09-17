@@ -88,7 +88,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     methods: [
       {
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
-        description: 'Run one arXiv-backed research pass while the addressed Agent is idle.',
+        description: 'Run one multi-source research pass while the addressed Agent is idle.',
         parameters: [{ name: 'request', description: 'search query, disclosure, and the Session containing the approved brief plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
         returns: 'completed or cancelled draft data with its durable Session identity.',
       },
@@ -112,10 +112,10 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the provider\'s normalized works, capped to `request.maxResults`.',
       },
       {
-        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>',
-        description: 'Search every usable provider and merge their results round-robin before applying the total bound.',
+        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>',
+        description: 'Search every usable provider and merge their results round-robin before applying the total bound.\n\nOne provider\'s failure never discards another provider\'s results: expected search failures become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining providers survive in `batch.items`. Every called provider succeeds — including zero-result searches — yields `batch.status: success`; at least one surviving work beside failures yields `partial_success`; only failures yields `failed` with every failure retained. Configuration failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of fabricating provider failures.\n\n`discoveredRecords` counts every record the providers returned before the aggregate `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound dropped records; `limitations` carries each called provider\'s declared coverage limits and one aggregate-bound entry when the total bound dropped records. The inherited `works` and `truncated` fields mirror `batch.items` for the existing single-result adapter shape.',
         parameters: [{ name: 'request', description: 'query and total result limit across providers.' }, { name: 'signal', description: 'optional cancellation forwarded to every provider.' }],
-        returns: 'normalized results from all usable providers.',
+        returns: 'the aggregate batch outcome from all usable providers.',
       },
       {
         signature: 'resolveFullText(version: WorkVersion): AcademicSourceFullText | null',
@@ -3559,7 +3559,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicSourceProvider',
-    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    fullTextUrls(recordId: string): readonly string[];\n}',
+    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    fullTextUrls(recordId: string): readonly string[];\n    readonly limitations?: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceSearchBatchResult',
+    declaration: 'export interface AcademicSourceSearchBatchResult extends AcademicSourceSearchResult {\n    readonly providers: readonly string[];\n    readonly discoveredRecords: number;\n    readonly batch: BatchResult<AcademicSourceWork>;\n    readonly limitations: readonly string[];\n}',
   },
   {
     name: 'AcademicSourceSearchRequest',
@@ -3820,6 +3824,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BashEnvVariableInfo',
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
+  },
+  {
+    name: 'BatchResult',
+    declaration: 'export interface BatchResult<T> {\n    readonly schemaVersion: 1;\n    readonly status: BatchStatus;\n    readonly items: readonly T[];\n    readonly failures: readonly ProviderFailure[];\n}',
+  },
+  {
+    name: 'BatchStatus',
+    declaration: 'export type BatchStatus = \'success\' | \'partial_success\' | \'failed\';',
   },
   {
     name: 'Branded',
@@ -4248,6 +4260,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ExtractionMethod',
     declaration: 'export interface ExtractionMethod {\n    readonly method: string;\n    readonly methodVersion: string;\n}',
+  },
+  {
+    name: 'FailureCategory',
+    declaration: 'export type FailureCategory = \'invalid_request\' | \'authentication_failed\' | \'rate_limited\' | \'timeout\' | \'network_error\' | \'upstream_error\' | \'not_found\' | \'parse_failed\' | \'fulltext_unavailable\' | \'unknown\';',
   },
   {
     name: 'FailureId',
@@ -4896,6 +4912,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PromptSectionOrderName',
     declaration: 'export type PromptSectionOrderName = keyof typeof SECTION_ORDERS;',
+  },
+  {
+    name: 'ProviderFailure',
+    declaration: 'export interface ProviderFailure {\n    readonly schemaVersion: 1;\n    readonly failureId: FailureId;\n    readonly provider: string;\n    readonly operation: string;\n    readonly category: FailureCategory;\n    readonly message: string;\n    readonly retryable: boolean;\n    readonly retryAfter: string | null;\n    readonly affectedWorkVersionId?: WorkVersionId;\n}',
   },
   {
     name: 'ProviderRecordReference',

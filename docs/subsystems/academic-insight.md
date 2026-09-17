@@ -47,7 +47,7 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 
 ```ts cordis-catalog
 /**
- * Run one arXiv-backed research pass while the addressed Agent is idle.
+ * Run one multi-source research pass while the addressed Agent is idle.
  * @param request - search query, disclosure, and the Session containing the approved brief plan.
  * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
  * @returns completed or cancelled draft data with its durable Session identity.
