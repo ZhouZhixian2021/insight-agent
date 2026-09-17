@@ -2,6 +2,8 @@
 
 Use this structure for the plan submitted through `exit_plan_mode`. Replace every placeholder with a concrete decision or an explicit assumption.
 
+The reviewed Markdown is also the machine-readable handoff to the research workflow. Include exactly one `academic-research-brief-json` fenced block, keep its field names and value types unchanged, and make its values agree with the readable sections. Do not put IDs, versions, or approval fields in the block; the host derives them from the successful plan review.
+
 ## Research objective
 
 - Topic and aliases:
@@ -40,3 +42,50 @@ Use this structure for the plan submitted through `exit_plan_mode`. Replace ever
 - Quality checks:
 - Time, cost, or source-access constraints:
 - Assumptions requiring disclosure:
+
+## Structured workflow handoff
+
+```academic-research-brief-json
+{
+  "schemaVersion": 1,
+  "topic": "<research topic>",
+  "aliases": ["<search alias>"],
+  "questions": ["<primary research question>"],
+  "publicationWindow": {
+    "start": { "iso": "2020", "precision": "year" },
+    "end": null,
+    "dateBasis": "first_public_release"
+  },
+  "includedWorkTypes": ["preprint", "conference_paper", "journal_article"],
+  "inclusionRules": ["<rule for including a work>"],
+  "exclusionRules": ["<rule for excluding a work>"],
+  "evidenceRequirements": {
+    "minimumIncludedWorks": 3,
+    "minimumFulltextWorks": 2,
+    "minimumEvidenceLevel": "fulltext",
+    "requireLocatableEvidence": true,
+    "allowPreprints": true,
+    "insufficientEvidencePolicy": "continue_with_warning"
+  },
+  "targetAudience": "<intended audience>",
+  "reportRequirements": {
+    "language": "zh-CN",
+    "targetLength": { "unit": "characters", "minimum": null, "maximum": null },
+    "requiredSections": ["research_scope", "directions", "limitations", "references"],
+    "citationStyle": "numeric",
+    "includeEvidenceAppendix": true,
+    "includeMethodology": true,
+    "includeLimitations": true,
+    "includeResearchGaps": true
+  },
+  "stopConditions": {
+    "maximumSearchRounds": 3,
+    "maximumCandidateWorks": 30,
+    "maximumIncludedWorks": 10,
+    "maximumElapsedMinutes": null,
+    "saturationRounds": 2,
+    "stopWhenEvidenceRequirementsMet": true
+  },
+  "assumptions": ["<assumption disclosed to the user>"]
+}
+```

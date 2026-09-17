@@ -1,14 +1,13 @@
 /** Browser-safe request and result vocabulary for Academic research runs. */
 import type {
   AcademicWorkId, Availability, ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId,
-  ExtractionMethod, ResearchBrief, ResearchBriefId, SourceLocatorId, WorkVersionId,
+  ExtractionMethod, ResearchBriefId, SourceLocatorId, WorkVersionId,
 } from '@deepseek-ai/dsh-academic-model'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
   readonly sessionId: SessionId
-  readonly brief: ResearchBrief
   readonly query: string
   readonly maxResults?: number
   readonly synthetic: boolean

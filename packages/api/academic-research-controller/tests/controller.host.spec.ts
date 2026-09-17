@@ -1,5 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { createAcademicWorkId, createResearchBriefId, createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,6 +12,7 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 }))
 
 import AcademicResearchController from '../src/index.ts'
+import { researchBriefFromApprovedPlan } from '../src/research-brief-plan.ts'
 
 const contexts: Context[] = []
 afterEach(async () => {
@@ -32,7 +34,40 @@ function brief() {
       approvedBriefVersion: 1, comment: null } }
 }
 
-function harness(options: { busy?: boolean; header?: boolean } = {}) {
+function briefPayload() {
+  const { researchBriefId: _researchBriefId, version: _version, approval: _approval, ...payload } = brief()
+  return payload
+}
+
+function briefPlan(payload: unknown = briefPayload()): string {
+  return `# Retrieval research\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
+}
+
+function nativePlanEvents(plan: string, options: { isError?: boolean; time?: number; argumentsJson?: string } = {}) {
+  const callId = ToolCallId('approved-brief-call')
+  return [
+    { type: 'tool/call', seq: 1, time: 1,
+      data: { turn: 1, step: 1, callId, name: 'exit_plan_mode',
+        arguments: options.argumentsJson ?? JSON.stringify({ plan }) } },
+    { type: 'tool/result', seq: 2, time: options.time ?? Date.parse('2026-09-16T00:00:01Z'), surfaceOp: 'append',
+      data: { turn: 1, step: 1, message: createToolResultMessage({ callId, content: [], isError: options.isError ?? false }) } },
+  ] as never
+}
+
+function approvedBriefEvents() {
+  return nativePlanEvents(briefPlan())
+}
+
+function harness(options: {
+  busy?: boolean
+  header?: boolean
+  approvedPlan?: boolean
+  model?: boolean
+  missingModel?: boolean
+  eventsError?: boolean
+  resolveError?: boolean
+  reasoning?: boolean
+} = {}) {
   const ctx = new Context()
   contexts.push(ctx)
   const dispose = (): void => {}
@@ -40,7 +75,7 @@ function harness(options: { busy?: boolean; header?: boolean } = {}) {
   const search = vi.fn()
   const resolveFullText = vi.fn((version: { sourceRecords: readonly { provider: string; recordId: string }[] }) => {
     const record = version.sourceRecords[0]
-    return record === undefined ? null : {
+    return record === undefined || record.provider === 'unregistered' ? null : {
       sourceProvider: record.provider,
       urls: [`https://arxiv.org/html/${record.recordId}`, `https://arxiv.org/pdf/${record.recordId}`],
     }
@@ -50,18 +85,32 @@ function harness(options: { busy?: boolean; header?: boolean } = {}) {
   ctx.provide('web', { fetch } as never)
   const sessionId = SessionId('academic-session')
   const signal = new AbortController().signal
-  const agent = { id: sessionId, ctx, options: { provider: 'fixture', model: 'fallback', maxTokens: 4000 },
-    session: { id: sessionId, requestHeader: () => options.header === false ? undefined
-      : { config: { provider: 'fixture', model: 'selected', maxTokens: 8000 } } },
+  const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
+  const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
+    : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
+  const agent = {
+    id: sessionId,
+    ctx,
+    options: fallback,
+    session: {
+      id: sessionId,
+      snapshotEvents: () => {
+        if (options.eventsError === true) throw 'invalid event source'
+        return options.approvedPlan === false ? [] : approvedBriefEvents()
+      },
+      requestHeader: () => options.header === false ? undefined : { config: selected },
+    },
     runMaintenance: options.busy ? () => { throw new Error('already has active work') }
-      : (task: (maintenanceSignal: AbortSignal) => Promise<unknown>) => task(signal) }
-  ctx.provide('sessionController', { resolveAgent: () => Promise.resolve({ agent }) } as never)
+      : (task: (maintenanceSignal: AbortSignal) => Promise<unknown>) => task(signal),
+  }
+  const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
+  ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
   const controller = new AcademicResearchController(ctx)
   return { controller, search, fetch, sessionId, signal }
 }
 
 describe('AcademicResearchController', () => {
-  it('runs the formal workflow with the Session model and arXiv adapters', async () => {
+  it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = harness()
     const resultWorkVersionId = createWorkVersionId()
     runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
@@ -70,7 +119,7 @@ describe('AcademicResearchController', () => {
         { status: 'excluded', exclusion: { workVersionId: resultWorkVersionId, reason: 'survey' } },
         { status: 'paused', pause: { workVersionId: resultWorkVersionId, reason: 'too long' } },
       ], failures: [], analysis: null, report: null } as never)
-    const result = await fixture.controller.run({ sessionId: fixture.sessionId, brief: brief(), query: 'retrieval', maxResults: 2,
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'retrieval', maxResults: 2,
       synthetic: false }, new AbortController().signal)
     expect(result.papers).toEqual([
       { status: 'extracted', workVersionId: resultWorkVersionId, evidenceCount: 2 },
@@ -80,9 +129,12 @@ describe('AcademicResearchController', () => {
     const call = runAcademicResearchDraft.mock.calls[0]?.[0]
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
-      input: { search: { query: 'retrieval', maxResults: 2 }, synthetic: false } })
+      input: { brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
+        approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
+      search: { query: 'retrieval', maxResults: 2 }, synthetic: false } })
     await call.adapters.search({ query: 'x' }, fixture.signal)
     await call.adapters.fetcher('https://arxiv.org/pdf/1', fixture.signal)
+    expect(Date.parse(call.adapters.now())).not.toBeNaN()
     expect(fixture.search).toHaveBeenCalledWith({ query: 'x' }, fixture.signal)
     expect(fixture.fetch).toHaveBeenCalledWith({ url: 'https://arxiv.org/pdf/1' }, fixture.signal)
 
@@ -99,21 +151,190 @@ describe('AcademicResearchController', () => {
     expect(selected[0]).toMatchObject({ sourceProvider: 'arxiv', urls: [
       'https://arxiv.org/html/2406.12345v1', 'https://arxiv.org/pdf/2406.12345v1',
     ] })
+    expect(call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
+      externalIdentifiers: [], workVersionIds: [workVersionId], canonicalVersionId: workVersionId,
+      firstPublicDate: { status: 'available', value: { iso: '2026', precision: 'year' } },
+      publicationStatus: { status: 'available', value: 'preprint' }, venue: { status: 'unknown', reason: 'none' } }],
+    versions: [{ schemaVersion: 1, workVersionId, academicWorkId,
+      versionType: 'preprint', versionLabel: { status: 'available', value: 'v1' },
+      releaseDate: { status: 'available', value: { iso: '2026', precision: 'year' } }, externalIdentifiers: [],
+      sourceRecords: [{ provider: 'unregistered', recordId: 'missing' }], contentHash: { status: 'not_extracted' },
+      supersedesWorkVersionId: null, status: 'active' }], index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
+    audit: { entries: [] } }, brief())).toEqual([])
   })
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
     const fixture = harness({ header: false })
     runAcademicResearchDraft.mockResolvedValue({ status: 'cancelled', sessionId: fixture.sessionId,
       papers: [], failures: [], analysis: null, report: null } as never)
-    await fixture.controller.run({ sessionId: fixture.sessionId, brief: brief(), query: 'x', synthetic: true },
+    await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: true },
       new AbortController().signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
   })
 
   it('reports a busy Session before starting workflow work', async () => {
     const fixture = harness({ busy: true })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, brief: brief(), query: 'x', synthetic: false },
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
       new AbortController().signal)).rejects.toMatchObject({ code: 'session/agent-busy' })
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
+
+  it('refuses to run without a successfully approved structured Brief plan', async () => {
+    const fixture = harness({ approvedPlan: false })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
+      new AbortController().signal)).rejects.toMatchObject({
+      code: 'gateway/bad-request',
+      message: 'the Session has no approved Academic Research Brief plan',
+    })
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('refuses to run when the Session has no model selection', async () => {
+    const fixture = harness({ model: false })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
+      new AbortController().signal)).rejects.toMatchObject({
+      code: 'gateway/bad-request',
+      message: 'the Session has no selected model',
+    })
+  })
+
+  it('also rejects a partially selected model', async () => {
+    const fixture = harness({ missingModel: true })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
+      new AbortController().signal)).rejects.toMatchObject({ code: 'gateway/bad-request' })
+  })
+
+  it('preserves reasoning effort when max tokens are absent', async () => {
+    const fixture = harness({ reasoning: true })
+    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+      papers: [], failures: [], analysis: null, report: null } as never)
+    await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({
+      provider: 'fixture', model: 'selected', reasoningEffort: 'low',
+    })
+  })
+
+  it('forwards Session lookup errors and normalizes non-Error Brief failures', async () => {
+    const missing = harness({ resolveError: true })
+    await expect(missing.controller.run({ sessionId: missing.sessionId, query: 'x', synthetic: false }, missing.signal))
+      .rejects.toThrow('missing Session')
+    const malformed = harness({ eventsError: true })
+    await expect(malformed.controller.run({ sessionId: malformed.sessionId, query: 'x', synthetic: false }, malformed.signal))
+      .rejects.toMatchObject({ code: 'gateway/bad-request', message: 'invalid Academic Research Brief' })
+  })
 })
+
+describe('approved Research Brief plan handoff', () => {
+  it('accepts a successful PTC dispatch and preserves a complete typed payload', () => {
+    const base = briefPayload()
+    const payload = {
+      ...base,
+      publicationWindow: { ...base.publicationWindow,
+        start: { iso: '2020-01', precision: 'month' as const },
+        end: { iso: '2026-09-16', precision: 'day' as const } },
+      reportRequirements: { ...base.reportRequirements,
+        targetLength: { unit: 'words', minimum: 1000, maximum: 2000 } },
+      stopConditions: { ...base.stopConditions, maximumElapsedMinutes: 30 },
+    }
+    const events = [
+      { type: 'other', seq: 0, time: 0, data: {} },
+      { type: 'tool/code-dispatch', seq: 1, time: 1, data: { name: 'other', isError: false } },
+      { type: 'tool/code-dispatch', seq: 2, time: 2, data: { name: 'exit_plan_mode', isError: true } },
+      { type: 'tool/code-dispatch', seq: 3, time: 3, data: { name: 'exit_plan_mode', isError: false, arguments: null } },
+      { type: 'tool/code-dispatch', seq: 4, time: Date.parse('2026-09-16T01:02:03Z'), data: {
+        rootCallId: 'root', parentCallId: 'root', subCallId: 'root:code:1', name: 'exit_plan_mode',
+        arguments: { plan: briefPlan(payload) }, isError: false, content: [],
+      } },
+    ] as never
+
+    expect(researchBriefFromApprovedPlan('session-1', events)).toMatchObject({
+      ...payload,
+      researchBriefId: 'session-1:approved-plan:root:code:1',
+      version: 1,
+      approval: { status: 'approved', reviewedBy: 'session-user', reviewedAt: '2026-09-16T01:02:03.000Z',
+        approvedBriefVersion: 1, comment: null },
+    })
+  })
+
+  it('ignores failed and malformed plan calls', () => {
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { isError: true })))
+      .toThrow('no approved Academic Research Brief')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { argumentsJson: '{' })))
+      .toThrow('no approved Academic Research Brief')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { argumentsJson: 'null' })))
+      .toThrow('no approved Academic Research Brief')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), {
+      argumentsJson: JSON.stringify({ unrelated: true }),
+    }))).toThrow('no approved Academic Research Brief')
+  })
+
+  it('rejects an invalid review timestamp', () => {
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { time: Number.NaN })))
+      .toThrow('invalid review timestamp')
+  })
+
+  it.each([
+    ['missing block', '# Plan only', 'exactly one'],
+    ['duplicate block', `${briefPlan()}\n${briefPlan()}`, 'exactly one'],
+    ['invalid JSON', '# Plan\n\n```academic-research-brief-json\n{\n```', 'valid JSON'],
+  ])('rejects %s', (_label, plan, message) => {
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(plan))).toThrow(message)
+  })
+
+  it.each([
+    ['object', null, 'must be an object'],
+    ['missing field', omitTopic(), 'missing: topic'],
+    ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
+    ['schema version', { ...briefPayload(), schemaVersion: 2 }, 'schemaVersion must be 1'],
+    ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
+    ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
+    ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],
+    ['questions', { ...briefPayload(), questions: [] }, 'questions must contain at least one item'],
+    ['publication window', { ...briefPayload(), publicationWindow: null }, 'publicationWindow must be an object'],
+    ['partial date', { ...briefPayload(), publicationWindow: { ...briefPayload().publicationWindow, start: 2020 } },
+      'publicationWindow.start must be an object'],
+    ['date basis', { ...briefPayload(), publicationWindow: { ...briefPayload().publicationWindow, dateBasis: 'created' } },
+      'publicationWindow.dateBasis must be one of'],
+    ['work types', { ...briefPayload(), includedWorkTypes: [] }, 'includedWorkTypes must contain at least one item'],
+    ['evidence requirements', { ...briefPayload(), evidenceRequirements: null }, 'evidenceRequirements must be an object'],
+    ['non-integer count', withEvidence({ minimumIncludedWorks: 1.5 }), 'must be a non-negative integer'],
+    ['negative count', withEvidence({ minimumFulltextWorks: -1 }), 'must be a non-negative integer'],
+    ['evidence level', withEvidence({ minimumEvidenceLevel: 1 }), 'minimumEvidenceLevel must be one of'],
+    ['boolean', withEvidence({ requireLocatableEvidence: 'yes' }), 'requireLocatableEvidence must be a boolean'],
+    ['evidence policy', withEvidence({ insufficientEvidencePolicy: 'ignore' }), 'insufficientEvidencePolicy must be one of'],
+    ['report requirements', { ...briefPayload(), reportRequirements: null }, 'reportRequirements must be an object'],
+    ['target length', withReport({ targetLength: null }), 'targetLength must be an object'],
+    ['length count', withReport({ targetLength: { unit: 'words', minimum: -1, maximum: null } }),
+      'minimum must be a non-negative integer'],
+    ['length order', withReport({ targetLength: { unit: 'words', minimum: 2, maximum: 1 } }),
+      'minimum must not exceed maximum'],
+    ['citation style', withReport({ citationStyle: 'links' }), 'citationStyle must be one of'],
+    ['report boolean', withReport({ includeMethodology: 'yes' }), 'includeMethodology must be a boolean'],
+    ['stop conditions', { ...briefPayload(), stopConditions: null }, 'stopConditions must be an object'],
+    ['positive count', withStop({ maximumSearchRounds: 0 }), 'maximumSearchRounds must be a positive integer'],
+    ['elapsed count', withStop({ maximumElapsedMinutes: -1 }), 'maximumElapsedMinutes must be a non-negative integer'],
+    ['stop boolean', withStop({ stopWhenEvidenceRequirementsMet: 'yes' }), 'stopWhenEvidenceRequirementsMet must be a boolean'],
+  ])('rejects an invalid %s field', (_label, payload, message) => {
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(payload)))).toThrow(message)
+  })
+})
+
+function omitTopic(): Omit<ReturnType<typeof briefPayload>, 'topic'> {
+  const { topic: _topic, ...rest } = briefPayload()
+  return rest
+}
+
+function withEvidence(patch: Record<string, unknown>) {
+  const payload = briefPayload()
+  return { ...payload, evidenceRequirements: { ...payload.evidenceRequirements, ...patch } }
+}
+
+function withReport(patch: Record<string, unknown>) {
+  const payload = briefPayload()
+  return { ...payload, reportRequirements: { ...payload.reportRequirements, ...patch } }
+}
+
+function withStop(patch: Record<string, unknown>) {
+  const payload = briefPayload()
+  return { ...payload, stopConditions: { ...payload.stopConditions, ...patch } }
+}
