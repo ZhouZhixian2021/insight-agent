@@ -18,6 +18,8 @@
 - [`b-retrieval-evidence.sample.json`](b-retrieval-evidence.sample.json)：模拟 B 输出的 Research Brief、检索运行、论文、版本、证据、Evidence Card、覆盖统计和逐项失败。
 - [`c-analysis.sample.json`](c-analysis.sample.json)：模拟 C 直接引用 B 的稳定 ID 形成 Claim、Claim–Evidence 关联和评测结果。
 - [`claim-freshness.sample.json`](claim-freshness.sample.json)：模拟证据版本变化后，旧 Claim 在使用时被判定为 `stale`。
+- [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json)：固定 B 一次多来源搜索的部分成功目标结果。
+- [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json)：固定 C 在正式接入前可使用的浏览器安全 Remote 目标结果。
 
 ## 样例覆盖
 
@@ -30,6 +32,7 @@
 7. Claim 使用前比较证据版本；版本不一致时不得进入最终报告。
 8. `EvidenceCard` 固定包含 `researchQuestions`、`methods`、`datasets`、`metrics`、`findings` 和 `limitations` 六个分区；没有受证据支持的条目时使用空数组。
 9. `Availability<T>` 固定使用五种状态；包装层只保存 `status`、`value`、`reason` 或 `failureId`，字段自身的数据全部放入 `value`。
+10. 一个 Provider 失败不会丢弃其他 Provider 的成功结果；工作流向 Web 客户端报告同一条失败和实际覆盖情况。
 
 ## 已确认的字段规则
 
@@ -42,7 +45,7 @@
 
 ## 验证标准
 
-- 三个文件必须能被标准 JSON 解析器读取。
+- 五个文件必须能被标准 JSON 解析器读取。
 - C 样例引用的每个 `academicWorkId`、`workVersionId` 和 `evidenceId` 必须存在于 B 样例。
 - 同一个 `AcademicWorkId` 的多个版本只能计为一个研究工作。
 - `metadata` 证据不得支持实验结果或方法细节。

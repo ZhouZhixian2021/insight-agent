@@ -1,0 +1,173 @@
+{
+  "sampleSchemaVersion": 1,
+  "sampleId": "academic-web-run-001",
+  "synthetic": true,
+  "request": {
+    "sessionId": "session-academic-synthetic-001",
+    "query": "retrieval augmented generation evaluation",
+    "maxResults": 2,
+    "synthetic": true
+  },
+  "expectedValue": {
+    "sessionId": "session-academic-synthetic-001",
+    "status": "completed",
+    "retrievalRun": {
+      "schemaVersion": 1,
+      "retrievalRunId": "40000000-0000-4000-8000-000000000001",
+      "researchBriefId": "brief-academic-synthetic-001",
+      "researchBriefVersion": 1,
+      "stage": "completed",
+      "status": "partial_success",
+      "startedAt": "2026-09-17T02:00:00.000Z",
+      "completedAt": "2026-09-17T02:03:00.000Z",
+      "queries": [
+        "retrieval augmented generation evaluation"
+      ],
+      "providers": [
+        "acl",
+        "arxiv",
+        "cvf",
+        "pmlr"
+      ],
+      "academicWorkIds": [
+        "10000000-0000-4000-8000-000000000001",
+        "10000000-0000-4000-8000-000000000002"
+      ],
+      "coverageSummary": {
+        "schemaVersion": 1,
+        "discoveredRecords": 5,
+        "deduplicatedWorks": 2,
+        "includedWorks": 1,
+        "availableFulltextWorks": 1,
+        "abstractOnlyWorks": 0,
+        "metadataOnlyWorks": 0,
+        "failedOperations": 1,
+        "truncated": true,
+        "limitations": [
+          "PMLR search failed; results from the other providers were retained.",
+          "The aggregate result bound retained two of five discovered records.",
+          "This run used one search round without automatic retries."
+        ],
+        "providerBreakdown": null
+      },
+      "failures": [
+        {
+          "schemaVersion": 1,
+          "failureId": "30000000-0000-4000-8000-000000000001",
+          "provider": "pmlr",
+          "operation": "search",
+          "category": "network_error",
+          "message": "Synthetic failure: the configured catalog could not be reached.",
+          "retryable": true,
+          "retryAfter": null
+        }
+      ]
+    },
+    "papers": [
+      {
+        "status": "extracted",
+        "workVersionId": "20000000-0000-4000-8000-000000000001",
+        "evidenceCount": 1
+      },
+      {
+        "status": "excluded",
+        "workVersionId": "20000000-0000-4000-8000-000000000002",
+        "reason": "The full text did not satisfy the approved inclusion rules."
+      }
+    ],
+    "failures": [],
+    "report": {
+      "title": "检索增强生成评测研究草稿",
+      "mode": "draft",
+      "synthetic": true,
+      "markdown": "# 检索增强生成评测研究草稿\n\n本合成样例仅用于验证界面。",
+      "evaluation": {
+        "status": "needs_review",
+        "assessments": [
+          {
+            "schemaVersion": 1,
+            "claimAssessmentId": "50000000-0000-4000-8000-000000000001",
+            "claimId": "60000000-0000-4000-8000-000000000001",
+            "status": "partially_supported",
+            "reason": "Structural checks passed; semantic support still requires review.",
+            "method": "evidence-integrity-only",
+            "methodVersion": "1",
+            "assessedEvidenceIds": [
+              "70000000-0000-4000-8000-000000000001"
+            ],
+            "assessedAt": "2026-09-17T02:03:00.000Z"
+          }
+        ],
+        "issues": [
+          {
+            "claimId": "60000000-0000-4000-8000-000000000001",
+            "code": "semantic_review_required",
+            "message": "References pass; semantic support still requires review of the same evidence."
+          }
+        ]
+      },
+      "claims": [
+        {
+          "schemaVersion": 1,
+          "claimId": "60000000-0000-4000-8000-000000000001",
+          "text": "该合成论文分别记录检索质量与回答正确性。",
+          "category": "comparison",
+          "scope": "仅适用于本次合成样例。",
+          "uncertainty": "尚未完成独立语义审核。",
+          "confidence": "medium",
+          "confidenceReasons": [
+            "一条全文证据直接描述两个评测维度。"
+          ],
+          "evidenceSnapshot": {
+            "schemaVersion": 1,
+            "evidenceSnapshotId": "80000000-0000-4000-8000-000000000001",
+            "researchBriefId": "brief-academic-synthetic-001",
+            "researchBriefVersion": 1,
+            "evidenceItems": [
+              {
+                "evidenceId": "70000000-0000-4000-8000-000000000001",
+                "academicWorkId": "10000000-0000-4000-8000-000000000001",
+                "workVersionId": "20000000-0000-4000-8000-000000000001",
+                "contentHash": "sha256:synthetic-academic-content-001"
+              }
+            ],
+            "createdAt": "2026-09-17T02:03:00.000Z"
+          },
+          "validity": "current"
+        }
+      ],
+      "evidence": [
+        {
+          "schemaVersion": 1,
+          "evidenceId": "70000000-0000-4000-8000-000000000001",
+          "academicWorkId": "10000000-0000-4000-8000-000000000001",
+          "workVersionId": "20000000-0000-4000-8000-000000000001",
+          "level": "fulltext",
+          "verbatimExcerpt": {
+            "status": "available",
+            "value": "Synthetic source text reports retrieval quality and answer correctness separately."
+          },
+          "sourcedStatement": "该合成论文分别报告检索质量和回答正确性。",
+          "sourceLocatorId": "90000000-0000-4000-8000-000000000001",
+          "sourceProvider": "arxiv",
+          "sourceUrl": "https://example.invalid/synthetic-paper-001.pdf",
+          "retrievedAt": "2026-09-17T02:02:00.000Z",
+          "contentHash": {
+            "status": "available",
+            "value": "sha256:synthetic-academic-content-001"
+          },
+          "extractionMethod": {
+            "method": "dsh-academic-evidence",
+            "methodVersion": "1"
+          },
+          "qualityNotes": []
+        }
+      ],
+      "limitations": [
+        "PMLR search failed; results from the other providers were retained.",
+        "Single search pass; no automatic retries.",
+        "Semantic support still requires independent review."
+      ]
+    }
+  }
+}
