@@ -1,0 +1,19 @@
+.page { display: grid; gap: 20px; color: var(--dsw-alias-label-primary); overflow-wrap: anywhere; }
+.page h3, .page h4 { margin: 12px 0; }
+.page h5 { font-size: inherit; margin: 0; }
+.page p { margin: 8px 0; }
+.page input { display: block; width: 100%; padding: 8px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0; }
+.stats > div, .card { padding: 12px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; }
+.stats dt { color: var(--dsw-alias-label-secondary); }
+.stats dd { margin: 6px 0 0; font-weight: 600; }
+.notice { color: var(--dsw-alias-label-secondary); }
+.card { margin: 12px 0; }
+.markdown { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dialog { width: min(960px, 94vw); max-width: 94vw; }
+.body { max-height: 82vh; overflow-y: auto; }
+.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+
+.entry, .body button, .body select { padding: 6px 10px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); font: inherit; cursor: pointer; }
+.entry { max-width: 100%; text-align: start; }
+.controls select { margin-inline-start: 8px; }

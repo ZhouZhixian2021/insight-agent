@@ -12,7 +12,7 @@ Status: implemented
 
 [分析库](../../../../packages/academic/analysis/README.zh.md)从至少两项独立研究生成注明归属的方法与发现对比。它选择有效的正式引用版本或唯一可用版本，拒绝在多个候选版本中任意选择，并使用 A5 记录与不可变证据快照。[评测库](../../../../packages/academic/eval/README.zh.md)检查当前身份、引用、证据深度、覆盖度和明确的审核记录；仅引用完整仍保留待语义审核状态。
 
-[报告库](../../../../packages/academic/report/README.zh.md)在自身交付入口执行评测，披露草稿限制并拒绝不安全的最终交付。[查看器](../../../../packages/client/ui-academic-research/README.zh.md)生成自包含 HTML，提供内容转义、证据导航和 Markdown 下载。它不注册为实时 Web 插件，也不拥有 Session 事件。输入准备决策继续有效，本决策是补充而非替代。
+[报告库](../../../../packages/academic/report/README.zh.md)在自身交付入口执行评测，披露草稿限制并拒绝不安全的最终交付。[查看器](../../../../packages/client/ui-academic-research/README.zh.md)生成自包含 HTML，提供内容转义、证据导航和 Markdown 下载。独立渲染器不拥有 Session 事件；后续增加的固定数据 Web 入口见[运行页面决策](2026-09-17-academic-run-viewer.zh.md)。输入准备决策继续有效，本决策是补充而非替代。
 
 ## Alternatives considered
 

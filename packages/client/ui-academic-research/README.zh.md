@@ -1,5 +1,5 @@
 ---
-description: "学术研究报告的 Web 客户端界面：一个客户端插件骨架，内部含 HTML 报告渲染器。"
+description: "学术研究报告的 Web 客户端界面：固定数据运行结果页面与内部 HTML 报告渲染器。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-生成可独立打开的 HTML 报告页，提供证据导航、搜索和 Markdown 下载。
+在主 Web 侧栏提供“学术研究样例”入口，展示固定返回结果的运行状态、检索状态、报告质量、覆盖统计与证据，支持场景切换和 Markdown 下载。
 
 ## 目录
 
@@ -21,9 +21,9 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-`renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。浏览器半是插件骨架，该渲染器暂为内部辅助函数，待阶段四的研究界面接入。
+`renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。该渲染器继续作为内部辅助函数。主 Web 通过 sidebar.footer.action 注册样例入口，并使用框架 locale 字典。
 
-本包是无状态函数库，不发布 invariant 伴随模块；自动化测试核验输出关联和失败行为。
+样例场景为运行中、部分成功、成功、取消、失败、质量阻止交付和请求异常。取消仅切换本地样例，不中止真实 Session；运行中不显示进度百分比，providerBreakdown 为 null 时不生成逐来源计数。
 
 <a id="model-experience"></a>
 ## 模型体验
@@ -45,7 +45,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与后续工作
 
-- 不提供实时进度、会话订阅、Brief 审批操作或主 Web 导航入口。这些需要 A 的工作流及后续基于 slot 的客户端插件。用户数据按文字呈现，不作为可执行 Markdown 或 HTML。
+- 固定样例始终明确标注为合成数据。正式 Remote 尚未提供 retrievalRun，暂不连接真实请求、服务器进度、Session 恢复或 Brief 审批；页面局部类型只组合现有 Remote 类型和共享 RetrievalRun。用户内容按文字显示。没有独立分歧状态需要 invariant 伴随模块。
 
 <a id="dev-note"></a>
 ### 开发备注

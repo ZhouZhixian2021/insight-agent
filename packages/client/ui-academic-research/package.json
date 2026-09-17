@@ -27,7 +27,11 @@
   },
   "dsh": {
     "client": {
-      "platform": "web"
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   },
   "scripts": {
@@ -45,6 +49,15 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-report": "workspace:^"
+    "@deepseek-ai/dsh-academic-report": "workspace:^",
+    "@deepseek-ai/dsh-client-locale": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-renderer": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-sidebar": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-slots": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-primitives": "workspace:^",
+    "@deepseek-ai/dsh-api-academic-research-controller": "workspace:^",
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "react": "^18.2.0",
+    "@types/react": "~18.3.1"
   }
 }
