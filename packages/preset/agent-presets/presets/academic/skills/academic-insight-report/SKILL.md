@@ -9,7 +9,7 @@ Produce a direction-level academic insight report whose conclusions remain trace
 
 ## Plan before research
 
-While plan mode is active, read [references/research-brief.md](references/research-brief.md) and use it to prepare the complete Research Brief and execution plan. A small preliminary search may clarify terminology and feasibility, but do not conduct the full review or draft the final report before approval. Put the complete plan in the `plan` argument of `exit_plan_mode` without an ordinary-text preamble; after approval, execute the approved scope exactly and disclose any necessary deviation.
+While plan mode is active, read [references/research-brief.md](references/research-brief.md) and use it to prepare the complete Research Brief and execution plan, including its one required structured handoff block. A small preliminary search may clarify terminology and feasibility, but do not conduct the full review or draft the final report before approval. Put the complete plan in the `plan` argument of `exit_plan_mode` without an ordinary-text preamble. After approval, do not repeat the research with generic Web tools: end the turn without starting research so the host can run the approved Academic workflow after the Session becomes idle.
 
 ## Establish the scope
 
