@@ -1,7 +1,7 @@
 /** Browser-safe request and result vocabulary for Academic research runs. */
 import type {
   AcademicWorkId, Availability, ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId,
-  ExtractionMethod, ResearchBriefId, SourceLocatorId, WorkVersionId,
+  ExtractionMethod, ResearchBriefId, RetrievalRun, SourceLocatorId, WorkVersionId,
 } from '@deepseek-ai/dsh-academic-model'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
@@ -101,10 +101,11 @@ export type AcademicPaperResultView =
   | { readonly status: 'excluded'; readonly workVersionId: WorkVersionId; readonly reason: string }
   | { readonly status: 'paused'; readonly workVersionId: WorkVersionId; readonly reason: string }
 
-/** Completed or cancelled Academic draft plus the Session that owns its model records. */
+/** Completed or cancelled Academic draft, observed retrieval run, and owning Session. */
 export interface AcademicResearchRunValue {
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
+  readonly retrievalRun: RetrievalRun
   readonly papers: readonly AcademicPaperResultView[]
   readonly failures: readonly {
     readonly workVersionId: WorkVersionId

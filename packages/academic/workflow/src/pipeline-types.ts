@@ -1,6 +1,6 @@
 /** Explicit adapters and results for one bounded research draft pass. */
-import type { ResearchBrief, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSourceSearchRequest, AcademicSourceSearchResult } from '@deepseek-ai/dsh-academic-source'
+import type { ResearchBrief, RetrievalRun, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicSourceSearchBatchResult, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicWebFetcher } from '@deepseek-ai/dsh-academic-evidence'
 import type { PaperEvidenceGenerator } from './model-types.ts'
@@ -17,14 +17,22 @@ export interface SelectedPaper {
   readonly hasHistoricalEvidence: boolean
 }
 
-/** Callers own query planning, scope selection, model transport and durable request logging. */
+/** Selected full-text candidates plus an observed included-work bound. */
+export interface PaperSelectionResult {
+  readonly papers: readonly SelectedPaper[]
+  /** True when another eligible, resolvable paper existed beyond the approved included-work limit. */
+  readonly truncated: boolean
+}
+
+/** Callers own query planning, source execution, scope selection, model transport and durable request logging. */
 export interface DraftPipelineAdapters {
-  readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchResult>
-  /** Apply approved scope and date rules; select at most one actual version per work. */
-  readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => readonly SelectedPaper[]
+  /** Return source-observed providers, counts, limits, successes, and failures for one search round. */
+  readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchBatchResult>
+  /** Apply approved scope and date rules and report whether the included-work bound omitted another eligible version. */
+  readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
   readonly fetcher: AcademicWebFetcher
   readonly generator: PaperEvidenceGenerator
-  /** Current UTC ISO time, called separately for acquisition and report evaluation. */
+  /** Current UTC ISO time for run settlement, acquisition, and report evaluation. */
   readonly now: () => string
 }
 
@@ -41,9 +49,10 @@ export interface PaperProcessingFailure {
   readonly stage: 'fulltext' | 'extraction'
 }
 
-/** Completed paper results remain available even when the caller cancels the pass. */
+/** Completed paper results and observed retrieval facts remain available when the caller cancels the pass. */
 export interface DraftPipelineResult {
   readonly status: 'completed' | 'cancelled'
+  readonly retrievalRun: RetrievalRun
   readonly papers: readonly PaperEvidenceResult[]
   readonly failures: readonly PaperProcessingFailure[]
   readonly analysis: AnalysisResult | null

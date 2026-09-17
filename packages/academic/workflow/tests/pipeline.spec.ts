@@ -1,8 +1,26 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import { createBatchResult, createFailureId, createWorkVersionId, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicSourceSearchBatchResult, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
 import { runResearchDraft, WorkflowLogError } from '../src/index.ts'
 import { draftFixture as fixture } from './pipeline-fixture.ts'
+
+function searchBatch(
+  works: readonly AcademicSourceWork[],
+  options: {
+    readonly failures?: readonly ProviderFailure[]
+    readonly discoveredRecords?: number
+    readonly truncated?: boolean
+    readonly limitations?: readonly string[]
+    readonly providers?: readonly string[]
+  } = {},
+): AcademicSourceSearchBatchResult {
+  const batch = createBatchResult(works, options.failures ?? [])
+  return { works: batch.items, batch, providers: options.providers ?? ['fixture'],
+    discoveredRecords: options.discoveredRecords ?? works.length, truncated: options.truncated ?? false,
+    limitations: options.limitations ?? [] }
+}
+
 describe('single-pass research draft', () => {
   it('continues other papers after a model input limit pause', async () => {
     const { input, adapters } = fixture()
@@ -39,7 +57,7 @@ describe('single-pass research draft', () => {
     adapters.search = async () => {
       controller.abort()
       if (outcome === 'reject') throw new Error('cancelled')
-      return { works: records, truncated: false }
+      return searchBatch(records)
     }
     const result = await runResearchDraft(input, adapters, controller.signal)
     expect(result.status).toBe('cancelled')
@@ -48,7 +66,7 @@ describe('single-pass research draft', () => {
   it.each([true, false])('does not start papers or a report after selection cancellation (empty=%s)', async (empty) => {
     const { input, adapters } = fixture()
     const controller = new AbortController(), select = adapters.selectPapers
-    adapters.selectPapers = (a, b) => { controller.abort(); return empty ? [] : select(a, b) }
+    adapters.selectPapers = (a, b) => { controller.abort(); return empty ? { papers: [], truncated: false } : select(a, b) }
     const result = await runResearchDraft(input, adapters, controller.signal)
     expect(result.status).toBe('cancelled')
     expect(result.report).toBeNull()
@@ -74,6 +92,51 @@ describe('single-pass research draft', () => {
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(result.report?.evidence).toHaveLength(2)
     expect(records[0]!.workVersion.contentHash.status).toBe('not_extracted')
+    const includedWorkIds = result.papers.flatMap(paper => paper.status === 'extracted' ? [paper.version.academicWorkId] : [])
+    expect(result.retrievalRun).toMatchObject({ stage: 'completed', status: 'success', queries: ['synthetic methods'],
+      providers: ['fixture'],
+      coverageSummary: { discoveredRecords: 2, deduplicatedWorks: 2, includedWorks: 2,
+        availableFulltextWorks: 2, failedOperations: 0, truncated: false, providerBreakdown: null } })
+    expect(new Set(result.retrievalRun.academicWorkIds)).toEqual(new Set(includedWorkIds))
+  })
+  it('retains source failures and observed coverage beside successful papers', async () => {
+    const { input, adapters, records } = fixture()
+    const failure: ProviderFailure = { schemaVersion: 1, failureId: createFailureId(), provider: 'pmlr', operation: 'search',
+      category: 'upstream_error', message: 'catalog unavailable', retryable: true, retryAfter: null }
+    vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch(records, { failures: [failure], discoveredRecords: 5,
+      truncated: true, limitations: ['PMLR searches configured catalog pages only.'], providers: ['arxiv', 'pmlr'] }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.retrievalRun).toMatchObject({ stage: 'completed', status: 'partial_success', providers: ['arxiv', 'pmlr'],
+      failures: [failure], coverageSummary: { discoveredRecords: 5, deduplicatedWorks: 2, includedWorks: 2,
+        availableFulltextWorks: 2, failedOperations: 1, truncated: true } })
+    expect(result.retrievalRun.coverageSummary.limitations).toContain('PMLR searches configured catalog pages only.')
+    expect(result.retrievalRun.coverageSummary.limitations).toContain('Provider pmlr failed during search.')
+  })
+  it('marks declared source coverage limits without inventing provider counts', async () => {
+    const { input, adapters, records } = fixture()
+    vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch(records, {
+      limitations: ['PMLR searches configured catalog pages only.'], providers: ['pmlr'],
+    }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ truncated: true, providerBreakdown: null })
+    expect(result.retrievalRun.coverageSummary.limitations).toContain('PMLR searches configured catalog pages only.')
+  })
+  it('marks an all-source failure as a failed retrieval while returning the blocked draft', async () => {
+    const { input, adapters } = fixture()
+    const failure: ProviderFailure = { schemaVersion: 1, failureId: createFailureId(), provider: 'pmlr', operation: 'search',
+      category: 'upstream_error', message: 'catalog unavailable', retryable: true, retryAfter: null }
+    vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch([], { failures: [failure], providers: ['pmlr'] }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.status).toBe('completed')
+    expect(result.report?.evaluation.status).toBe('blocked')
+    expect(result.retrievalRun).toMatchObject({ stage: 'failed', status: 'failed', academicWorkIds: [],
+      coverageSummary: { discoveredRecords: 0, includedWorks: 0, failedOperations: 1, truncated: true } })
   })
   it('retains a model scope exclusion and omits its evidence from analysis', async () => {
     const { input, adapters } = fixture()
@@ -102,6 +165,14 @@ describe('single-pass research draft', () => {
     expect(result.failures[0]?.stage).toBe(stage)
     expect(result.papers).toHaveLength(1)
     expect(result.report?.limitations.join(' ')).toContain(stage)
+    expect(result.retrievalRun.status).toBe('partial_success')
+    expect(result.retrievalRun.failures[0]).toMatchObject({
+      operation: stage === 'fulltext' ? 'fetch_fulltext' : 'extract_evidence',
+      category: stage === 'fulltext' ? 'fulltext_unavailable' : 'parse_failed',
+      affectedWorkVersionId: result.failures[0]?.workVersionId,
+    })
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ includedWorks: 1,
+      availableFulltextWorks: stage === 'fulltext' ? 1 : 2, failedOperations: 1, truncated: true })
   })
   it('bounds candidates and discloses truncation without inventing a second search', async () => {
     const { input, adapters } = fixture()
@@ -109,10 +180,28 @@ describe('single-pass research draft', () => {
     expect(adapters.search).toHaveBeenCalledWith({ query: input.search.query, maxResults: 1 }, undefined)
     expect(result.papers).toHaveLength(1)
     expect(result.report?.limitations.join(' ')).toContain('truncated')
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 2, deduplicatedWorks: 1,
+      includedWorks: 1, truncated: true })
+  })
+  it('records an observed included-work bound from paper selection', async () => {
+    const { input, adapters } = fixture()
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
+    const select = adapters.selectPapers
+    adapters.selectPapers = (ingested, brief) => {
+      const result = select(ingested, brief)
+      return { papers: result.papers.slice(0, 1), truncated: result.papers.length > 1 }
+    }
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.papers).toHaveLength(1)
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ deduplicatedWorks: 2, includedWorks: 1, truncated: true })
+    expect(result.retrievalRun.coverageSummary.limitations)
+      .toContain('The approved included-work bound stopped selection at 1.')
   })
   it('produces an explicitly blocked empty draft after a successful empty search', async () => {
     const { input, adapters } = fixture()
-    vi.mocked(adapters.search).mockResolvedValueOnce({ works: [], truncated: false })
+    vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch([]))
     const result = await runResearchDraft(input, adapters)
     expect(adapters.fetcher).not.toHaveBeenCalled()
     expect(result.report?.evaluation.status).toBe('blocked')
@@ -130,8 +219,10 @@ describe('single-pass research draft', () => {
     if (kind === 'too_many') input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
     const select = adapters.selectPapers
     if (kind === 'unknown' || kind === 'duplicate') adapters.selectPapers = (a, b) => {
-      const papers = select(a, b)
-      return kind === 'unknown' ? [{ ...papers[0]!, workVersionId: createWorkVersionId() }] : [papers[0]!, papers[0]!]
+      const selection = select(a, b), papers = selection.papers
+      return { ...selection, papers: kind === 'unknown'
+        ? [{ ...papers[0]!, workVersionId: createWorkVersionId() }]
+        : [papers[0]!, papers[0]!] }
     }
     await expect(runResearchDraft(input, adapters)).rejects.toThrow()
     expect(adapters.fetcher).not.toHaveBeenCalled()
@@ -146,6 +237,8 @@ describe('single-pass research draft', () => {
     const { input, adapters } = fixture()
     const result = await runResearchDraft(input, adapters, AbortSignal.abort())
     expect(result.status).toBe('cancelled')
+    expect(result.retrievalRun).toMatchObject({ stage: 'cancelled', status: 'success', queries: [], providers: [],
+      coverageSummary: { discoveredRecords: 0, deduplicatedWorks: 0, includedWorks: 0, failedOperations: 0 } })
     expect(result.report).toBeNull()
     expect(adapters.search).not.toHaveBeenCalled()
   })

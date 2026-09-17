@@ -14,8 +14,9 @@ describe('production paper selection', () => {
       urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
       extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false,
     }))
-    expect(selected).toHaveLength(1)
-    expect(selected[0]?.workVersionId).toBe(ingested.works[0]?.canonicalVersionId)
+    expect(selected.papers).toHaveLength(1)
+    expect(selected.papers[0]?.workVersionId).toBe(ingested.works[0]?.canonicalVersionId)
+    expect(selected.truncated).toBe(true)
   })
 
   it('filters work type, preprint permission, retraction and publication dates before resolving URLs', async () => {
@@ -26,12 +27,12 @@ describe('production paper selection', () => {
     const resolve = vi.fn(() => ({ urls: ['https://example.org/paper'], sourceProvider: 'fixture',
       extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false }))
     const excludedType = { ...input.brief, includedWorkTypes: ['version_of_record'] }
-    expect(selectResearchPapers(ingested, excludedType, resolve)).toEqual([])
+    expect(selectResearchPapers(ingested, excludedType, resolve)).toEqual({ papers: [], truncated: false })
     const noPreprints = { ...input.brief, evidenceRequirements: { ...input.brief.evidenceRequirements, allowPreprints: false } }
-    expect(selectResearchPapers(ingested, noPreprints, resolve)).toEqual([])
+    expect(selectResearchPapers(ingested, noPreprints, resolve)).toEqual({ papers: [], truncated: false })
     const dated: ResearchBrief = { ...input.brief,
       publicationWindow: { start: { iso: '2025', precision: 'year' }, end: null, dateBasis: 'first_public_release' } }
-    expect(selectResearchPapers(ingested, dated, resolve)).toEqual([])
+    expect(selectResearchPapers(ingested, dated, resolve)).toEqual({ papers: [], truncated: false })
     expect(resolve).not.toHaveBeenCalled()
   })
 })

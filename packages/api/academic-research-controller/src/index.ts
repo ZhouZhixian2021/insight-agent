@@ -36,7 +36,7 @@ export class AcademicResearchController extends TypertRemoteService {
    * Run one multi-source research pass while the addressed Agent is idle.
    * @param request - search query, disclosure, and the Session containing the approved brief plan.
    * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
-   * @returns completed or cancelled draft data with its durable Session identity.
+   * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
    */
   @Remote('run')
   async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue> {
@@ -88,7 +88,8 @@ export class AcademicResearchController extends TypertRemoteService {
 }
 
 function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue {
-  return { sessionId: result.sessionId, status: result.status, failures: result.failures,
+  return { sessionId: result.sessionId, status: result.status, retrievalRun: result.retrievalRun,
+    failures: result.failures.map(failure => ({ workVersionId: failure.workVersionId, stage: failure.stage })),
     papers: result.papers.map((paper) => {
       switch (paper.status) {
         case 'extracted': return { status: 'extracted', workVersionId: paper.version.workVersionId,

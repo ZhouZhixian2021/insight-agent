@@ -1,5 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
-import { createAcademicWorkId, createResearchBriefId, createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import { createAcademicWorkId, createCoverageSummary, createResearchBriefId, createRetrievalRunId,
+  createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -32,6 +33,15 @@ function brief() {
       maximumIncludedWorks: 2, maximumElapsedMinutes: null, saturationRounds: 1, stopWhenEvidenceRequirementsMet: false },
     assumptions: [], approval: { status: 'approved' as const, reviewedBy: 'tester', reviewedAt: '2026-09-16T00:00:00Z',
       approvedBriefVersion: 1, comment: null } }
+}
+
+function retrievalRun(stage: 'completed' | 'cancelled' = 'completed'): RetrievalRun {
+  return { schemaVersion: 1, retrievalRunId: createRetrievalRunId(), researchBriefId: createResearchBriefId(),
+    researchBriefVersion: 1, stage, status: 'success', startedAt: '2026-09-16T00:00:00Z',
+    completedAt: '2026-09-16T00:01:00Z', queries: ['retrieval'], providers: ['fixture'], academicWorkIds: [],
+    coverageSummary: createCoverageSummary({ discoveredRecords: 0, deduplicatedWorks: 0, includedWorks: 0,
+      availableFulltextWorks: 0, abstractOnlyWorks: 0, metadataOnlyWorks: 0, failedOperations: 0,
+      truncated: false, limitations: [], providerBreakdown: null }), failures: [] }
 }
 
 function briefPayload() {
@@ -113,7 +123,8 @@ describe('AcademicResearchController', () => {
   it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = harness()
     const resultWorkVersionId = createWorkVersionId()
-    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+    const observedRun = retrievalRun()
+    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId, retrievalRun: observedRun,
       papers: [
         { status: 'extracted', version: { workVersionId: resultWorkVersionId }, evidence: { evidenceRecords: [{}, {}] } },
         { status: 'excluded', exclusion: { workVersionId: resultWorkVersionId, reason: 'survey' } },
@@ -126,6 +137,7 @@ describe('AcademicResearchController', () => {
       { status: 'excluded', workVersionId: resultWorkVersionId, reason: 'survey' },
       { status: 'paused', workVersionId: resultWorkVersionId, reason: 'too long' },
     ])
+    expect(result.retrievalRun).toBe(observedRun)
     const call = runAcademicResearchDraft.mock.calls[0]?.[0]
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
@@ -148,7 +160,7 @@ describe('AcademicResearchController', () => {
       externalIdentifiers: [], sourceRecords: [{ provider: 'arxiv', recordId: '2406.12345v1' }],
       contentHash: { status: 'not_extracted' }, supersedesWorkVersionId: null, status: 'active' }],
     index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() }, audit: { entries: [] } }, brief())
-    expect(selected[0]).toMatchObject({ sourceProvider: 'arxiv', urls: [
+    expect(selected.papers[0]).toMatchObject({ sourceProvider: 'arxiv', urls: [
       'https://arxiv.org/html/2406.12345v1', 'https://arxiv.org/pdf/2406.12345v1',
     ] })
     expect(call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
@@ -160,12 +172,13 @@ describe('AcademicResearchController', () => {
       releaseDate: { status: 'available', value: { iso: '2026', precision: 'year' } }, externalIdentifiers: [],
       sourceRecords: [{ provider: 'unregistered', recordId: 'missing' }], contentHash: { status: 'not_extracted' },
       supersedesWorkVersionId: null, status: 'active' }], index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
-    audit: { entries: [] } }, brief())).toEqual([])
+    audit: { entries: [] } }, brief())).toEqual({ papers: [], truncated: false })
   })
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
     const fixture = harness({ header: false })
     runAcademicResearchDraft.mockResolvedValue({ status: 'cancelled', sessionId: fixture.sessionId,
+      retrievalRun: retrievalRun('cancelled'),
       papers: [], failures: [], analysis: null, report: null } as never)
     await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: true },
       new AbortController().signal)
@@ -207,6 +220,7 @@ describe('AcademicResearchController', () => {
   it('preserves reasoning effort when max tokens are absent', async () => {
     const fixture = harness({ reasoning: true })
     runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: retrievalRun(),
       papers: [], failures: [], analysis: null, report: null } as never)
     await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({

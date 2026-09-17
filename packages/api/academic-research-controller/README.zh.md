@@ -24,9 +24,9 @@ kind: "package-reference"
 
 将控制器与 `academicSource`、`sessionController`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 arXiv、CVF、ACL Anthology 与 PMLR Provider。请求传入 Session ID、查询、可选结果上限及合成数据声明。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。
 
-操作通过 `runMaintenance()` 占用 Agent 的空闲阶段。Academic 预设在计划获批后结束当前轮次，客户端等待 Session 空闲后再启动该操作。正在执行的聊天或其他维护操作返回 `session/agent-busy`。Remote 取消与 Agent 取消合并为同一个信号。整轮完成或观察到取消后，响应返回工作流结果和 Session ID；该接口不提供断线恢复。
+操作通过 `runMaintenance()` 占用 Agent 的空闲阶段。Academic 预设在计划获批后结束当前轮次，客户端等待 Session 空闲后再启动该操作。正在执行的聊天或其他维护操作返回 `session/agent-busy`。Remote 取消与 Agent 取消合并为同一个信号。整轮完成或观察到取消后，响应返回工作流结果、Session ID 和 JSON 安全的 `retrievalRun`。该运行记录包含实际调用的 Provider、执行的查询、去重与纳入成果身份、覆盖统计、截断原因以及清理后的来源或论文操作失败；该接口不提供断线恢复。
 
-元数据选择使用规范版本、批准的论文类型、预印本策略、发表时间范围、撤稿状态和纳入数量上限。每个来源 Provider 提供自己的有序全文候选。全文解析后，模型返回明确的纳入或排除决定及原因；被排除论文保留在论文结果中，但不向分析提供证据。
+元数据选择使用规范版本、批准的论文类型、预印本策略、发表时间范围、撤稿状态和纳入数量上限。每个来源 Provider 提供自己的有序全文候选。全文解析后，模型返回明确的纳入或排除决定及原因；被排除论文保留在论文结果中，但不向分析提供证据。顶层 `status` 表示调用已完成或取消，`retrievalRun.status` 表示成功、部分成功或失败，`report.evaluation.status` 表示草稿质量。
 
 -----
 
@@ -52,7 +52,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
-- 一次 Remote 调用会保持到整轮结束。工作流恢复、进度流、持久运行身份、重试和长论文分段留待后续。
+- 一次 Remote 调用会保持到整轮结束。工作流恢复、进度流、RetrievalRun 持久记录、重试和长论文分段留待后续。
 - 当前每份获批计划都会建立版本 1，其身份由 Session 和获批计划调用共同确定；对已批准 Brief 进行后续版本修订留待后续。
 
 -----
