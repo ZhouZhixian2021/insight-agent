@@ -116,7 +116,7 @@ at most 3 entries primarily supporting any one focus question.`)
       expect(record.contentHash).toEqual({ status: 'available', value: request?.data.source.contentHash })
     }
   })
-  it('offers one formal entry with low reasoning and the durable Session identity', async () => {
+  it('offers one formal entry with the model default reasoning and durable Session identity', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     const result = await runAcademicResearchDraft({
@@ -124,13 +124,25 @@ at most 3 entries primarily supporting any one focus question.`)
     })
     expect(result).toMatchObject({ status: 'completed', sessionId: f.session.id, failures: [] })
     expect(f.adapter.calls).toHaveLength(2)
-    expect(f.adapter.calls.every(call => call.reasoningEffort === 'low')).toBe(true)
+    expect(f.adapter.calls.every(call => call.reasoningEffort === undefined)).toBe(true)
   })
-  it('rejects an unsupported default reasoning effort before external work begins', async () => {
+  it('allows a model without configurable reasoning when the caller omits an effort', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.supportsReasoning = false
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    await expect(runAcademicResearchDraft({
+      ctx: f.ctx, session: f.session, model: config, input: draft.input, adapters: draft.adapters,
+    })).resolves.toMatchObject({ status: 'completed', sessionId: f.session.id })
+    expect(draft.adapters.search).toHaveBeenCalledOnce()
+    expect(f.adapter.calls).toHaveLength(2)
+    expect(f.adapter.calls.every(call => call.reasoningEffort === undefined)).toBe(true)
+  })
+  it('rejects an explicit unsupported reasoning effort before external work begins', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.supportsReasoning = false
     await expect(runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: config, input: draft.input, adapters: draft.adapters,
+      ctx: f.ctx, session: f.session, model: { ...config, reasoningEffort: ReasoningEffortId('low') },
+      input: draft.input, adapters: draft.adapters,
     })).rejects.toMatchObject({ code: 'UNSUPPORTED_REASONING_EFFORT' })
     expect(draft.adapters.search).not.toHaveBeenCalled()
     expect(f.adapter.calls).toHaveLength(0)

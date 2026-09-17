@@ -10,7 +10,7 @@ Academic 各库已经形成经过测试的后端链路，但缺少由应用负�
 
 ## Decision
 
-`@deepseek-ai/dsh-api-academic-research-controller` 负责单个 `academicResearch.run` Remote 操作。它通过 Session Controller 解析目标 Agent，使用 `runMaintenance()` 占用空闲阶段，从最新 Session 请求头或 Agent 选择取得模型配置，并把 Agent 范围内的 Academic 检索与 Web 获取服务绑定到 `runAcademicResearchDraft()`。
+`@deepseek-ai/dsh-api-academic-research-controller` 负责单个 `academicResearch.run` Remote 操作。它通过 Session Controller 解析目标 Agent，使用 `runMaintenance()` 占用空闲阶段，从最新 Session 请求头或 Agent 选择取得模型配置，并把 Agent 范围内的 Academic 检索与 Web 获取服务绑定到 `runAcademicResearchDraft()`。控制器在创建适配器前通过 `agent.ctx.get()` 解析这些服务，既保留 Agent 范围，也避免跨 Fiber 属性读取；该机制由 [Agent 服务查找修复](../bug-fix/2026-09-17-academic-remote-agent-service-lookup.zh.md)负责。
 
 请求携带 Session 身份、检索词、结果上限和合成数据声明，但不携带 `ResearchBrief`。控制器从持久 Session 日志里最近一次成功的原生或 PTC `exit_plan_mode` 事件重建 Brief，要求计划中恰好包含一个 `academic-research-brief-json` 围栏区块，校验全部字段，根据 Session 与获批工具调用生成稳定身份，并以审核时间记录版本 1。Academic 预设在计划获批后结束当前轮次且不执行通用 Web 研究，主机等待 Session 空闲后再调用 Remote 操作。
 

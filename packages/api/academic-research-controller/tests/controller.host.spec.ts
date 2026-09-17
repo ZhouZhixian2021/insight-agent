@@ -68,7 +68,7 @@ function approvedBriefEvents() {
   return nativePlanEvents(briefPlan())
 }
 
-function harness(options: {
+async function harness(options: {
   busy?: boolean
   header?: boolean
   approvedPlan?: boolean
@@ -91,8 +91,13 @@ function harness(options: {
     }
   })
   const fetch = vi.fn()
-  ctx.provide('academicSource', { searchAll: search, resolveFullText } as never)
-  ctx.provide('web', { fetch } as never)
+  await ctx.plugin((serviceCtx: Context) => {
+    serviceCtx.provide('academicSource', { searchAll: search, resolveFullText } as never)
+    serviceCtx.provide('web', { fetch } as never)
+  })
+  let agentContext: Context | undefined
+  await ctx.plugin((agentCtx: Context) => { agentContext = agentCtx })
+  if (agentContext === undefined) throw new Error('missing Agent context fixture')
   const sessionId = SessionId('academic-session')
   const signal = new AbortController().signal
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
@@ -100,7 +105,7 @@ function harness(options: {
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
   const agent = {
     id: sessionId,
-    ctx,
+    ctx: agentContext,
     options: fallback,
     session: {
       id: sessionId,
@@ -121,7 +126,7 @@ function harness(options: {
 
 describe('AcademicResearchController', () => {
   it('runs the formal workflow with the Session model and registered source adapters', async () => {
-    const fixture = harness()
+    const fixture = await harness()
     const resultWorkVersionId = createWorkVersionId()
     const observedRun = retrievalRun()
     runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId, retrievalRun: observedRun,
@@ -176,7 +181,7 @@ describe('AcademicResearchController', () => {
   })
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
-    const fixture = harness({ header: false })
+    const fixture = await harness({ header: false })
     runAcademicResearchDraft.mockResolvedValue({ status: 'cancelled', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun('cancelled'),
       papers: [], failures: [], analysis: null, report: null } as never)
@@ -186,14 +191,14 @@ describe('AcademicResearchController', () => {
   })
 
   it('reports a busy Session before starting workflow work', async () => {
-    const fixture = harness({ busy: true })
+    const fixture = await harness({ busy: true })
     await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
       new AbortController().signal)).rejects.toMatchObject({ code: 'session/agent-busy' })
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('refuses to run without a successfully approved structured Brief plan', async () => {
-    const fixture = harness({ approvedPlan: false })
+    const fixture = await harness({ approvedPlan: false })
     await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
       new AbortController().signal)).rejects.toMatchObject({
       code: 'gateway/bad-request',
@@ -203,7 +208,7 @@ describe('AcademicResearchController', () => {
   })
 
   it('refuses to run when the Session has no model selection', async () => {
-    const fixture = harness({ model: false })
+    const fixture = await harness({ model: false })
     await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
       new AbortController().signal)).rejects.toMatchObject({
       code: 'gateway/bad-request',
@@ -212,13 +217,13 @@ describe('AcademicResearchController', () => {
   })
 
   it('also rejects a partially selected model', async () => {
-    const fixture = harness({ missingModel: true })
+    const fixture = await harness({ missingModel: true })
     await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
       new AbortController().signal)).rejects.toMatchObject({ code: 'gateway/bad-request' })
   })
 
   it('preserves reasoning effort when max tokens are absent', async () => {
-    const fixture = harness({ reasoning: true })
+    const fixture = await harness({ reasoning: true })
     runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun(),
       papers: [], failures: [], analysis: null, report: null } as never)
@@ -229,10 +234,10 @@ describe('AcademicResearchController', () => {
   })
 
   it('forwards Session lookup errors and normalizes non-Error Brief failures', async () => {
-    const missing = harness({ resolveError: true })
+    const missing = await harness({ resolveError: true })
     await expect(missing.controller.run({ sessionId: missing.sessionId, query: 'x', synthetic: false }, missing.signal))
       .rejects.toThrow('missing Session')
-    const malformed = harness({ eventsError: true })
+    const malformed = await harness({ eventsError: true })
     await expect(malformed.controller.run({ sessionId: malformed.sessionId, query: 'x', synthetic: false }, malformed.signal))
       .rejects.toMatchObject({ code: 'gateway/bad-request', message: 'invalid Academic Research Brief' })
   })
