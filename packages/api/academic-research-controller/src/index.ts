@@ -2,7 +2,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
-import { arxivFullTextUrls } from '@deepseek-ai/dsh-academic-source-arxiv'
 import {
   runAcademicResearchDraft,
   selectResearchPapers,
@@ -34,7 +33,7 @@ export class AcademicResearchController extends TypertRemoteService {
   }
 
   /**
-   * Run one arXiv-backed research pass while the addressed Agent is idle.
+   * Run one multi-source research pass while the addressed Agent is idle.
    * @param request - search query, disclosure, and the Session containing the approved brief plan.
    * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
    * @returns completed or cancelled draft data with its durable Session identity.
@@ -59,11 +58,11 @@ export class AcademicResearchController extends TypertRemoteService {
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       ...selectedModel.maxTokens === undefined ? {} : { maxTokens: selectedModel.maxTokens } }
     const adapters: Omit<DraftPipelineAdapters, 'generator'> = {
-      search: (search, operationSignal) => agent.ctx.academicSource.search(search, operationSignal),
+      search: (search, operationSignal) => agent.ctx.academicSource.searchAll(search, operationSignal),
       selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
-        const record = version.sourceRecords.find(candidate => candidate.provider === 'arxiv')
-        if (record === undefined) return null
-        return { urls: arxivFullTextUrls(record.recordId), sourceProvider: 'arxiv',
+        const fullText = agent.ctx.academicSource.resolveFullText(version)
+        if (fullText === null) return null
+        return { ...fullText,
           extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' }, hasHistoricalEvidence: false }
       }),
       fetcher: (url, operationSignal) => agent.ctx.web.fetch({ url }, operationSignal),

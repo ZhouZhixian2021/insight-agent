@@ -52,7 +52,12 @@ function makeSearchProvider(
   available: boolean,
   search: (request: AcademicSourceSearchRequest) => Promise<AcademicSourceSearchResult>,
 ): AcademicSourceProvider {
-  return { id, available: () => available, search: request => search(request) }
+  return {
+    id,
+    available: () => available,
+    search: request => search(request),
+    fullTextUrls: recordId => [`https://example.org/${id}/${recordId}.pdf`],
+  }
 }
 
 const available = true
@@ -151,10 +156,44 @@ describe('AcademicSourceRuntime execution resolution', () => {
       id: 'openalex',
       available: () => available,
       search: (_request, signal) => { seen.push(signal); return Promise.resolve(searchResult('openalex')) },
+      fullTextUrls: () => [],
     })
     const controller = new AbortController()
     await source.search({ query: 'retrieval' }, controller.signal)
     expect(seen[0]).toBe(controller.signal)
+  })
+})
+
+describe('AcademicSourceRuntime multi-provider execution', () => {
+  it('searches every usable provider and interleaves the total result bound', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve({
+      works: [makeWork('b1'), makeWork('b2')], truncated: false,
+    })))
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve({
+      works: [makeWork('a1'), makeWork('a2')], truncated: false,
+    })))
+
+    const result = await source.searchAll({ query: 'retrieval', maxResults: 3 })
+
+    expect(result.works.map(work => work.academicWork.title)).toEqual(['a1', 'b1', 'a2'])
+    expect(result.truncated).toBe(true)
+  })
+
+  it('ignores unavailable providers and resolves full text through source records', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('alpha'))))
+    source.registerSearchProvider(makeSearchProvider('beta', unavailable, () => Promise.resolve(searchResult('beta'))))
+    const result = await source.searchAll({ query: 'retrieval' })
+    const version = result.works[0]?.workVersion
+    if (version === undefined) throw new Error('missing test version')
+    const withRecord = { ...version, sourceRecords: [{ provider: 'alpha', recordId: 'paper-1' }] }
+
+    expect(result.works.map(work => work.academicWork.title)).toEqual(['alpha'])
+    expect(source.resolveFullText(withRecord)).toEqual({
+      sourceProvider: 'alpha',
+      urls: ['https://example.org/alpha/paper-1.pdf'],
+    })
   })
 })
 

@@ -71,7 +71,24 @@ registerSearchProvider(provider: AcademicSourceProvider): () => void
  * @returns the provider's normalized works, capped to `request.maxResults`.
  */
 async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+
+/**
+ * Search every usable provider and merge their results round-robin before applying the total bound.
+ * @param request - query and total result limit across providers.
+ * @param signal - optional cancellation forwarded to every provider.
+ * @returns normalized results from all usable providers.
+ */
+async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+
+/**
+ * Resolve full-text URLs through the provider named by a version's source records.
+ * @param version - version selected after ingestion.
+ * @returns the first usable provider's ordered candidates, or `null`.
+ */
+resolveFullText(version: WorkVersion): AcademicSourceFullText | null
 ```
+
+Types: [WorkVersion](academic-insight.md)
 
 Source: [`packages/academic/source/src/index.ts`](../../packages/academic/source/src/index.ts)
 <!-- END GENERATED cordis-surface -->

@@ -111,6 +111,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
         returns: 'the provider\'s normalized works, capped to `request.maxResults`.',
       },
+      {
+        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>',
+        description: 'Search every usable provider and merge their results round-robin before applying the total bound.',
+        parameters: [{ name: 'request', description: 'query and total result limit across providers.' }, { name: 'signal', description: 'optional cancellation forwarded to every provider.' }],
+        returns: 'normalized results from all usable providers.',
+      },
+      {
+        signature: 'resolveFullText(version: WorkVersion): AcademicSourceFullText | null',
+        description: 'Resolve full-text URLs through the provider named by a version\'s source records.',
+        parameters: [{ name: 'version', description: 'version selected after ingestion.' }],
+        returns: 'the first usable provider\'s ordered candidates, or `null`.',
+      },
     ],
   },
   {
@@ -3542,8 +3554,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicResearchRunValue {\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
   },
   {
+    name: 'AcademicSourceFullText',
+    declaration: 'export interface AcademicSourceFullText {\n    readonly sourceProvider: string;\n    readonly urls: readonly string[];\n}',
+  },
+  {
     name: 'AcademicSourceProvider',
-    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n}',
+    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    fullTextUrls(recordId: string): readonly string[];\n}',
   },
   {
     name: 'AcademicSourceSearchRequest',

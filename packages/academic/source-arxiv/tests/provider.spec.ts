@@ -46,6 +46,10 @@ describe('ArxivProvider.search', () => {
     expect(requested.pathname).toBe('/api/query')
     expect(requested.searchParams.get('search_query')).toBe('all:retrieval')
     expect(requested.searchParams.get('max_results')).toBe('3')
+    expect(provider.fullTextUrls('2406.12345v1')).toEqual([
+      'https://arxiv.org/html/2406.12345v1',
+      'https://arxiv.org/pdf/2406.12345v1',
+    ])
   })
 
   it('throws ACADEMIC_SOURCE_PROVIDER_ERROR on a non-2xx response', async () => {

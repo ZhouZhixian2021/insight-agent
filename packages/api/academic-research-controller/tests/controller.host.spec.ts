@@ -73,8 +73,15 @@ function harness(options: {
   const dispose = (): void => {}
   ctx.provide('typert', { lookups: { configure: () => dispose }, contexts: { configureHost: () => dispose } } as never)
   const search = vi.fn()
+  const resolveFullText = vi.fn((version: { sourceRecords: readonly { provider: string; recordId: string }[] }) => {
+    const record = version.sourceRecords[0]
+    return record === undefined || record.provider === 'unregistered' ? null : {
+      sourceProvider: record.provider,
+      urls: [`https://arxiv.org/html/${record.recordId}`, `https://arxiv.org/pdf/${record.recordId}`],
+    }
+  })
   const fetch = vi.fn()
-  ctx.provide('academicSource', { search } as never)
+  ctx.provide('academicSource', { searchAll: search, resolveFullText } as never)
   ctx.provide('web', { fetch } as never)
   const sessionId = SessionId('academic-session')
   const signal = new AbortController().signal
@@ -103,7 +110,7 @@ function harness(options: {
 }
 
 describe('AcademicResearchController', () => {
-  it('runs the formal workflow with the Session model and arXiv adapters', async () => {
+  it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = harness()
     const resultWorkVersionId = createWorkVersionId()
     runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
@@ -151,7 +158,7 @@ describe('AcademicResearchController', () => {
     versions: [{ schemaVersion: 1, workVersionId, academicWorkId,
       versionType: 'preprint', versionLabel: { status: 'available', value: 'v1' },
       releaseDate: { status: 'available', value: { iso: '2026', precision: 'year' } }, externalIdentifiers: [],
-      sourceRecords: [{ provider: 'openalex', recordId: 'W1' }], contentHash: { status: 'not_extracted' },
+      sourceRecords: [{ provider: 'unregistered', recordId: 'missing' }], contentHash: { status: 'not_extracted' },
       supersedesWorkVersionId: null, status: 'active' }], index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
     audit: { entries: [] } }, brief())).toEqual([])
   })

@@ -46,6 +46,12 @@ export interface AcademicSourceSearchResult {
   readonly truncated: boolean
 }
 
+/** Full-text candidates resolved by the provider that owns a version record. */
+export interface AcademicSourceFullText {
+  readonly sourceProvider: string
+  readonly urls: readonly string[]
+}
+
 /**
  * A source-capable backend. Registered with `ctx.academicSource.registerSearchProvider`.
  * `id` is a stable string, unique within the search capability kind.
@@ -56,6 +62,8 @@ export interface AcademicSourceProvider {
   available(): boolean
   /** Run one scholarly search; honor `signal` for cancellation. */
   search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+  /** Resolve ordered full-text candidates for one provider-owned record id. */
+  fullTextUrls(recordId: string): readonly string[]
 }
 
 /**

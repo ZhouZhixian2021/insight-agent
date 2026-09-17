@@ -7,8 +7,10 @@
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
+import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import z from '@deepseek-ai/schemastery'
 import type {
+  AcademicSourceFullText,
   AcademicSourceProvider,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
@@ -17,11 +19,18 @@ import { AcademicSourceError } from './types.ts'
 
 export { AcademicSourceError } from './types.ts'
 export type {
+  AcademicSourceFullText,
   AcademicSourceProvider,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
   AcademicSourceWork,
 } from './types.ts'
+export {
+  academicCatalogHtmlText,
+  normalizeAcademicCatalogRecord,
+  searchAcademicCatalogs,
+} from './catalog.ts'
+export type { AcademicCatalogRecord, AcademicCatalogSearchOptions } from './catalog.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -121,6 +130,46 @@ export class AcademicSourceRuntime extends Service {
     const result = await provider.search(request, signal)
     return capWorks(result, request.maxResults)
   }
+
+  /**
+   * Search every usable provider and merge their results round-robin before applying the total bound.
+   * @param request - query and total result limit across providers.
+   * @param signal - optional cancellation forwarded to every provider.
+   * @returns normalized results from all usable providers.
+   */
+  async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
+    const providers = [...this.providers.values()]
+      .filter(provider => provider.available())
+      .sort((left, right) => left.id.localeCompare(right.id))
+    if (providers.length === 0) {
+      throw new AcademicSourceError('no usable academic source provider is registered', 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE')
+    }
+    const results = await Promise.all(providers.map(async provider => capWorks(
+      await provider.search(request, signal),
+      request.maxResults,
+    )))
+    const works = roundRobin(results.map(result => result.works))
+    const capped = request.maxResults === undefined ? works : works.slice(0, request.maxResults)
+    return {
+      works: capped,
+      truncated: results.some(result => result.truncated) || capped.length < works.length,
+    }
+  }
+
+  /**
+   * Resolve full-text URLs through the provider named by a version's source records.
+   * @param version - version selected after ingestion.
+   * @returns the first usable provider's ordered candidates, or `null`.
+   */
+  resolveFullText(version: WorkVersion): AcademicSourceFullText | null {
+    for (const record of version.sourceRecords) {
+      const provider = this.providers.get(record.provider)
+      if (provider === undefined || !provider.available()) continue
+      const urls = provider.fullTextUrls(record.recordId)
+      if (urls.length > 0) return { sourceProvider: provider.id, urls }
+    }
+    return null
+  }
 }
 
 interface ResolvableProvider {
@@ -166,6 +215,19 @@ function resolveProvider<P extends ResolvableProvider>(selection: Selection<P>):
 function capWorks(result: AcademicSourceSearchResult, maxResults: number | undefined): AcademicSourceSearchResult {
   if (maxResults === undefined || result.works.length <= maxResults) return result
   return { ...result, works: result.works.slice(0, maxResults), truncated: true }
+}
+
+/** Interleave provider result lists so a total cap does not favor registration order. */
+function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
+  const merged: T[] = []
+  const length = Math.max(0, ...groups.map(group => group.length))
+  for (let index = 0; index < length; index++) {
+    for (const group of groups) {
+      const item = group[index]
+      if (item !== undefined) merged.push(item)
+    }
+  }
+  return merged
 }
 
 export default AcademicSourceRuntime
