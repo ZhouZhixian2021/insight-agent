@@ -1,6 +1,6 @@
 /** Stable application entry for one Academic research draft pass. */
 import type { Context } from '@deepseek-ai/cordis'
-import { ReasoningEffortId, type LlmCallConfig } from '@deepseek-ai/dsh-llm'
+import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionId } from '@deepseek-ai/dsh-session'
 import { runModelResearchDraft } from './model-pipeline.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
@@ -11,7 +11,7 @@ export interface AcademicResearchDraftRequest {
   readonly ctx: Context
   /** Live Session used for durable Academic model-call records. */
   readonly session: Session
-  /** Exact model route and generation controls; reasoning defaults to low when omitted. */
+  /** Exact model route and generation controls; omitted reasoning uses the model route default. */
   readonly model: LlmCallConfig
   /** Approved Brief, search request and synthetic-data disclosure. */
   readonly input: DraftPipelineInput
@@ -29,7 +29,7 @@ export interface AcademicResearchDraftResult extends DraftPipelineResult {
 /**
  * Run the formal B → A → B → C Academic draft pipeline entry.
  * Model capability is checked before search or acquisition begins. An omitted
- * reasoning effort becomes `low`; an explicit caller choice is preserved.
+ * reasoning effort uses the model route default; an explicit caller choice is preserved.
  * @param request - complete application-owned dependencies and research input.
  * @returns the draft and terminal retrieval result with its durable model-record Session identity.
  * @throws when the model route or requested reasoning effort is unsupported,
@@ -40,10 +40,7 @@ export async function runAcademicResearchDraft(
 ): Promise<AcademicResearchDraftResult> {
   const llm = request.ctx.get('llm')
   if (!llm) throw new Error('Academic research requires the DSH llm service.')
-  const proposed = request.model.reasoningEffort === undefined
-    ? { ...request.model, reasoningEffort: ReasoningEffortId('low') }
-    : request.model
-  const model = await llm.resolveCallConfig(proposed, request.signal)
+  const model = await llm.resolveCallConfig(request.model, request.signal)
   const result = await runModelResearchDraft(
     request.ctx,
     request.session,

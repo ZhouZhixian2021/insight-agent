@@ -43,6 +43,14 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
+    const academicSource = agent.ctx.get('academicSource')
+    if (academicSource === undefined) {
+      throw new RemoteError('gateway/internal', 'Academic research is unavailable: the Session has no academicSource service', {})
+    }
+    const web = agent.ctx.get('web')
+    if (web === undefined) {
+      throw new RemoteError('gateway/internal', 'Academic research is unavailable: the Session has no web service', {})
+    }
     let brief
     try {
       brief = researchBriefFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
@@ -58,14 +66,14 @@ export class AcademicResearchController extends TypertRemoteService {
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       ...selectedModel.maxTokens === undefined ? {} : { maxTokens: selectedModel.maxTokens } }
     const adapters: Omit<DraftPipelineAdapters, 'generator'> = {
-      search: (search, operationSignal) => agent.ctx.academicSource.searchAll(search, operationSignal),
+      search: (search, operationSignal) => academicSource.searchAll(search, operationSignal),
       selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
-        const fullText = agent.ctx.academicSource.resolveFullText(version)
+        const fullText = academicSource.resolveFullText(version)
         if (fullText === null) return null
         return { ...fullText,
           extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' }, hasHistoricalEvidence: false }
       }),
-      fetcher: (url, operationSignal) => agent.ctx.web.fetch({ url }, operationSignal),
+      fetcher: (url, operationSignal) => web.fetch({ url }, operationSignal),
       now: () => new Date().toISOString(),
     }
     let maintenance: Promise<AcademicResearchDraftResult>

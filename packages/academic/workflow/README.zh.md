@@ -50,7 +50,7 @@ runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标�
 
 返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
-应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, input, adapters, signal })`。这个稳定入口会在检索或全文获取前检查准确模型路由；没有指定推理强度时默认使用 `low`，调用方明确指定的值保持不变。不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
+应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, input, adapters, signal })`。这个稳定入口会在检索或全文获取前检查准确模型路由。没有指定推理强度时使用模型路由默认值；调用方明确指定的值会被保留并校验。明确指定但不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
 
 `runModelResearchDraft(ctx, session, config, input, adapters, signal)` 继续作为较底层的组合入口。adapters 提供 search、selectPapers、fetcher 和 now；它绑定模型生成器，沿用既有流水线连接 B 的解析/证据和 C 的分析/评测草稿。两个入口都不拥有 Session 生命周期。Brief 批准、选文策略、期限、报告保存和发布仍由调用方负责。
 

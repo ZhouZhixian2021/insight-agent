@@ -30,3 +30,11 @@
 ## 验证
 
 Academic Workflow 与 Academic Research Controller 聚焦测试共 6 个文件、125 个测试通过；两个包的 TypeScript 检查、新控制器构建、工作区约束、导出 JSDoc、Cordis 目录生成检查、文档结构与双语配对检查通过。Windows 检出中的 `verify-cordis-config` 仍只报告既有符号链接文件 `apps/cli/tests/profiles/acp/cordis.yml` 被读取为普通文件；本次未为该平台问题增加绕过代码。
+
+## 真实 Web 的 Agent 服务查找修复
+
+2026-09-17 真实 Web 请求越过模型预检后，在首次检索前返回 `cannot get property "academicSource" without inject`。控制器自身声明了 `academicSource` 与 `web` 依赖，但适配器延迟读取的是另一个 Cordis Fiber 拥有的 `agent.ctx` 属性，不能继承控制器的属性访问授权；`web` 使用了相同方式，若只修复检索，全文获取阶段还会再次失败。
+
+控制器现于解析 Agent 后立即通过 `agent.ctx.get()` 取得 Agent 范围内的 `academicSource` 与 `web` 服务，缺失时在工作流开始前返回明确可用性错误；检索、全文候选解析和 Web 获取适配器捕获已经解析的服务。该方式保留 Session 对应 Agent 的服务范围，没有回退到控制器的全局上下文，也没有修改 B 的 Provider、A 的工作流接口或 C 的返回字段。
+
+控制器测试改为把服务提供方与 Agent 上下文挂载成同级 Cordis Fiber。修改源码前，该测试复现与 Web 相同的 `without inject` 错误；修复后控制器 42 项通过。Academic workflow 与 controller 共 6 个测试文件、169 项通过，完整 Host TypeScript、两个包的 oxlint、六组相关双语配对、文档快速门禁 15/15 及 workflow/controller 聚焦打包通过。本轮尚未提交或推送；真实 Web 复测需要重启服务后执行。
