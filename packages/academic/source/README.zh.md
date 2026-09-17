@@ -36,7 +36,7 @@ kind: "package-reference"
 |---|---|---|
 | `searchProvider` | （未设置） | 固定的搜索提供方 id；未设置时在恰好一个可用时自动选择 |
 
-两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
+两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 把所有可用提供方聚合成一个批次：单个提供方失败时，其他提供方的成果保留在 `batch.items`，失败记录进 `batch.failures`，而 `providers`、`discoveredRecords`、`truncated` 与 `limitations` 分别报告实际调用的提供方、应用上限前的记录数、丢包状态与来源覆盖限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
 ### 提供方选择
 
@@ -55,7 +55,7 @@ kind: "package-reference"
 
 ### 失败与恢复
 
-失败抛出 `AcademicSourceError`，携带稳定、可机读的错误码；消息补充细节，例如缺失的提供方 id 或存在歧义的候选集。调用方按错误码路由并决定如何降级。
+`search()` 失败抛出 `AcademicSourceError`，携带稳定、可机读的错误码；消息补充细节，例如缺失的提供方 id 或存在歧义的候选集。`searchAll()` 则把每个提供方可预期的搜索失败转换为来源级 `ProviderFailure`（不含凭据的消息、可重试的上游类别）并保留幸存提供方的成果，因此部分失败不会中止整轮；选择/配置错误仍然抛出，取消以 `ACADEMIC_SOURCE_ABORTED` 中止整轮。调用方按错误码或批次状态路由并决定如何降级。
 
 -----
 
@@ -64,9 +64,10 @@ kind: "package-reference"
 
 | 导出 | 角色 |
 |---|---|
-| `AcademicSourceProvider` | 后端契约：可用性、搜索与来源专用全文 URL 解析。 |
+| `AcademicSourceProvider` | 后端契约：可用性、搜索、来源专用全文 URL 解析，以及可选的已声明覆盖限制。 |
 | `AcademicSourceSearchRequest` | 一次学术查询，带可选 `maxResults` 上限。 |
 | `AcademicSourceSearchResult` | 规范化成果/版本对，外加 `truncated` 标记。 |
+| `AcademicSourceSearchBatchResult` | `searchAll()` 的聚合结果：实际调用的提供方、上限前记录数、成果与来源级失败组成的 `BatchResult`、截断状态与覆盖限制。 |
 | `AcademicSourceWork` | 一对 provider 中立的 `{ academicWork, workVersion }`。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
 | `AcademicSourceRuntime` | Provider 注册、单源/多源搜索与全文解析。 |
@@ -91,7 +92,7 @@ kind: "package-reference"
 - **无网络客户端**——服务只做选择与上限控制；抓取、限流处理与重试属于各提供方实现。
 - **搜索请求只携带 `query` 与 `maxResults`**——provider 中立的过滤（`publicationWindow`、成果类型）延后到后端与有驱动的消费方能诚实支持时再加。
 - **无按标识符抓取操作**——按 DOI 或提供方 id 定位单一成果是另一项未来操作，不会塞进 `search()`。
-- **无检索运行报告**——共享模型尚未发布 `RetrievalRun`、`CoverageSummary`、`ProviderFailure` 与 `BatchResult`，因此本 seam 不记录运行统计，失败仅通过 `AcademicSourceError` 呈现。
+- **无检索运行报告**——`searchAll()` 发布批次事实（`providers`、`discoveredRecords`、`BatchResult`、`limitations`），但构造 `RetrievalRun` 与 `CoverageSummary` 仍由工作流消费方负责；在提供方暴露更细的错误粒度之前，提供方搜索失败统一转换为上游 `FailureCategory`。
 
 <a id="dev-note"></a>
 ### 开发备注

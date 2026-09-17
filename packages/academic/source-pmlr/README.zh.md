@@ -47,7 +47,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-Provider 复用共享目录抓取、过滤和规范化助手。专用解析器提取每篇论文块与摘要路径；Provider 再推导对应的规范 PDF 路径。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
+Provider 复用共享目录抓取、过滤和规范化助手。专用解析器提取每篇论文块与摘要路径；Provider 再推导对应的规范 PDF 路径。Provider 通过 `limitations` 字段声明其仅覆盖配置目录的限制，由 `searchAll()` 呈现。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
 
 </details>
 

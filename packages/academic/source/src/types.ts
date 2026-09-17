@@ -1,12 +1,17 @@
 /**
  * Vocabulary for the academic source capability seam (`ctx.academicSource`). A source provider
  * searches scholarly works and returns provider-neutral work/version pairs; the seam owns provider
- * selection, cancellation, the result bound, and one error taxonomy, while cross-record version
- * linking, deduplication, and run/coverage statistics remain later increments of the shared model.
+ * selection, cancellation, the result bound, and one error taxonomy, and `searchAll()` aggregates
+ * every usable provider into one partial-success batch, while cross-record version linking,
+ * deduplication, and run/coverage statistics remain later increments of the shared model.
  * @module @deepseek-ai/dsh-academic-source/types
  */
 
-import type { AcademicWork, WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import type {
+  AcademicWork,
+  BatchResult,
+  WorkVersion,
+} from '@deepseek-ai/dsh-academic-model'
 
 /**
  * One provider-neutral work/version pair: the portable search-result item a
@@ -53,6 +58,25 @@ export interface AcademicSourceFullText {
 }
 
 /**
+ * Batch outcome of one `searchAll()` round. `batch.items` keeps the works that
+ * survived provider failures and the aggregate bound; `batch.failures` keeps
+ * one source-level `ProviderFailure` per failed provider. The inherited
+ * `works`/`truncated` fields mirror `batch.items` and the shared truncation
+ * flag so the existing single-result adapter shape keeps compiling until the
+ * workflow consumes the batch fields directly.
+ */
+export interface AcademicSourceSearchBatchResult extends AcademicSourceSearchResult {
+  /** Ids of every provider whose search was initiated this round, zero-result and failed providers included; sorted and deduplicated. */
+  readonly providers: readonly string[]
+  /** Sum of the record counts each provider returned, counted before the aggregate `maxResults` bound is applied. */
+  readonly discoveredRecords: number
+  /** Successful works and source-level failures; both non-empty means `partial_success`. */
+  readonly batch: BatchResult<AcademicSourceWork>
+  /** Source-owned coverage limits declared by the called providers, plus one aggregate-bound entry when the total bound dropped records. */
+  readonly limitations: readonly string[]
+}
+
+/**
  * A source-capable backend. Registered with `ctx.academicSource.registerSearchProvider`.
  * `id` is a stable string, unique within the search capability kind.
  */
@@ -64,6 +88,13 @@ export interface AcademicSourceProvider {
   search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
   /** Resolve ordered full-text candidates for one provider-owned record id. */
   fullTextUrls(recordId: string): readonly string[]
+  /**
+   * Source-owned coverage limits surfaced through `searchAll()`'s
+   * `limitations`, such as searching only configured catalog pages. Each entry
+   * is a complete credential-free sentence and never a per-item error message;
+   * omitted means the provider declares no coverage limit.
+   */
+  readonly limitations?: readonly string[]
 }
 
 /**

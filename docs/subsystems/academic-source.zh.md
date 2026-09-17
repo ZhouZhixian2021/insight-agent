@@ -1,5 +1,5 @@
 ---
-description: "学术来源 seam：AcademicSourceSearchRequest/Result、AcademicSourceWork、提供方可用性与 AcademicSourceError。"
+description: "学术来源 seam：AcademicSourceSearchRequest/Result/BatchResult、AcademicSourceWork、提供方可用性与 AcademicSourceError。"
 kind: "subsystem"
 ---
 
@@ -7,13 +7,19 @@ kind: "subsystem"
 
 [English](academic-source.md) | 中文
 
-学术来源 seam 是一个[能力 seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.zh.md)，横跨一个 `ctx.academicSource` 服务。Service Definition（[dsh-academic-source](../../packages/academic/source)）拥有 `ctx.academicSource` 与 Provider 注册表；arXiv 提供当前 Service Provider，工作流消费规范化结果。学术来源是一项可选能力，不属于 agent loop（智能体循环）主干，因此其词汇定义在此而非 [core.md](core.zh.md) 中。
+学术来源 seam 是一个[能力 seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.zh.md)，横跨一个 `ctx.academicSource` 服务。Service Definition（[dsh-academic-source](../../packages/academic/source)）拥有 `ctx.academicSource` 与 Provider 注册表；arXiv、CVF、ACL Anthology 与 PMLR 提供当前的 Service Provider，工作流消费规范化结果。学术来源是一项可选能力，不属于 agent loop（智能体循环）主干，因此其词汇定义在此而非 [core.md](core.zh.md) 中。
 
 源码：[`packages/academic/source/src/types.ts`](../../packages/academic/source/src/types.ts)
 
 ## 搜索请求与结果
 
 每个 seam 请求只携带一个 `query`。`maxResults` 是消费方自有的上限，通过 seam 传递并在返回时强制执行——如果提供方返回超量，seam 截断 `works[]` 并设置 `truncated`。搜索返回 provider 中立的 `AcademicSourceWork` 项，每一项都是来自[共享模型](academic-insight.zh.md)的一对 `{ academicWork, workVersion }`：`academicWork` 是全新的成果身份，`workVersion` 是它唯一的不可变版本，因此跨记录的版本关联与去重留在摄取增量中，而不属于提供方。
+
+## 多提供方批次结果
+
+`searchAll()` 运行每个可用的提供方，并把结果聚合成 `AcademicSourceSearchBatchResult`。单个提供方的失败不会丢弃其他提供方的成果：可预期的搜索失败变成 `batch.failures` 中的来源级 `ProviderFailure`，而幸存的成果保留在 `batch.items` 中，因此两者同时存在的轮次是 `partial_success`，全部成功（包括零结果搜索）是 `success`，只有失败的轮次是 `failed` 且保留全部失败明细。seam 把被拒绝的 `AcademicSourceError` 转换为携带提供方不含凭据消息的可重试上游失败；非预期的拒绝值以 `unknown` 类别呈现且不可重试，搜索级失败从不设置 `affectedWorkVersionId`。配置错误仍然抛出对应的选择错误代码，调用方取消会让整轮以 `ACADEMIC_SOURCE_ABORTED` 中止，而不是编造提供方失败。
+
+`providers` 列出实际发起搜索的每个 id——包括零结果与失败的提供方——按提供方 id 排序并去重。`discoveredRecords` 统计应用聚合 `maxResults` 上限之前各提供方返回的记录数；`truncated` 在提供方或聚合上限丢弃记录时置位；`limitations` 携带每个被调用提供方声明的覆盖限制（即提供方接口的可选 `limitations` 字段），并在总上限丢弃记录时追加一条聚合上限条目。继承的 `works` 与 `truncated` 字段镜像 `batch.items`，供工作流仍在使用的单结果适配器形态消费。
 
 ## 提供方可用性
 
@@ -25,7 +31,7 @@ kind: "subsystem"
 
 ## 服务
 
-`AcademicSourceRuntime` 注册搜索提供方，以 `ACADEMIC_SOURCE_DUPLICATE_PROVIDER` 拒绝重复 id，并在执行时以结构化的选择错误解析提供方。每个提供方在自己的包边界把记录转换成规范化的 `{ academicWork, workVersion }` 对；seam 只负责选择、转发取消与强制执行 `maxResults`。
+`AcademicSourceRuntime` 注册搜索提供方，以 `ACADEMIC_SOURCE_DUPLICATE_PROVIDER` 拒绝重复 id，并在执行时以结构化的选择错误解析提供方。每个提供方在自己的包边界把记录转换成规范化的 `{ academicWork, workVersion }` 对；seam 负责选择、转发取消、强制执行 `maxResults`，并把多提供方轮次聚合为一个部分成功的批次。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -74,11 +80,26 @@ async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promis
 
 /**
  * Search every usable provider and merge their results round-robin before applying the total bound.
+ *
+ * One provider's failure never discards another provider's results: expected search failures
+ * become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining
+ * providers survive in `batch.items`. Every called provider succeeds — including zero-result
+ * searches — yields `batch.status: success`; at least one surviving work beside failures yields
+ * `partial_success`; only failures yields `failed` with every failure retained. Configuration
+ * failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw,
+ * and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of
+ * fabricating provider failures.
+ *
+ * `discoveredRecords` counts every record the providers returned before the aggregate
+ * `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound
+ * dropped records; `limitations` carries each called provider's declared coverage limits and one
+ * aggregate-bound entry when the total bound dropped records. The inherited `works` and
+ * `truncated` fields mirror `batch.items` for the existing single-result adapter shape.
  * @param request - query and total result limit across providers.
  * @param signal - optional cancellation forwarded to every provider.
- * @returns normalized results from all usable providers.
+ * @returns the aggregate batch outcome from all usable providers.
  */
-async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Resolve full-text URLs through the provider named by a version's source records.

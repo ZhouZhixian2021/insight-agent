@@ -28,7 +28,7 @@ export interface AcademicSourceRuntimeConfig {
 }
 ```
 
-来源：[`packages/academic/source/src/index.ts:55`](../packages/academic/source/src/index.ts)
+来源：[`packages/academic/source/src/index.ts:60`](../packages/academic/source/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-acl"></a>
 

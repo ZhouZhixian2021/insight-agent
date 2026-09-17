@@ -23,6 +23,9 @@ export interface PmlrProviderOptions {
 export class PmlrProvider implements AcademicSourceProvider {
   readonly id = PMLR_PROVIDER_ID
 
+  /** Surfaced through `searchAll()`; catalog search never leaves the configured volumes. */
+  readonly limitations = ['PMLR search covers only configured volume catalogs and performs no site-wide crawl.']
+
   /** @param resolveOptions - current base URL and official volume catalogs. */
   constructor(private readonly resolveOptions: () => PmlrProviderOptions) {}
 

@@ -36,7 +36,7 @@ Load the service and pin a provider with `searchProvider`, or let a single mount
 |---|---|---|
 | `searchProvider` | (unset) | Pinned search provider id; unset auto-selects when exactly one is usable |
 
-Both search methods return normalized works and enforce the total `request.maxResults` bound. `resolveFullText()` maps a selected version's source record back to its provider-owned ordered URL candidates. Calls accept an optional `AbortSignal` forwarded to providers.
+Both search methods return normalized works and enforce the total `request.maxResults` bound. `searchAll()` aggregates every usable provider into one batch: a single provider's failure keeps the other providers' works in `batch.items` and records the failure in `batch.failures`, while `providers`, `discoveredRecords`, `truncated`, and `limitations` report the called providers, the pre-bound record count, dropped-record state, and source coverage limits. `resolveFullText()` maps a selected version's source record back to its provider-owned ordered URL candidates. Calls accept an optional `AbortSignal` forwarded to providers.
 
 ### Provider selection
 
@@ -55,7 +55,7 @@ A provider's availability is a cheap local check — for example whether its key
 
 ### Failures and recovery
 
-Failures throw `AcademicSourceError` with a stable, machine-routable code; the message adds detail such as the missing provider id or the ambiguous candidate set. Callers route on the code and decide how to degrade.
+`search()` failures throw `AcademicSourceError` with a stable, machine-routable code; the message adds detail such as the missing provider id or the ambiguous candidate set. `searchAll()` instead converts each provider's expected search failure into a source-level `ProviderFailure` (credential-free message, retryable upstream category) and keeps the surviving providers' works, so partial failures never abort the whole round; selection/configuration errors still throw, and cancellation aborts the round as `ACADEMIC_SOURCE_ABORTED`. Callers route on the code or the batch status and decide how to degrade.
 
 -----
 
@@ -64,9 +64,10 @@ Failures throw `AcademicSourceError` with a stable, machine-routable code; the m
 
 | Export | Role |
 |---|---|
-| `AcademicSourceProvider` | Backend contract: availability, search, and source-specific full-text URL resolution. |
+| `AcademicSourceProvider` | Backend contract: availability, search, source-specific full-text URL resolution, and optional declared coverage limitations. |
 | `AcademicSourceSearchRequest` | One scholarly query with an optional `maxResults` bound. |
 | `AcademicSourceSearchResult` | Normalized work/version pairs plus a `truncated` flag. |
+| `AcademicSourceSearchBatchResult` | `searchAll()` aggregate: called providers, pre-bound record count, the `BatchResult` of works and source failures, truncation, and coverage limitations. |
 | `AcademicSourceWork` | One provider-neutral `{ academicWork, workVersion }` pair. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
 | `AcademicSourceRuntime` | Registration, single/all-source search, and full-text resolution. |
@@ -91,7 +92,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 - **No network client** — the service selects and bounds providers; fetching, rate-limit handling, and retries belong to each provider implementation.
 - **Search requests carry only `query` and `maxResults`** — provider-neutral filters (`publicationWindow`, work types) are deferred until backends and a driven consumer can honor them honestly.
 - **No fetch-by-identifier operation** — resolving a single work by DOI or provider id is a separate future operation, not a widening of `search()`.
-- **No retrieval-run reporting** — `RetrievalRun`, `CoverageSummary`, `ProviderFailure`, and `BatchResult` are not yet published by the shared model, so this seam records no run statistics and surfaces failure only through `AcademicSourceError`.
+- **No retrieval-run reporting** — `searchAll()` publishes batch facts (`providers`, `discoveredRecords`, `BatchResult`, `limitations`), but constructing `RetrievalRun` and `CoverageSummary` stays with the workflow consumer, and provider search failures convert to one upstream `FailureCategory` until providers expose finer error granularity.
 
 <a id="dev-note"></a>
 ### Dev Note

@@ -46,7 +46,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-Provider 通过共享目录助手抓取配置页面。专用解析器提取标题链接、作者和会议信息；Provider 再把 `/html/*.html` 记录地址转换为对应的 `/papers/*.pdf` 地址。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
+Provider 通过共享目录助手抓取配置页面。专用解析器提取标题链接、作者和会议信息；Provider 再把 `/html/*.html` 记录地址转换为对应的 `/papers/*.pdf` 地址。Provider 通过 `limitations` 字段声明其仅覆盖配置目录的限制，由 `searchAll()` 呈现。去重与正文解析仍由 `academic-ingestion` 和 `academic-evidence` 负责。
 
 </details>
 

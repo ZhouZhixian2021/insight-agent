@@ -1,5 +1,5 @@
 ---
-description: "The academic source seam: AcademicSourceSearchRequest/Result, AcademicSourceWork, provider availability, and AcademicSourceError."
+description: "The academic source seam: AcademicSourceSearchRequest/Result/BatchResult, AcademicSourceWork, provider availability, and AcademicSourceError."
 kind: "subsystem"
 ---
 
@@ -7,13 +7,19 @@ kind: "subsystem"
 
 English | [中文](academic-source.zh.md)
 
-The academic source seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.md) spanning one `ctx.academicSource` service. The Service Definition ([dsh-academic-source](../../packages/academic/source)) owns `ctx.academicSource` and the provider registry; arXiv supplies the current Service Provider, while the workflow consumes normalized results. Academic source is one optional capability, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
+The academic source seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.md) spanning one `ctx.academicSource` service. The Service Definition ([dsh-academic-source](../../packages/academic/source)) owns `ctx.academicSource` and the provider registry; arXiv, CVF, ACL Anthology, and PMLR supply the current Service Providers, while the workflow consumes normalized results. Academic source is one optional capability, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
 
 Source: [`packages/academic/source/src/types.ts`](../../packages/academic/source/src/types.ts)
 
 ## Search request and result
 
 Each seam request carries exactly one `query`. `maxResults` is a consumer-owned bound passed through the seam and enforced on the way back — if a provider over-returns, the seam truncates `works[]` and sets `truncated`. A search returns provider-neutral `AcademicSourceWork` items, each a `{ academicWork, workVersion }` pair from the [shared model](academic-insight.md): `academicWork` is a fresh work identity and `workVersion` its single immutable version, so cross-record version linking and deduplication stay in the ingestion increment rather than in a provider.
+
+## Multi-provider batch results
+
+`searchAll()` runs every usable provider and aggregates the outcomes into `AcademicSourceSearchBatchResult`. One provider's failure never discards another provider's works: expected search failures become source-level `ProviderFailure` entries in `batch.failures` while surviving works stay in `batch.items`, so a round holding both is `partial_success`, all-success rounds (zero-result searches included) are `success`, and only-failure rounds are `failed` with every failure retained. The seam converts a rejected `AcademicSourceError` into a retryable upstream failure carrying the provider's credential-free message; unexpected rejection values surface as `unknown` and not retryable, and search-level failures never set `affectedWorkVersionId`. Configuration errors still throw their selection codes, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` rather than fabricating provider failures.
+
+`providers` lists every id whose search was initiated — zero-result and failed providers included — sorted and deduplicated by id. `discoveredRecords` counts the records the providers returned before the aggregate `maxResults` bound, `truncated` is set when either a provider or the aggregate bound dropped records, and `limitations` carries each called provider's declared coverage limits (the provider interface's optional `limitations`) plus one aggregate-bound entry when the total bound dropped records. The inherited `works` and `truncated` fields mirror `batch.items` for the single-result adapter shape the workflow still consumes.
 
 ## Provider availability
 
@@ -25,7 +31,7 @@ A provider's `available(): boolean` is a cheap local check (credential presence,
 
 ## The service
 
-`AcademicSourceRuntime` registers search providers, rejects duplicate ids with `ACADEMIC_SOURCE_DUPLICATE_PROVIDER`, and resolves providers at execution time with structured selection errors. Each provider translates its own records into normalized `{ academicWork, workVersion }` pairs at its package boundary; the seam only selects, forwards cancellation, and enforces `maxResults`.
+`AcademicSourceRuntime` registers search providers, rejects duplicate ids with `ACADEMIC_SOURCE_DUPLICATE_PROVIDER`, and resolves providers at execution time with structured selection errors. Each provider translates its own records into normalized `{ academicWork, workVersion }` pairs at its package boundary; the seam selects, forwards cancellation, enforces `maxResults`, and aggregates multi-provider rounds into one partial-success batch.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -74,11 +80,26 @@ async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promis
 
 /**
  * Search every usable provider and merge their results round-robin before applying the total bound.
+ *
+ * One provider's failure never discards another provider's results: expected search failures
+ * become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining
+ * providers survive in `batch.items`. Every called provider succeeds — including zero-result
+ * searches — yields `batch.status: success`; at least one surviving work beside failures yields
+ * `partial_success`; only failures yields `failed` with every failure retained. Configuration
+ * failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw,
+ * and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of
+ * fabricating provider failures.
+ *
+ * `discoveredRecords` counts every record the providers returned before the aggregate
+ * `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound
+ * dropped records; `limitations` carries each called provider's declared coverage limits and one
+ * aggregate-bound entry when the total bound dropped records. The inherited `works` and
+ * `truncated` fields mirror `batch.items` for the existing single-result adapter shape.
  * @param request - query and total result limit across providers.
  * @param signal - optional cancellation forwarded to every provider.
- * @returns normalized results from all usable providers.
+ * @returns the aggregate batch outcome from all usable providers.
  */
-async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Resolve full-text URLs through the provider named by a version's source records.

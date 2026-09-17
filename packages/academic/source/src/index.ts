@@ -2,18 +2,22 @@
  * Service Definition for the academic source capability seam (`ctx.academicSource`): a provider
  * registry and provider-selecting execution for scholarly search. Duplicate ids are rejected. At
  * execution time, a configured provider must exist and be usable; without one, exactly one usable
- * provider is required, so selection never depends on registration order.
+ * provider is required, so selection never depends on registration order. `searchAll()` runs every
+ * usable provider and aggregates their outcomes into one partial-success batch.
  * @module @deepseek-ai/dsh-academic-source
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
-import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import { createBatchResult, createFailureId } from '@deepseek-ai/dsh-academic-model'
+import type { ProviderFailure, WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import z from '@deepseek-ai/schemastery'
 import type {
   AcademicSourceFullText,
   AcademicSourceProvider,
+  AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
+  AcademicSourceWork,
 } from './types.ts'
 import { AcademicSourceError } from './types.ts'
 
@@ -21,6 +25,7 @@ export { AcademicSourceError } from './types.ts'
 export type {
   AcademicSourceFullText,
   AcademicSourceProvider,
+  AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
   AcademicSourceWork,
@@ -133,26 +138,66 @@ export class AcademicSourceRuntime extends Service {
 
   /**
    * Search every usable provider and merge their results round-robin before applying the total bound.
+   *
+   * One provider's failure never discards another provider's results: expected search failures
+   * become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining
+   * providers survive in `batch.items`. Every called provider succeeds — including zero-result
+   * searches — yields `batch.status: success`; at least one surviving work beside failures yields
+   * `partial_success`; only failures yields `failed` with every failure retained. Configuration
+   * failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw,
+   * and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of
+   * fabricating provider failures.
+   *
+   * `discoveredRecords` counts every record the providers returned before the aggregate
+   * `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound
+   * dropped records; `limitations` carries each called provider's declared coverage limits and one
+   * aggregate-bound entry when the total bound dropped records. The inherited `works` and
+   * `truncated` fields mirror `batch.items` for the existing single-result adapter shape.
    * @param request - query and total result limit across providers.
    * @param signal - optional cancellation forwarded to every provider.
-   * @returns normalized results from all usable providers.
+   * @returns the aggregate batch outcome from all usable providers.
    */
-  async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
+  async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
     const providers = [...this.providers.values()]
       .filter(provider => provider.available())
       .sort((left, right) => left.id.localeCompare(right.id))
     if (providers.length === 0) {
       throw new AcademicSourceError('no usable academic source provider is registered', 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE')
     }
-    const results = await Promise.all(providers.map(async provider => capWorks(
-      await provider.search(request, signal),
-      request.maxResults,
-    )))
-    const works = roundRobin(results.map(result => result.works))
-    const capped = request.maxResults === undefined ? works : works.slice(0, request.maxResults)
+    const settled = await Promise.all(providers.map(async (provider) => {
+      try {
+        return { provider, result: await provider.search(request, signal) }
+      } catch (reason: unknown) {
+        return { provider, reason }
+      }
+    }))
+    const cancelled = cancellationOf(settled, signal)
+    if (cancelled !== undefined) throw cancelled
+    const failures: ProviderFailure[] = []
+    const groups: (readonly AcademicSourceWork[])[] = []
+    let providerTruncated = false
+    for (const entry of settled) {
+      if ('result' in entry) {
+        groups.push(entry.result.works)
+        providerTruncated = providerTruncated || entry.result.truncated
+      } else {
+        failures.push(searchFailure(entry.provider, entry.reason))
+      }
+    }
+    const merged = roundRobin(groups)
+    const capped = request.maxResults === undefined ? merged : merged.slice(0, request.maxResults)
+    const batch = createBatchResult(capped, failures)
+    const limitations = declaredLimitations(providers)
+    if (capped.length < merged.length) {
+      limitations.push(`The aggregate result bound retained ${capped.length} of ${merged.length} discovered records.`)
+    }
     return {
-      works: capped,
-      truncated: results.some(result => result.truncated) || capped.length < works.length,
+      works: batch.items,
+      truncated: providerTruncated || capped.length < merged.length,
+      providers: providers.map(provider => provider.id),
+      discoveredRecords: merged.length,
+      batch,
+      limitations,
     }
   }
 
@@ -215,6 +260,66 @@ function resolveProvider<P extends ResolvableProvider>(selection: Selection<P>):
 function capWorks(result: AcademicSourceSearchResult, maxResults: number | undefined): AcademicSourceSearchResult {
   if (maxResults === undefined || result.works.length <= maxResults) return result
   return { ...result, works: result.works.slice(0, maxResults), truncated: true }
+}
+
+/** One provider's settled search: its success result or its rejection reason. */
+type SettledSearch =
+  | { readonly provider: AcademicSourceProvider; readonly result: AcademicSourceSearchResult }
+  | { readonly provider: AcademicSourceProvider; readonly reason: unknown }
+
+/**
+ * The whole round's cancellation, if any: the first provider's `ACADEMIC_SOURCE_ABORTED`
+ * error, or a synthesized one when the signal is already aborted.
+ * @param settled - per-provider outcomes; abort rejections abort the round, never become failures.
+ * @param signal - the caller's cancellation signal.
+ * @returns the error to rethrow, or `undefined` when the round was not cancelled.
+ */
+function cancellationOf(settled: readonly SettledSearch[], signal: AbortSignal | undefined): AcademicSourceError | undefined {
+  for (const entry of settled) {
+    if ('reason' in entry && entry.reason instanceof AcademicSourceError && entry.reason.code === 'ACADEMIC_SOURCE_ABORTED') {
+      return entry.reason
+    }
+  }
+  if (signal?.aborted === true) {
+    return new AcademicSourceError('academic source searchAll aborted', 'ACADEMIC_SOURCE_ABORTED', { cause: signal.reason })
+  }
+  return undefined
+}
+
+/**
+ * Convert one provider's rejected search into a source-level `ProviderFailure`.
+ * Expected provider failures carry the provider's credential-free message as a
+ * retryable upstream error; unexpected rejection values surface as unknown and
+ * not retryable. Finer categories (network, timeout, rate limit) wait for a
+ * provider error-granularity increment; search-level failures never set
+ * `affectedWorkVersionId`.
+ * @param provider - the provider whose search rejected.
+ * @param reason - the rejection value; provider messages are credential-free by construction.
+ * @returns the `ProviderFailure` recorded in `batch.failures`.
+ */
+function searchFailure(provider: AcademicSourceProvider, reason: unknown): ProviderFailure {
+  const expected = reason instanceof AcademicSourceError
+  return {
+    schemaVersion: 1,
+    failureId: createFailureId(),
+    provider: provider.id,
+    operation: 'search',
+    category: expected ? 'upstream_error' : 'unknown',
+    message: expected ? reason.message : String(reason),
+    retryable: expected,
+    retryAfter: null,
+  }
+}
+
+/** Collect the called providers' declared coverage limitations, deduplicated in provider order. */
+function declaredLimitations(providers: readonly AcademicSourceProvider[]): string[] {
+  const limitations: string[] = []
+  for (const provider of providers) {
+    for (const limitation of provider.limitations ?? []) {
+      if (!limitations.includes(limitation)) limitations.push(limitation)
+    }
+  }
+  return limitations
 }
 
 /** Interleave provider result lists so a total cap does not favor registration order. */
