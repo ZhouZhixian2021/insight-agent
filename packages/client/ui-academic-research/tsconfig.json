@@ -5,7 +5,7 @@
     "outDir": "lib/types"
   },
   "include": [
-    "src/**/*.ts"
+    "src"
   ],
   "references": [
     {
@@ -13,6 +13,27 @@
     },
     {
       "path": "../../academic/report"
+    },
+    {
+      "path": "../locale"
+    },
+    {
+      "path": "../ui-renderer"
+    },
+    {
+      "path": "../ui-sidebar"
+    },
+    {
+      "path": "../ui-slots"
+    },
+    {
+      "path": "../ui-primitives"
+    },
+    {
+      "path": "../../api/academic-research-controller"
+    },
+    {
+      "path": "../../academic/model"
     }
   ]
 }

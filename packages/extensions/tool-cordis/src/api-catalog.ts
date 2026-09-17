@@ -88,7 +88,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     methods: [
       {
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
-        description: 'Run one arXiv-backed research pass while the addressed Agent is idle.',
+        description: 'Run one multi-source research pass while the addressed Agent is idle.',
         parameters: [{ name: 'request', description: 'search query, disclosure, and the Session containing the approved brief plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
         returns: 'completed or cancelled draft data with its durable Session identity.',
       },

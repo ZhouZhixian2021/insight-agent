@@ -1,5 +1,5 @@
 ---
-description: "Web-client surface for the academic research report: a client plugin skeleton with an internal HTML report renderer."
+description: "Web-client surface for the academic research report: a fixed-data run result viewer and an internal HTML report renderer."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Render a portable HTML report with evidence navigation, search and Markdown download.
+The main Web sidebar exposes Academic research samples: a fixed-data run viewer with separate lifecycle, retrieval and report-quality states, coverage, evidence navigation and Markdown download.
 
 ## Table of Contents
 
@@ -21,9 +21,9 @@ Render a portable HTML report with evidence navigation, search and Markdown down
 <a id="use-this-package"></a>
 ## Use this package
 
-`renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. The browser half is a plugin skeleton; this renderer is an internal helper until the phase-4 research surface wires in.
+`renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This renderer remains internal. The main Web entry registers through sidebar.footer.action and uses framework locale dictionaries.
 
-This stateless library publishes no invariant companion; automated tests verify output relationships and failure behavior.
+Scenarios cover pending, partial success, success, cancellation, failure, blocked quality and request errors. Cancel only changes the local sample, not a live Session. Pending runs have no progress percentage; null providerBreakdown never becomes invented provider counts.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -46,7 +46,7 @@ This package performs no model cache operations.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- No live progress, session subscription, Brief approval controls, or main-Web navigation entry. These require A's workflow and a later slot-based client plugin. User data is displayed as text, not executable Markdown or HTML.
+- Fixed samples are explicitly synthetic. The official Remote does not yet supply retrievalRun; live requests, server progress, Session recovery and Brief approval are not connected. The local adaptation combines existing Remote types with the shared RetrievalRun. User content renders as text. No independently divergent state requires an invariant companion.
 
 <a id="dev-note"></a>
 ### Dev Note

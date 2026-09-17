@@ -12,7 +12,7 @@ Shared Claim types do not define analysis behavior or prove semantic support. A 
 
 The [analysis library](../../../../packages/academic/analysis/README.md) generates attributed method and finding comparisons from at least two independent works. It selects an accepted canonical version, or the sole available version, and refuses ambiguous multiple-version selection. It uses A5 records and immutable evidence snapshots. The [evaluation library](../../../../packages/academic/eval/README.md) checks current identities, references, source depth, coverage and explicit reviewer records; reference integrity alone leaves semantic review pending.
 
-The [report library](../../../../packages/academic/report/README.md) evaluates at its own delivery entry point, exposes draft limitations and refuses unsafe final delivery. The [viewer](../../../../packages/client/ui-academic-research/README.md) creates a self-contained HTML artifact with escaped content, evidence navigation and Markdown download. It is not registered as a live Web plugin and owns no Session events. The input-preparation decision remains active and is extended, not superseded.
+The [report library](../../../../packages/academic/report/README.md) evaluates at its own delivery entry point, exposes draft limitations and refuses unsafe final delivery. The [viewer](../../../../packages/client/ui-academic-research/README.md) creates a self-contained HTML artifact with escaped content, evidence navigation and Markdown download. The standalone renderer owns no Session events; the later fixed-data Web entry is described in the [run viewer decision](2026-09-17-academic-run-viewer.md). The input-preparation decision remains active and is extended, not superseded.
 
 ## Alternatives considered
 

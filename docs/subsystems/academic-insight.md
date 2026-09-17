@@ -23,7 +23,7 @@ Shared record changes land through member A so provider-specific and report-spec
 
 ## Evidence-to-report consumers
 
-The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) reconciles current evidence with explicit semantic reviews; the [report library](../../packages/academic/report/README.md) executes evaluation at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and Markdown download without a live Session or Web slot registration. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
+The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) reconciles current evidence with explicit semantic reviews; the [report library](../../packages/academic/report/README.md) executes evaluation at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a fixed-data Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
 
 ## Initial model increment
 
@@ -47,7 +47,7 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 
 ```ts cordis-catalog
 /**
- * Run one arXiv-backed research pass while the addressed Agent is idle.
+ * Run one multi-source research pass while the addressed Agent is idle.
  * @param request - search query, disclosure, and the Session containing the approved brief plan.
  * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
  * @returns completed or cancelled draft data with its durable Session identity.
