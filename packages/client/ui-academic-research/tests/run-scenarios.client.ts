@@ -1,6 +1,6 @@
 /** Deterministic presentation scenarios, with no network requests or simulated progress timer. */
 import { sampleRun } from './run-sample.ts'
-import type { RunView } from './run-types.ts'
+import type { RunView } from '../src/client/run-types.ts'
 
 /** Scenario choices are local demonstration controls, not Remote lifecycle states. */
 export const scenarios = ['running', 'partial_success', 'success', 'cancelled', 'failed', 'blocked', 'error'] as const

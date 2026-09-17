@@ -30,7 +30,9 @@
       "platform": "web",
       "inject": [
         "@deepseek-ai/dsh-client-ui-renderer",
-        "@deepseek-ai/dsh-client-locale"
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-ui-session"
       ]
     }
   },
@@ -58,6 +60,8 @@
     "@deepseek-ai/dsh-api-academic-research-controller": "workspace:^",
     "@deepseek-ai/dsh-academic-model": "workspace:^",
     "react": "^18.2.0",
-    "@types/react": "~18.3.1"
+    "@types/react": "~18.3.1",
+    "@deepseek-ai/dsh-api-remotes": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-session": "workspace:^"
   }
 }

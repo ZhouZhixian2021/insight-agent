@@ -1,5 +1,5 @@
 ---
-description: "Web-client surface for the academic research report: a fixed-data run result viewer and an internal HTML report renderer."
+description: "Web-client surface for the academic research report: a Session-backed Remote run viewer and an internal HTML report renderer."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The main Web sidebar exposes Academic research samples: a fixed-data run viewer with separate lifecycle, retrieval and report-quality states, coverage, evidence navigation and Markdown download.
+The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, retrieval and report-quality states, coverage, evidence navigation and Markdown download.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ The main Web sidebar exposes Academic research samples: a fixed-data run viewer 
 
 `renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This renderer remains internal. The main Web entry registers through sidebar.footer.action and uses framework locale dictionaries.
 
-Scenarios cover pending, partial success, success, cancellation, failure, blocked quality and request errors. Cancel only changes the local sample, not a live Session. Pending runs have no progress percentage; null providerBreakdown never becomes invented provider counts.
+Enter a query after selecting a model and approving the Research Brief plan in the current Session. The entry calls ctx.remote.academicResearch.run with sessionId, the trimmed query, synthetic: false and an AbortSignal. Cancellation, dialog close and Session changes abort the owned request; late replies from disposed forms cannot update a different Session. A returned cancellation preserves producer facts; cancellation without a final reply explicitly reports that no server result was received. Pending runs have no progress percentage; null providerBreakdown never becomes invented provider counts. Fixed scenarios live only in tests.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -32,11 +32,11 @@ Scenarios cover pending, partial success, success, cancellation, failure, blocke
 
 #### What the model sees
 
-`renderResearchPage()` returns data without issuing model requests.
+The standalone renderer `renderResearchPage()` returns data without model requests. The Web form submits the query to the Academic Controller; the workflow owns model prompts and recorded research state.
 
 #### Token effect
 
-No direct tokens. Consumers own subsequent rendering and request logging.
+Starting research can consume model tokens through the configured workflow. Viewing, filtering and downloading returned data issue no additional model requests.
 
 #### KV Cache effect
 
@@ -46,7 +46,7 @@ This package performs no model cache operations.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- Fixed samples are explicitly synthetic. The official Remote does not yet supply retrievalRun; live requests, server progress, Session recovery and Brief approval are not connected. The local adaptation combines existing Remote types with the shared RetrievalRun. User content renders as text. No independently divergent state requires an invariant companion.
+- The viewer uses AcademicResearchRunValue directly. It offers no server progress stream, automatic retry, result recovery after closing, or Brief approval action. Cancellation of the carrier does not itself confirm server settlement. User content renders as text. No independently divergent state requires an invariant companion.
 
 <a id="dev-note"></a>
 ### Dev Note

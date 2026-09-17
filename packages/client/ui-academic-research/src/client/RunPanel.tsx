@@ -1,7 +1,8 @@
 /** Render producer facts without inferring progress, coverage or semantic approval. */
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import type { RunView, RunValue } from './run-types.ts'
+import type { RunView } from './run-types.ts'
+import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import css from './RunPanel.module.css'
 
 type Copy = PropsLocale<'academicRun'>
@@ -17,7 +18,7 @@ export type RunPanelProps = Copy & { readonly view: RunView; readonly onCancel: 
 export function RunPanel({ view, onCancel, t }: RunPanelProps) {
   if (view.phase === 'running') return <section aria-busy="true">
     <p role="status">{t('running')}</p><p>{t('waiting')}</p>
-    <button type="button" onClick={onCancel}>{t('cancel')}</button>
+    <button type="button" disabled={view.cancelling} onClick={onCancel}>{t(view.cancelling ? 'cancelling' : 'cancel')}</button>
   </section>
   if (view.phase === 'error') return <section role="alert"><h3>{t('error')}</h3><p>{view.message}</p></section>
   return <SettledRun value={view.value} t={t} />
@@ -27,7 +28,7 @@ function Lines({ values, empty }: { readonly values: readonly string[]; readonly
   return values.length === 0 ? <p>{empty}</p> : <ul>{values.map((value, index) => <li key={index}>{value}</li>)}</ul>
 }
 
-function SettledRun({ value, t }: Copy & { readonly value: RunValue }) {
+function SettledRun({ value, t }: Copy & { readonly value: AcademicResearchRunValue }) {
   const { retrievalRun: run, report } = value
   const coverage = run.coverageSummary
   const counts = ['discoveredRecords', 'deduplicatedWorks', 'includedWorks', 'availableFulltextWorks',
@@ -78,7 +79,7 @@ export function downloadMarkdown(markdown: string): void {
   setTimeout(() => { URL.revokeObjectURL(url) }, 1000)
 }
 
-function ReportView({ report, t }: Copy & { readonly report: NonNullable<RunValue['report']> }) {
+function ReportView({ report, t }: Copy & { readonly report: NonNullable<AcademicResearchRunValue['report']> }) {
   const [query, setQuery] = useState('')
   const [openedEvidence, setOpenedEvidence] = useState<string | null>(null)
   const matches = (text: string) => text.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/academic-insight.md
-academic-insight.md: 93b477f068f7c48ab73716fa088cd307757efd80
-academic-insight.zh.md: 94660b8436a609574096a63214d3f882e9269823
+academic-insight.md: 416ebb7ecc28454cb2aa892aba2de4ec0e16c0d7
+academic-insight.zh.md: 8f042ccb16f1dd95584643069e56f0b2cef6302d

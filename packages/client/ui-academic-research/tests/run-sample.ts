@@ -1,5 +1,5 @@
 /** Exact JSON-safe copy of A's synthetic expectedValue; never a live result. */
-import type { RunValue } from './run-types.ts'
+import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 
 // Serialized sample IDs acquire their existing shared brands only at this fixture boundary.
 const value = {
@@ -163,7 +163,7 @@ const value = {
       'Semantic support still requires independent review.',
     ],
   },
-} as unknown as RunValue & { readonly report: NonNullable<RunValue['report']> }
+} as unknown as AcademicResearchRunValue & { readonly report: NonNullable<AcademicResearchRunValue['report']> }
 
 /** Return an isolated copy of the agreed fixed result.
  * @returns Synthetic handoff result with its known report.

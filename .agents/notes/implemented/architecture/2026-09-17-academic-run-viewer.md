@@ -1,4 +1,4 @@
-# Agent Note: Fixed-data Academic run viewer
+# Agent Note: Session-backed Academic run viewer
 
 Status: implemented
 
@@ -6,22 +6,24 @@ English | [中文](2026-09-17-academic-run-viewer.zh.md)
 
 ## Problem
 
-The Academic Remote does not yet expose the retrievalRun agreed in A's handoff. A completed Promise, successful retrieval and report approval describe different facts; a report-only viewer hides partial failures and coverage limits.
+A completed request, successful retrieval and report approval describe different facts. The Web entry must present the formal AcademicResearchRunValue without manufacturing progress or mixing results between Sessions.
 
 ## Decision
 
-The [client plugin](../../../../packages/client/ui-academic-research/README.md) registers an explicitly synthetic sample viewer in sidebar.footer.action. A local RunValue combines the existing Remote result with the shared RetrievalRun, without modifying either producer type. A source fixture copies the handoff expectedValue and an equality test detects drift.
+The [client plugin](../../../../packages/client/ui-academic-research/README.md) registers a research form in sidebar.footer.action. The framework useSessions selector supplies the selected saved Session. The form submits a trimmed query, synthetic: false and an AbortSignal through an injected callback; the [Remote assembly](../../../../packages/api/remotes/README.md) mounts the generated Academic contribution. The Controller owns approved-brief and model prerequisites.
 
-The panel receives caller-owned view data and a cancellation callback. The shipped sample entry only switches fixed local scenarios; it issues no Remote request, progress timer or model call. Pending views show waiting and cancel. Settled views display lifecycle, retrieval and report quality independently, read coverage directly, keep source and paper failures distinct, and preserve cancelled partial results without a report. Null providerBreakdown produces an unavailable message.
+Each mounted Session form owns one AbortController. Running, error and settled views follow request settlement. Closing, switching Sessions or unloading aborts the operation; request identity suppresses late updates after disposal. User cancellation aborts the carrier and waits for settlement. If a final value arrives, the panel preserves it; if cancellation rejects without a value, the page explicitly reports the absent server result. No report is fabricated. Samples and scenario derivation live only in tests.
+
+The result panel displays lifecycle, retrieval and quality separately, reads coverage directly, and keeps source and paper failures distinct. Null providerBreakdown produces an unavailable message. Existing evidence navigation, filtering and Markdown download consume the returned report.
 
 ## Alternatives considered
 
-Calling the current Remote and filling absent coverage from papers would invent source facts. Changing the Controller type in C's work would violate the producer ownership. Both are deferred to A's integration; the local adapter can be removed when the official result matches the handoff.
+A temporary intersection with RetrievalRun would duplicate a field already owned by the official result. A scenario selector in the production entry would substitute invented results for live work. Treating abort as a server completion would claim information the transport has not returned.
 
 ## Consequences
 
-The sample viewer has no Session persistence, server cancellation or semantic approval action. The legacy standalone report renderer remains internal. The [earlier report baseline](2026-09-14-academic-report-slice.md) still owns analysis and evaluation semantics; this decision adds the Web slot and run-result presentation.
+Results remain component-local and disappear on close or Session change. The entry offers no progress stream, automatic retry, recovery or approval action. The [report baseline](2026-09-14-academic-report-slice.md) retains responsibility for analysis and evaluation semantics.
 
 ## Verification
 
-Owner tests cover handoff equality, status separation, empty and incomplete evidence, safe text, filtering, exact Markdown download and plugin disposal. A keyless browser test boots the shipped Web Loader composition and exercises the actual sidebar entry, evidence and sample cancellation. Generated Controller schemas need zod at runtime; its missing dependency is declared without changing Controller types or behavior.
+Owner tests cover returned results, structured failures, cancellation, duplicate submission, close, Session changes and late settlement. The keyless browser test boots the shipped Web composition, creates a real Session and verifies its actual Controller prerequisite error through the Remote path without issuing model calls. This validates transport integration, not a live-provider full research benchmark.
