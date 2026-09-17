@@ -20,6 +20,9 @@ export interface CvfProviderOptions {
 export class CvfProvider implements AcademicSourceProvider {
   readonly id = CVF_PROVIDER_ID
 
+  /** Surfaced through `searchAll()`; catalog search never leaves the configured pages. */
+  readonly limitations = ['CVF search covers only configured catalog pages and performs no site-wide crawl.']
+
   /** @param resolveOptions - current configured official conference catalogs. */
   constructor(private readonly resolveOptions: () => CvfProviderOptions) {}
 

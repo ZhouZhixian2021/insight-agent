@@ -23,6 +23,9 @@ export interface AclProviderOptions {
 export class AclProvider implements AcademicSourceProvider {
   readonly id = ACL_PROVIDER_ID
 
+  /** Surfaced through `searchAll()`; catalog search never leaves the configured volumes. */
+  readonly limitations = ['ACL Anthology search covers only configured volume catalogs and performs no site-wide crawl.']
+
   /** @param resolveOptions - current base URL and official volume catalogs. */
   constructor(private readonly resolveOptions: () => AclProviderOptions) {}
 

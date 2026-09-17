@@ -50,12 +50,12 @@ function makeWork(title: string): AcademicSourceWork {
 function makeSearchProvider(
   id: string,
   available: boolean,
-  search: (request: AcademicSourceSearchRequest) => Promise<AcademicSourceSearchResult>,
+  search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchResult>,
 ): AcademicSourceProvider {
   return {
     id,
     available: () => available,
-    search: request => search(request),
+    search: (request, signal) => search(request, signal),
     fullTextUrls: recordId => [`https://example.org/${id}/${recordId}.pdf`],
   }
 }
@@ -194,6 +194,173 @@ describe('AcademicSourceRuntime multi-provider execution', () => {
       sourceProvider: 'alpha',
       urls: ['https://example.org/alpha/paper-1.pdf'],
     })
+  })
+})
+
+describe('AcademicSourceRuntime searchAll batch result', () => {
+  it('reports success with zero results when every provider succeeds empty', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve({ works: [], truncated: false })))
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve({ works: [], truncated: false })))
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.batch.status).toBe('success')
+    expect(result.batch.items).toEqual([])
+    expect(result.batch.failures).toEqual([])
+    expect(result.providers).toEqual(['alpha', 'beta'])
+    expect(result.discoveredRecords).toBe(0)
+    expect(result.truncated).toBe(false)
+    expect(result.limitations).toEqual([])
+  })
+
+  it('keeps successful works and records one source-level failure on partial success', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))))
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.reject(new AcademicSourceError(
+      'beta catalog request failed (HTTP 503)',
+      'ACADEMIC_SOURCE_PROVIDER_ERROR',
+    ))))
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.batch.status).toBe('partial_success')
+    expect(result.batch.items.map(work => work.academicWork.title)).toEqual(['a1'])
+    expect(result.batch.failures).toHaveLength(1)
+    const failure = result.batch.failures[0]
+    if (failure === undefined) throw new Error('missing test failure')
+    expect(failure.provider).toBe('beta')
+    expect(failure.operation).toBe('search')
+    expect(failure.category).toBe('upstream_error')
+    expect(failure.message).toBe('beta catalog request failed (HTTP 503)')
+    expect(failure.retryable).toBe(true)
+    expect(failure.retryAfter).toBeNull()
+    expect('affectedWorkVersionId' in failure).toBe(false)
+    expect(result.providers).toEqual(['alpha', 'beta'])
+    expect(result.works).toBe(result.batch.items)
+  })
+
+  it('returns failed with every failure detail when all called providers fail', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.reject(new AcademicSourceError(
+      'alpha catalog request failed (HTTP 500)',
+      'ACADEMIC_SOURCE_PROVIDER_ERROR',
+    ))))
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.reject(new Error('unexpected crash'))))
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.batch.status).toBe('failed')
+    expect(result.batch.items).toEqual([])
+    expect(result.batch.failures).toHaveLength(2)
+    const [alpha, beta] = result.batch.failures
+    if (alpha === undefined || beta === undefined) throw new Error('missing test failures')
+    expect(alpha.provider).toBe('alpha')
+    expect(alpha.category).toBe('upstream_error')
+    expect(alpha.retryable).toBe(true)
+    expect(beta.provider).toBe('beta')
+    expect(beta.category).toBe('unknown')
+    expect(beta.retryable).toBe(false)
+    expect(beta.message).toBe('Error: unexpected crash')
+    expect(result.providers).toEqual(['alpha', 'beta'])
+    expect(result.discoveredRecords).toBe(0)
+  })
+
+  it('aborts the whole round on cancellation without fabricating provider failures', async () => {
+    const { source } = await mountSource()
+    const controller = new AbortController()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))))
+    source.registerSearchProvider(makeSearchProvider('beta', available, (_request, signal) => {
+      controller.abort()
+      if (signal?.aborted === true) {
+        return Promise.reject(new AcademicSourceError('beta search aborted', 'ACADEMIC_SOURCE_ABORTED'))
+      }
+      return Promise.resolve(searchResult('b1'))
+    }))
+
+    await expect(source.searchAll({ query: 'retrieval' }, controller.signal))
+      .rejects.toThrow(expect.objectContaining({ code: 'ACADEMIC_SOURCE_ABORTED' }))
+  })
+
+  it('aborts when the signal is already aborted even if every provider ignored it', async () => {
+    const { source } = await mountSource()
+    const controller = new AbortController()
+    controller.abort()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))))
+
+    await expect(source.searchAll({ query: 'retrieval' }, controller.signal))
+      .rejects.toThrow(expect.objectContaining({ code: 'ACADEMIC_SOURCE_ABORTED' }))
+  })
+
+  it('counts discovered records before the aggregate bound and reports the truncation', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve({
+      works: [makeWork('a1'), makeWork('a2'), makeWork('a3')], truncated: false,
+    })))
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve({
+      works: [makeWork('b1'), makeWork('b2')], truncated: false,
+    })))
+
+    const result = await source.searchAll({ query: 'retrieval', maxResults: 2 })
+
+    expect(result.discoveredRecords).toBe(5)
+    expect(result.batch.items.map(work => work.academicWork.title)).toEqual(['a1', 'b1'])
+    expect(result.works.map(work => work.academicWork.title)).toEqual(['a1', 'b1'])
+    expect(result.truncated).toBe(true)
+    expect(result.limitations).toEqual(['The aggregate result bound retained 2 of 5 discovered records.'])
+    expect(result.batch.status).toBe('success')
+  })
+
+  it('sets truncated through a provider-side drop without an aggregate limitation', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve({
+      works: [makeWork('a1')], truncated: true,
+    })))
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.truncated).toBe(true)
+    expect(result.limitations).toEqual([])
+    expect(result.discoveredRecords).toBe(1)
+  })
+
+  it('collects declared provider coverage limitations in provider order without duplicates', async () => {
+    const { source } = await mountSource()
+    const shared = 'Catalog search covers only configured catalog pages.'
+    source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve(searchResult('b1'))))
+    source.registerSearchProvider({
+      ...makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))),
+      limitations: [shared, 'Alpha rejects queries shorter than three characters.'],
+    })
+    source.registerSearchProvider({
+      ...makeSearchProvider('gamma', available, () => Promise.resolve(searchResult('g1'))),
+      limitations: [shared],
+    })
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.limitations).toEqual([shared, 'Alpha rejects queries shorter than three characters.'])
+  })
+
+  it('keeps throwing the configuration error when no provider is usable', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('alpha', unavailable, () => Promise.resolve(searchResult('a1'))))
+    await expect(source.searchAll({ query: 'retrieval' }))
+      .rejects.toThrow(expect.objectContaining({ code: 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE' }))
+  })
+
+  it('includes zero-result and failed providers in the called provider list', async () => {
+    const { source } = await mountSource()
+    source.registerSearchProvider(makeSearchProvider('zeta', available, () => Promise.resolve({ works: [], truncated: false })))
+    source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.reject(new AcademicSourceError(
+      'alpha down',
+      'ACADEMIC_SOURCE_PROVIDER_ERROR',
+    ))))
+
+    const result = await source.searchAll({ query: 'retrieval' })
+
+    expect(result.providers).toEqual(['alpha', 'zeta'])
+    expect(result.batch.status).toBe('failed')
   })
 })
 
