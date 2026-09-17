@@ -2,7 +2,7 @@
 
 ## 基线与范围
 
-2026-09-15 核对远程 master 为 88cde0f，本地个人分支 dev/zhouzhixian2021 已包含相同提交。范围包括 A5（PR #12）、B 的全文解析（PR #13）及 C 的报告模块（PR #14）。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)已在本地实现单轮检索到评测草稿的库级调用链；[模型适配器](../../packages/academic/workflow/src/model.ts)已实现 DSH 模型服务调用及 Session 请求/结果记录，已用合成模型回答和真实本地存储验证。主 Web、真实模型联网验收与完整工作流恢复尚未完成。当前未提交或推送。
+2026-09-17 核对远程 master 为 2a938ba，本地个人分支 dev/zhouzhixian2021 已包含相同提交。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索，以及 C 的最小分析、评测、报告和独立渲染器均已合并。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供单轮检索到评测草稿的库级调用链，[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief 并调用该链路。主 Web 研究页面、来源部分失败、覆盖记录、完整工作流恢复及正式 Web 真实模型验收尚未完成。
 
 ## 调用顺序
 
@@ -30,6 +30,40 @@
 4. **统计与报告**：CoverageSummary、BatchResult、RetrievalRun 已有共享表示，但 C 的 EvaluationInput 当前不接收 CoverageSummary。A 记录真实运行统计、纳入筛选与截断原因；需要报告展示的统计由 A、C 明确传递接口，不能声称当前评测已验证完整检索覆盖。
 5. **输入限制执行**：查询参数目前只有 query 和 maxResults；时间窗口、范围、停止条件等 Brief 要求不能假定提供方已全部执行。A 列出工作流必须检查的规则，并把无法满足的要求显式拒绝或披露。
 6. **恢复与审核身份**：IngestIndex 包含 Map，不能直接 JSON.stringify 后当作可恢复状态。A6 需定义编码、解析校验和版本策略；语义审核的可信来源、适用证据及重新审核条件需明确。
+
+## 多来源结果交接
+
+本轮复用 A5 已发布的 `BatchResult<T>`、`ProviderFailure`、`CoverageSummary` 和 `RetrievalRun`，不新增第二套失败或覆盖类型。B 拥有来源执行结果，A 拥有运行汇总，C 只读取浏览器安全投影。`providerBreakdown` 继续为 `null`；没有已确认的逐来源统计需求，不提前扩展共享字段。
+
+### B 向 A 提供的搜索批次
+
+B 后续为多来源搜索结果增加一个来源包拥有的批次结构，字段如下。这个结构复用 `BatchResult<AcademicSourceWork>`，不进入 `academic-model`，因为 `AcademicSourceWork` 属于来源能力。
+
+| 字段 | 含义 |
+|---|---|
+| `providers` | 实际发起搜索的 Provider ID，包含成功返回零条和失败的 Provider，去重并保持确定顺序。 |
+| `discoveredRecords` | 应用总结果上限前，各 Provider 实际返回的记录数总和；只能来自执行观察。 |
+| `batch` | `BatchResult<AcademicSourceWork>`；成功项保留在 `items`，来源级失败保留在 `failures`。 |
+| `truncated` | Provider 或来源服务因数量上限丢弃了结果。 |
+| `limitations` | 来源声明的覆盖限制，例如仅搜索配置的会议或论文集目录；不能用模型估算。 |
+
+单个 Provider 的网络、限流、上游或解析失败进入 `batch.failures`，其他 Provider 继续。所有 Provider 运行失败时返回 `status: failed` 和完整失败列表。没有可用 Provider、配置不合法及重复注册属于运行时配置错误，继续尽早抛出；用户取消进入整轮取消，不伪装成 `ProviderFailure`。
+
+### A 生成的运行汇总
+
+A 在工作流结束或取消时建立一条 `RetrievalRun`。`queries` 保存实际执行的查询，`providers` 直接采用 B 的观察，`failures` 合并来源搜索失败和工作流观察到的全文获取或抽取失败。全文与抽取失败必须保留 `affectedWorkVersionId`；日志和浏览器返回不复制凭据或未经清理的异常文本。
+
+`CoverageSummary` 的计数使用以下统一口径：`discoveredRecords` 取 B 的搜索观察；`deduplicatedWorks` 取摄取后的成果数；`includedWorks` 只计算实际进入分析的成果；`availableFulltextWorks` 计算已成功取得全文的成果；当前流程不降级摘要或元数据，因此 `abstractOnlyWorks` 和 `metadataOnlyWorks` 为零；`failedOperations` 等于运行记录中的失败项数。来源截断、来源失败、候选或纳入数量上限都会令覆盖 `truncated` 为 true，并在 `limitations` 中说明原因。
+
+终态 `status` 采用 A5 批处理语义：没有失败为 `success`，存在成功纳入成果和失败为 `partial_success`，没有成功纳入成果且存在失败为 `failed`。正常零结果仍是 `success`。取消通过 `stage: cancelled` 表达，并保留取消前的成功项和失败；`status` 仍只描述已返回成果与失败的组合。
+
+### A 向 C 提供的浏览器结果
+
+`AcademicResearchRunValue` 后续增加一份 JSON 安全的检索运行投影，至少包含运行 ID、阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 使用该投影显示来源失败、覆盖不足和截断原因，不从论文数组反推调用了哪些 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
+
+本次先固定上述交接，不开始逐来源统计、自动重试、多轮检索、持久恢复或进度流。B 完成搜索批次后，A 再接入 `RetrievalRun`；C 可以同时使用固定投影夹具开发页面，最终以 A 合并的 Remote 类型为准。
+
+B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多来源研究运行交接说明](academic-multi-source-run-handoff.md)。
 
 ## 模型抽取接入：输入、返回与检查规则
 

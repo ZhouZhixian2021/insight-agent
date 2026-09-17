@@ -18,6 +18,8 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 - [`b-retrieval-evidence.sample.json`](b-retrieval-evidence.sample.json): simulates B's Research Brief, retrieval run, papers, versions, evidence, Evidence Card, coverage statistics, and item-level failures.
 - [`c-analysis.sample.json`](c-analysis.sample.json): simulates C using stable IDs from B to create Claims, Claim–Evidence relations, and evaluation results.
 - [`claim-freshness.sample.json`](claim-freshness.sample.json): simulates an old Claim becoming `stale` when its evidence version changes.
+- [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
+- [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result that C can use before live integration.
 
 ## Sample coverage
 
@@ -30,6 +32,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 7. The system compares evidence versions before using a Claim; a mismatch prevents the Claim from entering the final report.
 8. `EvidenceCard` always contains the six `researchQuestions`, `methods`, `datasets`, `metrics`, `findings`, and `limitations` sections; a section without evidence-supported items uses an empty array.
 9. `Availability<T>` always uses five states; the wrapper stores only `status`, `value`, `reason`, or `failureId`, while all field-specific data remains inside `value`.
+10. A failed Provider does not discard other providers' successful results; the workflow reports the same failure and observed coverage to the Web client.
 
 ## Confirmed field rules
 
@@ -42,7 +45,7 @@ The samples do not use `null` in place of a core field's missing-data state; an 
 
 ## Verification criteria
 
-- A standard JSON parser must parse all three files.
+- A standard JSON parser must parse all five files.
 - Every `academicWorkId`, `workVersionId`, and `evidenceId` referenced by C's sample must exist in B's sample.
 - Multiple versions of one `AcademicWorkId` count as one research work.
 - `metadata` evidence must not support experimental results or method details.

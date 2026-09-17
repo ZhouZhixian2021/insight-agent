@@ -1,0 +1,190 @@
+{
+  "sampleSchemaVersion": 1,
+  "sampleId": "academic-multi-source-batch-001",
+  "synthetic": true,
+  "request": {
+    "query": "retrieval augmented generation evaluation",
+    "maxResults": 2
+  },
+  "expectedResult": {
+    "providers": [
+      "acl",
+      "arxiv",
+      "cvf",
+      "pmlr"
+    ],
+    "discoveredRecords": 5,
+    "batch": {
+      "schemaVersion": 1,
+      "status": "partial_success",
+      "items": [
+        {
+          "academicWork": {
+            "schemaVersion": 1,
+            "academicWorkId": "10000000-0000-4000-8000-000000000001",
+            "title": "Synthetic Study of Retrieval Evaluation",
+            "authors": [
+              "Example Author A"
+            ],
+            "externalIdentifiers": [
+              {
+                "kind": "arxiv",
+                "normalizedValue": "2601.00001",
+                "originalValue": "arXiv:2601.00001",
+                "sourceProvider": "arxiv"
+              }
+            ],
+            "workVersionIds": [
+              "20000000-0000-4000-8000-000000000001"
+            ],
+            "canonicalVersionId": "20000000-0000-4000-8000-000000000001",
+            "firstPublicDate": {
+              "status": "available",
+              "value": {
+                "iso": "2026-01-15",
+                "precision": "day"
+              }
+            },
+            "publicationStatus": {
+              "status": "available",
+              "value": "preprint"
+            },
+            "venue": {
+              "status": "not_applicable",
+              "reason": "The synthetic preprint has no publication venue."
+            }
+          },
+          "workVersion": {
+            "schemaVersion": 1,
+            "workVersionId": "20000000-0000-4000-8000-000000000001",
+            "academicWorkId": "10000000-0000-4000-8000-000000000001",
+            "versionType": "preprint",
+            "versionLabel": {
+              "status": "available",
+              "value": "v1"
+            },
+            "releaseDate": {
+              "status": "available",
+              "value": {
+                "iso": "2026-01-15",
+                "precision": "day"
+              }
+            },
+            "externalIdentifiers": [
+              {
+                "kind": "arxiv",
+                "normalizedValue": "2601.00001",
+                "originalValue": "arXiv:2601.00001",
+                "sourceProvider": "arxiv"
+              }
+            ],
+            "sourceRecords": [
+              {
+                "provider": "arxiv",
+                "recordId": "2601.00001v1"
+              }
+            ],
+            "contentHash": {
+              "status": "not_extracted",
+              "reason": "Full text has not been fetched."
+            },
+            "supersedesWorkVersionId": null,
+            "status": "active"
+          }
+        },
+        {
+          "academicWork": {
+            "schemaVersion": 1,
+            "academicWorkId": "10000000-0000-4000-8000-000000000002",
+            "title": "Synthetic Conference Paper on Evidence Tracing",
+            "authors": [
+              "Example Author B",
+              "Example Author C"
+            ],
+            "externalIdentifiers": [
+              {
+                "kind": "provider_record",
+                "normalizedValue": "cvf:synthetic-paper-002",
+                "originalValue": "synthetic-paper-002",
+                "sourceProvider": "cvf"
+              }
+            ],
+            "workVersionIds": [
+              "20000000-0000-4000-8000-000000000002"
+            ],
+            "canonicalVersionId": "20000000-0000-4000-8000-000000000002",
+            "firstPublicDate": {
+              "status": "available",
+              "value": {
+                "iso": "2025",
+                "precision": "year"
+              }
+            },
+            "publicationStatus": {
+              "status": "available",
+              "value": "published"
+            },
+            "venue": {
+              "status": "available",
+              "value": "Synthetic CVF Conference 2025"
+            }
+          },
+          "workVersion": {
+            "schemaVersion": 1,
+            "workVersionId": "20000000-0000-4000-8000-000000000002",
+            "academicWorkId": "10000000-0000-4000-8000-000000000002",
+            "versionType": "version_of_record",
+            "versionLabel": {
+              "status": "available",
+              "value": "synthetic-paper-002"
+            },
+            "releaseDate": {
+              "status": "available",
+              "value": {
+                "iso": "2025",
+                "precision": "year"
+              }
+            },
+            "externalIdentifiers": [
+              {
+                "kind": "provider_record",
+                "normalizedValue": "cvf:synthetic-paper-002",
+                "originalValue": "synthetic-paper-002",
+                "sourceProvider": "cvf"
+              }
+            ],
+            "sourceRecords": [
+              {
+                "provider": "cvf",
+                "recordId": "synthetic-paper-002"
+              }
+            ],
+            "contentHash": {
+              "status": "not_extracted",
+              "reason": "Full text has not been fetched."
+            },
+            "supersedesWorkVersionId": null,
+            "status": "active"
+          }
+        }
+      ],
+      "failures": [
+        {
+          "schemaVersion": 1,
+          "failureId": "30000000-0000-4000-8000-000000000001",
+          "provider": "pmlr",
+          "operation": "search",
+          "category": "network_error",
+          "message": "Synthetic failure: the configured catalog could not be reached.",
+          "retryable": true,
+          "retryAfter": null
+        }
+      ]
+    },
+    "truncated": true,
+    "limitations": [
+      "CVF, ACL Anthology, and PMLR cover only configured catalog pages.",
+      "The aggregate result bound retained two of five discovered records."
+    ]
+  }
+}
