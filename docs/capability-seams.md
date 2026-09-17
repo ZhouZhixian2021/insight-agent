@@ -43,8 +43,6 @@ flowchart LR
   pkg_subagent_in_process_driver["subagent-in-process-driver"]
   pkg_invariants["invariants"]
   pkg_message_feedback["message-feedback"]
-  pkg_api_academic_research_controller["api-academic-research-controller"]
-  svc_academicResearchController["ctx.academicResearchController<br/>Host Academic research Remote controller"]
   svc_sessionController["ctx.sessionController<br/>Host Session Remote controller"]
   svc_sessionFileReferences["ctx.sessionFileReferences<br/>Session-addressed file-reference Remote adapter"]
   svc_sessionSkillCatalog["ctx.sessionSkillCatalog<br/>Session-addressed skill Remote adapter"]

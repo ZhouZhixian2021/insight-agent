@@ -89,7 +89,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       {
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
         description: 'Run one arXiv-backed research pass while the addressed Agent is idle.',
-        parameters: [{ name: 'request', description: 'approved brief, search query, disclosure, and owning Session.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
+        parameters: [{ name: 'request', description: 'search query, disclosure, and the Session containing the approved brief plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
         returns: 'completed or cancelled draft data with its durable Session identity.',
       },
     ],
@@ -3535,7 +3535,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunRequest',
-    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly brief: ResearchBrief;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
+    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
   },
   {
     name: 'AcademicResearchRunValue',
@@ -3812,10 +3812,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BrandedNumber',
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
-  },
-  {
-    name: 'BriefApproval',
-    declaration: 'export type BriefApproval = {\n    readonly status: \'pending\';\n} | {\n    readonly status: \'approved\';\n    readonly reviewedBy: string;\n    readonly reviewedAt: string;\n    readonly approvedBriefVersion: number;\n    readonly comment: string | null;\n} | {\n    readonly status: \'revision_requested\';\n    readonly reviewedBy: string;\n    readonly reviewedAt: string;\n    readonly reviewedBriefVersion: number;\n    readonly comment: string;\n};',
   },
   {
     name: 'ClaimAssessmentId',
@@ -4218,10 +4214,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type EvidenceId = Branded<\'EvidenceId\'>;',
   },
   {
-    name: 'EvidenceRequirements',
-    declaration: 'export interface EvidenceRequirements {\n    readonly minimumIncludedWorks: number;\n    readonly minimumFulltextWorks: number;\n    readonly minimumEvidenceLevel: RequiredEvidenceLevel;\n    readonly requireLocatableEvidence: boolean;\n    readonly allowPreprints: boolean;\n    readonly insufficientEvidencePolicy: InsufficientEvidencePolicy;\n}',
-  },
-  {
     name: 'EvidenceSnapshotId',
     declaration: 'export type EvidenceSnapshotId = Branded<\'EvidenceSnapshotId\'>;',
   },
@@ -4428,10 +4420,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InspectorJsonValue',
     declaration: 'export type InspectorJsonValue = InspectorJsonPrimitive | readonly InspectorJsonValue[] | InspectorJsonObject;',
-  },
-  {
-    name: 'InsufficientEvidencePolicy',
-    declaration: 'export type InsufficientEvidencePolicy = \'continue_with_warning\' | \'stop_for_review\';',
   },
   {
     name: 'InvariantFailure',
@@ -4914,16 +4902,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcDispatchLog {\n    readonly exec: ToolExecution;\n    readonly agent?: Agent;\n    readonly subCallId: ToolCallId;\n    readonly name: string;\n    readonly isError: boolean;\n    readonly content: ContentBlock[];\n}',
   },
   {
-    name: 'PublicationDateBasis',
-    declaration: 'export type PublicationDateBasis = \'published\' | \'first_public_release\';',
-  },
-  {
     name: 'PublicationStatus',
     declaration: 'export type PublicationStatus = \'preprint\' | \'accepted\' | \'published\' | \'corrected\' | \'retracted\' | \'unknown\';',
-  },
-  {
-    name: 'PublicationWindow',
-    declaration: 'export interface PublicationWindow {\n    readonly start: PartialDate | null;\n    readonly end: PartialDate | null;\n    readonly dateBasis: PublicationDateBasis;\n}',
   },
   {
     name: 'ReadFileLine',
@@ -4966,14 +4946,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ReplayEnvelope {\n    response: unknown;\n    blocks?: readonly unknown[];\n}',
   },
   {
-    name: 'ReportRequirements',
-    declaration: 'export interface ReportRequirements {\n    readonly language: string;\n    readonly targetLength: ReportTargetLength;\n    readonly requiredSections: readonly string[];\n    readonly citationStyle: \'numeric\' | \'author_year\';\n    readonly includeEvidenceAppendix: boolean;\n    readonly includeMethodology: boolean;\n    readonly includeLimitations: boolean;\n    readonly includeResearchGaps: boolean;\n}',
-  },
-  {
-    name: 'ReportTargetLength',
-    declaration: 'export interface ReportTargetLength {\n    readonly unit: string;\n    readonly minimum: number | null;\n    readonly maximum: number | null;\n}',
-  },
-  {
     name: 'RequestContext',
     declaration: 'export interface RequestContext {\n    provider: string;\n    model: string;\n    contextWindow?: number;\n}',
   },
@@ -4992,14 +4964,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RequestRunOutcome',
     declaration: 'export type RequestRunOutcome = \'approved\' | \'completed\' | \'rejected\' | \'cancelled\' | \'failed\';',
-  },
-  {
-    name: 'RequiredEvidenceLevel',
-    declaration: 'export type RequiredEvidenceLevel = \'abstract\' | \'fulltext\';',
-  },
-  {
-    name: 'ResearchBrief',
-    declaration: 'export interface ResearchBrief {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly version: number;\n    readonly topic: string;\n    readonly aliases: readonly string[];\n    readonly questions: readonly string[];\n    readonly publicationWindow: PublicationWindow;\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly evidenceRequirements: EvidenceRequirements;\n    readonly targetAudience: string;\n    readonly reportRequirements: ReportRequirements;\n    readonly stopConditions: StopConditions;\n    readonly assumptions: readonly string[];\n    readonly approval: BriefApproval;\n}',
   },
   {
     name: 'ResearchBriefId',
@@ -5760,10 +5724,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SpillSource',
     declaration: 'export interface SpillSource {\n    toolName: string;\n    callId: ToolCallId;\n    label: string;\n}',
-  },
-  {
-    name: 'StopConditions',
-    declaration: 'export interface StopConditions {\n    readonly maximumSearchRounds: number;\n    readonly maximumCandidateWorks: number;\n    readonly maximumIncludedWorks: number;\n    readonly maximumElapsedMinutes: number | null;\n    readonly saturationRounds: number;\n    readonly stopWhenEvidenceRequirementsMet: boolean;\n}',
   },
   {
     name: 'StorageBackend',

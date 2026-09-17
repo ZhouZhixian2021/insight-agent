@@ -12,6 +12,7 @@ import {
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
+import { researchBriefFromApprovedPlan } from './research-brief-plan.ts'
 import type { AcademicResearchRunRequest, AcademicResearchRunValue } from './types.ts'
 
 export type * from './types.ts'
@@ -34,7 +35,7 @@ export class AcademicResearchController extends TypertRemoteService {
 
   /**
    * Run one arXiv-backed research pass while the addressed Agent is idle.
-   * @param request - approved brief, search query, disclosure, and owning Session.
+   * @param request - search query, disclosure, and the Session containing the approved brief plan.
    * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
    * @returns completed or cancelled draft data with its durable Session identity.
    */
@@ -43,6 +44,13 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
+    let brief
+    try {
+      brief = researchBriefFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+    } catch (cause: unknown) {
+      throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
+        { cause })
+    }
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
     if (selectedModel.provider === undefined || selectedModel.model === undefined) {
       throw new RemoteError('gateway/bad-request', 'the Session has no selected model', {})
@@ -67,7 +75,7 @@ export class AcademicResearchController extends TypertRemoteService {
         ctx: agent.ctx,
         session: agent.session,
         model,
-        input: { brief: request.brief, search: { query: request.query,
+        input: { brief, search: { query: request.query,
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } }, synthetic: request.synthetic },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),

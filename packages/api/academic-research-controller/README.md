@@ -8,7 +8,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run`. One call resolves an existing Session Agent, reuses its selected model, searches arXiv, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
+`@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run`. One call resolves an existing Session Agent, reconstructs the ResearchBrief approved through plan review, reuses the Session's selected model, searches arXiv, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
 
 ## Table of Contents
 
@@ -22,9 +22,9 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount the controller with `academicSource`, `sessionController`, `typert`, and `web`. The Web application mounts the Academic source runtime with arXiv as its explicit search provider. The request supplies a Session ID, approved ResearchBrief, query, optional result bound, and synthetic-data disclosure. Model selection remains owned by the Session.
+Mount the controller with `academicSource`, `sessionController`, `typert`, and `web`. The Web application mounts the Academic source runtime with arXiv as its explicit search provider. The request supplies a Session ID, query, optional result bound, and synthetic-data disclosure. The controller reads the latest successful `exit_plan_mode` review from that Session, validates its single `academic-research-brief-json` block, and adds stable identity, version 1, and approval metadata. The caller therefore cannot substitute an unreviewed Brief. Model selection remains owned by the Session.
 
-The operation claims the Agent's idle phase with `runMaintenance()`. Active chat or another maintenance operation returns `session/agent-busy`. Remote cancellation and Agent cancellation share one signal. The response returns the workflow result and Session ID after the pass completes or observes cancellation; it does not provide reconnect recovery.
+The operation claims the Agent's idle phase with `runMaintenance()`. The Academic preset ends its turn after plan approval, and the client starts this operation once the Session is idle. Active chat or another maintenance operation returns `session/agent-busy`. Remote cancellation and Agent cancellation share one signal. The response returns the workflow result and Session ID after the pass completes or observes cancellation; it does not provide reconnect recovery.
 
 Metadata selection uses the canonical version, approved work type, preprint policy, publication window, retraction state, and included-work bound. arXiv supplies ordered HTML and PDF candidates. After full-text parsing, the model returns an explicit included or excluded decision with a reason; excluded papers remain in the paper results and contribute no evidence to analysis.
 
@@ -53,6 +53,7 @@ Each paper is an independent request and does not replay the Session conversatio
 
 - The shipped composition uses arXiv only. Additional full-text source providers remain source-owned work.
 - One Remote call remains open for the pass. Workflow recovery, progress streaming, persisted run identity, retries, and long-paper chunking are deferred.
+- Each approved plan currently creates Brief version 1 with an identity derived from the Session and approved plan call. Editing an already approved Brief as a later version is deferred.
 
 -----
 

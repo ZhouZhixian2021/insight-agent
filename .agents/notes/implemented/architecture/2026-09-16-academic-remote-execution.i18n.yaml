@@ -1,3 +1,6 @@
-# Bilingual-pair consistency record (docs/i18n/README.md).
-2026-09-16-academic-remote-execution.md: 9c146abb962925dd9c0842443dffc60675f4ae1e
-2026-09-16-academic-remote-execution.zh.md: 34811f851b268530b6b7703186d0ce090a0b7a88
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-16-academic-remote-execution.md
+2026-09-16-academic-remote-execution.md: f1cd44bc097f06e19edbf6ceaae89a18fe7fac1b
+2026-09-16-academic-remote-execution.zh.md: c2c05e17a697e377af986a5e7695f5053abdf149
