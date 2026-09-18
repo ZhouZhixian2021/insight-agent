@@ -35,7 +35,7 @@ kind: "package-reference"
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API 基址；会追加 `/api/query`。 |
 
-提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
+提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
 
 -----
 
@@ -46,10 +46,11 @@ kind: "package-reference"
 |---|---|
 | `ArxivProvider` | 以 id `arxiv` 注册的 `AcademicSourceProvider` 实现。 |
 | `ArxivProviderOptions` | 一次搜索使用的已解析端点。 |
-| `parseArxivFeed()` | 把 Atom feed 正文解析为提炼后的条目。 |
+| `parseArxivFeed()` | 把 Atom feed 正文解析为提炼后的条目与 feed 的 `totalResults` 计数。 |
 | `normalizeArxivWork()` | 把一条 arXiv 条目转换为成果/版本对。 |
 | `arxivFullTextUrls()` | 从 arXiv id 推导版本对应的 HTML 与 PDF 全文 URL。 |
 | `ArxivRawWork` | 规范化器消费的提炼后 arXiv 条目字段。 |
+| `ArxivFeedResult` | 解析结果：提炼后的条目与上游 `totalResults` 计数。 |
 
 插件入口还导出 `name`、`inject`、`Config` 与 `apply`。
 

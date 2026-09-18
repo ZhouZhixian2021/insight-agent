@@ -1,7 +1,8 @@
 /**
  * arXiv scholarly search over the public Atom `/api/query` endpoint. Each search parses the
- * Atom feed and maps each entry through {@link normalizeArxivWork}; the seam owns the
- * `maxResults` bound, so `truncated` is always `false` here.
+ * Atom feed and maps each entry through {@link normalizeArxivWork}; `truncated` reports the
+ * feed's `<opensearch:totalResults>` exceeding the returned entries, while the seam separately
+ * flags its own `maxResults` cap.
  * @module @deepseek-ai/dsh-academic-source-arxiv/provider
  */
 
@@ -94,8 +95,9 @@ export class ArxivProvider implements AcademicSourceProvider {
 
     try {
       const body = await response.text()
-      const works = parseArxivFeed(body).map(normalizeArxivWork)
-      return { works, truncated: false }
+      const feed = parseArxivFeed(body)
+      const works = feed.entries.map(normalizeArxivWork)
+      return { works, truncated: feed.totalResults !== null && feed.totalResults > works.length }
     } catch (error: unknown) {
       if (signal?.aborted === true || isAbortError(error)) throw aborted(signal, error)
       if (error instanceof AcademicSourceError) throw error

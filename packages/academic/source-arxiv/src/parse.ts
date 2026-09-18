@@ -1,13 +1,14 @@
 /**
- * Parses the arXiv Atom search feed into distilled entries. The wire shape is provider-private;
- * this module turns the single-object-or-array and attribute shapes the parser emits into a
- * uniform entry list.
+ * Parses the arXiv Atom search feed into distilled entries and the upstream match
+ * count. The wire shape is provider-private; this module turns the
+ * single-object-or-array and attribute shapes the parser emits into a uniform
+ * entry list and a safe-integer `totalResults`.
  * @module @deepseek-ai/dsh-academic-source-arxiv/parse
  */
 
 import { XMLParser } from 'fast-xml-parser'
 
-import type { ArxivRawWork } from './types.ts'
+import type { ArxivFeedResult, ArxivRawWork } from './types.ts'
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -30,25 +31,32 @@ interface ParsedEntry {
   readonly doi?: string | { readonly '#text'?: string }
 }
 
+/** `<opensearch:totalResults>` after namespace removal: scalar, or an object when it carries attributes. */
+type ParsedTotalResults = number | string | { readonly '#text'?: number | string }
+
 /** Top-level Atom feed envelope. */
 interface ParsedFeed {
   readonly feed?: {
+    readonly totalResults?: ParsedTotalResults
     readonly entry?: ParsedEntry | ParsedEntry[]
   }
 }
 
 /**
- * Parses an arXiv Atom search response into distilled entries, normalizing the
- * single-object-or-array entry/author shapes.
+ * Parses an arXiv Atom search response into distilled entries and the feed's
+ * `<opensearch:totalResults>` match count, normalizing the single-object-or-array
+ * entry/author shapes.
  *
  * @param xml - the Atom feed body returned by the arXiv API.
- * @returns the distilled entries, possibly empty.
+ * @returns the distilled entries and the upstream match count.
  */
-export function parseArxivFeed(xml: string): ArxivRawWork[] {
+export function parseArxivFeed(xml: string): ArxivFeedResult {
   const parsed = parser.parse(xml) as ParsedFeed
   const raw = parsed.feed?.entry
-  const entries = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw]
-  return entries.map(mapEntry).filter((entry): entry is ArxivRawWork => entry.id.length > 0)
+  const entries = (raw === undefined ? [] : Array.isArray(raw) ? raw : [raw])
+    .map(mapEntry)
+    .filter((entry): entry is ArxivRawWork => entry.id.length > 0)
+  return { entries, totalResults: totalResultsOf(parsed.feed?.totalResults) }
 }
 
 /** Maps one parsed entry to its distilled form. */
@@ -64,6 +72,14 @@ function mapEntry(entry: ParsedEntry): ArxivRawWork {
     updated: entry.updated ?? null,
     doi: textOf(entry.doi),
   }
+}
+
+/** Read `<opensearch:totalResults>` as a safe non-negative integer; absent or malformed input yields null. */
+function totalResultsOf(value: ParsedTotalResults | undefined): number | null {
+  const raw = typeof value === 'object' ? value['#text'] : value
+  const count = typeof raw === 'number' ? raw
+    : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : Number.NaN
+  return Number.isSafeInteger(count) && count >= 0 ? count : null
 }
 
 /** Extracts the text of a scalar-or-object element value. */

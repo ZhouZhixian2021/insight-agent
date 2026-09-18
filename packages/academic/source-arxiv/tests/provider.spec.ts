@@ -52,6 +52,46 @@ describe('ArxivProvider.search', () => {
     ])
   })
 
+  it('reports upstream truncation when totalResults exceeds the returned entries', async () => {
+    const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <opensearch:totalResults>6</opensearch:totalResults>
+  <entry>
+    <id>http://arxiv.org/abs/2406.12345v1</id>
+    <title>Joint evaluation</title>
+    <published>2024-06-15T12:34:56Z</published>
+    <author><name>Alice Example</name></author>
+  </entry>
+</feed>`
+    vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse(feed)))
+
+    const provider = new ArxivProvider(() => ({ baseURL: 'https://export.arxiv.org' }))
+    const result = await provider.search({ query: 'retrieval', maxResults: 5 })
+
+    expect(result.truncated).toBe(true)
+    expect(result.works).toHaveLength(1)
+  })
+
+  it('reports no truncation when totalResults matches the returned entries', async () => {
+    const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <entry>
+    <id>http://arxiv.org/abs/2406.12345v1</id>
+    <title>Joint evaluation</title>
+    <published>2024-06-15T12:34:56Z</published>
+    <author><name>Alice Example</name></author>
+  </entry>
+</feed>`
+    vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse(feed)))
+
+    const provider = new ArxivProvider(() => ({ baseURL: 'https://export.arxiv.org' }))
+    const result = await provider.search({ query: 'retrieval', maxResults: 5 })
+
+    expect(result.truncated).toBe(false)
+    expect(result.works).toHaveLength(1)
+  })
+
   it('throws ACADEMIC_SOURCE_PROVIDER_ERROR on a non-2xx response', async () => {
     vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse('error', { status: 503 })))
     const provider = new ArxivProvider(() => ({ baseURL: 'https://export.arxiv.org' }))
