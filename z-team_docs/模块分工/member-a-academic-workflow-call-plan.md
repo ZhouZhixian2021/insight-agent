@@ -2,14 +2,14 @@
 
 ## 基线与范围
 
-2026-09-17 以远程 master 提交 5633a9a 为集成基线。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索和部分成功批次，以及 C 的最小分析、评测、报告和独立渲染器均已接入。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供单轮检索到评测草稿的库级调用链，并生成 RetrievalRun 与 CoverageSummary；[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief，调用该链路并返回 JSON 安全的检索运行。主 Web 研究页面、完整工作流恢复及正式 Web 真实模型验收尚未完成。
+2026-09-18 以已合并的真实 Web 研究路径为集成基线。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索和部分成功批次，以及 C 的分析、评测、报告与 Web 运行结果页面均已接入。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供有界明确查询到评测草稿的库级调用链，并生成 RetrievalRun 与 CoverageSummary；[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief，按行解析一至三条明确查询，调用该链路并返回 JSON 安全的检索运行。完整工作流恢复、自动查询规划、重试及稳定的真实来源联网验收尚未完成。
 
 ## 调用顺序
 
 | 顺序 | 已有入口与归属 | 输入 → 输出 | A 需要接入的工作 |
 |---|---|---|---|
 | 1. 研究批准 | [model](../../packages/academic/model/src/index.ts)：isExecutableResearchBrief | ResearchBrief → 当前版本是否获准执行 | 从用户需求形成 Brief，记录批准与版本；执行绑定获准版本，修改需求后重新批准。 |
-| 2. 检索 | [source](../../packages/academic/source/src/index.ts)：ctx.academicSource.searchAll | query、maxResults、signal → 多来源 BatchResult、Provider、发现数、截断与限制 | 将研究问题转换为明确查询；消费 B 的来源观察，不从论文数组推断调用与失败。 |
+| 2. 检索 | [source](../../packages/academic/source/src/index.ts)：ctx.academicSource.searchAll | 单条 query、maxResults、signal → 多来源 BatchResult、Provider、发现数、截断与限制 | 将不同子问题拆成一至三条有序明确查询；按顺序复用 B 的单查询接口，消费来源观察，不从论文数组推断调用与失败。 |
 | 3. 去重与版本归并 | [ingestion](../../packages/academic/ingestion/src/index.ts)：createIngestIndex、ingestWorks | 既有索引、论文与版本对 → index、works、versions、audit | 保留跨批次索引和归并记录；后续使用归并后的身份，不使用提供方临时身份。模糊重复按审计结果处理。 |
 | 4. 取得可定位全文 | [evidence](../../packages/academic/evidence/src/fetch-fulltext.ts)：fetchAcademicFullText | 论文版本、来源信息、有序 urls、fetcher → EvidenceExtractionInput | 从版本资料构造候选地址，适配 ctx.web.fetch，传递取消信号。HTML 优先是候选排列策略，函数按输入顺序尝试。 |
 | 5. 抽取单篇证据 | [evidence](../../packages/academic/evidence/src/extract.ts)：extractEvidenceFromContent | 可定位片段、EvidenceGenerator → sourceLocators、evidenceRecords、evidenceCard | 提供真实模型生成器，校验模型 JSON，记录模型可见输入和结果；原文子串验证不能替代语义审核。 |
@@ -22,7 +22,7 @@
 
 ## 实施前需要解决的接口衔接
 
-第一项采用[全文内容与论文版本交接规则](academic-content-version-handoff.md)的最小接法：A 在首次解析后补齐当前版本的内存副本，沿用现有 B、C 接口；已有哈希冲突时拒绝覆盖。单篇交接与单轮批次已由 [runResearchDraft](../../packages/academic/workflow/src/pipeline.ts) 接入，运行、证据与卡片持久化尚未接入。
+第一项采用[全文内容与论文版本交接规则](academic-content-version-handoff.md)的最小接法：A 在首次解析后补齐当前版本的内存副本，沿用现有 B、C 接口；已有哈希冲突时拒绝覆盖。单篇交接与有界明确查询批次已由 [runResearchDraft](../../packages/academic/workflow/src/pipeline.ts) 接入，运行、证据与卡片持久化尚未接入。
 
 1. **版本与哈希**：提供方返回的版本可能尚未提取 contentHash，全文解析则产生实际内容哈希。A 与 B 需明确版本记录、EvidenceRecord、SourceLocator 如何指向同一份内容，以及内容变化如何产生后继记录；不能为通过评测而覆盖历史版本或制造哈希。
 2. **生成器与数据校验**：B 已提供 EvidenceGenerator 接口，实际模型适配、JSON 解析校验与模型输入的会话记录由 A 接入；这是实际证据生产的必要前置工作。
@@ -61,7 +61,7 @@ A 在工作流结束或取消时建立一条 `RetrievalRun`。`queries` 保存�
 
 `AcademicResearchRunValue` 包含必有且 JSON 安全的 `retrievalRun`，提供运行 ID、阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 使用该投影显示来源失败、覆盖不足和截断原因，不从论文数组反推调用了哪些 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
 
-本轮不开始逐来源统计、自动重试、多轮检索、持久恢复或进度流。B 的搜索批次和 A 的 `RetrievalRun` 已接通；C 使用固定投影夹具开发页面，并以 A 的正式 Remote 类型完成真实返回接入。
+本轮不开始逐来源统计、自动查询规划、自适应追加检索、自动重试、持久恢复或进度流。B 的单查询搜索批次和 A 的有界查询编排及 `RetrievalRun` 已接通；C 继续使用 A 的正式 Remote 类型消费真实返回。
 
 B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多来源研究运行交接说明](academic-multi-source-run-handoff.md)。
 
@@ -156,7 +156,7 @@ Availability 沿用五态：available 携带正确类型的 value；unknown 和 
 
 | 事项 | 当前决定与状态 | 后续改进及完成依据 | 负责人 |
 |---|---|---|---|
-| 自动多轮检索 | 成员 A 确认先完成第一步：runResearchDraft 每次只执行一轮检索，连接去重、全文、证据、分析和评测草稿；不自动发起第二轮。 | 第二步再设计跨轮索引复用、查询调整、重试、饱和判定、时间预算与达到证据量后的停止。实现前确认具体策略；用测试证明有界执行、停止原因可追溯、失败不会丢失已取得证据。 | A；B、C 提供相应输入与验收样例。 |
+| 自动多轮检索 | 2026-09-18 已完成最小的有界明确查询编排：调用方按行提供最多三条查询，数量不得超过 Brief 的 `maximumSearchRounds`；查询串行执行，批次轮转合并并精确去重，统一应用全局候选上限。某条查询的来源失败批次不阻止后续查询，取消则停止；不使用额外模型规划查询。 | 后续再设计自动查询调整、跨运行索引复用、重试、饱和判定、时间预算与达到证据量后的停止。实现前确认具体策略；用测试证明有界执行、停止原因可追溯、失败不会丢失已取得证据。 | A；B、C 提供相应输入与验收样例。 |
 | 超长论文分批抽取 | 2026-09-15 用户确认第一版超限暂停该论文并记录原因，其他论文继续；输入估算检查与模型接入已在库级实现并验证。 | 后续确认分批大小、原始段落编号映射、跨批证据合并和覆盖记录后再实现；不静默丢弃正文。 | A；B 配合片段定位验收。 |
 | 哈希冲突的核对与继续处理 | 2026-09-15 确认：原因未明时暂停该论文，其他论文继续；记录冲突，不覆盖旧数据。规则详见[全文交接规则](academic-content-version-handoff.md)，单篇暂停返回已实现，记录保存与恢复尚未接入。 | 根据实际冲突样例确定人工核对及重新处理方式；确认内容变化则创建新版本，单纯格式差异不判为改版。能定位原因、明确处理结果并继续该论文，且保留历史证据后，再标记完成。具体自动化方案实施前由 A 确认。 | A；涉及解析原因时由 B 配合。 |
 

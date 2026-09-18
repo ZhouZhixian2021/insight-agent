@@ -6,7 +6,7 @@ import { draftFixture } from './pipeline-fixture.ts'
 describe('production paper selection', () => {
   it('selects canonical versions in search order and applies the approved cap', async () => {
     const { input, adapters } = draftFixture()
-    const search = await adapters.search(input.search)
+    const search = await adapters.search(input.searches[0]!)
     const { createIngestIndex, ingestWorks } = await import('@deepseek-ai/dsh-academic-ingestion')
     const ingested = ingestWorks(createIngestIndex(), search.works)
     const brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
@@ -21,7 +21,7 @@ describe('production paper selection', () => {
 
   it('filters work type, preprint permission, retraction and publication dates before resolving URLs', async () => {
     const { input, adapters } = draftFixture()
-    const search = await adapters.search(input.search)
+    const search = await adapters.search(input.searches[0]!)
     const { createIngestIndex, ingestWorks } = await import('@deepseek-ai/dsh-academic-ingestion')
     const ingested = ingestWorks(createIngestIndex(), search.works)
     const resolve = vi.fn(() => ({ urls: ['https://example.org/paper'], sourceProvider: 'fixture',

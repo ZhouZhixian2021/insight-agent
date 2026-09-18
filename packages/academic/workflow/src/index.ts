@@ -10,6 +10,7 @@ export { runResearchDraft } from './pipeline.ts'
 export { runModelResearchDraft } from './model-pipeline.ts'
 export { runAcademicResearchDraft } from './entry.ts'
 export { selectResearchPapers } from './selection.ts'
+export { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 export type { PaperCandidateResolver } from './selection.ts'
 export type { AcademicResearchDraftRequest, AcademicResearchDraftResult } from './entry.ts'
 export type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, PaperSelectionResult, SelectedPaper,

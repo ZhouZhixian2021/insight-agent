@@ -8,7 +8,9 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
   readonly sessionId: SessionId
+  /** One to three ordered queries separated by line breaks; exact repeats are ignored. */
   readonly query: string
+  /** Global deduplicated candidate-work bound for the complete run. */
   readonly maxResults?: number
   readonly synthetic: boolean
 }

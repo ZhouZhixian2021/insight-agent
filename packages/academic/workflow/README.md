@@ -26,17 +26,17 @@ paused contains work and version IDs, old and new hashes, source URL, acquisitio
 
 Returned paper records share readonly references; they are not deeply frozen or durable snapshots. No invariant companion is published because this library has no registrations or independently maintained runtime service observations; the model adapter dispatches immutable request data read directly from its persisted Session event, and call-time checks verify storage correspondence.
 
-## Single-pass research draft
+## Bounded research draft
 
-runResearchDraft accepts an approved Brief, one explicit query and synthetic disclosure. It orders search → ingestion → version selection → per-paper full-text parsing and extraction → analysis → an evaluated draft report. Selection admits one version per work and is fully checked before acquisition.
+runResearchDraft accepts an approved Brief, one to three ordered explicit queries, and synthetic disclosure. The query count must also fit the Brief's `maximumSearchRounds`. It runs the queries sequentially, then orders merged ingestion → version selection → per-paper full-text parsing and extraction → analysis → an evaluated draft report. Selection admits one version per work and is fully checked before acquisition.
 
 Callers supply search, selectPapers, fetcher, generator and now. search returns `AcademicSourceSearchBatchResult` from `ctx.academicSource.searchAll()`, and fetcher can adapt ctx.web.fetch. `selectResearchPapers()` applies deterministic version, date, work-type, retraction and preprint rules through a provider-owned full-text resolver; its `PaperSelectionResult` records whether the approved included-work bound omitted another eligible paper. Generator and clock are explicit; this library reads no credentials, creates no network client and introduces no generic scheduler.
 
-Search results respect maximumCandidateWorks and the request bound; selection respects maximumIncludedWorks. Unapproved input, duplicate works, unknown versions and excluded/retracted selections reject. Hash conflicts return pauses; model scope exclusions retain their reason without contributing evidence. Acquisition or extraction failures retain the version and failed stage while other papers continue. The terminal `RetrievalRun` combines source and paper failures, deduplicated and included work counts, successful full-text acquisitions, called providers, executed queries, and explicit truncation reasons. Reports disclose the same incomplete-coverage observations without claiming complete coverage.
+Each query uses the same candidate bound. Completed query batches are merged round-robin so an earlier query cannot consume the global bound alone, exact identifiers are deduplicated, and `maximumCandidateWorks` plus the request bound apply to the deduplicated result. Selection respects `maximumIncludedWorks`. Unapproved input, too many queries, duplicate selected works, unknown versions and excluded/retracted selections reject. A failed source batch does not block a later explicit query; configuration or unrepresented search errors still reject. Hash conflicts return pauses; model scope exclusions retain their reason without contributing evidence. Acquisition or extraction failures retain the version and failed stage while other papers continue. The terminal `RetrievalRun` combines source and paper failures, deduplicated and included work counts, successful full-text acquisitions, called providers, actually started queries, and explicit truncation reasons. Reports disclose the same incomplete-coverage observations without claiming complete coverage.
 
 Output status=completed means only that this pass finished, not that research or review is sufficient. `retrievalRun.status` independently reports success, partial success, or failure from included works and recorded failures; an all-source failure therefore returns a blocked draft with a failed retrieval run. report always uses draft mode and empty semantic reviews; report.evaluation carries quality status. Cancellation returns cancelled with completed papers, failures, observed coverage, and no report. Configuration and unrepresented search failures reject. Callers own durable model/network records and deadline cancellation signals.
 
-Automatic repeated search, retries, cross-round index recovery, saturation rules and stopping as soon as evidence counts are met remain subsequent work. This pass has no automatic abstract fallback or final publication. The main Web application invokes it through `@deepseek-ai/dsh-api-academic-research-controller`.
+Automatic query planning, adaptive follow-up searches, retries, cross-run index recovery, saturation rules and stopping as soon as evidence counts are met remain subsequent work. This pass has no automatic abstract fallback or final publication. The main Web application invokes it through `@deepseek-ai/dsh-api-academic-research-controller`.
 
 ## Model response validation
 
@@ -88,7 +88,7 @@ No model cache policy changes.
 
 ## Known Limitations and Deferred Work
 
-- This library provides a single-pass draft pipeline, paper handoff and opt-in model adapter. Session logging covers model requests and settlements; the returned RetrievalRun, evidence/card identities, and complete workflow state are not persisted for recovery. Long-paper chunking, automatic retries and final semantic review remain subsequent work. It does not prove scholarly identity or distinguish format changes from content revisions.
+- This library provides a bounded explicit-query draft pipeline, paper handoff and opt-in model adapter. Session logging covers model requests and settlements; the returned RetrievalRun, evidence/card identities, and complete workflow state are not persisted for recovery. Adaptive query planning, long-paper chunking, automatic retries and final semantic review remain subsequent work. It does not prove scholarly identity or distinguish format changes from content revisions.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -96,6 +96,6 @@ No model cache policy changes.
 <details>
 <summary>Working context for maintainers</summary>
 
-See [paper handoff decision](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.md) and [tests](tests/handoff.spec.ts).
+See the [paper handoff decision](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.md), the [explicit query orchestration decision](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.md), and [tests](tests/handoff.spec.ts).
 
 </details>

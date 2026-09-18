@@ -24,9 +24,12 @@ export interface PaperSelectionResult {
   readonly truncated: boolean
 }
 
+/** Hard safety bound for explicit queries in one draft pass. */
+export const MAX_DRAFT_SEARCH_QUERIES = 3
+
 /** Callers own query planning, source execution, scope selection, model transport and durable request logging. */
 export interface DraftPipelineAdapters {
-  /** Return source-observed providers, counts, limits, successes, and failures for one search round. */
+  /** Return source-observed providers, counts, limits, successes, and failures for one explicit query. */
   readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchBatchResult>
   /** Apply approved scope and date rules and report whether the included-work bound omitted another eligible version. */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
@@ -36,10 +39,10 @@ export interface DraftPipelineAdapters {
   readonly now: () => string
 }
 
-/** A single search round followed by ordered paper processing and a draft only. */
+/** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
 export interface DraftPipelineInput {
   readonly brief: ResearchBrief
-  readonly search: AcademicSourceSearchRequest
+  readonly searches: readonly AcademicSourceSearchRequest[]
   readonly synthetic: boolean
 }
 
