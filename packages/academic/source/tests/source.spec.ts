@@ -403,3 +403,90 @@ describe('AcademicSourceError', () => {
     expect(error.name).toBe('AcademicSourceError')
   })
 })
+
+describe('AcademicSourceRuntime discovery selection and deadlines', () => {
+  it('reports unknown metadata and missing or broken full-text resolution without losing search results', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const works = ['missing', 'broken'].map((id) => {
+        const work = makeWork(id)
+        return { ...work, workVersion: { ...work.workVersion, sourceRecords: [{ provider: 'test', recordId: id }] } }
+      })
+      source.registerSearchProvider({ ...makeSearchProvider('test', available, () => Promise.resolve({ works, truncated: false })),
+        fullTextUrls: (id) => { if (id === 'broken') throw new Error('resolution failed'); return [] } })
+      const result = await source.searchAll({ query: 'test' })
+      expect(result.works).toHaveLength(2)
+      expect(result.batch.status).toBe('success')
+      expect(result.limitations).toEqual([
+        '2 returned works have unknown first_public_release dates; publication dates must not substitute for them.',
+        '2 returned works have unknown publication venues; download hosts do not establish conference membership or ranking.',
+        '2 returned works have unknown version types; version eligibility requires verification.',
+        '1 returned works have no resolvable full-text candidates; this does not establish that no full text exists.',
+        'Full-text candidate resolution failed for 1 returned works; no download was attempted during discovery.',
+      ])
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('keeps catalog resolvers without calling their searches', async () => {
+    const { ctx, source } = await mountSource({ searchProviders: ['openalex'], searchTimeoutMs: 1000 })
+    try {
+      let catalogCalls = 0
+      source.registerSearchProvider(makeSearchProvider('acl', available, () => {
+        catalogCalls++
+        return Promise.resolve(searchResult('catalog'))
+      }))
+      source.registerSearchProvider(makeSearchProvider('openalex', available, () => Promise.resolve(searchResult('discovery'))))
+      const result = await source.searchAll({ query: 'test' })
+      expect(result.providers).toEqual(['openalex'])
+      expect(catalogCalls).toBe(0)
+      expect(source.resolveFullText({ ...makeWork('paper').workVersion,
+        sourceRecords: [{ provider: 'acl', recordId: 'N19-1423' }] })?.sourceProvider).toBe('acl')
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('returns partial results when a source hangs, aborts its request, and still executes a later query', async () => {
+    const { ctx, source } = await mountSource({ searchTimeoutMs: 10 })
+    const signals: AbortSignal[] = []
+    const queries: string[] = []
+    try {
+      source.registerSearchProvider(makeSearchProvider('slow', available, (_request, signal) => {
+        signals.push(signal as AbortSignal)
+        return new Promise(() => {})
+      }))
+      source.registerSearchProvider(makeSearchProvider('fast', available, (request) => {
+        queries.push(request.query)
+        return Promise.resolve(searchResult(request.query))
+      }))
+      for (const query of ['first', 'second']) {
+        const result = await source.searchAll({ query })
+        expect(result.batch.status).toBe('partial_success')
+        expect(result.batch.items[0]?.academicWork.title).toBe(query)
+        expect(result.batch.failures).toMatchObject([{ provider: 'slow', category: 'timeout' }])
+        expect(result.providers).toEqual(['fast', 'slow'])
+      }
+      expect(queries).toEqual(['first', 'second'])
+      expect(signals.every(signal => signal.aborted)).toBe(true)
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('cancels promptly even when a provider ignores cancellation and never starts pre-aborted calls', async () => {
+    const { ctx, source } = await mountSource({ searchTimeoutMs: 1000 })
+    let calls = 0
+    try {
+      source.registerSearchProvider(makeSearchProvider('slow', available, () => { calls++; return new Promise(() => {}) }))
+      const controller = new AbortController()
+      const pending = source.searchAll({ query: 'first' }, controller.signal)
+      controller.abort()
+      await expect(pending).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+      await expect(source.searchAll({ query: 'second' }, controller.signal)).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+      expect(calls).toBe(1)
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('rejects missing selected providers instead of silently falling back to catalogs', async () => {
+    const { ctx, source } = await mountSource({ searchProviders: ['missing'] })
+    try {
+      await expect(source.searchAll({ query: 'test' })).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING' })
+    } finally { await ctx.fiber.dispose() }
+  })
+})

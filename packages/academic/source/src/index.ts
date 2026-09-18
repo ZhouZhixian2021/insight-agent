@@ -2,8 +2,8 @@
  * Service Definition for the academic source capability seam (`ctx.academicSource`): a provider
  * registry and provider-selecting execution for scholarly search. Duplicate ids are rejected. At
  * execution time, a configured provider must exist and be usable; without one, exactly one usable
- * provider is required, so selection never depends on registration order. `searchAll()` runs every
- * usable provider and aggregates their outcomes into one partial-success batch.
+ * provider is required, so selection never depends on registration order. `searchAll()` runs the
+ * configured discovery providers (all usable providers when omitted) in one partial-success batch.
  * @module @deepseek-ai/dsh-academic-source
  */
 
@@ -60,6 +60,10 @@ interface Selection<P> {
 export interface AcademicSourceRuntimeConfig {
   /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
   readonly searchProvider?: string
+  /** Provider ids called by searchAll; omitted searches every usable provider. Resolvers remain registered. */
+  readonly searchProviders?: string[]
+  /** Per-provider search deadline; omitted preserves the caller-owned budget. No retries are performed. */
+  readonly searchTimeoutMs?: number
 }
 
 /**
@@ -83,14 +87,29 @@ export class AcademicSourceRuntime extends Service {
    */
   static Config: z<AcademicSourceRuntimeConfig> = z.object({
     searchProvider: z.string(),
+    searchProviders: z.array(z.string()).extra('default', undefined),
+    searchTimeoutMs: z.number(),
   })
 
   private providers = new Map<string, AcademicSourceProvider>()
   private readonly searchProviderId: string | undefined
+  private readonly searchProviderIds: readonly string[] | undefined
+  private readonly searchTimeoutMs: number | undefined
 
   constructor(ctx: Context, config: AcademicSourceRuntimeConfig = {}) {
     super(ctx, 'academicSource')
     this.searchProviderId = config.searchProvider ?? process.env.DSH_ACADEMIC_SOURCE_SEARCH_PROVIDER
+    if (config.searchProviders !== undefined && (config.searchProviders.length === 0
+      || config.searchProviders.some(id => id.trim() === '')
+      || new Set(config.searchProviders).size !== config.searchProviders.length)) {
+      throw new Error('searchProviders must contain distinct, non-empty provider ids')
+    }
+    if (config.searchTimeoutMs !== undefined && (!Number.isSafeInteger(config.searchTimeoutMs)
+      || config.searchTimeoutMs <= 0 || config.searchTimeoutMs > 2_147_483_647)) {
+      throw new Error('searchTimeoutMs must be a positive timer-safe integer')
+    }
+    this.searchProviderIds = config.searchProviders
+    this.searchTimeoutMs = config.searchTimeoutMs
   }
 
   /**
@@ -132,12 +151,12 @@ export class AcademicSourceRuntime extends Service {
       providers: this.providers,
       ...this.searchProviderId !== undefined ? { configuredId: this.searchProviderId } : {},
     })
-    const result = await provider.search(request, signal)
+    const result = await this.runSearch(provider, request, signal)
     return capWorks(result, request.maxResults)
   }
 
   /**
-   * Search every usable provider and merge their results round-robin before applying the total bound.
+   * Search configured discovery providers, or every usable provider, and merge results round-robin.
    *
    * One provider's failure never discards another provider's results: expected search failures
    * become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining
@@ -158,15 +177,17 @@ export class AcademicSourceRuntime extends Service {
    * @returns the aggregate batch outcome from all usable providers.
    */
   async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
-    const providers = [...this.providers.values()]
-      .filter(provider => provider.available())
+    if (signal?.aborted) throw new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')
+    const providers = (this.searchProviderIds === undefined
+      ? [...this.providers.values()].filter(provider => provider.available())
+      : this.searchProviderIds.map(configuredId => resolveProvider({ providers: this.providers, configuredId })))
       .sort((left, right) => left.id.localeCompare(right.id))
     if (providers.length === 0) {
       throw new AcademicSourceError('no usable academic source provider is registered', 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE')
     }
     const settled = await Promise.all(providers.map(async (provider) => {
       try {
-        return { provider, result: await provider.search(request, signal) }
+        return { provider, result: await this.runSearch(provider, request, signal) }
       } catch (reason: unknown) {
         return { provider, reason }
       }
@@ -188,6 +209,25 @@ export class AcademicSourceRuntime extends Service {
     const capped = request.maxResults === undefined ? merged : merged.slice(0, request.maxResults)
     const batch = createBatchResult(capped, failures)
     const limitations = declaredLimitations(providers)
+    const identified = capped.filter(work => work.workVersion.sourceRecords.length > 0)
+    const unknownDates = identified.filter(work => work.academicWork.firstPublicDate.status !== 'available').length
+    const unknownVenues = identified.filter(work => work.academicWork.venue.status !== 'available').length
+    const unknownVersions = identified.filter(work => work.workVersion.versionType === 'unknown').length
+    let missingFullText = 0
+    let failedResolution = 0
+    for (const work of identified) {
+      try {
+        if (this.resolveFullText(work.workVersion) === null) missingFullText++
+      } catch {
+        // Resolution failures remain explicit limits; they must not discard another source's search results.
+        failedResolution++
+      }
+    }
+    if (unknownDates > 0) limitations.push(`${unknownDates} returned works have unknown first_public_release dates; publication dates must not substitute for them.`)
+    if (unknownVenues > 0) limitations.push(`${unknownVenues} returned works have unknown publication venues; download hosts do not establish conference membership or ranking.`)
+    if (unknownVersions > 0) limitations.push(`${unknownVersions} returned works have unknown version types; version eligibility requires verification.`)
+    if (missingFullText > 0) limitations.push(`${missingFullText} returned works have no resolvable full-text candidates; this does not establish that no full text exists.`)
+    if (failedResolution > 0) limitations.push(`Full-text candidate resolution failed for ${failedResolution} returned works; no download was attempted during discovery.`)
     if (capped.length < merged.length) {
       limitations.push(`The aggregate result bound retained ${capped.length} of ${merged.length} discovered records.`)
     }
@@ -198,6 +238,31 @@ export class AcademicSourceRuntime extends Service {
       discoveredRecords: merged.length,
       batch,
       limitations,
+    }
+  }
+
+  /** Bound one provider without treating its deadline as cancellation of other sources. */
+  private async runSearch(provider: AcademicSourceProvider, request: AcademicSourceSearchRequest,
+    signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
+    if (signal?.aborted) throw new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')
+    if (this.searchTimeoutMs === undefined) return provider.search(request, signal)
+    const controller = new AbortController()
+    const abort = () => { controller.abort(new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')) }
+    signal?.addEventListener('abort', abort, { once: true })
+    const timer = setTimeout(() => { controller.abort(new AcademicSourceError(
+      `${provider.id} search exceeded ${this.searchTimeoutMs} ms`, 'ACADEMIC_SOURCE_TIMEOUT',
+    )) }, this.searchTimeoutMs)
+    let onAbort: () => void = () => {}
+    try {
+      const stopped = new Promise<never>((_resolve, reject) => {
+        onAbort = () => { reject(controller.signal.reason as AcademicSourceError) }
+        controller.signal.addEventListener('abort', onAbort, { once: true })
+      })
+      return await Promise.race([provider.search(request, controller.signal), stopped])
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', abort)
+      controller.signal.removeEventListener('abort', onAbort)
     }
   }
 
@@ -289,10 +354,9 @@ function cancellationOf(settled: readonly SettledSearch[], signal: AbortSignal |
 /**
  * Convert one provider's rejected search into a source-level `ProviderFailure`.
  * Expected provider failures carry the provider's credential-free message as a
- * retryable upstream error; unexpected rejection values surface as unknown and
- * not retryable. Finer categories (network, timeout, rate limit) wait for a
- * provider error-granularity increment; search-level failures never set
- * `affectedWorkVersionId`.
+ * classified failure; unclassified expected errors retain the upstream category.
+ * Unexpected rejection values surface as unknown and not retryable. Search-level
+ * failures never set `affectedWorkVersionId`; this conversion does not retry requests.
  * @param provider - the provider whose search rejected.
  * @param reason - the rejection value; provider messages are credential-free by construction.
  * @returns the `ProviderFailure` recorded in `batch.failures`.
@@ -304,7 +368,10 @@ function searchFailure(provider: AcademicSourceProvider, reason: unknown): Provi
     failureId: createFailureId(),
     provider: provider.id,
     operation: 'search',
-    category: expected ? 'upstream_error' : 'unknown',
+    category: !expected ? 'unknown' : reason.code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
+      : reason.code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
+        : reason.code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
+          : reason.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error' : 'upstream_error',
     message: expected ? reason.message : String(reason),
     retryable: expected,
     retryAfter: null,

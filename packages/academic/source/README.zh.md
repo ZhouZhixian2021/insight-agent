@@ -35,6 +35,10 @@ kind: "package-reference"
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `searchProvider` | （未设置） | 固定的搜索提供方 id；未设置时在恰好一个可用时自动选择 |
+| `searchProviders` | （未设置） | `searchAll()` 的非空发现提供方 id 列表；未设置时调用所有可用提供方 |
+| `searchTimeoutMs` | （未设置） | 正数的单提供方时限；未设置时由调用方控制预算 |
+
+设置 `searchProviders: [openalex]` 可避免发现阶段下载目录，同时保留已挂载目录提供方供 `resolveFullText()` 使用。此列表不会把 OpenAlex 标识符映射成其他提供方的标识符。配置的提供方缺失或不可用时明确失败。设置 `searchTimeoutMs` 可隔离卡住的提供方：服务中止其子信号、记录 `timeout` 失败并保留其他结果。调用方取消仍中止整轮。提供方必须配合取消才能释放底层资源；服务可以停止等待，但无法终止任意提供方代码。
 
 两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 把所有可用提供方聚合成一个批次：单个提供方失败时，其他提供方的成果保留在 `batch.items`，失败记录进 `batch.failures`，而 `providers`、`discoveredRecords`、`truncated` 与 `limitations` 分别报告实际调用的提供方、应用上限前的记录数、丢包状态与来源覆盖限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
@@ -55,7 +59,9 @@ kind: "package-reference"
 
 ### 失败与恢复
 
-`search()` 失败抛出 `AcademicSourceError`，携带稳定、可机读的错误码；消息补充细节，例如缺失的提供方 id 或存在歧义的候选集。`searchAll()` 则把每个提供方可预期的搜索失败转换为来源级 `ProviderFailure`（不含凭据的消息、可重试的上游类别）并保留幸存提供方的成果，因此部分失败不会中止整轮；选择/配置错误仍然抛出，取消以 `ACADEMIC_SOURCE_ABORTED` 中止整轮。调用方按错误码或批次状态路由并决定如何降级。
+对于保留下来且带来源记录的成果，`searchAll()` 还在 `limitations` 中报告首次公开日期、场所、版本类型未知的数量，以及全文候选缺失或解析失败的数量。这些是发现限制，不是下载尝试或来源搜索失败；不会伪造 `batch.failures` 或丢弃成功的搜索结果。没有候选不等于论文不存在全文。
+
+`search()` 失败抛出携带稳定、可机读错误码的 `AcademicSourceError`。`searchAll()` 把预期搜索失败转换为来源级 `ProviderFailure` 并保留其他成果。超时、限流、网络和解析错误码对应不同类别；其他预期错误码使用 `upstream_error`。选择/配置错误仍然抛出，调用方取消以 `ACADEMIC_SOURCE_ABORTED` 中止整轮。服务不执行重试或查询规划。
 
 -----
 
@@ -92,7 +98,7 @@ kind: "package-reference"
 - **无网络客户端**——服务只做选择与上限控制；抓取、限流处理与重试属于各提供方实现。
 - **搜索请求只携带 `query` 与 `maxResults`**——provider 中立的过滤（`publicationWindow`、成果类型）延后到后端与有驱动的消费方能诚实支持时再加。
 - **无按标识符抓取操作**——按 DOI 或提供方 id 定位单一成果是另一项未来操作，不会塞进 `search()`。
-- **无检索运行报告**——`searchAll()` 发布批次事实（`providers`、`discoveredRecords`、`BatchResult`、`limitations`），但构造 `RetrievalRun` 与 `CoverageSummary` 仍由工作流消费方负责；在提供方暴露更细的错误粒度之前，提供方搜索失败统一转换为上游 `FailureCategory`。
+- **无检索运行报告**——`searchAll()` 发布批次事实（`providers`、`discoveredRecords`、`BatchResult`、`limitations`），但构造 `RetrievalRun` 与 `CoverageSummary` 仍由工作流消费方负责。
 
 <a id="dev-note"></a>
 ### 开发备注
