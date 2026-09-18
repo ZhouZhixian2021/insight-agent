@@ -16,6 +16,8 @@ import type { PaperEvidenceResult } from './types.ts'
 export interface RetrievalSearchObservation {
   readonly providers: readonly string[]
   readonly discoveredRecords: number
+  /** Exact work identities returned across queries before the aggregate run applies its candidate-work bound. */
+  readonly deduplicatedWorks: number
   readonly failures: readonly ProviderFailure[]
   readonly limitations: readonly string[]
   readonly truncated: boolean
@@ -96,7 +98,7 @@ export function buildRetrievalRun(observation: RetrievalRunObservation): Retriev
   ])
   const coverageSummary = createCoverageSummary({
     discoveredRecords: observation.search?.discoveredRecords ?? 0,
-    deduplicatedWorks: observation.academicWorkIds.length,
+    deduplicatedWorks: observation.search?.deduplicatedWorks ?? 0,
     includedWorks: includedWorkIds.length,
     availableFulltextWorks: observation.availableFulltextWorks,
     abstractOnlyWorks: 0,

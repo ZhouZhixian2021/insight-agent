@@ -65,6 +65,77 @@ A 在工作流结束或取消时建立一条 `RetrievalRun`。`queries` 保存�
 
 B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多来源研究运行交接说明](academic-multi-source-run-handoff.md)。
 
+## 真实双查询端到端验收基线
+
+本基线用于三人完成当前来源、工作流和 Web 改动后的同题验收。它只验证已经实现的明确查询流程，不引入自动查询生成、自动重试、分段抽取、持久恢复或新的公共字段。
+
+### 固定研究需求
+
+在新的“学术洞察”会话中选择可用模型，发送以下完整需求，并在计划审核卡中核对 Research Brief 后批准：
+
+> 请研究 Transformer 自注意力机制相对于循环神经网络在长距离依赖建模上的主要优势，以及 BERT 如何利用双向 Transformer 预训练获得上下文表示。范围限定为 2017—2020 年，优先使用论文全文，纳入 Transformer 和 BERT 的代表性论文。最多候选 5 篇，最终纳入 2 篇，输出中文研究草稿，并明确证据限制。
+
+批准前至少核对以下字段。计划不满足时继续修改，不用错误计划开始研究。
+
+| Research Brief 项目 | 固定值或要求 |
+|---|---|
+| `publicationWindow` | 2017 至 2020，依据 `first_public_release`。 |
+| `questions` | 分别覆盖自注意力相对 RNN 的长距离依赖优势，以及 BERT 的双向 Transformer 预训练。 |
+| `includedWorkTypes` | 同时允许 `preprint` 与 `version_of_record`。 |
+| `evidenceRequirements` | 至少纳入 2 篇、至少 2 篇全文、证据级别为 `fulltext`、要求可定位证据、允许预印本。证据不足时继续但明确警告。 |
+| `reportRequirements` | 语言为中文，包含方法、证据限制和研究缺口，使用编号引用。 |
+| `stopConditions` | `maximumSearchRounds: 2`、`maximumCandidateWorks: 5`、`maximumIncludedWorks: 2`。 |
+
+计划批准后，在“学术研究”页面按原顺序输入以下两行。每行是一条明确查询：
+
+```text
+Transformer self-attention long-range dependencies recurrent neural networks
+BERT bidirectional Transformer pre-training contextual representations
+```
+
+### 验收前置条件
+
+1. A 的明确查询编排已经进入当前运行的 Web 构建，Remote 请求仍使用 `query: string`，换行必须原样传到后端。
+2. B 的来源配置覆盖 2017—2020 年目标论文所在目录，并且运行环境能够访问相应来源和全文地址。
+3. C 的页面允许输入多行文本，提示“一行一条、最多三条”，并且不把换行折叠为空格。
+4. 当前会话已经选择模型并批准上述 Research Brief；本次运行使用同一个 Session。
+
+### 两级验收结论
+
+**流水线接线通过**要求以下事实全部成立：
+
+1. 页面收到结构化运行结果，不出现未捕获的“请求异常”。
+2. `retrievalRun.queries` 按顺序精确记录上面两条查询，既不重复也不合并成一条。
+3. 第二条查询在第一条返回来源失败批次后仍会执行；用户取消时才停止尚未开始的查询。
+4. `retrievalRun.providers`、`failures`、`coverageSummary` 来自实际运行观察；`failedOperations` 等于失败记录数量。
+5. `deduplicatedWorks` 不大于 `discoveredRecords`，`includedWorks` 不大于 2，`availableFulltextWorks` 不大于 `includedWorks`。
+6. 来源失败、来源覆盖限制、来源截断、候选上限、纳入上限或论文处理失败发生时，`coverageSummary.truncated` 与 `limitations` 如实披露。
+7. `retrievalRun.stage: completed` 只表示运行结束；页面不得据此显示人工审核通过。
+
+**研究内容通过**还要求以下事实全部成立：
+
+1. 去重后能识别 Transformer 与 BERT 两篇代表性工作，最终纳入 2 篇，且两篇均成功取得全文并抽取证据。
+2. 中文草稿分别回答两个研究问题，实质性结论能追溯到原文摘录和来源定位。
+3. 草稿明确说明来源目录、检索失败、全文失败、抽取失败和人工审核状态等真实限制。
+4. 没有独立语义审核时，`report.evaluation` 允许是 `needs_review` 或 `blocked`；这表示草稿不能作为最终报告交付，不等于 Remote 或检索流水线失败。
+
+若只满足第一组，则记录“接线通过、内容未通过”，根据失败归属继续处理。若第一组也不满足，A 先按 `retrievalRun` 和页面请求错误定位接口或编排问题。
+
+### 2026-09-18 真实运行结果
+
+在 PR #28 合并并完成全量构建后，使用上述 Brief 和两条查询完成一次真实 Web 运行。页面返回结构化终态，两条查询按顺序执行，第一条的来源失败没有阻止第二条，因此“流水线接线通过”。运行共发现 10 条记录，候选上限保留 5 篇，最终纳入 0 篇、可用全文 0 篇；ACL 与 PMLR 在两轮查询中共发生 4 次搜索失败，arXiv 两篇候选共发生 2 次全文获取失败，报告被正确标记为“阻止交付”，因此“研究内容未通过”。
+
+本次还发现 `deduplicatedWorks` 显示为限额后的 5，而限制说明记录“从 10 篇去重论文保留 5 篇”。A 已将该字段统一为各查询实际返回记录经过跨查询去重、但尚未应用本轮全局候选上限时的数量；`RetrievalRun.academicWorkIds` 继续保存上限内保留的候选。同类运行应显示 10 篇去重论文和 5 个候选 ID。B 继续处理来源联网、目标目录和全文获取，C 的多行输入及终态展示无需因本次结果返工。
+
+### 失败归属
+
+| 观察结果 | 首要负责人 |
+|---|---|
+| 查询被合并、顺序错误、来源失败后未继续、运行统计或状态不一致 | A |
+| 来源联网失败、2017—2020 目录未配置、目标论文未命中、全文地址或解析失败 | B |
+| 页面不能输入两行、换行未保留、状态或限制文案误导 | C |
+| 模型路由、凭据或外部网络不可用 | 联调环境问题，由 A 记录后交给对应配置负责人处理。 |
+
 ## 模型抽取接入：输入、返回与检查规则
 
 本节是 2026-09-15 的模型适配实施约定。[parseEvidenceDrafts](../../packages/academic/workflow/src/parse-evidence.ts) 已实现完整回答的 JSON 与字段检查；createModelEvidenceGenerator 已接入 DSH 模型调用、输出结束检查、输入估算和 Session 请求/结果记录，尚未完成真实模型联网验收。字段以 B 的 [EvidenceGenerationRequest / EvidenceDraft](../../packages/academic/evidence/src/types.ts) 和 A 的[证据卡类型](../../packages/academic/model/src/types.ts)为准；不修改 B、C 的业务接口。

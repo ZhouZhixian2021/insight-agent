@@ -147,7 +147,8 @@ describe('single-pass research draft', () => {
     ])
     expect(events).toEqual(['select', 'fetch:a', 'extract', 'fetch:b', 'extract', 'fetch:c', 'extract'])
     expect(result.retrievalRun).toMatchObject({ queries: ['transformer', 'bert'], providers: ['arxiv', 'acl'],
-      coverageSummary: { discoveredRecords: 4, deduplicatedWorks: 3, includedWorks: 3, truncated: true } })
+      coverageSummary: { discoveredRecords: 4, deduplicatedWorks: 4, includedWorks: 3, truncated: true } })
+    expect(result.retrievalRun.academicWorkIds).toHaveLength(3)
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('candidate-work bound')
   })
   it('continues later explicit queries after an earlier source batch failed', async () => {
@@ -272,6 +273,7 @@ describe('single-pass research draft', () => {
     expect(result.report?.limitations.join(' ')).toContain('truncated')
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 2, deduplicatedWorks: 1,
       includedWorks: 1, truncated: true })
+    expect(result.retrievalRun.academicWorkIds).toHaveLength(1)
   })
   it('records an observed included-work bound from paper selection', async () => {
     const { input, adapters } = fixture()
