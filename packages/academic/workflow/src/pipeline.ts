@@ -194,6 +194,7 @@ function aggregateSearches(
     search: {
       providers: unique(results.flatMap(result => result.providers)),
       discoveredRecords: results.reduce((sum, result) => sum + result.discoveredRecords, 0),
+      deduplicatedWorks: complete.works.length,
       failures: results.flatMap(result => result.batch.failures),
       limitations,
       truncated: candidateTruncated || results.some(result => result.truncated),
