@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createBatchResult, createFailureId, createWorkVersionId, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
+import { createAcademicWorkId, createBatchResult, createFailureId, createWorkVersionId,
+  type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceSearchBatchResult, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
 import { runResearchDraft, WorkflowLogError } from '../src/index.ts'
@@ -19,6 +20,19 @@ function searchBatch(
   return { works: batch.items, batch, providers: options.providers ?? ['fixture'],
     discoveredRecords: options.discoveredRecords ?? works.length, truncated: options.truncated ?? false,
     limitations: options.limitations ?? [] }
+}
+
+function distinctRecord(base: AcademicSourceWork, key: string): AcademicSourceWork {
+  const academicWorkId = createAcademicWorkId()
+  const workVersionId = createWorkVersionId()
+  const externalIdentifier = { kind: 'provider_record' as const, normalizedValue: key,
+    originalValue: key, sourceProvider: 'fixture' }
+  return {
+    academicWork: { ...base.academicWork, academicWorkId, title: `Synthetic ${key}`,
+      externalIdentifiers: [externalIdentifier], workVersionIds: [workVersionId], canonicalVersionId: workVersionId },
+    workVersion: { ...base.workVersion, academicWorkId, workVersionId, externalIdentifiers: [externalIdentifier],
+      sourceRecords: [{ provider: 'fixture', recordId: key }] },
+  }
 }
 
 describe('single-pass research draft', () => {
@@ -48,7 +62,7 @@ describe('single-pass research draft', () => {
   })
   it('rejects an invalid explicit search bound before search', async () => {
     const { input, adapters } = fixture()
-    await expect(runResearchDraft({ ...input, search: { query: 'x', maxResults: 0 } }, adapters)).rejects.toThrow('positive integer')
+    await expect(runResearchDraft({ ...input, searches: [{ query: 'x', maxResults: 0 }] }, adapters)).rejects.toThrow('positive integer')
     expect(adapters.search).not.toHaveBeenCalled()
   })
   it.each(['resolve', 'reject'] as const)('handles cancellation when search adapters %s', async (outcome) => {
@@ -114,6 +128,82 @@ describe('single-pass research draft', () => {
     expect(result.retrievalRun.coverageSummary.limitations).toContain('PMLR searches configured catalog pages only.')
     expect(result.retrievalRun.coverageSummary.limitations).toContain('Provider pmlr failed during search.')
   })
+  it('executes explicit queries in order and round-robins their candidates under one global bound', async () => {
+    const { input, adapters, records, events } = fixture()
+    const c = distinctRecord(records[0]!, 'c')
+    const d = distinctRecord(records[0]!, 'd')
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
+      maximumSearchRounds: 2, maximumCandidateWorks: 3, maximumIncludedWorks: 3 } }
+    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    vi.mocked(adapters.search)
+      .mockResolvedValueOnce(searchBatch([records[0]!, c], { providers: ['arxiv'] }))
+      .mockResolvedValueOnce(searchBatch([records[1]!, d], { providers: ['acl'] }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(vi.mocked(adapters.search).mock.calls.map(call => call[0])).toEqual([
+      { query: 'transformer', maxResults: 3 },
+      { query: 'bert', maxResults: 3 },
+    ])
+    expect(events).toEqual(['select', 'fetch:a', 'extract', 'fetch:b', 'extract', 'fetch:c', 'extract'])
+    expect(result.retrievalRun).toMatchObject({ queries: ['transformer', 'bert'], providers: ['arxiv', 'acl'],
+      coverageSummary: { discoveredRecords: 4, deduplicatedWorks: 3, includedWorks: 3, truncated: true } })
+    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('candidate-work bound')
+  })
+  it('continues later explicit queries after an earlier source batch failed', async () => {
+    const { input, adapters, records } = fixture()
+    const failure: ProviderFailure = { schemaVersion: 1, failureId: createFailureId(), provider: 'arxiv', operation: 'search',
+      category: 'upstream_error', message: 'network unavailable', retryable: true, retryAfter: null }
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
+    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    vi.mocked(adapters.search)
+      .mockResolvedValueOnce(searchBatch([], { failures: [failure], providers: ['arxiv'] }))
+      .mockResolvedValueOnce(searchBatch(records, { providers: ['acl'] }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(adapters.search).toHaveBeenCalledTimes(2)
+    expect(result.retrievalRun).toMatchObject({ status: 'partial_success', queries: ['transformer', 'bert'],
+      providers: ['arxiv', 'acl'], failures: [failure], coverageSummary: { deduplicatedWorks: 2, includedWorks: 2 } })
+  })
+  it('deduplicates an exact work identity found by more than one query', async () => {
+    const { input, adapters, records } = fixture()
+    const first = distinctRecord(records[0]!, 'shared')
+    const repeated = distinctRecord(records[0]!, 'shared')
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
+    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    vi.mocked(adapters.search)
+      .mockResolvedValueOnce(searchBatch([first]))
+      .mockResolvedValueOnce(searchBatch([repeated, records[1]!]))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 3, deduplicatedWorks: 2, includedWorks: 2 })
+    expect(result.papers).toHaveLength(2)
+  })
+  it('records only queries started before cancellation', async () => {
+    const { input, adapters, records } = fixture()
+    const controller = new AbortController()
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
+    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    adapters.search = vi.fn(async () => { controller.abort(); return searchBatch(records) })
+
+    const result = await runResearchDraft(input, adapters, controller.signal)
+
+    expect(adapters.search).toHaveBeenCalledOnce()
+    expect(result.retrievalRun.queries).toEqual(['transformer'])
+    expect(result.status).toBe('cancelled')
+  })
+  it('rejects query counts above the hard or approved search-round bound before search', async () => {
+    const { input, adapters } = fixture()
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 3 } }
+    input.searches = ['one', 'two', 'three', 'four'].map(query => ({ query }))
+    await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 3')
+    input.searches = [{ query: 'one' }, { query: 'two' }]
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 1 } }
+    await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 1')
+    expect(adapters.search).not.toHaveBeenCalled()
+  })
   it('marks declared source coverage limits without inventing provider counts', async () => {
     const { input, adapters, records } = fixture()
     vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch(records, {
@@ -176,8 +266,8 @@ describe('single-pass research draft', () => {
   })
   it('bounds candidates and discloses truncation without inventing a second search', async () => {
     const { input, adapters } = fixture()
-    const result = await runResearchDraft({ ...input, search: { ...input.search, maxResults: 1 } }, adapters)
-    expect(adapters.search).toHaveBeenCalledWith({ query: input.search.query, maxResults: 1 }, undefined)
+    const result = await runResearchDraft({ ...input, searches: [{ ...input.searches[0]!, maxResults: 1 }] }, adapters)
+    expect(adapters.search).toHaveBeenCalledWith({ query: input.searches[0]!.query, maxResults: 1 }, undefined)
     expect(result.papers).toHaveLength(1)
     expect(result.report?.limitations.join(' ')).toContain('truncated')
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 2, deduplicatedWorks: 1,

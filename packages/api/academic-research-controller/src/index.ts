@@ -3,6 +3,7 @@ import { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
+  MAX_DRAFT_SEARCH_QUERIES,
   runAcademicResearchDraft,
   selectResearchPapers,
   type AcademicResearchDraftResult,
@@ -34,7 +35,7 @@ export class AcademicResearchController extends TypertRemoteService {
 
   /**
    * Run one multi-source research pass while the addressed Agent is idle.
-   * @param request - search query, disclosure, and the Session containing the approved brief plan.
+   * @param request - one to three newline-separated queries, disclosure, and the Session containing the approved brief plan.
    * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
    * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
    */
@@ -56,6 +57,13 @@ export class AcademicResearchController extends TypertRemoteService {
       brief = researchBriefFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
     } catch (cause: unknown) {
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
+        { cause })
+    }
+    let queries: readonly string[]
+    try {
+      queries = parseResearchQueries(request.query, brief.stopConditions.maximumSearchRounds)
+    } catch (cause: unknown) {
+      throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic search queries', {},
         { cause })
     }
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
@@ -82,8 +90,8 @@ export class AcademicResearchController extends TypertRemoteService {
         ctx: agent.ctx,
         session: agent.session,
         model,
-        input: { brief, search: { query: request.query,
-          ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } }, synthetic: request.synthetic },
+        input: { brief, searches: queries.map(query => ({ query,
+          ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),
       }))
@@ -93,6 +101,16 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     return runValue(await maintenance)
   }
+}
+
+/** Parse one browser string into ordered, non-empty, distinct queries without changing the Remote shape. */
+function parseResearchQueries(value: string, approvedMaximumRounds: number): readonly string[] {
+  if (typeof value !== 'string') throw new Error('Academic search queries must be a string.')
+  const queries = [...new Set(value.split(/\r?\n/u).map(query => query.trim()).filter(query => query.length > 0))]
+  if (queries.length === 0) throw new Error('At least one Academic search query is required.')
+  const maximum = Math.min(MAX_DRAFT_SEARCH_QUERIES, approvedMaximumRounds)
+  if (queries.length > maximum) throw new Error(`Academic search query count exceeds the approved bound of ${maximum}.`)
+  return queries
 }
 
 function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue {

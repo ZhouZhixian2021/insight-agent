@@ -29,7 +29,7 @@ function brief() {
       requireLocatableEvidence: true, allowPreprints: true, insufficientEvidencePolicy: 'continue_with_warning' as const },
     targetAudience: 'researchers', reportRequirements: { language: 'en', targetLength: { unit: 'words', minimum: null, maximum: null },
       requiredSections: [], citationStyle: 'numeric' as const, includeEvidenceAppendix: true, includeMethodology: true,
-      includeLimitations: true, includeResearchGaps: false }, stopConditions: { maximumSearchRounds: 1, maximumCandidateWorks: 3,
+      includeLimitations: true, includeResearchGaps: false }, stopConditions: { maximumSearchRounds: 3, maximumCandidateWorks: 3,
       maximumIncludedWorks: 2, maximumElapsedMinutes: null, saturationRounds: 1, stopWhenEvidenceRequirementsMet: false },
     assumptions: [], approval: { status: 'approved' as const, reviewedBy: 'tester', reviewedAt: '2026-09-16T00:00:00Z',
       approvedBriefVersion: 1, comment: null } }
@@ -148,7 +148,7 @@ describe('AcademicResearchController', () => {
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
       input: { brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
-      search: { query: 'retrieval', maxResults: 2 }, synthetic: false } })
+      searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })
     await call.adapters.search({ query: 'x' }, fixture.signal)
     await call.adapters.fetcher('https://arxiv.org/pdf/1', fixture.signal)
     expect(Date.parse(call.adapters.now())).not.toBeNaN()
@@ -188,6 +188,28 @@ describe('AcademicResearchController', () => {
     await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: true },
       new AbortController().signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
+  })
+
+  it('parses newline-separated queries, trims them, and removes exact repeats', async () => {
+    const fixture = await harness()
+    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: retrievalRun(), papers: [], failures: [], analysis: null, report: null } as never)
+
+    await fixture.controller.run({ sessionId: fixture.sessionId,
+      query: '  Transformer long-range dependencies  \nBERT bidirectional pre-training\nTransformer long-range dependencies',
+      maxResults: 5, synthetic: false }, fixture.signal)
+
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].input.searches).toEqual([
+      { query: 'Transformer long-range dependencies', maxResults: 5 },
+      { query: 'BERT bidirectional pre-training', maxResults: 5 },
+    ])
+  })
+
+  it('rejects more queries than the hard and approved bound before starting maintenance', async () => {
+    const fixture = await harness()
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'one\ntwo\nthree\nfour', synthetic: false }, fixture.signal))
+      .rejects.toMatchObject({ code: 'gateway/bad-request', message: 'Academic search query count exceeds the approved bound of 3.' })
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('reports a busy Session before starting workflow work', async () => {

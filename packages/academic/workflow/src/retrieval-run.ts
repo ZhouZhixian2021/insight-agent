@@ -9,9 +9,17 @@ import {
   type RetrievalRun,
   type RetrievalRunId,
 } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSourceSearchBatchResult } from '@deepseek-ai/dsh-academic-source'
 import type { PaperProcessingFailure, SelectedPaper } from './pipeline-types.ts'
 import type { PaperEvidenceResult } from './types.ts'
+
+/** Source facts accumulated from the explicit queries that completed. */
+export interface RetrievalSearchObservation {
+  readonly providers: readonly string[]
+  readonly discoveredRecords: number
+  readonly failures: readonly ProviderFailure[]
+  readonly limitations: readonly string[]
+  readonly truncated: boolean
+}
 
 /** Observations needed to settle one retrieval run without consulting provider state again. */
 export interface RetrievalRunObservation {
@@ -20,9 +28,8 @@ export interface RetrievalRunObservation {
   readonly startedAt: string
   readonly completedAt: string
   readonly cancelled: boolean
-  readonly query: string
-  readonly queryExecuted: boolean
-  readonly search: AcademicSourceSearchBatchResult | null
+  readonly queries: readonly string[]
+  readonly search: RetrievalSearchObservation | null
   readonly academicWorkIds: readonly AcademicWorkId[]
   readonly papers: readonly PaperEvidenceResult[]
   readonly paperFailures: readonly PaperProcessingFailure[]
@@ -65,7 +72,7 @@ export function buildRetrievalRun(observation: RetrievalRunObservation): Retriev
     : [])
   const status = createBatchResult(includedWorkIds, observation.failures).status
   const paused = observation.papers.filter(paper => paper.status === 'paused')
-  const sourceFailures = observation.search?.batch.failures ?? []
+  const sourceFailures = observation.search?.failures ?? []
   const truncated = observation.search?.truncated === true
     || (observation.search?.limitations.length ?? 0) > 0
     || sourceFailures.length > 0
@@ -83,7 +90,9 @@ export function buildRetrievalRun(observation: RetrievalRunObservation): Retriev
       : [],
     ...paused.map(paper => `Paused version ${paper.pause.workVersionId}: ${paper.pause.reason}.`),
     ...observation.paperFailures.map(failure => `Version ${failure.workVersionId} failed during ${failure.stage}.`),
-    ...observation.queryExecuted ? ['This run used one search round without automatic retries.'] : [],
+    ...observation.queries.length > 0
+      ? [`This run executed ${observation.queries.length} ordered search ${observation.queries.length === 1 ? 'query' : 'queries'} without automatic retries.`]
+      : [],
   ])
   const coverageSummary = createCoverageSummary({
     discoveredRecords: observation.search?.discoveredRecords ?? 0,
@@ -106,7 +115,7 @@ export function buildRetrievalRun(observation: RetrievalRunObservation): Retriev
     status,
     startedAt: observation.startedAt,
     completedAt: observation.completedAt,
-    queries: observation.queryExecuted ? [observation.query] : [],
+    queries: [...observation.queries],
     providers: observation.search?.providers ?? [],
     academicWorkIds: [...observation.academicWorkIds],
     coverageSummary,

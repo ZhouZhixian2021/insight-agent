@@ -19,17 +19,18 @@ export function draftFixture() {
       sourceRecords: [{ provider: 'fixture', recordId: key }], contentHash: { status: 'not_extracted' }, supersedesWorkVersionId: null, status: 'active' }
     return { academicWork, workVersion }
   })
-  const input: { -readonly [K in keyof DraftPipelineInput]: DraftPipelineInput[K] } = { synthetic: true, search: { query: 'synthetic methods' }, brief: {
-    schemaVersion: 1, researchBriefId: createResearchBriefId(), version: 1, topic: 'Synthetic comparison', aliases: [], questions: ['Compare methods'],
-    publicationWindow: { start: null, end: null, dateBasis: 'first_public_release' }, includedWorkTypes: ['preprint'], inclusionRules: [], exclusionRules: [],
-    evidenceRequirements: { minimumIncludedWorks: 2, minimumFulltextWorks: 2, minimumEvidenceLevel: 'fulltext', requireLocatableEvidence: true,
-      allowPreprints: true, insufficientEvidencePolicy: 'continue_with_warning' }, targetAudience: 'researchers',
-    reportRequirements: { language: 'zh-CN', targetLength: { unit: 'characters', minimum: null, maximum: null }, requiredSections: [], citationStyle: 'numeric',
-      includeEvidenceAppendix: true, includeMethodology: true, includeLimitations: true, includeResearchGaps: false },
-    stopConditions: { maximumSearchRounds: 1, maximumCandidateWorks: 3, maximumIncludedWorks: 3, maximumElapsedMinutes: null,
-      saturationRounds: 1, stopWhenEvidenceRequirementsMet: false }, assumptions: ['Synthetic'],
-    approval: { status: 'approved', reviewedBy: 'fixture', reviewedAt: '2026-09-15T00:00:00Z', approvedBriefVersion: 1, comment: null },
-  } }
+  const input: { -readonly [K in keyof DraftPipelineInput]: DraftPipelineInput[K] } = { synthetic: true,
+    searches: [{ query: 'synthetic methods' }], brief: {
+      schemaVersion: 1, researchBriefId: createResearchBriefId(), version: 1, topic: 'Synthetic comparison', aliases: [], questions: ['Compare methods'],
+      publicationWindow: { start: null, end: null, dateBasis: 'first_public_release' }, includedWorkTypes: ['preprint'], inclusionRules: [], exclusionRules: [],
+      evidenceRequirements: { minimumIncludedWorks: 2, minimumFulltextWorks: 2, minimumEvidenceLevel: 'fulltext', requireLocatableEvidence: true,
+        allowPreprints: true, insufficientEvidencePolicy: 'continue_with_warning' }, targetAudience: 'researchers',
+      reportRequirements: { language: 'zh-CN', targetLength: { unit: 'characters', minimum: null, maximum: null }, requiredSections: [], citationStyle: 'numeric',
+        includeEvidenceAppendix: true, includeMethodology: true, includeLimitations: true, includeResearchGaps: false },
+      stopConditions: { maximumSearchRounds: 1, maximumCandidateWorks: 3, maximumIncludedWorks: 3, maximumElapsedMinutes: null,
+        saturationRounds: 1, stopWhenEvidenceRequirementsMet: false }, assumptions: ['Synthetic'],
+      approval: { status: 'approved', reviewedBy: 'fixture', reviewedAt: '2026-09-15T00:00:00Z', approvedBriefVersion: 1, comment: null },
+    } }
   const adapters: { -readonly [K in keyof DraftPipelineAdapters]: DraftPipelineAdapters[K] } = {
     search: vi.fn<DraftPipelineAdapters['search']>(async (request) => { events.push('search')
       const works = request.maxResults === undefined ? records : records.slice(0, request.maxResults)

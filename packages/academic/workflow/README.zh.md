@@ -26,17 +26,17 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 返回的论文记录共享只读引用，不提供深冻结或持久快照。该库没有独立注册或单独维护的运行时服务观察，因此不发布 invariant 子路径；模型适配器直接使用已保存 Session 事件中的不可变请求数据，调用时核对存储内容。
 
-## 一轮研究草稿
+## 有界研究草稿
 
-runResearchDraft 接收已批准的 Brief、一个明确查询和 synthetic 标记。调用顺序固定为检索 → 去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
+runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 synthetic 标记；查询数还必须符合 Brief 的 `maximumSearchRounds`。它先按顺序执行查询，再执行合并去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
 调用方提供 search、selectPapers、fetcher、generator 和 now。search 返回 `ctx.academicSource.searchAll()` 的 `AcademicSourceSearchBatchResult`，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿和预印本规则；其 `PaperSelectionResult` 记录批准的纳入数量上限是否遗漏了另一篇符合条件的论文。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 
-查询结果受 maximumCandidateWorks 与请求上限约束，选择受 maximumIncludedWorks 约束；拒绝未批准、重复论文、未知版本和撤稿等非法选择。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。终态 `RetrievalRun` 合并来源与论文失败、去重及纳入成果数、成功取得全文数、实际调用的 Provider、执行的查询和明确的截断原因。报告披露相同的不完整覆盖观察，不把结果标成完整覆盖。
+每条查询使用相同候选上限。已完成查询批次按轮转顺序合并，避免前一条查询独占全局名额；随后按精确标识符去重，再将 `maximumCandidateWorks` 与请求上限应用于去重结果。选择受 `maximumIncludedWorks` 约束。未批准输入、查询过多、重复选择同一成果、未知版本和撤稿等非法选择会被拒绝。某条查询得到来源失败批次时仍继续后续明确查询；配置错误或无法表达为批次结果的搜索错误仍向上抛出。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。终态 `RetrievalRun` 合并来源与论文失败、去重及纳入成果数、成功取得全文数、实际调用的 Provider、实际开始执行的查询和明确的截断原因。报告披露相同的不完整覆盖观察，不把结果标成完整覆盖。
 
 输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。模型与网络的持久记录、期限取消信号均由调用方负责。
 
-自动多轮检索、重试、跨轮索引恢复、停止条件的饱和判定和达到证据量后的自动停止留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用本工作流。
+自动规划查询、自适应追加检索、重试、跨运行索引恢复、停止条件的饱和判定和达到证据量后的自动停止留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用本工作流。
 
 ## 模型回答校验
 
@@ -88,7 +88,7 @@ DSH 现有消息估算器计算完整包装后的输入。输入估算加已解�
 
 ## Known Limitations and Deferred Work
 
-- 该库提供单轮草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果；返回的 RetrievalRun、证据/卡片身份及完整工作流状态尚未持久化以供恢复。长论文分批、自动重试及最终语义审核留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
+- 该库提供有界明确查询草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果；返回的 RetrievalRun、证据/卡片身份及完整工作流状态尚未持久化以供恢复。自适应查询规划、长论文分批、自动重试及最终语义审核留待后续。它不证明文件的学术身份，也不判断格式差异或内容改版。
 
 <a id="dev-note"></a>
 ### 开发备注
@@ -96,6 +96,6 @@ DSH 现有消息估算器计算完整包装后的输入。输入估算加已解�
 <details>
 <summary>Working context for maintainers</summary>
 
-设计与验证见 [论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md) 及 [测试](tests/handoff.spec.ts).
+设计与验证见[论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md)、[明确查询编排决策](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.zh.md)及[测试](tests/handoff.spec.ts)。
 
 </details>
