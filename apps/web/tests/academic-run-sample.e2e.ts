@@ -24,7 +24,12 @@ describe('academic research Remote entry', () => {
         const dialog = page.getByRole('dialog', { name: 'Research run results' })
         await dialog.waitFor()
         expect(await dialog.getByRole('combobox').count()).toBe(0)
-        await dialog.getByRole('textbox', { name: 'Research query' }).fill('retrieval evaluation')
+        const queries = 'Attention Is All You Need\nBERT Pre-training of Deep Bidirectional Transformers'
+        const queryBox = dialog.getByRole('textbox', { name: 'Research query' })
+        await queryBox.fill(queries)
+        expect(await queryBox.evaluate(element => element.tagName)).toBe('TEXTAREA')
+        expect(await queryBox.inputValue()).toBe(queries)
+        expect(await dialog.getByText('One query per line, up to three, subject to the approved research plan.', { exact: true }).count()).toBe(1)
         await dialog.getByRole('button', { name: 'Start research' }).click()
         await dialog.getByRole('alert').waitFor()
         expect(await dialog.getByRole('alert').textContent()).toContain('no approved Academic Research Brief plan')

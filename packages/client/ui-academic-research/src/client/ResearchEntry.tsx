@@ -1,5 +1,5 @@
 /** Session-bound Academic Remote request form and result viewer. */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { AcademicResearchRunRequest, AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
@@ -33,6 +33,7 @@ export function ResearchEntry({ t, useSessions, run }: ResearchEntryProps) {
 }
 
 function ResearchForm({ sessionId, run, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
+  const queryHelpId = useId()
   const [query, setQuery] = useState('')
   const [view, setView] = useState<RunView | null>(null)
   const active = useRef<AbortController | null>(null)
@@ -59,7 +60,8 @@ function ResearchForm({ sessionId, run, t }: ResearchEntryInjected & PropsLocale
   return <>
     <p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('prerequisite')}</p>
     <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
-      <label>{t('query')}<input required value={query} disabled={view?.phase === 'running'} onChange={(event) => { setQuery(event.target.value) }} /></label>
+      <label>{t('query')}<textarea rows={4} aria-describedby={queryHelpId} required value={query} disabled={view?.phase === 'running'} onChange={(event) => { setQuery(event.target.value) }} /></label>
+      <p id={queryHelpId} className={css.notice}>{t('queryHelp')}</p>
       <button type="submit" disabled={query.trim() === '' || view?.phase === 'running'}>{t('start')}</button>
     </form>
     {view !== null && <RunPanel view={view} t={t} onCancel={() => {
