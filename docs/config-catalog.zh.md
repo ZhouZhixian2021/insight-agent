@@ -25,6 +25,10 @@
 export interface AcademicSourceRuntimeConfig {
   /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
   readonly searchProvider?: string
+  /** Provider ids called by searchAll; omitted searches every usable provider. Resolvers remain registered. */
+  readonly searchProviders?: string[]
+  /** Per-provider search deadline; omitted preserves the caller-owned budget. No retries are performed. */
+  readonly searchTimeoutMs?: number
 }
 ```
 
@@ -79,6 +83,34 @@ export interface Config {
 ```
 
 来源：[`packages/academic/source-cvf/src/index.ts:18`](../packages/academic/source-cvf/src/index.ts)
+
+<a id="deepseek-aidsh-academic-source-openalex"></a>
+
+## `@deepseek-ai/dsh-academic-source-openalex`
+
+需要：`academicSource`
+
+```ts config-catalog
+/** OpenAlex request settings; API keys remain in the configured environment variable. */
+export interface Config {
+  /** OpenAlex REST API base; `/works` requests resolve against it. Defaults to `https://api.openalex.org`. */
+  readonly baseURL?: string
+  /** Environment variable that may hold an OpenAlex API key sent as a bearer token. Defaults to `OPENALEX_API_KEY`. */
+  readonly apiKeyEnv?: string
+  /** Query interpretation: `keyword` sends `search`, `semantic` sends `search.semantic`. Defaults to `keyword`. */
+  readonly searchMode?: 'keyword' | 'semantic'
+  /** Optional ascending `YYYY-YYYY` range restricting discovery to `publication_year`; not a first-public-release filter. */
+  readonly publicationYears?: string
+  /** Per-request timeout in milliseconds. Defaults to `20000`. */
+  readonly timeoutMs?: number
+  /** Maximum records requested per query; semantic mode caps this at `50` and keyword mode at `100`. Defaults to `50`. */
+  readonly maxResults?: number
+  /** Capacity of the instance-local full-text candidate map; must be at least `maxResults`. Defaults to `1000`. */
+  readonly maxCachedRecords?: number
+}
+```
+
+来源：[`packages/academic/source-openalex/src/index.ts:17`](../packages/academic/source-openalex/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-pmlr"></a>
 

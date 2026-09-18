@@ -79,7 +79,7 @@ registerSearchProvider(provider: AcademicSourceProvider): () => void
 async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
 
 /**
- * Search every usable provider and merge their results round-robin before applying the total bound.
+ * Search configured discovery providers, or every usable provider, and merge results round-robin.
  *
  * One provider's failure never discards another provider's results: expected search failures
  * become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining

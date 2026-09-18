@@ -143,6 +143,7 @@
     { "path": "./packages/academic/source-acl" },
     { "path": "./packages/academic/source-arxiv" },
     { "path": "./packages/academic/source-cvf" },
+    { "path": "./packages/academic/source-openalex" },
     { "path": "./packages/academic/source-pmlr" },
     { "path": "./packages/util/http-proxy" },
     { "path": "./packages/util/launch-environment" },

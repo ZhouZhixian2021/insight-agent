@@ -89,6 +89,22 @@ describe('OpenAlex discovery', () => {
     expect(signals[1]?.aborted).toBe(true)
   })
 
+  it('rejects an already-aborted caller signal without sending a request', async () => {
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    const controller = new AbortController()
+    controller.abort()
+    await expect(new OpenAlexProvider(options).search({ query: 'test' }, controller.signal))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('rejects responses without a valid results envelope', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ meta: { count: 'many' }, results: [] }))))
+    await expect(new OpenAlexProvider(options).search({ query: 'test' }))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PARSE_ERROR', message: 'OpenAlex returned an invalid results envelope' })
+  })
+
   it('rejects multiline and invalid requests instead of planning queries', async () => {
     const fetch = vi.fn()
     vi.stubGlobal('fetch', fetch)
@@ -139,6 +155,16 @@ describe('OpenAlex metadata and versions', () => {
     ] }).work.academicWork.venue).toMatchObject({ value: 'NAACL 2019' })
   })
 
+  it('prefers a named non-repository source over repository hosting', () => {
+    expect(normalizeOpenAlexWork({ ...bert(), primary_location: { version: 'publishedVersion',
+      source: { type: 'repository', display_name: 'arXiv' }, raw_source_name: 'arXiv' }, locations: [] })
+      .work.academicWork.venue.status).toBe('unknown')
+    expect(normalizeOpenAlexWork({ ...bert(), primary_location: { version: 'publishedVersion',
+      source: { type: 'repository', display_name: 'arXiv' } }, locations: [
+      { version: 'publishedVersion', source: { type: 'journal', display_name: 'Transactions of the ACL' } },
+    ] }).work.academicWork.venue).toMatchObject({ value: 'Transactions of the ACL' })
+  })
+
   it('does not download a preprint as the published version', () => {
     const raw = { ...bert(), doi: 'https://doi.org/10.1109/example', locations: [
       { version: 'submittedVersion', pdf_url: 'https://arxiv.org/pdf/1706.03762' },
@@ -157,6 +183,16 @@ describe('OpenAlex metadata and versions', () => {
     expect(result.urls).toEqual(['https://arxiv.org/html/1706.03762', 'https://arxiv.org/pdf/1706.03762'])
   })
 
+  it('does not duplicate arXiv identifiers already retained from the DOI', () => {
+    const result = normalizeOpenAlexWork({ ...bert(), type: 'preprint', doi: 'https://doi.org/10.48550/arXiv.1706.03762',
+      primary_location: { version: 'submittedVersion' }, locations: [
+        { version: 'submittedVersion', landing_page_url: 'https://arxiv.org/abs/1706.03762v2' },
+        { version: 'submittedVersion', landing_page_url: 'https://arxiv.org/abs/not-a-valid-identifier' },
+      ] })
+    expect(result.work.academicWork.externalIdentifiers.filter(identifier => identifier.kind === 'arxiv'))
+      .toEqual([{ kind: 'arxiv', normalizedValue: '1706.03762', originalValue: '1706.03762', sourceProvider: 'openalex' }])
+  })
+
   it('canonicalizes legacy ACL links and derives official CVF and PMLR candidates', () => {
     const result = normalizeOpenAlexWork({ ...bert(), doi: null, locations: [
       { version: 'publishedVersion', pdf_url: 'http://www.aclweb.org/anthology/N19-1423.pdf' },
@@ -168,10 +204,41 @@ describe('OpenAlex metadata and versions', () => {
       'https://openaccess.thecvf.com/content/CVPR2022/papers/Test.pdf'])
   })
 
+  it('keeps published PDFs from other hosts and from arXiv itself', () => {
+    const result = normalizeOpenAlexWork({ ...bert(), doi: null, locations: [
+      { version: 'publishedVersion', pdf_url: 'http://example.org/paper.pdf' },
+      { version: 'publishedVersion', pdf_url: 'https://arxiv.org/pdf/1706.03762' },
+    ] })
+    expect(result.urls).toEqual(['http://example.org/paper.pdf', 'https://arxiv.org/pdf/1706.03762'])
+  })
+
+  it('derives modern ACL anthology candidates and ignores unmatched ACL DOIs', () => {
+    expect(normalizeOpenAlexWork({ ...bert(), doi: 'https://doi.org/10.18653/v1/2020.acl-main.1' }).urls)
+      .toEqual(['https://aclanthology.org/2020.acl-main.1.pdf'])
+    expect(normalizeOpenAlexWork({ ...bert(), doi: 'https://doi.org/10.18653/v1/garbage' }).urls).toEqual([])
+  })
+
+  it('maps official ACL landing pages to PDF candidates and ignores volume index pages', () => {
+    const result = normalizeOpenAlexWork({ ...bert(), doi: null, locations: [
+      { version: 'publishedVersion', landing_page_url: 'https://aclanthology.org/N19-1423' },
+      { version: 'publishedVersion', landing_page_url: 'https://proceedings.mlr.press/v139' },
+    ] })
+    expect(result.urls).toEqual(['https://aclanthology.org/N19-1423.pdf'])
+  })
+
   it('rejects invalid dates and missing authors and preserves retractions', () => {
     expect(() => normalizeOpenAlexWork({ ...bert(), publication_date: '2020-02-31' })).toThrow()
     expect(() => normalizeOpenAlexWork({ ...bert(), authorships: [{}] })).toThrow()
+    expect(() => normalizeOpenAlexWork({ ...bert(), authorships: [{ author: { display_name: ' ' } }] })).toThrow()
     expect(normalizeOpenAlexWork({ ...bert(), is_retracted: true }).work.workVersion.status).toBe('retracted')
+  })
+
+  it('tolerates a missing primary location and an omitted publication date', () => {
+    const unversioned = normalizeOpenAlexWork({ ...bert(), primary_location: null })
+    expect(unversioned.work.workVersion.versionType).toBe('unknown')
+    expect(unversioned.urls).toEqual([])
+    expect(normalizeOpenAlexWork({ ...bert(), publication_date: undefined }).work.workVersion.releaseDate)
+      .toMatchObject({ status: 'unknown' })
   })
 
   it('does not turn a merged later accepted-version date into the original preprint release', () => {
@@ -194,8 +261,23 @@ it('registers and disposes the plugin and rejects configuration errors before fe
     expect((await ctx.academicSource.searchAll({ query: 'test' })).providers).toEqual(['openalex'])
     await fiber.dispose()
     await expect(ctx.academicSource.searchAll({ query: 'test' })).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE' })
-    for (const config of [{ baseURL: 'http://example.org' }, { timeoutMs: 0 }, { publicationYears: '2020-2017' }, { maxCachedRecords: 1 }]) {
+    for (const config of [{ baseURL: 'http://example.org' }, { timeoutMs: 0 }, { publicationYears: '2020-2017' }, { maxCachedRecords: 1 },
+      { searchMode: 'semantic' as const, maxResults: 51 }]) {
       expect(() => { plugin.apply(ctx, config) }).toThrow()
     }
+  } finally { await ctx.fiber.dispose() }
+})
+
+it('applies documented defaults for direct TypeScript callers', async () => {
+  const ctx = new Context()
+  try {
+    await ctx.plugin(AcademicSourceRuntime)
+    plugin.apply(ctx, {})
+    const fetch = vi.fn().mockResolvedValue(response([], 0))
+    vi.stubGlobal('fetch', fetch)
+    await ctx.academicSource.searchAll({ query: 'defaults' })
+    const url = fetch.mock.calls[0]?.[0] as URL
+    expect(url.href).toBe('https://api.openalex.org/works?search=defaults&per_page=50')
+    expect(url.searchParams.has('filter')).toBe(false)
   } finally { await ctx.fiber.dispose() }
 })
