@@ -23,7 +23,7 @@ kind: "package-reference"
 
 `renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。该渲染器继续作为内部辅助函数。主 Web 通过 sidebar.footer.action 注册研究入口，并使用框架 locale 字典。
 
-请先在当前会话选择模型并完成 Research Brief 的 Plan 审核，再输入查询。入口调用 ctx.remote.academicResearch.run，传递 sessionId、去除首尾空格的 query、synthetic: false 和 AbortSignal。取消、关闭页面及切换会话均中止本次请求；已卸载表单的迟到响应不能更新其他会话。服务器返回取消结果时保留实际成果；取消后未收到最终响应则明确提示，不伪造服务器完成状态。运行中不显示进度百分比，providerBreakdown 为 null 时不生成逐来源计数。固定场景仅用于测试。
+请先在当前会话选择模型并完成 Research Brief 的 Plan 审核，再在多行输入框中一行输入一条查询，最多三条，并受已批准研究计划限制。查询内部换行保留在现有 query 字符串中，由 Controller 负责拆分和计划限额校验。入口调用 ctx.remote.academicResearch.run，传递 sessionId、去除首尾空格的 query、synthetic: false 和 AbortSignal。取消、关闭页面及切换会话均中止本次请求；已卸载表单的迟到响应不能更新其他会话。服务器返回取消结果时保留实际成果；取消后未收到最终响应则明确提示，不伪造服务器完成状态。覆盖截断提示为“检索覆盖受限或提前截断”，不将其原因仅解释为数量上限。运行中不显示进度百分比，providerBreakdown 为 null 时不生成逐来源计数。固定场景仅用于测试。
 
 <a id="model-experience"></a>
 ## 模型体验

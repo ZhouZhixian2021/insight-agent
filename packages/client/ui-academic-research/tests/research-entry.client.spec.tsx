@@ -20,7 +20,7 @@ function deferred() {
 }
 function open() { fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '学术研究' })) }
 function start(query = '  retrieval  ') {
-  fireEvent.change(screen.getByRole<HTMLInputElement>('textbox', { name: '研究查询' }), { target: { value: query } })
+  fireEvent.change(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '研究查询' }), { target: { value: query } })
   fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '开始研究' }))
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
@@ -43,11 +43,24 @@ describe('Session research request lifecycle', () => {
     start()
     expect(run).toHaveBeenCalledWith({ sessionId: sid, query: 'retrieval', synthetic: false }, expect.any(AbortSignal))
     expect(screen.getByRole('status').textContent).toBe('研究运行中')
-    fireEvent.submit(screen.getByRole<HTMLInputElement>('textbox').closest('form')!)
+    fireEvent.submit(screen.getByRole<HTMLTextAreaElement>('textbox').closest('form')!)
     expect(run).toHaveBeenCalledTimes(1)
     await act(async () => { d.resolve(sampleRun()); await d.promise })
     expect(screen.getByText('部分成功')).toBeTruthy()
     expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
+  })
+  it('preserves two query lines in the existing Remote query field and renders the returned result', async () => {
+    const run = vi.fn<ResearchEntryProps['run']>().mockResolvedValue(sampleRun())
+    render(<ResearchEntry {...props(run)} />); open()
+    const queries = 'Attention Is All You Need\nBERT Pre-training of Deep Bidirectional Transformers'
+    const input = screen.getByRole<HTMLTextAreaElement>('textbox', { name: '研究查询' })
+    expect(input.tagName).toBe('TEXTAREA')
+    expect(document.getElementById(input.getAttribute('aria-describedby')!)?.textContent)
+      .toBe('一行一条查询，最多三条，并受已批准研究计划限制。')
+    await act(async () => { start(queries) })
+    expect(run).toHaveBeenCalledWith({ sessionId: sid, query: queries, synthetic: false }, expect.any(AbortSignal))
+    expect(input.value).toBe(queries)
+    expect(screen.getByText('部分成功')).toBeTruthy()
   })
   it('aborts the actual signal and distinguishes missing final result from a server cancellation result', async () => {
     const d = deferred(), run = vi.fn((_request, signal: AbortSignal) => {
@@ -85,7 +98,7 @@ describe('Session research request lifecycle', () => {
     open()
     await act(async () => { d.resolve(sampleRun()); await d.promise })
     expect(screen.queryByText('部分成功')).toBeNull()
-    expect((screen.getByRole<HTMLInputElement>('textbox')).value).toBe('')
+    expect((screen.getByRole<HTMLTextAreaElement>('textbox')).value).toBe('')
   })
   it('aborts on Session change and ignores the previous Session rejection', async () => {
     const d = deferred(), run = vi.fn((_request, _signal: AbortSignal) => d.promise)

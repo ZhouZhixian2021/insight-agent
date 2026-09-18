@@ -36,7 +36,7 @@ describe('fixed research result presentation', () => {
     }
     expect(screen.getByText('pmlr')).toBeTruthy()
     expect(screen.getByText('未提供逐来源统计。')).toBeTruthy()
-    expect(screen.getByText('结果已被数量上限截断')).toBeTruthy()
+    expect(screen.getByText('检索覆盖受限或提前截断')).toBeTruthy()
     expect(screen.getByText('已排除')).toBeTruthy()
     expect(container.querySelector('[role="progressbar"]')).toBeNull()
     expect(screen.queryByText('人工审核通过')).toBeNull()

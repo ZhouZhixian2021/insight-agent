@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-[客户端插件](../../../../packages/client/ui-academic-research/README.zh.md)在 sidebar.footer.action 注册研究表单。框架 useSessions 选择器提供当前已保存会话。表单通过注入回调提交去除首尾空格的查询、synthetic: false 和 AbortSignal；[Remote 集合](../../../../packages/api/remotes/README.zh.md)挂载生成的 Academic 贡献。Controller 负责已审核 Brief 与模型前置条件。
+[客户端插件](../../../../packages/client/ui-academic-research/README.zh.md)在 sidebar.footer.action 注册研究表单。框架 useSessions 选择器提供当前已保存会话。表单通过注入回调提交去除首尾空格的查询、synthetic: false 和 AbortSignal；[Remote 集合](../../../../packages/api/remotes/README.zh.md)挂载生成的 Academic 贡献。Controller 负责已审核 Brief 与模型前置条件。多行输入框保留 query 内部换行，提示最多三条查询及已批准计划限制；拆分与限额校验归服务器负责。覆盖文案包含提前终止或检索受限，不将所有截断归因为数量上限。
 
 每个已挂载的会话表单拥有一个 AbortController。running、error、settled 视图由请求结算驱动。关闭、切换会话或卸载会中止操作，请求身份阻止卸载后的迟到更新。用户取消时中止传输并等待结算；收到最终值则保留返回事实，取消后未收到值则明确提示缺少服务器结果，不伪造报告。样例与场景派生仅保留在测试中。
 
