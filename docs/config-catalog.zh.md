@@ -66,7 +66,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
+来源：[`packages/academic/source-arxiv/src/index.ts:35`](../packages/academic/source-arxiv/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-cvf"></a>
 

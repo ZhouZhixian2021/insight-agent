@@ -7,7 +7,7 @@ kind: "subsystem"
 
 [English](academic-source.md) | 中文
 
-学术来源 seam 是一个[能力 seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.zh.md)，横跨一个 `ctx.academicSource` 服务。Service Definition（[dsh-academic-source](../../packages/academic/source)）拥有 `ctx.academicSource` 与 Provider 注册表；arXiv、CVF、ACL Anthology 与 PMLR 提供当前的 Service Provider，工作流消费规范化结果。学术来源是一项可选能力，不属于 agent loop（智能体循环）主干，因此其词汇定义在此而非 [core.md](core.zh.md) 中。
+学术来源 seam 是一个[能力 seam](../../.agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.zh.md)，横跨一个 `ctx.academicSource` 服务。Service Definition（[dsh-academic-source](../../packages/academic/source)）拥有 `ctx.academicSource` 与 Provider 注册表；arXiv、OpenAlex、CVF、ACL Anthology 与 PMLR 提供当前的 Service Provider，工作流消费规范化结果。学术来源是一项可选能力，不属于 agent loop（智能体循环）主干，因此其词汇定义在此而非 [core.md](core.zh.md) 中。
 
 源码：[`packages/academic/source/src/types.ts`](../../packages/academic/source/src/types.ts)
 
