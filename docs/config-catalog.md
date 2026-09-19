@@ -64,7 +64,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/academic/source-arxiv/src/index.ts:34`](../packages/academic/source-arxiv/src/index.ts)
+Source: [`packages/academic/source-arxiv/src/index.ts:35`](../packages/academic/source-arxiv/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-cvf"></a>
 

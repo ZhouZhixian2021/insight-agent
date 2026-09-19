@@ -1728,6 +1728,9 @@ importers:
       '@deepseek-ai/dsh-academic-source-cvf':
         specifier: workspace:^
         version: link:../../academic/source-cvf
+      '@deepseek-ai/dsh-academic-source-openalex':
+        specifier: workspace:^
+        version: link:../../academic/source-openalex
       '@deepseek-ai/dsh-academic-source-pmlr':
         specifier: workspace:^
         version: link:../../academic/source-pmlr
