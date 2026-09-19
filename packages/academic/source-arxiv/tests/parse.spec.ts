@@ -18,7 +18,7 @@ const FEED = `<?xml version="1.0" encoding="UTF-8"?>
 
 describe('parseArxivFeed', () => {
   it('distills one entry with authors and a DOI', () => {
-    const entries = parseArxivFeed(FEED)
+    const { entries, totalResults } = parseArxivFeed(FEED)
     expect(entries).toEqual([{
       id: 'http://arxiv.org/abs/2406.12345v1',
       title: 'Joint evaluation of retrieval and generation',
@@ -27,14 +27,44 @@ describe('parseArxivFeed', () => {
       updated: '2024-07-01T12:34:56Z',
       doi: '10.48550/arXiv.2406.12345',
     }])
+    expect(totalResults).toBeNull()
   })
 
-  it('returns an empty list for a feed without entries', () => {
-    expect(parseArxivFeed('<feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toEqual([])
+  it('returns an empty list and a null count for a feed without entries', () => {
+    expect(parseArxivFeed('<feed xmlns="http://www.w3.org/2005/Atom"></feed>'))
+      .toEqual({ entries: [], totalResults: null })
+  })
+
+  it('reads the opensearch totalResults match count', () => {
+    const { entries, totalResults } = parseArxivFeed(`<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <opensearch:totalResults>6</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <opensearch:itemsPerPage>5</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/2406.12345v1</id>
+    <title>Joint evaluation of retrieval and generation</title>
+    <published>2024-06-15T12:34:56Z</published>
+    <author><name>Alice Example</name></author>
+  </entry>
+</feed>`)
+    expect(entries).toHaveLength(1)
+    expect(totalResults).toBe(6)
+  })
+
+  it('rejects a malformed totalResults instead of trusting it', () => {
+    for (const value of ['not-a-number', '-1', '']) {
+      const feed = parseArxivFeed(`<feed xmlns="http://www.w3.org/2005/Atom">
+  <totalResults>${value}</totalResults>
+  <entry><id>http://arxiv.org/abs/1</id><title>t</title></entry>
+</feed>`)
+      expect(feed.totalResults).toBeNull()
+      expect(feed.entries).toHaveLength(1)
+    }
   })
 
   it('normalizes sparse and repeated entry elements', () => {
-    const entries = parseArxivFeed(`<feed>
+    const { entries, totalResults } = parseArxivFeed(`<feed>
       <entry><id>http://arxiv.org/abs/1</id><title type="text"></title><author/></entry>
       <entry><title>missing id</title></entry>
     </feed>`)
@@ -46,6 +76,7 @@ describe('parseArxivFeed', () => {
       updated: null,
       doi: null,
     }])
+    expect(totalResults).toBeNull()
   })
 })
 
@@ -63,7 +94,7 @@ describe('normalizeArxivWork', () => {
   })
 
   it('translates an entry as a preprint with arxiv and doi identifiers', () => {
-    const entry = parseArxivFeed(FEED)[0]!
+    const entry = parseArxivFeed(FEED).entries[0]!
     const { academicWork, workVersion } = normalizeArxivWork(entry)
 
     expect(academicWork.title).toBe('Joint evaluation of retrieval and generation')
@@ -84,7 +115,7 @@ describe('normalizeArxivWork', () => {
   })
 
   it('marks the version label unknown when the entry id has no revision suffix', () => {
-    const entry = { ...parseArxivFeed(FEED)[0]!, id: 'http://arxiv.org/abs/2406.12345' }
+    const entry = { ...parseArxivFeed(FEED).entries[0]!, id: 'http://arxiv.org/abs/2406.12345' }
     expect(normalizeArxivWork(entry).workVersion.versionLabel).toEqual({
       status: 'unknown',
       reason: 'arXiv entry id carries no version suffix.',
@@ -93,7 +124,7 @@ describe('normalizeArxivWork', () => {
 
   it('keeps absent publication and update timestamps explicit', () => {
     const entry = {
-      ...parseArxivFeed(FEED)[0]!,
+      ...parseArxivFeed(FEED).entries[0]!,
       published: null,
       updated: null,
     }

@@ -711,6 +711,22 @@ importers:
         specifier: workspace:^
         version: link:../source
 
+  packages/academic/source-openalex:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../model
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:^
+        version: link:../source
+
   packages/academic/source-pmlr:
     dependencies:
       '@deepseek-ai/schemastery':

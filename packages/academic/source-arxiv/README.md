@@ -35,7 +35,7 @@ Load the seam and this provider together; with no other provider registered, `se
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API base; `/api/query` is appended. |
 
-The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
+The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. `truncated` is true when the feed's `<opensearch:totalResults>` exceeds the returned entries; the seam flags its own `maxResults` cap separately. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
 
 -----
 
@@ -46,10 +46,11 @@ The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_result
 |---|---|
 | `ArxivProvider` | The `AcademicSourceProvider` implementation registered under id `arxiv`. |
 | `ArxivProviderOptions` | The resolved endpoint for one search. |
-| `parseArxivFeed()` | Parses an Atom feed body into distilled entries. |
+| `parseArxivFeed()` | Parses an Atom feed body into distilled entries and the feed's `totalResults` count. |
 | `normalizeArxivWork()` | Translates one arXiv entry into a work/version pair. |
 | `arxivFullTextUrls()` | Derives version-specific HTML and PDF full-text URLs from an arXiv id. |
 | `ArxivRawWork` | The distilled arXiv entry fields the normalizer consumes. |
+| `ArxivFeedResult` | The parse result: distilled entries and the upstream `totalResults` count. |
 
 The plugin entry also exports `name`, `inject`, `Config`, and `apply`.
 

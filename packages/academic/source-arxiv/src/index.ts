@@ -20,6 +20,7 @@ export type { ArxivProviderOptions } from './provider.ts'
 export { arxivFullTextUrls, normalizeArxivWork } from './normalize.ts'
 export { parseArxivFeed } from './parse.ts'
 export type {
+  ArxivFeedResult,
   ArxivRawWork,
   NormalizedArxivWork,
 } from './types.ts'
