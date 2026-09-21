@@ -35,6 +35,8 @@ kind: "package-reference"
 
 `plan-review` 意图——由 `dsh-plan-mode` 在 `exit_plan_mode` 审阅上设置——渲染等待审批卡片的布局：一条 `Plan review` 条带、计划作为可滚动的 markdown 主体，以及一行 `Chat about it` / `Refuse` / `Approve` 的决定操作。Approve 与 Refuse 用提问方自己的选项标签回答；`Chat about it` 以 `ASK_CANCELLED` 拒绝该等待，让编辑器归位，用户可以直接说出他想说的话。
 
+学术计划中唯一的 `academic-research-brief-json` 围栏交接块默认折叠在本地化的系统执行信息下，前后的可读 Markdown 仍然显示。普通代码块、有歧义或未闭合的交接块保持完整展示。这只影响呈现：待处理请求、持久化计划和批准响应保持原样。
+
 ### 失败与恢复
 
 通用提问流程把当前题号、已选标签、自定义文本和显式跳过状态保存在非持久化 Slot store 中；该 store 归属对应 Session，并以待处理请求的本地渲染标识为 key。从 Session A 切换到 B 会重新挂载严格 Session 级编辑器条目，但返回 A 时会复用 A 的 store 并恢复未完成草稿。不同的请求标识读取空草稿，并在首次编辑时替换旧值；成功回答或取消会清除相符的值。请求是否仍在等待由主机保持权威。

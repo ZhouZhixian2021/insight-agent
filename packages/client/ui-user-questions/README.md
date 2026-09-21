@@ -35,6 +35,8 @@ A multi-select draft keeps its selected labels while the user opens or edits the
 
 A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders the waiting-approval card layout: a `Plan review` strip, the plan as the scrolling markdown body, and one decision row of `Chat about it` / `Refuse` / `Approve`. Approve and Refuse answer with the asker's own option labels; `Chat about it` rejects the wait as `ASK_CANCELLED`, returning the composer so the user can say what they want instead.
 
+For Academic plans, the single `academic-research-brief-json` fenced handoff is collapsed under localized system execution details. Readable Markdown before and after it remains visible. Ordinary code blocks and ambiguous or unfinished handoffs stay in the full view. This is presentation only: the pending request, persisted plan, and approval response are unchanged.
+
 ### Failure and recovery
 
 The generic question flow keeps its current page, selected labels, custom text, and explicit skips in a non-persisted Slot store scoped to the owning Session and keyed by the pending request's local render identity. Switching from Session A to B remounts the strict composer entry, but returning to A reuses A's store and restores the unfinished draft. A different request identity reads an empty draft and replaces the previous value on its first edit; a successful answer or cancellation clears the matching value. The host remains authoritative for whether the request is pending.

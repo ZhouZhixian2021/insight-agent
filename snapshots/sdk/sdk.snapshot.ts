@@ -120,6 +120,13 @@ interface SdkAssertions {
 }
 
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
+  'academic-plan-chinese': {
+    runtimeProfile: 'sdk-minimal',
+    environment: {
+      DSH_TEST_ACADEMIC_BRIEF_TEMPLATE: fileURLToPath(new URL('../../packages/preset/agent-presets/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url)),
+    },
+    expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] },
+  },
   'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
   'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] } },
   'academic-limited-draft': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },

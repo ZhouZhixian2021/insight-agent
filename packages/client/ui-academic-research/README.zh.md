@@ -27,7 +27,7 @@ kind: "package-reference"
 
 `renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。该渲染器继续作为内部辅助函数。主 Web 通过 sidebar.footer.action 注册研究入口，并使用框架 locale 字典。
 
-请先在当前会话选择模型并完成 Research Brief 的 Plan 审核，再在多行输入框中一行输入一条查询，最多三条，并受已批准研究计划限制。查询内部换行保留在现有 query 字符串中，由 Controller 负责拆分和计划限额校验。入口调用 ctx.remote.academicResearch.run，传递 sessionId、去除首尾空格的 query、synthetic: false 和 AbortSignal。取消、关闭页面及切换会话均中止本次请求；已卸载表单的迟到响应不能更新其他会话。服务器返回取消结果时保留实际成果；取消后未收到最终响应则明确提示，不伪造服务器完成状态。页面直接展示生产方返回的 `stages` 结论，因此后续证据抽取失败时，已成功的检索与全文获取仍会明确显示。覆盖截断提示为“检索覆盖受限或提前截断”，不将其原因仅解释为数量上限。运行中不显示进度百分比，providerBreakdown 为 null 时不生成逐来源计数。固定场景仅用于测试。
+选择模型并审核研究计划后，打开侧栏入口，通过 `academicResearch.plan` 预览主题、研究问题和中文检索方向。页面不再提供查询输入框。“按计划开始研究”向 `academicResearch.run` 传递 `sessionId`、预览返回的 `researchBriefId`、`synthetic: false` 与 AbortSignal。缺少或不完整的计划提示用户回到聊天完成审核；批准身份变化后需要重新打开预览。表单释放后忽略迟到的预览响应。取消、关闭页面及切换会话均中止本次请求；已卸载表单的迟到响应不能更新其他会话。服务器返回取消结果时保留实际成果；取消后未收到最终响应则明确提示，不伪造服务器完成状态。页面直接展示生产方返回的 `stages` 结论，因此后续证据抽取失败时，已成功的检索与全文获取仍会明确显示。覆盖截断提示为“检索覆盖受限或提前截断”，不将其原因仅解释为数量上限。运行中不显示进度百分比，providerBreakdown 为 null 时不生成逐来源计数。固定场景仅用于测试。
 
 逐篇结果区分完整、部分与失败的抽取状态。页面显示合格证据数量、被拒草稿序号和本地化原因。草稿序号从一开始显示，来源片段序号保留为生产方诊断。被拒陈述不会作为合格报告证据展示。
 
@@ -38,7 +38,7 @@ kind: "package-reference"
 
 #### 模型看到的内容
 
-独立渲染器 `renderResearchPage()` 仅返回数据，不发送模型请求。Web 表单向 Academic Controller 提交查询；工作流负责模型提示词和研究状态记录。
+独立渲染器 `renderResearchPage()` 仅返回数据，不发送模型请求。Web 表单向 Academic Controller 提交预览过的批准身份；工作流负责模型提示词和研究状态记录。
 
 #### Token 影响
 

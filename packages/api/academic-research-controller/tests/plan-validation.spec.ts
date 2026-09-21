@@ -17,6 +17,13 @@ describe('Academic plan compatibility before review', () => {
     expect(unsupported).toContain('"conference_paper", "journal_article"')
   })
 
+  it('rejects a new handoff with no search plan before asking the user to approve it', () => {
+    const payload = JSON.parse(template.match(/```academic-research-brief-json\s*\n([\s\S]*?)\n```/u)![1]!) as Record<string, unknown>
+    delete payload.searchPlan
+    const missing = `# 研究计划\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
+    expect(() => { validateAcademicPlan(missing) }).toThrow('missing: searchPlan')
+  })
+
   it('blocks review dispatch, delegates compatible and ordinary plans, and removes the guard on disposal', async () => {
     const ctx = new Context()
     try {

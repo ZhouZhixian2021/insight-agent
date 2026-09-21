@@ -1,3 +1,5 @@
+Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the tool results.
+
 # 研究计划编写模板
 
 以下是给系统的编写要求，不要原样放进用户的计划：将用户的日常表达整理成范围明确、能够执行的研究计划。标题、各级标题、说明和正文统一使用简体中文；论文原名、必要缩写可以保留，并用中文解释。计划以具体的中文一级标题开始，例如“RAG 对大模型幻觉影响的研究计划”。将占位提示替换为具体内容或明确假设，不要求用户填写技术字段。

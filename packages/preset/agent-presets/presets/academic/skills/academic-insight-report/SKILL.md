@@ -13,7 +13,11 @@ While plan mode is active, read [references/research-brief.md](references/resear
 
 ## Establish the scope
 
-Identify the technology, research questions, publication window, included publication types, audience, and desired depth. Ask one concise clarification only when a missing choice would materially change retrieval or the report. State assumptions when the user leaves a non-critical choice open.
+Generate the structured `searchPlan` while preparing the Brief. Link each query to its exact research questions and give its purpose in Chinese; describe the same directions in the readable plan. Cover every question within the template's query and round limits. The Host executes these approved expressions, so do not ask the user to enter queries again after approval. Source filtering still enforces dates, version states, and inclusion rules after candidate discovery.
+
+Write the plan title, headings, explanations, and readable body in Simplified Chinese. Explain necessary technical terms in Chinese; proper names and acronyms may remain. Turn broad everyday questions into a bounded research scope and answerable questions, and disclose assumptions. The user reviews intent, scope, evidence limits, and deliverables; generate the JSON fields, version-state values, and search aliases yourself. Never require the user to supply JSON, enum values, or English search terms. Keep the machine handoff at the end and make every consequential requirement explicit in the readable plan.
+
+Identify the technology, research questions, publication window, included version states (预印本、录用稿、正式发表版本), audience, and desired depth. Ask one concise clarification only when a missing choice would materially change retrieval or the report. State assumptions when the user leaves a non-critical choice open.
 
 Run a small preliminary search before fixing the research directions. Use the observed terminology, venues, benchmarks, and neighboring methods to refine the scope.
 

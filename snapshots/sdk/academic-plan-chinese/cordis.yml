@@ -1,0 +1,18 @@
+# Exercise the production review guard and plan tool through the shipped SDK profile.
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    persona: 'Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the tool results.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: academic-plan-chinese
+      name: '../../../packages/api/academic-research-controller/src/plan-validation.ts'
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        section: !!js "process.getBuiltinModule('node:fs').readFileSync(process.env.DSH_TEST_ACADEMIC_BRIEF_TEMPLATE, 'utf8')"
+        initialActive: true

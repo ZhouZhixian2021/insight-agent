@@ -87,9 +87,15 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Host service backing the generated `ctx.remote.academicResearch` namespace.',
     methods: [
       {
+        signature: '@Remote(\'plan\') async plan(sessionId: AcademicResearchRunRequest[\'sessionId\']): Promise<AcademicResearchPlanView>',
+        description: 'Preview the latest approved plan without starting retrieval or calling a model.',
+        parameters: [{ name: 'sessionId', description: 'Session whose research plan the user wants to execute.' }],
+        returns: 'Chinese research intent, search directions, and the approval identity to pass to run.',
+      },
+      {
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
         description: 'Run one multi-source research pass while the addressed Agent is idle.',
-        parameters: [{ name: 'request', description: 'one to three newline-separated queries, disclosure, and the Session containing the approved brief plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
+        parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
         returns: 'completed or cancelled draft data with its observed retrieval run and durable Session identity.',
       },
     ],
@@ -3542,12 +3548,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
   },
   {
+    name: 'AcademicPlannedSearch',
+    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicResearchPlanView',
+    declaration: 'export interface AcademicResearchPlanView {\n    readonly researchBriefId: ResearchBriefId;\n    readonly topic: string;\n    readonly questions: readonly string[];\n    readonly searches: readonly AcademicPlannedSearch[];\n}',
+  },
+  {
     name: 'AcademicResearchReportView',
     declaration: 'export interface AcademicResearchReportView {\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
   },
   {
     name: 'AcademicResearchRunRequest',
-    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
+    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
   },
   {
     name: 'AcademicResearchRunValue',

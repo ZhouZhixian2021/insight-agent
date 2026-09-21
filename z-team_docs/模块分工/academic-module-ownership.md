@@ -2,7 +2,7 @@
 
 ## 状态
 
-本目录保存三人团队的拟议模块边界。负责人姓名尚未全部登记，文档先使用负责人 A、B、C；团队确认成员后，在[成员与分支](../02-成员与分支.md)中建立唯一映射。这里描述计划，不表示对应源码包已经实现。
+本目录保存团队的模块所有权，成员映射见[成员与分支](../02-成员与分支.md)。截至 2026-09-21，A 暂代团队全部开发与验收，B、C 暂停工作；下文 A/B/C 表示保留的模块归属，不要求当前等待 B、C 执行。恢复分工时按实际改动和验收记录交接。能力进度统一见[交付计划](../../docs/academic-insight-plan.zh.md)。
 
 ## 架构原则
 
@@ -41,9 +41,9 @@ flowchart TB
     SOURCE --> PLATFORM
 ```
 
-## 拟议源码目录
+## 模块目录与归属
 
-以下目录由对应能力的第一个实现 PR 创建。团队不提前提交空目录或占位包。
+以下主要目录已经存在；归属不表示其全部目标能力均已完成。来源提供方清单及当前行为见[Academic 子系统](../../docs/subsystems/academic-insight.zh.md)。
 
 ```text
 packages/academic/
@@ -74,6 +74,8 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 现有 Academic Preset、Research Brief、Plan Mode 组装、Academic Skill、独立 `DSH_HOME` 启动入口和正式 Academic 文档由 A 维护。通用 `web_search` 与 `web_fetch` 是临时来源能力，不归 Academic 业务包所有；B 在学术来源能力可用后负责把它们降为补充路径。当前报告方法由 C 接管内容验收，运行时 Skill 的组装位置仍由 A 维护。
 
 ## 集成顺序
+
+以下为模块依赖顺序，主链已经接通。当前执行顺序以[交付计划](../../docs/academic-insight-plan.zh.md)为准，由 A 统一推进，不再把等待 B、C 的 PR 作为前置条件。
 
 1. A 根据 B、C 已提交的需求确定共享类型和研究状态接口。
 2. B 开发来源到证据的纵向切片，C 使用固定证据夹具并行开发分析、报告和评测。
