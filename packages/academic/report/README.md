@@ -21,6 +21,8 @@ Generate a traceable Chinese Markdown draft and gate final reports on current ev
 <a id="use-this-package"></a>
 ## Use this package
 
+Question-driven drafts disclose admitted, cited and supporting-work counts separately. Below-Plan supporting-work or full-text counts produce a prominent limited-evidence notice and `unmet_plan` issues. Such drafts remain viewable with blocked final delivery; neither the approved minimums nor citation integrity checks are relaxed.
+
 With validated `synthesis` and observed `coverage`, `generateReport()` renders approved questions, retained paragraphs and numeric citations. Rejected candidate indexes and reasons enter limitations and `unmet_plan` issues; rejected prose never enters conclusions, Claims or body length. Affected questions and sections disclose incomplete coverage. Each accepted paragraph renders once, excluding headings, citations, appendix and repetitions from body length. Bibliography and excerpts come from supplied records. Partial recovery does not satisfy Plan or grant semantic review; synthesis remains draft-only.
 
 `generateReport()` — Pass shared model records, work bibliography, explicit draft/final mode, a synthetic-data flag and limitations. Evaluation runs inside report generation. Drafts expose failed checks and pending semantic review; final mode rejects non-ready evaluation and synthetic data. Source excerpts, evidence IDs, actual versions and citation versions remain inspectable. Markdown content is escaped and only HTTP(S) source links are active.

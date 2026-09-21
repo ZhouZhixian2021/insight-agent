@@ -57,7 +57,9 @@ describe('bounded candidate replenishment', () => {
     input.brief = { ...input.brief, evidenceRequirements: { ...input.brief.evidenceRequirements, minimumIncludedWorks: 3 } }
     const result = await runResearchDraft(input, adapters)
     expect(adapters.generator).toHaveBeenCalledTimes(2)
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.synthesis.status).toBe('partial_success')
+    expect(result.report?.evaluation.status).toBe('blocked')
+    expect(result.report?.markdown).toContain('证据有限的研究草稿')
     expect(result.retrievalRun.coverageSummary.limitations.join('\n')).toContain('达到成功纳入上限 2 篇')
   })
 
@@ -112,4 +114,29 @@ describe('bounded candidate replenishment', () => {
       expect(adapters.synthesize).not.toHaveBeenCalled()
     } finally { timeout.mockRestore() }
   })
+})
+
+
+it.each(['continue_with_warning', 'stop_for_review'] as const)('exhausts remaining candidates before applying %s', async (policy) => {
+  const { input, adapters } = fixture()
+  input.brief = { ...input.brief, evidenceRequirements: { ...input.brief.evidenceRequirements,
+    minimumIncludedWorks: 6, minimumFulltextWorks: 3, insufficientEvidencePolicy: policy },
+  stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 10 } }
+  const generator = adapters.generator
+  let count = 0
+  adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => ++count <= 3 ? generator(...args)
+    : { scope: { status: 'excluded' as const, reason: 'Outside scope.' }, evidence: [] })
+  const result = await runResearchDraft(input, adapters)
+  expect(adapters.generator).toHaveBeenCalledTimes(5)
+  expect(result.retrievalRun.coverageSummary.includedWorks).toBe(3)
+  expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('可处理候选已用完（5 篇）')
+  expect(result.synthesis.status).toBe(policy === 'continue_with_warning' ? 'partial_success' : 'blocked')
+  if (policy === 'continue_with_warning') {
+    expect(adapters.synthesize).toHaveBeenCalledOnce()
+    expect(result.report?.markdown).toContain('Plan 至少要求 6 篇')
+    expect(result.report?.evaluation.status).toBe('blocked')
+  } else {
+    expect(adapters.synthesize).not.toHaveBeenCalled()
+    expect(result.report).toBeNull()
+  }
 })

@@ -20,6 +20,8 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 ## Use this package
 
+带警告准入不满足补选停止条件。候选池用完或达到纳入上限后，`continue_with_warning` 允许基于已有可用证据生成有限草稿；`stop_for_review` 阻止分析。带警告草稿返回 `synthesis.status=partial_success` 和程序生成的原因。取消或零可用证据时不启动分析。
+
 `includedWorkTypes` 按 `WorkVersion.versionType` 筛选：`preprint`、`accepted_manuscript` 或 `version_of_record`。会议与期刊类别不属于版本状态。`allowPreprints: false` 优先排除预印本。流水线也会在获取全文前拒绝适配器选出的、未被批准纳入的版本；发表场所名称不决定纳入资格。`validateResearchBriefRequirements()` 向计划审核调用方提供共用的分析要求检查。
 
 正式入口准入证据后，使用会话模型与有界输出截断重试策略执行逐题洞察。`academic/synthesis-request` 记录准确输入；`academic/synthesis-result` 记录原始输出、用量与拒绝诊断。段落部分合格记为 `partially_validated`；全部被拒记为 `failed` 和 `SYNTHESIS_NO_VALID_STATEMENTS`。早期事件及 JSON 解析前的失败不含 `rejectedStatements`。仍有合格段落时，Remote 返回 `partial_success`、拒绝原因与草稿；没有合格段落则不返回报告。整份响应无效、证据不足或取消也不返回报告。持久化失败中止整轮。不使用模板回退、自动语义修复或放宽引用要求。

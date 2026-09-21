@@ -59,3 +59,17 @@ describe('question-driven report', () => {
     expect(() => generateReport({ ...input, mode: 'final' })).toThrow()
   })
 })
+
+
+it('discloses count gaps in a downloadable draft while denying final delivery', () => {
+  const value = fixture()
+  const brief = { ...value.brief, evidenceRequirements: { ...value.brief.evidenceRequirements, minimumIncludedWorks: 6 } }
+  const report = generateReport({ ...value, brief, coverage: { ...value.coverage, includedWorks: 3 } })
+  expect(report.markdown).toContain('证据有限的研究草稿')
+  expect(report.markdown).toContain('本轮纳入分析 3 篇论文；正文引用 2 篇')
+  expect(report.markdown).toContain('Plan 至少要求 6 篇')
+  expect(report.markdown).toContain('部分回答')
+  expect(report.evaluation.status).toBe('blocked')
+  expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan' && issue.message.includes('至少要求 6 篇'))).toBe(true)
+  expect(() => generateReport({ ...value, brief, mode: 'final', synthetic: false })).toThrow()
+})

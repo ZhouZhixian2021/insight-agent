@@ -21,6 +21,8 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
+准入区分 `ready`、`ready_with_warning` 和 `blocked`。存在可用证据但低于论文或全文下限时，仅在 `continue_with_warning` 下允许分析；零可用证据及 `stop_for_review` 下的证据不足仍被阻止。警告披露未满足的下限，不修改获批 Brief。模型提示记录这些限制，要求在支持不足时标注部分回答或尚未回答。
+
 证据准入也返回供有界补选使用的 `usableWorkIds`，未满足 Plan 下限时仍返回该值。它列出有准入证据的独立论文，不纳入仅下载成功或仅被范围判断接受的论文。
 
 `validateSynthesisRequirements()` 检查拟议报告要求，不授予批准状态；返回支持的章节，或逐项指出不支持的语言、引用格式、篇幅单位、章节及版本状态。`synthesisSections()` 还要求当前计划已获批准。两者均不改写 Brief。

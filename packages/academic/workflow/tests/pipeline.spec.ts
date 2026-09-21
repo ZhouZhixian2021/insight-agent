@@ -78,9 +78,9 @@ describe('single-pass research draft', () => {
     expect(result.failures).toHaveLength(mode === 'partial' ? 0 : 1)
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('rejected 1 drafts')
     if (mode === 'all_rejected') {
-      expect(result.report).toBeNull()
-      expect(result.synthesis.status).toBe('blocked')
-      expect(adapters.synthesize).not.toHaveBeenCalled()
+      expect(result.report).not.toBeNull()
+      expect(result.synthesis.status).toBe('partial_success')
+      expect(adapters.synthesize).toHaveBeenCalledOnce()
     }
     if (mode === 'partial') {
       expect(result.report?.limitations.join(' ')).toContain('rejected 1 drafts')
@@ -114,7 +114,7 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft(input, adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
     expect(result.papers[0]).toMatchObject({ status: 'paused', pause: { reason: 'input_too_large' } })
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.synthesis.status).toBe('partial_success')
   })
   it('stops the whole pass on log failure before starting another paper', async () => {
     const { input, adapters } = fixture()
@@ -309,7 +309,7 @@ describe('single-pass research draft', () => {
     const includedPaper = result.papers[1]
     expect(includedPaper?.status === 'extracted' && includedPaper.evidence.evidenceRecords).toHaveLength(1)
     expect(result.papers[0]).toMatchObject({ status: 'excluded', exclusion: { reason: 'The paper does not satisfy the approved population rule.' } })
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.synthesis.status).toBe('partial_success')
   })
   it('pauses a hash conflict while preserving successful papers and the report limitation', async () => {
     const { input, adapters, records } = fixture()
@@ -318,7 +318,7 @@ describe('single-pass research draft', () => {
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
     expect(adapters.generator).toHaveBeenCalledOnce()
     expect(result.papers[0]).toMatchObject({ status: 'paused', pause: { reason: 'hash_conflict' } })
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.synthesis.status).toBe('partial_success')
   })
   it.each(['fulltext', 'extraction'] as const)('isolates %s failure and continues', async (stage) => {
     const { input, adapters } = fixture()
@@ -327,8 +327,8 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft(input, adapters)
     expect(result.failures[0]?.stage).toBe(stage)
     expect(result.papers).toHaveLength(1)
-    expect(result.report).toBeNull()
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.report).not.toBeNull()
+    expect(result.synthesis.status).toBe('partial_success')
     expect(result.retrievalRun.status).toBe('partial_success')
     expect(result.retrievalRun.failures[0]).toMatchObject({
       operation: stage === 'fulltext' ? 'fetch_fulltext' : 'extract_evidence',
@@ -368,8 +368,8 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft({ ...input, searches: [{ ...input.searches[0]!, maxResults: 1 }] }, adapters)
     expect(adapters.search).toHaveBeenCalledWith({ query: input.searches[0]!.query, maxResults: 1 }, undefined)
     expect(result.papers).toHaveLength(1)
-    expect(result.report).toBeNull()
-    expect(result.synthesis.status).toBe('blocked')
+    expect(result.report).not.toBeNull()
+    expect(result.synthesis.status).toBe('partial_success')
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 2, deduplicatedWorks: 1,
       includedWorks: 1, truncated: true })
     expect(result.retrievalRun.academicWorkIds).toHaveLength(1)

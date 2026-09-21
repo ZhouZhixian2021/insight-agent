@@ -21,6 +21,8 @@ Callers use `prepareAnalysisInput()` to group evidence-card entries by work and 
 <a id="use-this-package"></a>
 ## Use this package
 
+Admission distinguishes `ready`, `ready_with_warning`, and `blocked`. Positive usable evidence below a work or full-text minimum is allowed only under `continue_with_warning`; zero usable evidence and insufficient evidence under `stop_for_review` remain blocked. Warnings disclose unmet minimums without changing the approved Brief. The model prompt records these limitations and requests partial or unanswered questions where support is missing.
+
 Evidence admission also returns `usableWorkIds` for bounded replenishment even when the Plan minimum is unmet. These identify independent works with admitted evidence, not downloaded or merely scope-accepted papers.
 
 `validateSynthesisRequirements()` checks proposed report requirements without granting approval. It returns supported sections or names every unsupported language, citation style, length unit, section and version state. `synthesisSections()` additionally requires current approval. Neither function rewrites the Brief.

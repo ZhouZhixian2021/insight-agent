@@ -98,6 +98,8 @@ function ReportView({ report, t }: Copy & { readonly report: NonNullable<Academi
   const claims = report.claims.filter(claim => matches(`${claim.text} ${claim.scope} ${claim.claimId}`))
   const evidence = report.evidence.filter(record => matches(`${record.evidenceId} ${record.sourcedStatement} ${record.sourceProvider} ${record.verbatimExcerpt.status === 'available' ? record.verbatimExcerpt.value : ''}`))
   return <section><h3>{t('report')}: {report.title}</h3>
+    {report.mode === 'draft' && report.evaluation.issues.some(issue => issue.code === 'insufficient_coverage')
+      && <p role="note">{t('limitedDraft')}</p>}
     <p>{t(report.mode)} · {t(report.evaluation.status)} {report.synthetic && <strong>· {t('synthetic')}</strong>}</p>
     <button type="button" onClick={() => { downloadMarkdown(report.markdown) }}>{t('download')}</button>
     <h4>{t('issues')}</h4><Lines values={report.evaluation.issues.map(issue => `${issue.claimId === null ? '' : `${issue.claimId}: `}${issue.code} — ${issue.message}`)} empty={t('noIssues')} />

@@ -179,3 +179,16 @@ describe('fixed research result presentation', () => {
     vi.runAllTimers()
   })
 })
+
+
+it('keeps a limited draft downloadable while displaying unmet delivery requirements', () => {
+  const value = sampleRun()
+  if (value.report === null) throw new Error('Report fixture required')
+  const report = { ...value.report, evaluation: { ...value.report.evaluation, status: 'blocked' as const,
+    issues: [{ claimId: null, code: 'insufficient_coverage', message: '3 of 6 works.' }] } }
+  render(<RunPanel view={{ phase: 'settled', value: { ...value, report,
+    synthesis: { status: 'partial_success', reasons: ['继续生成有限草稿。'] } } }} onCancel={vi.fn()} t={t} />)
+  expect(screen.getByRole('note').textContent).toBe(zh.limitedDraft)
+  expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeTruthy()
+  expect(screen.getAllByText(/阻止交付/).length).toBeGreaterThan(0)
+})
