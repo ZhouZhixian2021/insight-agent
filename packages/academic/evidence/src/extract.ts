@@ -14,6 +14,7 @@ import type {
   EvidenceCardInput,
   EvidenceCardItemDraft,
   EvidenceContentSegment,
+  EvidenceDraftRejection,
   EvidenceExtractionInput,
   EvidenceExtractionResult,
   EvidenceGenerator,
@@ -39,7 +40,9 @@ type CardSections = {
  * @param input - paper identity, provenance, content hash, and locatable text segments.
  * @param generator - semantic extraction implementation, normally backed by the workflow model.
  * @param signal - optional cancellation signal forwarded to the generator.
- * @returns verified source locators, evidence records, and one six-section evidence card.
+ * Invalid model source references are rejected individually; accepted drafts continue.
+ * Generator failures, cancellation and invalid program-owned provenance still reject the call.
+ * @returns verified locators, records, one six-section card, and rejected draft diagnostics.
  */
 export async function extractEvidenceFromContent(
   input: EvidenceExtractionInput,
@@ -60,6 +63,7 @@ export async function extractEvidenceFromContent(
   signal?.throwIfAborted()
 
   const sourceLocators: SourceLocator[] = []
+  const rejectedDrafts: EvidenceDraftRejection[] = []
   const evidenceRecords: EvidenceExtractionResult['evidenceRecords'][number][] = []
   const sections: CardSections = {
     researchQuestions: [],
@@ -70,12 +74,19 @@ export async function extractEvidenceFromContent(
     limitations: [],
   }
 
-  for (const draft of drafts) {
-    const segment = segmentAt(input.segments, draft.segmentIndex)
+  for (const [draftIndex, draft] of drafts.entries()) {
+    signal?.throwIfAborted()
     const excerpt = draft.verbatimExcerpt.trim()
-    assertNonEmpty('verbatimExcerpt', excerpt)
-    const excerptStart = segment.text.indexOf(excerpt)
-    if (excerptStart < 0) invalid(`excerpt is not present in segment ${draft.segmentIndex}`, 'EVIDENCE_EXCERPT_NOT_FOUND')
+    let located: ReturnType<typeof locateExcerpt>
+    try {
+      located = locateExcerpt(input.segments, draft.segmentIndex, excerpt)
+    } catch (error: unknown) {
+      if (!(error instanceof EvidenceError) || (error.code !== 'EVIDENCE_EMPTY_EXCERPT'
+        && error.code !== 'EVIDENCE_INVALID_SEGMENT_INDEX' && error.code !== 'EVIDENCE_EXCERPT_NOT_FOUND')) throw error
+      rejectedDrafts.push({ draftIndex, segmentIndex: draft.segmentIndex, code: error.code, reason: error.message })
+      continue
+    }
+    const { segment, excerptStart } = located
 
     const sourceLocator = locatorFor(input, segment, excerptStart, excerpt.length)
     const evidenceRecord = createEvidenceRecord({
@@ -98,6 +109,7 @@ export async function extractEvidenceFromContent(
   }
 
   return {
+    rejectedDrafts,
     sourceLocators,
     evidenceRecords,
     evidenceCard: createEvidenceCard({
@@ -108,9 +120,34 @@ export async function extractEvidenceFromContent(
   }
 }
 
+/** Keep a valid model locator, or repair only an unambiguous exact match elsewhere. */
+function locateExcerpt(
+  segments: readonly EvidenceContentSegment[],
+  requestedIndex: number,
+  excerpt: string,
+): { readonly segment: EvidenceContentSegment; readonly excerptStart: number } {
+  if (excerpt.length === 0) invalid('verbatimExcerpt must not be empty', 'EVIDENCE_EMPTY_EXCERPT')
+  const requested = segmentAt(segments, requestedIndex)
+  const requestedStart = requested.text.indexOf(excerpt)
+  if (requestedStart >= 0) return { segment: requested, excerptStart: requestedStart }
+  const matches: Array<{ readonly segment: EvidenceContentSegment; readonly excerptStart: number }> = []
+  for (const segment of segments) {
+    for (let start = segment.text.indexOf(excerpt); start >= 0; start = segment.text.indexOf(excerpt, start + excerpt.length)) {
+      matches.push({ segment, excerptStart: start })
+      if (matches.length > 1) break
+    }
+    if (matches.length > 1) break
+  }
+  if (matches.length === 1) {
+    const match = matches[0]
+    if (match !== undefined) return match
+  }
+  invalid(`excerpt is not uniquely present outside segment ${requestedIndex}`, 'EVIDENCE_EXCERPT_NOT_FOUND')
+}
+
 function segmentAt(segments: readonly EvidenceContentSegment[], index: number): EvidenceContentSegment {
   if (!Number.isInteger(index) || index < 0 || segments[index] === undefined) {
-    invalid(`segmentIndex ${index} does not identify a supplied segment`)
+    invalid(`segmentIndex ${index} does not identify a supplied segment`, 'EVIDENCE_INVALID_SEGMENT_INDEX')
   }
   return segments[index]
 }

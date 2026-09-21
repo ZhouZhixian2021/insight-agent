@@ -191,11 +191,22 @@ export interface AcademicFullTextFetchInput extends Omit<FetchedAcademicFullText
 /** Caller-owned adapter over `ctx.web.fetch()`. */
 export type AcademicWebFetcher = (url: string, signal?: AbortSignal) => Promise<AcademicWebFetchResult>
 
-/** Traceable records, locators, and the single-paper card produced by one extraction call. */
+/** One model draft withheld from evidence because its exact source could not be verified. */
+export interface EvidenceDraftRejection {
+  /** Zero-based position in the model's evidence array. */
+  readonly draftIndex: number
+  readonly segmentIndex: number
+  readonly code: 'EVIDENCE_EMPTY_EXCERPT' | 'EVIDENCE_INVALID_SEGMENT_INDEX' | 'EVIDENCE_EXCERPT_NOT_FOUND'
+  /** Diagnostic without the rejected source text or model statement. */
+  readonly reason: string
+}
+
+/** Accepted records and card items, plus individually rejected source references. */
 export interface EvidenceExtractionResult {
   readonly sourceLocators: readonly SourceLocator[]
   readonly evidenceRecords: readonly EvidenceRecord[]
   readonly evidenceCard: EvidenceCard
+  readonly rejectedDrafts: readonly EvidenceDraftRejection[]
 }
 
 /**

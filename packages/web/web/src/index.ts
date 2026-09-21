@@ -59,6 +59,12 @@ export interface WebRuntimeConfig {
   readonly fetchProvider?: string
 }
 
+/** Call-scoped fetch provider selection without changing the deployment default. */
+export interface WebFetchExecutionOptions {
+  /** Provider id for this fetch only; omitted uses the configured fetch selection. */
+  readonly providerId?: string
+}
+
 /**
  * The web access service. Registered as `ctx.web` (one instance per context).
  *
@@ -152,12 +158,19 @@ export class WebRuntime extends Service {
    * capability cannot run. A non-2xx response is a result, not a throw.
    * @param request - the URL plus retrieval options.
    * @param signal - optional cancellation signal forwarded to the provider.
+   * @param options - optional call-scoped provider selection.
    * @returns the retrieval outcome; non-2xx responses resolve descriptively.
    */
-  async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
+  async fetch(
+    request: WebFetchRequest,
+    signal?: AbortSignal,
+    options: WebFetchExecutionOptions = {},
+  ): Promise<WebFetchResult> {
     const provider = resolveProvider({
       providers: this.fetchProviders,
-      ...this.fetchProviderId !== undefined ? { configuredId: this.fetchProviderId } : {},
+      ...options.providerId !== undefined
+        ? { configuredId: options.providerId }
+        : this.fetchProviderId !== undefined ? { configuredId: this.fetchProviderId } : {},
     })
     return provider.fetch(request, signal)
   }

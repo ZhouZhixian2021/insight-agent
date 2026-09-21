@@ -82,6 +82,14 @@ interface WebFetchRequest {
 }
 ```
 
+```ts type-equiv
+/** Call-scoped fetch provider selection without changing the deployment default. */
+interface WebFetchExecutionOptions {
+  /** Provider id for this fetch only; omitted uses the configured fetch selection. */
+  readonly providerId?: string
+}
+```
+
 HTTP status is part of the fetched resource state, not automatically a failure: a successful network fetch of a `404`/`500` returns a `WebFetchResult` with the status code and a bounded decoded body. `url` is the final URL after allowed redirects. `WebError` is reserved for failures to safely retrieve or represent the resource.
 
 ```ts type-equiv
@@ -123,7 +131,7 @@ type WebFetchBody =
 
 A provider's `available(): boolean` is a cheap LOCAL check (credential presence, parseable config) and **must not make network calls**. It is an input to execution-time selection, not a health system: `search()`/`fetch()` read it to pick a usable provider, and a selection failure surfaces as the structured `WebError` the caller routes on — which carries the branchable detail (the missing id or ambiguous candidate set) in its code and message.
 
-Selection never depends on registration, config, or HMR order: a capability has an explicit provider id (config `searchProvider`/`fetchProvider`, or the matching env var feeding the same field), or auto-selects when exactly one usable provider is registered; multiple usable providers with no configured id is `WEB_PROVIDER_AMBIGUOUS`, not first-wins.
+Selection never depends on registration, config, or HMR order: a fetch call may supply a call-scoped provider id, otherwise a capability has an explicit deployment provider id (config `searchProvider`/`fetchProvider`, or the matching env var feeding the same field), or auto-selects when exactly one usable provider is registered. A call-scoped selection does not mutate the deployment default; multiple usable providers with no applicable id is `WEB_PROVIDER_AMBIGUOUS`, not first-wins.
 
 ## Fetch network policy
 
@@ -198,9 +206,10 @@ async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearch
  * capability cannot run. A non-2xx response is a result, not a throw.
  * @param request - the URL plus retrieval options.
  * @param signal - optional cancellation signal forwarded to the provider.
+ * @param options - optional call-scoped provider selection.
  * @returns the retrieval outcome; non-2xx responses resolve descriptively.
  */
-async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult>
+async fetch( request: WebFetchRequest, signal?: AbortSignal, options: WebFetchExecutionOptions = {}, ): Promise<WebFetchResult>
 ```
 
 Source: [`packages/web/web/src/index.ts`](../../packages/web/web/src/index.ts)

@@ -1,6 +1,9 @@
 /** Markdown delivery with mandatory current-evidence evaluation and visible limitations. */
 import { evaluateClaims, type EvaluationInput, type EvaluationResult } from '@deepseek-ai/dsh-academic-eval'
 import type { AcademicWork, ClaimRecord, EvidenceRecord } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
+import type { CoverageSummary } from '@deepseek-ai/dsh-academic-model'
+import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
 
 /** Report-owned delivery format, not a second paper or Claim model. */
 export interface ResearchReport {
@@ -16,14 +19,14 @@ export interface ResearchReport {
 
 /** Caller explicitly selects publication mode and discloses synthetic data. */
 export interface ReportInput extends EvaluationInput {
+  /** Validated question-driven model analysis; legacy extractive callers may omit it. */
+  readonly synthesis?: AcademicSynthesisDraft
+  /** Observed retrieval counts, required with synthesis. */
+  readonly coverage?: CoverageSummary
   readonly works: readonly AcademicWork[]
   readonly limitations: readonly string[]
   readonly mode: 'draft' | 'final'
   readonly synthetic: boolean
-}
-
-function escapeMarkdown(text: string): string {
-  return text.replaceAll('\\', '\\\\').replace(/([`*_{}\[\]<>#|])/gu, '\\$1').replace(/\r?\n/gu, ' ')
 }
 
 /**
@@ -33,12 +36,14 @@ function escapeMarkdown(text: string): string {
  * @throws Error if final publication is requested while evaluation is not ready.
  */
 export function generateReport(input: ReportInput): ResearchReport {
-  const evaluation = evaluateClaims(input)
+  let evaluation = evaluateClaims({ ...input,
+    ...input.synthesis === undefined ? {} : { sourceStatements: input.synthesis.statements.filter(statement => statement.kind === 'source_statement') },
+  })
   if (input.mode === 'final' && (evaluation.status !== 'ready' || input.synthetic)) {
     throw new Error('Final report requires supporting reviews, current evidence, sufficient coverage and non-synthetic data.')
   }
   const supportedSections = new Set(['executive_summary', 'scope_and_method', 'cross_paper_analysis', 'limitations', 'references', 'evidence_appendix'])
-  if (input.mode === 'final' && (input.brief.reportRequirements.language !== 'zh-CN'
+  if (input.synthesis === undefined && input.mode === 'final' && (input.brief.reportRequirements.language !== 'zh-CN'
     || input.brief.reportRequirements.citationStyle !== 'numeric'
     || input.brief.reportRequirements.includeResearchGaps
     || input.brief.reportRequirements.requiredSections.some(section => !supportedSections.has(section)))) {
@@ -46,7 +51,8 @@ export function generateReport(input: ReportInput): ResearchReport {
   }
   const byWork = new Map(input.works.map(work => [work.academicWorkId, work]))
   if (byWork.size !== input.works.length) throw new Error('Duplicate work identities in report input.')
-  const cited = new Set(input.links.map(link => link.evidenceId))
+  const cited = new Set([...input.links.map(link => link.evidenceId),
+    ...input.synthesis?.statements.flatMap(statement => statement.evidenceLinks.map(link => link.evidenceId)) ?? []])
   const evidence = input.evidence.filter(record => cited.has(record.evidenceId))
   if (evidence.some(record => !byWork.has(record.academicWorkId))) throw new Error('Cited work bibliography is missing.')
   const workIds = [...new Set(evidence.map(record => record.academicWorkId))]
@@ -54,24 +60,36 @@ export function generateReport(input: ReportInput): ResearchReport {
   const limitations = [...input.limitations, ...evaluation.issues.map(issue => issue.message)]
   const lines = [`# ${escapeMarkdown(input.brief.topic)}`, '',
     input.mode === 'draft' ? '> 草稿：未经完整审核，不作为最终研究结论。' : '> 已完成当前证据与语义审核。',
-    input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '',
-    '## 管理层摘要', '', `纳入 ${workIds.length} 项研究，形成 ${input.claims.length} 条对比记录。质量状态：${evaluation.status}。`, '',
-    '## 范围与方法', '', escapeMarkdown(input.brief.questions.join('；')),
-    '仅整理给定材料，不执行补充搜索；结论范围限于纳入的论文与实验条件。', '', '## 论文对比与证据', '']
-  for (const [index, claim] of input.claims.entries()) {
-    const assessmentStatus = evaluation.assessments.filter(item => item.claimId === claim.claimId).map(item => item.status).join(', ')
-    const links = input.links.filter(link => link.claimId === claim.claimId)
-    lines.push(`### ${index + 1}. ${escapeMarkdown(claim.category)}`, '', escapeMarkdown(claim.text), '',
-      `适用范围：${escapeMarkdown(claim.scope)}`, `置信度：${claim.confidence}；评测：${assessmentStatus}`,
-      `依据：${escapeMarkdown(claim.confidenceReasons.join('；'))}`,
-      `不确定性：${escapeMarkdown(claim.uncertainty ?? '未说明')}`, '')
-    for (const link of links) {
-      const record = evidence.find(item => item.evidenceId === link.evidenceId)
-      lines.push(`- ${link.relation}：${record ? `[${references.get(record.academicWorkId)}]` : '缺失来源'}；证据 ${escapeMarkdown(link.evidenceId)}；${escapeMarkdown(link.rationale)}`)
+    input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
+  if (input.synthesis !== undefined) {
+    if (input.coverage === undefined) throw new Error('Synthesis report requires observed coverage.')
+    const rendered = renderSynthesis(input.brief, input.synthesis, evidence, references, input.coverage)
+    lines.push(...rendered.lines)
+    limitations.push(...rendered.unmet, '问题回答与单篇论文陈述尚未经过独立语义审核。')
+    evaluation = { ...evaluation, status: evaluation.status === 'blocked' ? 'blocked' : 'needs_review',
+      issues: [...evaluation.issues, { claimId: null, code: 'question_review_required', message: '逐题回答仍需内容审核。' },
+        ...rendered.unmet.map(message => ({ claimId: null, code: 'unmet_plan', message }))] }
+    if (input.mode === 'final') throw new Error('Question-driven synthesis requires independent question review before final publication.')
+  } else {
+    lines.push(
+      '## 管理层摘要', '', `纳入 ${workIds.length} 项研究，形成 ${input.claims.length} 条对比记录。质量状态：${evaluation.status}。`, '',
+      '## 范围与方法', '', escapeMarkdown(input.brief.questions.join('；')),
+      '仅整理给定材料，不执行补充搜索；结论范围限于纳入的论文与实验条件。', '', '## 论文对比与证据', '')
+    for (const [index, claim] of input.claims.entries()) {
+      const assessmentStatus = evaluation.assessments.filter(item => item.claimId === claim.claimId).map(item => item.status).join(', ')
+      const links = input.links.filter(link => link.claimId === claim.claimId)
+      lines.push(`### ${index + 1}. ${escapeMarkdown(claim.category)}`, '', escapeMarkdown(claim.text), '',
+        `适用范围：${escapeMarkdown(claim.scope)}`, `置信度：${claim.confidence}；评测：${assessmentStatus}`,
+        `依据：${escapeMarkdown(claim.confidenceReasons.join('；'))}`,
+        `不确定性：${escapeMarkdown(claim.uncertainty ?? '未说明')}`, '')
+      for (const link of links) {
+        const record = evidence.find(item => item.evidenceId === link.evidenceId)
+        lines.push(`- ${link.relation}：${record ? `[${references.get(record.academicWorkId)}]` : '缺失来源'}；证据 ${escapeMarkdown(link.evidenceId)}；${escapeMarkdown(link.rationale)}`)
+      }
+      lines.push('')
     }
-    lines.push('')
+    if (input.claims.length === 0) lines.push('证据不足，未形成可用的跨论文结论。', '')
   }
-  if (input.claims.length === 0) lines.push('证据不足，未形成可用的跨论文结论。', '')
   lines.push('## 局限与质量检查', '', ...limitations.map(text => `- ${escapeMarkdown(text)}`), '',
     '## 参考文献', '')
   for (const work of input.works.filter(item => references.has(item.academicWorkId))) {

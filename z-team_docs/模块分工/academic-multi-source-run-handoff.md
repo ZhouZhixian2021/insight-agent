@@ -49,12 +49,17 @@ B 负责把可预期的网络、限流、超时、上游和解析错误转换为
 
 ## C：Web 运行结果
 
-C 按 `AcademicResearchRunValue` 的正式字段开发主 Web。返回值包含必有的 `retrievalRun`；其字段与共享 `RetrievalRun` 一致并保持 JSON 安全。C 不从 `papers` 推断 Provider、失败数量或覆盖范围。
+C 按 `AcademicResearchRunValue` 的正式字段开发主 Web。返回值包含必有的 `stages` 和 `retrievalRun`；`stages` 由 Controller 分别结算来源检索、全文获取和证据抽取，`retrievalRun` 的字段与共享 `RetrievalRun` 一致并保持 JSON 安全。C 不从 `papers` 推断阶段结果、Provider、失败数量或覆盖范围。
 
 ```ts
 interface AcademicResearchRunValue {
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
+  readonly stages: {
+    readonly search: 'success' | 'partial_success' | 'failed' | 'not_run'
+    readonly fulltext: 'success' | 'partial_success' | 'failed' | 'not_run'
+    readonly extraction: 'success' | 'partial_success' | 'failed' | 'not_run'
+  }
   readonly retrievalRun: RetrievalRun
   readonly papers: readonly AcademicPaperResultView[]
   readonly failures: readonly PaperProcessingFailureView[]
@@ -66,8 +71,9 @@ interface AcademicResearchRunValue {
 
 - Remote Promise 未结算时只能显示“研究运行中”和取消操作；当前接口没有服务器进度百分比或阶段流。
 - `status: cancelled` 表示用户或 Session 取消；保留已经返回的论文结果，`report` 为 `null`。
-- `retrievalRun.status: partial_success` 表示部分来源或论文操作失败，但仍有成果进入分析；页面显示限制和失败，不把整轮标成完全失败。
-- `retrievalRun.status: failed` 表示没有成功纳入成果且存在失败；页面仍展示失败列表和覆盖信息。
+- `stages.search`、`stages.fulltext` 和 `stages.extraction` 分别表示来源检索、全文获取和证据抽取结果；页面直接显示这些生产方结论，不用整轮状态替代单个阶段。
+- `retrievalRun.status: partial_success` 表示整轮部分来源或论文操作失败，但仍有成果进入分析；页面显示限制和失败，不把整轮标成完全失败。
+- `retrievalRun.status: failed` 表示整轮没有成功纳入成果且存在失败；它可能发生在全文或抽取阶段，不能据此宣称来源检索失败。
 - `report.evaluation.status` 独立表示报告质量。`completed` 或检索 `success` 都不等于人工审核通过。
 - `coverageSummary.providerBreakdown` 为 `null`；页面不得渲染虚构的逐来源计数。
 
@@ -75,8 +81,8 @@ interface AcademicResearchRunValue {
 
 ## A：运行汇总与 Remote 投影
 
-A 的工作流直接消费 B 的 `batch.items`、`batch.failures`、Provider、发现数量、截断与限制，构造终态 `RetrievalRun` 和 `CoverageSummary`。来源失败与全文或抽取失败进入统一运行失败列表，Controller 在 `AcademicResearchRunValue` 中返回 JSON 安全的 `retrievalRun`。正式接口测试覆盖成功、部分成功、全部来源失败、论文操作失败、截断与取消。
+A 的工作流直接消费 B 的 `batch.items`、`batch.failures`、Provider、发现数量、截断与限制，构造终态 `RetrievalRun` 和 `CoverageSummary`。来源失败与全文或抽取失败进入统一运行失败列表，Controller 在 `AcademicResearchRunValue` 中返回 JSON 安全的 `retrievalRun`，并独立结算 `stages`。正式接口测试覆盖成功、部分成功、全部来源失败、论文操作失败、截断与取消。
 
-A 在 2026-09-18 的后续增量中补充了有界明确查询编排：Remote 的 `query` 字符串按行解析为最多三条查询，同时受已批准 Brief 的 `maximumSearchRounds` 约束；工作流按顺序调用 B 的既有 `searchAll()`，按轮转顺序合并批次，在精确去重后应用一个全局候选上限，并将实际开始的查询写入 `RetrievalRun.queries`。这不改变 B 的单次搜索接口或 C 的返回字段。自动生成查询、自适应追加查询、自动重试、持久恢复、进度流、逐来源统计和长论文分段仍未加入。
+A 在 2026-09-18 的后续增量中补充了有界明确查询编排：Remote 的 `query` 字符串按行解析为最多三条查询，同时受已批准 Brief 的 `maximumSearchRounds` 约束；工作流按顺序调用 B 的既有 `searchAll()`，按轮转顺序合并批次，在精确去重后应用一个全局候选上限，并将实际开始的查询写入 `RetrievalRun.queries`。这不改变 B 的单次搜索接口或 C 的返回字段。来源临时传输失败和证据模型输出截断可以在配置上限内重试，但不会生成、追加或改写查询；自动查询生成、自适应追加查询、持久恢复、进度流、逐来源统计和长论文分段仍未加入。
 
 返回[学术洞察模块总览](academic-module-ownership.md)。

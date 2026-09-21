@@ -27,6 +27,8 @@ kind: "package-library"
 
 本包把随附 profile 场景变成无密钥快照套件：写一张场景表和一个 fixture 目录，调用一次匹配的适配器，工具包就负责启动或组合 profile、驱动场景、比较规范化输出并守护已提交的 fixture。
 
+学术抽取与洞察结果流规范化其采样时间，保留响应文本、用量和请求序号关联。
+
 ### 编写快照套件
 
 消费方 `*.snapshot.ts` 就是场景表加一次工厂调用。`AgentUnderTest` 提供绝对 `binScript`、可选 `libBinScript`、`configPath` 与 `tsconfigPath` 路径，因为子进程 cwd 位于仓库之外：

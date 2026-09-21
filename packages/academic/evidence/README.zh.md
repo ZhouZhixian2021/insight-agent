@@ -44,7 +44,7 @@ const result = await extractEvidenceFromContent({
 }, generator)
 ```
 
-结果包含 `sourceLocators`、`evidenceRecords` 和一张 `evidenceCard`。每段引文必须逐字存在于所引用的片段中；无效索引、不存在的引文和空内容会在不可追溯证据进入分析前以 `EvidenceError` 失败。当调用方已有经过验证的证据时，仍可使用底层构造函数：
+结果包含 `sourceLocators`、`evidenceRecords` 和一张 `evidenceCard`。每段引文必须逐字存在于所引用的片段中。有效片段索引指错位置时，只有未经改写的引文在全部输入片段中恰好出现一次，抽取器才会纠正定位；歧义、规范化改写、不存在、空内容或非法索引仍会在不可追溯证据进入分析前以 `EvidenceError` 失败。当调用方已有经过验证的证据时，仍可使用底层构造函数：
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -60,6 +60,8 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 ```
 
 当定位范围无效、记录版本或等级与定位不一致、陈述或来源字段为空、或卡片条目未引用任何证据时，构造会以 `EvidenceError` 清晰地失败。
+
+抽取逐条拒绝模型提供的无效来源引用。`EvidenceExtractionResult.rejectedDrafts` 保存被拒草稿从零开始的 `draftIndex`、`segmentIndex`、稳定的 `code` 与诊断 `reason`；只有合格草稿会生成记录、定位和卡片条目。空引文、无效片段序号、未匹配或有歧义的引文不会丢弃其他合格草稿。逐字核验仍是必需条件，包括 Unicode 和公式痕迹。程序拥有的输入无效、生成器错误和取消仍会使调用失败。模型未提出证据时返回空记录和空拒绝列表；全部被拒时返回空记录与拒绝列表。JSON 结构校验仍由调用方负责。
 
 -----
 

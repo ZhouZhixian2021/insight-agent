@@ -24,6 +24,8 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
+The executable Academic workflow interprets `ResearchBrief.includedWorkTypes` as version states (`preprint`, `accepted_manuscript`, `version_of_record`), not conference/journal publication categories. `AcademicWork.venue` is a source label and does not establish a publication category; strict category filtering is not represented by this model.
+
 Academic packages import these types instead of declaring provider-specific substitutes. Provider and workflow packages translate their own records into this model at their package boundaries.
 
 -----

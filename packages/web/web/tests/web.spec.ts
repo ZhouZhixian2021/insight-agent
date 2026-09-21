@@ -204,6 +204,25 @@ describe('WebRuntime fetch capability', () => {
       expect.objectContaining({ code: 'WEB_PROVIDER_UNAVAILABLE' }),
     )
   })
+
+  it('uses a call-scoped fetch provider without changing the deployment default', async () => {
+    const { web } = await mountWeb({ fetchProvider: 'readable-text' })
+    web.registerFetchProvider(makeFetchProvider('readable-text', available, fetchResult('readable-text')))
+    web.registerFetchProvider(makeFetchProvider('raw-http', available, fetchResult('raw-http')))
+
+    await expect(web.fetch({ url: 'https://example.com' }, undefined, { providerId: 'raw-http' }))
+      .resolves.toMatchObject({ body: { content: 'raw-http' } })
+    await expect(web.fetch({ url: 'https://example.com' }))
+      .resolves.toMatchObject({ body: { content: 'readable-text' } })
+  })
+
+  it('reports a missing call-scoped fetch provider through the existing selection error', async () => {
+    const { web } = await mountWeb({ fetchProvider: 'readable-text' })
+    web.registerFetchProvider(makeFetchProvider('readable-text', available, fetchResult('readable-text')))
+
+    await expect(web.fetch({ url: 'https://example.com' }, undefined, { providerId: 'raw-http' }))
+      .rejects.toThrow(expect.objectContaining({ code: 'WEB_PROVIDER_CONFIGURED_MISSING' }))
+  })
 })
 
 describe('WebError', () => {

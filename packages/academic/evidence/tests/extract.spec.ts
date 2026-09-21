@@ -163,19 +163,47 @@ describe('extractEvidenceFromContent', () => {
       sourcedStatement: 'statement',
       verbatimExcerpt: 'source',
       cardItems: [],
-    }])).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_EXTRACTION' })
+    }])).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_INVALID_SEGMENT_INDEX' }] })
     await expect(extractEvidenceFromContent(source, async () => [{
       segmentIndex: 0,
       sourcedStatement: 'statement',
       verbatimExcerpt: '  ',
       cardItems: [],
-    }])).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_EXTRACTION' })
+    }])).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_EMPTY_EXCERPT' }] })
     await expect(extractEvidenceFromContent(source, async () => [{
       segmentIndex: 0,
       sourcedStatement: 'statement',
       verbatimExcerpt: 'missing',
       cardItems: [],
-    }])).rejects.toMatchObject({ code: 'EVIDENCE_EXCERPT_NOT_FOUND' })
+    }])).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_EXCERPT_NOT_FOUND' }] })
+  })
+
+  it('repairs a wrong segment index only when the excerpt has one exact source match', async () => {
+    const source = input([
+      { text: 'Unrelated first paragraph.', locator: { kind: 'paragraph', paragraphNumber: 1 } },
+      { text: 'The exact source statement is here.', locator: { kind: 'paragraph', paragraphNumber: 2 } },
+    ])
+    const result = await extractEvidenceFromContent(source, async () => [{
+      segmentIndex: 0,
+      sourcedStatement: 'The source statement is here.',
+      verbatimExcerpt: 'exact source statement',
+      cardItems: [],
+    }])
+    expect(result.sourceLocators[0]).toMatchObject({ kind: 'paragraph', paragraphNumber: 2 })
+  })
+
+  it('rejects wrong segment indexes when the exact excerpt is ambiguous', async () => {
+    const source = input([
+      { text: 'No quoted text here.', locator: { kind: 'paragraph', paragraphNumber: 1 } },
+      { text: 'Repeated exact text.', locator: { kind: 'paragraph', paragraphNumber: 2 } },
+      { text: 'Repeated exact text.', locator: { kind: 'paragraph', paragraphNumber: 3 } },
+    ])
+    await expect(extractEvidenceFromContent(source, async () => [{
+      segmentIndex: 0,
+      sourcedStatement: 'Repeated text.',
+      verbatimExcerpt: 'Repeated exact text',
+      cardItems: [],
+    }])).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_EXCERPT_NOT_FOUND' }] })
   })
 
   it('forwards cancellation and rejects an invalid abstract offset', async () => {
@@ -223,7 +251,34 @@ describe('extractEvidenceFromContent', () => {
       await expect(extractEvidenceFromContent(
         input([{ text: 'source text', locator: { kind: 'abstract' } }]),
         async () => [{ segmentIndex, sourcedStatement: 'statement', verbatimExcerpt: 'source', cardItems: [] }],
-      )).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_EXTRACTION' })
+      )).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_INVALID_SEGMENT_INDEX' }] })
     }
+  })
+
+  it('retains exact evidence on both sides of a normalized formula rejection without orphan card items', async () => {
+    const source = input([{ text: 'Uses Method X. Requires O⁡(n)O(n) operations. Supports parallel computation.',
+      locator: { kind: 'paragraph', paragraphNumber: 1 } }])
+    const result = await extractEvidenceFromContent(source, async () => [
+      { segmentIndex: 0, sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', cardItems: [] },
+      { segmentIndex: 0, sourcedStatement: 'Requires linear operations.', verbatimExcerpt: 'Requires O(n) operations.',
+        cardItems: [{ section: 'findings', statement: 'Rejected finding.', findingType: { status: 'available', value: 'primary' },
+          conditions: { status: 'not_extracted' } }] },
+      { segmentIndex: 0, sourcedStatement: 'Supports parallel computation.', verbatimExcerpt: 'Supports parallel computation.',
+        cardItems: [{ section: 'methods', statement: 'Parallel computation.', methodName: { status: 'available', value: 'parallel' },
+          methodRole: { status: 'available', value: 'proposed' } }] },
+    ])
+    expect(result.evidenceRecords.map(record => record.sourcedStatement)).toEqual(['Uses Method X.', 'Supports parallel computation.'])
+    expect(result.sourceLocators).toHaveLength(2)
+    expect(result.rejectedDrafts).toEqual([{ draftIndex: 1, segmentIndex: 0, code: 'EVIDENCE_EXCERPT_NOT_FOUND',
+      reason: 'excerpt is not uniquely present outside segment 0' }])
+    expect(result.evidenceCard.findings).toEqual([])
+    expect(result.evidenceCard.methods[0]?.evidenceIds).toEqual([result.evidenceRecords[1]?.evidenceId])
+    expect(result.evidenceRecords.every(record => record.contentHash.status === 'available' && record.contentHash.value === source.contentHash)).toBe(true)
+  })
+
+  it('returns an empty rejection list when the generator proposes no evidence', async () => {
+    const result = await extractEvidenceFromContent(input([{ text: 'Source text.', locator: { kind: 'abstract' } }]), async () => [])
+    expect(result.evidenceRecords).toEqual([])
+    expect(result.rejectedDrafts).toEqual([])
   })
 })

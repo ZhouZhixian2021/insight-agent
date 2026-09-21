@@ -1,5 +1,6 @@
 import type { ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
+import { validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-workflow'
 
 const EXIT_PLAN_MODE = 'exit_plan_mode'
 const BRIEF_FENCE = 'academic-research-brief-json'
@@ -26,6 +27,7 @@ export function researchBriefFromApprovedPlan(
     throw new Error('the Session has no approved Academic Research Brief plan')
   }
   const payload = parseBriefPayload(approved.markdown)
+  validateResearchBriefRequirements(payload)
   return {
     ...payload,
     researchBriefId: `${sessionId}:approved-plan:${approved.identity}` as ResearchBriefId,
@@ -38,6 +40,15 @@ export function researchBriefFromApprovedPlan(
       comment: null,
     },
   }
+}
+
+/**
+ * Reject an incompatible Academic plan before presenting it for user review.
+ * @param markdown Complete proposed plan, including its structured Brief.
+ * @returns Nothing when the plan can be executed; approval remains a separate user action.
+ */
+export function validateAcademicPlan(markdown: string): void {
+  validateResearchBriefRequirements(parseBriefPayload(markdown))
 }
 
 function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | undefined {

@@ -23,6 +23,8 @@ Shared record changes land through member A so provider-specific and report-spec
 
 ## Evidence-to-report consumers
 
+The [evidence library](../../packages/academic/evidence/README.md) returns accepted records and `EvidenceExtractionResult.rejectedDrafts`. Each rejection carries zero-based `draftIndex` and `segmentIndex`, a stable `code`, and a diagnostic `reason` without source text. The workflow exposes `extracted`, `partially_extracted`, or `extraction_failed` paper settlements; only the first two supply evidence to analysis. The Academic Remote projects accepted `evidenceCount` and the rejection list for each extraction settlement. A partially extracted paper contributes both retained evidence and one failed extraction operation, while a fully rejected paper contributes no included work.
+
 The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) reconciles current evidence with explicit semantic reviews; the [report library](../../packages/academic/report/README.md) executes evaluation at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
 
 ## Initial model increment
@@ -57,3 +59,5 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)
 <!-- END GENERATED cordis-surface -->
+
+Question synthesis is owned by the [analysis library](../../packages/academic/analysis/README.md) and dispatched by the [workflow](../../packages/academic/workflow/README.md). `AcademicSynthesisInput` binds an approved Brief version, RetrievalRun identity, accepted analysis records and observed coverage. `AcademicSynthesisDraft` contains cited statements, one ordered answer per question, sections and limitations. The Remote adds `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`; retrieval statistics remain retrieval-only. Question answers are not semantic approvals.

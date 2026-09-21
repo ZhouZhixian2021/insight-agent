@@ -12,6 +12,35 @@ const t: RunPanelProps['t'] = key => zh[key as RunKey]
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('fixed research result presentation', () => {
+  it('keeps the draft download and rejection reasons for partial synthesis without granting approval', () => {
+    const value = sampleRun()
+    render(<RunPanel view={{ phase: 'settled', value: { ...value,
+      synthesis: { status: 'partial_success', reasons: ['模型候选段落 4 未纳入报告。'] } } }} onCancel={vi.fn()} t={t} />)
+    expect(screen.getByText('模型候选段落 4 未纳入报告。')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeTruthy()
+    expect(screen.getAllByText('部分成功').length).toBeGreaterThan(0)
+    expect(screen.queryByText('人工审核通过')).toBeNull()
+  })
+  it('shows synthesis admission reasons independently of successful extraction', () => {
+    const value = sampleRun()
+    render(<RunPanel view={{ phase: 'settled', value: { ...value, report: null,
+      synthesis: { status: 'blocked', reasons: ['可用全文证据未达到 Plan 下限。'] } } }} onCancel={vi.fn()} t={t} />)
+    expect(screen.getByText('可用全文证据未达到 Plan 下限。')).toBeTruthy()
+    expect(screen.getAllByText('洞察分析')).toHaveLength(2)
+    expect(screen.queryByText('下载 Markdown')).toBeNull()
+  })
+  it.each(['partially_extracted', 'extraction_failed'] as const)('shows %s with accepted counts and rejected draft reasons', (status) => {
+    const value = sampleRun()
+    const first = value.papers[0]!
+    const paper = { status, workVersionId: first.workVersionId, evidenceCount: status === 'partially_extracted' ? 2 : 0,
+      rejectedDrafts: [{ draftIndex: 1, segmentIndex: 39, code: 'EVIDENCE_EXCERPT_NOT_FOUND' as const, reason: 'Exact quote missing.' }] }
+    render(<RunPanel view={{ phase: 'settled', value: { ...value, papers: [paper],
+      stages: { ...value.stages, extraction: status === 'partially_extracted' ? 'partial_success' : 'failed' } } }} onCancel={vi.fn()} t={t} />)
+    expect(screen.getByText(zh[status])).toBeTruthy()
+    expect(screen.getByText(`证据数量: ${paper.evidenceCount}`)).toBeTruthy()
+    expect(screen.getByText('被拒证据: 1')).toBeTruthy()
+    expect(screen.getByText(/候选证据 2/).textContent).toContain(zh.EVIDENCE_EXCERPT_NOT_FOUND)
+  })
   it('matches A’s handoff exactly and keeps fixture mutations isolated', () => {
     const agreed = JSON.parse(readFileSync('z-team_docs/interface-samples/academic-model-v1/c-academic-research-run.sample.json', 'utf8')) as { expectedValue: unknown }
     expect(sampleRun()).toEqual(agreed.expectedValue)
@@ -20,16 +49,16 @@ describe('fixed research result presentation', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(zh).sort())
   })
 
-  it('separates completed, partial retrieval and pending report review', () => {
+  it('separates run, processing, pipeline stages and pending report review', () => {
     render(<RunPanel view={scenarioView('partial_success')} onCancel={vi.fn()} t={t} />)
-    expect(screen.getAllByRole('definition').slice(0, 3).map(node => node.textContent))
-      .toEqual(['已完成', '部分成功', '待审核'])
+    expect(screen.getAllByRole('definition').slice(0, 7).map(node => node.textContent))
+      .toEqual(['已完成', '部分成功', '部分成功', '成功', '成功', '已完成', '待审核'])
   })
 
   it('shows producer counts and source failure even when paper failures are empty', () => {
     const { container } = render(<RunPanel view={scenarioView('partial_success')} onCancel={vi.fn()} t={t} />)
-    expect(screen.getByText('已完成')).toBeTruthy()
-    expect(screen.getByText('部分成功')).toBeTruthy()
+    expect(screen.getAllByText('已完成')).toHaveLength(2)
+    expect(screen.getAllByText('部分成功')).toHaveLength(2)
     expect(screen.getAllByText(/待审核/).length).toBeGreaterThan(0)
     for (const [label, count] of [['发现记录', '5'], ['去重后论文', '2'], ['实际纳入', '1']]) {
       expect(screen.getByText(label!).parentElement?.querySelector('dd')?.textContent).toBe(count)
@@ -61,7 +90,7 @@ describe('fixed research result presentation', () => {
 
   it('success is not report approval; blocked and transport error stay distinct', () => {
     const view = render(<RunPanel view={scenarioView('success')} onCancel={vi.fn()} t={t} />)
-    expect(screen.getByText('成功')).toBeTruthy()
+    expect(screen.getAllByText('成功').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/待审核/).length).toBeGreaterThan(0)
     view.rerender(<RunPanel view={scenarioView('blocked')} onCancel={vi.fn()} t={t} />)
     expect(screen.getAllByText(/阻止交付/).length).toBeGreaterThan(0)

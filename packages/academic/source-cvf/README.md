@@ -72,4 +72,4 @@ No direct invalidation; the workflow owns ordering and prompt serialization.
 <a id="dev-note"></a>
 ### Dev Note
 
-None.
+No invariant companion is published because this provider owns no independently maintained runtime observations; catalog parsing and result mapping are checked by focused tests.

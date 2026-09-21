@@ -56,7 +56,9 @@ export async function extractPaperEvidence(
         workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
         reason: decision.reason } }
     }
-    return { status: 'extracted', version: current, evidence }
+    const status = evidence.rejectedDrafts.length === 0 ? 'extracted'
+      : evidence.evidenceRecords.length > 0 ? 'partially_extracted' : 'extraction_failed'
+    return { status, version: current, evidence }
   } catch (error: unknown) {
     if (error instanceof EvidenceError && error.code === 'EVIDENCE_INPUT_TOO_LARGE') return pause('input_too_large')
     throw error

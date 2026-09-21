@@ -23,6 +23,8 @@ kind: "subsystem"
 
 ## 证据到报告消费方
 
+[证据库](../../packages/academic/evidence/README.zh.md) 返回合格记录与 `EvidenceExtractionResult.rejectedDrafts`。每条拒绝记录包含从零开始的 `draftIndex` 和 `segmentIndex`、稳定的 `code`，以及不含原文的诊断 `reason`。工作流提供 `extracted`、`partially_extracted` 或 `extraction_failed` 论文结果；只有前两类向分析提供证据。Academic Remote 为每份抽取结果投影合格 `evidenceCount` 和拒绝列表。部分抽取成功的论文同时贡献保留证据和一次失败抽取操作，全部被拒的论文不计入实际纳入成果。
+
 分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测结合当前证据与明确的语义审核，报告在最终交付入口执行核验。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
 
 ## 初始阶段
@@ -57,3 +59,5 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)
 <!-- END GENERATED cordis-surface -->
+
+逐题洞察由[分析库](../../packages/academic/analysis/README.zh.md)负责，通过[工作流](../../packages/academic/workflow/README.zh.md)调用模型。`AcademicSynthesisInput` 绑定批准的 Brief 版本、RetrievalRun 身份、准入分析记录与观察到的覆盖统计。`AcademicSynthesisDraft` 包含带引用的陈述、每个问题按序对应的回答、章节及局限。Remote 增加 `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`；检索统计仍只描述检索。问题回答不代表语义审核通过。

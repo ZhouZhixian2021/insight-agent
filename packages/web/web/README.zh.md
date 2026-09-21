@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-需要 web 访问的组合会加载 `dsh-web` 服务并挂载至少一个后端——搜索提供方和／或抓取提供方——插件或工具作者随后直接调用 `ctx.web.search()` 与 `ctx.web.fetch()`。服务会为每次调用解析后端，因此除非调用方配置了提供方 id，否则它们看不到提供方 id。
+需要 web 访问的组合会加载 `dsh-web` 服务并挂载至少一个后端——搜索提供方和／或抓取提供方——插件或工具作者随后直接调用 `ctx.web.search()` 与 `ctx.web.fetch()`。服务会为每次调用解析后端。大多数调用方使用部署默认值；抓取契约不同的消费者可以为单次调用提供 Provider id，而不改变该默认值。
 
 ### 何时选择
 
@@ -58,16 +58,20 @@ const result = await ctx.web.search({ query: 'deepseek harness', maxResults: 8 }
 
 // Fetch one URL; a non-2xx response is a result, not an error:
 const page = await ctx.web.fetch({ url: 'https://example.com' })
+
+// Fetch through one named provider without changing the deployment default:
+const rawPage = await ctx.web.fetch({ url: 'https://example.com' }, signal, { providerId: 'http' })
 ```
 
 两个调用都接受可选的 `AbortSignal`，用于把取消转发给提供方。规范化的请求与结果形状是调用方赖以构建的约定；[web 子系统](../../../docs/subsystems/web.zh.md) 参考中的词汇章节对其有穷尽式描述。
 
 ### 提供方选择
 
-每次调用都在执行时解析提供方，注册或加载顺序从不影响结果。已配置的提供方 id 在已注册且可用时优先；没有配置 id 时，服务运行唯一可用的提供方，或在情况不明时明确失败：
+每次调用都在执行时解析 Provider，注册或加载顺序从不影响结果。抓取调用的 `providerId` 只对该次调用优先；否则已配置的 Provider id 在已注册且可用时优先。两者都未提供时，服务运行唯一可用的 Provider，或在情况不明时明确失败：
 
 | 情况 | 结果 |
 |---|---|
+| 抓取调用提供了已注册且可用的 `providerId` | 仅本次调用使用它；部署默认值不变 |
 | 已配置 id 已注册且可用 | 运行该提供方 |
 | 已配置 id 未注册 | `WEB_PROVIDER_CONFIGURED_MISSING` |
 | 已配置 id 已注册但不可用 | `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` |
@@ -96,7 +100,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 本包建立在一个刻意的分离之上：
 
 - **一个 seam，两个独立操作。** 搜索与抓取没有共享请求 schema 或业务逻辑，但它们共用一个服务，使提供方选择、取消、错误与产品配置只有一个归属方。并行的 `Search`／`Fetch` 方法对是有意为之。
-- **选择绝不依赖顺序。** 能力要么固定提供方 id，要么在恰好注册一个可用提供方时自动选择；`search()`／`fetch()` 在执行时解析提供方。
+- **选择绝不依赖顺序。** 抓取调用可以为本次操作指定一个 Provider；否则能力要么固定 Provider id，要么在恰好注册一个可用 Provider 时自动选择；`search()`／`fetch()` 在执行时解析 Provider。
 - **服务拥有结果上限。** `maxResults` 由 seam 在提供方返回后强制执行，因此超量返回的提供方绝不可能泄漏超出调用方要求的来源。
 
 ### 源码地图
@@ -130,6 +134,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 - [dsh-web-fetch-http](../web-fetch-http/README.zh.md)——已交付的匿名 HTTP(S) 抓取后端。
 - [生成配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web)——每个受支持配置字段及其源声明。
 - [web 能力 seam 决策](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.zh.md)——搜索与抓取为何共用一项提供方选择服务。
+- [单次调用抓取选择](../../../.agents/notes/implemented/architecture/2026-09-20-call-scoped-web-fetch-provider.zh.md)——单个消费者为何可以选择抓取 Provider，而不改变部署默认值。
 
 -----
 

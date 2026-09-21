@@ -103,7 +103,7 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:61`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:71`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -114,7 +114,29 @@ Source: [`packages/academic/workflow/src/model-types.ts:61`](../packages/academi
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:63`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:73`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicsynthesis-request--log-only"></a>
+
+#### `academic/synthesis-request` — log-only
+
+```ts persistence-catalog
+/** Log-only approved Brief, admitted evidence and exact synthesis model request. */
+'academic/synthesis-request': SynthesisModelRequest
+```
+
+Source: [`packages/academic/workflow/src/synthesis-model.ts:26`](../packages/academic/workflow/src/synthesis-model.ts)
+
+<a id="academicsynthesis-result--log-only"></a>
+
+#### `academic/synthesis-result` — log-only
+
+```ts persistence-catalog
+/** Log-only synthesis settlement, raw output, usage and request sequence. */
+'academic/synthesis-result': SynthesisModelResult
+```
+
+Source: [`packages/academic/workflow/src/synthesis-model.ts:28`](../packages/academic/workflow/src/synthesis-model.ts)
 
 ### `agent/*`
 

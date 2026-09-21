@@ -25,7 +25,7 @@ Any plugin or tool can search the web or fetch a URL through `dsh-web` (`ctx.web
 <a id="use-this-package"></a>
 ## Use this package
 
-A composition that needs web access loads the `dsh-web` service and mounts at least one backend — a search provider and/or a fetch provider — and plugin or tool authors then call `ctx.web.search()` and `ctx.web.fetch()` directly. The service resolves the backend for each call, so callers never see provider ids unless they configured one.
+A composition that needs web access loads the `dsh-web` service and mounts at least one backend — a search provider and/or a fetch provider — and plugin or tool authors then call `ctx.web.search()` and `ctx.web.fetch()` directly. The service resolves the backend for each call. Most callers use the deployment default; a consumer with a distinct fetch contract can supply a call-scoped provider id without changing that default.
 
 ### When to choose it
 
@@ -58,16 +58,20 @@ const result = await ctx.web.search({ query: 'deepseek harness', maxResults: 8 }
 
 // Fetch one URL; a non-2xx response is a result, not an error:
 const page = await ctx.web.fetch({ url: 'https://example.com' })
+
+// Fetch through one named provider without changing the deployment default:
+const rawPage = await ctx.web.fetch({ url: 'https://example.com' }, signal, { providerId: 'http' })
 ```
 
 Both calls accept an optional `AbortSignal` that is forwarded to the provider for cancellation. The normalized request and result shapes are the contract callers build on; the vocabulary section of the [web subsystem](../../../docs/subsystems/web.md) reference describes them exhaustively.
 
 ### Provider selection
 
-Each call resolves its provider at execution time, and registration or load order never matters. A configured provider id wins when it is registered and usable; without a configured id, the service runs the single usable provider or fails clearly:
+Each call resolves its provider at execution time, and registration or load order never matters. A fetch call's `providerId` wins only for that call; otherwise a configured provider id wins when it is registered and usable. Without either selection, the service runs the single usable provider or fails clearly:
 
 | Situation | Outcome |
 |---|---|
+| fetch call supplies a registered and usable `providerId` | runs it for that call; the deployment default is unchanged |
 | configured id registered and usable | runs that provider |
 | configured id not registered | `WEB_PROVIDER_CONFIGURED_MISSING` |
 | configured id registered but unavailable | `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` |
@@ -96,7 +100,7 @@ This section explains the design decisions behind the service; the observable be
 The package is built on one deliberate separation:
 
 - **One seam, two independent operations.** Search and fetch share no request schema and no business logic, but they share one service so provider selection, cancellation, errors, and product configuration have a single owner. The parallel `Search`/`Fetch` method pairs are intentional.
-- **Selection is never order-dependent.** A capability either pins a provider id or auto-selects when exactly one usable provider is registered; `search()`/`fetch()` resolve the provider at execution time.
+- **Selection is never order-dependent.** A fetch call can name one provider for that operation; otherwise a capability either pins a provider id or auto-selects when exactly one usable provider is registered. `search()`/`fetch()` resolve the provider at execution time.
 - **The service owns the result bound.** `maxResults` is enforced by the seam after the provider returns, so an over-returning provider can never leak more sources than the caller asked for.
 
 ### Source map
@@ -130,6 +134,7 @@ Read these pages when the package-level contract is not enough. They move from t
 - [dsh-web-fetch-http](../web-fetch-http/README.md) — the shipped anonymous HTTP(S) fetch backend.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web) — every accepted config field and its source declaration.
 - [Web capability seam decision](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md) — why search and fetch share one provider-selection service.
+- [Call-scoped fetch selection](../../../.agents/notes/implemented/architecture/2026-09-20-call-scoped-web-fetch-provider.md) — why one consumer can select a fetch provider without changing the deployment default.
 
 -----
 

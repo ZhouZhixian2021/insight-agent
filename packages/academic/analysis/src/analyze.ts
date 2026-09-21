@@ -3,11 +3,12 @@ import {
   createClaimId, createClaimEvidenceLinkId, createEvidenceSnapshotId, isExecutableResearchBrief,
   type ClaimRecord, type ClaimEvidenceLink, type EvidenceId, type EvidenceCardItem, type ResearchBrief,
 } from '@deepseek-ai/dsh-academic-model'
-import { prepareAnalysisInput } from './index.ts'
+import { prepareAnalysisInput } from './prepare.ts'
 import type { AnalysisInput, PreparedAnalysisInput } from './types.ts'
 
 /** Analysis-owned result; shared evidence and Claim records retain their model types. */
 export interface AnalysisResult {
+  readonly synthesis?: import('./synthesis-types.ts').AcademicSynthesisDraft
   readonly prepared: PreparedAnalysisInput
   readonly claims: readonly ClaimRecord[]
   readonly links: readonly ClaimEvidenceLink[]

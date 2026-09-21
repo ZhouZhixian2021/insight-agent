@@ -21,7 +21,7 @@ export function scenarioView(scenario: Scenario): RunView {
     retrievalRun: { ...value.retrievalRun, stage: 'cancelled', status: 'partial_success', completedAt: '2026-09-17T02:03:00.000Z' },
   } }
   if (scenario === 'failed') return { phase: 'settled', value: {
-    ...value, papers: [], report: null,
+    ...value, stages: { search: 'failed', fulltext: 'not_run', extraction: 'not_run' }, papers: [], report: null,
     retrievalRun: { ...value.retrievalRun, stage: 'failed', status: 'failed', completedAt: '2026-09-17T02:03:00.000Z',
       academicWorkIds: [], coverageSummary: { ...value.retrievalRun.coverageSummary,
         discoveredRecords: 0, deduplicatedWorks: 0, includedWorks: 0, availableFulltextWorks: 0,
@@ -29,6 +29,7 @@ export function scenarioView(scenario: Scenario): RunView {
     },
   } }
   if (scenario === 'success') return { phase: 'settled', value: { ...value,
+    stages: { search: 'success', fulltext: 'success', extraction: 'success' },
     retrievalRun: { ...value.retrievalRun, stage: 'completed', status: 'success', completedAt: '2026-09-17T02:03:00.000Z',
       failures: [], coverageSummary: { ...value.retrievalRun.coverageSummary, failedOperations: 0,
         limitations: ['Synthetic successful retrieval; the aggregate result limit retained two of five discovered records.', 'Single search pass; no automatic retries.'],

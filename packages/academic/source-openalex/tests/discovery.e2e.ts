@@ -17,7 +17,7 @@ it.skipIf(!live)('records fixed-query discovery separately from title-directed f
     await ctx.plugin(AcademicSourceRuntime, { searchProviders: ['openalex'], searchTimeoutMs: 25_000 })
     ctx.academicSource.registerSearchProvider(new OpenAlexProvider({ baseURL: 'https://api.openalex.org',
       apiKey: process.env.OPENALEX_API_KEY, searchMode: 'keyword', publicationYears: '2017-2020',
-      timeoutMs: 20_000, maxResults: 5, maxCachedRecords: 50 }))
+      timeoutMs: 20_000, maxAttempts: 1, retryDelayMs: 0, maxResults: 5, maxCachedRecords: 50 }))
     for (const query of fixedQueries) {
       const start = Date.now()
       const result = await ctx.academicSource.searchAll({ query, maxResults: 5 })

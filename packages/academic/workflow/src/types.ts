@@ -24,8 +24,9 @@ export interface PaperExclusion {
   readonly reason: string
 }
 
-/** Only an extracted result contains a version suitable for downstream analysis. */
+/** Fully or partially extracted papers supply accepted evidence to downstream analysis. */
 export type PaperEvidenceResult =
   | { readonly status: 'paused'; readonly pause: PaperPause }
   | { readonly status: 'excluded'; readonly exclusion: PaperExclusion }
-  | { readonly status: 'extracted'; readonly version: WorkVersion; readonly evidence: EvidenceExtractionResult }
+  | (({ readonly status: 'extracted' } | { readonly status: 'partially_extracted' } | { readonly status: 'extraction_failed' })
+    & { readonly version: WorkVersion; readonly evidence: EvidenceExtractionResult })

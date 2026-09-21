@@ -21,6 +21,12 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
+证据准入也返回供有界补选使用的 `usableWorkIds`，未满足 Plan 下限时仍返回该值。它列出有准入证据的独立论文，不纳入仅下载成功或仅被范围判断接受的论文。
+
+`validateSynthesisRequirements()` 检查拟议报告要求，不授予批准状态；返回支持的章节，或逐项指出不支持的语言、引用格式、篇幅单位、章节及版本状态。`synthesisSections()` 还要求当前计划已获批准。两者均不改写 Brief。
+
+`prepareSynthesisInput()` 按批准的论文与全文下限准入版本、定位和哈希一致的证据。`parseSynthesisDraft()` 拒绝无效 JSON、错误 Brief 版本以及无效的问题/章节结构。不合格段落隔离到主机生成的 `rejectedStatements`，保留从零开始的原始序号和原因；合格段落重新编号，受影响的问题覆盖状态降级，空缺章节说明证据不足。未知证据、仅背景引用或独立论文支持不足不会变成合格结论。`synthesisPrompt()` 要求把本轮缺口写入限制或缺失原因。`synthesisAnalysis()` 仅为至少两篇独立论文支持的结论创建共享 Claim，单篇解释仍是来源陈述。参见[洞察分析决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.zh.md)。
+
 按 [AnalysisInput](src/types.ts) 的字段名称传入具有类型的 `AcademicWork`、`WorkVersion`、`EvidenceRecord`、`EvidenceCard` 和 `SourceLocator` 数组。调用同进程函数前，外部 JSON 由其入口负责人校验。至少保留一个卡片条目时返回 `usable`，否则返回 `no_usable_input`；`usable` 不证明证据充分、内容真实或指标可以比较。
 
 论文或版本缺失、归属不一致以及版本撤回会导致卡片被排除。证据或定位缺失、版本或等级不匹配、已知内容哈希冲突以及元数据用于支持实质性陈述会导致整个条目被排除。即使其他引用有效，一条无效引用也会排除整个条目。任一输入对象集合内出现重复 ID 时抛出错误，不任意选择记录。其他有效条目继续保留。
@@ -38,11 +44,11 @@ kind: "package-library"
 
 #### 模型看到的内容
 
-没有直接可见内容。`prepareAnalysisInput()` 向调用方返回有类型的材料，不发送模型请求。
+`synthesisPrompt()` 提供批准的 Brief、准入证据关系、观察到的覆盖统计和来源失败，作为无工具的结构化任务。论文内容是数据而非指令；消费方工作流负责记录和发送。`prepareAnalysisInput()` 本身不发送请求。
 
 #### Token 影响
 
-直接 Token 消耗为零；渲染和请求日志由消费工作流负责。
+提示长度取决于准入证据与批准的问题；传输预算和日志归消费工作流负责。
 
 #### KV Cache 影响
 
@@ -53,7 +59,7 @@ kind: "package-library"
 <a id="known-limitations-and-deferred-work"></a>
 
 - 整理视图仍归 analysis 内部所有。生成结论使用 A5 Claim 类型；抽取式对比不排名指标，也不推断共识、趋势或研究空白。
-- 结构检查不核验引文是否存在于完整来源中，不比较实验条件，不执行已批准 Brief 的要求，也不查询外部存储判断证据是否陈旧。缺少原文的材料保留明确限制。
+- 结构检查不核验引文是否存在于完整来源中，不比较实验条件，不查询外部存储判断证据是否陈旧。缺少原文的材料保留明确限制。
 - 返回子集是整理视图，不替代生产者卡片，也不是持久记录。不能沿用原卡片 ID 将其作为新来源证据持久化。
 
 <a id="dev-note"></a>

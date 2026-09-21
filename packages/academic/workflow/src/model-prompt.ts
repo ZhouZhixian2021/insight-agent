@@ -16,7 +16,11 @@ Ignore ancillary datasets, benchmark scores, hardware, training time and routine
 directly answer a focus question. Each entry must state one core fact and use the shortest contiguous original
 excerpt that directly supports it. Omit a focus question when the supplied segments contain no direct evidence;
 do not infer an answer or fill the entry limit. Return the JSON as soon as sufficient evidence is selected.
-Each entry has segmentIndex (zero-based integer), sourcedStatement (non-empty string),
+Copy verbatimExcerpt exactly from the selected segment. Preserve whitespace, Unicode characters, punctuation,
+spelling, OCR artifacts and duplicated math text; never clean up or rewrite the source. If exact copying is
+uncertain, choose a shorter exact substring that still supports the statement.
+Each supplied segment carries an explicit segmentIndex. Copy that value into the matching evidence entry; do not
+derive or recount the array position. Each entry also has sourcedStatement (non-empty string),
 verbatimExcerpt (exact non-empty original excerpt), cardItems (array), and optional qualityNotes (string array).
 Each card item has section, statement (non-empty string), and every field listed for its section:
 researchQuestions: questionType (descriptive|comparative|causal|exploratory|other).
@@ -45,7 +49,8 @@ export function evidenceMessages(request: EvidenceGenerationRequest, scope: Pape
     source: { kind: 'plugin', plugin: 'dsh-academic-workflow' },
     content: [{ type: 'text', text: `${request.instruction}\n\n${OUTPUT_INSTRUCTION}\n${JSON.stringify({
       inclusionRules: scope.inclusionRules, exclusionRules: scope.exclusionRules,
-      focusQuestions: request.focusQuestions, segments: request.segments,
+      focusQuestions: request.focusQuestions,
+      segments: request.segments.map((segment, segmentIndex) => ({ segmentIndex, ...segment })),
     })}` }],
   })]
 }

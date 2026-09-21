@@ -22,7 +22,7 @@ The Academic workflow owns network and model routing plus durable request loggin
 6. `fetchAcademicFullText(input, fetcher, signal)` tries caller-supplied candidate URLs in order, normally HTML before PDF, and returns the first confirmed full text. The caller adapts `ctx.web.fetch()` so provider selection and network policy remain workflow-owned.
 7. `extractEvidenceFromContent(input, generator, signal)` gives the generator the extraction instruction, focus questions, and locatable abstract/full-text segments. It verifies each returned excerpt as an exact substring, derives its locator, creates an evidence record with an available excerpt and hash, and groups the draft's items into one `EvidenceCard`. Cancellation is checked before and after generation.
 
-Validation failures throw `EvidenceError` (re-implementing the `HarnessError` shape, no cross-package base) with stable codes. Full-text preparation uses `EVIDENCE_FETCH_STATUS`, `EVIDENCE_FETCH_TRUNCATED`, `EVIDENCE_FETCH_BODY_UNSUPPORTED`, `EVIDENCE_FULLTEXT_UNCONFIRMED`, and `EVIDENCE_PDF_PARSE_FAILED`; construction and extraction retain their existing codes.
+Construction failures throw `EvidenceError` (re-implementing the `HarnessError` shape, no cross-package base) with stable codes. Full-text preparation uses `EVIDENCE_FETCH_STATUS`, `EVIDENCE_FETCH_TRUNCATED`, `EVIDENCE_FETCH_BODY_UNSUPPORTED`, `EVIDENCE_FULLTEXT_UNCONFIRMED`, and `EVIDENCE_PDF_PARSE_FAILED`; construction retains its existing codes. Model source-reference failures use the [per-draft rejection contract](2026-09-20-academic-evidence-extraction-recovery.md), while generator and program-owned input failures still reject the extraction call.
 
 ## Level-locator pairing
 

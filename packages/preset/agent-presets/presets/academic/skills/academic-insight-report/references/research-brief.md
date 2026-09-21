@@ -14,7 +14,7 @@ The reviewed Markdown is also the machine-readable handoff to the research workf
 ## Evidence scope
 
 - Publication window:
-- Included publication types:
+- Included version states (preprint, accepted manuscript, version of record):
 - Inclusion criteria:
 - Exclusion criteria:
 - Local materials to inspect:
@@ -45,6 +45,10 @@ The reviewed Markdown is also the machine-readable handoff to the research workf
 
 ## Structured workflow handoff
 
+`includedWorkTypes` selects version states only: `preprint`, `accepted_manuscript`, and `version_of_record`. These do not distinguish conference papers from journal articles. Do not put publication categories in this field or promise strict conference/journal filtering; the workflow has no reliable publication-category field. `allowPreprints: false` excludes preprints even when they appear in the list. Describe the same version scope in the readable plan and obtain approval before changing an already reviewed scope.
+
+The executable report currently requires `language: "zh-CN"`, `citationStyle: "numeric"`, and `targetLength.unit: "characters"`. Supported sections are `executive_summary`, `scope_and_method`, `technology_overview`, `paper_landscape`, `cross_paper_analysis`, `key_findings`, `limitations`, `research_gaps`, `references`, and `evidence_appendix`; `research_scope` and `directions` are accepted aliases for `scope_and_method` and `technology_overview`. Do not promise another format as executable. If the requested scope cannot be expressed, discuss the limitation with the user before submitting the plan.
+
 ```academic-research-brief-json
 {
   "schemaVersion": 1,
@@ -56,7 +60,7 @@ The reviewed Markdown is also the machine-readable handoff to the research workf
     "end": null,
     "dateBasis": "first_public_release"
   },
-  "includedWorkTypes": ["preprint", "conference_paper", "journal_article"],
+  "includedWorkTypes": ["preprint", "accepted_manuscript", "version_of_record"],
   "inclusionRules": ["<rule for including a work>"],
   "exclusionRules": ["<rule for excluding a work>"],
   "evidenceRequirements": {

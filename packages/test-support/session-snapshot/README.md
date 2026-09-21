@@ -27,6 +27,8 @@ English | [中文](README.zh.md)
 
 This package turns a shipped profile scenario into a keyless snapshot suite: write a scenario table and a fixtures directory, call the matching adapter once, and the kit owns launching or composing the profile, driving the scenario, comparing normalized output, and guarding the committed fixtures.
 
+Academic extraction and synthesis result streams normalize their recorded sampling clocks while retaining response text, usage and request-sequence references.
+
 ### Writing a snapshot suite
 
 A consuming `*.snapshot.ts` is the scenario table plus one factory call. `AgentUnderTest` supplies absolute `binScript`, optional `libBinScript`, `configPath`, and `tsconfigPath` paths, because the subprocess cwd sits outside the repository:

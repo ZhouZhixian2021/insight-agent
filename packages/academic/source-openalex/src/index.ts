@@ -25,6 +25,10 @@ export interface Config {
   readonly publicationYears?: string
   /** Per-request timeout in milliseconds. Defaults to `20000`. */
   readonly timeoutMs?: number
+  /** Total attempts for network failures or per-attempt timeouts. Defaults to `1`. */
+  readonly maxAttempts?: number
+  /** Delay before a repeated transport attempt, in milliseconds. Defaults to `0`. */
+  readonly retryDelayMs?: number
   /** Maximum records requested per query; semantic mode caps this at `50` and keyword mode at `100`. Defaults to `50`. */
   readonly maxResults?: number
   /** Capacity of the instance-local full-text candidate map; must be at least `maxResults`. Defaults to `1000`. */
@@ -37,6 +41,8 @@ export const Config: z<Config> = z.object({
   searchMode: z.union(['keyword', 'semantic']).default('keyword'),
   publicationYears: z.string(),
   timeoutMs: z.number().default(20_000),
+  maxAttempts: z.number().default(1),
+  retryDelayMs: z.number().default(0),
   maxResults: z.number().default(50),
   maxCachedRecords: z.number().default(1000),
 })
@@ -54,12 +60,16 @@ export function apply(ctx: Context, config: Config): void {
   const timeoutMs = config.timeoutMs ?? 20_000
   const maxResults = config.maxResults ?? 50
   const maxCachedRecords = config.maxCachedRecords ?? 1000
+  const maxAttempts = config.maxAttempts ?? 1
+  const retryDelayMs = config.retryDelayMs ?? 0
   const searchMode = config.searchMode ?? 'keyword'
   const cap = searchMode === 'semantic' ? 50 : 100
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2_147_483_647
+    || !Number.isSafeInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 3
+    || !Number.isSafeInteger(retryDelayMs) || retryDelayMs < 0 || retryDelayMs > 30_000
     || !Number.isSafeInteger(maxResults) || maxResults < 1 || maxResults > cap
     || !Number.isSafeInteger(maxCachedRecords) || maxCachedRecords < maxResults) {
-    throw new Error('invalid OpenAlex timeout, result limit or full-text cache capacity')
+    throw new Error('invalid OpenAlex timeout, retry settings, result limit or full-text cache capacity')
   }
   const years = config.publicationYears
   if (years !== undefined && (!/^\d{4}-\d{4}$/u.test(years) || years.slice(0, 4) > years.slice(5))) {
@@ -67,5 +77,5 @@ export function apply(ctx: Context, config: Config): void {
   }
   ctx.academicSource.registerSearchProvider(new OpenAlexProvider({ baseURL,
     apiKey: process.env[config.apiKeyEnv ?? 'OPENALEX_API_KEY'], searchMode, publicationYears: years,
-    timeoutMs, maxResults, maxCachedRecords }))
+    timeoutMs, maxAttempts, retryDelayMs, maxResults, maxCachedRecords }))
 }

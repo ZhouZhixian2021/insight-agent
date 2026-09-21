@@ -27,7 +27,7 @@ function brief() {
     includedWorkTypes: ['preprint'], inclusionRules: ['Include retrieval studies.'], exclusionRules: ['Exclude surveys.'],
     evidenceRequirements: { minimumIncludedWorks: 1, minimumFulltextWorks: 1, minimumEvidenceLevel: 'fulltext' as const,
       requireLocatableEvidence: true, allowPreprints: true, insufficientEvidencePolicy: 'continue_with_warning' as const },
-    targetAudience: 'researchers', reportRequirements: { language: 'en', targetLength: { unit: 'words', minimum: null, maximum: null },
+    targetAudience: 'researchers', reportRequirements: { language: 'zh-CN', targetLength: { unit: 'characters', minimum: null, maximum: null },
       requiredSections: [], citationStyle: 'numeric' as const, includeEvidenceAppendix: true, includeMethodology: true,
       includeLimitations: true, includeResearchGaps: false }, stopConditions: { maximumSearchRounds: 3, maximumCandidateWorks: 3,
       maximumIncludedWorks: 2, maximumElapsedMinutes: null, saturationRounds: 1, stopWhenEvidenceRequirementsMet: false },
@@ -120,32 +120,51 @@ async function harness(options: {
   }
   const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
-  const controller = new AcademicResearchController(ctx)
+  const controller = new AcademicResearchController(ctx, {
+    fulltextFetchProvider: 'academic-raw',
+    extractionMaxTokens: 16_384,
+    extractionMaxAttempts: 2,
+  })
   return { controller, search, fetch, sessionId, signal }
 }
 
 describe('AcademicResearchController', () => {
+  it.each(['partially_extracted', 'extraction_failed'] as const)('projects %s without presenting complete extraction success', async (status) => {
+    const fixture = await harness()
+    const workVersionId = createWorkVersionId()
+    const observedRun = retrievalRun()
+    const rejectedDrafts = [{ draftIndex: 1, segmentIndex: 39, code: 'EVIDENCE_EXCERPT_NOT_FOUND', reason: 'Exact quote missing.' }]
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: { ...observedRun, coverageSummary: { ...observedRun.coverageSummary, availableFulltextWorks: 1 } },
+      papers: [{ status, version: { workVersionId }, evidence: { evidenceRecords: status === 'partially_extracted' ? [{}, {}] : [], rejectedDrafts } }],
+      failures: status === 'extraction_failed' ? [{ workVersionId, stage: 'extraction' }] : [], analysis: null, report: null } as never)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'retrieval', synthetic: false }, fixture.signal)
+    expect(result.stages).toMatchObject({ fulltext: 'success', extraction: status === 'partially_extracted' ? 'partial_success' : 'failed' })
+    expect(result.papers).toEqual([{ status, workVersionId, evidenceCount: status === 'partially_extracted' ? 2 : 0, rejectedDrafts }])
+  })
   it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = await harness()
     const resultWorkVersionId = createWorkVersionId()
     const observedRun = retrievalRun()
-    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId, retrievalRun: observedRun,
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId, retrievalRun: observedRun,
       papers: [
-        { status: 'extracted', version: { workVersionId: resultWorkVersionId }, evidence: { evidenceRecords: [{}, {}] } },
+        { status: 'extracted', version: { workVersionId: resultWorkVersionId }, evidence: { evidenceRecords: [{}, {}], rejectedDrafts: [] } },
         { status: 'excluded', exclusion: { workVersionId: resultWorkVersionId, reason: 'survey' } },
         { status: 'paused', pause: { workVersionId: resultWorkVersionId, reason: 'too long' } },
       ], failures: [], analysis: null, report: null } as never)
     const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'retrieval', maxResults: 2,
       synthetic: false }, new AbortController().signal)
     expect(result.papers).toEqual([
-      { status: 'extracted', workVersionId: resultWorkVersionId, evidenceCount: 2 },
+      { status: 'extracted', workVersionId: resultWorkVersionId, evidenceCount: 2, rejectedDrafts: [] },
       { status: 'excluded', workVersionId: resultWorkVersionId, reason: 'survey' },
       { status: 'paused', workVersionId: resultWorkVersionId, reason: 'too long' },
     ])
     expect(result.retrievalRun).toBe(observedRun)
+    expect(result.stages).toEqual({ search: 'success', fulltext: 'not_run', extraction: 'not_run' })
     const call = runAcademicResearchDraft.mock.calls[0]?.[0]
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
+      modelPolicy: { maxAttempts: 2 },
       input: { brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
       searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })
@@ -153,7 +172,9 @@ describe('AcademicResearchController', () => {
     await call.adapters.fetcher('https://arxiv.org/pdf/1', fixture.signal)
     expect(Date.parse(call.adapters.now())).not.toBeNaN()
     expect(fixture.search).toHaveBeenCalledWith({ query: 'x' }, fixture.signal)
-    expect(fixture.fetch).toHaveBeenCalledWith({ url: 'https://arxiv.org/pdf/1' }, fixture.signal)
+    expect(fixture.fetch).toHaveBeenCalledWith(
+      { url: 'https://arxiv.org/pdf/1' }, fixture.signal, { providerId: 'academic-raw' },
+    )
 
     const academicWorkId = createAcademicWorkId(), workVersionId = createWorkVersionId()
     const selected = call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
@@ -182,7 +203,7 @@ describe('AcademicResearchController', () => {
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
     const fixture = await harness({ header: false })
-    runAcademicResearchDraft.mockResolvedValue({ status: 'cancelled', sessionId: fixture.sessionId,
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'cancelled', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun('cancelled'),
       papers: [], failures: [], analysis: null, report: null } as never)
     await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: true },
@@ -190,9 +211,27 @@ describe('AcademicResearchController', () => {
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
   })
 
+  it('settles successful search and full text separately from failed evidence extraction', async () => {
+    const fixture = await harness()
+    const first = createWorkVersionId(), second = createWorkVersionId()
+    const observed = retrievalRun()
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: { ...observed, status: 'failed', coverageSummary: { ...observed.coverageSummary,
+        discoveredRecords: 20, deduplicatedWorks: 8, includedWorks: 0, availableFulltextWorks: 2,
+        failedOperations: 2 } },
+      papers: [], failures: [
+        { workVersionId: first, stage: 'extraction' },
+        { workVersionId: second, stage: 'extraction' },
+      ], analysis: null, report: null } as never)
+
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
+    expect(result.stages).toEqual({ search: 'success', fulltext: 'success', extraction: 'failed' })
+    expect(result.retrievalRun.status).toBe('failed')
+  })
+
   it('parses newline-separated queries, trims them, and removes exact repeats', async () => {
     const fixture = await harness()
-    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun(), papers: [], failures: [], analysis: null, report: null } as never)
 
     await fixture.controller.run({ sessionId: fixture.sessionId,
@@ -244,14 +283,14 @@ describe('AcademicResearchController', () => {
       new AbortController().signal)).rejects.toMatchObject({ code: 'gateway/bad-request' })
   })
 
-  it('preserves reasoning effort when max tokens are absent', async () => {
+  it('preserves reasoning effort and supplies the configured extraction cap when Session max tokens are absent', async () => {
     const fixture = await harness({ reasoning: true })
-    runAcademicResearchDraft.mockResolvedValue({ status: 'completed', sessionId: fixture.sessionId,
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun(),
       papers: [], failures: [], analysis: null, report: null } as never)
     await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({
-      provider: 'fixture', model: 'selected', reasoningEffort: 'low',
+      provider: 'fixture', model: 'selected', reasoningEffort: 'low', maxTokens: 16_384,
     })
   })
 
@@ -274,7 +313,7 @@ describe('approved Research Brief plan handoff', () => {
         start: { iso: '2020-01', precision: 'month' as const },
         end: { iso: '2026-09-16', precision: 'day' as const } },
       reportRequirements: { ...base.reportRequirements,
-        targetLength: { unit: 'words', minimum: 1000, maximum: 2000 } },
+        targetLength: { unit: 'characters', minimum: 1000, maximum: 2000 } },
       stopConditions: { ...base.stopConditions, maximumElapsedMinutes: 30 },
     }
     const events = [

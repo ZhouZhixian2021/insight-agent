@@ -72,3 +72,28 @@
 - 实际合成配置显示，本机安装的 `dsh-web-tools` 又把通用 `ctx.web.fetch` 选择改为 `dsh-web-tools-fetch`。该 Provider 将 HTML 转成 `text`，并拒绝 PDF；B 的 Academic 证据准备只接受未截断 HTML 或 PDF，因此正式 Academic Controller 通过通用默认 Provider 调用时与该插件不兼容。一次性验收覆盖把学术全文切回 `http` 后，不再使用该第三方 fetch Provider；临时覆盖未纳入仓库。
 - 一次性覆盖下连续两轮运行仍在全文前结束：arXiv 的两条搜索均返回 `TypeError: fetch failed`，OpenAlex 也出现一次网络失败或超时。仓库内置 HTTP 抓取器在同一环境可以通过 DSH 代理取得两篇 arXiv 全文，而 arXiv 与 OpenAlex 搜索 Provider 当前直接使用 Node `fetch`。因此本轮无法完成证据抽取与报告内容验收，阻塞点归为 B 的来源网络出口；不是 C 的页面问题，也不是 B 的全文解析算法失败。
 - 后续由 B 让 arXiv 与 OpenAlex 搜索遵循 DSH 的代理出口并保持现有失败分类；由 A 另行确认 Academic Controller 如何明确选择可返回原始 HTML/PDF 的全文 Provider，避免第三方通用 fetch 选择改变学术输入格式。C 无需针对本次结果改页面。
+
+## 2026-09-20 临时传输失败修复
+
+- A 临时代 B 复查来源联网。当前启动环境没有 `HTTP_PROXY`、`HTTPS_PROXY` 或 `ALL_PROXY`，Windows 也未配置系统或 WinHTTP 代理；arXiv 与 OpenAlex 因此使用直连。arXiv 失败的底层原因是 `UND_ERR_CONNECT_TIMEOUT`，同一进程稍后用相同 Provider 可以成功；OpenAlex 也在不同轮次间出现过一次 25 秒超时和随后成功。
+- 仓库内置 HTTP fetch Provider 访问同一个 arXiv API 时复现了相同的首次连接超时，因此问题不是 Academic Provider 绕过了 DSH 代理，也不能通过改走通用 Web fetch 接口解决。
+- arXiv 与 OpenAlex Provider 新增显式的 `maxAttempts` 与 `retryDelayMs`，默认仍为一次。Web 组合为两者配置两次尝试；arXiv 仅重试收到 HTTP 响应前的网络失败，OpenAlex 仅重试网络失败与自身单次尝试超时。HTTP 错误、限流、解析失败和调用方取消不重试，外层 25000 ms 来源时限继续约束整次调用。
+- 两个 Provider 的 34 项聚焦测试，以及连同工作流在内的 71 项聚焦测试通过。正式 Web 组合确认 OpenAlex 与 arXiv 均装载两次尝试配置。
+- 重启正式 Web 后，使用原 Session、原批准 Brief 以及 `1706.03762`、`1810.04805` 两条查询完成网页复验。两个来源共发现 20 条记录、跨查询去重后 8 篇，来源搜索没有失败，说明此前阻塞整轮的偶发连接超时已不再复现。
+- 复验随后在全文阶段停止：候选上限选出的两篇 arXiv 版本都返回 `fetch_fulltext/fulltext_unavailable`，实际纳入、可用全文和证据均为 0，报告继续阻止交付。当前正式组合仍由 `dsh-web-tools-fetch` 提供通用全文抓取，与前一轮已确认的原始 HTML/PDF 输入要求不兼容；这属于下一项全文 Provider 选择问题，不回滚本次来源重试修复。
+
+## 2026-09-20 Academic 全文 Provider 隔离
+
+- 普通 Web 抓取与 Academic 全文需要不同的数据形状：前者可以使用 `dsh-web-tools-fetch` 的正文转换，后者必须取得未截断的原始 HTML 或 PDF。全局切换 Provider 会破坏其中一个消费者，因此没有卸载本机插件，也没有把全局默认改回 `http`。
+- `ctx.web.fetch()` 新增单次调用范围的 `providerId` 选项，沿用既有确定性 Provider 选择和错误分类，不修改部署默认值。Academic Controller 新增 `fulltextFetchProvider` 配置并默认为 `http`；正式 Web 组合显式设置该值。
+- 普通网页继续使用部署默认的 `dsh-web-tools-fetch`，Academic 全文单独选择内置 `http`。未来有其他能够保留原始 HTML/PDF 的 Provider 时，只需调整 Controller 配置，不修改工作流。
+
+## 2026-09-20 模型预算与逐字证据复验
+
+- 全文 Provider 隔离后，固定双查询能够稳定取得两篇 arXiv 全文；页面统计为发现 20 条、跨查询去重后 8 篇、可用全文 2 篇。此前全文抓取阶段的阻塞已经解除。
+- 首轮证据抽取在进入模型前以 `EVIDENCE_MODEL_BUDGET_UNKNOWN` 失败。原因是当前 Session 选择的 `wowei/deepseek-v4-pro` 没有声明 `maxTokens`，而 Academic Controller 把缺失值原样传入。Controller 现为这种情况提供可配置的 `extractionMaxTokens`，默认及 Web 正式组合均为 16384；Session 明确声明的值仍优先。
+- 增加预算后，两篇模型请求都完整停止并通过 JSON 结构校验：一次使用 8143 输入、10050 输出 tokens，另一次使用 13869 输入、8106 输出 tokens。页面得到 1 篇实际纳入、3 条证据；另一篇因模型把 PDF 解析文本中的 `O⁡(n)O(n)` 清理为 `O(n)`，未通过逐字摘录校验。
+- 工作流把已知证据错误映射为稳定的公开失败分类，不向 Web 复制模型原始输出。预算缺失为 `invalid_request`，模型未完成为 `upstream_error`，无效 JSON、意外内容和摘录不匹配为 `parse_failed`；摘录不匹配显示为“未与所选来源段落逐字一致”。
+- 提示词随后明确要求保留空白、Unicode、标点、拼写、OCR 瑕疵和重复数学文本。再次使用同一 Session 和同两条查询复验时，两次模型调用仍都完整停止并通过 JSON 校验，但严格证据校验均拒绝结果：Transformer 仍把 `O⁡(n)O(n)` 清理为 `O(n)`；BERT 摘录来自正文，但模型把摘录关联到了错误的数组位置。
+- 为避免模型自行从长数组计数，输入给模型的每个段落现携带显式 `segmentIndex`，并要求直接复制该值。该变更不放宽逐字证据标准。是否对 PDF/OCR 变体进行受控归一化、自动修复段落关联或增加一次纠错重试，会改变证据整理策略或调用成本，需单独确认后实施。
+- 显式索引进入模型请求后再次复验，两篇全文仍均可获取，但两次模型输出都恰好达到 16384 tokens 并以 `max-tokens` 结束，页面正确显示两条 `extract_evidence/upstream_error`。因此该轮没有产生可供逐字匹配的完整 JSON，尚不能用真实结果证明显式索引已经消除 BERT 的错误段落关联。继续提高输出上限会增加模型调用量和等待时间，需单独确认。

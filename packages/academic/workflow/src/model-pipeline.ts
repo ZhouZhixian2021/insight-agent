@@ -3,7 +3,9 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import { createModelEvidenceGenerator } from './model.ts'
+import { createModelSynthesisGenerator } from './synthesis-model.ts'
 import { runResearchDraft } from './pipeline.ts'
+import type { EvidenceModelPolicy } from './model-types.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
 
 /**
@@ -12,6 +14,7 @@ import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } f
  * @param ctx Context providing model, token and Session persistence services.
  * @param session Live Session with an active persistence writer.
  * @param config Explicit model configuration for every paper in this pass.
+ * @param policy Bounded model recovery policy.
  * @param input Approved Brief, query and synthetic-data disclosure.
  * @param adapters External search, scope selection, acquisition and clock dependencies.
  * @param signal Caller-owned cancellation and elapsed-time budget.
@@ -22,11 +25,13 @@ export function runModelResearchDraft(
   ctx: Context,
   session: Session,
   config: LlmCallConfig,
+  policy: EvidenceModelPolicy,
   input: DraftPipelineInput,
-  adapters: Omit<DraftPipelineAdapters, 'generator'>,
+  adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'>,
   signal?: AbortSignal,
 ): Promise<DraftPipelineResult> {
   return runResearchDraft(input, {
-    ...adapters, generator: createModelEvidenceGenerator(ctx, session, config),
+    ...adapters, generator: createModelEvidenceGenerator(ctx, session, config, policy),
+    synthesize: createModelSynthesisGenerator(ctx, session, config, policy),
   }, signal)
 }

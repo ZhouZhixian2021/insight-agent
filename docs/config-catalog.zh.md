@@ -63,6 +63,10 @@ export interface Config {
 export interface Config {
   /** arXiv export API base; `/api/query` is appended. Defaults to `https://export.arxiv.org`. */
   baseURL?: string
+  /** Total transport attempts after connection failures. Defaults to `1`. */
+  maxAttempts?: number
+  /** Delay before a repeated transport attempt, in milliseconds. Defaults to `0`. */
+  retryDelayMs?: number
 }
 ```
 
@@ -103,6 +107,10 @@ export interface Config {
   readonly publicationYears?: string
   /** Per-request timeout in milliseconds. Defaults to `20000`. */
   readonly timeoutMs?: number
+  /** Total attempts for network failures or per-attempt timeouts. Defaults to `1`. */
+  readonly maxAttempts?: number
+  /** Delay before a repeated transport attempt, in milliseconds. Defaults to `0`. */
+  readonly retryDelayMs?: number
   /** Maximum records requested per query; semantic mode caps this at `50` and keyword mode at `100`. Defaults to `50`. */
   readonly maxResults?: number
   /** Capacity of the instance-local full-text candidate map; must be at least `maxResults`. Defaults to `1000`. */
@@ -303,6 +311,26 @@ export interface Config {
 依赖：[`ToolPresentationMode`](subsystems/tools.zh.md)
 
 来源：[`packages/core/agent-tool-presentation/src/index.ts:38`](../packages/core/agent-tool-presentation/src/index.ts)
+
+<a id="deepseek-aidsh-api-academic-research-controller"></a>
+
+## `@deepseek-ai/dsh-api-academic-research-controller`
+
+需要：`academicSource` · `sessionController` · `typert` · `web`
+
+```ts config-catalog
+/** Academic research deployment policy. */
+export interface Config {
+  /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
+  readonly fulltextFetchProvider?: string
+  /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
+  readonly extractionMaxTokens?: number
+  /** Total model attempts per paper. Only output-limit exhaustion is retried. Defaults to 2. */
+  readonly extractionMaxAttempts?: number
+}
+```
+
+来源：[`packages/api/academic-research-controller/src/index.ts:32`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 
@@ -3447,7 +3475,6 @@ export interface Config {
 
 - `@deepseek-ai/dsh-acp-app` — 需要 `cmdlineArgs`（[`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts)）
 - `@deepseek-ai/dsh-agent`（[`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts)）
-- `@deepseek-ai/dsh-api-academic-research-controller` — 需要 `academicSource` · `sessionController` · `typert` · `web`（[`packages/api/academic-research-controller/src/index.ts`](../packages/api/academic-research-controller/src/index.ts)）
 - `@deepseek-ai/dsh-api-remotes` — 需要 `typertGateway`（[`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts)）
 - `@deepseek-ai/dsh-api-workspace-controller` — 需要 `typert` · `workspaceRegistry`（[`packages/api/workspace-controller/src/index.ts`](../packages/api/workspace-controller/src/index.ts)）
 - `@deepseek-ai/dsh-authorization` — 需要 `credentials`（[`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts)）

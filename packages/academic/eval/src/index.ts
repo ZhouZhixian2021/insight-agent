@@ -9,6 +9,8 @@ export interface EvaluationInput {
   readonly brief: ResearchBrief
   readonly claims: readonly ClaimRecord[]
   readonly links: readonly ClaimEvidenceLink[]
+  /** Validated single-paper statements; each retains all support, opposition and background links. */
+  readonly sourceStatements?: readonly { readonly evidenceLinks: readonly Pick<ClaimEvidenceLink, 'evidenceId' | 'relation'>[] }[]
   readonly evidence: readonly EvidenceRecord[]
   readonly versions: readonly WorkVersion[]
   readonly sourceLocators: readonly SourceLocator[]
@@ -53,7 +55,8 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     blocked = true
     add(null, 'brief_not_approved', 'The current brief version is not approved.')
   }
-  if (input.claims.length === 0) { blocked = true; add(null, 'no_claims', 'No cross-paper conclusions are available.') }
+  const sourceStatements = input.sourceStatements ?? []
+  if (input.claims.length === 0 && sourceStatements.length === 0) { blocked = true; add(null, 'no_claims', 'No cross-paper conclusions are available.') }
   const claimed = new Set(input.claims.map(claim => claim.claimId))
   if (input.links.some(link => !claimed.has(link.claimId))) {
     blocked = true
@@ -61,6 +64,43 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
   }
   const citedWorks = new Set<string>()
   const fulltextWorks = new Set<string>()
+  function checkEvidence(links: readonly Pick<ClaimEvidenceLink, 'evidenceId' | 'relation'>[], claimId: ClaimId | null): void {
+    for (const link of links) {
+      const record = evidence.get(link.evidenceId)
+      if (!record) { add(claimId, 'missing_evidence', `Evidence ${link.evidenceId} is missing.`); continue }
+      const version = versions.get(record.workVersionId)
+      const locator = locators.get(record.sourceLocatorId)
+      if (!locator || locator.workVersionId !== record.workVersionId) add(claimId, 'invalid_locator', 'Evidence locator is missing or refers to another version.')
+      if (locator) {
+        const level = locator.kind === 'provider_record' ? 'metadata' : locator.kind === 'abstract' ? 'abstract' : 'fulltext'
+        if (record.level !== level) add(claimId, 'invalid_locator_level', 'Evidence level and locator kind disagree.')
+        if (locator.contentHash !== null && record.contentHash.status === 'available' && locator.contentHash !== record.contentHash.value) {
+          add(claimId, 'locator_hash_mismatch', 'Evidence and locator hashes disagree.')
+        }
+      }
+      if (!version || version.academicWorkId !== record.academicWorkId || version.status === 'retracted'
+        || version.versionType === 'retracted') add(claimId, 'invalid_version', 'Evidence version is missing, mismatched or retracted.')
+      if (version?.contentHash.status === 'available' && record.contentHash.status === 'available'
+        && version.contentHash.value !== record.contentHash.value) add(claimId, 'version_hash_mismatch', 'Version and evidence hashes disagree.')
+      if (!input.brief.evidenceRequirements.allowPreprints && version?.versionType === 'preprint') add(claimId, 'preprint_disallowed', 'The brief excludes preprints.')
+      if (record.level === 'metadata') add(claimId, 'metadata_only', 'Metadata does not support substantive conclusions.')
+      if (input.brief.evidenceRequirements.minimumEvidenceLevel === 'fulltext' && record.level !== 'fulltext') add(claimId, 'fulltext_required', 'The brief requires full-text evidence.')
+      if (record.verbatimExcerpt.status !== 'available') add(claimId, 'excerpt_unavailable', 'Semantic review requires the original excerpt.')
+      if (link.relation === 'supports') {
+        citedWorks.add(record.academicWorkId)
+        if (record.level === 'fulltext') fulltextWorks.add(record.academicWorkId)
+      }
+    }
+  }
+  for (const statement of sourceStatements) {
+    const before = issues.length
+    if (!statement.evidenceLinks.some(link => link.relation === 'supports')) {
+      add(null, 'no_source_support', 'A source statement requires supporting evidence.')
+    }
+    checkEvidence(statement.evidenceLinks, null)
+    if (issues.length > before) blocked = true
+  }
+  if (sourceStatements.length > 0) add(null, 'source_statement_review_required', 'Attributed source statements still require independent semantic review.')
   for (const claim of input.claims) {
     const before = issues.length
     const claimLinks = input.links.filter(link => link.claimId === claim.claimId)
@@ -74,32 +114,7 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     if (freshness.status !== 'current') add(claim.claimId, freshness.status, freshness.reasons.join(' '))
     const supporting = claimLinks.filter(link => link.relation === 'supports')
     if (supporting.length === 0) add(claim.claimId, 'no_support', 'Background or opposing evidence alone does not support a claim.')
-    for (const link of claimLinks) {
-      const record = evidence.get(link.evidenceId)
-      if (!record) { add(claim.claimId, 'missing_evidence', `Evidence ${link.evidenceId} is missing.`); continue }
-      const version = versions.get(record.workVersionId)
-      const locator = locators.get(record.sourceLocatorId)
-      if (!locator || locator.workVersionId !== record.workVersionId) add(claim.claimId, 'invalid_locator', 'Evidence locator is missing or refers to another version.')
-      if (locator) {
-        const level = locator.kind === 'provider_record' ? 'metadata' : locator.kind === 'abstract' ? 'abstract' : 'fulltext'
-        if (record.level !== level) add(claim.claimId, 'invalid_locator_level', 'Evidence level and locator kind disagree.')
-        if (locator.contentHash !== null && record.contentHash.status === 'available' && locator.contentHash !== record.contentHash.value) {
-          add(claim.claimId, 'locator_hash_mismatch', 'Evidence and locator hashes disagree.')
-        }
-      }
-      if (!version || version.academicWorkId !== record.academicWorkId || version.status === 'retracted'
-        || version.versionType === 'retracted') add(claim.claimId, 'invalid_version', 'Evidence version is missing, mismatched or retracted.')
-      if (version?.contentHash.status === 'available' && record.contentHash.status === 'available'
-        && version.contentHash.value !== record.contentHash.value) add(claim.claimId, 'version_hash_mismatch', 'Version and evidence hashes disagree.')
-      if (!input.brief.evidenceRequirements.allowPreprints && version?.versionType === 'preprint') add(claim.claimId, 'preprint_disallowed', 'The brief excludes preprints.')
-      if (record.level === 'metadata') add(claim.claimId, 'metadata_only', 'Metadata does not support substantive conclusions.')
-      if (input.brief.evidenceRequirements.minimumEvidenceLevel === 'fulltext' && record.level !== 'fulltext') add(claim.claimId, 'fulltext_required', 'The brief requires full-text evidence.')
-      if (record.verbatimExcerpt.status !== 'available') add(claim.claimId, 'excerpt_unavailable', 'Semantic review requires the original excerpt.')
-      if (link.relation === 'supports') {
-        citedWorks.add(record.academicWorkId)
-        if (record.level === 'fulltext') fulltextWorks.add(record.academicWorkId)
-      }
-    }
+    checkEvidence(claimLinks, claim.claimId)
     const integrityFailed = issues.length > before
     if (integrityFailed) blocked = true
     const reviews = input.reviews.filter(review => review.claimId === claim.claimId)
@@ -131,5 +146,5 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     add(null, 'insufficient_coverage', 'Cited work or full-text counts do not meet the approved brief.')
     blocked = true
   }
-  return { status: blocked ? 'blocked' : assessments.every(a => a.status === 'supported') ? 'ready' : 'needs_review', assessments, issues }
+  return { status: blocked ? 'blocked' : sourceStatements.length === 0 && assessments.every(a => a.status === 'supported') ? 'ready' : 'needs_review', assessments, issues }
 }

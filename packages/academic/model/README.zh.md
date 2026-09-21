@@ -24,6 +24,8 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
+可执行 Academic 工作流将 `ResearchBrief.includedWorkTypes` 解释为版本状态（`preprint`、`accepted_manuscript`、`version_of_record`），不表示会议／期刊发表类别。`AcademicWork.venue` 是来源提供的名称，不能据此确定发表类别；当前模型不表达严格的发表类别筛选。
+
 学术业务包应导入这些类型，而不是各自声明提供方专用的替代类型。提供方包和工作流包在各自的包边界把记录转换为本模型。
 
 -----

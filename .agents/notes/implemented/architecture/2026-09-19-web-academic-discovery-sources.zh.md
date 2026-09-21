@@ -12,7 +12,7 @@ Web Academic 组合原先注册 arXiv 与三个会议目录 Provider；来源运
 
 正式 Web 组合挂载 OpenAlex Provider，并把 `searchProviders` 配置为 `openalex` 与 `arxiv`，每个 Provider 的搜索时限为 25000 ms。面向 `search()` 调用方的单来源 `searchProvider` 继续使用 `arxiv`。
 
-ACL Anthology、CVF 与 PMLR 继续挂载，因为它们登记的记录能够解析已知全文地址；它们不属于 Web 发现列表。OpenAlex 不设置发表年份过滤：其聚合发表日期不能确立 `first_public_release`，严格日期资格仍需权威来源。来源运行时继续把原查询不加修改地各发送一次，不做规划或重试。
+ACL Anthology、CVF 与 PMLR 继续挂载，因为它们登记的记录能够解析已知全文地址；它们不属于 Web 发现列表。OpenAlex 不设置发表年份过滤：其聚合发表日期不能确立 `first_public_release`，严格日期资格仍需权威来源。每个 Provider 都接收未修改的原查询且不做规划；[有界传输重试决策](../bug-fix/2026-09-20-academic-source-transient-transport-retries.zh.md)允许 arXiv 与 OpenAlex 仅重复临时传输尝试。
 
 Web 组合把内置 `web-fetch-http` Provider 配置为 120000 ms 超时、5000000 字节响应上限和 1000000 字符解码正文上限。Academic 证据准备会拒绝截断的 HTML 与不完整 PDF，而两篇固定验收论文都超过该 Provider 原先的 100000 字符默认值。面向模型的 Web 工具继续保留自身更短的调用预算。
 

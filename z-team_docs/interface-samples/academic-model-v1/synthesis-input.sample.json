@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "brief": {
+    "schemaVersion": 1,
+    "researchBriefId": "brief-synthesis-fixture-001",
+    "version": 1,
+    "topic": "Transformer 与 BERT 机制分析（合成接口夹具）",
+    "aliases": [
+      "Transformer",
+      "BERT"
+    ],
+    "questions": [
+      "自注意力相对循环网络如何缩短远距离信息传递路径？",
+      "双向预训练如何形成上下文表示？"
+    ],
+    "publicationWindow": {
+      "start": {
+        "iso": "2017",
+        "precision": "year"
+      },
+      "end": {
+        "iso": "2020",
+        "precision": "year"
+      },
+      "dateBasis": "first_public_release"
+    },
+    "includedWorkTypes": [
+      "preprint",
+      "version_of_record"
+    ],
+    "inclusionRules": [
+      "材料讨论上述两个研究问题。"
+    ],
+    "exclusionRules": [
+      "排除未提供可核验材料的推断。"
+    ],
+    "evidenceRequirements": {
+      "minimumIncludedWorks": 2,
+      "minimumFulltextWorks": 2,
+      "minimumEvidenceLevel": "fulltext",
+      "requireLocatableEvidence": true,
+      "allowPreprints": true,
+      "insufficientEvidencePolicy": "continue_with_warning"
+    },
+    "targetAudience": "研究人员",
+    "reportRequirements": {
+      "language": "zh-CN",
+      "targetLength": {
+        "unit": "characters",
+        "minimum": null,
+        "maximum": null
+      },
+      "requiredSections": [
+        "executive_summary",
+        "scope_and_method",
+        "technology_overview",
+        "cross_paper_analysis",
+        "key_findings",
+        "limitations",
+        "research_gaps",
+        "references",
+        "evidence_appendix"
+      ],
+      "citationStyle": "numeric",
+      "includeEvidenceAppendix": true,
+      "includeMethodology": true,
+      "includeLimitations": true,
+      "includeResearchGaps": true
+    },
+    "stopConditions": {
+      "maximumSearchRounds": 2,
+      "maximumCandidateWorks": 5,
+      "maximumIncludedWorks": 2,
+      "maximumElapsedMinutes": null,
+      "saturationRounds": 1,
+      "stopWhenEvidenceRequirementsMet": true
+    },
+    "assumptions": [
+      "本文件全部材料为人工编写的合成夹具，不是 Transformer 或 BERT 原文，不证明真实研究内容验收通过。",
+      "该夹具不验收正文篇幅；真实课题仍遵守批准的 2000—8000 字要求。"
+    ],
+    "approval": {
+      "status": "approved",
+      "reviewedBy": "synthetic-fixture-reviewer",
+      "reviewedAt": "2026-09-20T00:00:00Z",
+      "approvedBriefVersion": 1,
+      "comment": "仅批准合成接口测试"
+    }
+  },
+  "retrievalRunId": "run-synthesis-fixture-001",
+  "analysisInput": {
+    "academicWorks": [
+      {
+        "schemaVersion": 1,
+        "academicWorkId": "sample-work-1",
+        "title": "合成论文 A：自注意力路径示意",
+        "authors": [
+          "合成作者"
+        ],
+        "externalIdentifiers": [],
+        "workVersionIds": [
+          "sample-version-1"
+        ],
+        "canonicalVersionId": "sample-version-1",
+        "firstPublicDate": {
+          "status": "available",
+          "value": {
+            "iso": "2017",
+            "precision": "year"
+          }
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "preprint"
+        },
+        "venue": {
+          "status": "unknown",
+          "reason": "合成夹具未提供"
+        }
+      },
+      {
+        "schemaVersion": 1,
+        "academicWorkId": "sample-work-2",
+        "title": "合成论文 B：双向预训练示意",
+        "authors": [
+          "合成作者"
+        ],
+        "externalIdentifiers": [],
+        "workVersionIds": [
+          "sample-version-2"
+        ],
+        "canonicalVersionId": "sample-version-2",
+        "firstPublicDate": {
+          "status": "available",
+          "value": {
+            "iso": "2018",
+            "precision": "year"
+          }
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "preprint"
+        },
+        "venue": {
+          "status": "unknown",
+          "reason": "合成夹具未提供"
+        }
+      }
+    ],
+    "workVersions": [
+      {
+        "schemaVersion": 1,
+        "workVersionId": "sample-version-1",
+        "academicWorkId": "sample-work-1",
+        "versionType": "preprint",
+        "versionLabel": {
+          "status": "available",
+          "value": "fixture-v1"
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2017",
+            "precision": "year"
+          }
+        },
+        "externalIdentifiers": [],
+        "sourceRecords": [
+          {
+            "provider": "synthetic-fixture",
+            "recordId": "sample-work-1"
+          }
+        ],
+        "contentHash": {
+          "status": "available",
+          "value": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      {
+        "schemaVersion": 1,
+        "workVersionId": "sample-version-2",
+        "academicWorkId": "sample-work-2",
+        "versionType": "preprint",
+        "versionLabel": {
+          "status": "available",
+          "value": "fixture-v1"
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2018",
+            "precision": "year"
+          }
+        },
+        "externalIdentifiers": [],
+        "sourceRecords": [
+          {
+            "provider": "synthetic-fixture",
+            "recordId": "sample-work-2"
+          }
+        ],
+        "contentHash": {
+          "status": "available",
+          "value": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      }
+    ],
+    "evidenceRecords": [
+      {
+        "schemaVersion": 1,
+        "evidenceId": "sample-evidence-1",
+        "academicWorkId": "sample-work-1",
+        "workVersionId": "sample-version-1",
+        "level": "fulltext",
+        "verbatimExcerpt": {
+          "status": "available",
+          "value": "【合成材料，非论文原文】样例机制 A 让每个位置直接访问其他位置；样例循环机制需要经过中间位置逐步传递信息。"
+        },
+        "sourcedStatement": "样例 A 直接连接位置，循环样例经过中间位置。",
+        "sourceLocatorId": "sample-locator-1",
+        "sourceProvider": "synthetic-fixture",
+        "sourceUrl": "https://example.invalid/academic/synthetic/1",
+        "retrievedAt": "2026-09-20T00:01:00Z",
+        "contentHash": {
+          "status": "available",
+          "value": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "extractionMethod": {
+          "method": "synthetic-fixture",
+          "methodVersion": "1"
+        },
+        "qualityNotes": [
+          "摘录与哈希均为合成夹具值，不是从真实论文提取。"
+        ]
+      },
+      {
+        "schemaVersion": 1,
+        "evidenceId": "sample-evidence-2",
+        "academicWorkId": "sample-work-2",
+        "workVersionId": "sample-version-2",
+        "level": "fulltext",
+        "verbatimExcerpt": {
+          "status": "available",
+          "value": "【合成材料，非论文原文】样例机制 B 在预测被隐藏的词时同时使用其左右两侧的上下文。"
+        },
+        "sourcedStatement": "样例 B 用被隐藏词左右两侧上下文进行预测。",
+        "sourceLocatorId": "sample-locator-2",
+        "sourceProvider": "synthetic-fixture",
+        "sourceUrl": "https://example.invalid/academic/synthetic/2",
+        "retrievedAt": "2026-09-20T00:01:00Z",
+        "contentHash": {
+          "status": "available",
+          "value": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "extractionMethod": {
+          "method": "synthetic-fixture",
+          "methodVersion": "1"
+        },
+        "qualityNotes": [
+          "摘录与哈希均为合成夹具值，不是从真实论文提取。"
+        ]
+      }
+    ],
+    "evidenceCards": [
+      {
+        "schemaVersion": 1,
+        "evidenceCardId": "sample-card-1",
+        "academicWorkId": "sample-work-1",
+        "workVersionId": "sample-version-1",
+        "researchQuestions": [],
+        "methods": [
+          {
+            "evidenceCardItemId": "sample-card-item-1",
+            "statement": "样例 A 直接连接位置，循环样例经过中间位置。",
+            "evidenceIds": [
+              "sample-evidence-1"
+            ],
+            "methodName": {
+              "status": "available",
+              "value": "位置直接连接样例"
+            },
+            "methodRole": {
+              "status": "available",
+              "value": "proposed"
+            }
+          }
+        ],
+        "datasets": [],
+        "metrics": [],
+        "findings": [],
+        "limitations": []
+      },
+      {
+        "schemaVersion": 1,
+        "evidenceCardId": "sample-card-2",
+        "academicWorkId": "sample-work-2",
+        "workVersionId": "sample-version-2",
+        "researchQuestions": [],
+        "methods": [
+          {
+            "evidenceCardItemId": "sample-card-item-2",
+            "statement": "样例 B 用被隐藏词左右两侧上下文进行预测。",
+            "evidenceIds": [
+              "sample-evidence-2"
+            ],
+            "methodName": {
+              "status": "available",
+              "value": "双向上下文预测样例"
+            },
+            "methodRole": {
+              "status": "available",
+              "value": "proposed"
+            }
+          }
+        ],
+        "datasets": [],
+        "metrics": [],
+        "findings": [],
+        "limitations": []
+      }
+    ],
+    "sourceLocators": [
+      {
+        "schemaVersion": 1,
+        "sourceLocatorId": "sample-locator-1",
+        "workVersionId": "sample-version-1",
+        "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "kind": "paragraph",
+        "sectionTitle": "合成方法说明",
+        "paragraphNumber": 1
+      },
+      {
+        "schemaVersion": 1,
+        "sourceLocatorId": "sample-locator-2",
+        "workVersionId": "sample-version-2",
+        "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "kind": "paragraph",
+        "sectionTitle": "合成方法说明",
+        "paragraphNumber": 1
+      }
+    ]
+  },
+  "coverageSummary": {
+    "schemaVersion": 1,
+    "discoveredRecords": 2,
+    "deduplicatedWorks": 2,
+    "includedWorks": 2,
+    "availableFulltextWorks": 2,
+    "abstractOnlyWorks": 0,
+    "metadataOnlyWorks": 0,
+    "failedOperations": 0,
+    "truncated": true,
+    "limitations": [
+      "仅有两个合成样例；不能据此推断实际学术领域的趋势或研究空白。"
+    ],
+    "providerBreakdown": null
+  },
+  "sourceFailures": []
+}

@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-plan-validation
+profile: sdk
+composition: sdk-academic-plan-validation
+recording: authored
+header:
+  class: academic-plan-validation
+  pin: true

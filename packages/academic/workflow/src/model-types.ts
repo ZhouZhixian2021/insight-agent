@@ -27,6 +27,12 @@ export type PaperEvidenceGenerator = (
   scope: PaperScopeRules,
 ) => Promise<PaperModelResponse>
 
+/** Bounded recovery policy for one paper's model extraction. */
+export interface EvidenceModelPolicy {
+  /** Total dispatch attempts. Only output-limit exhaustion is retried. */
+  readonly maxAttempts: number
+}
+
 /** Program-owned identity of the exact parsed content submitted for extraction. */
 export type EvidenceModelSource = Pick<EvidenceExtractionInput,
   'academicWorkId' | 'workVersionId' | 'contentHash' | 'sourceProvider' | 'sourceUrl' | 'retrievedAt' | 'extractionMethod'>
@@ -39,6 +45,8 @@ export interface EvidenceModelRequest {
   readonly estimatedInputTokens: number
   readonly contextWindow: number
   readonly outputTokens: number
+  readonly attempt: number
+  readonly maxAttempts: number
   readonly decision: 'dispatch' | 'skip_input_limit'
 }
 
@@ -47,6 +55,8 @@ export interface EvidenceModelResult {
   readonly source: EvidenceModelSource
   /** Null when preparation failed before an exact request could be recorded. */
   readonly requestSeq: SessionSeq | null
+  readonly attempt: number
+  readonly maxAttempts: number
   readonly status: 'validated' | 'failed' | 'cancelled' | 'skipped'
   /** Lossless compact chunks, including rejected tool calls and interrupted output. */
   readonly stream: readonly AssistantStreamRecord[]

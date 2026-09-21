@@ -82,6 +82,14 @@ interface WebFetchRequest {
 }
 ```
 
+```ts type-equiv
+/** Call-scoped fetch provider selection without changing the deployment default. */
+interface WebFetchExecutionOptions {
+  /** Provider id for this fetch only; omitted uses the configured fetch selection. */
+  readonly providerId?: string
+}
+```
+
 HTTP 状态码是被抓取资源状态的一部分，不自动视为失败：即使一次成功的网络抓取收到 `404` 或 `500` 响应，也仍会产出一个 `WebFetchResult`，其中包含状态码和长度受限的已解码正文。`url` 是经过允许的重定向后的最终 URL。`WebError` 仅用于无法安全获取或表示资源的情况。
 
 ```ts type-equiv
@@ -123,7 +131,7 @@ type WebFetchBody =
 
 提供方的 `available(): boolean` 是一个廉价的本地检查（凭证是否存在、配置是否可解析），**禁止发起网络调用**。它是执行时选择提供方的输入，而不是健康检查系统：`search()`／`fetch()` 会读取它来选择可用的提供方。选择失败时，调用方会收到可据以分支处理的结构化 `WebError`；其错误代码和消息会说明缺失的 id 或存在歧义的候选集。
 
-选择从不依赖注册顺序、配置顺序或 HMR（热模块替换）顺序：一项能力要么有显式的提供方 id（配置 `searchProvider`／`fetchProvider`，或填充同一字段的对应环境变量），要么在恰好只有一个可用提供方注册时自动选择；如果存在多个可用提供方却未配置 id，则抛出 `WEB_PROVIDER_AMBIGUOUS`，而不会选用最先注册的提供方。
+选择从不依赖注册顺序、配置顺序或 HMR（热模块替换）顺序：抓取调用可以提供单次调用范围的 Provider id；否则一项能力要么有显式的部署 Provider id（配置 `searchProvider`／`fetchProvider`，或填充同一字段的对应环境变量），要么在恰好只有一个可用 Provider 注册时自动选择。单次调用选择不会修改部署默认值；如果存在多个可用 Provider 却没有适用的 id，则抛出 `WEB_PROVIDER_AMBIGUOUS`，而不会选用最先注册的 Provider。
 
 ## 抓取网络策略
 
@@ -198,9 +206,10 @@ async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearch
  * capability cannot run. A non-2xx response is a result, not a throw.
  * @param request - the URL plus retrieval options.
  * @param signal - optional cancellation signal forwarded to the provider.
+ * @param options - optional call-scoped provider selection.
  * @returns the retrieval outcome; non-2xx responses resolve descriptively.
  */
-async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult>
+async fetch( request: WebFetchRequest, signal?: AbortSignal, options: WebFetchExecutionOptions = {}, ): Promise<WebFetchResult>
 ```
 
 Source: [`packages/web/web/src/index.ts`](../../packages/web/web/src/index.ts)
