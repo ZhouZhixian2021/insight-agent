@@ -13,7 +13,7 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 }))
 
 import AcademicResearchController from '../src/index.ts'
-import { researchBriefFromApprovedPlan } from '../src/research-brief-plan.ts'
+import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
 
 const contexts: Context[] = []
 afterEach(async () => {
@@ -64,11 +64,9 @@ function nativePlanEvents(plan: string, options: { isError?: boolean; time?: num
   ] as never
 }
 
-function approvedBriefEvents() {
-  return nativePlanEvents(briefPlan())
-}
-
 async function harness(options: {
+  searches?: readonly string[]
+  legacyPlan?: boolean
   busy?: boolean
   header?: boolean
   approvedPlan?: boolean
@@ -111,7 +109,10 @@ async function harness(options: {
       id: sessionId,
       snapshotEvents: () => {
         if (options.eventsError === true) throw 'invalid event source'
-        return options.approvedPlan === false ? [] : approvedBriefEvents()
+        return options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(),
+          ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
+            purpose: '查找相关研究', questions: briefPayload().questions })) },
+        }))
       },
       requestHeader: () => options.header === false ? undefined : { config: selected },
     },
@@ -129,6 +130,58 @@ async function harness(options: {
 }
 
 describe('AcademicResearchController', () => {
+  it('reports unavailable sessions and unreadable history during preview without running research', async () => {
+    const missing = await harness({ resolveError: true })
+    await expect(missing.controller.plan(missing.sessionId)).rejects.toThrow('missing Session')
+    const invalid = await harness({ eventsError: true })
+    await expect(invalid.controller.plan(invalid.sessionId)).rejects.toThrow('无法读取研究计划')
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [null, '至少一条查询'],
+    [[], '至少一条查询'],
+    [[{ query: 'x', purpose: '检索', questions: ['不在计划中的问题'] }], '计划之外'],
+    [[{ query: ' ', purpose: '检索', questions: ['Which method works?'] }], 'query must be a non-empty string'],
+    [[{ query: 'x', purpose: '', questions: ['Which method works?'] }], 'purpose must be a non-empty string'],
+    [[{ query: 'x', purpose: '检索', questions: [] }], 'questions must contain'],
+    [[{ query: 'x', purpose: '检索', questions: ['Which method works?'], extra: true }], 'unknown: extra'],
+  ])('rejects malformed saved searches before retrieval: %j', (searchPlan, message) => {
+    expect(() => researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan({ ...briefPayload(), searchPlan })))).toThrow(message)
+  })
+
+  it('requires every research question to be covered within the approved round bound', () => {
+    const searchPlan = [{ query: 'first', purpose: '比较方法', questions: ['Which method works?'] }]
+    expect(() => researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan({ ...briefPayload(), searchPlan,
+      questions: ['Which method works?', 'What are the limitations?'] })))).toThrow('未覆盖全部研究问题')
+    expect(() => researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan({ ...briefPayload(),
+      stopConditions: { ...briefPayload().stopConditions, maximumSearchRounds: 1 },
+      searchPlan: [...searchPlan, { ...searchPlan[0], query: 'second' }] })))).toThrow('1 条查询上限')
+  })
+
+  it('previews the approved plan without retrieval and refuses a different approval identity', async () => {
+    const fixture = await harness()
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    expect(preview).toMatchObject({ topic: 'Retrieval', questions: ['Which method works?'],
+      searches: [{ query: 'retrieval', purpose: '查找相关研究', questions: ['Which method works?'] }] })
+    expect(fixture.search).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: createResearchBriefId(),
+      synthetic: false }, fixture.signal))
+      .rejects.toThrow('研究计划已更新')
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('requires legacy plans to be completed and approved instead of inventing search expressions', async () => {
+    const fixture = await harness({ legacyPlan: true })
+    await expect(fixture.controller.plan(fixture.sessionId)).rejects.toThrow('缺少检索方案')
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: createResearchBriefId(),
+      synthetic: false }, fixture.signal))
+      .rejects.toThrow('缺少检索方案')
+    expect(fixture.search).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
   it.each(['partially_extracted', 'extraction_failed'] as const)('projects %s without presenting complete extraction success', async (status) => {
     const fixture = await harness()
     const workVersionId = createWorkVersionId()
@@ -138,7 +191,8 @@ describe('AcademicResearchController', () => {
       retrievalRun: { ...observedRun, coverageSummary: { ...observedRun.coverageSummary, availableFulltextWorks: 1 } },
       papers: [{ status, version: { workVersionId }, evidence: { evidenceRecords: status === 'partially_extracted' ? [{}, {}] : [], rejectedDrafts } }],
       failures: status === 'extraction_failed' ? [{ workVersionId, stage: 'extraction' }] : [], analysis: null, report: null } as never)
-    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'retrieval', synthetic: false }, fixture.signal)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)
     expect(result.stages).toMatchObject({ fulltext: 'success', extraction: status === 'partially_extracted' ? 'partial_success' : 'failed' })
     expect(result.papers).toEqual([{ status, workVersionId, evidenceCount: status === 'partially_extracted' ? 2 : 0, rejectedDrafts }])
   })
@@ -152,7 +206,7 @@ describe('AcademicResearchController', () => {
         { status: 'excluded', exclusion: { workVersionId: resultWorkVersionId, reason: 'survey' } },
         { status: 'paused', pause: { workVersionId: resultWorkVersionId, reason: 'too long' } },
       ], failures: [], analysis: null, report: null } as never)
-    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'retrieval', maxResults: 2,
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, maxResults: 2,
       synthetic: false }, new AbortController().signal)
     expect(result.papers).toEqual([
       { status: 'extracted', workVersionId: resultWorkVersionId, evidenceCount: 2, rejectedDrafts: [] },
@@ -206,7 +260,7 @@ describe('AcademicResearchController', () => {
     runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'cancelled', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun('cancelled'),
       papers: [], failures: [], analysis: null, report: null } as never)
-    await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: true },
+    await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: true },
       new AbortController().signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
   })
@@ -224,18 +278,19 @@ describe('AcademicResearchController', () => {
         { workVersionId: second, stage: 'extraction' },
       ], analysis: null, report: null } as never)
 
-    const result = await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)
     expect(result.stages).toEqual({ search: 'success', fulltext: 'success', extraction: 'failed' })
     expect(result.retrievalRun.status).toBe('failed')
   })
 
-  it('parses newline-separated queries, trims them, and removes exact repeats', async () => {
-    const fixture = await harness()
+  it('executes only saved plan queries, trims them, and removes exact repeats', async () => {
+    const fixture = await harness({ searches: ['  Transformer long-range dependencies  ', 'BERT bidirectional pre-training', 'Transformer long-range dependencies'] })
     runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun(), papers: [], failures: [], analysis: null, report: null } as never)
 
     await fixture.controller.run({ sessionId: fixture.sessionId,
-      query: '  Transformer long-range dependencies  \nBERT bidirectional pre-training\nTransformer long-range dependencies',
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
       maxResults: 5, synthetic: false }, fixture.signal)
 
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].input.searches).toEqual([
@@ -245,33 +300,37 @@ describe('AcademicResearchController', () => {
   })
 
   it('rejects more queries than the hard and approved bound before starting maintenance', async () => {
-    const fixture = await harness()
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'one\ntwo\nthree\nfour', synthetic: false }, fixture.signal))
-      .rejects.toMatchObject({ code: 'gateway/bad-request', message: 'Academic search query count exceeds the approved bound of 3.' })
+    const fixture = await harness({ searches: ['one', 'two', 'three', 'four'] })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal))
+      .rejects.toMatchObject({ code: 'gateway/bad-request', message: '检索方案超过已批准的 3 条查询上限，请缩小方案后重新审核。' })
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('reports a busy Session before starting workflow work', async () => {
     const fixture = await harness({ busy: true })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
-      new AbortController().signal)).rejects.toMatchObject({ code: 'session/agent-busy' })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false },
+    new AbortController().signal)).rejects.toMatchObject({ code: 'session/agent-busy' })
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('refuses to run without a successfully approved structured Brief plan', async () => {
     const fixture = await harness({ approvedPlan: false })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
-      new AbortController().signal)).rejects.toMatchObject({
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false },
+    new AbortController().signal)).rejects.toMatchObject({
       code: 'gateway/bad-request',
-      message: 'the Session has no approved Academic Research Brief plan',
+      message: '请先在当前会话完成研究计划审核。',
     })
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('refuses to run when the Session has no model selection', async () => {
     const fixture = await harness({ model: false })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
-      new AbortController().signal)).rejects.toMatchObject({
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false },
+    new AbortController().signal)).rejects.toMatchObject({
       code: 'gateway/bad-request',
       message: 'the Session has no selected model',
     })
@@ -279,8 +338,9 @@ describe('AcademicResearchController', () => {
 
   it('also rejects a partially selected model', async () => {
     const fixture = await harness({ missingModel: true })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false },
-      new AbortController().signal)).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false },
+    new AbortController().signal)).rejects.toMatchObject({ code: 'gateway/bad-request' })
   })
 
   it('preserves reasoning effort and supplies the configured extraction cap when Session max tokens are absent', async () => {
@@ -288,7 +348,8 @@ describe('AcademicResearchController', () => {
     runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
       retrievalRun: retrievalRun(),
       papers: [], failures: [], analysis: null, report: null } as never)
-    await fixture.controller.run({ sessionId: fixture.sessionId, query: 'x', synthetic: false }, fixture.signal)
+    await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({
       provider: 'fixture', model: 'selected', reasoningEffort: 'low', maxTokens: 16_384,
     })
@@ -296,10 +357,12 @@ describe('AcademicResearchController', () => {
 
   it('forwards Session lookup errors and normalizes non-Error Brief failures', async () => {
     const missing = await harness({ resolveError: true })
-    await expect(missing.controller.run({ sessionId: missing.sessionId, query: 'x', synthetic: false }, missing.signal))
+    await expect(missing.controller.run({ sessionId: missing.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, missing.signal))
       .rejects.toThrow('missing Session')
     const malformed = await harness({ eventsError: true })
-    await expect(malformed.controller.run({ sessionId: malformed.sessionId, query: 'x', synthetic: false }, malformed.signal))
+    await expect(malformed.controller.run({ sessionId: malformed.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, malformed.signal))
       .rejects.toMatchObject({ code: 'gateway/bad-request', message: 'invalid Academic Research Brief' })
   })
 })
@@ -338,14 +401,14 @@ describe('approved Research Brief plan handoff', () => {
 
   it('ignores failed and malformed plan calls', () => {
     expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { isError: true })))
-      .toThrow('no approved Academic Research Brief')
+      .toThrow('请先在当前会话完成研究计划审核')
     expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { argumentsJson: '{' })))
-      .toThrow('no approved Academic Research Brief')
+      .toThrow('请先在当前会话完成研究计划审核')
     expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), { argumentsJson: 'null' })))
-      .toThrow('no approved Academic Research Brief')
+      .toThrow('请先在当前会话完成研究计划审核')
     expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(), {
       argumentsJson: JSON.stringify({ unrelated: true }),
-    }))).toThrow('no approved Academic Research Brief')
+    }))).toThrow('请先在当前会话完成研究计划审核')
   })
 
   it('rejects an invalid review timestamp', () => {
@@ -365,7 +428,7 @@ describe('approved Research Brief plan handoff', () => {
     ['object', null, 'must be an object'],
     ['missing field', omitTopic(), 'missing: topic'],
     ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
-    ['schema version', { ...briefPayload(), schemaVersion: 2 }, 'schemaVersion must be 1'],
+    ['schema version', { ...briefPayload(), schemaVersion: 3 }, 'schemaVersion must be 1 or 2'],
     ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
     ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
     ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],

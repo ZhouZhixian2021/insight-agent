@@ -10,19 +10,19 @@ The Web Remote accepted one search string and the workflow called the multi-sour
 
 ## Decision
 
-The existing browser request keeps its `query: string` field. The Controller interprets non-empty lines as ordered explicit queries, trims whitespace, removes exact repeats, and accepts at most three. The query count must also fit the approved Research Brief's `maximumSearchRounds`; an invalid count is rejected before maintenance work starts. A one-line caller remains unchanged.
+The Controller now obtains bounded expressions from the [approved plan handoff](2026-09-21-academic-approved-plan-search.md). The pipeline still accepts at most three distinct queries within the approved Research Brief’s `maximumSearchRounds`.
 
 `DraftPipelineInput` carries ordered `searches`. The workflow executes them sequentially through B's unchanged one-query `searchAll()` adapter. A completed batch that contains source failures does not stop later explicit queries. Configuration or unrepresented adapter errors still reject, and cancellation stops before the next query. `RetrievalRun.queries` records every query whose adapter call started, including a call interrupted by cancellation.
 
 Completed query batches are interleaved round-robin before ingestion. Ingestion performs the existing exact-identifier reconciliation, and one global candidate-work bound applies to the deduplicated works. This keeps the first query from consuming every candidate slot and prevents one paper found by several queries from consuming several slots. Providers, discovered record counts, limitations, truncation and failures accumulate across completed batches.
 
-No model plans, rewrites, or appends queries. The workflow performs no automatic retry.
+The pipeline executes the supplied expressions without generating or appending queries; the approved-plan owner prepares them before the run. The workflow performs no automatic query retry.
 
 ## Alternatives considered
 
 **Keep one long query.** Rejected because independent subquestions may require papers from different years and vocabularies, while the catalog matcher can require every term.
 
-**Add an LLM query planner.** Deferred because it adds model cost, nondeterminism, another recorded decision, and new approval semantics before the explicit-query path is stable.
+**Add an LLM query planner during execution.** Deferred because it adds model cost and another decision after approval. The approved-plan owner instead prepares expressions in the existing planning turn.
 
 **Run queries concurrently.** Rejected for this increment because ordered execution makes cancellation, source load, failure attribution and `RetrievalRun.queries` deterministic.
 
@@ -30,6 +30,6 @@ No model plans, rewrites, or appends queries. The workflow performs no automatic
 
 ## Consequences
 
-The Remote contract remains source-compatible for current Web callers. A client can later expose a multiline input without changing the request type. Brief plans that use two or three queries must approve a matching `maximumSearchRounds`. B keeps the existing provider API, and C keeps the existing result projection.
+The current Remote input and plan preview are owned by the [approved-plan decision](2026-09-21-academic-approved-plan-search.md). B retains the Provider interface and C retains the result projection.
 
 Focused workflow and Controller tests cover ordered execution, round-robin candidate selection, exact deduplication across queries, continuation after a failed source batch, cancellation, query normalization, and hard or approved bounds. Adaptive query generation, retries, persistence, progress streaming and cross-run index reuse remain deferred.

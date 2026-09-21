@@ -8,11 +8,29 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
   readonly sessionId: SessionId
-  /** One to three ordered queries separated by line breaks; exact repeats are ignored. */
-  readonly query: string
+  /** Identity returned by plan preview; a newer approved plan requires another preview. */
+  readonly researchBriefId: ResearchBriefId
   /** Global deduplicated candidate-work bound for the complete run. */
   readonly maxResults?: number
   readonly synthetic: boolean
+}
+
+/** One system-authored search direction retained with the reviewed plan. */
+export interface AcademicPlannedSearch {
+  /** Exact search expression sent to source providers. */
+  readonly query: string
+  /** Chinese explanation of this search direction. */
+  readonly purpose: string
+  /** Research questions from the same Brief that this search supports. */
+  readonly questions: readonly string[]
+}
+
+/** Read-only summary of the latest approved, executable search plan. */
+export interface AcademicResearchPlanView {
+  readonly researchBriefId: ResearchBriefId
+  readonly topic: string
+  readonly questions: readonly string[]
+  readonly searches: readonly AcademicPlannedSearch[]
 }
 
 /** Evidence identity captured when one report claim was formed. */

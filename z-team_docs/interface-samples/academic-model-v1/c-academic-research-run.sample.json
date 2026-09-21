@@ -4,7 +4,7 @@
   "synthetic": true,
   "request": {
     "sessionId": "session-academic-synthetic-001",
-    "query": "retrieval augmented generation evaluation",
+    "researchBriefId": "brief-academic-synthetic-001",
     "maxResults": 2,
     "synthetic": true
   },

@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-plan-chinese
+profile: sdk
+composition: sdk-academic-plan-chinese
+recording: authored
+header:
+  class: academic-plan-chinese
+  pin: true

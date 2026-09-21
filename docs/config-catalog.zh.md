@@ -330,7 +330,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/api/academic-research-controller/src/index.ts:32`](../packages/api/academic-research-controller/src/index.ts)
+来源：[`packages/api/academic-research-controller/src/index.ts:31`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

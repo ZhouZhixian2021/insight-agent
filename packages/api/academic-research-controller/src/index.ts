@@ -4,7 +4,6 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
-  MAX_DRAFT_SEARCH_QUERIES,
   runAcademicResearchDraft,
   selectResearchPapers,
   type AcademicResearchDraftResult,
@@ -13,10 +12,10 @@ import {
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
-import { researchBriefFromApprovedPlan } from './research-brief-plan.ts'
+import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import type {
-  AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
+  AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus, AcademicResearchPlanView,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -65,8 +64,26 @@ export class AcademicResearchController extends TypertRemoteService {
   }
 
   /**
+   * Preview the latest approved plan without starting retrieval or calling a model.
+   * @param sessionId Session whose research plan the user wants to execute.
+   * @returns Chinese research intent, search directions, and the approval identity to pass to run.
+   */
+  @Remote('plan')
+  async plan(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchPlanView> {
+    const found = await this.ctx.sessionController.resolveAgent(sessionId)
+    if ('error' in found) throw found.error
+    try {
+      const { brief, searches } = researchPlanFromApprovedPlan(String(sessionId), found.agent.session.snapshotEvents())
+      if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
+      return { researchBriefId: brief.researchBriefId, topic: brief.topic, questions: brief.questions, searches }
+    } catch (cause: unknown) {
+      throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : '无法读取研究计划，请先完成计划审核。', {}, { cause })
+    }
+  }
+
+  /**
    * Run one multi-source research pass while the addressed Agent is idle.
-   * @param request - one to three newline-separated queries, disclosure, and the Session containing the approved brief plan.
+   * @param request - previewed approval identity, disclosure, and the Session containing the plan.
    * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
    * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
    */
@@ -84,17 +101,15 @@ export class AcademicResearchController extends TypertRemoteService {
       throw new RemoteError('gateway/internal', 'Academic research is unavailable: the Session has no web service', {})
     }
     let brief
+    let searches
     try {
-      brief = researchBriefFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+      const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+      brief = approved.brief
+      searches = approved.searches
+      if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
+      if (brief.researchBriefId !== request.researchBriefId) throw new Error('研究计划已更新，请重新打开学术研究，确认最新计划后再开始。')
     } catch (cause: unknown) {
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
-        { cause })
-    }
-    let queries: readonly string[]
-    try {
-      queries = parseResearchQueries(request.query, brief.stopConditions.maximumSearchRounds)
-    } catch (cause: unknown) {
-      throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic search queries', {},
         { cause })
     }
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
@@ -124,7 +139,7 @@ export class AcademicResearchController extends TypertRemoteService {
         session: agent.session,
         model,
         modelPolicy: { maxAttempts: this.extractionMaxAttempts },
-        input: { brief, searches: queries.map(query => ({ query,
+        input: { brief, searches: searches.map(search => ({ query: search.query,
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),
@@ -135,16 +150,6 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     return runValue(await maintenance)
   }
-}
-
-/** Parse one browser string into ordered, non-empty, distinct queries without changing the Remote shape. */
-function parseResearchQueries(value: string, approvedMaximumRounds: number): readonly string[] {
-  if (typeof value !== 'string') throw new Error('Academic search queries must be a string.')
-  const queries = [...new Set(value.split(/\r?\n/u).map(query => query.trim()).filter(query => query.length > 0))]
-  if (queries.length === 0) throw new Error('At least one Academic search query is required.')
-  const maximum = Math.min(MAX_DRAFT_SEARCH_QUERIES, approvedMaximumRounds)
-  if (queries.length > maximum) throw new Error(`Academic search query count exceeds the approved bound of ${maximum}.`)
-  return queries
 }
 
 function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue {

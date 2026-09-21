@@ -24,17 +24,22 @@ A1 合并后，B、C 可以建立各自目录并依赖基础类型。A 开发 A2
 
 ## 当前进度
 
-- A1 已完成：独立包、不透明 ID、`Availability<T>` 五态和基础测试已经进入本地工作区。
-- A2 已完成：`AcademicWork`、`WorkVersion`、外部标识符、版本关系和去重键已经进入本地工作区。
-- A3 已完成：`ResearchBrief`、发表窗口、证据与报告要求、停止条件、三态审核和当前版本批准判定已经进入本地工作区。
-- A4 已完成：`EvidenceRecord`、六类 `SourceLocator`、六分区 `EvidenceCard` 和不可变 `EvidenceSnapshot` 已经进入本地工作区。
-- A4 合并后，成员 B 可以正式产出共享 `EvidenceRecord` 与 `EvidenceCard`。
-- A5 是下一阶段；完成并合并后，成员 C 可以正式产出跨论文 Claim 和报告输入。
-- A1 至 A4 及质量修复已合并到 master；A5 已在个人分支 dev/zhouzhixian2021 实现失败与检索运行 ID 创建、ProviderFailure、BatchResult、CoverageSummary、RetrievalRun 和 ResearchStage；并补齐 ClaimRecord、ClaimEvidenceLink、ClaimAssessment、对应 ID 和 checkClaimFreshness；本地实现尚未提交合并，A6 持久化与实际工作流未启动。
+截至 2026-09-21，按现有共享包和工作流核对如下。A 暂代 B、C 推进开发与验收，模块归属仍按[模块分工](academic-module-ownership.md)维护。
+
+| 步骤 | 状态 | 已实现内容与剩余边界 |
+|---|---|---|
+| A1 基础包 | 已完成并被下游使用 | 独立包、品牌 ID、`Availability<T>` 五态及纯函数。 |
+| A2 学术成果 | 已完成并被下游使用 | Work、Version、外部标识符与去重规则；跨运行身份索引恢复仍属 A6。 |
+| A3 研究简报 | 已完成并被下游使用 | 研究范围、证据和报告要求、停止条件、批准判定；批准后的 Brief 修订机制仍待完善。 |
+| A4 证据卡片 | 已完成并被下游使用 | 证据、定位、卡片和快照类型；实际全文及证据链已接入。 |
+| A5 分析输入 | 已完成并被下游使用 | 失败与覆盖统计、RetrievalRun、Claim 及证据关系、核验类型与过期检查，已用于真实 Remote 和草稿报告。 |
+| A6 持久化与恢复 | 部分实现，未完成 | 模型请求与结果已进入 Session 持久记录；完整证据、运行、报告身份及跨重启恢复仍待设计与实现。 |
+
+实际工作流已接通；A1—A5 的完成不代表 A6 或正式报告验收通过。当前集成步骤见[调用与交接计划](member-a-academic-workflow-call-plan.md)，整体里程碑见[交付计划](../../docs/academic-insight-plan.zh.md)。
 
 ## A5 字段清单
 
-本清单面向 A5 编码和 C 的并行开发，描述待实现接口，不代表源码 API。字段语义以[字段规范](academic-model-v1-field-reference.md)为唯一依据；输入需求来自[C 的需求说明](academic-analysis-interface-requirements.md)，交接数据使用[固定样例](../interface-samples/academic-model-v1/README.zh.md)。A1–A4 的类型与语义保持不变。
+本清单保留 A5 实施时的字段约定，不是未完成任务清单；实际导出以[共享包](../../packages/academic/model/README.zh.md)为准。字段解释见[字段规范](academic-model-v1-field-reference.md)，输入需求来自[C 的需求说明](academic-analysis-interface-requirements.md)，交接数据见[固定样例](../interface-samples/academic-model-v1/README.zh.md)。
 
 ### 复用输入与标识
 

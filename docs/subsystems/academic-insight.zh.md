@@ -49,8 +49,15 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 
 ```ts cordis-catalog
 /**
+ * Preview the latest approved plan without starting retrieval or calling a model.
+ * @param sessionId Session whose research plan the user wants to execute.
+ * @returns Chinese research intent, search directions, and the approval identity to pass to run.
+ */
+@Remote('plan') async plan(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchPlanView>
+
+/**
  * Run one multi-source research pass while the addressed Agent is idle.
- * @param request - one to three newline-separated queries, disclosure, and the Session containing the approved brief plan.
+ * @param request - previewed approval identity, disclosure, and the Session containing the plan.
  * @param signal - Remote caller lifetime; disconnect or cancellation aborts the pass.
  * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
  */

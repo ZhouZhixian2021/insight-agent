@@ -26,7 +26,11 @@ export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register('academicRun', { zh, en }), 'academicRun: locale')
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'academic-research', order: 100, locale: 'academicRun',
-    inject: (): ResearchEntryInjected => ({ run: async (request, signal) => {
+    inject: (): ResearchEntryInjected => ({ plan: async (sessionId) => {
+      const result = await ctx.remote.academicResearch.plan(sessionId)
+      if (!result.ok) throw result.error
+      return result.value
+    }, run: async (request, signal) => {
       const result = await ctx.remote.academicResearch.run(request, signal)
       if (!result.ok) throw result.error
       return result.value

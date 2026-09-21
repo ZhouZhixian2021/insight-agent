@@ -198,6 +198,33 @@ describe('planReviewOf', () => {
 })
 
 describe('PlanReviewPanel', () => {
+  it('folds the academic handoff while preserving readable scope and the original approval', () => {
+    const plan = '# RAG 研究计划\n\n## 研究范围\n\n纳入预印本、录用稿、正式发表版本。\n\n```academic-research-brief-json\n{"schemaVersion":1}\n```\n\n证据不足时披露限制。'
+    const items = questions().map(item => ({ ...item, detail: plan }))
+    const { carrier, answer } = wait(items)
+    render(<QuestionComposer matched={carrier} {...kit} />)
+    expect(screen.getByRole('heading', { name: 'RAG 研究计划' })).toBeTruthy()
+    expect(screen.getByText('纳入预印本、录用稿、正式发表版本。')).toBeTruthy()
+    expect(screen.getByText('证据不足时披露限制。')).toBeTruthy()
+    const details = screen.getByText(zh['plan.executionDetails']).closest('details')
+    expect(details?.hasAttribute('open')).toBe(false)
+    expect(details?.textContent).toContain('schemaVersion')
+    expect(planReviewOf(items)?.plan).toBe(plan)
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.approve'] }))
+    expect(answer).toHaveBeenCalledWith(decision('Approve'))
+  })
+
+  it.each([
+    '```json\n{"schemaVersion":1}\n```',
+    '```academic-research-brief-json\n{"schemaVersion":1}',
+    '```academic-research-brief-json\n{}\n```\n```academic-research-brief-json\n{}\n```',
+  ])('keeps ordinary or ambiguous code visible: %s', (code) => {
+    const { carrier } = wait(questions().map(item => ({ ...item, detail: `# 研究计划\n\n${code}` })))
+    render(<QuestionComposer matched={carrier} {...kit} />)
+    expect(document.querySelector('details')).toBeNull()
+    expect(document.querySelector('code')).toBeTruthy()
+  })
+
   it('renders the plan under a review strip, with none of the quiz affordances', () => {
     const { carrier } = wait()
     render(<QuestionComposer matched={carrier} {...kit} />)

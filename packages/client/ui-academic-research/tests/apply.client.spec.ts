@@ -15,8 +15,9 @@ describe('academic sidebar registration', () => {
     try {
       await ctx.plugin(SlotRegistry).await()
       const remoteRun = vi.fn().mockResolvedValue({ ok: true, value: sampleRun() })
-      ctx.provide('remote', { academicResearch: { run: remoteRun } })
-      ctx.provide('remote.academicResearch', { run: remoteRun })
+      const remotePlan = vi.fn().mockResolvedValue({ ok: true, value: { topic: 'RAG' } })
+      ctx.provide('remote', { academicResearch: { run: remoteRun, plan: remotePlan } })
+      ctx.provide('remote.academicResearch', { run: remoteRun, plan: remotePlan })
       ctx.provide('locale', new LocaleRuntime(ctx))
       const slots = ctx.get('slots') as SlotRegistry
       const fiber = ctx.plugin({ inject, apply })
@@ -28,11 +29,15 @@ describe('academic sidebar registration', () => {
       expect(slots.entries('sidebar.footer.action')).toHaveLength(1)
       expect(slots.entries('sidebar.footer.action')[0]!.locale).toBe('academicRun')
       const face = (slots.entries('sidebar.footer.action')[0]!.inject as unknown as () => ResearchEntryInjected)()
-      const request = { sessionId: sampleRun().sessionId, query: 'test', synthetic: false }
+      const request = { sessionId: sampleRun().sessionId, researchBriefId: sampleRun().retrievalRun.researchBriefId, synthetic: false }
       const signal = new AbortController().signal
       await expect(face.run(request, signal)).resolves.toEqual(sampleRun())
       expect(remoteRun).toHaveBeenCalledWith(request, signal)
+      await expect(face.plan(request.sessionId)).resolves.toEqual({ topic: 'RAG' })
+      expect(remotePlan).toHaveBeenCalledWith(request.sessionId)
       const failure = new Error('server denied')
+      remotePlan.mockResolvedValueOnce({ ok: false, error: failure })
+      await expect(face.plan(request.sessionId)).rejects.toBe(failure)
       remoteRun.mockResolvedValueOnce({ ok: false, error: failure })
       await expect(face.run(request, signal)).rejects.toBe(failure)
       disposeOwner()

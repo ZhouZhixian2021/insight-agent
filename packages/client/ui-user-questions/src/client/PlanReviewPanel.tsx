@@ -25,6 +25,12 @@ function tooltip(description: string | undefined): { title?: string } {
  * @returns The plan-review takeover for this request.
  */
 export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
+  // Only the named machine handoff is folded; approval still refers to the
+  // original pending request. Ambiguous plans remain fully visible.
+  const handoff = useMemo(() => {
+    const matches = [...review.plan.matchAll(/(?:^|\n)```academic-research-brief-json\s*\n[\s\S]*?\n```(?=\n|$)/gu)]
+    return matches.length === 1 ? matches[0] : undefined
+  }, [review.plan])
   const markdownLabels = useMemo(() => ({
     code: { copyLabel: t('copy'), copiedLabel: t('copied') },
     footnotes: t('markdown.footnotes'),
@@ -54,7 +60,14 @@ export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
           {t('plan.header')}
         </div>
         <div className={css.body} data-plan-review-scroll>
-          <MarkdownText text={review.plan} labels={markdownLabels} />
+          {handoff === undefined ? <MarkdownText text={review.plan} labels={markdownLabels} /> : <>
+            <MarkdownText text={review.plan.slice(0, handoff.index)} labels={markdownLabels} />
+            <details>
+              <summary>{t('plan.executionDetails')}</summary>
+              <MarkdownText text={handoff[0]} labels={markdownLabels} />
+            </details>
+            <MarkdownText text={review.plan.slice(handoff.index + handoff[0].length)} labels={markdownLabels} />
+          </>}
         </div>
         <div className={css.footer}>
           <div className={css.feedback} role="status">{error}</div>
