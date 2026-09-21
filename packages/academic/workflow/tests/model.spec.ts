@@ -11,7 +11,8 @@ import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { EvidenceExtractionInput, EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
 import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearchDraft, runModelResearchDraft, WorkflowLogError } from '../src/index.ts'
-import { draftFixture } from './pipeline-fixture.ts'
+import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
+import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages } from '../src/model-prompt.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
@@ -21,12 +22,15 @@ const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper 
 const script: StreamChunk[] = [{ type: 'text-delta', index: 0, text: output },
   { type: 'usage', usage: { inputTokens: 100, outputTokens: 30 } }, { type: 'finish', reason: { kind: 'stop' } }]
 const config = { provider: 'fixture', model: 'fixture', maxTokens: 500 }
+const policy = { maxAttempts: 1 }
 const scope = { inclusionRules: [], exclusionRules: [] }
 
 class Adapter extends LlmAdapter {
   calls: GenerateOptions[] = []
   contextWindow: number | undefined = 10000
   script = script
+  synthesisScript?: StreamChunk[]
+  synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
   afterChunk?: () => void
   supportsReasoning = true
@@ -40,7 +44,15 @@ class Adapter extends LlmAdapter {
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     await this.beforeDispatch?.()
     this.calls.push(options)
-    for (const chunk of this.script) { yield chunk; this.afterChunk?.() }
+    const prompt = options.messages[0]?.content[0]
+    const synthesis = prompt?.type === 'text' && prompt.text.includes('INPUT_JSON\n')
+      ? JSON.stringify(this.synthesisTransform === undefined
+        ? synthesisFixture(JSON.parse(prompt.text.split('INPUT_JSON\n')[1]!) as AcademicSynthesisInput)
+        : this.synthesisTransform(synthesisFixture(JSON.parse(prompt.text.split('INPUT_JSON\n')[1]!) as AcademicSynthesisInput)),
+      (key, value: unknown) => key === 'rejectedStatements' ? undefined : value) : null
+    const chunks: StreamChunk[] = synthesis === null ? this.script : this.synthesisScript
+      ?? [{ type: 'text-delta', index: 0, text: synthesis }, { type: 'finish', reason: { kind: 'stop' } }]
+    for (const chunk of chunks) { yield chunk; this.afterChunk?.() }
   }
 }
 const cleanups: Array<() => Promise<void>> = []
@@ -67,7 +79,7 @@ async function fixture(writer = true) {
     retrievedAt: '2026-09-15T00:00:00Z', extractionMethod: { method: 'fixture', methodVersion: '1' },
     segments: [{ text: 'Uses Method X.', locator: { kind: 'paragraph', paragraphNumber: 1 } }] }
   const request: EvidenceGenerationRequest = { instruction: 'Extract supported methods.', focusQuestions: ['Which method?'], segments: source.segments }
-  const generate = createModelEvidenceGenerator(ctx, session, config)
+  const generate = createModelEvidenceGenerator(ctx, session, config, policy)
   const read = async () => {
     await using handle = await ctx.sessionPersistence.open(session.id, 'read')
     return await handle.read()
@@ -79,6 +91,55 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it.each(['partial', 'all_rejected'] as const)('persists %s synthesis and only reports accepted paragraphs', async (mode) => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisTransform = (value) => {
+      const bad = { ...value.statements[0]!, text: 'Unsupported paragraph must not appear.', evidenceLinks: [] }
+      if (mode === 'all_rejected') return { ...value, statements: [bad] }
+      return { ...value, statements: [...value.statements, bad],
+        questionAnswers: value.questionAnswers.map((answer, index) => index === 0
+          ? { ...answer, statementIndexes: [...answer.statementIndexes, value.statements.length] } : answer),
+      }
+    }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
+    expect(result.synthesis.status).toBe(mode === 'partial' ? 'partial_success' : 'failed')
+    expect(result.synthesis.reasons.join(' ')).toContain('未纳入报告')
+    if (mode === 'partial') {
+      expect(result.report?.markdown).not.toContain('Unsupported paragraph')
+      expect(result.report?.markdown).toContain('部分回答')
+      expect(result.report?.evaluation.status).toBe('needs_review')
+      expect(result.report?.evaluation.issues.some(issue => issue.code === 'unmet_plan')).toBe(true)
+      expect(result.analysis?.claims).toHaveLength(1)
+    } else expect(result.report).toBeNull()
+    const events = await f.read()
+    const response = events.find(event => event.type === 'academic/synthesis-result')
+    expect(response?.data).toMatchObject({ status: mode === 'partial' ? 'partially_validated' : 'failed',
+      rejectedStatements: [{ statementIndex: mode === 'partial' ? 1 : 0, code: 'SYNTHESIS_INVALID_MODEL_OUTPUT' }] })
+    expect(f.adapter.calls).toHaveLength(3)
+  })
+  it('retains papers and persists rejected synthesis output without publishing a template report', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'text-delta', index: 0, text: '{"invented":"answer"}' }, script[2]!]
+    f.adapter.beforeDispatch = async () => {
+      const saved = await f.read()
+      expect(saved.at(-1)?.type.endsWith('-request')).toBe(true)
+    }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('failed')
+    const events = await f.read()
+    const request = events.find(event => event.type === 'academic/synthesis-request')
+    const response = events.find(event => event.type === 'academic/synthesis-result')
+    expect(response?.data).toMatchObject({ status: 'failed', errorCode: 'SYNTHESIS_INVALID_MODEL_OUTPUT', requestSeq: request?.seq })
+    if (request?.type !== 'academic/synthesis-request') throw new Error('missing synthesis request')
+    expect(request.data.messages).toEqual(f.adapter.calls[2]?.messages)
+    expect(request.data.input.analysisInput.evidenceRecords).toHaveLength(2)
+    expect(request.data.input.brief).toEqual(draft.input.brief)
+  })
   it('scopes the model request to a bounded answer for the supplied focus questions', async () => {
     const f = await fixture()
     const block = evidenceMessages(f.request, scope)[0]?.content[0]
@@ -88,13 +149,15 @@ describe('durable academic model extraction', () => {
     expect(visible).toContain(`Return at most 6 entries total and
 at most 3 entries primarily supporting any one focus question.`)
     expect(visible).toContain('Do not catalogue every extractable statement.')
+    expect(visible).toContain('Preserve whitespace, Unicode characters, punctuation')
+    expect(visible).toContain('"segments":[{"segmentIndex":0,"text":"Uses Method X."')
     expect(visible).toContain('"inclusionRules":[]')
     expect(visible).toContain('"focusQuestions":["Which method?"]')
   })
   it('runs two parsed papers through the model and B evidence into C evaluated draft', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
-    const result = await runModelResearchDraft(f.ctx, f.session, config, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
     expect(result.status).toBe('completed')
     expect(result.failures).toEqual([])
     expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
@@ -105,10 +168,10 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(draft.events).toEqual(['search', 'select', 'fetch:a', 'fetch:b'])
     expect(draft.adapters.generator).not.toHaveBeenCalled()
-    expect(f.adapter.calls).toHaveLength(2)
+    expect(f.adapter.calls).toHaveLength(3)
     const saved = await f.read()
     expect(saved.map(event => event.type)).toEqual(['academic/evidence-request', 'academic/evidence-result',
-      'academic/evidence-request', 'academic/evidence-result'])
+      'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])
     const requests = saved.filter(event => event.type === 'academic/evidence-request')
     expect(new Set(requests.map(event => event.data.source.academicWorkId)).size).toBe(2)
     for (const record of result.report!.evidence) {
@@ -120,10 +183,10 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     const result = await runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: config, input: draft.input, adapters: draft.adapters,
+      ctx: f.ctx, session: f.session, model: config, modelPolicy: policy, input: draft.input, adapters: draft.adapters,
     })
     expect(result).toMatchObject({ status: 'completed', sessionId: f.session.id, failures: [] })
-    expect(f.adapter.calls).toHaveLength(2)
+    expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === undefined)).toBe(true)
   })
   it('allows a model without configurable reasoning when the caller omits an effort', async () => {
@@ -131,17 +194,17 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.supportsReasoning = false
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     await expect(runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: config, input: draft.input, adapters: draft.adapters,
+      ctx: f.ctx, session: f.session, model: config, modelPolicy: policy, input: draft.input, adapters: draft.adapters,
     })).resolves.toMatchObject({ status: 'completed', sessionId: f.session.id })
     expect(draft.adapters.search).toHaveBeenCalledOnce()
-    expect(f.adapter.calls).toHaveLength(2)
+    expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === undefined)).toBe(true)
   })
   it('rejects an explicit unsupported reasoning effort before external work begins', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.supportsReasoning = false
     await expect(runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: { ...config, reasoningEffort: ReasoningEffortId('low') },
+      ctx: f.ctx, session: f.session, model: { ...config, reasoningEffort: ReasoningEffortId('low') }, modelPolicy: policy,
       input: draft.input, adapters: draft.adapters,
     })).rejects.toMatchObject({ code: 'UNSUPPORTED_REASONING_EFFORT' })
     expect(draft.adapters.search).not.toHaveBeenCalled()
@@ -151,8 +214,9 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     await runAcademicResearchDraft({ ctx: f.ctx, session: f.session,
-      model: { ...config, reasoningEffort: ReasoningEffortId('high') }, input: draft.input, adapters: draft.adapters })
-    expect(f.adapter.calls).toHaveLength(2)
+      model: { ...config, reasoningEffort: ReasoningEffortId('high') }, modelPolicy: policy,
+      input: draft.input, adapters: draft.adapters })
+    expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === 'high')).toBe(true)
   })
   it('continues the next paper after real model admission pauses an oversized first paper', async () => {
@@ -162,9 +226,10 @@ at most 3 entries primarily supporting any one focus question.`)
     draft.adapters.fetcher = async (url, signal) => url.endsWith('/a')
       ? { url, statusCode: 200, truncated: false, body: { kind: 'html', content: `<article><h2>Methods</h2><p>${'oversized '.repeat(20000)}</p></article>` } }
       : fetch(url, signal)
-    const result = await runModelResearchDraft(f.ctx, f.session, config, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
-    expect(result.report?.limitations.join(' ')).toContain('input_too_large')
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
     expect(f.adapter.calls).toHaveLength(1)
     expect((await f.read()).filter(event => event.type === 'academic/evidence-result').map(event => event.data.status))
       .toEqual(['skipped', 'validated'])
@@ -176,7 +241,8 @@ at most 3 entries primarily supporting any one focus question.`)
       if (session.snapshotEvents().at(-1)?.type === 'academic/evidence-result') throw new Error('disk failure')
       return flush(session)
     })
-    await expect(runModelResearchDraft(f.ctx, f.session, config, draft.input, draft.adapters)).rejects.toBeInstanceOf(WorkflowLogError)
+    await expect(runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters))
+      .rejects.toBeInstanceOf(WorkflowLogError)
     expect(draft.adapters.fetcher).toHaveBeenCalledOnce()
     expect(f.adapter.calls).toHaveLength(1)
   })
@@ -243,6 +309,27 @@ at most 3 entries primarily supporting any one focus question.`)
     await expect(f.generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_INCOMPLETE' })
     expect((await f.read()).at(-1)?.data).toMatchObject({ status: 'failed', finish: { kind } })
   })
+  it('retries output-limit exhaustion once and records both complete attempts', async () => {
+    const f = await fixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: '{' },
+      { type: 'finish', reason: { kind: 'max-tokens' } }]
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 1) f.adapter.script = script
+    }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2 })
+    await expect(generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' } })
+    expect(f.adapter.calls).toHaveLength(2)
+    const attempts = (await f.read()).flatMap((event) => {
+      if (event.type !== 'academic/evidence-request' && event.type !== 'academic/evidence-result') return []
+      return [{ type: event.type, attempt: event.data.attempt, maxAttempts: event.data.maxAttempts }]
+    })
+    expect(attempts).toEqual([
+      { type: 'academic/evidence-request', attempt: 1, maxAttempts: 2 },
+      { type: 'academic/evidence-result', attempt: 1, maxAttempts: 2 },
+      { type: 'academic/evidence-request', attempt: 2, maxAttempts: 2 },
+      { type: 'academic/evidence-result', attempt: 2, maxAttempts: 2 },
+    ])
+  })
   it('retains rejected tool chunks without executing them', async () => {
     const f = await fixture()
     f.adapter.script = [{ type: 'block-start', index: 0, blockType: 'tool-call' }, { type: 'finish', reason: { kind: 'tool-calls' } }]
@@ -298,7 +385,7 @@ at most 3 entries primarily supporting any one focus question.`)
   })
   it('refuses missing runtime services at binding time', async () => {
     const f = await fixture()
-    expect(() => createModelEvidenceGenerator(new Context(), f.session, config)).toThrow('requires')
+    expect(() => createModelEvidenceGenerator(new Context(), f.session, config, policy)).toThrow('requires')
   })
   it('gives a storage failure priority over concurrent cancellation', async () => {
     const f = await fixture(), controller = new AbortController()

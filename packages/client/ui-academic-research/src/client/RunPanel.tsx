@@ -36,10 +36,16 @@ function SettledRun({ value, t }: Copy & { readonly value: AcademicResearchRunVa
   return <div className={css.page}>
     <dl className={css.stats} aria-label={t('runStatus')}>
       <div><dt>{t('runStatus')}</dt><dd>{t(value.status)}</dd></div>
-      <div><dt>{t('retrievalStatus')}</dt><dd>{run.status === null ? t('running') : t(run.status)}</dd></div>
+      <div><dt>{t('processingStatus')}</dt><dd>{run.status === null ? t('running') : t(run.status)}</dd></div>
+      <div><dt>{t('searchStage')}</dt><dd>{t(value.stages.search)}</dd></div>
+      <div><dt>{t('fulltextStage')}</dt><dd>{t(value.stages.fulltext)}</dd></div>
+      <div><dt>{t('extractionStage')}</dt><dd>{t(value.stages.extraction)}</dd></div>
+      <div><dt>{t('synthesisStage')}</dt><dd>{t(value.synthesis.status)}</dd></div>
       <div><dt>{t('quality')}</dt><dd>{report === null ? t('noReport') : t(report.evaluation.status)}</dd></div>
     </dl>
     <p className={css.notice}>{t('reviewNotice')}</p>
+    {value.synthesis.reasons.length > 0 && <section><h3>{t('synthesisStage')}</h3>
+      <Lines values={value.synthesis.reasons} empty={t('noLimits')} /></section>}
     <section><h3>{t('coverage')}</h3>
       <dl className={css.stats}>{counts.map(key => <div key={key}><dt>{t(key)}</dt><dd>{coverage[key]}</dd></div>)}</dl>
       <p>{t('providers')}: {run.providers.join(', ')}</p><p>{t('noBreakdown')}</p>
@@ -59,7 +65,13 @@ function SettledRun({ value, t }: Copy & { readonly value: AcademicResearchRunVa
     <section><h3>{t('papers')}</h3>
       {value.papers.length === 0 ? <p>{t('emptyPapers')}</p> : <ul>{value.papers.map(paper => <li key={paper.workVersionId}>
         <strong>{t(paper.status)}</strong> · {paper.workVersionId}
-        <p>{paper.status === 'extracted' ? `${t('evidenceCount')}: ${paper.evidenceCount}` : paper.reason}</p>
+        {paper.status === 'paused' || paper.status === 'excluded' ? <p>{paper.reason}</p> : <>
+          <p>{t('evidenceCount')}: {paper.evidenceCount}</p>
+          {paper.rejectedDrafts.length > 0 && <><p>{t('rejectedEvidence')}: {paper.rejectedDrafts.length}</p>
+            <ul>{paper.rejectedDrafts.map(rejection => <li key={rejection.draftIndex}>
+              {t('evidenceItem')} {rejection.draftIndex + 1} · {t(rejection.code)}
+            </li>)}</ul></>}
+        </>}
       </li>)}</ul>}
     </section>
     {report === null ? <p>{t('noReport')}</p> : <ReportView report={report} t={t} />}

@@ -29,7 +29,7 @@ export function selectResearchPapers(
     if (version === undefined || !eligible(work, version, brief)) continue
     const candidate = resolve(work, version)
     if (candidate === null || candidate.urls.length === 0) continue
-    if (selected.length >= brief.stopConditions.maximumIncludedWorks) return { papers: selected, truncated: true }
+    if (selected.length >= brief.stopConditions.maximumCandidateWorks) return { papers: selected, truncated: true }
     selected.push({ workVersionId: version.workVersionId, ...candidate })
   }
   return { papers: selected, truncated: false }

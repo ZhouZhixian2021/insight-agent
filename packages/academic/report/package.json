@@ -28,7 +28,8 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-academic-model": "workspace:^",
-    "@deepseek-ai/dsh-academic-eval": "workspace:^"
+    "@deepseek-ai/dsh-academic-eval": "workspace:^",
+    "@deepseek-ai/dsh-academic-analysis": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",

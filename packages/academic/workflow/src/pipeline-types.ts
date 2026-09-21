@@ -17,10 +17,10 @@ export interface SelectedPaper {
   readonly hasHistoricalEvidence: boolean
 }
 
-/** Selected full-text candidates plus an observed included-work bound. */
+/** Ordered full-text candidates, bounded before processing; inclusion is decided from usable evidence. */
 export interface PaperSelectionResult {
   readonly papers: readonly SelectedPaper[]
-  /** True when another eligible, resolvable paper existed beyond the approved included-work limit. */
+  /** True when the selector omitted another eligible, resolvable candidate. */
   readonly truncated: boolean
 }
 
@@ -29,9 +29,12 @@ export const MAX_DRAFT_SEARCH_QUERIES = 3
 
 /** Callers own query planning, source execution, scope selection, model transport and durable request logging. */
 export interface DraftPipelineAdapters {
+  /** Return an evidence-validated draft for the admitted research questions. */
+  readonly synthesize: (input: import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisInput,
+    signal?: AbortSignal) => Promise<import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisDraft>
   /** Return source-observed providers, counts, limits, successes, and failures for one explicit query. */
   readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchBatchResult>
-  /** Apply approved scope and date rules and report whether the included-work bound omitted another eligible version. */
+  /** Return the ordered eligible candidate pool under maximumCandidateWorks; do not apply maximumIncludedWorks here. */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
   readonly fetcher: AcademicWebFetcher
   readonly generator: PaperEvidenceGenerator
@@ -54,10 +57,17 @@ export interface PaperProcessingFailure {
 
 /** Completed paper results and observed retrieval facts remain available when the caller cancels the pass. */
 export interface DraftPipelineResult {
+  readonly synthesis: SynthesisSettlement
   readonly status: 'completed' | 'cancelled'
   readonly retrievalRun: RetrievalRun
   readonly papers: readonly PaperEvidenceResult[]
   readonly failures: readonly PaperProcessingFailure[]
   readonly analysis: AnalysisResult | null
   readonly report: ResearchReport | null
+}
+
+/** Analysis settlement is independent of retrieval success and report semantic approval. */
+export interface SynthesisSettlement {
+  readonly status: 'not_run' | 'blocked' | 'failed' | 'completed' | 'partial_success'
+  readonly reasons: readonly string[]
 }

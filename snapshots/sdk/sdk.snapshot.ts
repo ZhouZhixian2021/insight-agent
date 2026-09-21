@@ -120,6 +120,8 @@ interface SdkAssertions {
 }
 
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
+  'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
+  'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] } },
   'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
   'subagent-dsh-sdk-diagnostic': {
     environment: { DSH_TEST_CHILD_PATCH: dshSdkDiagnosticChildPatch },
@@ -833,6 +835,18 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       }
 
       // Wire-shape invariants that must hold in every mode.
+      if (scenario.name === 'academic-replenishment') {
+        const rows = ordered[0]!.content.trim().split('\n').map(line => JSON.parse(line) as {
+          type: string
+          data: { message: { content: { isError: boolean; content: { text: string }[] }[] } }
+        })
+        const result = rows.find(row => row.type === 'tool/result')!.data.message.content[0]!
+        expect(result.isError).toBe(false)
+        expect(JSON.parse(result.content[0]!.text)).toMatchObject({
+          attempted: ['https://example.org/0', 'https://example.org/1', 'https://example.org/2', 'https://example.org/3'],
+          includedWorks: 2, failures: 1, synthesis: 'completed', hasReport: true,
+        })
+      }
       if (scenario.manifest.workspace?.final === true) {
         const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))
         expect(finalWorkspace, `${scenario.name}: complete final workspace`).toEqual(expectedWorkspace)

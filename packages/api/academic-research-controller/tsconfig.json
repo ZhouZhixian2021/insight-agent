@@ -5,6 +5,7 @@
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../core/agent" },
+    { "path": "../../core/tools" },
     { "path": "../../llm/llm" },
     { "path": "../../core/session" },
     { "path": "../../academic/model" },

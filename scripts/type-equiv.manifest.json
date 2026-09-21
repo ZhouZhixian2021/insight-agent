@@ -1418,6 +1418,11 @@
     },
     {
       "doc": "docs/subsystems/web.md",
+      "symbol": "WebFetchExecutionOptions",
+      "source": "packages/web/web/src/index.ts"
+    },
+    {
+      "doc": "docs/subsystems/web.md",
       "symbol": "WebFetchResult",
       "source": "packages/web/web/src/types.ts"
     },

@@ -39,6 +39,7 @@
     "@deepseek-ai/dsh-academic-report": "workspace:^"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-agent": "workspace:^",
     "@deepseek-ai/dsh-session-persistence": "workspace:^",
     "@deepseek-ai/dsh-session-persistence-jsonl": "workspace:^",

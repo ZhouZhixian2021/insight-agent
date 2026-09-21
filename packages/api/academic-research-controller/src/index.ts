@@ -1,5 +1,6 @@
 /** Host Remote owner for one Session-backed Academic research pass. */
 import { Context } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
@@ -13,7 +14,10 @@ import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
 import { researchBriefFromApprovedPlan } from './research-brief-plan.ts'
-import type { AcademicResearchRunRequest, AcademicResearchRunValue } from './types.ts'
+import * as academicPlanValidation from './plan-validation.ts'
+import type {
+  AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
+} from './types.ts'
 
 export type * from './types.ts'
 
@@ -24,13 +28,40 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
+/** Academic research deployment policy. */
+export interface Config {
+  /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
+  readonly fulltextFetchProvider?: string
+  /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
+  readonly extractionMaxTokens?: number
+  /** Total model attempts per paper. Only output-limit exhaustion is retried. Defaults to 2. */
+  readonly extractionMaxAttempts?: number
+}
+
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
 export class AcademicResearchController extends TypertRemoteService {
   static inject = ['academicSource', 'sessionController', 'typert', 'web']
 
-  /** @param ctx - Host context containing Session, Academic source, and Web fetch services. */
-  constructor(ctx: Context) {
+  static Config: z<Config> = z.object({
+    fulltextFetchProvider: z.string().default('http'),
+    extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
+    extractionMaxAttempts: z.number().step(1).min(1).max(2).default(2),
+  })
+
+  private readonly fulltextFetchProvider: string
+  private readonly extractionMaxTokens: number
+  private readonly extractionMaxAttempts: number
+
+  /**
+   * @param ctx - Host context containing Session, Academic source, and Web fetch services.
+   * @param config - deployment policy for Academic full-text retrieval.
+   */
+  constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'academicResearchController', { namespace: 'academicResearch' })
+    this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
+    this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
+    this.extractionMaxAttempts = config.extractionMaxAttempts ?? 2
+    ctx.plugin(academicPlanValidation)
   }
 
   /**
@@ -72,8 +103,8 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
-      ...selectedModel.maxTokens === undefined ? {} : { maxTokens: selectedModel.maxTokens } }
-    const adapters: Omit<DraftPipelineAdapters, 'generator'> = {
+      maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
+    const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
       search: (search, operationSignal) => academicSource.searchAll(search, operationSignal),
       selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
         const fullText = academicSource.resolveFullText(version)
@@ -81,7 +112,9 @@ export class AcademicResearchController extends TypertRemoteService {
         return { ...fullText,
           extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' }, hasHistoricalEvidence: false }
       }),
-      fetcher: (url, operationSignal) => web.fetch({ url }, operationSignal),
+      fetcher: (url, operationSignal) => web.fetch(
+        { url }, operationSignal, { providerId: this.fulltextFetchProvider },
+      ),
       now: () => new Date().toISOString(),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
@@ -90,6 +123,7 @@ export class AcademicResearchController extends TypertRemoteService {
         ctx: agent.ctx,
         session: agent.session,
         model,
+        modelPolicy: { maxAttempts: this.extractionMaxAttempts },
         input: { brief, searches: queries.map(query => ({ query,
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
@@ -114,18 +148,42 @@ function parseResearchQueries(value: string, approvedMaximumRounds: number): rea
 }
 
 function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue {
-  return { sessionId: result.sessionId, status: result.status, retrievalRun: result.retrievalRun,
+  const searchFailures = result.retrievalRun.failures.filter(failure => failure.operation === 'search').length
+  const fulltextFailures = result.failures.filter(failure => failure.stage === 'fulltext').length
+  const extractionFailures = result.failures.filter(failure => failure.stage === 'extraction').length
+    + result.papers.filter(paper => paper.status === 'paused' || paper.status === 'partially_extracted').length
+  const extractionSuccesses = result.papers.filter(paper => paper.status === 'extracted'
+    || paper.status === 'partially_extracted' || paper.status === 'excluded').length
+  return { sessionId: result.sessionId, status: result.status, synthesis: result.synthesis,
+    stages: {
+      search: settleStage(result.retrievalRun.queries.length > 0,
+        result.retrievalRun.coverageSummary.discoveredRecords, searchFailures),
+      fulltext: settleStage(result.retrievalRun.coverageSummary.availableFulltextWorks + fulltextFailures > 0,
+        result.retrievalRun.coverageSummary.availableFulltextWorks, fulltextFailures),
+      extraction: settleStage(result.retrievalRun.coverageSummary.availableFulltextWorks > 0,
+        extractionSuccesses, extractionFailures),
+    },
+    retrievalRun: result.retrievalRun,
     failures: result.failures.map(failure => ({ workVersionId: failure.workVersionId, stage: failure.stage })),
     papers: result.papers.map((paper) => {
       switch (paper.status) {
-        case 'extracted': return { status: 'extracted', workVersionId: paper.version.workVersionId,
-          evidenceCount: paper.evidence.evidenceRecords.length }
+        case 'extracted':
+        case 'partially_extracted':
+        case 'extraction_failed': return { status: paper.status, workVersionId: paper.version.workVersionId,
+          evidenceCount: paper.evidence.evidenceRecords.length,
+          rejectedDrafts: paper.evidence.rejectedDrafts.map(rejection => ({ ...rejection })) }
         case 'excluded': return { status: 'excluded', workVersionId: paper.exclusion.workVersionId,
           reason: paper.exclusion.reason }
         case 'paused': return { status: 'paused', workVersionId: paper.pause.workVersionId, reason: paper.pause.reason }
       }
     }),
     report: result.report }
+}
+
+function settleStage(ran: boolean, successes: number, failures: number): AcademicResearchStageStatus {
+  if (!ran) return 'not_run'
+  if (failures > 0) return successes > 0 ? 'partial_success' : 'failed'
+  return 'success'
 }
 
 export default AcademicResearchController

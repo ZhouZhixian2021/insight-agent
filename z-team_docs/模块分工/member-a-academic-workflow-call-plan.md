@@ -1,5 +1,7 @@
 # 成员 A：学术模块调用与交接计划
 
+Evidence → Insight → Report 的后续实现按[洞察合成交接](academic-synthesis-handoff.md)推进；该交接是文档级设计，保留当前全文能力，尚未接入真实模型合成或替换现有模板报告。
+
 ## 基线与范围
 
 2026-09-18 以已合并的真实 Web 研究路径为集成基线。A 的正式 Remote 入口、B 的 arXiv、CVF、ACL Anthology 与 PMLR 多来源全文检索和部分成功批次，以及 C 的分析、评测、报告与 Web 运行结果页面均已接入。[runResearchDraft](../../packages/academic/workflow/src/pipeline.ts)提供有界明确查询到评测草稿的库级调用链，并生成 RetrievalRun 与 CoverageSummary；[AcademicResearchController](../../packages/api/academic-research-controller/src/index.ts)从已批准计划重建 Brief，按行解析一至三条明确查询，调用该链路并返回 JSON 安全的检索运行。完整工作流恢复、自动查询规划、重试及稳定的真实来源联网验收尚未完成。
@@ -59,15 +61,15 @@ A 在工作流结束或取消时建立一条 `RetrievalRun`。`queries` 保存�
 
 ### A 向 C 提供的浏览器结果
 
-`AcademicResearchRunValue` 包含必有且 JSON 安全的 `retrievalRun`，提供运行 ID、阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 使用该投影显示来源失败、覆盖不足和截断原因，不从论文数组反推调用了哪些 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
+`AcademicResearchRunValue` 包含必有且 JSON 安全的 `stages` 和 `retrievalRun`。`stages.search`、`stages.fulltext`、`stages.extraction` 由 Controller 分别结算，C 直接使用这些值显示来源检索、全文获取和证据抽取结果。`retrievalRun` 提供运行 ID、运行阶段、批次状态、查询、Provider、覆盖统计和失败列表。C 不从论文数组反推阶段结论或调用过的 Provider，也不把 `completed` 解释为证据充分或人工审核通过。现有 `report.evaluation` 继续单独表达草稿质量。
 
-本轮不开始逐来源统计、自动查询规划、自适应追加检索、自动重试、持久恢复或进度流。B 的单查询搜索批次和 A 的有界查询编排及 `RetrievalRun` 已接通；C 继续使用 A 的正式 Remote 类型消费真实返回。
+本轮不开始逐来源统计、自动查询规划、自适应追加检索、持久恢复或进度流。来源模块可以在配置上限内重复临时传输失败，证据模型只在 `max-tokens` 时按配置重试；这些有界恢复都不会追加或改写查询。B 的单查询搜索批次和 A 的有界查询编排及 `RetrievalRun` 已接通；C 继续使用 A 的正式 Remote 类型消费真实返回。
 
 B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多来源研究运行交接说明](academic-multi-source-run-handoff.md)。
 
 ## 真实双查询端到端验收基线
 
-本基线用于三人完成当前来源、工作流和 Web 改动后的同题验收。它只验证已经实现的明确查询流程，不引入自动查询生成、自动重试、分段抽取、持久恢复或新的公共字段。
+本基线用于三人完成当前来源、工作流和 Web 改动后的同题验收。它只验证已经实现的明确查询流程，不引入自动查询生成、分段抽取或持久恢复。来源临时传输失败和证据模型输出截断只允许使用已配置的有界重试。
 
 ### 固定研究需求
 
@@ -86,11 +88,11 @@ B、C 的具体字段、行为矩阵、修改范围和固定输入输出见[多�
 | `reportRequirements` | 语言为中文，包含方法、证据限制和研究缺口，使用编号引用。 |
 | `stopConditions` | `maximumSearchRounds: 2`、`maximumCandidateWorks: 5`、`maximumIncludedWorks: 2`。 |
 
-计划批准后，在“学术研究”页面按原顺序输入以下两行。每行是一条明确查询：
+计划批准后，在“学术研究”页面按原顺序输入以下两行。研究主题用于 Plan 审核；这里输入的是第一版已经确认的两个精确 arXiv 编号，每行一条：
 
 ```text
-Transformer self-attention long-range dependencies recurrent neural networks
-BERT bidirectional Transformer pre-training contextual representations
+1706.03762
+1810.04805
 ```
 
 ### 验收前置条件
@@ -105,12 +107,13 @@ BERT bidirectional Transformer pre-training contextual representations
 **流水线接线通过**要求以下事实全部成立：
 
 1. 页面收到结构化运行结果，不出现未捕获的“请求异常”。
-2. `retrievalRun.queries` 按顺序精确记录上面两条查询，既不重复也不合并成一条。
+2. `retrievalRun.queries` 按顺序精确记录上面两个 arXiv 编号，既不重复也不合并成一条。
 3. 第二条查询在第一条返回来源失败批次后仍会执行；用户取消时才停止尚未开始的查询。
 4. `retrievalRun.providers`、`failures`、`coverageSummary` 来自实际运行观察；`failedOperations` 等于失败记录数量。
 5. `deduplicatedWorks` 不大于 `discoveredRecords`，`includedWorks` 不大于 2，`availableFulltextWorks` 不大于 `includedWorks`。
 6. 来源失败、来源覆盖限制、来源截断、候选上限、纳入上限或论文处理失败发生时，`coverageSummary.truncated` 与 `limitations` 如实披露。
 7. `retrievalRun.stage: completed` 只表示运行结束；页面不得据此显示人工审核通过。
+8. `stages.search`、`stages.fulltext`、`stages.extraction` 与实际执行结果一致；后续阶段失败不得把已成功的来源检索显示为失败。
 
 **研究内容通过**还要求以下事实全部成立：
 
@@ -236,7 +239,7 @@ Availability 沿用五态：available 携带正确类型的 value；unknown 和 
 | 自动多轮检索 | 2026-09-18 已完成最小的有界明确查询编排：调用方按行提供最多三条查询，数量不得超过 Brief 的 `maximumSearchRounds`；查询串行执行，批次轮转合并并精确去重，统一应用全局候选上限。某条查询的来源失败批次不阻止后续查询，取消则停止；不使用额外模型规划查询。 | 后续再设计自动查询调整、跨运行索引复用、重试、饱和判定、时间预算与达到证据量后的停止。实现前确认具体策略；用测试证明有界执行、停止原因可追溯、失败不会丢失已取得证据。 | A；B、C 提供相应输入与验收样例。 |
 | 超长论文分批抽取 | 2026-09-15 用户确认第一版超限暂停该论文并记录原因，其他论文继续；输入估算检查与模型接入已在库级实现并验证。 | 后续确认分批大小、原始段落编号映射、跨批证据合并和覆盖记录后再实现；不静默丢弃正文。 | A；B 配合片段定位验收。 |
 | 哈希冲突的核对与继续处理 | 2026-09-15 确认：原因未明时暂停该论文，其他论文继续；记录冲突，不覆盖旧数据。规则详见[全文交接规则](academic-content-version-handoff.md)，单篇暂停返回已实现，记录保存与恢复尚未接入。 | 根据实际冲突样例确定人工核对及重新处理方式；确认内容变化则创建新版本，单纯格式差异不判为改版。能定位原因、明确处理结果并继续该论文，且保留历史证据后，再标记完成。具体自动化方案实施前由 A 确认。 | A；涉及解析原因时由 B 配合。 |
-| 来源搜索的代理出口 | 2026-09-19 精确编号验收中，arXiv 两条搜索连续两轮均以 `TypeError: fetch failed` 结束；OpenAlex 也发生网络失败或超时。同一环境的仓库内置 HTTP Provider 能通过 DSH 代理下载两篇 arXiv 全文，说明来源 Provider 直接使用 Node `fetch` 时没有走相同出口。 | B 让 arXiv 与 OpenAlex 搜索遵循 DSH 的代理策略，并用原固定 Session 与两个精确编号证明至少 arXiv 搜索、范围筛选和全文选择可以进入下一阶段；保留取消、超时和部分成功语义。 | B；A 复验整轮。 |
-| Academic 全文 Provider 选择 | 2026-09-19 确认内置 `http` Provider 在 120000 ms、1000000 字符配置下可完整解析 Transformer 67 段与 BERT 114 段。本机 `dsh-web-tools-fetch` 会把 HTML 转成 `text` 并拒绝 PDF，通用 `ctx.web.fetch` 被该插件选中后与当前 Academic HTML/PDF 输入不兼容。 | A 先与团队确认最小接口再实现：Academic 全文必须明确选择能返回原始 HTML/PDF 的 Provider，不能依赖通用 Web 默认项，也不应破坏普通 `web_fetch` 的第三方 Provider 选择。用同时注册两个 fetch Provider 的正式组合测试固定行为。 | A；B 提供全文样例，C 无接口变化。 |
+| 来源搜索的临时传输失败 | 2026-09-20 复核确认当前环境没有配置 DSH 或 Windows 系统代理；arXiv 的底层失败是一次 `UND_ERR_CONNECT_TIMEOUT`，相同进程后续调用可成功，内置 HTTP Provider 访问同一 API 也会复现。A 临时代修：arXiv 与 OpenAlex 默认仍尝试一次，Web 组合显式配置最多两次，仅重试连接失败或 Provider 自身超时。 | 用原固定 Session 与两个精确编号证明至少 arXiv 搜索、范围筛选和全文选择可以进入下一阶段；持续失败仍进入部分成功批次，不得重试 HTTP 错误、限流、解析失败或用户取消。 | B 继续拥有来源模块；A 复验整轮。 |
+| Academic 全文 Provider 选择 | 2026-09-20 已实现：`ctx.web.fetch` 支持单次调用的 `providerId`；Academic Controller 用独立 `fulltextFetchProvider` 配置选择 `http`，普通 Web 默认仍可由 `dsh-web-tools-fetch` 提供。调用范围选择沿用既有缺失、不可用与取消语义，不静默回退。 | 用同时注册两个 fetch Provider 的测试证明单次选择不改变部署默认值；用原固定 Session 与两个精确编号复验两篇全文均能解析并进入证据阶段。 | A；B 提供全文样例，C 无接口变化。 |
 
 返回[团队文档索引](../00-团队文档索引.md)。

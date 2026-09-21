@@ -22,7 +22,7 @@ Academic 工作流拥有网络与模型路由以及持久请求记录，证据�
 6. `fetchAcademicFullText(input, fetcher, signal)` 按顺序尝试调用方提供的候选 URL（通常 HTML 优先、PDF 回退），返回第一个确认的全文。调用方适配 `ctx.web.fetch()`，因此 Provider 选择与网络策略仍由工作流拥有。
 7. `extractEvidenceFromContent(input, generator, signal)` 把抽取指令、关注问题与可定位的摘要/全文片段交给生成器。它核对每段返回引文是原文的逐字子串，推导定位，使用可用片段与哈希构造证据记录，并把草稿条目归入一张 `EvidenceCard`。生成前后都会检查取消信号。
 
-校验失败抛出 `EvidenceError`（重新实现 `HarnessError` 结构，无跨包基类），携带稳定代码。全文准备使用 `EVIDENCE_FETCH_STATUS`、`EVIDENCE_FETCH_TRUNCATED`、`EVIDENCE_FETCH_BODY_UNSUPPORTED`、`EVIDENCE_FULLTEXT_UNCONFIRMED` 与 `EVIDENCE_PDF_PARSE_FAILED`；构造和抽取保留现有代码。
+构造失败抛出 `EvidenceError`（重新实现 `HarnessError` 结构，无跨包基类），携带稳定代码。全文准备使用 `EVIDENCE_FETCH_STATUS`、`EVIDENCE_FETCH_TRUNCATED`、`EVIDENCE_FETCH_BODY_UNSUPPORTED`、`EVIDENCE_FULLTEXT_UNCONFIRMED` 与 `EVIDENCE_PDF_PARSE_FAILED`；构造保留现有代码。模型来源引用失败使用[逐条拒绝契约](2026-09-20-academic-evidence-extraction-recovery.zh.md)，生成器错误和程序拥有的输入无效仍使抽取调用失败。
 
 ## 等级-定位配对
 

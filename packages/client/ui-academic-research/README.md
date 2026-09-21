@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, retrieval and report-quality states, coverage, evidence navigation and Markdown download.
+The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, aggregate processing, source-search, full-text, evidence-extraction and report-quality states, coverage, evidence navigation and Markdown download.
 
 ## Table of Contents
 
@@ -21,9 +21,13 @@ The main Web sidebar starts Academic research in the selected saved Session and 
 <a id="use-this-package"></a>
 ## Use this package
 
+The run panel displays insight settlement and reasons separately from extraction and review. `partial_success` retains the draft download and rejected candidate paragraph reasons; it is not report approval. Question answers and gaps appear in Markdown. Failed or blocked synthesis has no report download.
+
 `renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This renderer remains internal. The main Web entry registers through sidebar.footer.action and uses framework locale dictionaries.
 
-After selecting a model and approving the Research Brief plan, enter one query per line in the multiline field: up to three queries, subject to the approved plan. Internal newlines remain in the existing query string; the Controller owns query parsing and the approved limit. The entry calls ctx.remote.academicResearch.run with sessionId, the trimmed query, synthetic: false and an AbortSignal. Cancellation, dialog close and Session changes abort the owned request; late replies from disposed forms cannot update a different Session. A returned cancellation preserves producer facts; cancellation without a final reply explicitly reports that no server result was received. Coverage truncation is presented as limited retrieval coverage or an early stop, rather than only a count limit. Pending runs have no progress percentage; null providerBreakdown never becomes invented provider counts. Fixed scenarios live only in tests.
+After selecting a model and approving the Research Brief plan, enter one query per line in the multiline field: up to three queries, subject to the approved plan. Internal newlines remain in the existing query string; the Controller owns query parsing and the approved limit. The entry calls ctx.remote.academicResearch.run with sessionId, the trimmed query, synthetic: false and an AbortSignal. Cancellation, dialog close and Session changes abort the owned request; late replies from disposed forms cannot update a different Session. A returned cancellation preserves producer facts; cancellation without a final reply explicitly reports that no server result was received. The page renders the producer's `stages` settlements directly, so a successful search and full-text acquisition remain visible when later evidence extraction fails. Coverage truncation is presented as limited retrieval coverage or an early stop, rather than only a count limit. Pending runs have no progress percentage; null providerBreakdown never becomes invented provider counts. Fixed scenarios live only in tests.
+
+Per-paper results distinguish complete, partial and failed extraction. The page shows accepted evidence counts and rejected draft numbers with localized reasons. Draft numbers are displayed starting at one; source indexes remain producer-owned diagnostics. Rejected statements are not displayed as accepted report evidence.
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -46,7 +50,7 @@ This package performs no model cache operations.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- The viewer uses AcademicResearchRunValue directly. It offers no server progress stream, automatic retry, result recovery after closing, or Brief approval action. Cancellation of the carrier does not itself confirm server settlement. User content renders as text. No independently divergent state requires an invariant companion.
+- The viewer uses AcademicResearchRunValue directly. It offers no server progress stream, automatic retry, result recovery after closing, or Brief approval action. Cancellation of the carrier does not itself confirm server settlement. User content renders as text. No invariant companion is published because the viewer owns no independently divergent state.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -54,6 +58,6 @@ This package performs no model cache operations.
 <details>
 <summary>Working context for maintainers</summary>
 
-See the fixed benchmark and verification in the [development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
+See the fixed benchmark in the [report development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md) and the [stage-settlement decision](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.md).
 
 </details>

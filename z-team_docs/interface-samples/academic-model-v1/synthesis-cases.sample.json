@@ -1,0 +1,252 @@
+{
+  "sampleSchemaVersion": 1,
+  "synthetic": true,
+  "inputFile": "synthesis-input.sample.json",
+  "outputFile": "synthesis-output.sample.json",
+  "patchFormat": "JSON Patch (RFC 6902); inputPatch targets the input file, outputPatch targets the output file. Cases are exercised by analysis/tests/synthesis.spec.ts; synthetic checks do not establish real-paper quality.",
+  "cases": [
+    {
+      "name": "traceable_partial_draft",
+      "inputPatch": [],
+      "outputPatch": [],
+      "expected": {
+        "invokeSynthesis": true,
+        "structuralValidation": "passed",
+        "reportDisposition": "partial_draft",
+        "planSatisfied": false,
+        "semanticReview": "pending",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "zero_evidence",
+      "inputPatch": [
+        {
+          "op": "replace",
+          "path": "/analysisInput/evidenceRecords",
+          "value": []
+        },
+        {
+          "op": "replace",
+          "path": "/analysisInput/evidenceCards",
+          "value": []
+        },
+        {
+          "op": "replace",
+          "path": "/analysisInput/sourceLocators",
+          "value": []
+        },
+        {
+          "op": "replace",
+          "path": "/coverageSummary/includedWorks",
+          "value": 0
+        }
+      ],
+      "outputPatch": [],
+      "expected": {
+        "invokeSynthesis": false,
+        "report": null,
+        "issue": "insufficient_evidence",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "fulltext_below_plan",
+      "inputPatch": [
+        {
+          "op": "replace",
+          "path": "/brief/evidenceRequirements/minimumFulltextWorks",
+          "value": 3
+        },
+        {
+          "op": "replace",
+          "path": "/brief/stopConditions/maximumIncludedWorks",
+          "value": 3
+        }
+      ],
+      "outputPatch": [],
+      "expected": {
+        "invokeSynthesis": false,
+        "report": null,
+        "issue": "insufficient_fulltext",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "work_count_below_plan",
+      "inputPatch": [
+        {
+          "op": "replace",
+          "path": "/brief/evidenceRequirements/minimumIncludedWorks",
+          "value": 3
+        },
+        {
+          "op": "replace",
+          "path": "/brief/stopConditions/maximumIncludedWorks",
+          "value": 3
+        }
+      ],
+      "outputPatch": [],
+      "expected": {
+        "invokeSynthesis": false,
+        "report": null,
+        "issue": "insufficient_works",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "unknown_evidence",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/statements/0/evidenceLinks/0/evidenceId",
+          "value": "absent-evidence"
+        }
+      ],
+      "expected": {
+        "structuralValidation": "partial",
+        "issue": "unknown_evidence",
+        "finalAllowed": false,
+        "reportDisposition": "partial_draft",
+        "rejectedStatementIndexes": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "brief_version_mismatch",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/researchBriefVersion",
+          "value": 2
+        }
+      ],
+      "expected": {
+        "structuralValidation": "rejected",
+        "report": null,
+        "issue": "brief_version_mismatch",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "unanswered_question",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/questionAnswers/1",
+          "value": {
+            "questionIndex": 1,
+            "status": "unanswered",
+            "statementIndexes": [],
+            "reason": "无法从提供的材料完成回答。"
+          }
+        }
+      ],
+      "expected": {
+        "structuralValidation": "passed",
+        "reportDisposition": "partial_draft",
+        "planSatisfied": false,
+        "semanticReview": "pending",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "required_section_missing",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "remove",
+          "path": "/sections/6"
+        }
+      ],
+      "expected": {
+        "structuralValidation": "rejected",
+        "report": null,
+        "issue": "missing_required_section",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "background_only",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/statements/0/evidenceLinks/0/relation",
+          "value": "background"
+        }
+      ],
+      "expected": {
+        "structuralValidation": "partial",
+        "issue": "no_supporting_evidence",
+        "finalAllowed": false,
+        "reportDisposition": "partial_draft",
+        "rejectedStatementIndexes": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "hash_mismatch",
+      "inputPatch": [
+        {
+          "op": "replace",
+          "path": "/analysisInput/workVersions/0/contentHash/value",
+          "value": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      ],
+      "outputPatch": [],
+      "expected": {
+        "invokeSynthesis": false,
+        "report": null,
+        "issue": "evidence_hash_mismatch",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "out_of_range_statement",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/questionAnswers/0/statementIndexes",
+          "value": [
+            999
+          ]
+        }
+      ],
+      "expected": {
+        "structuralValidation": "rejected",
+        "report": null,
+        "issue": "invalid_statement_index",
+        "finalAllowed": false
+      }
+    },
+    {
+      "name": "claims_all_answered_still_unreviewed",
+      "inputPatch": [],
+      "outputPatch": [
+        {
+          "op": "replace",
+          "path": "/questionAnswers/1/status",
+          "value": "answered"
+        },
+        {
+          "op": "replace",
+          "path": "/questionAnswers/1/reason",
+          "value": null
+        }
+      ],
+      "expected": {
+        "structuralValidation": "passed",
+        "semanticReview": "pending",
+        "planSatisfied": "not_established_by_model_label",
+        "finalAllowed": false
+      }
+    }
+  ]
+}

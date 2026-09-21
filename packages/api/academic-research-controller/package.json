@@ -32,6 +32,7 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-agent": "workspace:^",
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-llm": "workspace:^",
     "@deepseek-ai/dsh-academic-model": "workspace:^",
     "@deepseek-ai/dsh-academic-source": "workspace:^",
@@ -42,11 +43,13 @@
     "@deepseek-ai/dsh-web": "workspace:^"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-agent": "workspace:^",
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-llm": "workspace:^",
     "@deepseek-ai/dsh-academic-model": "workspace:^",
     "@deepseek-ai/dsh-academic-source": "workspace:^",

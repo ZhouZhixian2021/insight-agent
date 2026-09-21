@@ -36,6 +36,73 @@ function distinctRecord(base: AcademicSourceWork, key: string): AcademicSourceWo
 }
 
 describe('single-pass research draft', () => {
+  it('rejects unsupported report requirements before search or model work', async () => {
+    const { input, adapters } = fixture()
+    input.brief = { ...input.brief, reportRequirements: { ...input.brief.reportRequirements, language: 'unsupported' } }
+    await expect(runResearchDraft(input, adapters)).rejects.toMatchObject({ code: 'SYNTHESIS_UNSUPPORTED_PLAN' })
+    expect(adapters.search).not.toHaveBeenCalled()
+    expect(adapters.synthesize).not.toHaveBeenCalled()
+  })
+  it('retains extraction results when cancelled during synthesis and returns no report', async () => {
+    const { input, adapters } = fixture(), abort = new AbortController()
+    const synthesize = adapters.synthesize
+    adapters.synthesize = async (...args) => { const draft = await synthesize(...args); abort.abort(); return draft }
+    const result = await runResearchDraft(input, adapters, abort.signal)
+    expect(result.status).toBe('cancelled')
+    expect(result.papers).toHaveLength(2)
+    expect(result.report).toBeNull()
+  })
+  it('propagates synthesis logging failure instead of disguising it as an ordinary model failure', async () => {
+    const { input, adapters } = fixture()
+    adapters.synthesize = async () => { throw new WorkflowLogError(new Error('disk failure')) }
+    await expect(runResearchDraft(input, adapters)).rejects.toBeInstanceOf(WorkflowLogError)
+  })
+  it.each(['partial', 'all_rejected'] as const)('preserves accepted evidence and records %s papers without stopping later papers', async (mode) => {
+    const { input, adapters } = fixture()
+    const original = adapters.generator
+    let calls = 0
+    adapters.generator = async (...args) => {
+      const response = await original(...args)
+      if (calls++ > 0) return response
+      const rejected = { segmentIndex: 0, sourcedStatement: 'Unsupported statement.', verbatimExcerpt: 'Not in the source.', cardItems: [] }
+      return { ...response, evidence: mode === 'partial'
+        ? [rejected, ...response.evidence] : [rejected] }
+    }
+    const result = await runResearchDraft(input, adapters)
+    expect(calls).toBe(2)
+    expect(result.papers.map(paper => paper.status)).toEqual([mode === 'partial' ? 'partially_extracted' : 'extraction_failed', 'extracted'])
+    expect(result.retrievalRun).toMatchObject({ status: 'partial_success', coverageSummary: {
+      includedWorks: mode === 'partial' ? 2 : 1, availableFulltextWorks: 2, failedOperations: 1, truncated: true } })
+    expect(result.retrievalRun.failures).toHaveLength(1)
+    expect(result.retrievalRun.failures[0]).toMatchObject({ operation: 'extract_evidence', category: 'parse_failed', retryable: false })
+    expect(result.failures).toHaveLength(mode === 'partial' ? 0 : 1)
+    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('rejected 1 drafts')
+    if (mode === 'all_rejected') {
+      expect(result.report).toBeNull()
+      expect(result.synthesis.status).toBe('blocked')
+      expect(adapters.synthesize).not.toHaveBeenCalled()
+    }
+    if (mode === 'partial') {
+      expect(result.report?.limitations.join(' ')).toContain('rejected 1 drafts')
+      expect(result.report?.evidence.some(record => record.sourcedStatement === 'Unsupported statement.')).toBe(false)
+      expect(result.report?.evidence).toHaveLength(2)
+      expect(result.report?.evaluation.status).not.toBe('ready')
+    }
+  })
+
+  it('reports failure with no included works when all papers have only rejected drafts', async () => {
+    const { input, adapters } = fixture()
+    adapters.generator = async () => ({ scope: { status: 'included', reason: 'In scope.' }, evidence: [
+      { segmentIndex: 99, sourcedStatement: 'Unsupported.', verbatimExcerpt: 'Not present.', cardItems: [] },
+    ] })
+    const result = await runResearchDraft(input, adapters)
+    expect(result.papers.map(paper => paper.status)).toEqual(['extraction_failed', 'extraction_failed'])
+    expect(result.retrievalRun).toMatchObject({ status: 'failed', coverageSummary: { includedWorks: 0, failedOperations: 2 } })
+    expect(result.report).toBeNull()
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
+    expect(adapters.synthesize).not.toHaveBeenCalled()
+  })
   it('continues other papers after a model input limit pause', async () => {
     const { input, adapters } = fixture()
     const generate = adapters.generator
@@ -46,7 +113,8 @@ describe('single-pass research draft', () => {
     }
     const result = await runResearchDraft(input, adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
-    expect(result.report?.limitations.join(' ')).toContain('input_too_large')
+    expect(result.papers[0]).toMatchObject({ status: 'paused', pause: { reason: 'input_too_large' } })
+    expect(result.synthesis.status).toBe('blocked')
   })
   it('stops the whole pass on log failure before starting another paper', async () => {
     const { input, adapters } = fixture()
@@ -216,7 +284,7 @@ describe('single-pass research draft', () => {
     expect(result.retrievalRun.coverageSummary).toMatchObject({ truncated: true, providerBreakdown: null })
     expect(result.retrievalRun.coverageSummary.limitations).toContain('PMLR searches configured catalog pages only.')
   })
-  it('marks an all-source failure as a failed retrieval while returning the blocked draft', async () => {
+  it('marks an all-source failure as a failed retrieval without generating an insight report', async () => {
     const { input, adapters } = fixture()
     const failure: ProviderFailure = { schemaVersion: 1, failureId: createFailureId(), provider: 'pmlr', operation: 'search',
       category: 'upstream_error', message: 'catalog unavailable', retryable: true, retryAfter: null }
@@ -225,7 +293,9 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft(input, adapters)
 
     expect(result.status).toBe('completed')
-    expect(result.report?.evaluation.status).toBe('blocked')
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
+    expect(adapters.synthesize).not.toHaveBeenCalled()
     expect(result.retrievalRun).toMatchObject({ stage: 'failed', status: 'failed', academicWorkIds: [],
       coverageSummary: { discoveredRecords: 0, includedWorks: 0, failedOperations: 1, truncated: true } })
   })
@@ -238,7 +308,8 @@ describe('single-pass research draft', () => {
     expect(result.papers.map(paper => paper.status)).toEqual(['excluded', 'extracted'])
     const includedPaper = result.papers[1]
     expect(includedPaper?.status === 'extracted' && includedPaper.evidence.evidenceRecords).toHaveLength(1)
-    expect(result.report?.limitations.join(' ')).toContain('does not satisfy the approved population rule')
+    expect(result.papers[0]).toMatchObject({ status: 'excluded', exclusion: { reason: 'The paper does not satisfy the approved population rule.' } })
+    expect(result.synthesis.status).toBe('blocked')
   })
   it('pauses a hash conflict while preserving successful papers and the report limitation', async () => {
     const { input, adapters, records } = fixture()
@@ -246,7 +317,8 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft(input, adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
     expect(adapters.generator).toHaveBeenCalledOnce()
-    expect(result.report?.limitations.join(' ')).toContain('hash_conflict')
+    expect(result.papers[0]).toMatchObject({ status: 'paused', pause: { reason: 'hash_conflict' } })
+    expect(result.synthesis.status).toBe('blocked')
   })
   it.each(['fulltext', 'extraction'] as const)('isolates %s failure and continues', async (stage) => {
     const { input, adapters } = fixture()
@@ -255,27 +327,54 @@ describe('single-pass research draft', () => {
     const result = await runResearchDraft(input, adapters)
     expect(result.failures[0]?.stage).toBe(stage)
     expect(result.papers).toHaveLength(1)
-    expect(result.report?.limitations.join(' ')).toContain(stage)
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
     expect(result.retrievalRun.status).toBe('partial_success')
     expect(result.retrievalRun.failures[0]).toMatchObject({
       operation: stage === 'fulltext' ? 'fetch_fulltext' : 'extract_evidence',
-      category: stage === 'fulltext' ? 'fulltext_unavailable' : 'parse_failed',
+      category: stage === 'fulltext' ? 'fulltext_unavailable' : 'unknown',
       affectedWorkVersionId: result.failures[0]?.workVersionId,
     })
     expect(result.retrievalRun.coverageSummary).toMatchObject({ includedWorks: 1,
       availableFulltextWorks: stage === 'fulltext' ? 1 : 2, failedOperations: 1, truncated: true })
+  })
+  it('classifies known extraction failures without copying model output', async () => {
+    const { input, adapters } = fixture()
+    vi.mocked(adapters.generator).mockRejectedValueOnce(
+      new EvidenceError('details stay internal', 'EVIDENCE_MODEL_BUDGET_UNKNOWN'),
+    )
+    const result = await runResearchDraft(input, adapters)
+    expect(result.retrievalRun.failures[0]).toMatchObject({
+      operation: 'extract_evidence',
+      category: 'invalid_request',
+      message: 'Evidence extraction model capacity or output limit is unavailable.',
+    })
+    expect(result.retrievalRun.failures[0]?.message).not.toContain('details stay internal')
+  })
+  it('classifies source excerpt mismatches as parse failures', async () => {
+    const { input, adapters } = fixture()
+    vi.mocked(adapters.generator).mockRejectedValueOnce(
+      new EvidenceError('model output stays internal', 'EVIDENCE_EXCERPT_NOT_FOUND'),
+    )
+    const result = await runResearchDraft(input, adapters)
+    expect(result.retrievalRun.failures[0]).toMatchObject({
+      operation: 'extract_evidence',
+      category: 'parse_failed',
+      message: 'Evidence extraction excerpt did not exactly match the selected source segment.',
+    })
   })
   it('bounds candidates and discloses truncation without inventing a second search', async () => {
     const { input, adapters } = fixture()
     const result = await runResearchDraft({ ...input, searches: [{ ...input.searches[0]!, maxResults: 1 }] }, adapters)
     expect(adapters.search).toHaveBeenCalledWith({ query: input.searches[0]!.query, maxResults: 1 }, undefined)
     expect(result.papers).toHaveLength(1)
-    expect(result.report?.limitations.join(' ')).toContain('truncated')
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 2, deduplicatedWorks: 1,
       includedWorks: 1, truncated: true })
     expect(result.retrievalRun.academicWorkIds).toHaveLength(1)
   })
-  it('records an observed included-work bound from paper selection', async () => {
+  it('discloses an adapter-truncated candidate pool without claiming the included cap was reached', async () => {
     const { input, adapters } = fixture()
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
     const select = adapters.selectPapers
@@ -289,14 +388,16 @@ describe('single-pass research draft', () => {
     expect(result.papers).toHaveLength(1)
     expect(result.retrievalRun.coverageSummary).toMatchObject({ deduplicatedWorks: 2, includedWorks: 1, truncated: true })
     expect(result.retrievalRun.coverageSummary.limitations)
-      .toContain('The approved included-work bound stopped selection at 1.')
+      .toContain('候选选择器限制了可处理的论文范围。')
   })
-  it('produces an explicitly blocked empty draft after a successful empty search', async () => {
+  it('blocks synthesis after a successful empty search', async () => {
     const { input, adapters } = fixture()
     vi.mocked(adapters.search).mockResolvedValueOnce(searchBatch([]))
     const result = await runResearchDraft(input, adapters)
     expect(adapters.fetcher).not.toHaveBeenCalled()
-    expect(result.report?.evaluation.status).toBe('blocked')
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('blocked')
+    expect(adapters.synthesize).not.toHaveBeenCalled()
   })
   it('rejects an unapproved brief before calling search', async () => {
     const { input, adapters } = fixture()
@@ -304,11 +405,18 @@ describe('single-pass research draft', () => {
     await expect(runResearchDraft(input, adapters)).rejects.toThrow('approval')
     expect(adapters.search).not.toHaveBeenCalled()
   })
-  it.each(['unknown', 'duplicate', 'too_many', 'preprint', 'retracted'] as const)('rejects %s selection before fetching', async (kind) => {
+  it.each(['unknown', 'duplicate', 'too_many', 'preprint', 'retracted', 'version_type'] as const)('rejects %s selection before fetching', async (kind) => {
     const { input, adapters, records } = fixture()
     if (kind === 'preprint') input.brief = { ...input.brief, evidenceRequirements: { ...input.brief.evidenceRequirements, allowPreprints: false } }
     if (kind === 'retracted') records[0] = { ...records[0]!, workVersion: { ...records[0]!.workVersion, status: 'retracted' } }
-    if (kind === 'too_many') input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
+    if (kind === 'version_type') input.brief = { ...input.brief, includedWorkTypes: ['accepted_manuscript', 'version_of_record'] }
+    if (kind === 'too_many') {
+      const select = adapters.selectPapers
+      adapters.selectPapers = (a, b) => {
+        const selection = select(a, b)
+        return { ...selection, papers: [...selection.papers, ...selection.papers] }
+      }
+    }
     const select = adapters.selectPapers
     if (kind === 'unknown' || kind === 'duplicate') adapters.selectPapers = (a, b) => {
       const selection = select(a, b), papers = selection.papers

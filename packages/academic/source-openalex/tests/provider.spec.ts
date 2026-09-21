@@ -9,7 +9,8 @@ import type { OpenAlexOptions } from '../src/provider.ts'
 import { normalizeOpenAlexWork } from '../src/normalize.ts'
 
 const options: OpenAlexOptions = { baseURL: 'https://api.openalex.org', apiKey: undefined,
-  searchMode: 'keyword', publicationYears: '2017-2020', timeoutMs: 1000, maxResults: 5, maxCachedRecords: 10 }
+  searchMode: 'keyword', publicationYears: '2017-2020', timeoutMs: 1000,
+  maxAttempts: 1, retryDelayMs: 0, maxResults: 5, maxCachedRecords: 10 }
 
 function bert() {
   return { id: 'https://openalex.org/W2963341956', title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding',
@@ -70,6 +71,20 @@ describe('OpenAlex discovery', () => {
       expect((error as Error).message).not.toContain('secret')
     }
     expect(fetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('retries only network failures and per-attempt timeouts up to the configured bound', async () => {
+    const fetch = vi.fn().mockRejectedValueOnce(new Error('temporary network failure'))
+      .mockResolvedValueOnce(response())
+    vi.stubGlobal('fetch', fetch)
+    await expect(new OpenAlexProvider({ ...options, maxAttempts: 2 }).search({ query: 'BERT' }))
+      .resolves.toMatchObject({ works: [{ academicWork: { title: bert().title } }] })
+    expect(fetch).toHaveBeenCalledTimes(2)
+
+    fetch.mockReset().mockResolvedValue(new Response('', { status: 503 }))
+    await expect(new OpenAlexProvider({ ...options, maxAttempts: 2 }).search({ query: 'BERT' }))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_ERROR' })
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('aborts the underlying fetch on timeout and distinguishes caller cancellation', async () => {
@@ -261,7 +276,8 @@ it('registers and disposes the plugin and rejects configuration errors before fe
     expect((await ctx.academicSource.searchAll({ query: 'test' })).providers).toEqual(['openalex'])
     await fiber.dispose()
     await expect(ctx.academicSource.searchAll({ query: 'test' })).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE' })
-    for (const config of [{ baseURL: 'http://example.org' }, { timeoutMs: 0 }, { publicationYears: '2020-2017' }, { maxCachedRecords: 1 },
+    for (const config of [{ baseURL: 'http://example.org' }, { timeoutMs: 0 }, { maxAttempts: 0 }, { retryDelayMs: -1 },
+      { publicationYears: '2020-2017' }, { maxCachedRecords: 1 },
       { searchMode: 'semantic' as const, maxResults: 51 }]) {
       expect(() => { plugin.apply(ctx, config) }).toThrow()
     }

@@ -99,14 +99,41 @@ export interface AcademicResearchReportView {
 
 /** Per-paper settlement exposed without internal extraction objects. */
 export type AcademicPaperResultView =
-  | { readonly status: 'extracted'; readonly workVersionId: WorkVersionId; readonly evidenceCount: number }
+  | {
+    readonly status: 'extracted' | 'partially_extracted' | 'extraction_failed'
+    readonly workVersionId: WorkVersionId
+    readonly evidenceCount: number
+    /** Rejected drafts never appear in accepted evidence or report citations. Indexes are zero-based. */
+    readonly rejectedDrafts: readonly {
+      readonly draftIndex: number
+      readonly segmentIndex: number
+      readonly code: 'EVIDENCE_EMPTY_EXCERPT' | 'EVIDENCE_INVALID_SEGMENT_INDEX' | 'EVIDENCE_EXCERPT_NOT_FOUND'
+      readonly reason: string
+    }[]
+  }
   | { readonly status: 'excluded'; readonly workVersionId: WorkVersionId; readonly reason: string }
   | { readonly status: 'paused'; readonly workVersionId: WorkVersionId; readonly reason: string }
 
+/** Producer-settled result for one visible Academic pipeline stage. */
+export type AcademicResearchStageStatus = 'success' | 'partial_success' | 'failed' | 'not_run'
+
+/** Browser-safe stage settlements; the client must not infer them from aggregate counts. */
+export interface AcademicResearchStageResults {
+  readonly search: AcademicResearchStageStatus
+  readonly fulltext: AcademicResearchStageStatus
+  readonly extraction: AcademicResearchStageStatus
+}
+
 /** Completed or cancelled Academic draft, observed retrieval run, and owning Session. */
 export interface AcademicResearchRunValue {
+  /** Insight generation outcome, independent of retrieval and semantic approval. */
+  readonly synthesis: {
+    readonly status: 'not_run' | 'blocked' | 'failed' | 'completed' | 'partial_success'
+    readonly reasons: readonly string[]
+  }
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
+  readonly stages: AcademicResearchStageResults
   readonly retrievalRun: RetrievalRun
   readonly papers: readonly AcademicPaperResultView[]
   readonly failures: readonly {

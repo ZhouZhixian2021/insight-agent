@@ -34,8 +34,10 @@ kind: "package-reference"
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API 基址；会追加 `/api/query`。 |
+| `maxAttempts` | `1` | 连接失败后的总尝试次数；有效范围为 `1`–`3`。 |
+| `retryDelayMs` | `0` | 再次连接前的等待毫秒数；最大为 `30000`。 |
 
-提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
+提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。连接失败可在配置的尝试次数内重新发起；收到 HTTP 响应、解析失败、限流或调用方取消时都不会重试。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
 
 -----
 
@@ -69,7 +71,7 @@ kind: "package-reference"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **无重试或退避**——每次搜索只发一次请求；`429` 或 `5xx` 会以 `ACADEMIC_SOURCE_PROVIDER_ERROR` 呈现。
+- **网络重试有界且需显式启用**——默认只发送一次请求；组合可以为连接失败配置最多三次尝试。`429`、`5xx` 和异常 Atom 响应不会重试。
 - **无分页**——arXiv 用 `max_results` 限制每次查询；更大的结果集需要基于 `start` 的分页。
 - **一律视为预印本**——arXiv 不暴露正式出版版；该关联通过可选 DOI 建立。
 - **全文解析留在 evidence 包中**——本来源提供方只推导 arXiv URL，不抓取或解析其 HTML/PDF 正文。

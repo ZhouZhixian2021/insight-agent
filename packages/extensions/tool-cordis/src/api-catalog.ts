@@ -2791,9 +2791,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the provider\'s results, capped to `request.maxResults`.',
       },
       {
-        signature: 'async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult>',
+        signature: 'async fetch( request: WebFetchRequest, signal?: AbortSignal, options: WebFetchExecutionOptions = {}, ): Promise<WebFetchResult>',
         description: 'Retrieve one URL through the selected provider. Resolves the provider at call time with the selection rules above; throws WebError when the capability cannot run. A non-2xx response is a result, not a throw.',
-        parameters: [{ name: 'request', description: 'the URL plus retrieval options.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
+        parameters: [{ name: 'request', description: 'the URL plus retrieval options.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }, { name: 'options', description: 'optional call-scoped provider selection.' }],
         returns: 'the retrieval outcome; non-2xx responses resolve descriptively.',
       },
     ],
@@ -3539,7 +3539,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicPaperResultView',
-    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
+    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
   },
   {
     name: 'AcademicResearchReportView',
@@ -3551,7 +3551,15 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunValue',
-    declaration: 'export interface AcademicResearchRunValue {\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly stages: AcademicResearchStageResults;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+  },
+  {
+    name: 'AcademicResearchStageResults',
+    declaration: 'export interface AcademicResearchStageResults {\n    readonly search: AcademicResearchStageStatus;\n    readonly fulltext: AcademicResearchStageStatus;\n    readonly extraction: AcademicResearchStageStatus;\n}',
+  },
+  {
+    name: 'AcademicResearchStageStatus',
+    declaration: 'export type AcademicResearchStageStatus = \'success\' | \'partial_success\' | \'failed\' | \'not_run\';',
   },
   {
     name: 'AcademicSourceFullText',
@@ -6336,6 +6344,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WebFetchBody',
     declaration: 'export type WebFetchBody = {\n    readonly kind: \'html\';\n    readonly content: string;\n} | {\n    readonly kind: \'text\';\n    readonly content: string;\n} | {\n    readonly kind: \'pdf\';\n    readonly content: Uint8Array;\n};',
+  },
+  {
+    name: 'WebFetchExecutionOptions',
+    declaration: 'export interface WebFetchExecutionOptions {\n    readonly providerId?: string;\n}',
   },
   {
     name: 'WebFetchProvider',

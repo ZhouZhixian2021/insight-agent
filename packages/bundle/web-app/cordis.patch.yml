@@ -114,9 +114,15 @@
 
     - id: academic-source-openalex
       name: '@deepseek-ai/dsh-academic-source-openalex'
+      config:
+        maxAttempts: 2
+        retryDelayMs: 1000
 
     - id: academic-source-arxiv
       name: '@deepseek-ai/dsh-academic-source-arxiv'
+      config:
+        maxAttempts: 2
+        retryDelayMs: 3000
 
     - id: academic-source-cvf
       name: '@deepseek-ai/dsh-academic-source-cvf'
@@ -143,6 +149,10 @@
 
     - id: academic-research-controller
       name: '@deepseek-ai/dsh-api-academic-research-controller'
+      config:
+        fulltextFetchProvider: http
+        extractionMaxTokens: 16384
+        extractionMaxAttempts: 2
 
     # Configuration-surface reads and writes over Typert Remote. Each method
     # reports an actionable error when its settings-domain provider is absent.

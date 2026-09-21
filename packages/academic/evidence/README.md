@@ -44,7 +44,7 @@ const result = await extractEvidenceFromContent({
 }, generator)
 ```
 
-The result contains `sourceLocators`, `evidenceRecords`, and one `evidenceCard`. Each excerpt must occur exactly in its referenced segment; invalid indexes, absent quotes, and empty content fail with `EvidenceError` before untraceable evidence reaches analysis. The lower-level constructors remain available when a caller already owns verified evidence:
+The result contains `sourceLocators`, `evidenceRecords`, and one `evidenceCard`. Each excerpt must occur exactly in its referenced segment. When a valid segment index points to the wrong segment, the extractor repairs it only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous, normalized, absent, empty, or invalidly indexed excerpts fail with `EvidenceError` before untraceable evidence reaches analysis. The lower-level constructors remain available when a caller already owns verified evidence:
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -60,6 +60,8 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 ```
 
 Construction fails loud with an `EvidenceError` when a locator has an invalid range, a record's version or level disagrees with its locator, a statement or provenance field is empty, or a card item cites no evidence.
+
+Extraction rejects model source references individually. `EvidenceExtractionResult.rejectedDrafts` carries each rejected draft's zero-based `draftIndex`, `segmentIndex`, stable `code`, and diagnostic `reason`; accepted drafts alone create records, locators and card items. Empty excerpts, invalid segment indexes and non-matching or ambiguous quotes do not discard other accepted drafts. Exact quote checks remain mandatory, including Unicode and formula artifacts. Invalid program-owned input, generator errors and cancellation still reject the call. An empty proposal returns no records and no rejections; an entirely rejected proposal returns no records and its rejection list. JSON shape validation remains the caller's responsibility.
 
 -----
 

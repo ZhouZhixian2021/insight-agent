@@ -1,4 +1,5 @@
-/** One bounded OpenAlex request per caller-supplied query; no planning, fallback queries or retries. */
+/** Bounded OpenAlex discovery per caller-supplied query; no planning or fallback queries. */
+import { setTimeout as delay } from 'node:timers/promises'
 import { AcademicSourceError } from '@deepseek-ai/dsh-academic-source'
 import type { AcademicSourceProvider, AcademicSourceSearchRequest, AcademicSourceSearchResult } from '@deepseek-ai/dsh-academic-source'
 import { normalizeOpenAlexWork, object } from './normalize.ts'
@@ -10,6 +11,8 @@ export interface OpenAlexOptions {
   readonly searchMode: 'keyword' | 'semantic'
   readonly publicationYears: string | undefined
   readonly timeoutMs: number
+  readonly maxAttempts: number
+  readonly retryDelayMs: number
   readonly maxResults: number
   readonly maxCachedRecords: number
 }
@@ -24,7 +27,7 @@ export class OpenAlexProvider implements AcademicSourceProvider {
 
   get limitations(): readonly string[] {
     return [
-      `OpenAlex ${this.options.searchMode} search sends one unchanged query; no automatic planning, pagination or retries are performed.`,
+      `OpenAlex ${this.options.searchMode} search sends one unchanged query per attempt, with at most ${this.options.maxAttempts} transport attempts; no automatic planning or pagination is performed.`,
       `OpenAlex returns at most ${this.options.maxResults} records per request; index coverage, ranking and full-text links may be incomplete.`,
       'OpenAlex aggregate publication dates do not establish first_public_release; first-public dates remain unknown until an authoritative source supplies them.',
       'Full-text locations are version-matched; missing official links are not recovered through an automatic site search.',
@@ -44,14 +47,31 @@ export class OpenAlexProvider implements AcademicSourceProvider {
       || (request.maxResults !== undefined && (!Number.isSafeInteger(request.maxResults) || request.maxResults < 1))) {
       throw new AcademicSourceError('OpenAlex requires one non-empty query and a positive result limit', 'ACADEMIC_SOURCE_INVALID_REQUEST')
     }
-    const controller = new AbortController()
-    const operationSignal = signal === undefined ? controller.signal : AbortSignal.any([signal, controller.signal])
-    const timer = setTimeout(() => { controller.abort() }, this.options.timeoutMs)
     const url = new URL('/works', this.options.baseURL)
     const limit = Math.min(request.maxResults ?? this.options.maxResults, this.options.maxResults)
     url.searchParams.set(this.options.searchMode === 'keyword' ? 'search' : 'search.semantic', request.query)
     url.searchParams.set('per_page', String(limit))
     if (this.options.publicationYears !== undefined) url.searchParams.set('filter', `publication_year:${this.options.publicationYears}`)
+    for (let attempt = 1; attempt <= this.options.maxAttempts; attempt++) {
+      try {
+        return await this.searchOnce(url, limit, signal)
+      } catch (error: unknown) {
+        if (!(error instanceof AcademicSourceError)) throw error
+        if (error.code === 'ACADEMIC_SOURCE_ABORTED') throw error
+        const retryable = error.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' || error.code === 'ACADEMIC_SOURCE_TIMEOUT'
+        if (!retryable || attempt === this.options.maxAttempts) throw error
+        await waitForRetry(this.options.retryDelayMs, signal)
+      }
+    }
+    /* v8 ignore next -- plugin validation requires at least one attempt. */
+    throw new AcademicSourceError('OpenAlex search did not run', 'ACADEMIC_SOURCE_PROVIDER_ERROR')
+  }
+
+  /** Execute one bounded HTTP attempt and publish normalized locations only after it succeeds. */
+  private async searchOnce(url: URL, limit: number, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
+    const controller = new AbortController()
+    const operationSignal = signal === undefined ? controller.signal : AbortSignal.any([signal, controller.signal])
+    const timer = setTimeout(() => { controller.abort() }, this.options.timeoutMs)
     try {
       const response = await fetch(url, { redirect: 'error', signal: operationSignal, headers: {
         accept: 'application/json', 'user-agent': 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)',
@@ -83,5 +103,14 @@ export class OpenAlexProvider implements AcademicSourceProvider {
       if (cause instanceof SyntaxError) throw new AcademicSourceError('OpenAlex returned invalid JSON', 'ACADEMIC_SOURCE_PARSE_ERROR')
       throw new AcademicSourceError('OpenAlex network request failed', 'ACADEMIC_SOURCE_NETWORK_ERROR')
     } finally { clearTimeout(timer) }
+  }
+}
+
+/** Wait for the configured retry delay while preserving caller cancellation. */
+async function waitForRetry(retryDelayMs: number, signal?: AbortSignal): Promise<void> {
+  try {
+    await delay(retryDelayMs, undefined, signal === undefined ? undefined : { signal })
+  } catch (cause: unknown) {
+    throw new AcademicSourceError('OpenAlex search aborted', 'ACADEMIC_SOURCE_ABORTED', { cause })
   }
 }

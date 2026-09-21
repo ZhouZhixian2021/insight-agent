@@ -46,7 +46,7 @@ describe('Session research request lifecycle', () => {
     fireEvent.submit(screen.getByRole<HTMLTextAreaElement>('textbox').closest('form')!)
     expect(run).toHaveBeenCalledTimes(1)
     await act(async () => { d.resolve(sampleRun()); await d.promise })
-    expect(screen.getByText('部分成功')).toBeTruthy()
+    expect(screen.getAllByText('部分成功')).toHaveLength(2)
     expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
   })
   it('preserves two query lines in the existing Remote query field and renders the returned result', async () => {
@@ -60,7 +60,7 @@ describe('Session research request lifecycle', () => {
     await act(async () => { start(queries) })
     expect(run).toHaveBeenCalledWith({ sessionId: sid, query: queries, synthetic: false }, expect.any(AbortSignal))
     expect(input.value).toBe(queries)
-    expect(screen.getByText('部分成功')).toBeTruthy()
+    expect(screen.getAllByText('部分成功')).toHaveLength(2)
   })
   it('aborts the actual signal and distinguishes missing final result from a server cancellation result', async () => {
     const d = deferred(), run = vi.fn((_request, signal: AbortSignal) => {

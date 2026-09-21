@@ -105,7 +105,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:61`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:71`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -116,7 +116,29 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:63`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:73`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicsynthesis-request--log-only"></a>
+
+#### `academic/synthesis-request` — log-only
+
+```ts persistence-catalog
+/** Log-only approved Brief, admitted evidence and exact synthesis model request. */
+'academic/synthesis-request': SynthesisModelRequest
+```
+
+来源： [`packages/academic/workflow/src/synthesis-model.ts:22`](../packages/academic/workflow/src/synthesis-model.ts)
+
+<a id="academicsynthesis-result--log-only"></a>
+
+#### `academic/synthesis-result` — log-only
+
+```ts persistence-catalog
+/** Log-only synthesis settlement, raw output, usage and request sequence. */
+'academic/synthesis-result': SynthesisModelResult
+```
+
+来源： [`packages/academic/workflow/src/synthesis-model.ts:24`](../packages/academic/workflow/src/synthesis-model.ts)
 
 ### `agent/*`
 

@@ -6,6 +6,7 @@
  * @module @deepseek-ai/dsh-academic-source-arxiv/provider
  */
 
+import { setTimeout as delay } from 'node:timers/promises'
 import { AcademicSourceError } from '@deepseek-ai/dsh-academic-source'
 import type {
   AcademicSourceProvider,
@@ -29,6 +30,10 @@ const USER_AGENT = 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)'
 export interface ArxivProviderOptions {
   /** Endpoint base; `/api/query` is appended. */
   baseURL: string
+  /** Total transport attempts for a network failure. */
+  maxAttempts: number
+  /** Delay before a repeated transport attempt, in milliseconds. */
+  retryDelayMs: number
 }
 
 /**
@@ -62,24 +67,7 @@ export class ArxivProvider implements AcademicSourceProvider {
       url.searchParams.set('max_results', String(request.maxResults))
     }
 
-    let response: Response
-    try {
-      response = await fetch(url, {
-        redirect: 'error',
-        headers: {
-          'user-agent': USER_AGENT,
-          'accept': 'application/atom+xml',
-        },
-        ...signal !== undefined ? { signal } : {},
-      })
-    } catch (error: unknown) {
-      if (signal?.aborted === true || isAbortError(error)) throw aborted(signal, error)
-      throw new AcademicSourceError(
-        `arXiv search request failed: ${String(error)}`,
-        'ACADEMIC_SOURCE_PROVIDER_ERROR',
-        { cause: error },
-      )
-    }
+    const response = await requestWithNetworkRetry(url, options, signal)
 
     if (!response.ok) {
       const status = response.status
@@ -107,6 +95,45 @@ export class ArxivProvider implements AcademicSourceProvider {
         { cause: error },
       )
     }
+  }
+}
+
+/** Send one arXiv request, repeating only failures that occur before an HTTP response exists. */
+async function requestWithNetworkRetry(
+  url: URL,
+  options: ArxivProviderOptions,
+  signal?: AbortSignal,
+): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
+    try {
+      return await fetch(url, {
+        redirect: 'error',
+        headers: {
+          'user-agent': USER_AGENT,
+          'accept': 'application/atom+xml',
+        },
+        ...signal !== undefined ? { signal } : {},
+      })
+    } catch (error: unknown) {
+      if (signal?.aborted === true || isAbortError(error)) throw aborted(signal, error)
+      lastError = error
+      if (attempt < options.maxAttempts) await waitForRetry(options.retryDelayMs, signal)
+    }
+  }
+  throw new AcademicSourceError(
+    `arXiv search network request failed after ${options.maxAttempts} attempt(s)`,
+    'ACADEMIC_SOURCE_NETWORK_ERROR',
+    { cause: lastError },
+  )
+}
+
+/** Wait for the configured retry delay while preserving caller cancellation. */
+async function waitForRetry(retryDelayMs: number, signal?: AbortSignal): Promise<void> {
+  try {
+    await delay(retryDelayMs, undefined, signal === undefined ? undefined : { signal })
+  } catch (error: unknown) {
+    throw aborted(signal, error)
   }
 }
 

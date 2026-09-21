@@ -150,6 +150,7 @@ export interface ResearchBrief {
   readonly aliases: readonly string[]
   readonly questions: readonly string[]
   readonly publicationWindow: PublicationWindow
+  /** Included version states; the executable workflow supports preprint, accepted_manuscript and version_of_record. */
   readonly includedWorkTypes: readonly string[]
   readonly inclusionRules: readonly string[]
   readonly exclusionRules: readonly string[]

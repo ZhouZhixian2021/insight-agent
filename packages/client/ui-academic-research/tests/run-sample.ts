@@ -3,8 +3,14 @@ import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-res
 
 // Serialized sample IDs acquire their existing shared brands only at this fixture boundary.
 const value = {
+  synthesis: { status: 'completed', reasons: [] },
   'sessionId': 'session-academic-synthetic-001',
   'status': 'completed',
+  'stages': {
+    'search': 'partial_success',
+    'fulltext': 'success',
+    'extraction': 'success',
+  },
   'retrievalRun': {
     'schemaVersion': 1,
     'retrievalRunId': '40000000-0000-4000-8000-000000000001',
@@ -62,6 +68,7 @@ const value = {
       'status': 'extracted',
       'workVersionId': '20000000-0000-4000-8000-000000000001',
       'evidenceCount': 1,
+      'rejectedDrafts': [],
     },
     {
       'status': 'excluded',

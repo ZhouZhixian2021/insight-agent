@@ -34,8 +34,10 @@ Load the seam and this provider together; with no other provider registered, `se
 | Field | Default | Meaning |
 |---|---|---|
 | `baseURL` | `https://export.arxiv.org` | arXiv export API base; `/api/query` is appended. |
+| `maxAttempts` | `1` | Total attempts after connection failures; valid range `1`–`3`. |
+| `retryDelayMs` | `0` | Delay before another connection attempt; maximum `30000`. |
 
-The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. `truncated` is true when the feed's `<opensearch:totalResults>` exceeds the returned entries; the seam flags its own `maxResults` cap separately. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
+The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. A failed connection can be repeated within the configured attempt bound; an HTTP response, parse failure, rate limit, or caller cancellation is never retried. `truncated` is true when the feed's `<opensearch:totalResults>` exceeds the returned entries; the seam flags its own `maxResults` cap separately. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
 
 -----
 
@@ -69,7 +71,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **No retries or backoff** — one request per search; a `429` or `5xx` surfaces as `ACADEMIC_SOURCE_PROVIDER_ERROR`.
+- **Network retries are bounded and opt-in** — the default sends one request; a composition may configure at most three attempts for connection failures. `429`, `5xx`, and malformed Atom responses are not retried.
 - **No pagination** — arXiv caps a query at `max_results`; larger result sets need `start`-based paging.
 - **Everything is a preprint** — arXiv does not expose the published version; that link arrives through the optional DOI.
 - **Full-text parsing stays in the evidence package** — this source provider derives arXiv URLs but does not fetch or parse their HTML/PDF bodies.

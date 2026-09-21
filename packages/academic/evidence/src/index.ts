@@ -19,6 +19,7 @@ export type {
   EvidenceContentLocatorInput,
   EvidenceContentSegment,
   EvidenceDraft,
+  EvidenceDraftRejection,
   EvidenceExtractionInput,
   EvidenceExtractionResult,
   AcademicWebFetchResult,

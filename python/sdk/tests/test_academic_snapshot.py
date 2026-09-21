@@ -23,11 +23,12 @@ def academic_events(events: list[dict]) -> list[dict]:
     result = []
     message_ids: dict[str, str] = {}
     for original in events:
-        if original.get("type") not in {"academic/evidence-request", "academic/evidence-result"}:
+        if original.get("type") not in {"academic/evidence-request", "academic/evidence-result",
+                                         "academic/synthesis-request", "academic/synthesis-result"}:
             continue
         event = copy.deepcopy(original)
         event["time"] = 0
-        if event["type"] == "academic/evidence-request":
+        if event["type"].endswith("-request"):
             for message in event["data"]["messages"]:
                 identity = message["id"]
                 if identity not in message_ids:

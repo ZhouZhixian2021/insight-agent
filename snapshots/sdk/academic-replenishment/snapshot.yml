@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-replenishment
+profile: sdk
+composition: sdk-academic-replenishment
+recording: authored
+header:
+  class: academic-replenishment
+  pin: true
