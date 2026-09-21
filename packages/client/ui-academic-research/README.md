@@ -21,6 +21,8 @@ The main Web sidebar starts Academic research in the selected saved Session and 
 <a id="use-this-package"></a>
 ## Use this package
 
+A draft with an `insufficient_coverage` evaluation issue keeps its Markdown download and displays a localized limited-evidence notice. Blocked final delivery does not hide an existing draft.
+
 The run panel displays insight settlement and reasons separately from extraction and review. `partial_success` retains the draft download and rejected candidate paragraph reasons; it is not report approval. Question answers and gaps appear in Markdown. Failed or blocked synthesis has no report download.
 
 `renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This renderer remains internal. The main Web entry registers through sidebar.footer.action and uses framework locale dictionaries.

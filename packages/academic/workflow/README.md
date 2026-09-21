@@ -20,6 +20,8 @@ extractPaperEvidence fills a first observed version hash before invoking the exi
 
 ## Use this package
 
+Warning admission does not satisfy the replenishment stop condition. After the candidate pool or inclusion cap is exhausted, `continue_with_warning` permits a limited draft from positive usable evidence; `stop_for_review` blocks synthesis. Warning drafts return `synthesis.status=partial_success` and host-owned reasons. Cancellation and zero usable evidence never start synthesis.
+
 `includedWorkTypes` filters `WorkVersion.versionType`: `preprint`, `accepted_manuscript`, or `version_of_record`. Conference and journal categories are not version states. `allowPreprints: false` takes precedence. The pipeline also rejects adapter-selected versions outside the approved list before fetching; venue labels do not determine eligibility. `validateResearchBriefRequirements()` exposes the shared analysis check for plan review callers.
 
 The formal entry admits evidence and invokes question synthesis with the Session model and bounded output-limit retry policy. `academic/synthesis-request` records exact input; `academic/synthesis-result` records raw output, usage and rejection diagnostics. Partial paragraph acceptance is logged as `partially_validated`; all rejected paragraphs produce `failed` with `SYNTHESIS_NO_VALID_STATEMENTS`. Earlier events and failures before JSON parsing omit `rejectedStatements`. The Remote returns `partial_success` plus rejection reasons and a draft when valid paragraphs survive; no valid paragraphs means no report. Invalid whole responses, insufficient evidence or cancellation also return no report. Durability failures stop the run. No template fallback, automatic semantic repair or weakened references are used.

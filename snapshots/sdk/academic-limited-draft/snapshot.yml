@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-limited-draft
+profile: sdk
+composition: sdk-academic-limited-draft
+recording: authored
+header:
+  class: academic-limited-draft
+  pin: true

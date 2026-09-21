@@ -62,6 +62,11 @@
           "op": "replace",
           "path": "/brief/stopConditions/maximumIncludedWorks",
           "value": 3
+        },
+        {
+          "op": "replace",
+          "path": "/brief/evidenceRequirements/insufficientEvidencePolicy",
+          "value": "stop_for_review"
         }
       ],
       "outputPatch": [],
@@ -84,6 +89,11 @@
           "op": "replace",
           "path": "/brief/stopConditions/maximumIncludedWorks",
           "value": 3
+        },
+        {
+          "op": "replace",
+          "path": "/brief/evidenceRequirements/insufficientEvidencePolicy",
+          "value": "stop_for_review"
         }
       ],
       "outputPatch": [],
@@ -197,6 +207,11 @@
           "op": "replace",
           "path": "/analysisInput/workVersions/0/contentHash/value",
           "value": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        {
+          "op": "replace",
+          "path": "/brief/evidenceRequirements/insufficientEvidencePolicy",
+          "value": "stop_for_review"
         }
       ],
       "outputPatch": [],

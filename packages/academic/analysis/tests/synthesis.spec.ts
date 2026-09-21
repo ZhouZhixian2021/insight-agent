@@ -133,3 +133,29 @@ describe('question-driven synthesis admission and model validation', () => {
     expect(() => parseSynthesisDraft(JSON.stringify({ ...output(), rejectedStatements: [] }), input())).toThrow('fields')
   })
 })
+
+
+describe('insufficient evidence policy', () => {
+  it.each(['minimumIncludedWorks', 'minimumFulltextWorks'] as const)('admits a warned draft below %s without modifying the Brief', (field) => {
+    const value = input()
+    const brief = { ...value.brief, evidenceRequirements: { ...value.brief.evidenceRequirements, [field]: 6 } }
+    const request = { ...value, brief }, before = JSON.stringify(request)
+    const admission = prepareSynthesisInput(request)
+    expect(admission.status).toBe('ready_with_warning')
+    expect(admission.usableWorkIds).toHaveLength(2)
+    expect(synthesisPrompt(request)).toContain('Produce only a limited draft')
+    expect(synthesisPrompt(request)).toContain('Plan 至少要求 6 篇')
+    expect(JSON.stringify(request)).toBe(before)
+    const stopped = { ...request, brief: { ...brief, evidenceRequirements: {
+      ...brief.evidenceRequirements, insufficientEvidencePolicy: 'stop_for_review' as const } } }
+    expect(prepareSynthesisInput(stopped).status).toBe('blocked')
+    expect(() => synthesisPrompt(stopped)).toThrow('Synthesis is blocked')
+  })
+  it('blocks zero usable evidence even when the plan allows warnings and zero minima', () => {
+    const value = input()
+    const request = { ...value, brief: { ...value.brief, evidenceRequirements: { ...value.brief.evidenceRequirements,
+      minimumIncludedWorks: 0, minimumFulltextWorks: 0 } }, analysisInput: { ...value.analysisInput, evidenceCards: [] } }
+    expect(prepareSynthesisInput(request).status).toBe('blocked')
+    expect(() => synthesisPrompt(request)).toThrow('没有可用于洞察分析')
+  })
+})

@@ -48,15 +48,15 @@ export function validateSynthesisRequirements(
   return SYNTHESIS_SECTIONS.filter(section => required.has(section))
 }
 
-/** Prepared evidence or an explicit reason why no insight report is permitted. */
+/** Ready means both Plan minimums are met; warning admission permits a draft but never stops replenishment early. */
 export type SynthesisAdmission =
-  | { readonly status: 'ready'; readonly input: AcademicSynthesisInput; readonly limitations: readonly string[]; readonly usableWorkIds: readonly AcademicWorkId[] }
+  | { readonly status: 'ready' | 'ready_with_warning'; readonly input: AcademicSynthesisInput; readonly limitations: readonly string[]; readonly usableWorkIds: readonly AcademicWorkId[] }
   | { readonly status: 'blocked'; readonly reasons: readonly string[]; readonly usableWorkIds: readonly AcademicWorkId[] }
 
 /**
  * Exclude invalid relationships and count independent works from usable evidence.
  * @param input Exact Brief and observed materials; downloaded full text alone does not count.
- * @returns Sanitized model input or unmet evidence thresholds without lowering the Plan.
+ * @returns Sanitized input with explicit count warnings when permitted, or a block for zero evidence or stop-for-review policy.
  */
 export function prepareSynthesisInput(input: AcademicSynthesisInput): SynthesisAdmission {
   synthesisSections(input.brief)
@@ -85,13 +85,13 @@ export function prepareSynthesisInput(input: AcademicSynthesisInput): SynthesisA
   if (selected.length === 0) reasons.push('没有可用于洞察分析的已核验证据。')
   if (selected.length < minimum.minimumIncludedWorks) reasons.push(`可用证据涉及 ${selected.length} 篇独立论文，Plan 至少要求 ${minimum.minimumIncludedWorks} 篇。`)
   if (fulltext < minimum.minimumFulltextWorks) reasons.push(`提供可用全文证据的论文有 ${fulltext} 篇，Plan 至少要求 ${minimum.minimumFulltextWorks} 篇。`)
-  if (reasons.length > 0) return { status: 'blocked', usableWorkIds: selected.map(item => item.work.academicWorkId),
+  if (selected.length === 0 || (reasons.length > 0 && minimum.insufficientEvidencePolicy === 'stop_for_review')) return { status: 'blocked', usableWorkIds: selected.map(item => item.work.academicWorkId),
     reasons: [...reasons, `不足时策略：${minimum.insufficientEvidencePolicy}；保留已完成工作，不生成洞察报告。`] }
-  const limitations = prepared.issues.map(issue => `${issue.code}: ${issue.message}`)
+  const limitations = [...reasons, ...prepared.issues.map(issue => `${issue.code}: ${issue.message}`)]
   if (selected.reduce((count, item) => count + item.records.length, 0) !== input.analysisInput.evidenceRecords.length) {
     limitations.push('部分材料未通过证据版本、原文或哈希检查，未提交给洞察模型。')
   }
-  return { status: 'ready', usableWorkIds: selected.map(item => item.work.academicWorkId), limitations, input: { ...input, analysisInput: {
+  return { status: reasons.length > 0 ? 'ready_with_warning' : 'ready', usableWorkIds: selected.map(item => item.work.academicWorkId), limitations, input: { ...input, analysisInput: {
     academicWorks: selected.map(item => item.work), workVersions: selected.map(item => item.version),
     evidenceRecords: selected.flatMap(item => item.records), evidenceCards: selected.flatMap(item => item.cards),
     sourceLocators: selected.flatMap(item => item.locators),

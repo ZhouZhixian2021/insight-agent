@@ -161,7 +161,7 @@ export async function runResearchDraft(
   }
   if (signal?.aborted) return settle(true)
   const admission = evidenceAdmission()
-  if (attempted === validated.length && admission.status === 'blocked') {
+  if (attempted === validated.length && admission.status !== 'ready') {
     selectionLimitations.push(`本次可处理候选已用完（${attempted} 篇），证据仍不足；未自动扩展检索。`)
   }
   const assessedAt = adapters.now()
@@ -177,8 +177,9 @@ export async function runResearchDraft(
       ? `${error.code}: ${error.message}` : '洞察模型调用失败；已保留检索与论文处理结果，请查看会话调用记录。'] } }
   }
   if (signal?.aborted) return settle(true)
-  const synthesisReasons = draft.rejectedStatements.map(item =>
-    `模型候选段落 ${item.statementIndex + 1} 未纳入报告：${item.code} — ${item.reason}`)
+  const synthesisReasons = [...(admission.status === 'ready_with_warning'
+    ? ['证据未达到 Plan 数量要求；按 continue_with_warning 生成有限草稿，不代表正式交付通过。', ...admission.limitations] : []),
+  ...draft.rejectedStatements.map(item => `模型候选段落 ${item.statementIndex + 1} 未纳入报告：${item.code} — ${item.reason}`)]
   if (draft.statements.length === 0) return { ...settle(false),
     synthesis: { status: 'failed', reasons: ['没有通过校验的洞察段落；已保留论文与证据。', ...synthesisReasons] } }
   const analysis = synthesisAnalysis(admission.input, draft, assessedAt)
@@ -197,7 +198,7 @@ export async function runResearchDraft(
     sourceLocators: admission.input.analysisInput.sourceLocators,
     works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic })
   return { ...settle(false), analysis, report, synthesis: {
-    status: draft.rejectedStatements.length > 0 ? 'partial_success' : 'completed', reasons: synthesisReasons } }
+    status: admission.status === 'ready_with_warning' || draft.rejectedStatements.length > 0 ? 'partial_success' : 'completed', reasons: synthesisReasons } }
 }
 
 /** Normalize caller-owned queries once and enforce both the hard and approved round bounds. */

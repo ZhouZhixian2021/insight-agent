@@ -36,7 +36,7 @@ class SnapshotAdapter extends LlmAdapter {
   }
 }
 
-export function apply(ctx: Context): void {
+export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): void {
   ctx.effect(() => ctx.llm.registerAdapter(['academic-fixture'], new SnapshotAdapter()))
   ctx.on('agent/pre-step', async ({ agent }, next) => {
     if (!agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-result')) {
@@ -60,18 +60,24 @@ export function apply(ctx: Context): void {
       assert.equal(result.evidence.evidenceCard.workVersionId, workVersionId)
       assert.deepEqual(result.evidence.evidenceRecords[0]?.contentHash, { status: 'available', value: 'synthetic-content' })
       const input: AcademicSynthesisInput = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
-      const admission = prepareSynthesisInput(input)
-      assert.equal(admission.status, 'ready')
-      if (admission.status !== 'ready') throw new Error('synthetic evidence admission failed')
+      const limited = { ...input, brief: { ...input.brief,
+        evidenceRequirements: { ...input.brief.evidenceRequirements,
+          minimumIncludedWorks: config.limitedDraft ? 6 : input.brief.evidenceRequirements.minimumIncludedWorks } } }
+      const admission = prepareSynthesisInput(limited)
+      assert.equal(admission.status, config.limitedDraft ? 'ready_with_warning' : 'ready')
       const draft = await createModelSynthesisGenerator(ctx, agent.session,
         { provider: 'academic-fixture', model: 'fixture', maxTokens: 4096 }, { maxAttempts: 1 })(admission.input)
       const analysis = synthesisAnalysis(admission.input, draft, '2026-09-20T00:00:00Z')
-      const report = generateReport({ brief: input.brief, claims: analysis.claims, links: analysis.links,
+      const report = generateReport({ brief: limited.brief, claims: analysis.claims, links: analysis.links,
         evidence: input.analysisInput.evidenceRecords, versions: input.analysisInput.workVersions,
         sourceLocators: input.analysisInput.sourceLocators, works: input.analysisInput.academicWorks,
         reviews: [], assessedAt: '2026-09-20T00:00:00Z', limitations: draft.limitations,
         mode: 'draft', synthetic: true, synthesis: draft, coverage: input.coverageSummary })
-      assert.equal(report.evaluation.status, 'needs_review')
+      assert.equal(report.evaluation.status, config.limitedDraft ? 'blocked' : 'needs_review')
+      if (config.limitedDraft) {
+        assert.ok(report.markdown.includes('证据有限的研究草稿'))
+        assert.ok(report.markdown.includes('Plan 至少要求 6 篇'))
+      }
       assert.equal(report.claims.length, 1)
       assert.equal(report.evidence.length, 2)
       assert.equal(draft.rejectedStatements.length, 1)

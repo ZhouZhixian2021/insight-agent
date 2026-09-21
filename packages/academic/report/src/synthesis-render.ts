@@ -26,6 +26,17 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
   const rendered = new Set<number>()
   const required = synthesisSections(brief)
   const records = new Map(evidence.map(record => [record.evidenceId, record]))
+  const supportingIds = new Set(draft.statements.flatMap(item => item.evidenceLinks
+    .filter(link => link.relation === 'supports').map(link => link.evidenceId)))
+  const supporting = evidence.filter(record => supportingIds.has(record.evidenceId))
+  const citedWorks = new Set(supporting.map(record => record.academicWorkId)).size
+  const citedFulltext = new Set(supporting.filter(record => record.level === 'fulltext').map(record => record.academicWorkId)).size
+  const minimum = brief.evidenceRequirements
+  if (citedWorks < minimum.minimumIncludedWorks) unmet.push(`正文支持证据涉及 ${citedWorks} 篇独立论文，Plan 至少要求 ${minimum.minimumIncludedWorks} 篇。`)
+  if (citedFulltext < minimum.minimumFulltextWorks) unmet.push(`正文支持证据涉及 ${citedFulltext} 篇全文论文，Plan 至少要求 ${minimum.minimumFulltextWorks} 篇。`)
+  if (unmet.length > 0) lines.push('> 证据有限的研究草稿：未满足 Plan 的证据数量要求，不作为最终交付。',
+    ...unmet.map(reason => `> ${escapeMarkdown(reason)}`), '')
+  lines.push(`本轮纳入分析 ${coverage.includedWorks} 篇论文；正文引用 ${references.size} 篇，其中 ${citedWorks} 篇用于支持正文、${citedFulltext} 篇提供全文支持证据。`, '')
   for (const rejection of draft.rejectedStatements) {
     unmet.push(`模型候选段落 ${rejection.statementIndex + 1} 未纳入报告：${rejection.code} — ${rejection.reason}`)
   }

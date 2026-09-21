@@ -21,6 +21,8 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
+草稿存在 `insufficient_coverage` 评测问题时，保留 Markdown 下载并显示本地化的证据有限提示。正式交付被阻止不会隐藏已有草稿。
+
 运行面板将洞察状态和原因与抽取及审核分别展示。`partial_success` 保留草稿下载和被拒候选段落原因，不表示报告审核通过。逐题回答与缺口位于 Markdown。洞察失败或被阻止时不提供报告下载。
 
 `renderResearchPage()` — 传入已评测的 ResearchReport 和明确的 zh-CN 或 en 界面语言。返回的 HTML 包含样式与交互，不依赖服务或外部资源，报告文字在 HTML 和嵌入 JSON 中均转义。搜索筛选结论和证据，证据链接展开详情，下载导出原始 Markdown。该渲染器继续作为内部辅助函数。主 Web 通过 sidebar.footer.action 注册研究入口，并使用框架 locale 字典。
