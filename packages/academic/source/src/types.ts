@@ -10,6 +10,7 @@
 import type {
   AcademicWork,
   BatchResult,
+  FailureCategory,
   WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 
@@ -57,6 +58,56 @@ export interface AcademicSourceFullText {
   readonly urls: readonly string[]
 }
 
+/** One browser-search result offered to the Academic reference identifier. */
+export interface AcademicWebDiscoveryCandidate {
+  readonly url: string
+  readonly title?: string
+  readonly snippet?: string
+}
+
+/** A normalized paper reference identified from one Web discovery result. */
+export type AcademicReference =
+  | {
+    readonly kind: 'doi' | 'arxiv'
+    readonly normalizedValue: string
+    readonly originalValue: string
+    readonly discoveryUrl: string
+  }
+  | {
+    readonly kind: 'provider_record'
+    readonly provider: 'acl' | 'pmlr' | 'cvf'
+    readonly recordId: string
+    readonly discoveryUrl: string
+  }
+
+/** Pure identification boundary owned by Academic source adapters, without network verification. */
+export type AcademicReferenceIdentifier = (
+  candidate: AcademicWebDiscoveryCandidate,
+) => readonly AcademicReference[]
+
+/** One reference that an Academic Provider verified against authoritative metadata. */
+export interface AcademicVerifiedReference {
+  readonly reference: AcademicReference
+  readonly verificationProvider: string
+  readonly work: AcademicSourceWork
+  readonly fullText: AcademicSourceFullText | null
+}
+
+/** Credential-free failure for one reference verification attempt. */
+export interface AcademicReferenceVerificationFailure {
+  readonly reference: AcademicReference
+  readonly verificationProvider: string
+  readonly category: FailureCategory
+  readonly message: string
+  readonly retryable: boolean
+  readonly retryAfter: string | null
+}
+
+/** Per-reference settlement; one failed reference does not discard verified siblings. */
+export type AcademicReferenceVerificationOutcome =
+  | { readonly status: 'verified'; readonly value: AcademicVerifiedReference }
+  | { readonly status: 'failed'; readonly failure: AcademicReferenceVerificationFailure }
+
 /**
  * Batch outcome of one `searchAll()` round. `batch.items` keeps the works that
  * survived provider failures and the aggregate bound; `batch.failures` keeps
@@ -86,6 +137,12 @@ export interface AcademicSourceProvider {
   available(): boolean
   /** Run one scholarly search; honor `signal` for cancellation. */
   search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>
+  /**
+   * Verify one supported Web-discovered reference against this provider's authoritative metadata.
+   * Omit the method when the provider has no first-version verification contract. A resolved `null`
+   * means that the authoritative source has no matching record; transport and parse failures reject.
+   */
+  verifyReference?(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null>
   /** Resolve ordered full-text candidates for one provider-owned record id. */
   fullTextUrls(recordId: string): readonly string[]
   /**

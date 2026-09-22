@@ -1,0 +1,328 @@
+{
+  "sampleSchemaVersion": 1,
+  "synthetic": true,
+  "planView": {
+    "researchBriefId": "brief-academic-hybrid-001",
+    "topic": "检索增强生成与幻觉",
+    "questions": [
+      "检索增强生成在什么条件下减少幻觉？"
+    ],
+    "searches": [
+      {
+        "query": "retrieval augmented generation hallucination",
+        "purpose": "查找检索增强生成与幻觉的实证研究",
+        "questions": [
+          "检索增强生成在什么条件下减少幻觉？"
+        ],
+        "retrieval": {
+          "channels": [
+            "academic",
+            "web_discovery"
+          ],
+          "academicProviders": [
+            "openalex",
+            "arxiv"
+          ],
+          "verificationProviders": [
+            "openalex",
+            "arxiv",
+            "acl",
+            "pmlr",
+            "cvf"
+          ],
+          "maximumWebDiscoveryResults": 8,
+          "maximumReferenceVerifications": 5
+        }
+      }
+    ]
+  },
+  "identificationCases": [
+    {
+      "candidate": {
+        "url": "https://doi.org/10.1000/synthetic.1",
+        "title": "Synthetic DOI paper"
+      },
+      "references": [
+        {
+          "kind": "doi",
+          "normalizedValue": "10.1000/synthetic.1",
+          "originalValue": "10.1000/SYNTHETIC.1",
+          "discoveryUrl": "https://doi.org/10.1000/synthetic.1"
+        }
+      ]
+    },
+    {
+      "candidate": {
+        "url": "https://arxiv.org/pdf/2401.00001v2",
+        "title": "Synthetic arXiv paper"
+      },
+      "references": [
+        {
+          "kind": "arxiv",
+          "normalizedValue": "2401.00001v2",
+          "originalValue": "2401.00001v2",
+          "discoveryUrl": "https://arxiv.org/pdf/2401.00001v2"
+        }
+      ]
+    },
+    {
+      "candidate": {
+        "url": "https://aclanthology.org/2024.synthetic-main.1/",
+        "title": "Synthetic ACL paper"
+      },
+      "references": [
+        {
+          "kind": "provider_record",
+          "provider": "acl",
+          "recordId": "2024.synthetic-main.1",
+          "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/"
+        }
+      ]
+    },
+    {
+      "candidate": {
+        "url": "https://proceedings.mlr.press/v235/synthetic24a.html",
+        "title": "Synthetic PMLR paper"
+      },
+      "references": [
+        {
+          "kind": "provider_record",
+          "provider": "pmlr",
+          "recordId": "v235/synthetic24a",
+          "discoveryUrl": "https://proceedings.mlr.press/v235/synthetic24a.html"
+        }
+      ]
+    },
+    {
+      "candidate": {
+        "url": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+        "title": "Synthetic CVF paper"
+      },
+      "references": [
+        {
+          "kind": "provider_record",
+          "provider": "cvf",
+          "recordId": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+          "discoveryUrl": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html"
+        }
+      ]
+    }
+  ],
+  "verificationOutcomes": [
+    {
+      "status": "verified",
+      "value": {
+        "reference": {
+          "kind": "provider_record",
+          "provider": "acl",
+          "recordId": "2024.synthetic-main.1",
+          "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/"
+        },
+        "verificationProvider": "acl",
+        "work": {
+          "academicWork": {
+            "schemaVersion": 1,
+            "academicWorkId": "10000000-0000-4000-8000-000000000101",
+            "title": "Synthetic ACL paper",
+            "authors": [
+              "Synthetic Author"
+            ],
+            "externalIdentifiers": [
+              {
+                "kind": "provider_record",
+                "normalizedValue": "acl:2024.synthetic-main.1",
+                "originalValue": "2024.synthetic-main.1",
+                "sourceProvider": "acl"
+              }
+            ],
+            "workVersionIds": [
+              "20000000-0000-4000-8000-000000000101"
+            ],
+            "canonicalVersionId": "20000000-0000-4000-8000-000000000101",
+            "firstPublicDate": {
+              "status": "available",
+              "value": {
+                "iso": "2024",
+                "precision": "year"
+              }
+            },
+            "publicationStatus": {
+              "status": "available",
+              "value": "published"
+            },
+            "venue": {
+              "status": "available",
+              "value": "Synthetic ACL"
+            }
+          },
+          "workVersion": {
+            "schemaVersion": 1,
+            "workVersionId": "20000000-0000-4000-8000-000000000101",
+            "academicWorkId": "10000000-0000-4000-8000-000000000101",
+            "versionType": "version_of_record",
+            "versionLabel": {
+              "status": "available",
+              "value": "2024.synthetic-main.1"
+            },
+            "releaseDate": {
+              "status": "available",
+              "value": {
+                "iso": "2024",
+                "precision": "year"
+              }
+            },
+            "externalIdentifiers": [
+              {
+                "kind": "provider_record",
+                "normalizedValue": "acl:2024.synthetic-main.1",
+                "originalValue": "2024.synthetic-main.1",
+                "sourceProvider": "acl"
+              }
+            ],
+            "sourceRecords": [
+              {
+                "provider": "acl",
+                "recordId": "2024.synthetic-main.1"
+              }
+            ],
+            "contentHash": {
+              "status": "not_extracted",
+              "reason": "The synthetic full text has not been fetched."
+            },
+            "supersedesWorkVersionId": null,
+            "status": "active"
+          }
+        },
+        "fullText": {
+          "sourceProvider": "acl",
+          "urls": [
+            "https://aclanthology.org/2024.synthetic-main.1.pdf"
+          ]
+        }
+      }
+    },
+    {
+      "status": "failed",
+      "failure": {
+        "reference": {
+          "kind": "provider_record",
+          "provider": "pmlr",
+          "recordId": "v235/missing24a",
+          "discoveryUrl": "https://proceedings.mlr.press/v235/missing24a.html"
+        },
+        "verificationProvider": "pmlr",
+        "category": "not_found",
+        "message": "Synthetic authoritative record was not found.",
+        "retryable": false,
+        "retryAfter": null
+      }
+    }
+  ],
+  "hybridRetrieval": {
+    "schemaVersion": 1,
+    "stages": {
+      "academicSearch": "partial_success",
+      "webDiscovery": "success",
+      "referenceIdentification": "success",
+      "referenceVerification": "partial_success",
+      "deduplication": "success"
+    },
+    "counts": {
+      "academicDiscoveredRecords": 6,
+      "webDiscoveredUrls": 6,
+      "identifiedReferences": 5,
+      "attemptedVerifications": 5,
+      "verifiedReferences": 4,
+      "failedVerifications": 1,
+      "discardedWebCandidates": 1,
+      "mergedDuplicates": 2,
+      "deduplicatedWorks": 8
+    },
+    "webCandidates": [
+      {
+        "url": "https://doi.org/10.1000/synthetic.1",
+        "title": "Synthetic DOI paper",
+        "status": "references_identified",
+        "identifiedReferenceCount": 1,
+        "message": null
+      },
+      {
+        "url": "https://arxiv.org/pdf/2401.00001v2",
+        "title": "Synthetic arXiv paper",
+        "status": "references_identified",
+        "identifiedReferenceCount": 1,
+        "message": null
+      },
+      {
+        "url": "https://aclanthology.org/2024.synthetic-main.1/",
+        "title": "Synthetic ACL paper",
+        "status": "references_identified",
+        "identifiedReferenceCount": 1,
+        "message": null
+      },
+      {
+        "url": "https://proceedings.mlr.press/v235/synthetic24a.html",
+        "title": "Synthetic PMLR paper",
+        "status": "references_identified",
+        "identifiedReferenceCount": 1,
+        "message": null
+      },
+      {
+        "url": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+        "title": "Synthetic CVF paper",
+        "status": "references_identified",
+        "identifiedReferenceCount": 1,
+        "message": null
+      },
+      {
+        "url": "https://example.org/synthetic-commentary",
+        "title": "Synthetic commentary",
+        "status": "discarded_non_paper",
+        "identifiedReferenceCount": 0,
+        "message": "No supported scholarly reference was identified."
+      }
+    ],
+    "references": [
+      {
+        "kind": "doi",
+        "normalizedValue": "10.1000/synthetic.1",
+        "discoveryUrl": "https://doi.org/10.1000/synthetic.1",
+        "verificationProvider": "openalex",
+        "status": "merged_duplicate",
+        "message": "Matched a directly discovered work by verified DOI."
+      },
+      {
+        "kind": "arxiv",
+        "normalizedValue": "2401.00001v2",
+        "discoveryUrl": "https://arxiv.org/pdf/2401.00001v2",
+        "verificationProvider": "arxiv",
+        "status": "verified",
+        "message": null
+      },
+      {
+        "kind": "acl",
+        "normalizedValue": "2024.synthetic-main.1",
+        "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/",
+        "verificationProvider": "acl",
+        "status": "verified",
+        "message": null
+      },
+      {
+        "kind": "pmlr",
+        "normalizedValue": "v235/missing24a",
+        "discoveryUrl": "https://proceedings.mlr.press/v235/missing24a.html",
+        "verificationProvider": "pmlr",
+        "status": "verification_failed",
+        "message": "Synthetic authoritative record was not found."
+      },
+      {
+        "kind": "cvf",
+        "normalizedValue": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+        "discoveryUrl": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+        "verificationProvider": "cvf",
+        "status": "merged_duplicate",
+        "message": "Matched another verified reference to the same synthetic work."
+      }
+    ]
+  }
+}

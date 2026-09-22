@@ -25,10 +25,16 @@ export { AcademicSourceError } from './types.ts'
 export type {
   AcademicSourceFullText,
   AcademicSourceProvider,
+  AcademicReference,
+  AcademicReferenceIdentifier,
+  AcademicReferenceVerificationFailure,
+  AcademicReferenceVerificationOutcome,
+  AcademicVerifiedReference,
   AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
   AcademicSourceWork,
+  AcademicWebDiscoveryCandidate,
 } from './types.ts'
 export {
   academicCatalogHtmlText,

@@ -15,6 +15,23 @@ export interface AcademicResearchRunRequest {
   readonly synthetic: boolean
 }
 
+/** Search channels that one approved query may execute. */
+export type AcademicRetrievalChannel = 'academic' | 'web_discovery'
+
+/** Providers with a first-version Web-reference verification contract. */
+export type AcademicReferenceVerificationProvider = 'openalex' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'
+
+/** Approved per-query hybrid-retrieval policy; limits are positive safe integers. */
+export interface AcademicPlannedRetrieval {
+  readonly channels: readonly AcademicRetrievalChannel[]
+  /** Providers searched directly through the Academic source seam. */
+  readonly academicProviders: readonly string[]
+  /** Providers allowed to verify references found through Web discovery. */
+  readonly verificationProviders: readonly AcademicReferenceVerificationProvider[]
+  readonly maximumWebDiscoveryResults: number
+  readonly maximumReferenceVerifications: number
+}
+
 /** One system-authored search direction retained with the reviewed plan. */
 export interface AcademicPlannedSearch {
   /** Exact search expression sent to source providers. */
@@ -23,6 +40,8 @@ export interface AcademicPlannedSearch {
   readonly purpose: string
   /** Research questions from the same Brief that this search supports. */
   readonly questions: readonly string[]
+  /** Absent on approved schema-version-2 plans; A-H2 makes this explicit in the next plan schema. */
+  readonly retrieval?: AcademicPlannedRetrieval
 }
 
 /** Read-only summary of the latest approved, executable search plan. */
@@ -142,6 +161,59 @@ export interface AcademicResearchStageResults {
   readonly extraction: AcademicResearchStageStatus
 }
 
+/** Producer-settled stages belonging only to the mixed discovery and verification path. */
+export interface AcademicHybridRetrievalStageResults {
+  readonly academicSearch: AcademicResearchStageStatus
+  readonly webDiscovery: AcademicResearchStageStatus
+  readonly referenceIdentification: AcademicResearchStageStatus
+  readonly referenceVerification: AcademicResearchStageStatus
+  readonly deduplication: AcademicResearchStageStatus
+}
+
+/** Observed hybrid-retrieval counts; URLs, references and deduplicated works remain separate units. */
+export interface AcademicHybridRetrievalCounts {
+  readonly academicDiscoveredRecords: number
+  readonly webDiscoveredUrls: number
+  readonly identifiedReferences: number
+  readonly attemptedVerifications: number
+  readonly verifiedReferences: number
+  readonly failedVerifications: number
+  readonly discardedWebCandidates: number
+  readonly mergedDuplicates: number
+  readonly deduplicatedWorks: number
+}
+
+/** Browser-safe settlement of one Web result before scholarly-reference verification. */
+export interface AcademicWebDiscoveryCandidateView {
+  readonly url: string
+  readonly title: string | null
+  readonly status: 'discovered' | 'references_identified' | 'discarded_non_paper'
+  readonly identifiedReferenceCount: number
+  readonly message: string | null
+}
+
+/** Browser-safe reference kind; source-specific provider records stay distinguishable. */
+export type AcademicReferenceViewKind = 'doi' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'
+
+/** Settlement of one Web-discovered reference without exposing raw page content. */
+export interface AcademicReferenceView {
+  readonly kind: AcademicReferenceViewKind
+  readonly normalizedValue: string
+  readonly discoveryUrl: string
+  readonly verificationProvider: string | null
+  readonly status: 'identified' | 'verified' | 'verification_failed' | 'merged_duplicate'
+  readonly message: string | null
+}
+
+/** Optional first-version projection populated only when a run executes hybrid retrieval. */
+export interface AcademicHybridRetrievalView {
+  readonly schemaVersion: 1
+  readonly stages: AcademicHybridRetrievalStageResults
+  readonly counts: AcademicHybridRetrievalCounts
+  readonly webCandidates: readonly AcademicWebDiscoveryCandidateView[]
+  readonly references: readonly AcademicReferenceView[]
+}
+
 /** Completed or cancelled Academic draft, observed retrieval run, and owning Session. */
 export interface AcademicResearchRunValue {
   /** Insight generation outcome, independent of retrieval and semantic approval. */
@@ -152,6 +224,8 @@ export interface AcademicResearchRunValue {
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
   readonly stages: AcademicResearchStageResults
+  /** Absent for runs produced before or without the approved hybrid-retrieval policy. */
+  readonly hybridRetrieval?: AcademicHybridRetrievalView
   readonly retrievalRun: RetrievalRun
   readonly papers: readonly AcademicPaperResultView[]
   readonly failures: readonly {
