@@ -29,6 +29,8 @@ declare module '@deepseek-ai/cordis' {
 
 /** Academic research deployment policy. */
 export interface Config {
+  /** Maximum concurrent papers per research run. Defaults to 3. */
+  readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
@@ -42,12 +44,14 @@ export class AcademicResearchController extends TypertRemoteService {
   static inject = ['academicSource', 'sessionController', 'typert', 'web']
 
   static Config: z<Config> = z.object({
+    paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     fulltextFetchProvider: z.string().default('http'),
     extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
     extractionMaxAttempts: z.number().step(1).min(1).max(2).default(2),
   })
 
   private readonly fulltextFetchProvider: string
+  private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
   private readonly extractionMaxAttempts: number
 
@@ -57,6 +61,7 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'academicResearchController', { namespace: 'academicResearch' })
+    this.paperConcurrency = config.paperConcurrency ?? 3
     this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
     this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
     this.extractionMaxAttempts = config.extractionMaxAttempts ?? 2
@@ -139,7 +144,7 @@ export class AcademicResearchController extends TypertRemoteService {
         session: agent.session,
         model,
         modelPolicy: { maxAttempts: this.extractionMaxAttempts },
-        input: { brief, searches: searches.map(search => ({ query: search.query,
+        input: { brief, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),

@@ -1,0 +1,14 @@
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    persona: 'Run run_replenishment_fixture once and reply REPLENISHMENT_DONE.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: academic-parallel-papers-fixture
+      name: '../../../packages/academic/workflow/tests/replenishment-plugin.ts'
+      config:
+        paperConcurrency: 3

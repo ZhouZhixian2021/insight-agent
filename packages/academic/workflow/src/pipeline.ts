@@ -1,4 +1,4 @@
-/** Sequential draft orchestration; module dependencies point toward producer libraries. */
+/** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
   type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceSearchBatchResult, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
@@ -29,6 +29,10 @@ export async function runResearchDraft(
   signal?: AbortSignal,
 ): Promise<DraftPipelineResult> {
   const { brief } = input
+  const paperConcurrency = input.paperConcurrency ?? 1
+  if (!Number.isSafeInteger(paperConcurrency) || paperConcurrency < 1) {
+    throw new Error('Paper concurrency must be a positive safe integer.')
+  }
   if (!isExecutableResearchBrief(brief)) throw new Error('Current research brief requires approval.')
   synthesisSections(brief)
   const limits = brief.stopConditions
@@ -120,45 +124,79 @@ export async function runResearchDraft(
     usableWorkIds = admission.usableWorkIds
     return admission
   }
-  let attempted = 0
-  for (const { paper, version } of validated) {
-    if (signal?.aborted) return settle(true)
-    const admission = evidenceAdmission()
-    if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready') {
-      selectionTruncated = true
-      selectionLimitations.push(`证据已达到计划数量要求，停止补选；已处理 ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
-      break
-    }
-    if (admission.usableWorkIds.length >= limits.maximumIncludedWorks) {
-      selectionTruncated = true
-      selectionLimitations.push(`达到成功纳入上限 ${limits.maximumIncludedWorks} 篇，停止补选。`)
-      break
-    }
-    attempted += 1
+  const paperAbort = new AbortController()
+  const paperSignal = signal === undefined ? paperAbort.signal : AbortSignal.any([signal, paperAbort.signal])
+  let fatal: WorkflowLogError | undefined
+  const processPaper = async ({ paper, version }: typeof validated[number]) => {
+    let fulltext = false
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
     try {
       const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
-        retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, signal)
-      availableFulltextWorks += 1
-      if (signal?.aborted) return settle(true)
+        retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, paperSignal)
+      fulltext = true
+      if (paperSignal.aborted) return { fulltext }
       stage = 'extraction'
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
-        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, signal)
-      papers.push(result)
-      evidenceAdmission()
-      if (result.status === 'partially_extracted' || result.status === 'extraction_failed') {
-        providerFailures.push(createPaperProviderFailure(paper, 'extraction',
-          new EvidenceError('Some model drafts failed source verification.', 'EVIDENCE_DRAFTS_REJECTED')))
-        if (result.status === 'extraction_failed') failures.push({ workVersionId: paper.workVersionId, stage: 'extraction' })
-      }
+        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal)
+      return { fulltext, result }
     } catch (error: unknown) {
-      if (error instanceof WorkflowLogError) throw error
-      // Paper-local acquisition/extraction failures preserve other papers; cancellation is run-wide.
-      if (signal?.aborted) return settle(true)
-      failures.push({ workVersionId: paper.workVersionId, stage })
-      providerFailures.push(createPaperProviderFailure(paper, stage, error))
+      if (error instanceof WorkflowLogError) {
+        fatal ??= error
+        paperAbort.abort(error)
+      }
+      if (paperSignal.aborted) return { fulltext }
+      return { fulltext, failure: { workVersionId: paper.workVersionId, stage },
+        providerFailure: createPaperProviderFailure(paper, stage, error) }
     }
   }
+  const collect = (paper: typeof validated[number]['paper'], outcome: Awaited<ReturnType<typeof processPaper>>) => {
+    if (outcome.fulltext) availableFulltextWorks += 1
+    if (outcome.failure) failures.push(outcome.failure)
+    if (outcome.providerFailure) providerFailures.push(outcome.providerFailure)
+    if (outcome.result) {
+      papers.push(outcome.result)
+      if (outcome.result.status === 'partially_extracted' || outcome.result.status === 'extraction_failed') {
+        providerFailures.push(createPaperProviderFailure(paper, 'extraction',
+          new EvidenceError('Some model drafts failed source verification.', 'EVIDENCE_DRAFTS_REJECTED')))
+        if (outcome.result.status === 'extraction_failed') failures.push({ workVersionId: paper.workVersionId, stage: 'extraction' })
+      }
+    }
+    evidenceAdmission()
+  }
+  const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
+  let attempted = 0
+  let stopped = false
+  try {
+    while (attempted < validated.length || pending.length > 0) {
+      const admission = evidenceAdmission()
+      if (!stopped && attempted < validated.length && !paperSignal.aborted) {
+        if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready') {
+          stopped = true
+          selectionTruncated = true
+          selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
+        } else if (usableWorkIds.length >= limits.maximumIncludedWorks) {
+          stopped = true
+          selectionTruncated = true
+          selectionLimitations.push(`达到成功纳入上限 ${limits.maximumIncludedWorks} 篇，停止补选。`)
+        }
+      }
+      // Every unsettled candidate reserves an inclusion slot; completion order cannot change selection.
+      while (!stopped && !paperSignal.aborted && attempted < validated.length
+        && pending.length < paperConcurrency && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
+        const candidate = validated[attempted++]
+        if (candidate === undefined) break
+        pending.push({ paper: candidate.paper, done: processPaper(candidate) })
+      }
+      const next = pending.shift()
+      if (!next) break
+      collect(next.paper, await next.done)
+    }
+  } finally {
+    // On any coordinator failure, abort and join siblings before exposing failure to the caller.
+    paperAbort.abort()
+    await Promise.all(pending.map(item => item.done))
+  }
+  if (fatal) throw fatal
   if (signal?.aborted) return settle(true)
   const admission = evidenceAdmission()
   if (attempted === validated.length && admission.status !== 'ready') {

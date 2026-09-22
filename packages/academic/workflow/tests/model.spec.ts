@@ -91,6 +91,30 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it('persists overlapping paper calls with distinct request-result and source identities', async () => {
+    const f = await fixture()
+    let release!: () => void
+    const barrier = new Promise<void>((resolve) => { release = resolve })
+    let entered = 0
+    f.adapter.beforeDispatch = async () => { entered++; await barrier }
+    const sources = Array.from({ length: 3 }, () => ({ ...f.source,
+      academicWorkId: createAcademicWorkId(), workVersionId: createWorkVersionId() }))
+    const calls = sources.map(source => f.generate(f.request, source, scope))
+    const settled = Promise.allSettled(calls)
+    try { await vi.waitFor(() => { expect(entered).toBe(3) }) } finally { release() }
+    expect((await settled).map(value => value.status)).toEqual(['fulfilled', 'fulfilled', 'fulfilled'])
+    const rows = await f.read()
+    const requests = rows.filter(row => row.type === 'academic/evidence-request')
+    const results = rows.filter(row => row.type === 'academic/evidence-result')
+    expect(requests).toHaveLength(3)
+    expect(results).toHaveLength(3)
+    for (const result of results) {
+      const request = requests.find(row => row.seq === result.data.requestSeq)
+      expect(request?.data.source).toEqual(result.data.source)
+      expect(result.data.status).toBe('validated')
+    }
+    expect(new Set(results.map(row => row.data.requestSeq)).size).toBe(3)
+  })
   it.each(['partial', 'all_rejected'] as const)('persists %s synthesis and only reports accepted paragraphs', async (mode) => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]

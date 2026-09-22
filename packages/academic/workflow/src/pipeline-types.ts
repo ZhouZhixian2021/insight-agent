@@ -44,6 +44,8 @@ export interface DraftPipelineAdapters {
 
 /** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
 export interface DraftPipelineInput {
+  /** Maximum concurrent paper acquisitions/extractions; omitted means serial execution. */
+  readonly paperConcurrency?: number
   readonly brief: ResearchBrief
   readonly searches: readonly AcademicSourceSearchRequest[]
   readonly synthetic: boolean

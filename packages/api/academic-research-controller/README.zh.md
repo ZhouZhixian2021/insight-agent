@@ -8,6 +8,8 @@ kind: "package-reference"
 
 ## 概述
 
+`paperConcurrency` 默认每轮并发 3 篇论文，设为 1 可串行获取和抽取。检索仍按顺序执行，论文任务收尾后才开始洞察分析。批准的纳入上限可能降低实际并发数。来源和 Web 结果接口保持不变。并发可能增加上游限流，不保证按比例提速。
+
 `@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，检索所有已注册的学术来源，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
 
 ## 目录
