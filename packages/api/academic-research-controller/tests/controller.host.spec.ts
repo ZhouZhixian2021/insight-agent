@@ -219,7 +219,7 @@ describe('AcademicResearchController', () => {
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
       modelPolicy: { maxAttempts: 2 },
-      input: { brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
+      input: { paperConcurrency: 3, brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
       searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })
     await call.adapters.search({ query: 'x' }, fixture.signal)

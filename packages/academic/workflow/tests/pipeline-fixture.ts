@@ -6,10 +6,10 @@ import { createAcademicWorkId, createBatchResult, createWorkVersionId, createRes
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { DraftPipelineInput, DraftPipelineAdapters } from '../src/index.ts'
 
-/** Create two independent synthetic works and the externally supplied pipeline operations. */
-export function draftFixture() {
+/** Create independent synthetic works and the externally supplied pipeline operations. */
+export function draftFixture(count = 2) {
   const events: string[] = []
-  const records: AcademicSourceWork[] = ['a', 'b'].map((key) => {
+  const records: AcademicSourceWork[] = Array.from({ length: count }, (_, index) => String.fromCharCode(97 + index)).map((key) => {
     const academicWorkId = createAcademicWorkId(), workVersionId = createWorkVersionId()
     const academicWork: AcademicWork = { schemaVersion: 1, academicWorkId,
       workVersionIds: [workVersionId], canonicalVersionId: workVersionId,

@@ -8,6 +8,8 @@ English | [中文](README.zh.md)
 
 ## Summary
 
+`paperConcurrency` defaults to 3 papers per run and can be set to 1 for serial acquisition/extraction. Searches remain ordered; synthesis starts after paper tasks settle. The approved inclusion cap can reduce effective concurrency. Existing source and Web result interfaces are unchanged. Concurrency may increase upstream rate limiting and does not guarantee proportional speedup.
+
 `@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run`. One call resolves an existing Session Agent, reconstructs the ResearchBrief approved through plan review, reuses the Session's selected model, searches every registered academic source, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
 
 ## Table of Contents

@@ -319,6 +319,8 @@ Requires: `academicSource` · `sessionController` · `typert` · `web`
 ```ts config-catalog
 /** Academic research deployment policy. */
 export interface Config {
+  /** Maximum concurrent papers per research run. Defaults to 3. */
+  readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */

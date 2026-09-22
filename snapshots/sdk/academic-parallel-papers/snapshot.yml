@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-parallel-papers
+profile: sdk
+composition: sdk-academic-parallel-papers
+recording: authored
+header:
+  class: academic-parallel-papers
+  pin: true
