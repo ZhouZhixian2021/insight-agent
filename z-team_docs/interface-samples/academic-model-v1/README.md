@@ -22,6 +22,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 - [`claim-freshness.sample.json`](claim-freshness.sample.json): simulates an old Claim becoming `stale` when its evidence version changes.
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result, including producer-settled search, full-text, and evidence-extraction stages, that C can use before live integration.
+- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. All records are synthetic.
 
 ## Sample coverage
 
@@ -36,6 +37,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 9. `Availability<T>` always uses five states; the wrapper stores only `status`, `value`, `reason`, or `failureId`, while all field-specific data remains inside `value`.
 10. A failed Provider does not discard other providers' successful results; the workflow reports the same failure and observed coverage to the Web client.
 11. Search, full-text, and evidence-extraction results are settled independently, so a downstream failure does not relabel a successful search as failed.
+12. Web-discovered URLs, identified references, verification attempts, and deduplicated works remain separate units; DOI, arXiv, ACL, PMLR, and CVF references retain discovery and verification provenance.
 
 ## Confirmed field rules
 

@@ -3544,12 +3544,44 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicEvidenceView {\n    readonly schemaVersion: 1;\n    readonly evidenceId: EvidenceId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly level: \'metadata\' | \'abstract\' | \'fulltext\';\n    readonly verbatimExcerpt: Availability<string>;\n    readonly sourcedStatement: string;\n    readonly sourceLocatorId: SourceLocatorId;\n    readonly sourceProvider: string;\n    readonly sourceUrl: string;\n    readonly retrievedAt: string;\n    readonly contentHash: Availability<string>;\n    readonly extractionMethod: ExtractionMethod;\n    readonly qualityNotes: readonly string[];\n}',
   },
   {
+    name: 'AcademicHybridRetrievalCounts',
+    declaration: 'export interface AcademicHybridRetrievalCounts {\n    readonly academicDiscoveredRecords: number;\n    readonly webDiscoveredUrls: number;\n    readonly identifiedReferences: number;\n    readonly attemptedVerifications: number;\n    readonly verifiedReferences: number;\n    readonly failedVerifications: number;\n    readonly discardedWebCandidates: number;\n    readonly mergedDuplicates: number;\n    readonly deduplicatedWorks: number;\n}',
+  },
+  {
+    name: 'AcademicHybridRetrievalStageResults',
+    declaration: 'export interface AcademicHybridRetrievalStageResults {\n    readonly academicSearch: AcademicResearchStageStatus;\n    readonly webDiscovery: AcademicResearchStageStatus;\n    readonly referenceIdentification: AcademicResearchStageStatus;\n    readonly referenceVerification: AcademicResearchStageStatus;\n    readonly deduplication: AcademicResearchStageStatus;\n}',
+  },
+  {
+    name: 'AcademicHybridRetrievalView',
+    declaration: 'export interface AcademicHybridRetrievalView {\n    readonly schemaVersion: 1;\n    readonly stages: AcademicHybridRetrievalStageResults;\n    readonly counts: AcademicHybridRetrievalCounts;\n    readonly webCandidates: readonly AcademicWebDiscoveryCandidateView[];\n    readonly references: readonly AcademicReferenceView[];\n}',
+  },
+  {
     name: 'AcademicPaperResultView',
     declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
   },
   {
+    name: 'AcademicPlannedRetrieval',
+    declaration: 'export interface AcademicPlannedRetrieval {\n    readonly channels: readonly AcademicRetrievalChannel[];\n    readonly academicProviders: readonly string[];\n    readonly verificationProviders: readonly AcademicReferenceVerificationProvider[];\n    readonly maximumWebDiscoveryResults: number;\n    readonly maximumReferenceVerifications: number;\n}',
+  },
+  {
     name: 'AcademicPlannedSearch',
-    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n}',
+    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
+  },
+  {
+    name: 'AcademicReference',
+    declaration: 'export type AcademicReference = {\n    readonly kind: \'doi\' | \'arxiv\';\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly discoveryUrl: string;\n} | {\n    readonly kind: \'provider_record\';\n    readonly provider: \'acl\' | \'pmlr\' | \'cvf\';\n    readonly recordId: string;\n    readonly discoveryUrl: string;\n};',
+  },
+  {
+    name: 'AcademicReferenceVerificationProvider',
+    declaration: 'export type AcademicReferenceVerificationProvider = \'openalex\' | \'arxiv\' | \'acl\' | \'pmlr\' | \'cvf\';',
+  },
+  {
+    name: 'AcademicReferenceView',
+    declaration: 'export interface AcademicReferenceView {\n    readonly kind: AcademicReferenceViewKind;\n    readonly normalizedValue: string;\n    readonly discoveryUrl: string;\n    readonly verificationProvider: string | null;\n    readonly status: \'identified\' | \'verified\' | \'verification_failed\' | \'merged_duplicate\';\n    readonly message: string | null;\n}',
+  },
+  {
+    name: 'AcademicReferenceViewKind',
+    declaration: 'export type AcademicReferenceViewKind = \'doi\' | \'arxiv\' | \'acl\' | \'pmlr\' | \'cvf\';',
   },
   {
     name: 'AcademicResearchPlanView',
@@ -3565,7 +3597,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunValue',
-    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly stages: AcademicResearchStageResults;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly stages: AcademicResearchStageResults;\n    readonly hybridRetrieval?: AcademicHybridRetrievalView;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
   },
   {
     name: 'AcademicResearchStageResults',
@@ -3576,12 +3608,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AcademicResearchStageStatus = \'success\' | \'partial_success\' | \'failed\' | \'not_run\';',
   },
   {
+    name: 'AcademicRetrievalChannel',
+    declaration: 'export type AcademicRetrievalChannel = \'academic\' | \'web_discovery\';',
+  },
+  {
     name: 'AcademicSourceFullText',
     declaration: 'export interface AcademicSourceFullText {\n    readonly sourceProvider: string;\n    readonly urls: readonly string[];\n}',
   },
   {
     name: 'AcademicSourceProvider',
-    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    fullTextUrls(recordId: string): readonly string[];\n    readonly limitations?: readonly string[];\n}',
+    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    verifyReference?(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null>;\n    fullTextUrls(recordId: string): readonly string[];\n    readonly limitations?: readonly string[];\n}',
   },
   {
     name: 'AcademicSourceSearchBatchResult',
@@ -3598,6 +3634,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicSourceWork',
     declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n}',
+  },
+  {
+    name: 'AcademicWebDiscoveryCandidateView',
+    declaration: 'export interface AcademicWebDiscoveryCandidateView {\n    readonly url: string;\n    readonly title: string | null;\n    readonly status: \'discovered\' | \'references_identified\' | \'discarded_non_paper\';\n    readonly identifiedReferenceCount: number;\n    readonly message: string | null;\n}',
   },
   {
     name: 'AcademicWork',

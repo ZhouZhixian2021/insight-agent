@@ -22,6 +22,7 @@
 - [`claim-freshness.sample.json`](claim-freshness.sample.json)：模拟证据版本变化后，旧 Claim 在使用时被判定为 `stale`。
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json)：固定 B 一次多来源搜索的部分成功目标结果。
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json)：固定 C 在正式接入前可使用的浏览器安全 Remote 目标结果，包括由生产方结算的来源检索、全文获取和证据抽取阶段状态。
+- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影；全部记录均为合成数据。
 
 ## 样例覆盖
 
@@ -36,6 +37,7 @@
 9. `Availability<T>` 固定使用五种状态；包装层只保存 `status`、`value`、`reason` 或 `failureId`，字段自身的数据全部放入 `value`。
 10. 一个 Provider 失败不会丢弃其他 Provider 的成功结果；工作流向 Web 客户端报告同一条失败和实际覆盖情况。
 11. 来源检索、全文获取和证据抽取分别结算；后续阶段失败不会把成功的来源检索改标为失败。
+12. Web 发现 URL、已识别引用、核验尝试与去重论文保持不同计数单位；DOI、arXiv、ACL、PMLR、CVF 引用保留发现来源与核验来源。
 
 ## 已确认的字段规则
 

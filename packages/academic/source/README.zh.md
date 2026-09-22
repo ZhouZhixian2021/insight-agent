@@ -75,6 +75,8 @@ kind: "package-reference"
 | `AcademicSourceSearchResult` | 规范化成果/版本对，外加 `truncated` 标记。 |
 | `AcademicSourceSearchBatchResult` | `searchAll()` 的聚合结果：实际调用的提供方、上限前记录数、成果与来源级失败组成的 `BatchResult`、截断状态与覆盖限制。 |
 | `AcademicSourceWork` | 一对 provider 中立的 `{ academicWork, workVersion }`。 |
+| `AcademicWebDiscoveryCandidate`、`AcademicReference`、`AcademicReferenceIdentifier` | 从 Web 结果到 DOI、arXiv 及带 ACL/PMLR/CVF 命名空间记录的纯识别边界；发现文本绝不作为证据。 |
+| `AcademicReferenceVerificationOutcome` | 单条引用的已核验成果/全文结果或不含凭据的分类失败；同批其他结果独立保留。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
 | `AcademicSourceRuntime` | Provider 注册、单源/多源搜索与全文解析。 |
 
@@ -97,7 +99,7 @@ kind: "package-reference"
 
 - **无网络客户端**——服务只做选择与上限控制；抓取、限流处理与重试属于各提供方实现。
 - **搜索请求只携带 `query` 与 `maxResults`**——provider 中立的过滤（`publicationWindow`、成果类型）延后到后端与有驱动的消费方能诚实支持时再加。
-- **无按标识符抓取操作**——按 DOI 或提供方 id 定位单一成果是另一项未来操作，不会塞进 `search()`。
+- **引用核验目前只有契约**——Provider 可以实现 `verifyReference()`，公共引用与结果字段已经固定，但运行时尚未调度或结算 Web 混合发现。调用方不得把已识别 URL 或摘要当作已核验论文。
 - **无检索运行报告**——`searchAll()` 发布批次事实（`providers`、`discoveredRecords`、`BatchResult`、`limitations`），但构造 `RetrievalRun` 与 `CoverageSummary` 仍由工作流消费方负责。
 
 <a id="dev-note"></a>

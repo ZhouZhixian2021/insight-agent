@@ -75,6 +75,8 @@ For retained works with source records, `searchAll()` also reports counts of unk
 | `AcademicSourceSearchResult` | Normalized work/version pairs plus a `truncated` flag. |
 | `AcademicSourceSearchBatchResult` | `searchAll()` aggregate: called providers, pre-bound record count, the `BatchResult` of works and source failures, truncation, and coverage limitations. |
 | `AcademicSourceWork` | One provider-neutral `{ academicWork, workVersion }` pair. |
+| `AcademicWebDiscoveryCandidate`, `AcademicReference`, `AcademicReferenceIdentifier` | Pure Web-result-to-reference boundary for DOI, arXiv, and namespaced ACL/PMLR/CVF records; discovery text is never evidence. |
+| `AcademicReferenceVerificationOutcome` | Per-reference verified work/full-text result or credential-free classified failure; sibling outcomes survive independently. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
 | `AcademicSourceRuntime` | Registration, single/all-source search, and full-text resolution. |
 
@@ -97,7 +99,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 
 - **No network client** — the service selects and bounds providers; fetching, rate-limit handling, and retries belong to each provider implementation.
 - **Search requests carry only `query` and `maxResults`** — provider-neutral filters (`publicationWindow`, work types) are deferred until backends and a driven consumer can honor them honestly.
-- **No fetch-by-identifier operation** — resolving a single work by DOI or provider id is a separate future operation, not a widening of `search()`.
+- **Reference verification is contract-only** — providers may implement `verifyReference()`, and the public reference/result vocabulary is fixed, but the runtime does not yet dispatch or settle hybrid Web discovery. Callers must not treat identified URLs or snippets as verified papers.
 - **No retrieval-run reporting** — `searchAll()` publishes batch facts (`providers`, `discoveredRecords`, `BatchResult`, `limitations`), but constructing `RetrievalRun` and `CoverageSummary` stays with the workflow consumer.
 
 <a id="dev-note"></a>
