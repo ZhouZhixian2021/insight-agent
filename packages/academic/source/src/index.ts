@@ -351,6 +351,7 @@ interface ResolvableProvider {
 }
 
 /** Resolve the selected provider or throw the matching {@link AcademicSourceError}. */
+/* jscpd:ignore-start -- academic and Web providers own separate error codes and selection APIs. */
 function resolveProvider<P extends ResolvableProvider>(selection: Selection<P>): P {
   const { configuredId, providers } = selection
   if (configuredId !== undefined) {
@@ -383,6 +384,7 @@ function resolveProvider<P extends ResolvableProvider>(selection: Selection<P>):
   }
   return single
 }
+/* jscpd:ignore-end */
 
 /** Enforce `maxResults` on a search result: truncate `works[]` and flag it. */
 function capWorks(result: AcademicSourceSearchResult, maxResults: number | undefined): AcademicSourceSearchResult {
