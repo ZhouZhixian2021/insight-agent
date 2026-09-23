@@ -412,3 +412,4 @@ function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
 }
 
 export default AcademicSourceRuntime
+export { identifyAcademicReferences } from './identify-reference.ts'
