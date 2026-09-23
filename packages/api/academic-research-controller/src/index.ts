@@ -113,6 +113,9 @@ export class AcademicResearchController extends TypertRemoteService {
       searches = approved.searches
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       if (brief.researchBriefId !== request.researchBriefId) throw new Error('研究计划已更新，请重新打开学术研究，确认最新计划后再开始。')
+      if (searches.some(search => search.retrieval !== undefined)) {
+        throw new Error('当前版本尚未接入已批准的混合检索策略执行，请完成 A-H3 工作流接入后再开始研究。')
+      }
     } catch (cause: unknown) {
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
         { cause })

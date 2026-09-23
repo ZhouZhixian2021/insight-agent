@@ -3528,6 +3528,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicClaimView {\n    readonly schemaVersion: 1;\n    readonly claimId: ClaimId;\n    readonly text: string;\n    readonly category: \'consensus\' | \'trend\' | \'comparison\' | \'disagreement\' | \'research_gap\' | \'limitation\';\n    readonly scope: string;\n    readonly uncertainty: string | null;\n    readonly confidence: \'high\' | \'medium\' | \'low\' | \'insufficient\';\n    readonly confidenceReasons: readonly string[];\n    readonly evidenceSnapshot: AcademicEvidenceSnapshotView;\n    readonly validity: \'current\' | \'stale\';\n}',
   },
   {
+    name: 'AcademicDirectSearchProvider',
+    declaration: 'export type AcademicDirectSearchProvider = \'openalex\' | \'arxiv\';',
+  },
+  {
     name: 'AcademicEvaluationView',
     declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
   },
@@ -3561,7 +3565,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicPlannedRetrieval',
-    declaration: 'export interface AcademicPlannedRetrieval {\n    readonly channels: readonly AcademicRetrievalChannel[];\n    readonly academicProviders: readonly string[];\n    readonly verificationProviders: readonly AcademicReferenceVerificationProvider[];\n    readonly maximumWebDiscoveryResults: number;\n    readonly maximumReferenceVerifications: number;\n}',
+    declaration: 'export interface AcademicPlannedRetrieval {\n    readonly channels: readonly AcademicRetrievalChannel[];\n    readonly academicProviders: readonly AcademicDirectSearchProvider[];\n    readonly verificationProviders: readonly AcademicReferenceVerificationProvider[];\n    readonly maximumWebDiscoveryResults: number;\n    readonly maximumReferenceVerifications: number;\n}',
   },
   {
     name: 'AcademicPlannedSearch',

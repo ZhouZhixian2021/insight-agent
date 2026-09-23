@@ -40,72 +40,146 @@
     {
       "candidate": {
         "url": "https://doi.org/10.1000/synthetic.1",
-        "title": "Synthetic DOI paper"
+        "title": "Synthetic DOI paper",
+        "snippet": "The related arXiv identifier 2401 is incomplete."
       },
-      "references": [
-        {
-          "kind": "doi",
-          "normalizedValue": "10.1000/synthetic.1",
-          "originalValue": "10.1000/SYNTHETIC.1",
-          "discoveryUrl": "https://doi.org/10.1000/synthetic.1"
-        }
-      ]
+      "result": {
+        "status": "identified",
+        "references": [
+          {
+            "kind": "doi",
+            "normalizedValue": "10.1000/synthetic.1",
+            "originalValue": "10.1000/synthetic.1",
+            "discoveryUrl": "https://doi.org/10.1000/synthetic.1"
+          }
+        ],
+        "issues": [
+          {
+            "code": "invalid_reference",
+            "message": "The arXiv identifier in the snippet is incomplete."
+          }
+        ]
+      }
     },
     {
       "candidate": {
         "url": "https://arxiv.org/pdf/2401.00001v2",
         "title": "Synthetic arXiv paper"
       },
-      "references": [
-        {
-          "kind": "arxiv",
-          "normalizedValue": "2401.00001v2",
-          "originalValue": "2401.00001v2",
-          "discoveryUrl": "https://arxiv.org/pdf/2401.00001v2"
-        }
-      ]
+      "result": {
+        "status": "identified",
+        "references": [
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2401.00001v2",
+            "originalValue": "2401.00001v2",
+            "discoveryUrl": "https://arxiv.org/pdf/2401.00001v2"
+          }
+        ],
+        "issues": []
+      }
     },
     {
       "candidate": {
         "url": "https://aclanthology.org/2024.synthetic-main.1/",
         "title": "Synthetic ACL paper"
       },
-      "references": [
-        {
-          "kind": "provider_record",
-          "provider": "acl",
-          "recordId": "2024.synthetic-main.1",
-          "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/"
-        }
-      ]
+      "result": {
+        "status": "identified",
+        "references": [
+          {
+            "kind": "provider_record",
+            "provider": "acl",
+            "recordId": "2024.synthetic-main.1",
+            "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/"
+          }
+        ],
+        "issues": []
+      }
     },
     {
       "candidate": {
         "url": "https://proceedings.mlr.press/v235/synthetic24a.html",
         "title": "Synthetic PMLR paper"
       },
-      "references": [
-        {
-          "kind": "provider_record",
-          "provider": "pmlr",
-          "recordId": "v235/synthetic24a",
-          "discoveryUrl": "https://proceedings.mlr.press/v235/synthetic24a.html"
-        }
-      ]
+      "result": {
+        "status": "identified",
+        "references": [
+          {
+            "kind": "provider_record",
+            "provider": "pmlr",
+            "recordId": "v235/synthetic24a",
+            "discoveryUrl": "https://proceedings.mlr.press/v235/synthetic24a.html"
+          }
+        ],
+        "issues": []
+      }
     },
     {
       "candidate": {
         "url": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
         "title": "Synthetic CVF paper"
       },
-      "references": [
-        {
-          "kind": "provider_record",
-          "provider": "cvf",
-          "recordId": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
-          "discoveryUrl": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html"
-        }
-      ]
+      "result": {
+        "status": "identified",
+        "references": [
+          {
+            "kind": "provider_record",
+            "provider": "cvf",
+            "recordId": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
+            "discoveryUrl": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html"
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "candidate": {
+        "url": "https://example.test/research-news",
+        "title": "Synthetic research news"
+      },
+      "result": {
+        "status": "discarded",
+        "references": [],
+        "issues": [
+          {
+            "code": "unrecognized_page",
+            "message": "The Web result contains no supported paper reference."
+          }
+        ]
+      }
+    },
+    {
+      "candidate": {
+        "url": "https://doi.org/10.1000/",
+        "title": "Synthetic malformed DOI"
+      },
+      "result": {
+        "status": "discarded",
+        "references": [],
+        "issues": [
+          {
+            "code": "invalid_reference",
+            "message": "The DOI is incomplete."
+          }
+        ]
+      }
+    },
+    {
+      "candidate": {
+        "url": "https://example.test/paper",
+        "title": "Synthetic paper DOI 10.1000/first or 10.1000/second"
+      },
+      "result": {
+        "status": "discarded",
+        "references": [],
+        "issues": [
+          {
+            "code": "ambiguous_reference",
+            "message": "The Web result does not identify which DOI belongs to the paper."
+          }
+        ]
+      }
     }
   ],
   "verificationOutcomes": [
