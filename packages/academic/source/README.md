@@ -76,6 +76,7 @@ For retained works with source records, `searchAll()` also reports counts of unk
 | `AcademicSourceSearchBatchResult` | `searchAll()` aggregate: called providers, pre-bound record count, the `BatchResult` of works and source failures, truncation, and coverage limitations. |
 | `AcademicSourceWork` | One provider-neutral `{ academicWork, workVersion }` pair. |
 | `AcademicWebDiscoveryCandidate`, `AcademicReference`, `AcademicReferenceIdentifier` | Pure Web-result-to-reference boundary for DOI, arXiv, and namespaced ACL/PMLR/CVF records; successful references survive sibling identification issues, while discarded candidates retain an explicit unrecognized, invalid, or ambiguous reason. Discovery text is never evidence. |
+| `identifyAcademicReferences()` | Identifies references from one Web result's URL, title, and snippet without fetching; ambiguous DOI values are withheld while independent valid references survive. |
 | `AcademicReferenceVerificationOutcome` | Per-reference verified work/full-text result or credential-free classified failure; sibling outcomes survive independently. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
 | `AcademicSourceRuntime` | Registration, single/all-source search, and full-text resolution. |
