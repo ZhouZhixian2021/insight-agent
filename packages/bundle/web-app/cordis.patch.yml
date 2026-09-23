@@ -41,7 +41,7 @@
 # the Academic controller accept complete arXiv HTML before PDF fallback.
 - id: web-fetch-http
   config:
-    maxResponseBytes: 5000000
+    maxResponseBytes: 10000000
     maxBodyChars: 1000000
     timeoutMs: 120000
     maxRedirects: 5
