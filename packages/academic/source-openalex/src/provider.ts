@@ -1,7 +1,8 @@
 /** Bounded OpenAlex discovery per caller-supplied query; no planning or fallback queries. */
 import { setTimeout as delay } from 'node:timers/promises'
 import { AcademicSourceError } from '@deepseek-ai/dsh-academic-source'
-import type { AcademicSourceProvider, AcademicSourceSearchRequest, AcademicSourceSearchResult } from '@deepseek-ai/dsh-academic-source'
+import type { AcademicReference, AcademicSourceProvider, AcademicSourceSearchRequest,
+  AcademicSourceSearchResult, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { normalizeOpenAlexWork, object } from './normalize.ts'
 
 /** Deployment controls resolved by the plugin before searching. */
@@ -41,6 +42,50 @@ export class OpenAlexProvider implements AcademicSourceProvider {
 
   fullTextUrls(recordId: string): readonly string[] { return this.candidates.get(recordId) ?? [] }
 
+  /** Retrieve one OpenAlex work by DOI and compare the returned DOI. */
+  async verifyReference(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null> {
+    if (reference.kind !== 'doi' || !/^10\.\d{4,9}\/\S+$/iu.test(reference.normalizedValue)) {
+      throw new AcademicSourceError('Invalid DOI reference', 'ACADEMIC_SOURCE_INVALID_REQUEST')
+    }
+    if (signal?.aborted) throw new AcademicSourceError('OpenAlex paper request aborted', 'ACADEMIC_SOURCE_ABORTED')
+    const url = new URL('/works/', this.options.baseURL)
+    url.pathname += `doi:${reference.normalizedValue}`
+    const controller = new AbortController()
+    const operationSignal = signal === undefined ? controller.signal : AbortSignal.any([signal, controller.signal])
+    const timer = setTimeout(() => { controller.abort() }, this.options.timeoutMs)
+    try {
+      const response = await this.request(url, operationSignal)
+      if (response.status === 404) { await response.body?.cancel(); return null }
+      if (!response.ok) {
+        await response.body?.cancel()
+        throw new AcademicSourceError(`OpenAlex paper request returned HTTP ${response.status}`,
+          response.status === 429 ? 'ACADEMIC_SOURCE_RATE_LIMIT' : 'ACADEMIC_SOURCE_PROVIDER_ERROR')
+      }
+      const record = normalizeOpenAlexWork(await response.json())
+      if (!record.work.academicWork.externalIdentifiers.some(id => id.kind === 'doi'
+        && id.normalizedValue === reference.normalizedValue)) return null
+      this.candidates.delete(record.id)
+      this.candidates.set(record.id, record.urls)
+      while (this.candidates.size > this.options.maxCachedRecords) {
+        this.candidates.delete(this.candidates.keys().next().value as string)
+      }
+      return record.work
+    } catch (cause: unknown) {
+      if (signal?.aborted) throw new AcademicSourceError('OpenAlex paper request aborted', 'ACADEMIC_SOURCE_ABORTED')
+      if (controller.signal.aborted) throw new AcademicSourceError('OpenAlex paper request timed out', 'ACADEMIC_SOURCE_TIMEOUT')
+      if (cause instanceof AcademicSourceError) throw cause
+      if (cause instanceof SyntaxError) throw new AcademicSourceError('OpenAlex returned invalid JSON', 'ACADEMIC_SOURCE_PARSE_ERROR')
+      throw new AcademicSourceError('OpenAlex paper request failed', 'ACADEMIC_SOURCE_NETWORK_ERROR')
+    } finally { clearTimeout(timer) }
+  }
+
+  private request(url: URL, signal: AbortSignal): Promise<Response> {
+    return fetch(url, { redirect: 'error', signal, headers: {
+      accept: 'application/json', 'user-agent': 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)',
+      ...this.options.apiKey === undefined ? {} : { authorization: `Bearer ${this.options.apiKey}` },
+    } })
+  }
+
   async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
     if (signal?.aborted) throw new AcademicSourceError('OpenAlex search aborted', 'ACADEMIC_SOURCE_ABORTED')
     if (request.query.trim() === '' || /[\r\n]/u.test(request.query)
@@ -56,6 +101,7 @@ export class OpenAlexProvider implements AcademicSourceProvider {
       try {
         return await this.searchOnce(url, limit, signal)
       } catch (error: unknown) {
+        /* v8 ignore next -- searchOnce classifies every fetch and parse failure before returning. */
         if (!(error instanceof AcademicSourceError)) throw error
         if (error.code === 'ACADEMIC_SOURCE_ABORTED') throw error
         const retryable = error.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' || error.code === 'ACADEMIC_SOURCE_TIMEOUT'
@@ -73,10 +119,7 @@ export class OpenAlexProvider implements AcademicSourceProvider {
     const operationSignal = signal === undefined ? controller.signal : AbortSignal.any([signal, controller.signal])
     const timer = setTimeout(() => { controller.abort() }, this.options.timeoutMs)
     try {
-      const response = await fetch(url, { redirect: 'error', signal: operationSignal, headers: {
-        accept: 'application/json', 'user-agent': 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)',
-        ...this.options.apiKey === undefined ? {} : { authorization: `Bearer ${this.options.apiKey}` },
-      } })
+      const response = await this.request(url, operationSignal)
       if (!response.ok) {
         await response.body?.cancel()
         throw new AcademicSourceError(`OpenAlex search returned HTTP ${response.status}`,

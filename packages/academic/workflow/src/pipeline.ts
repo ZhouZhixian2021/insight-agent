@@ -311,6 +311,7 @@ function retainFirstWorks(outcome: IngestOutcome, maximum: number): IngestOutcom
 }
 
 /** Interleave query batches so an earlier query cannot consume the global candidate bound alone. */
+/* jscpd:ignore-start -- workflow query ordering and source provider ordering belong to separate packages. */
 function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
   const merged: T[] = []
   const length = Math.max(0, ...groups.map(group => group.length))
@@ -322,6 +323,7 @@ function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
   }
   return merged
 }
+/* jscpd:ignore-end */
 
 function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)]

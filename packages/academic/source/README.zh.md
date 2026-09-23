@@ -42,6 +42,8 @@ kind: "package-reference"
 
 两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 把所有可用提供方聚合成一个批次：单个提供方失败时，其他提供方的成果保留在 `batch.items`，失败记录进 `batch.failures`，而 `providers`、`discoveredRecords`、`truncated` 与 `limitations` 分别报告实际调用的提供方、应用上限前的记录数、丢包状态与来源覆盖限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
+`verifyReference(reference, allowedProviders, signal)` 把已识别 DOI 交给 OpenAlex、arXiv ID 交给 arXiv、ACL/PMLR/CVF 官方记录交给对应 Provider。服务在网络访问前检查允许列表；即使目录搜索不可用，已注册 Provider 仍可核验单篇记录。结果是带全文候选的已核验成果，或一条分类失败。Provider 未注册时明确抛错；调用方取消会中止调用。
+
 ### 提供方选择
 
 每次调用在执行时解析提供方，注册或加载顺序从不影响结果。配置的提供方 id 在已注册且可用时胜出；未配置 id 时，服务运行唯一可用提供方，否则清晰失败：
@@ -79,7 +81,7 @@ kind: "package-reference"
 | `identifyAcademicReferences()` | 从单条 Web 结果的 URL、标题和摘要片段识别引用，不抓取网页；含糊的 DOI 值不进入结果，其他有效引用仍保留。 |
 | `AcademicReferenceVerificationOutcome` | 单条引用的已核验成果/全文结果或不含凭据的分类失败；同批其他结果独立保留。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
-| `AcademicSourceRuntime` | Provider 注册、单源/多源搜索与全文解析。 |
+| `AcademicSourceRuntime` | Provider 注册、单源/多源搜索、单条引用核验与全文解析。 |
 
 完整签名见[学术来源子系统](../../../docs/subsystems/academic-source.zh.md)参考。
 
@@ -100,7 +102,7 @@ kind: "package-reference"
 
 - **无网络客户端**——服务只做选择与上限控制；抓取、限流处理与重试属于各提供方实现。
 - **搜索请求只携带 `query` 与 `maxResults`**——provider 中立的过滤（`publicationWindow`、成果类型）延后到后端与有驱动的消费方能诚实支持时再加。
-- **引用核验目前只有契约**——Provider 可以实现 `verifyReference()`，公共引用与结果字段已经固定，但运行时尚未调度或结算 Web 混合发现。调用方不得把已识别 URL 或摘要当作已核验论文。
+- **逐条核验引用**——运行时不搜索未知标识符，也不摄取全文。已核验记录提供候选 URL；下游抓取器负责检查并下载。
 - **无检索运行报告**——`searchAll()` 发布批次事实（`providers`、`discoveredRecords`、`BatchResult`、`limitations`），但构造 `RetrievalRun` 与 `CoverageSummary` 仍由工作流消费方负责。
 
 <a id="dev-note"></a>

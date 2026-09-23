@@ -11,6 +11,8 @@ kind: "package-reference"
 
 `dsh-academic-source-arxiv` 向 `ctx.academicSource` 注册 `arxiv` 提供方，并搜索公开的 arXiv Atom `/api/query` 端点。每条条目成为预印本 `AcademicWork`/`WorkVersion` 对：成果携带用于合并的 arXiv 基础 id 与可选 DOI，版本保留带 `vN` 的记录 id、标签与更新时间。
 
+`verifyReference()` 通过 `id_list` 查询单个 arXiv ID，并核对返回的 ID；明确指定 `vN` 时必须匹配该版本。它返回规范化记录及 HTML/PDF 候选，不下载全文。
+
 ## 目录
 
 - [使用本包](#use-this-package)

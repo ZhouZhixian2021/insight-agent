@@ -1,5 +1,5 @@
 ---
-description: "学术来源 seam：AcademicSourceSearchRequest/Result/BatchResult、AcademicSourceWork、提供方可用性与 AcademicSourceError。"
+description: "学术来源 seam：学术搜索、单条引用核验结果、提供方可用性与 AcademicSourceError。"
 kind: "subsystem"
 ---
 
@@ -14,6 +14,10 @@ kind: "subsystem"
 ## 搜索请求与结果
 
 每个 seam 请求只携带一个 `query`。`maxResults` 是消费方自有的上限，通过 seam 传递并在返回时强制执行——如果提供方返回超量，seam 截断 `works[]` 并设置 `truncated`。搜索返回 provider 中立的 `AcademicSourceWork` 项，每一项都是来自[共享模型](academic-insight.zh.md)的一对 `{ academicWork, workVersion }`：`academicWork` 是全新的成果身份，`workVersion` 是它唯一的不可变版本，因此跨记录的版本关联与去重留在摄取增量中，而不属于提供方。
+
+## 单条引用核验
+
+`AcademicReference` 标识从 Web 结果识别的一个 DOI、arXiv ID 或带命名空间的 ACL/PMLR/CVF 记录；其中发现 URL 只记录候选来自哪里，不作为论文元数据。`verifyReference()` 检查调用方的 Provider 允许列表，请对应的已注册 Provider 读取单篇官方记录，并返回 `AcademicReferenceVerificationOutcome`：包含可选全文 URL 的已核验 `AcademicSourceWork`，或一条分类失败。目录搜索不可用不影响已注册 Provider 核对精确记录。缺少核验方法属于配置错误；调用方取消会中止，而非生成失败结果。核验不下载全文，也不创建证据。
 
 ## 多提供方批次结果
 
@@ -107,6 +111,16 @@ async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Pro
  * @returns the first usable provider's ordered candidates, or `null`.
  */
 resolveFullText(version: WorkVersion): AcademicSourceFullText | null
+
+/**
+ * Verify one Web-discovered paper against the approved owning provider.
+ * Search-only availability does not prevent a registered provider from verifying a single record.
+ * @param reference - DOI, arXiv ID, or official provider record identified from one Web result.
+ * @param allowedProviders - provider ids approved by the research plan for verification.
+ * @param signal - caller cancellation, which aborts the whole verification round.
+ * @returns the official work and full-text candidates, or one classified failure.
+ */
+async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>
 ```
 
 Types: [WorkVersion](academic-insight.zh.md)

@@ -42,6 +42,8 @@ Set `searchProviders: [openalex]` to avoid catalog downloads during discovery wh
 
 Both search methods return normalized works and enforce the total `request.maxResults` bound. `searchAll()` aggregates every usable provider into one batch: a single provider's failure keeps the other providers' works in `batch.items` and records the failure in `batch.failures`, while `providers`, `discoveredRecords`, `truncated`, and `limitations` report the called providers, the pre-bound record count, dropped-record state, and source coverage limits. `resolveFullText()` maps a selected version's source record back to its provider-owned ordered URL candidates. Calls accept an optional `AbortSignal` forwarded to providers.
 
+`verifyReference(reference, allowedProviders, signal)` routes one identified DOI to OpenAlex, arXiv ID to arXiv, or official ACL/PMLR/CVF record to its provider. The allowlist is checked before network access; a registered provider can verify one record even when its catalog search is unavailable. The result is one verified work with full-text candidates or one classified failure. Missing provider registration fails explicitly, and caller cancellation aborts the call.
+
 ### Provider selection
 
 Each call resolves its provider at execution time, and registration or load order never matters. A configured provider id wins when it is registered and usable; without a configured id, the service runs the single usable provider or fails clearly:
@@ -79,7 +81,7 @@ For retained works with source records, `searchAll()` also reports counts of unk
 | `identifyAcademicReferences()` | Identifies references from one Web result's URL, title, and snippet without fetching; ambiguous DOI values are withheld while independent valid references survive. |
 | `AcademicReferenceVerificationOutcome` | Per-reference verified work/full-text result or credential-free classified failure; sibling outcomes survive independently. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
-| `AcademicSourceRuntime` | Registration, single/all-source search, and full-text resolution. |
+| `AcademicSourceRuntime` | Registration, single/all-source search, single-reference verification, and full-text resolution. |
 
 The exhaustive signatures live in the [academic source subsystem](../../../docs/subsystems/academic-source.md) reference.
 
@@ -100,7 +102,7 @@ No direct invalidation; the consumer owns record ordering and serialization into
 
 - **No network client** — the service selects and bounds providers; fetching, rate-limit handling, and retries belong to each provider implementation.
 - **Search requests carry only `query` and `maxResults`** — provider-neutral filters (`publicationWindow`, work types) are deferred until backends and a driven consumer can honor them honestly.
-- **Reference verification is contract-only** — providers may implement `verifyReference()`, and the public reference/result vocabulary is fixed, but the runtime does not yet dispatch or settle hybrid Web discovery. Callers must not treat identified URLs or snippets as verified papers.
+- **Reference verification is per record** — the runtime does not search for an unknown identifier or ingest full text. A verified record supplies candidate URLs; the downstream fetcher checks and downloads them.
 - **No retrieval-run reporting** — `searchAll()` publishes batch facts (`providers`, `discoveredRecords`, `BatchResult`, `limitations`), but constructing `RetrievalRun` and `CoverageSummary` stays with the workflow consumer.
 
 <a id="dev-note"></a>

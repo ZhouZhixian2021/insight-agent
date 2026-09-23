@@ -9,9 +9,11 @@
 import { setTimeout as delay } from 'node:timers/promises'
 import { AcademicSourceError } from '@deepseek-ai/dsh-academic-source'
 import type {
+  AcademicReference,
   AcademicSourceProvider,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
+  AcademicSourceWork,
 } from '@deepseek-ai/dsh-academic-source'
 import { normalizeArxivWork } from './normalize.ts'
 import { arxivFullTextUrls } from './normalize.ts'
@@ -56,6 +58,38 @@ export class ArxivProvider implements AcademicSourceProvider {
 
   fullTextUrls(recordId: string): readonly string[] {
     return arxivFullTextUrls(recordId)
+  }
+
+  /** Query one arXiv ID, preserving an explicitly requested version. */
+  async verifyReference(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null> {
+    if (reference.kind !== 'arxiv' || !/^(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[a-z]{2})?\/\d{7})(?:v\d+)?$/iu.test(reference.normalizedValue)) {
+      throw new AcademicSourceError('Invalid arXiv reference', 'ACADEMIC_SOURCE_INVALID_REQUEST')
+    }
+    throwIfAborted(signal)
+    const url = new URL('/api/query', this.resolveOptions().baseURL)
+    url.searchParams.set('id_list', reference.normalizedValue)
+    url.searchParams.set('max_results', '1')
+    const response = await requestWithNetworkRetry(url, this.resolveOptions(), signal)
+    if (!response.ok) {
+      await response.body?.cancel()
+      throw new AcademicSourceError(`arXiv paper request returned HTTP ${response.status}`,
+        response.status === 429 ? 'ACADEMIC_SOURCE_RATE_LIMIT' : 'ACADEMIC_SOURCE_PROVIDER_ERROR')
+    }
+    try {
+      const entries = parseArxivFeed(await response.text()).entries
+      const [entry] = entries
+      if (entry === undefined) return null
+      if (entries.length !== 1) throw new AcademicSourceError('arXiv returned multiple paper records', 'ACADEMIC_SOURCE_PARSE_ERROR')
+      const work = normalizeArxivWork(entry)
+      const returned = work.workVersion.sourceRecords[0]?.recordId
+      const requested = reference.normalizedValue
+      return returned === requested || (!/v\d+$/u.test(requested) && returned?.replace(/v\d+$/u, '') === requested)
+        ? work : null
+    } catch (error: unknown) {
+      if (signal?.aborted === true || isAbortError(error)) throw aborted(signal, error)
+      if (error instanceof AcademicSourceError) throw error
+      throw new AcademicSourceError('arXiv returned invalid paper metadata', 'ACADEMIC_SOURCE_PARSE_ERROR', { cause: error })
+    }
   }
 
   async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {

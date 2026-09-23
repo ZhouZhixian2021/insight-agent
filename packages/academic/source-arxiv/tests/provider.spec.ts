@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import AcademicSourceRuntime from '@deepseek-ai/dsh-academic-source'
+import AcademicSourceRuntime, { AcademicSourceError } from '@deepseek-ai/dsh-academic-source'
 import * as plugin from '../src/index.ts'
 import { ArxivProvider, ARXIV_PROVIDER_ID } from '../src/index.ts'
 import type { ArxivProviderOptions } from '../src/index.ts'
@@ -131,6 +131,143 @@ describe('ArxivProvider.search', () => {
     await expect(provider({ maxAttempts: 2 }).search({ query: 'retrieval' }))
       .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_NETWORK_ERROR', message: 'arXiv search network request failed after 2 attempt(s)' })
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('classifies failures while reading API error and successful feed bodies', async () => {
+    const unreadableError = atomResponse('', { status: 503 })
+    vi.spyOn(unreadableError, 'text').mockRejectedValue(new TypeError('read failed'))
+    const unreadableFeed = atomResponse(FEED)
+    vi.spyOn(unreadableFeed, 'text').mockRejectedValue(new TypeError('read failed'))
+    const classifiedFeed = atomResponse(FEED)
+    vi.spyOn(classifiedFeed, 'text').mockRejectedValue(new AcademicSourceError(
+      'invalid official feed', 'ACADEMIC_SOURCE_PARSE_ERROR'))
+    const abortedError = atomResponse('', { status: 503 })
+    vi.spyOn(abortedError, 'text').mockRejectedValue(new DOMException('aborted', 'AbortError'))
+    const abortedFeed = atomResponse(FEED)
+    vi.spyOn(abortedFeed, 'text').mockRejectedValue(new DOMException('aborted', 'AbortError'))
+    const fetch = vi.fn<FetchMock>()
+      .mockResolvedValueOnce(atomResponse('', { status: 503 }))
+      .mockResolvedValueOnce(unreadableError)
+      .mockResolvedValueOnce(unreadableFeed)
+      .mockResolvedValueOnce(classifiedFeed)
+      .mockResolvedValueOnce(abortedError)
+      .mockResolvedValueOnce(abortedFeed)
+    vi.stubGlobal('fetch', fetch)
+    const arxiv = provider()
+    for (const code of ['ACADEMIC_SOURCE_PROVIDER_ERROR', 'ACADEMIC_SOURCE_PROVIDER_ERROR',
+      'ACADEMIC_SOURCE_PROVIDER_ERROR', 'ACADEMIC_SOURCE_PARSE_ERROR',
+      'ACADEMIC_SOURCE_ABORTED', 'ACADEMIC_SOURCE_ABORTED']) {
+      await expect(arxiv.search({ query: 'retrieval' })).rejects.toMatchObject({ code })
+    }
+    expect(fetch).toHaveBeenCalledTimes(6)
+  })
+
+  it('passes a caller signal through retry and stops during a retry wait', async () => {
+    const controller = new AbortController()
+    const fetch = vi.fn<FetchMock>()
+      .mockRejectedValueOnce(new TypeError('temporary'))
+      .mockResolvedValueOnce(atomResponse(FEED))
+    vi.stubGlobal('fetch', fetch)
+    await expect(provider({ maxAttempts: 2 }).search({ query: 'retrieval' }, controller.signal))
+      .resolves.toMatchObject({ works: [{ academicWork: { title: 'Joint evaluation' } }] })
+    fetch.mockReset().mockImplementationOnce(async () => {
+      setImmediate(() => { controller.abort('stop retry') })
+      throw new TypeError('temporary')
+    })
+    await expect(provider({ maxAttempts: 2, retryDelayMs: 60_000 }).search({ query: 'retrieval' }, controller.signal))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects a pre-aborted request and an AbortError before any HTTP response', async () => {
+    const controller = new AbortController()
+    controller.abort('cancelled')
+    const fetch = vi.fn<FetchMock>()
+    vi.stubGlobal('fetch', fetch)
+    await expect(provider().search({ query: 'retrieval' }, controller.signal))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(fetch).not.toHaveBeenCalled()
+    fetch.mockRejectedValue(new DOMException('aborted', 'AbortError'))
+    await expect(provider().search({ query: 'retrieval' }))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+  })
+})
+
+describe('ArxivProvider.verifyReference', () => {
+  it('queries only the requested ID and retains its explicit version', async () => {
+    const fetchMock = vi.fn<FetchMock>(async () => atomResponse(FEED))
+    vi.stubGlobal('fetch', fetchMock)
+    const result = await provider().verifyReference({ kind: 'arxiv', normalizedValue: '2406.12345v1',
+      originalValue: '2406.12345v1', discoveryUrl: 'https://arxiv.org/abs/2406.12345v1' })
+    expect(requestedUrl(fetchMock).searchParams.get('id_list')).toBe('2406.12345v1')
+    expect(requestedUrl(fetchMock).searchParams.has('search_query')).toBe(false)
+    expect(result?.workVersion).toMatchObject({ versionLabel: { value: 'v1' },
+      sourceRecords: [{ provider: 'arxiv', recordId: '2406.12345v1' }] })
+  })
+
+  it('rejects a different version and a missing record', async () => {
+    const reference = { kind: 'arxiv' as const, normalizedValue: '2406.12345v2',
+      originalValue: '2406.12345v2', discoveryUrl: 'https://arxiv.org/abs/2406.12345v2' }
+    vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse(FEED)))
+    await expect(provider().verifyReference(reference)).resolves.toBeNull()
+    vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse('<feed xmlns="http://www.w3.org/2005/Atom"></feed>')))
+    await expect(provider().verifyReference(reference)).resolves.toBeNull()
+  })
+
+  it('accepts the returned latest version when no version was requested', async () => {
+    vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse(FEED)))
+    await expect(provider().verifyReference({ kind: 'arxiv', normalizedValue: '2406.12345',
+      originalValue: '2406.12345', discoveryUrl: 'https://arxiv.org/abs/2406.12345' }))
+      .resolves.toMatchObject({ workVersion: { sourceRecords: [{ recordId: '2406.12345v1' }] } })
+  })
+
+  it('rejects malformed references before requesting arXiv', async () => {
+    const fetch = vi.fn<FetchMock>()
+    vi.stubGlobal('fetch', fetch)
+    await expect(provider().verifyReference({ kind: 'arxiv', normalizedValue: 'invalid',
+      originalValue: 'invalid', discoveryUrl: 'https://arxiv.org/abs/invalid' }))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_INVALID_REQUEST' })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it.each([[429, 'ACADEMIC_SOURCE_RATE_LIMIT'], [503, 'ACADEMIC_SOURCE_PROVIDER_ERROR']] as const)(
+    'classifies paper request HTTP %i', async (status, code) => {
+      vi.stubGlobal('fetch', vi.fn<FetchMock>(async () => atomResponse('', { status })))
+      await expect(provider().verifyReference({ kind: 'arxiv', normalizedValue: '2406.12345v1',
+        originalValue: '2406.12345v1', discoveryUrl: 'https://arxiv.org/abs/2406.12345v1' }))
+        .rejects.toMatchObject({ code })
+    },
+  )
+
+  it('rejects multiple returned records and malformed feed content', async () => {
+    const duplicate = FEED.replace('</feed>', `<entry>
+<id>http://arxiv.org/abs/2406.12346v1</id><title>Another paper</title>
+<published>2024-06-15T12:34:56Z</published><author><name>Bob Example</name></author>
+</entry></feed>`)
+    const fetch = vi.fn<FetchMock>()
+      .mockResolvedValueOnce(atomResponse(duplicate))
+      .mockResolvedValueOnce(atomResponse('<not valid'))
+    vi.stubGlobal('fetch', fetch)
+    const reference = { kind: 'arxiv' as const, normalizedValue: '2406.12345v1',
+      originalValue: '2406.12345v1', discoveryUrl: 'https://arxiv.org/abs/2406.12345v1' }
+    await expect(provider().verifyReference(reference)).rejects.toMatchObject({
+      code: 'ACADEMIC_SOURCE_PARSE_ERROR' })
+    await expect(provider().verifyReference(reference)).rejects.toMatchObject({
+      code: 'ACADEMIC_SOURCE_PARSE_ERROR' })
+  })
+
+  it('propagates cancellation while reading the paper response', async () => {
+    const controller = new AbortController()
+    const response = atomResponse(FEED)
+    vi.spyOn(response, 'text').mockImplementation(async () => {
+      controller.abort()
+      throw new DOMException('aborted', 'AbortError')
+    })
+    const fetch = vi.fn<FetchMock>(async () => response)
+    vi.stubGlobal('fetch', fetch)
+    await expect(provider().verifyReference({ kind: 'arxiv', normalizedValue: '2406.12345v1',
+      originalValue: '2406.12345v1', discoveryUrl: 'https://arxiv.org/abs/2406.12345v1' }, controller.signal))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
   })
 })
 

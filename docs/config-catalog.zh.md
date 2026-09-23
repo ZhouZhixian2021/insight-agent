@@ -32,7 +32,7 @@ export interface AcademicSourceRuntimeConfig {
 }
 ```
 
-来源：[`packages/academic/source/src/index.ts:69`](../packages/academic/source/src/index.ts)
+来源：[`packages/academic/source/src/index.ts:73`](../packages/academic/source/src/index.ts)
 
 <a id="deepseek-aidsh-academic-source-acl"></a>
 
@@ -133,6 +133,8 @@ export interface Config {
   readonly baseURL?: string
   /** Official PMLR volume pages searched by this provider. */
   readonly catalogUrls?: string[]
+  /** Number of verified paper PDF locations retained for later full-text resolution. */
+  readonly maxCachedRecords?: number
 }
 ```
 

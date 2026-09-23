@@ -129,6 +129,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'version', description: 'version selected after ingestion.' }],
         returns: 'the first usable provider\'s ordered candidates, or `null`.',
       },
+      {
+        signature: 'async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>',
+        description: 'Verify one Web-discovered paper against the approved owning provider. Search-only availability does not prevent a registered provider from verifying a single record.',
+        parameters: [{ name: 'reference', description: 'DOI, arXiv ID, or official provider record identified from one Web result.' }, { name: 'allowedProviders', description: 'provider ids approved by the research plan for verification.' }, { name: 'signal', description: 'caller cancellation, which aborts the whole verification round.' }],
+        returns: 'the official work and full-text candidates, or one classified failure.',
+      },
     ],
   },
   {
@@ -3576,6 +3582,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AcademicReference = {\n    readonly kind: \'doi\' | \'arxiv\';\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly discoveryUrl: string;\n} | {\n    readonly kind: \'provider_record\';\n    readonly provider: \'acl\' | \'pmlr\' | \'cvf\';\n    readonly recordId: string;\n    readonly discoveryUrl: string;\n};',
   },
   {
+    name: 'AcademicReferenceVerificationFailure',
+    declaration: 'export interface AcademicReferenceVerificationFailure {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly category: FailureCategory;\n    readonly message: string;\n    readonly retryable: boolean;\n    readonly retryAfter: string | null;\n}',
+  },
+  {
+    name: 'AcademicReferenceVerificationOutcome',
+    declaration: 'export type AcademicReferenceVerificationOutcome = {\n    readonly status: \'verified\';\n    readonly value: AcademicVerifiedReference;\n} | {\n    readonly status: \'failed\';\n    readonly failure: AcademicReferenceVerificationFailure;\n};',
+  },
+  {
     name: 'AcademicReferenceVerificationProvider',
     declaration: 'export type AcademicReferenceVerificationProvider = \'openalex\' | \'arxiv\' | \'acl\' | \'pmlr\' | \'cvf\';',
   },
@@ -3638,6 +3652,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicSourceWork',
     declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n}',
+  },
+  {
+    name: 'AcademicVerifiedReference',
+    declaration: 'export interface AcademicVerifiedReference {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly work: AcademicSourceWork;\n    readonly fullText: AcademicSourceFullText | null;\n}',
   },
   {
     name: 'AcademicWebDiscoveryCandidateView',

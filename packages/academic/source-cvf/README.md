@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 This package adds CVF Open Access papers to `ctx.academicSource`. It searches configured official conference pages, normalizes matching papers, and returns their official PDFs for the shared evidence pipeline.
 
+`verifyReference()` reads one official paper page, including workshop paths, and checks its citation PDF URL against the paper ID. It works without conference catalogs and does not download the PDF.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
