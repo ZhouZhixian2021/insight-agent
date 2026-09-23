@@ -75,6 +75,7 @@ async function harness(options: {
   eventsError?: boolean
   resolveError?: boolean
   reasoning?: boolean
+  hybridPlan?: boolean
 } = {}) {
   const ctx = new Context()
   contexts.push(ctx)
@@ -110,8 +111,17 @@ async function harness(options: {
       snapshotEvents: () => {
         if (options.eventsError === true) throw 'invalid event source'
         return options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(),
+          ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
           ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
-            purpose: '查找相关研究', questions: briefPayload().questions })) },
+            purpose: '查找相关研究', questions: briefPayload().questions,
+            ...options.hybridPlan === true ? { retrieval: {
+              channels: ['academic', 'web_discovery'],
+              academicProviders: ['openalex', 'arxiv'],
+              verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
+              maximumWebDiscoveryResults: 8,
+              maximumReferenceVerifications: 5,
+            } } : {},
+          })) },
         }))
       },
       requestHeader: () => options.header === false ? undefined : { config: selected },
@@ -159,6 +169,20 @@ describe('AcademicResearchController', () => {
       searchPlan: [...searchPlan, { ...searchPlan[0], query: 'second' }] })))).toThrow('1 条查询上限')
   })
 
+  it('rejects duplicate expressions with different approved retrieval policies', () => {
+    const retrieval = {
+      channels: ['academic', 'web_discovery'],
+      academicProviders: ['openalex', 'arxiv'],
+      verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
+      maximumWebDiscoveryResults: 8,
+      maximumReferenceVerifications: 5,
+    }
+    const search = { query: 'retrieval', purpose: '查找相关研究', questions: ['Which method works?'], retrieval }
+    expect(() => researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan({ ...briefPayload(), schemaVersion: 3,
+      searchPlan: [search, { ...search, retrieval: { ...retrieval, maximumReferenceVerifications: 4 } }] }))))
+      .toThrow('完全相同的检索表达必须使用完全相同的检索策略')
+  })
+
   it('previews the approved plan without retrieval and refuses a different approval identity', async () => {
     const fixture = await harness()
     const preview = await fixture.controller.plan(fixture.sessionId)
@@ -169,6 +193,23 @@ describe('AcademicResearchController', () => {
     await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: createResearchBriefId(),
       synthetic: false }, fixture.signal))
       .rejects.toThrow('研究计划已更新')
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('previews an approved hybrid policy but refuses to execute it before A-H3', async () => {
+    const fixture = await harness({ hybridPlan: true })
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    expect(preview.searches[0]?.retrieval).toEqual({
+      channels: ['academic', 'web_discovery'],
+      academicProviders: ['openalex', 'arxiv'],
+      verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
+      maximumWebDiscoveryResults: 8,
+      maximumReferenceVerifications: 5,
+    })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: false }, fixture.signal))
+      .rejects.toThrow('完成 A-H3 工作流接入')
+    expect(fixture.search).not.toHaveBeenCalled()
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
@@ -428,7 +469,7 @@ describe('approved Research Brief plan handoff', () => {
     ['object', null, 'must be an object'],
     ['missing field', omitTopic(), 'missing: topic'],
     ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
-    ['schema version', { ...briefPayload(), schemaVersion: 3 }, 'schemaVersion must be 1 or 2'],
+    ['schema version', { ...briefPayload(), schemaVersion: 4 }, 'schemaVersion must be 1, 2, or 3'],
     ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
     ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
     ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],

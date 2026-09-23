@@ -32,9 +32,9 @@ kind: "package-reference"
 
 将控制器与 `academicSource`、`sessionController`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 arXiv、CVF、ACL Anthology 与 PMLR Provider。`fulltextFetchProvider` 默认为 `http`，只为 Academic 全文选择 Web 抓取 Provider，不改变部署中的普通 Web 抓取默认值。所选 Provider 必须保留有界的原始 HTML 或 PDF，因为证据包会拒绝转换后的文本和截断文档。`extractionMaxTokens` 默认为 16,384，只在 Session 模型选择未提供 `maxTokens` 时补充 Academic 抽取输出预留；Session 的明确值仍然优先。`extractionMaxAttempts` 默认为 2，且只允许 1 或 2；只有输出 token 用尽才消耗第二次尝试。先调用 `academicResearch.plan(sessionId)` 预览，再向 `academicResearch.run` 传入返回的 `researchBriefId`、Session ID、可选全局结果上限和合成数据声明。预览后批准身份发生变化时拒绝启动。查询只来自已批准计划，调用者不能替换；去除首尾空白后的完全重复查询只执行一次，查询数同时受三条硬上限与已批准 `maximumSearchRounds` 约束。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。开始运行前，控制器从 Agent 上下文解析 Academic 来源与 Web 服务；任一服务缺失时返回可用性错误。
 
-新结构化计划交接使用 `schemaVersion: 2`，必须包含 `searchPlan`；每项有 `query`、中文 `purpose` 和与 Brief 完全一致的 `questions`，覆盖所有研究问题。Controller 将交接投影为既有第 1 版领域 Brief 与独立流水线查询，不修改 model 包。旧第 1 版计划仍可读取，但缺少检索方案时不能预览或运行，提示用户让系统补齐并重新审核；运行时不额外调用模型生成查询。
+新结构化计划交接使用 `schemaVersion: 3`，必须包含 `searchPlan`；每项有 `query`、中文 `purpose`、与 Brief 完全一致的 `questions`，以及与查询一同审核的 `retrieval` 策略，覆盖所有研究问题。策略选择 `academic` 和／或 `web_discovery`，直接检索只允许 OpenAlex/arXiv，引用核验只允许 OpenAlex/arXiv/ACL/PMLR/CVF，Web 发现与核验上限均不得超过 8。依赖渠道的 Provider 列表和数量必须相符；重复值、不支持的值、未知字段、负数与超限值都会在审核前被拒绝。Controller 将交接投影为既有第 1 版领域 Brief 与独立流水线查询，不修改 model 包。旧第 1、2 版计划仍可读取，但缺少检索方案时不能预览或运行，提示用户让系统补齐并重新审核；运行时不额外调用模型生成查询。
 
-公共 Remote 字段还预留了每条检索可选的 `retrieval` 策略和整轮可选的 `hybridRetrieval` 投影。策略区分 `academic` 与 `web_discovery`、直接检索 Provider 与引用核验 Provider，并分别记录 Web 发现与引用核验上限。运行投影包含由生产方结算的混合阶段、彼此独立的 URL/引用/论文计数以及清理后的引用结果。当前第 2 版计划与单通道运行均不返回这两个字段；缺失表示“未提供混合策略”，不表示各项为零。后续计划与工作流增量会填充它们，而无需改变已经固定的浏览器契约。
+公共 Remote 字段继续把每条检索的 `retrieval` 策略设为可选，以便读取旧第 1、2 版计划，并预留整轮可选的 `hybridRetrieval` 投影。策略区分 `academic` 与 `web_discovery`、直接检索 Provider 与引用核验 Provider，并分别记录 Web 发现与引用核验上限。运行投影包含由生产方结算的混合阶段、彼此独立的 URL/引用/论文计数以及清理后的引用结果。字段缺失表示“未提供混合策略”，不表示各项为零。在 A-H3 接通按策略执行前，预览可以显示已批准的第 3 版策略，但 `run` 会拒绝启动，不会静默按旧来源选择执行。
 
 操作通过 `runMaintenance()` 占用 Agent 的空闲阶段。Academic 预设在计划获批后结束当前轮次，客户端等待 Session 空闲后再启动该操作。正在执行的聊天或其他维护操作返回 `session/agent-busy`。Remote 取消与 Agent 取消合并为同一个信号。查询按顺序执行；已完成批次按轮转顺序合并、去重，再使用同一个全局候选上限后进入选文。整轮完成或观察到取消后，响应返回工作流结果、Session ID 和 JSON 安全的 `retrievalRun`。该运行记录包含实际调用的 Provider、实际开始执行的查询、去重与纳入成果身份、覆盖统计、截断原因以及清理后的来源或论文操作失败；该接口不提供断线恢复。
 
@@ -65,7 +65,7 @@ kind: "package-reference"
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
 - 一次 Remote 调用会保持到整轮结束。工作流续跑、进度流、RetrievalRun 持久记录、检索级重试和长论文分段留待后续。
-- 混合 Web 发现尚未执行。可选计划与结果字段只是供后续计划、工作流、Provider 和客户端增量共同使用的接口基线。
+- 混合 Web 发现尚未执行。第 3 版计划可以审核，但在 A-H3 把获批策略接入工作流前不能运行；旧第 1、2 版纯学术计划保留现有执行路径。
 - 当前每份获批计划都会建立版本 1，其身份由 Session 和获批计划调用共同确定；对已批准 Brief 进行后续版本修订留待后续。
 
 -----

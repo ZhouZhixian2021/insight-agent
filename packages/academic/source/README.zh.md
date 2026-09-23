@@ -75,7 +75,7 @@ kind: "package-reference"
 | `AcademicSourceSearchResult` | 规范化成果/版本对，外加 `truncated` 标记。 |
 | `AcademicSourceSearchBatchResult` | `searchAll()` 的聚合结果：实际调用的提供方、上限前记录数、成果与来源级失败组成的 `BatchResult`、截断状态与覆盖限制。 |
 | `AcademicSourceWork` | 一对 provider 中立的 `{ academicWork, workVersion }`。 |
-| `AcademicWebDiscoveryCandidate`、`AcademicReference`、`AcademicReferenceIdentifier` | 从 Web 结果到 DOI、arXiv 及带 ACL/PMLR/CVF 命名空间记录的纯识别边界；发现文本绝不作为证据。 |
+| `AcademicWebDiscoveryCandidate`、`AcademicReference`、`AcademicReferenceIdentifier` | 从 Web 结果到 DOI、arXiv 及带 ACL/PMLR/CVF 命名空间记录的纯识别边界；有效引用不因同批识别问题被丢弃，被丢弃的候选则保留明确的未识别、格式错误或含糊原因。发现文本绝不作为证据。 |
 | `AcademicReferenceVerificationOutcome` | 单条引用的已核验成果/全文结果或不含凭据的分类失败；同批其他结果独立保留。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
 | `AcademicSourceRuntime` | Provider 注册、单源/多源搜索与全文解析。 |

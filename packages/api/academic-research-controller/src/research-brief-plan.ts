@@ -1,10 +1,23 @@
 import type { ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { MAX_DRAFT_SEARCH_QUERIES, validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-workflow'
-import type { AcademicPlannedSearch } from './types.ts'
+import type {
+  AcademicDirectSearchProvider,
+  AcademicPlannedRetrieval,
+  AcademicPlannedSearch,
+  AcademicReferenceVerificationProvider,
+  AcademicRetrievalChannel,
+} from './types.ts'
 
 const EXIT_PLAN_MODE = 'exit_plan_mode'
 const BRIEF_FENCE = 'academic-research-brief-json'
+const DIRECT_SEARCH_PROVIDERS = ['openalex', 'arxiv'] as const satisfies readonly AcademicDirectSearchProvider[]
+const REFERENCE_VERIFICATION_PROVIDERS = [
+  'openalex', 'arxiv', 'acl', 'pmlr', 'cvf',
+] as const satisfies readonly AcademicReferenceVerificationProvider[]
+const RETRIEVAL_CHANNELS = ['academic', 'web_discovery'] as const satisfies readonly AcademicRetrievalChannel[]
+const MAXIMUM_WEB_DISCOVERY_RESULTS = 8
+const MAXIMUM_REFERENCE_VERIFICATIONS = 8
 
 interface ApprovedPlan {
   readonly identity: string
@@ -136,11 +149,13 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     throw new Error(`the ${BRIEF_FENCE} block must contain valid JSON`)
   }
   const root = record(value, 'Research Brief')
-  if (root.schemaVersion !== 1 && root.schemaVersion !== 2) throw new Error('schemaVersion must be 1 or 2')
+  if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3) {
+    throw new Error('schemaVersion must be 1, 2, or 3')
+  }
   exactKeys(root, [
     'schemaVersion', 'topic', 'aliases', 'questions', 'publicationWindow', 'includedWorkTypes',
     'inclusionRules', 'exclusionRules', 'evidenceRequirements', 'targetAudience', 'reportRequirements',
-    'stopConditions', 'assumptions', ...(root.schemaVersion === 2 || 'searchPlan' in root) ? ['searchPlan'] : [],
+    'stopConditions', 'assumptions', ...(root.schemaVersion >= 2 || 'searchPlan' in root) ? ['searchPlan'] : [],
   ], 'Research Brief')
   const questions = nonEmptyStringArray(root.questions, 'questions')
   const limits = stopConditions(root.stopConditions)
@@ -158,26 +173,41 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     reportRequirements: reportRequirements(root.reportRequirements),
     stopConditions: limits,
     assumptions: stringArray(root.assumptions, 'assumptions'),
-    ...'searchPlan' in root ? { searchPlan: parseSearchPlan(root.searchPlan, questions, limits.maximumSearchRounds) } : {},
+    ...'searchPlan' in root ? { searchPlan: parseSearchPlan(
+      root.searchPlan,
+      questions,
+      limits.maximumSearchRounds,
+      root.schemaVersion === 3,
+    ) } : {},
   }
 }
 
-function parseSearchPlan(value: unknown, questions: readonly string[], rounds: number): readonly AcademicPlannedSearch[] {
+function parseSearchPlan(
+  value: unknown,
+  questions: readonly string[],
+  rounds: number,
+  requireRetrieval: boolean,
+): readonly AcademicPlannedSearch[] {
   if (!Array.isArray(value) || value.length === 0) throw new Error('检索方案必须包含至少一条查询，请重新整理研究计划。')
   const searches = value.map((entry, index) => {
     const item = record(entry, `searchPlan[${index}]`)
-    exactKeys(item, ['query', 'purpose', 'questions'], `searchPlan[${index}]`)
+    exactKeys(item, ['query', 'purpose', 'questions', ...requireRetrieval ? ['retrieval'] : []], `searchPlan[${index}]`)
     const linked = nonEmptyStringArray(item.questions, `searchPlan[${index}].questions`)
     if (linked.some(question => !questions.includes(question))) throw new Error('检索方案引用了计划之外的研究问题，请修正后重新审核。')
     return { query: nonEmptyString(item.query, `searchPlan[${index}].query`).trim(),
-      purpose: nonEmptyString(item.purpose, `searchPlan[${index}].purpose`), questions: linked }
+      purpose: nonEmptyString(item.purpose, `searchPlan[${index}].purpose`), questions: linked,
+      ...requireRetrieval ? { retrieval: parseRetrieval(item.retrieval, index) } : {} }
   })
   // Identical expressions execute once, retaining their reviewed purposes and question links.
   const distinct = new Map<string, AcademicPlannedSearch>()
   for (const search of searches) {
     const previous = distinct.get(search.query)
+    if (previous !== undefined && JSON.stringify(previous.retrieval) !== JSON.stringify(search.retrieval)) {
+      throw new Error('完全相同的检索表达必须使用完全相同的检索策略，请修正后重新审核。')
+    }
     distinct.set(search.query, previous === undefined ? search : { query: search.query,
-      purpose: `${previous.purpose}；${search.purpose}`, questions: [...new Set([...previous.questions, ...search.questions])] })
+      purpose: `${previous.purpose}；${search.purpose}`, questions: [...new Set([...previous.questions, ...search.questions])],
+      ...search.retrieval === undefined ? {} : { retrieval: search.retrieval } })
   }
   const maximum = Math.min(MAX_DRAFT_SEARCH_QUERIES, rounds)
   if (distinct.size > maximum) throw new Error(`检索方案超过已批准的 ${maximum} 条查询上限，请缩小方案后重新审核。`)
@@ -185,6 +215,54 @@ function parseSearchPlan(value: unknown, questions: readonly string[], rounds: n
     throw new Error('检索方案未覆盖全部研究问题，请补齐后重新审核。')
   }
   return [...distinct.values()]
+}
+
+function parseRetrieval(value: unknown, searchIndex: number): AcademicPlannedRetrieval {
+  const label = `searchPlan[${searchIndex}].retrieval`
+  const item = record(value, label)
+  exactKeys(item, [
+    'channels', 'academicProviders', 'verificationProviders',
+    'maximumWebDiscoveryResults', 'maximumReferenceVerifications',
+  ], label)
+  const channels = distinctEnumArray(item.channels, RETRIEVAL_CHANNELS, `${label}.channels`, true)
+  const academicProviders = distinctEnumArray(
+    item.academicProviders,
+    DIRECT_SEARCH_PROVIDERS,
+    `${label}.academicProviders`,
+    false,
+  )
+  const verificationProviders = distinctEnumArray(
+    item.verificationProviders,
+    REFERENCE_VERIFICATION_PROVIDERS,
+    `${label}.verificationProviders`,
+    false,
+  )
+  const maximumWebDiscoveryResults = boundedNonNegativeInteger(
+    item.maximumWebDiscoveryResults,
+    `${label}.maximumWebDiscoveryResults`,
+    MAXIMUM_WEB_DISCOVERY_RESULTS,
+  )
+  const maximumReferenceVerifications = boundedNonNegativeInteger(
+    item.maximumReferenceVerifications,
+    `${label}.maximumReferenceVerifications`,
+    MAXIMUM_REFERENCE_VERIFICATIONS,
+  )
+  const academicEnabled = channels.includes('academic')
+  const webEnabled = channels.includes('web_discovery')
+  if (academicEnabled !== (academicProviders.length > 0)) {
+    throw new Error(`${label}.academicProviders must be non-empty exactly when the academic channel is enabled`)
+  }
+  if (webEnabled !== (verificationProviders.length > 0)) {
+    throw new Error(`${label}.verificationProviders must be non-empty exactly when web_discovery is enabled`)
+  }
+  if (webEnabled !== (maximumWebDiscoveryResults > 0)) {
+    throw new Error(`${label}.maximumWebDiscoveryResults must be positive exactly when web_discovery is enabled`)
+  }
+  if (webEnabled !== (maximumReferenceVerifications > 0)) {
+    throw new Error(`${label}.maximumReferenceVerifications must be positive exactly when web_discovery is enabled`)
+  }
+  return { channels, academicProviders, verificationProviders,
+    maximumWebDiscoveryResults, maximumReferenceVerifications }
 }
 
 function publicationWindow(value: unknown): ResearchBrief['publicationWindow'] {
@@ -284,6 +362,19 @@ function stringArray(value: unknown, label: string): string[] {
   return value.map((entry, index) => nonEmptyString(entry, `${label}[${index}]`))
 }
 
+function distinctEnumArray<const T extends readonly string[]>(
+  value: unknown,
+  choices: T,
+  label: string,
+  nonEmpty: boolean,
+): T[number][] {
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`)
+  const result = value.map((entry, index) => oneOf(entry, choices, `${label}[${index}]`))
+  if (nonEmpty && result.length === 0) throw new Error(`${label} must contain at least one item`)
+  if (new Set(result).size !== result.length) throw new Error(`${label} must not contain duplicate values`)
+  return result
+}
+
 function nonEmptyStringArray(value: unknown, label: string): string[] {
   const result = stringArray(value, label)
   if (result.length === 0) throw new Error(`${label} must contain at least one item`)
@@ -305,6 +396,12 @@ function oneOf<const T extends readonly string[]>(value: unknown, choices: T, la
 function nonNegativeInteger(value: unknown, label: string): number {
   if (!Number.isSafeInteger(value) || (value as number) < 0) throw new Error(`${label} must be a non-negative integer`)
   return value as number
+}
+
+function boundedNonNegativeInteger(value: unknown, label: string, maximum: number): number {
+  const result = nonNegativeInteger(value, label)
+  if (result > maximum) throw new Error(`${label} must not exceed ${maximum}`)
+  return result
 }
 
 function positiveInteger(value: unknown, label: string): number {

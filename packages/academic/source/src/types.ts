@@ -80,10 +80,42 @@ export type AcademicReference =
     readonly discoveryUrl: string
   }
 
-/** Pure identification boundary owned by Academic source adapters, without network verification. */
+/** Stable reason why one Web discovery value did not produce a reference candidate. */
+export type AcademicReferenceIdentificationIssueCode =
+  | 'unrecognized_page'
+  | 'invalid_reference'
+  | 'ambiguous_reference'
+
+/** Credential-free problem found while identifying references from one Web discovery result. */
+export interface AcademicReferenceIdentificationIssue {
+  readonly code: AcademicReferenceIdentificationIssueCode
+  readonly message: string
+}
+
+/**
+ * Pure identification result for one Web discovery candidate. Successful references survive
+ * sibling issues; a discarded result always carries at least one explicit issue.
+ */
+export type AcademicReferenceIdentificationResult =
+  | {
+    readonly status: 'identified'
+    readonly references: readonly [AcademicReference, ...AcademicReference[]]
+    readonly issues: readonly AcademicReferenceIdentificationIssue[]
+  }
+  | {
+    readonly status: 'discarded'
+    readonly references: readonly []
+    readonly issues: readonly [AcademicReferenceIdentificationIssue, ...AcademicReferenceIdentificationIssue[]]
+  }
+
+/**
+ * Pure identification boundary owned by Academic source adapters, without network verification.
+ * @param candidate - one Web discovery result whose URL, title, and snippet may contain references.
+ * @returns identified references plus explicit non-network identification issues.
+ */
 export type AcademicReferenceIdentifier = (
   candidate: AcademicWebDiscoveryCandidate,
-) => readonly AcademicReference[]
+) => AcademicReferenceIdentificationResult
 
 /** One reference that an Academic Provider verified against authoritative metadata. */
 export interface AcademicVerifiedReference {

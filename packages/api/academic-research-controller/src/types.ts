@@ -18,14 +18,17 @@ export interface AcademicResearchRunRequest {
 /** Search channels that one approved query may execute. */
 export type AcademicRetrievalChannel = 'academic' | 'web_discovery'
 
+/** Providers supported for direct scholarly discovery in the first hybrid-plan version. */
+export type AcademicDirectSearchProvider = 'openalex' | 'arxiv'
+
 /** Providers with a first-version Web-reference verification contract. */
 export type AcademicReferenceVerificationProvider = 'openalex' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'
 
-/** Approved per-query hybrid-retrieval policy; limits are positive safe integers. */
+/** Approved per-query hybrid-retrieval policy; disabled Web discovery uses zero limits. */
 export interface AcademicPlannedRetrieval {
   readonly channels: readonly AcademicRetrievalChannel[]
   /** Providers searched directly through the Academic source seam. */
-  readonly academicProviders: readonly string[]
+  readonly academicProviders: readonly AcademicDirectSearchProvider[]
   /** Providers allowed to verify references found through Web discovery. */
   readonly verificationProviders: readonly AcademicReferenceVerificationProvider[]
   readonly maximumWebDiscoveryResults: number

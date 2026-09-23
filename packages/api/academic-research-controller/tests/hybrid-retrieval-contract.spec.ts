@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type {
-  AcademicReference,
+  AcademicReferenceIdentificationResult,
   AcademicReferenceVerificationOutcome,
   AcademicWebDiscoveryCandidate,
 } from '@deepseek-ai/dsh-academic-source'
@@ -16,7 +16,7 @@ interface HybridRetrievalSample {
   readonly planView: AcademicResearchPlanView
   readonly identificationCases: readonly {
     readonly candidate: AcademicWebDiscoveryCandidate
-    readonly references: readonly AcademicReference[]
+    readonly result: AcademicReferenceIdentificationResult
   }[]
   readonly verificationOutcomes: readonly AcademicReferenceVerificationOutcome[]
   readonly hybridRetrieval: AcademicHybridRetrievalView
@@ -40,11 +40,32 @@ describe('Academic hybrid retrieval contract fixture', () => {
   })
 
   it('covers DOI, arXiv, ACL, PMLR, and CVF reference identities', () => {
-    expect(sample.identificationCases.flatMap(entry => entry.references).map(reference => (
+    expect(sample.identificationCases.flatMap(entry => entry.result.references).map(reference => (
       reference.kind === 'provider_record' ? reference.provider : reference.kind
     ))).toEqual(['doi', 'arxiv', 'acl', 'pmlr', 'cvf'])
     expect(sample.identificationCases.every(entry => (
-      entry.references.every(reference => reference.discoveryUrl === entry.candidate.url)
+      entry.result.references.every(reference => reference.discoveryUrl === entry.candidate.url)
+    ))).toBe(true)
+    expect(sample.identificationCases[0]?.result.references[0]).toMatchObject({
+      kind: 'doi',
+      normalizedValue: '10.1000/synthetic.1',
+      originalValue: '10.1000/synthetic.1',
+    })
+    expect(sample.identificationCases[0]?.result).toMatchObject({
+      status: 'identified',
+      issues: [{ code: 'invalid_reference' }],
+    })
+  })
+
+  it('keeps explicit reasons when a Web candidate produces no reference', () => {
+    const discarded = sample.identificationCases.filter(entry => entry.result.status === 'discarded')
+    expect(discarded.map(entry => entry.result.issues[0]?.code)).toEqual([
+      'unrecognized_page',
+      'invalid_reference',
+      'ambiguous_reference',
+    ])
+    expect(discarded.every(entry => (
+      entry.result.references.length === 0 && entry.result.issues.length > 0
     ))).toBe(true)
   })
 
