@@ -1,5 +1,5 @@
 ---
-description: "The academic source seam: AcademicSourceSearchRequest/Result/BatchResult, AcademicSourceWork, provider availability, and AcademicSourceError."
+description: "The academic source seam: scholarly search and single-reference verification results, provider availability, and AcademicSourceError."
 kind: "subsystem"
 ---
 
@@ -14,6 +14,10 @@ Source: [`packages/academic/source/src/types.ts`](../../packages/academic/source
 ## Search request and result
 
 Each seam request carries exactly one `query`. `maxResults` is a consumer-owned bound passed through the seam and enforced on the way back — if a provider over-returns, the seam truncates `works[]` and sets `truncated`. A search returns provider-neutral `AcademicSourceWork` items, each a `{ academicWork, workVersion }` pair from the [shared model](academic-insight.md): `academicWork` is a fresh work identity and `workVersion` its single immutable version, so cross-record version linking and deduplication stay in the ingestion increment rather than in a provider.
+
+## Single-reference verification
+
+`AcademicReference` identifies one DOI, arXiv ID, or namespaced ACL/PMLR/CVF record extracted from a Web result; its discovery URL records where the candidate came from, not paper metadata. `verifyReference()` checks the caller's provider allowlist, asks the owning registered provider for one official record, and returns `AcademicReferenceVerificationOutcome`: a verified `AcademicSourceWork` with optional full-text URLs, or a classified per-reference failure. Catalog-search availability does not prevent a registered provider from checking an exact record. A missing verifier is a configuration error, and caller cancellation aborts rather than producing a failed outcome. Verification neither downloads full text nor creates evidence.
 
 ## Multi-provider batch results
 
@@ -107,6 +111,16 @@ async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Pro
  * @returns the first usable provider's ordered candidates, or `null`.
  */
 resolveFullText(version: WorkVersion): AcademicSourceFullText | null
+
+/**
+ * Verify one Web-discovered paper against the approved owning provider.
+ * Search-only availability does not prevent a registered provider from verifying a single record.
+ * @param reference - DOI, arXiv ID, or official provider record identified from one Web result.
+ * @param allowedProviders - provider ids approved by the research plan for verification.
+ * @param signal - caller cancellation, which aborts the whole verification round.
+ * @returns the official work and full-text candidates, or one classified failure.
+ */
+async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>
 ```
 
 Types: [WorkVersion](academic-insight.md)

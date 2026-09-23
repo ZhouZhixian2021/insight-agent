@@ -1,10 +1,13 @@
 /** ACL Anthology provider over configured official volume catalogs. */
 import type {
+  AcademicReference,
   AcademicSourceProvider,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
+  AcademicSourceWork,
 } from '@deepseek-ai/dsh-academic-source'
-import { searchAcademicCatalogs } from '@deepseek-ai/dsh-academic-source'
+import { AcademicSourceError, fetchAcademicPaperPage, normalizeAcademicCatalogRecord,
+  parseAcademicPaperCitation, searchAcademicCatalogs } from '@deepseek-ai/dsh-academic-source'
 
 import { parseAclCatalog } from './parse.ts'
 
@@ -38,6 +41,21 @@ export class AclProvider implements AcademicSourceProvider {
   search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult> {
     return searchAcademicCatalogs({ providerId: this.id, catalogUrls: this.resolveOptions().catalogUrls,
       parse: html => parseAclCatalog(html) }, request, signal)
+  }
+
+  /** Verify one ACL paper against its official landing-page metadata. */
+  async verifyReference(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null> {
+    if (reference.kind !== 'provider_record' || reference.provider !== this.id || this.fullTextUrls(reference.recordId).length === 0) {
+      throw new AcademicSourceError('Invalid ACL paper reference', 'ACADEMIC_SOURCE_INVALID_REQUEST')
+    }
+    const { recordId } = reference
+    const url = new URL(`${recordId}/`, `${this.resolveOptions().baseURL.replace(/\/$/u, '')}/`)
+    const html = await fetchAcademicPaperPage(this.id, url, signal)
+    if (html === null) return null
+    const citation = parseAcademicPaperCitation(html)
+    if (citation.pdfUrl !== `https://aclanthology.org/${recordId}.pdf`) return null
+    return normalizeAcademicCatalogRecord(this.id, { recordId, title: citation.title, authors: citation.authors,
+      year: citation.year, venue: citation.venue, doi: citation.doi })
   }
 
   fullTextUrls(recordId: string): readonly string[] {

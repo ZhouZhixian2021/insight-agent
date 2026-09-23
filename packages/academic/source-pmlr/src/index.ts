@@ -20,17 +20,24 @@ export interface Config {
   readonly baseURL?: string
   /** Official PMLR volume pages searched by this provider. */
   readonly catalogUrls?: string[]
+  /** Number of verified paper PDF locations retained for later full-text resolution. */
+  readonly maxCachedRecords?: number
 }
 
 export const Config: z<Config> = z.object({
   baseURL: z.string().default(PMLR_DEFAULT_BASE_URL),
   catalogUrls: z.array(z.string()).default([]),
+  maxCachedRecords: z.number().default(100),
 })
 
 /** Register the PMLR provider. */
 export function apply(ctx: Context, config: Config): void {
+  if (config.maxCachedRecords !== undefined && (!Number.isSafeInteger(config.maxCachedRecords) || config.maxCachedRecords < 1)) {
+    throw new Error('maxCachedRecords must be a positive safe integer')
+  }
   ctx.academicSource.registerSearchProvider(new PmlrProvider(() => ({
     baseURL: config.baseURL ?? PMLR_DEFAULT_BASE_URL,
     catalogUrls: config.catalogUrls ?? [],
+    maxCachedRecords: config.maxCachedRecords ?? 100,
   })))
 }

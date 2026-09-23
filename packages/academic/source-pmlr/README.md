@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 This package adds PMLR papers to `ctx.academicSource`. It searches configured official volume pages, normalizes matching papers, and returns their canonical PDFs for the shared evidence pipeline.
 
+`verifyReference()` reads one official abstract page by volume/paper ID and checks its citation URL. The page's PDF location is retained in a bounded cache because it can differ from the derived path; verification works without volume catalogs and does not download the PDF.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -36,6 +38,7 @@ Mount it after `dsh-academic-source` and list the PMLR volumes this deployment s
 |---|---|---|
 | `baseURL` | `https://proceedings.mlr.press` | Base used to resolve paper PDFs. |
 | `catalogUrls` | `[]` | Official PMLR volume pages; an empty list makes the provider unavailable. |
+| `maxCachedRecords` | `100` | Number of verified paper PDF locations retained in memory. |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-academic-source-pmlr) is the exhaustive field reference.
 

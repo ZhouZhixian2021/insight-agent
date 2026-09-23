@@ -11,6 +11,8 @@ kind: "package-reference"
 
 本包把 PMLR 论文接入 `ctx.academicSource`。它搜索已配置的官方论文集页面、规范化命中论文，并把规范 PDF 交给共享 evidence 流程。
 
+`verifyReference()` 按论文集/论文 ID 读取单篇官方摘要页，并核对页面的引用 URL。页面给出的 PDF 位置可能不同于推导路径，因此保存在有容量限制的缓存中；未配置论文集目录也可核验，且不会下载 PDF。
+
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -36,6 +38,7 @@ kind: "package-reference"
 |---|---|---|
 | `baseURL` | `https://proceedings.mlr.press` | 用于解析论文 PDF 的基址。 |
 | `catalogUrls` | `[]` | 官方 PMLR 论文集页面；空列表会使 Provider 不可用。 |
+| `maxCachedRecords` | `100` | 内存中保留的已核验论文 PDF 位置数量。 |
 
 完整字段见生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-academic-source-pmlr)。
 

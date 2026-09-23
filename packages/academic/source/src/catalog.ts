@@ -33,6 +33,76 @@ export interface AcademicCatalogSearchOptions {
   readonly parse: (html: string, catalogUrl: URL) => readonly AcademicCatalogRecord[]
 }
 
+/** Metadata published on one official paper page. */
+export interface AcademicPaperCitation {
+  readonly title: string
+  readonly authors: readonly string[]
+  readonly year: string | null
+  readonly venue: string | null
+  readonly doi: string | null
+  readonly pdfUrl: string | null
+  readonly abstractUrl: string | null
+}
+
+/**
+ * Fetch one official paper page; a missing record resolves to null.
+ * @param providerId - source owning the requested paper.
+ * @param url - validated official paper-page URL.
+ * @param signal - optional caller cancellation.
+ * @returns page HTML or null for HTTP 404.
+ */
+export async function fetchAcademicPaperPage(providerId: string, url: URL, signal?: AbortSignal): Promise<string | null> {
+  signal?.throwIfAborted()
+  try {
+    const response = await fetch(url, { redirect: 'error', headers: { accept: 'text/html', 'user-agent': USER_AGENT },
+      ...signal === undefined ? {} : { signal } })
+    if (response.status === 404) { await response.body?.cancel(); return null }
+    if (!response.ok) {
+      await response.body?.cancel()
+      throw new AcademicSourceError(`${providerId} paper request returned HTTP ${response.status}`,
+        response.status === 429 ? 'ACADEMIC_SOURCE_RATE_LIMIT' : 'ACADEMIC_SOURCE_PROVIDER_ERROR')
+    }
+    return await response.text()
+  } catch (error: unknown) {
+    if (signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError')) {
+      throw new AcademicSourceError(`${providerId} paper request aborted`, 'ACADEMIC_SOURCE_ABORTED', { cause: error })
+    }
+    if (error instanceof AcademicSourceError) throw error
+    throw new AcademicSourceError(`${providerId} paper request failed`, 'ACADEMIC_SOURCE_NETWORK_ERROR', { cause: error })
+  }
+}
+
+/**
+ * Read citation metadata from one official paper page.
+ * @param html - official paper-page HTML.
+ * @returns title, authors, date, venue, DOI, and page-provided URLs.
+ */
+export function parseAcademicPaperCitation(html: string): AcademicPaperCitation {
+  const fields = new Map<string, string[]>()
+  for (const tag of html.matchAll(/<meta\b[^>]*>/giu)) {
+    const attributes = new Map<string, string>()
+    for (const match of tag[0].matchAll(/([a-z][\w:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/giu)) {
+      attributes.set((match[1] as string).toLowerCase(), academicCatalogHtmlText((match[2] ?? match[3] ?? match[4]) as string))
+    }
+    const name = attributes.get('name')?.toLowerCase()
+    const value = attributes.get('content')
+    if (name?.startsWith('citation_') && value !== undefined) {
+      fields.set(name, [...(fields.get(name) ?? []), value])
+    }
+  }
+  const first = (name: string): string | null => fields.get(name)?.[0] || null
+  const title = first('citation_title')
+  const authors = fields.get('citation_author')?.filter(Boolean) ?? []
+  if (title === null || authors.length === 0) {
+    throw new AcademicSourceError('Official paper page has no title or authors', 'ACADEMIC_SOURCE_PARSE_ERROR')
+  }
+  const year = first('citation_publication_date')?.match(/^(?:19|20)\d{2}/u)?.[0] ?? null
+  return { title, authors, year,
+    venue: first('citation_conference_title') ?? first('citation_journal_title') ?? first('citation_inbook_title'),
+    doi: first('citation_doi'), pdfUrl: first('citation_pdf_url'),
+    abstractUrl: first('citation_abstract_html_url') }
+}
+
 /**
  * Fetch configured official catalog pages, filter them by all query terms, and normalize matches.
  * @param options - provider id, catalog URLs, and the provider-specific page parser.

@@ -11,6 +11,8 @@ kind: "package-reference"
 
 本包把 CVF Open Access 论文接入 `ctx.academicSource`。它搜索已配置的官方会议页面、规范化命中论文，并把官方 PDF 交给共享 evidence 流程。
 
+`verifyReference()` 读取单篇官方页面（含 workshop 路径），并检查引用元数据中的 PDF URL 与论文 ID 是否对应。未配置会议目录也可核验；此操作不下载 PDF。
+
 ## 目录
 
 - [使用本包](#use-this-package)

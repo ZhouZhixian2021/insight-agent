@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 This package adds ACL Anthology papers to `ctx.academicSource`. It searches configured official volume pages, normalizes matching papers, and returns direct Anthology PDFs for the shared evidence pipeline.
 
+`verifyReference()` fetches one official paper page by Anthology ID and checks its citation metadata before returning a work. This works without configured volume catalogs; it does not fetch the PDF.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 Search OpenAlex without downloading conference catalogs for each query. Each transport attempt sends the caller's unchanged query and returns normalized bibliography and version-matched full-text candidates. Discovery does not guarantee a downloadable full text or a verified first-public date. The workflow remains responsible for query planning, date eligibility, and evidence quality.
 
+`verifyReference()` retrieves one OpenAlex work through its DOI singleton endpoint, checks the returned DOI, and retains its version-specific full-text candidates. This lookup ignores discovery search mode and publication-year filters; it does not download full text.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

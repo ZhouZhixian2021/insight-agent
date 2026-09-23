@@ -87,6 +87,19 @@ describe('OpenAlex discovery', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
+  it('forwards caller cancellation through a retry wait', async () => {
+    const controller = new AbortController()
+    const fetch = vi.fn().mockImplementationOnce(async () => {
+      setImmediate(() => { controller.abort('stop retry') })
+      throw new TypeError('temporary network failure')
+    })
+    vi.stubGlobal('fetch', fetch)
+    await expect(new OpenAlexProvider({ ...options, maxAttempts: 2, retryDelayMs: 60_000 })
+      .search({ query: 'BERT' }, controller.signal)).rejects.toMatchObject({
+      code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
   it('aborts the underlying fetch on timeout and distinguishes caller cancellation', async () => {
     const signals: AbortSignal[] = []
     vi.stubGlobal('fetch', vi.fn((_url: URL, init: RequestInit) => new Promise((_resolve, reject) => {
@@ -141,6 +154,95 @@ describe('OpenAlex discovery', () => {
     expect(provider.fullTextUrls(bert().id)).toEqual([])
     expect(provider.fullTextUrls('https://openalex.org/W2')).toHaveLength(1)
     await expect(provider.search({ query: 'bad' })).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PARSE_ERROR' })
+  })
+})
+
+describe('OpenAlex exact DOI verification', () => {
+  it('gets one work by DOI without search or publication-year filtering', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(bert())))
+    vi.stubGlobal('fetch', fetch)
+    const provider = new OpenAlexProvider(options)
+    const work = await provider.verifyReference({ kind: 'doi', normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/N19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/N19-1423' })
+    expect((fetch.mock.calls[0]?.[0] as URL).pathname).toBe('/works/doi:10.18653/v1/n19-1423')
+    expect((fetch.mock.calls[0]?.[0] as URL).search).toBe('')
+    expect(work?.academicWork.title).toBe(bert().title)
+    expect(provider.fullTextUrls(bert().id)).toEqual(['https://aclanthology.org/N19-1423.pdf'])
+  })
+
+  it('returns no work for an absent or mismatched DOI', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce(new Response('', { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...bert(), doi: 'https://doi.org/10.1000/other' })))
+    vi.stubGlobal('fetch', fetch)
+    const provider = new OpenAlexProvider(options)
+    const reference = { kind: 'doi' as const, normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/N19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/N19-1423' }
+    await expect(provider.verifyReference(reference)).resolves.toBeNull()
+    await expect(provider.verifyReference(reference)).resolves.toBeNull()
+  })
+
+  it('rejects malformed DOI input and pre-aborted calls without fetching', async () => {
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    const provider = new OpenAlexProvider(options)
+    await expect(provider.verifyReference({ kind: 'doi', normalizedValue: 'bad',
+      originalValue: 'bad', discoveryUrl: 'https://doi.org/bad' }))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_INVALID_REQUEST' })
+    const controller = new AbortController()
+    controller.abort()
+    await expect(provider.verifyReference({ kind: 'doi', normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/n19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/n19-1423' },
+    controller.signal)).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('classifies HTTP, JSON, and network failures for one DOI', async () => {
+    const fetch = vi.fn().mockResolvedValueOnce(new Response('', { status: 429 }))
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+      .mockResolvedValueOnce(new Response('{bad'))
+      .mockRejectedValueOnce(new TypeError('offline'))
+    vi.stubGlobal('fetch', fetch)
+    const reference = { kind: 'doi' as const, normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/n19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/n19-1423' }
+    const provider = new OpenAlexProvider(options)
+    for (const code of ['ACADEMIC_SOURCE_RATE_LIMIT', 'ACADEMIC_SOURCE_PROVIDER_ERROR',
+      'ACADEMIC_SOURCE_PARSE_ERROR', 'ACADEMIC_SOURCE_NETWORK_ERROR']) {
+      await expect(provider.verifyReference(reference)).rejects.toMatchObject({ code })
+    }
+    expect(fetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('bounds exact-verification PDF locations and sends a configured credential as a header', async () => {
+    const second = { ...bert(), id: 'https://openalex.org/W2' }
+    const fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(bert())))
+      .mockResolvedValueOnce(new Response(JSON.stringify(second)))
+    vi.stubGlobal('fetch', fetch)
+    const provider = new OpenAlexProvider({ ...options, apiKey: 'test-key', maxCachedRecords: 1 })
+    const reference = { kind: 'doi' as const, normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/n19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/n19-1423' }
+    await provider.verifyReference(reference)
+    await provider.verifyReference(reference)
+    expect(provider.fullTextUrls(bert().id)).toEqual([])
+    expect(provider.fullTextUrls(second.id)).toEqual(['https://aclanthology.org/N19-1423.pdf'])
+    expect((fetch.mock.calls[0]?.[1] as RequestInit).headers).toMatchObject({ authorization: 'Bearer test-key' })
+  })
+
+  it('distinguishes request timeout from caller cancellation', async () => {
+    const signals: AbortSignal[] = []
+    vi.stubGlobal('fetch', vi.fn((_url: URL, init: RequestInit) => new Promise((_resolve, reject) => {
+      const signal = init.signal as AbortSignal
+      signals.push(signal)
+      signal.addEventListener('abort', () => { reject(new Error('aborted')) }, { once: true })
+    })))
+    const reference = { kind: 'doi' as const, normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/n19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/n19-1423' }
+    await expect(new OpenAlexProvider({ ...options, timeoutMs: 10 }).verifyReference(reference))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_TIMEOUT' })
+    const controller = new AbortController()
+    const pending = new OpenAlexProvider(options).verifyReference(reference, controller.signal)
+    controller.abort()
+    await expect(pending).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+    expect(signals.every(signal => signal.aborted)).toBe(true)
   })
 })
 

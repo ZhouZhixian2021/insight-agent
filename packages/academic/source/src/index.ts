@@ -9,9 +9,11 @@
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import { createBatchResult, createFailureId } from '@deepseek-ai/dsh-academic-model'
-import type { ProviderFailure, WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import type { FailureCategory, ProviderFailure, WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import z from '@deepseek-ai/schemastery'
 import type {
+  AcademicReference,
+  AcademicReferenceVerificationOutcome,
   AcademicSourceFullText,
   AcademicSourceProvider,
   AcademicSourceSearchBatchResult,
@@ -41,10 +43,12 @@ export type {
 } from './types.ts'
 export {
   academicCatalogHtmlText,
+  fetchAcademicPaperPage,
   normalizeAcademicCatalogRecord,
+  parseAcademicPaperCitation,
   searchAcademicCatalogs,
 } from './catalog.ts'
-export type { AcademicCatalogRecord, AcademicCatalogSearchOptions } from './catalog.ts'
+export type { AcademicCatalogRecord, AcademicCatalogSearchOptions, AcademicPaperCitation } from './catalog.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -261,12 +265,10 @@ export class AcademicSourceRuntime extends Service {
     const timer = setTimeout(() => { controller.abort(new AcademicSourceError(
       `${provider.id} search exceeded ${this.searchTimeoutMs} ms`, 'ACADEMIC_SOURCE_TIMEOUT',
     )) }, this.searchTimeoutMs)
-    let onAbort: () => void = () => {}
+    const { promise: stopped, reject } = Promise.withResolvers<never>()
+    const onAbort = () => { reject(controller.signal.reason as AcademicSourceError) }
+    controller.signal.addEventListener('abort', onAbort, { once: true })
     try {
-      const stopped = new Promise<never>((_resolve, reject) => {
-        onAbort = () => { reject(controller.signal.reason as AcademicSourceError) }
-        controller.signal.addEventListener('abort', onAbort, { once: true })
-      })
       return await Promise.race([provider.search(request, controller.signal), stopped])
     } finally {
       clearTimeout(timer)
@@ -289,6 +291,58 @@ export class AcademicSourceRuntime extends Service {
     }
     return null
   }
+
+  /**
+   * Verify one Web-discovered paper against the approved owning provider.
+   * Search-only availability does not prevent a registered provider from verifying a single record.
+   * @param reference - DOI, arXiv ID, or official provider record identified from one Web result.
+   * @param allowedProviders - provider ids approved by the research plan for verification.
+   * @param signal - caller cancellation, which aborts the whole verification round.
+   * @returns the official work and full-text candidates, or one classified failure.
+   */
+  async verifyReference(reference: AcademicReference, allowedProviders: readonly string[],
+    signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome> {
+    if (signal?.aborted) throw new AcademicSourceError('academic reference verification aborted', 'ACADEMIC_SOURCE_ABORTED')
+    const providerId = reference.kind === 'provider_record' ? reference.provider
+      : reference.kind === 'doi' ? 'openalex' : 'arxiv'
+    if (!allowedProviders.includes(providerId)) {
+      return referenceFailure(reference, providerId, 'invalid_request', `${providerId} was not approved for reference verification.`)
+    }
+    const provider = this.providers.get(providerId)
+    if (provider === undefined || provider.verifyReference === undefined) {
+      throw new AcademicSourceError(`academic source provider "${providerId}" cannot verify references`,
+        'ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING')
+    }
+    try {
+      const work = await provider.verifyReference(reference, signal)
+      if (work === null) return referenceFailure(reference, providerId, 'not_found',
+        `${providerId} has no matching official paper record.`)
+      const record = work.workVersion.sourceRecords.find(item => item.provider === providerId)
+      if (record === undefined) throw new AcademicSourceError('Verified work has no owning source record', 'ACADEMIC_SOURCE_PARSE_ERROR')
+      const urls = provider.fullTextUrls(record.recordId)
+      return { status: 'verified', value: { reference, verificationProvider: providerId, work,
+        fullText: urls.length === 0 ? null : { sourceProvider: providerId, urls } } }
+    } catch (reason: unknown) {
+      if (signal?.aborted || reason instanceof AcademicSourceError && reason.code === 'ACADEMIC_SOURCE_ABORTED') {
+        throw new AcademicSourceError('academic reference verification aborted', 'ACADEMIC_SOURCE_ABORTED', { cause: reason })
+      }
+      const code = reason instanceof AcademicSourceError ? reason.code : ''
+      const category: FailureCategory = code === 'ACADEMIC_SOURCE_INVALID_REQUEST' ? 'invalid_request'
+        : code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
+          : code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
+            : code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error'
+              : code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
+                : code === 'ACADEMIC_SOURCE_PROVIDER_ERROR' ? 'upstream_error' : 'unknown'
+      return referenceFailure(reference, providerId, category,
+        reason instanceof AcademicSourceError ? reason.message : `${providerId} verification failed.`)
+    }
+  }
+}
+
+function referenceFailure(reference: AcademicReference, verificationProvider: string, category: FailureCategory,
+  message: string): AcademicReferenceVerificationOutcome {
+  return { status: 'failed', failure: { reference, verificationProvider, category, message,
+    retryable: ['rate_limited', 'timeout', 'network_error'].includes(category), retryAfter: null } }
 }
 
 interface ResolvableProvider {

@@ -11,6 +11,8 @@ kind: "package-reference"
 
 本包把 ACL Anthology 论文接入 `ctx.academicSource`。它搜索已配置的官方论文集页面、规范化命中论文，并把 Anthology PDF 交给共享 evidence 流程。
 
+`verifyReference()` 按 Anthology ID 读取单篇官方页面，检查引用元数据后返回成果。未配置论文集目录也可核验；此操作不下载 PDF。
+
 ## 目录
 
 - [使用本包](#use-this-package)
