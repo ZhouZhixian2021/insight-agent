@@ -124,6 +124,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the aggregate batch outcome from all usable providers.',
       },
       {
+        signature: 'async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>',
+        description: 'Search only the provider ids approved for this request, regardless of discovery configuration. Reject empty, duplicate, missing, or unavailable ids before any provider search starts.',
+        parameters: [{ name: 'request', description: 'query and total result limit across selected providers.' }, { name: 'providerIds', description: 'provider ids approved for this search.' }, { name: 'signal', description: 'optional cancellation forwarded to each selected provider.' }],
+        returns: 'the aggregate batch outcome from the selected providers.',
+      },
+      {
         signature: 'resolveFullText(version: WorkVersion): AcademicSourceFullText | null',
         description: 'Resolve full-text URLs through the provider named by a version\'s source records.',
         parameters: [{ name: 'version', description: 'version selected after ingestion.' }],

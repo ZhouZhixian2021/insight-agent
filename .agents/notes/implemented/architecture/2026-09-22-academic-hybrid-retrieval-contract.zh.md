@@ -12,11 +12,13 @@ Academic 工作流已经有 Provider 中立的多学术源检索路径，但加�
 
 共享契约区分 `academic` 与 `web_discovery` 渠道。每条检索可选的 retrieval 策略分别列出直接检索的 Academic Provider 与引用核验 Provider，并携带独立的 Web 发现和引用核验上限。该字段保持可选，使第 1、2 版计划维持原有行为；字段缺失表示没有获批混合策略，不表示观察值为零。第 3 版计划依据[已批准计划决策](2026-09-21-academic-approved-plan-search.zh.md)要求并校验该策略。
 
+`AcademicSourceRuntime.searchProviders(request, providerIds, signal)` 仅搜索单条查询获批准的直接 Provider，不受部署的 `searchProviders` 发现配置影响。它在调用任何 Provider 前拒绝无效或不可用的选择，并复用现有多 Provider 批次结算。`searchAll()` 继续为现有消费方使用部署配置的选择。
+
 Web 发现产生 `AcademicWebDiscoveryCandidate`。纯识别器将其转换成 DOI、arXiv 或带 ACL/PMLR/CVF 命名空间的 Provider Record 引用，同时保留原始发现 URL。识别结果会在同批问题旁保留成功引用；被丢弃的候选至少携带一条 `unrecognized_page`、`invalid_reference` 或 `ambiguous_reference` 问题，不能只返回无说明的空数组。识别阶段不执行网络可信判断。Provider 可以实现 `verifyReference()`，把单条受支持引用解析成既有 `AcademicSourceWork`；权威来源确认无记录时返回 `null`，传输或解析失败则抛出，供后续分类结算。公共结果字段保留已核验成果/全文或单条不含凭据的分类失败。Web 标题、摘要片段与生成式回答绝不成为证据。
 
 可选的 `hybridRetrieval` Remote 投影携带由生产方结算的学术检索、Web 发现、引用识别、引用核验与去重阶段。直接发现记录、Web URL、引用、核验尝试、核验成功/失败、丢弃引用、合并重复与去重论文保持不同计数单位。每条浏览器安全引用保留类型、规范值、发现 URL、核验 Provider、状态和清理后的消息。
 
-固定合成夹具覆盖 DOI、arXiv、ACL、PMLR 与 CVF 引用，包括没有 DOI 或 arXiv ID 的官方记录。标识原始写法必须能从候选输入中还原；规范化不能创造候选中不存在的大小写。夹具还覆盖三种识别问题、一条核验成功、一条分类失败和浏览器投影。计划会为第 3 版交接填充策略。工作流的 `executeHybridSearch()` 同时启动获批的学术源发现和 Web 发现，执行精确引用去重、Provider 白名单与核验预算，只返回直接发现或核验成功的论文及彼此分离的渠道观察值。在 Academic Source 提供单次调用的 Provider 操作且 A-H4 投影这些观察值前，Controller 仍拒绝第 3 版计划运行。
+固定合成夹具覆盖 DOI、arXiv、ACL、PMLR 与 CVF 引用，包括没有 DOI 或 arXiv ID 的官方记录。标识原始写法必须能从候选输入中还原；规范化不能创造候选中不存在的大小写。夹具还覆盖三种识别问题、一条核验成功、一条分类失败和浏览器投影。计划会为第 3 版交接填充策略。工作流的 `executeHybridSearch()` 同时启动获批的学术源发现和 Web 发现，执行精确引用去重、Provider 白名单与核验预算，只返回直接发现或核验成功的论文及彼此分离的渠道观察值。Controller 在 A-H4 投影这些观察值并接入获批操作前仍拒绝第 3 版计划运行。
 
 ## 考虑过的替代方案
 
