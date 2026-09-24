@@ -63,7 +63,9 @@ A provider's availability is a cheap local check — for example whether its key
 
 For retained works with source records, `searchAll()` also reports counts of unknown first-public dates, venues, and version types, plus missing or failed full-text candidate resolution, in `limitations`. These are discovery limits, not download attempts or source-search failures; they do not fabricate `batch.failures` or discard successful search results. No candidates does not establish that a paper has no full text.
 
-`search()` failures throw `AcademicSourceError` with a stable, machine-routable code. `searchAll()` converts expected search failures into source-level `ProviderFailure` entries and keeps surviving works. Timeout, rate-limit, network, and parsing codes have distinct categories; other expected codes use `upstream_error`. Selection/configuration errors still throw, and caller cancellation aborts the round as `ACADEMIC_SOURCE_ABORTED`. The service performs no retries or query planning.
+`search()` failures throw `AcademicSourceError` with a stable, machine-routable code. `searchAll()` converts expected search failures into source-level `ProviderFailure` entries and keeps surviving works. Timeout, rate-limit, network, and parsing codes have distinct categories; other expected codes use `upstream_error`. Only rate limits, timeouts, and network errors are retryable. Unexpected errors retain an `unknown` category and a generic message instead of exposing raw provider details. Selection/configuration errors still throw, and caller cancellation aborts the round as `ACADEMIC_SOURCE_ABORTED`. The service performs no retries or query planning.
+
+`verifyReference()` keeps an official work when its provider has no full-text candidate or candidate resolution fails. The verified outcome then has `fullText: null` and a classified `fullTextFailure`; no candidate is `fulltext_unavailable`, while resolution errors retain their category. A missing official paper remains a failed verification with `not_found`. Web discovery URLs, titles, and snippets do not supply verified metadata or full-text candidates.
 
 -----
 
@@ -79,7 +81,7 @@ For retained works with source records, `searchAll()` also reports counts of unk
 | `AcademicSourceWork` | One provider-neutral work/version pair; the hybrid consumer may attach verified Web discovery URLs and verification Provider IDs. |
 | `AcademicWebDiscoveryCandidate`, `AcademicReference`, `AcademicReferenceIdentifier` | Pure Web-result-to-reference boundary for DOI, arXiv, and namespaced ACL/PMLR/CVF records; successful references survive sibling identification issues, while discarded candidates retain an explicit unrecognized, invalid, or ambiguous reason. Discovery text is never evidence. |
 | `identifyAcademicReferences()` | Identifies references from one Web result's URL, title, and snippet without fetching; ambiguous DOI values are withheld while independent valid references survive. |
-| `AcademicReferenceVerificationOutcome` | Per-reference verified work/full-text result or credential-free classified failure; sibling outcomes survive independently. |
+| `AcademicReferenceVerificationOutcome` | Per-reference verified work with optional full-text candidates and candidate failure, or a classified verification failure; sibling outcomes survive independently. |
 | `AcademicSourceError` | Typed failure carrying a stable, open-string `code`. |
 | `AcademicSourceRuntime` | Registration, single/all-source search, single-reference verification, and full-text resolution. |
 

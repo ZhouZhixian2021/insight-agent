@@ -14,10 +14,12 @@ A Web result can identify a plausible paper URL or identifier without proving th
 
 arXiv uses `id_list` and matches an explicitly requested version. OpenAlex reads its DOI singleton and compares the returned DOI. ACL, PMLR, and CVF fetch only the paper's official page, parse citation metadata, and check its official record or PDF URL. PMLR retains the page's PDF URL in a bounded instance cache because an official paper can publish a PDF outside the derived path. The result carries a normalized work and full-text candidates, not downloaded or extracted body text.
 
+An official work remains verified when its provider has no full-text candidate or candidate resolution fails. `fullTextFailure` records `fulltext_unavailable` or the classified resolution error beside `fullText: null`; an absent official record instead fails verification as `not_found`. Search batches and reference failures mark only rate limits, timeouts, and network errors retryable. Unexpected provider errors use a generic message rather than exposing their raw text.
+
 ## Alternatives considered
 
-Accepting a plausible URL or a successful HTTP response alone does not validate paper metadata. Re-searching a full catalog for each Web result increases work and can miss papers outside the configured catalog subset. Using the derived PMLR PDF path after reading the paper page can point to a nonexistent file.
+Accepting a plausible URL or a successful HTTP response alone does not validate paper metadata. Re-searching a full catalog for each Web result increases work and can miss papers outside the configured catalog subset. Using the derived PMLR PDF path after reading the paper page can point to a nonexistent file. Treating absent full-text candidates as absent papers discards verified metadata and hides the reason evidence cannot be created.
 
 ## Consequences
 
-The five providers can settle one identified reference without expanding its citation network. Official record absence, transport errors, rate limits, and parse failures remain distinct; caller cancellation aborts the call. Full-text safety, download limits, parsing, and evidence creation remain with the downstream fetch and evidence packages.
+The five providers can settle one identified reference without expanding its citation network. Official record absence, transport errors, rate limits, parse failures, and missing full-text candidates remain distinct; caller cancellation aborts the call. Metadata-only works remain available for ingestion but cannot supply full-text evidence. Full-text safety, download limits, parsing, and evidence creation remain with the downstream fetch and evidence packages.

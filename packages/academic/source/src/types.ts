@@ -128,10 +128,13 @@ export interface AcademicVerifiedReference {
   readonly reference: AcademicReference
   readonly verificationProvider: string
   readonly work: AcademicSourceWork
+  /** Candidate URLs from the owning provider, never a Web discovery URL or fetched body. */
   readonly fullText: AcademicSourceFullText | null
+  /** A missing or failed candidate resolution does not discard verified paper metadata. */
+  readonly fullTextFailure: AcademicReferenceVerificationFailure | null
 }
 
-/** Credential-free failure for one reference verification attempt. */
+/** Credential-free failure while verifying a reference or resolving its full-text candidates. */
 export interface AcademicReferenceVerificationFailure {
   readonly reference: AcademicReference
   readonly verificationProvider: string

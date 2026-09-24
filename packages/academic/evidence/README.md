@@ -26,6 +26,8 @@ English | [中文](README.zh.md)
 
 Pass ordered HTML/PDF URLs and a thin adapter over `ctx.web.fetch()` to `fetchAcademicFullText()`, then give its output to `extractEvidenceFromContent()`. The first confirmed full text wins: semantic HTML produces section-aware paragraph locators, while PDF produces page locators through PDF.js. Both paths reject non-2xx or truncated responses and attach the final URL plus a SHA-256 of the exact accepted content.
 
+The caller supplies URLs resolved from the selected academic version's source records, never Web discovery URLs. A Web search snippet or provider-generated answer is not a fetched paper body. Direct calls to `extractEvidenceFromContent()` require caller-verified paper segments; exact excerpt matching checks a draft against those segments but cannot establish their origin.
+
 ```text
 const source = await fetchAcademicFullText({
   academicWorkId, workVersionId, sourceProvider, retrievedAt,
@@ -34,7 +36,7 @@ const source = await fetchAcademicFullText({
 const result = await extractEvidenceFromContent(source, generator, signal)
 ```
 
-Call `extractEvidenceFromContent()` directly when the workflow already has locatable paper segments. The generator receives the extraction instruction, focus questions, locatable segments, and cancellation signal; it returns typed drafts after validating any external model output.
+Call `extractEvidenceFromContent()` directly when the workflow already has verified, locatable paper segments. The generator receives the extraction instruction, focus questions, locatable segments, and cancellation signal; it returns typed drafts after validating any external model output.
 
 ```text
 const result = await extractEvidenceFromContent({
