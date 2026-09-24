@@ -139,7 +139,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>',
         description: 'Verify one Web-discovered paper against the approved owning provider. Search-only availability does not prevent a registered provider from verifying a single record.',
         parameters: [{ name: 'reference', description: 'DOI, arXiv ID, or official provider record identified from one Web result.' }, { name: 'allowedProviders', description: 'provider ids approved by the research plan for verification.' }, { name: 'signal', description: 'caller cancellation, which aborts the whole verification round.' }],
-        returns: 'the official work and full-text candidates, or one classified failure.',
+        returns: 'the official work with optional full-text candidates and a separate candidate failure, or a failed verification.',
       },
     ],
   },
@@ -3661,7 +3661,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicVerifiedReference',
-    declaration: 'export interface AcademicVerifiedReference {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly work: AcademicSourceWork;\n    readonly fullText: AcademicSourceFullText | null;\n}',
+    declaration: 'export interface AcademicVerifiedReference {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly work: AcademicSourceWork;\n    readonly fullText: AcademicSourceFullText | null;\n    readonly fullTextFailure: AcademicReferenceVerificationFailure | null;\n}',
   },
   {
     name: 'AcademicWebDiscoveryCandidateView',

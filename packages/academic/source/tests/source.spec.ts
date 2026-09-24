@@ -61,7 +61,8 @@ describe('AcademicSourceRuntime reference verification', () => {
         verifyReference: () => Promise.resolve(verified) })
       await expect(source.verifyReference(reference, ['acl'])).resolves.toMatchObject({ status: 'verified',
         value: { verificationProvider: 'acl', work: verified,
-          fullText: { sourceProvider: 'acl', urls: ['https://example.org/acl/2024.acl-long.1.pdf'] } } })
+          fullText: { sourceProvider: 'acl', urls: ['https://example.org/acl/2024.acl-long.1.pdf'] },
+          fullTextFailure: null } })
     } finally { await ctx.fiber.dispose() }
   })
 
@@ -147,7 +148,66 @@ describe('AcademicSourceRuntime reference verification', () => {
         verifyReference: () => Promise.resolve({ academicWork: work.academicWork, workVersion: {
           ...work.workVersion, sourceRecords: [{ provider: 'acl', recordId: reference.recordId }] } }) })
       await expect(source.verifyReference(reference, ['acl'])).resolves.toMatchObject({
-        status: 'verified', value: { fullText: null } })
+        status: 'verified', value: { fullText: null, fullTextFailure: {
+          category: 'fulltext_unavailable', retryable: false, reference,
+        } } })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('retains verified metadata when full-text candidate resolution fails', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const work = makeWork('Official metadata')
+      source.registerSearchProvider({ ...makeSearchProvider('acl', available, () => Promise.resolve(searchResult('unused'))),
+        fullTextUrls: () => { throw new AcademicSourceError('Official URL could not be parsed',
+          'ACADEMIC_SOURCE_PARSE_ERROR') },
+        verifyReference: () => Promise.resolve({ academicWork: work.academicWork, workVersion: {
+          ...work.workVersion, sourceRecords: [{ provider: 'acl', recordId: reference.recordId }] } }) })
+      await expect(source.verifyReference(reference, ['acl'])).resolves.toMatchObject({
+        status: 'verified', value: { work: { academicWork: work.academicWork }, fullText: null,
+          fullTextFailure: { category: 'parse_failed', retryable: false,
+            message: 'Official URL could not be parsed' } } })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('hides unexpected full-text resolver details while retaining the official work', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const work = makeWork('Official metadata')
+      source.registerSearchProvider({ ...makeSearchProvider('acl', available, () => Promise.resolve(searchResult('unused'))),
+        fullTextUrls: () => { throw new Error('private resolver detail') },
+        verifyReference: () => Promise.resolve({ academicWork: work.academicWork, workVersion: {
+          ...work.workVersion, sourceRecords: [{ provider: 'acl', recordId: reference.recordId }] } }) })
+      await expect(source.verifyReference(reference, ['acl'])).resolves.toMatchObject({
+        status: 'verified', value: { fullText: null, fullTextFailure: { category: 'unknown',
+          message: 'acl full-text candidate resolution failed.', retryable: false } } })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('propagates cancellation during full-text candidate resolution', async () => {
+    const { ctx, source } = await mountSource()
+    const controller = new AbortController()
+    try {
+      const work = makeWork('Official metadata')
+      source.registerSearchProvider({ ...makeSearchProvider('acl', available, () => Promise.resolve(searchResult('unused'))),
+        fullTextUrls: () => { controller.abort(); return [] },
+        verifyReference: () => Promise.resolve({ academicWork: work.academicWork, workVersion: {
+          ...work.workVersion, sourceRecords: [{ provider: 'acl', recordId: reference.recordId }] } }) })
+      await expect(source.verifyReference(reference, ['acl'], controller.signal)).rejects.toMatchObject({
+        code: 'ACADEMIC_SOURCE_ABORTED' })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('propagates provider cancellation raised during full-text candidate resolution', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const work = makeWork('Official metadata')
+      source.registerSearchProvider({ ...makeSearchProvider('acl', available, () => Promise.resolve(searchResult('unused'))),
+        fullTextUrls: () => { throw new AcademicSourceError('cancelled', 'ACADEMIC_SOURCE_ABORTED') },
+        verifyReference: () => Promise.resolve({ academicWork: work.academicWork, workVersion: {
+          ...work.workVersion, sourceRecords: [{ provider: 'acl', recordId: reference.recordId }] } }) })
+      await expect(source.verifyReference(reference, ['acl'])).rejects.toMatchObject({
+        code: 'ACADEMIC_SOURCE_ABORTED' })
     } finally { await ctx.fiber.dispose() }
   })
 
@@ -339,6 +399,10 @@ describe('AcademicSourceRuntime multi-provider execution', () => {
     }
     await expect(source.searchProviders({ query: 'retrieval' }, ['beta', 'missing']))
       .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING' })
+    const cancelled = new AbortController()
+    cancelled.abort()
+    await expect(source.searchProviders({ query: 'retrieval' }, ['beta'], cancelled.signal))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
     expect(called).toEqual(['beta', 'gamma'])
   })
 
@@ -410,7 +474,7 @@ describe('AcademicSourceRuntime searchAll batch result', () => {
     expect(failure.operation).toBe('search')
     expect(failure.category).toBe('upstream_error')
     expect(failure.message).toBe('beta catalog request failed (HTTP 503)')
-    expect(failure.retryable).toBe(true)
+    expect(failure.retryable).toBe(false)
     expect(failure.retryAfter).toBeNull()
     expect('affectedWorkVersionId' in failure).toBe(false)
     expect(result.providers).toEqual(['alpha', 'beta'])
@@ -434,11 +498,11 @@ describe('AcademicSourceRuntime searchAll batch result', () => {
     if (alpha === undefined || beta === undefined) throw new Error('missing test failures')
     expect(alpha.provider).toBe('alpha')
     expect(alpha.category).toBe('upstream_error')
-    expect(alpha.retryable).toBe(true)
+    expect(alpha.retryable).toBe(false)
     expect(beta.provider).toBe('beta')
     expect(beta.category).toBe('unknown')
     expect(beta.retryable).toBe(false)
-    expect(beta.message).toBe('Error: unexpected crash')
+    expect(beta.message).toBe('beta search failed.')
     expect(result.providers).toEqual(['alpha', 'beta'])
     expect(result.discoveredRecords).toBe(0)
   })
@@ -627,16 +691,28 @@ describe('AcademicSourceRuntime discovery selection and deadlines', () => {
   })
 
   it.each([
-    ['ACADEMIC_SOURCE_RATE_LIMIT', 'rate_limited'],
-    ['ACADEMIC_SOURCE_PARSE_ERROR', 'parse_failed'],
-    ['ACADEMIC_SOURCE_NETWORK_ERROR', 'network_error'],
-  ] as const)('classifies %s in a search batch', async (code, category) => {
+    ['ACADEMIC_SOURCE_RATE_LIMIT', 'rate_limited', true],
+    ['ACADEMIC_SOURCE_TIMEOUT', 'timeout', true],
+    ['ACADEMIC_SOURCE_PARSE_ERROR', 'parse_failed', false],
+    ['ACADEMIC_SOURCE_NETWORK_ERROR', 'network_error', true],
+  ] as const)('classifies %s in a search batch', async (code, category, retryable) => {
     const { ctx, source } = await mountSource()
     try {
       source.registerSearchProvider(makeSearchProvider('openalex', available,
         () => Promise.reject(new AcademicSourceError('official source failed', code))))
       const result = await source.searchAll({ query: 'test' })
-      expect(result.batch.failures).toMatchObject([{ category, message: 'official source failed' }])
+      expect(result.batch.failures).toMatchObject([{ category, message: 'official source failed', retryable }])
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('does not expose an unexpected provider error in the source batch', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      source.registerSearchProvider(makeSearchProvider('openalex', available,
+        () => Promise.reject(new Error('private provider detail'))))
+      const result = await source.searchAll({ query: 'test' })
+      expect(result.batch.failures).toMatchObject([{ category: 'unknown', retryable: false,
+        message: 'openalex search failed.' }])
     } finally { await ctx.fiber.dispose() }
   })
 

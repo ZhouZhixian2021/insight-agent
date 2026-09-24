@@ -63,7 +63,9 @@ kind: "package-reference"
 
 对于保留下来且带来源记录的成果，`searchAll()` 还在 `limitations` 中报告首次公开日期、场所、版本类型未知的数量，以及全文候选缺失或解析失败的数量。这些是发现限制，不是下载尝试或来源搜索失败；不会伪造 `batch.failures` 或丢弃成功的搜索结果。没有候选不等于论文不存在全文。
 
-`search()` 失败抛出携带稳定、可机读错误码的 `AcademicSourceError`。`searchAll()` 把预期搜索失败转换为来源级 `ProviderFailure` 并保留其他成果。超时、限流、网络和解析错误码对应不同类别；其他预期错误码使用 `upstream_error`。选择/配置错误仍然抛出，调用方取消以 `ACADEMIC_SOURCE_ABORTED` 中止整轮。服务不执行重试或查询规划。
+`search()` 失败抛出携带稳定、可机读错误码的 `AcademicSourceError`。`searchAll()` 把预期搜索失败转换为来源级 `ProviderFailure` 并保留其他成果。超时、限流、网络和解析错误码对应不同类别；其他预期错误码使用 `upstream_error`。只有限流、超时和网络错误标记为可重试。非预期错误保留 `unknown` 类别和通用消息，不暴露原始 Provider 细节。选择/配置错误仍然抛出，调用方取消以 `ACADEMIC_SOURCE_ABORTED` 中止整轮。服务不执行重试或查询规划。
+
+`verifyReference()` 在 Provider 没有全文候选或候选解析失败时仍保留官方成果。此时已核验结果的 `fullText` 为 `null`，`fullTextFailure` 记录分类原因；无候选使用 `fulltext_unavailable`，解析错误保留原有类别。官方论文不存在仍是 `not_found` 核验失败。Web 发现 URL、标题和摘要片段都不能提供已核验元数据或全文候选。
 
 -----
 
@@ -79,7 +81,7 @@ kind: "package-reference"
 | `AcademicSourceWork` | 一对 Provider 中立的成果/版本记录；混合检索消费方可附加已核验的 Web 发现 URL 与核验 Provider ID。 |
 | `AcademicWebDiscoveryCandidate`、`AcademicReference`、`AcademicReferenceIdentifier` | 从 Web 结果到 DOI、arXiv 及带 ACL/PMLR/CVF 命名空间记录的纯识别边界；有效引用不因同批识别问题被丢弃，被丢弃的候选则保留明确的未识别、格式错误或含糊原因。发现文本绝不作为证据。 |
 | `identifyAcademicReferences()` | 从单条 Web 结果的 URL、标题和摘要片段识别引用，不抓取网页；含糊的 DOI 值不进入结果，其他有效引用仍保留。 |
-| `AcademicReferenceVerificationOutcome` | 单条引用的已核验成果/全文结果或不含凭据的分类失败；同批其他结果独立保留。 |
+| `AcademicReferenceVerificationOutcome` | 单条引用的已核验成果、可选全文候选及候选失败，或分类后的核验失败；同批其他结果独立保留。 |
 | `AcademicSourceError` | 携带稳定、开放式 `code` 的类型化失败。 |
 | `AcademicSourceRuntime` | Provider 注册、单源/多源搜索、单条引用核验与全文解析。 |
 

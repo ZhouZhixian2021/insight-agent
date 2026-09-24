@@ -26,6 +26,8 @@ kind: "package-library"
 
 把按优先级排列的 HTML/PDF URL 与 `ctx.web.fetch()` 的薄适配器传给 `fetchAcademicFullText()`，再把其输出交给 `extractEvidenceFromContent()`。第一个确认的全文会被采用：语义化 HTML 生成带章节的段落定位，PDF 则由 PDF.js 生成页码定位。两条路径都拒绝非 2xx 或截断响应，并附上最终 URL 与已接受原始内容的 SHA-256。
 
+调用方只提供从所选学术版本的来源记录解析出的 URL，不提供 Web 发现 URL。Web 搜索摘要和 Provider 生成的答案都不是已抓取的论文正文。直接调用 `extractEvidenceFromContent()` 时，调用方必须先核验可定位的论文片段；逐字引文匹配只核对草稿与这些片段，不能单独证明片段的来源。
+
 ```text
 const source = await fetchAcademicFullText({
   academicWorkId, workVersionId, sourceProvider, retrievedAt,
@@ -34,7 +36,7 @@ const source = await fetchAcademicFullText({
 const result = await extractEvidenceFromContent(source, generator, signal)
 ```
 
-当工作流已有可定位的论文片段时，可以直接调用 `extractEvidenceFromContent()`。生成器接收抽取指令、关注问题、可定位片段和取消信号；生成器必须先校验任何外部模型输出，再返回有类型的草稿。
+当工作流已有经过核验且可定位的论文片段时，可以直接调用 `extractEvidenceFromContent()`。生成器接收抽取指令、关注问题、可定位片段和取消信号；生成器必须先校验任何外部模型输出，再返回有类型的草稿。
 
 ```text
 const result = await extractEvidenceFromContent({

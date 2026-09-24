@@ -74,7 +74,9 @@ function identified(...references: readonly AcademicReference[]): AcademicRefere
 }
 
 function verified(reference: AcademicReference, provider: string, value: AcademicSourceWork): AcademicReferenceVerificationOutcome {
-  return { status: 'verified', value: { reference, verificationProvider: provider, work: value, fullText: null } }
+  return { status: 'verified', value: { reference, verificationProvider: provider, work: value,
+    fullText: null, fullTextFailure: { reference, verificationProvider: provider,
+      category: 'fulltext_unavailable', message: 'No full-text candidate.', retryable: false, retryAfter: null } } }
 }
 
 const policy: HybridRetrievalPolicy = {

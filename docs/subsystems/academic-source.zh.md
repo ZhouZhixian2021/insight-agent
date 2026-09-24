@@ -17,11 +17,11 @@ kind: "subsystem"
 
 ## 单条引用核验
 
-`AcademicReference` 标识从 Web 结果识别的一个 DOI、arXiv ID 或带命名空间的 ACL/PMLR/CVF 记录；其中发现 URL 只记录候选来自哪里，不作为论文元数据。`verifyReference()` 检查调用方的 Provider 允许列表，请对应的已注册 Provider 读取单篇官方记录，并返回 `AcademicReferenceVerificationOutcome`：包含可选全文 URL 的已核验 `AcademicSourceWork`，或一条分类失败。混合检索工作流在摄取前把已核验的发现 URL 和核验 Provider 附加到 `AcademicSourceWork.verifiedDiscoveries`。目录搜索不可用不影响已注册 Provider 核对精确记录。缺少核验方法属于配置错误；调用方取消会中止，而非生成失败结果。核验不下载全文，也不创建证据。
+`AcademicReference` 标识从 Web 结果识别的一个 DOI、arXiv ID 或带命名空间的 ACL/PMLR/CVF 记录；其中发现 URL 只记录候选来自哪里，不作为论文元数据。`verifyReference()` 检查调用方的 Provider 允许列表，请对应的已注册 Provider 读取单篇官方记录，并返回 `AcademicReferenceVerificationOutcome`：包含可选的 Provider 解析全文 URL 和 `fullTextFailure` 的已核验 `AcademicSourceWork`，或一条分类失败。全文候选缺失仍保留已核验的官方成果，并记录 `fulltext_unavailable`；官方记录不存在则以 `not_found` 判定核验失败。混合检索工作流在摄取前把已核验的发现 URL 和核验 Provider 附加到 `AcademicSourceWork.verifiedDiscoveries`。目录搜索不可用不影响已注册 Provider 核对精确记录。缺少核验方法属于配置错误；调用方取消会中止，而非生成失败结果。核验不下载全文，也不创建证据。
 
 ## 多提供方批次结果
 
-`searchAll()` 运行配置的发现 Provider；未配置时运行每个可用 Provider。`searchProviders()` 则仅运行单次请求指定的 ID，并在网络访问前拒绝无效选择。两者都把结果聚合成 `AcademicSourceSearchBatchResult`。单个提供方的失败不会丢弃其他提供方的成果：可预期的搜索失败变成 `batch.failures` 中的来源级 `ProviderFailure`，而幸存的成果保留在 `batch.items` 中，因此两者同时存在的轮次是 `partial_success`，全部成功（包括零结果搜索）是 `success`，只有失败的轮次是 `failed` 且保留全部失败明细。seam 把被拒绝的 `AcademicSourceError` 转换为携带提供方不含凭据消息的可重试上游失败；非预期的拒绝值以 `unknown` 类别呈现且不可重试，搜索级失败从不设置 `affectedWorkVersionId`。配置错误仍然抛出对应的选择错误代码，调用方取消会让整轮以 `ACADEMIC_SOURCE_ABORTED` 中止，而不是编造提供方失败。
+`searchAll()` 运行配置的发现 Provider；未配置时运行每个可用 Provider。`searchProviders()` 则仅运行单次请求指定的 ID，并在网络访问前拒绝无效选择。两者都把结果聚合成 `AcademicSourceSearchBatchResult`。单个提供方的失败不会丢弃其他提供方的成果：可预期的搜索失败变成 `batch.failures` 中的来源级 `ProviderFailure`，而幸存的成果保留在 `batch.items` 中，因此两者同时存在的轮次是 `partial_success`，全部成功（包括零结果搜索）是 `success`，只有失败的轮次是 `failed` 且保留全部失败明细。seam 对被拒绝的 `AcademicSourceError` 分类并保留其不含凭据的消息；只有限流、超时和网络错误可重试。非预期的拒绝值以 `unknown` 类别及通用消息呈现，且不可重试；搜索级失败从不设置 `affectedWorkVersionId`。配置错误仍然抛出对应的选择错误代码，调用方取消会让整轮以 `ACADEMIC_SOURCE_ABORTED` 中止，而不是编造提供方失败。
 
 `providers` 列出实际发起搜索的每个 id——包括零结果与失败的提供方——按提供方 id 排序并去重。`discoveredRecords` 统计应用聚合 `maxResults` 上限之前各提供方返回的记录数；`truncated` 在提供方或聚合上限丢弃记录时置位；`limitations` 携带每个被调用提供方声明的覆盖限制（即提供方接口的可选 `limitations` 字段），并在总上限丢弃记录时追加一条聚合上限条目。继承的 `works` 与 `truncated` 字段镜像 `batch.items`，供工作流仍在使用的单结果适配器形态消费。
 
@@ -128,7 +128,7 @@ resolveFullText(version: WorkVersion): AcademicSourceFullText | null
  * @param reference - DOI, arXiv ID, or official provider record identified from one Web result.
  * @param allowedProviders - provider ids approved by the research plan for verification.
  * @param signal - caller cancellation, which aborts the whole verification round.
- * @returns the official work and full-text candidates, or one classified failure.
+ * @returns the official work with optional full-text candidates and a separate candidate failure, or a failed verification.
  */
 async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>
 ```

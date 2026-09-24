@@ -13,6 +13,7 @@ import type { FailureCategory, ProviderFailure, WorkVersion } from '@deepseek-ai
 import z from '@deepseek-ai/schemastery'
 import type {
   AcademicReference,
+  AcademicReferenceVerificationFailure,
   AcademicReferenceVerificationOutcome,
   AcademicSourceFullText,
   AcademicSourceProvider,
@@ -324,7 +325,7 @@ export class AcademicSourceRuntime extends Service {
    * @param reference - DOI, arXiv ID, or official provider record identified from one Web result.
    * @param allowedProviders - provider ids approved by the research plan for verification.
    * @param signal - caller cancellation, which aborts the whole verification round.
-   * @returns the official work and full-text candidates, or one classified failure.
+   * @returns the official work with optional full-text candidates and a separate candidate failure, or a failed verification.
    */
   async verifyReference(reference: AcademicReference, allowedProviders: readonly string[],
     signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome> {
@@ -345,30 +346,52 @@ export class AcademicSourceRuntime extends Service {
         `${providerId} has no matching official paper record.`)
       const record = work.workVersion.sourceRecords.find(item => item.provider === providerId)
       if (record === undefined) throw new AcademicSourceError('Verified work has no owning source record', 'ACADEMIC_SOURCE_PARSE_ERROR')
-      const urls = provider.fullTextUrls(record.recordId)
+      signal?.throwIfAborted()
+      let urls: readonly string[]
+      try {
+        urls = provider.fullTextUrls(record.recordId)
+      } catch (reason: unknown) {
+        if (signal?.aborted || reason instanceof AcademicSourceError && reason.code === 'ACADEMIC_SOURCE_ABORTED') throw reason
+        return { status: 'verified', value: { reference, verificationProvider: providerId, work,
+          fullText: null, fullTextFailure: referenceFailureFromReason(reference, providerId, reason,
+            'full-text candidate resolution') } }
+      }
+      signal?.throwIfAborted()
       return { status: 'verified', value: { reference, verificationProvider: providerId, work,
-        fullText: urls.length === 0 ? null : { sourceProvider: providerId, urls } } }
+        fullText: urls.length === 0 ? null : { sourceProvider: providerId, urls },
+        fullTextFailure: urls.length === 0 ? referenceIssue(reference, providerId, 'fulltext_unavailable',
+          `${providerId} has no full-text candidate for the verified record.`) : null } }
     } catch (reason: unknown) {
       if (signal?.aborted || reason instanceof AcademicSourceError && reason.code === 'ACADEMIC_SOURCE_ABORTED') {
         throw new AcademicSourceError('academic reference verification aborted', 'ACADEMIC_SOURCE_ABORTED', { cause: reason })
       }
-      const code = reason instanceof AcademicSourceError ? reason.code : ''
-      const category: FailureCategory = code === 'ACADEMIC_SOURCE_INVALID_REQUEST' ? 'invalid_request'
-        : code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
-          : code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
-            : code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error'
-              : code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
-                : code === 'ACADEMIC_SOURCE_PROVIDER_ERROR' ? 'upstream_error' : 'unknown'
-      return referenceFailure(reference, providerId, category,
-        reason instanceof AcademicSourceError ? reason.message : `${providerId} verification failed.`)
+      return { status: 'failed', failure: referenceFailureFromReason(reference, providerId, reason) }
     }
   }
 }
 
 function referenceFailure(reference: AcademicReference, verificationProvider: string, category: FailureCategory,
   message: string): AcademicReferenceVerificationOutcome {
-  return { status: 'failed', failure: { reference, verificationProvider, category, message,
-    retryable: ['rate_limited', 'timeout', 'network_error'].includes(category), retryAfter: null } }
+  return { status: 'failed', failure: referenceIssue(reference, verificationProvider, category, message) }
+}
+
+function referenceIssue(reference: AcademicReference, verificationProvider: string, category: FailureCategory,
+  message: string): AcademicReferenceVerificationFailure {
+  return { reference, verificationProvider, category, message,
+    retryable: ['rate_limited', 'timeout', 'network_error'].includes(category), retryAfter: null }
+}
+
+function referenceFailureFromReason(reference: AcademicReference, providerId: string,
+  reason: unknown, operation = 'verification'): AcademicReferenceVerificationFailure {
+  const code = reason instanceof AcademicSourceError ? reason.code : ''
+  const category: FailureCategory = code === 'ACADEMIC_SOURCE_INVALID_REQUEST' ? 'invalid_request'
+    : code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
+      : code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
+        : code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error'
+          : code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
+            : code === 'ACADEMIC_SOURCE_PROVIDER_ERROR' ? 'upstream_error' : 'unknown'
+  return referenceIssue(reference, providerId, category,
+    reason instanceof AcademicSourceError ? reason.message : `${providerId} ${operation} failed.`)
 }
 
 interface ResolvableProvider {
@@ -454,17 +477,18 @@ function cancellationOf(settled: readonly SettledSearch[], signal: AbortSignal |
  */
 function searchFailure(provider: AcademicSourceProvider, reason: unknown): ProviderFailure {
   const expected = reason instanceof AcademicSourceError
+  const category: FailureCategory = !expected ? 'unknown' : reason.code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
+    : reason.code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
+      : reason.code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
+        : reason.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error' : 'upstream_error'
   return {
     schemaVersion: 1,
     failureId: createFailureId(),
     provider: provider.id,
     operation: 'search',
-    category: !expected ? 'unknown' : reason.code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
-      : reason.code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
-        : reason.code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
-          : reason.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error' : 'upstream_error',
-    message: expected ? reason.message : String(reason),
-    retryable: expected,
+    category,
+    message: expected ? reason.message : `${provider.id} search failed.`,
+    retryable: ['rate_limited', 'timeout', 'network_error'].includes(category),
     retryAfter: null,
   }
 }
