@@ -1,0 +1,20 @@
+# Model replies are replayed; the fixture scripts upstream providers over real services.
+- id: llm-deepseek
+  name: '@deepseek-ai/dsh-llm-deepseek'
+  disabled: true
+
+- id: sessions
+  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+
+- insert:
+    - id: llm-replay
+      name: '../../../packages/test-support/llm-replay/lib/index.js'
+      config:
+        providers:
+          - id: deepseek-official
+            name: DeepSeek
+            models:
+              - id: deepseek-v4-flash

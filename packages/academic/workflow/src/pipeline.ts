@@ -1,7 +1,7 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
   type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSourceSearchBatchResult, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
+import type { AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import { EvidenceError, fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import { prepareSynthesisInput, synthesisSections, synthesisAnalysis, SynthesisError } from '@deepseek-ai/dsh-academic-analysis'
@@ -12,7 +12,8 @@ import { buildRetrievalRun, createPaperProviderFailure, evidenceRejectionLimitat
   type RetrievalSearchObservation } from './retrieval-run.ts'
 import type { PaperEvidenceResult } from './types.ts'
 import { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
-import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, PaperProcessingFailure } from './pipeline-types.ts'
+import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
+import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure } from './pipeline-types.ts'
 
 /**
  * Search, reconcile, acquire and extract papers before analyzing and evaluating a draft.
@@ -51,7 +52,8 @@ export async function runResearchDraft(
   const failures: PaperProcessingFailure[] = []
   const providerFailures: ProviderFailure[] = []
   const executedQueries: string[] = []
-  const searchResults: AcademicSourceSearchBatchResult[] = []
+  const searchResults: (DraftSearchResult & { readonly query: string })[] = []
+  let hybridSearch: HybridRunObservation | undefined
   let search: RetrievalSearchObservation | null = null
   let ingested = ingestWorks(createIngestIndex(), [])
   let academicWorkIds: readonly AcademicWorkId[] = []
@@ -60,6 +62,8 @@ export async function runResearchDraft(
   let usableWorkIds: readonly AcademicWorkId[] = []
   const selectionLimitations: string[] = []
   const settle = (cancelled: boolean): DraftPipelineResult => ({
+    completedSearchQueries: searchResults.map(result => result.query),
+    ...hybridSearch === undefined ? {} : { hybridSearch },
     status: cancelled ? 'cancelled' : 'completed',
     synthesis: { status: 'not_run', reasons: cancelled
       ? [signal?.reason instanceof DOMException && signal.reason.name === 'TimeoutError'
@@ -75,16 +79,20 @@ export async function runResearchDraft(
   if (signal?.aborted) return settle(true)
   for (const request of searches) {
     executedQueries.push(request.query)
-    let result: AcademicSourceSearchBatchResult
+    let result: DraftSearchResult
     try {
       result = await adapters.search({ ...request, maxResults }, signal)
     } catch (error: unknown) {
-      if (signal?.aborted) return settle(true)
+      if (signal?.aborted) {
+        selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
+        return settle(true)
+      }
       throw error
     }
-    searchResults.push(result)
+    searchResults.push({ ...result, query: request.query })
     providerFailures.push(...result.batch.failures)
     const aggregate = aggregateSearches(searchResults, maxResults)
+    hybridSearch = aggregate.hybridSearch
     search = aggregate.search
     ingested = aggregate.ingested
     academicWorkIds = ingested.works.map(work => work.academicWorkId)
@@ -277,9 +285,13 @@ function sharedCandidateLimit(searches: readonly AcademicSourceSearchRequest[], 
 
 /** Merge completed query batches fairly, deduplicate exact identities, then apply the global work cap. */
 function aggregateSearches(
-  results: readonly AcademicSourceSearchBatchResult[],
+  results: readonly (DraftSearchResult & { readonly query: string })[],
   maxResults: number,
-): { readonly ingested: IngestOutcome; readonly search: RetrievalSearchObservation } {
+): {
+  readonly ingested: IngestOutcome
+  readonly search: RetrievalSearchObservation
+  readonly hybridSearch: HybridRunObservation | undefined
+} {
   const records = roundRobin(results.map(result => result.batch.items))
   const complete = ingestWorks(createIngestIndex(), records)
   const candidateTruncated = complete.works.length > maxResults
@@ -289,6 +301,7 @@ function aggregateSearches(
     limitations.push(`The approved candidate-work bound retained ${maxResults} of ${complete.works.length} deduplicated works.`)
   }
   return {
+    hybridSearch: collectHybridRun(results, complete),
     ingested,
     search: {
       providers: unique(results.flatMap(result => result.providers)),

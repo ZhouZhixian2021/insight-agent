@@ -1,6 +1,6 @@
 /** Policy-aware Academic and Web discovery before the existing ingestion pass. */
 import { createBatchResult, createFailureId, type FailureCategory, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
-import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
+import { createIngestIndex, dedupKeys, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import type {
   AcademicReference,
   AcademicReferenceIdentificationResult,
@@ -77,6 +77,14 @@ export interface HybridSearchObservation {
   readonly duplicateReferences: number
   readonly attemptedVerifications: number
   readonly verificationOutcomes: readonly AcademicReferenceVerificationOutcome[]
+  /** Outcome indexes admitted after the per-query result bound; verification success alone is not admission. */
+  readonly retainedVerificationIndexes: readonly number[]
+  /** Original contributing records of admitted works, before per-query version reconciliation. */
+  readonly admittedRecords: readonly AcademicSourceWork[]
+  readonly skippedReferences: readonly {
+    readonly reference: AcademicReference
+    readonly reason: 'provider_not_approved' | 'verification_limit'
+  }[]
   readonly verifiedReferences: number
   readonly failedVerifications: number
   readonly discardedWebCandidates: number
@@ -159,9 +167,23 @@ export async function executeHybridSearch(
   const retainedWorks = request.maxResults === undefined
     ? [...merged.index.records] : [...merged.index.records].slice(0, request.maxResults)
   const retained = retainedWorks.flatMap(([, records]) => records)
+  const retainedIds = new Set(retainedWorks.map(([id]) => id))
+  const admitted = allWorks.map(record => dedupKeys(record.academicWork).exact.some((key) => {
+    const id = merged.index.byExactKey.get(key)
+    return id !== undefined && retainedIds.has(id)
+  }) || retained.includes(record))
+  let verifiedOffset = direct.works.length
+  const retainedVerificationIndexes = verificationOutcomes.flatMap((outcome, index) =>
+    outcome.status === 'verified' && admitted[verifiedOffset++] ? [index] : [])
+  const originalRecords = [...direct.works, ...verificationOutcomes.flatMap(outcome =>
+    outcome.status === 'verified' ? [outcome.value.work] : [])]
+  const admittedRecords = originalRecords.filter((_, index) => admitted[index])
   const resultBoundTruncated = retainedWorks.length < merged.works.length
   const verificationBoundTruncated = permitted.length > selected.length
   const limitations = [...direct.limitations]
+  const discarded = identifications.filter(entry => entry.result.status === 'discarded').length
+  if (discarded > 0) limitations.push(`${discarded} Web candidates produced no supported scholarly reference; they were not admitted as papers.`)
+  if (permitted.length < distinct.values.length) limitations.push(`${distinct.values.length - permitted.length} references require unapproved verification providers and were not verified.`)
   if (web.status === 'success' && web.value.truncated) limitations.push('Web discovery reached its approved result bound.')
   if (verificationBoundTruncated) limitations.push('Reference verification reached its approved attempt bound.')
   if (resultBoundTruncated) limitations.push(`The aggregate result bound retained ${retainedWorks.length} of ${merged.works.length} deduplicated works.`)
@@ -192,9 +214,15 @@ export async function executeHybridSearch(
       duplicateReferences: distinct.duplicates,
       attemptedVerifications: verificationOutcomes.length,
       verificationOutcomes,
+      retainedVerificationIndexes,
+      admittedRecords,
+      skippedReferences: distinct.values.filter(reference => !selected.includes(reference)).map(reference => ({
+        reference, reason: policy.verificationProviders.includes(providerFor(reference))
+          ? 'verification_limit' : 'provider_not_approved',
+      })),
       verifiedReferences: verificationOutcomes.filter(outcome => outcome.status === 'verified').length,
       failedVerifications: verificationOutcomes.filter(outcome => outcome.status === 'failed').length,
-      discardedWebCandidates: identifications.filter(entry => entry.result.status === 'discarded').length,
+      discardedWebCandidates: discarded,
     },
   }
 }
@@ -249,11 +277,14 @@ function settlementStage<T>(settlement: Settlement<T>, batch?: AcademicSourceSea
 function identificationStage(
   entries: readonly { readonly result: AcademicReferenceIdentificationResult }[],
 ): HybridSearchStageStatus {
-  const discarded = entries.filter(entry => entry.result.status === 'discarded').length
-  return discarded === 0 ? 'success' : discarded === entries.length ? 'failed' : 'partial_success'
+  if (entries.length === 0) return 'not_run'
+  const issues = entries.filter(entry => entry.result.issues.length > 0).length
+  const successes = entries.filter(entry => entry.result.status === 'identified').length
+  return issues === 0 ? 'success' : successes === 0 ? 'failed' : 'partial_success'
 }
 
 function verificationStage(outcomes: readonly AcademicReferenceVerificationOutcome[]): HybridSearchStageStatus {
+  if (outcomes.length === 0) return 'not_run'
   const failed = outcomes.filter(outcome => outcome.status === 'failed').length
   return failed === 0 ? 'success' : failed === outcomes.length ? 'failed' : 'partial_success'
 }

@@ -297,7 +297,7 @@
     "stages": {
       "academicSearch": "partial_success",
       "webDiscovery": "success",
-      "referenceIdentification": "success",
+      "referenceIdentification": "partial_success",
       "referenceVerification": "partial_success",
       "deduplication": "success"
     },
@@ -318,42 +318,48 @@
         "title": "Synthetic DOI paper",
         "status": "references_identified",
         "identifiedReferenceCount": 1,
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "url": "https://arxiv.org/pdf/2401.00001v2",
         "title": "Synthetic arXiv paper",
         "status": "references_identified",
         "identifiedReferenceCount": 1,
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "url": "https://aclanthology.org/2024.synthetic-main.1/",
         "title": "Synthetic ACL paper",
         "status": "references_identified",
         "identifiedReferenceCount": 1,
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "url": "https://proceedings.mlr.press/v235/synthetic24a.html",
         "title": "Synthetic PMLR paper",
         "status": "references_identified",
         "identifiedReferenceCount": 1,
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "url": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
         "title": "Synthetic CVF paper",
         "status": "references_identified",
         "identifiedReferenceCount": 1,
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "url": "https://example.org/synthetic-commentary",
         "title": "Synthetic commentary",
         "status": "discarded_non_paper",
         "identifiedReferenceCount": 0,
-        "message": "No supported scholarly reference was identified."
+        "message": "No supported scholarly reference was identified.",
+        "query": "retrieval augmented generation hallucination"
       }
     ],
     "references": [
@@ -363,7 +369,8 @@
         "discoveryUrl": "https://doi.org/10.1000/synthetic.1",
         "verificationProvider": "openalex",
         "status": "merged_duplicate",
-        "message": "Matched a directly discovered work by verified DOI."
+        "message": "Matched a directly discovered work by verified DOI.",
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "kind": "arxiv",
@@ -371,7 +378,8 @@
         "discoveryUrl": "https://arxiv.org/pdf/2401.00001v2",
         "verificationProvider": "arxiv",
         "status": "verified",
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "kind": "acl",
@@ -379,7 +387,8 @@
         "discoveryUrl": "https://aclanthology.org/2024.synthetic-main.1/",
         "verificationProvider": "acl",
         "status": "verified",
-        "message": null
+        "message": null,
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "kind": "pmlr",
@@ -387,7 +396,8 @@
         "discoveryUrl": "https://proceedings.mlr.press/v235/missing24a.html",
         "verificationProvider": "pmlr",
         "status": "verification_failed",
-        "message": "Synthetic authoritative record was not found."
+        "message": "Synthetic authoritative record was not found.",
+        "query": "retrieval augmented generation hallucination"
       },
       {
         "kind": "cvf",
@@ -395,7 +405,8 @@
         "discoveryUrl": "https://openaccess.thecvf.com/content/CVPR2025/html/Synthetic_Paper_CVPR_2025_paper.html",
         "verificationProvider": "cvf",
         "status": "merged_duplicate",
-        "message": "Matched another verified reference to the same synthetic work."
+        "message": "Matched another verified reference to the same synthetic work.",
+        "query": "retrieval augmented generation hallucination"
       }
     ]
   }

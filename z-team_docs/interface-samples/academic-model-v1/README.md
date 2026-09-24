@@ -22,7 +22,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 - [`claim-freshness.sample.json`](claim-freshness.sample.json): simulates an old Claim becoming `stale` when its evidence version changes.
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result, including producer-settled search, full-text, and evidence-extraction stages, that C can use before live integration.
-- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, explicit unrecognized/invalid/ambiguous identification issues, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. All records are synthetic.
+- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, explicit unrecognized/invalid/ambiguous identification issues, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. A-H4 adds optional query attribution to candidate/reference rows; counts keep repeated reference observations separate from actual ingested work merges. All records are synthetic.
 
 ## Sample coverage
 
