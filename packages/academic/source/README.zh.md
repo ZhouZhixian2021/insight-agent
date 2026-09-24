@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-任何学术包都可以通过 `dsh-academic-source`（`ctx.academicSource`）搜索学术 Provider，而无需绑定厂商 API。调用方可以用 `search()` 选择单个 Provider，也可以用 `searchAll()` 聚合所有可用 Provider，再从选中版本解析有序全文候选。服务本身不发起网络请求，也不注册面向模型的工具；网络传输和来源专用解析由 Provider 负责。
+任何学术包都可以通过 `dsh-academic-source`（`ctx.academicSource`）搜索学术 Provider，而无需绑定厂商 API。调用方可以用 `search()` 选择单个 Provider、用 `searchAll()` 聚合配置的 Provider，或用 `searchProviders()` 按请求指定 Provider，再从选中版本解析有序全文候选。服务本身不发起网络请求，也不注册面向模型的工具；网络传输和来源专用解析由 Provider 负责。
 
 ## 目录
 
@@ -40,7 +40,7 @@ kind: "package-reference"
 
 设置 `searchProviders: [openalex]` 可避免发现阶段下载目录，同时保留已挂载目录提供方供 `resolveFullText()` 使用。此列表不会把 OpenAlex 标识符映射成其他提供方的标识符。配置的提供方缺失或不可用时明确失败。设置 `searchTimeoutMs` 可隔离卡住的提供方：服务中止其子信号、记录 `timeout` 失败并保留其他结果。调用方取消仍中止整轮。提供方必须配合取消才能释放底层资源；服务可以停止等待，但无法终止任意提供方代码。
 
-两种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 把所有可用提供方聚合成一个批次：单个提供方失败时，其他提供方的成果保留在 `batch.items`，失败记录进 `batch.failures`，而 `providers`、`discoveredRecords`、`truncated` 与 `limitations` 分别报告实际调用的提供方、应用上限前的记录数、丢包状态与来源覆盖限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
+三种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 使用配置的发现 Provider；未配置时调用全部可用 Provider。`searchProviders(request, providerIds, signal)` 仅搜索请求指定的 ID，不受发现配置影响；空列表、重复 ID、缺失或不可用的 Provider 都在网络请求前失败。多 Provider 搜索在部分来源失败时保留其他成果和来源失败，并报告实际调用列表、上限前记录数、截断状态与来源限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
 `verifyReference(reference, allowedProviders, signal)` 把已识别 DOI 交给 OpenAlex、arXiv ID 交给 arXiv、ACL/PMLR/CVF 官方记录交给对应 Provider。服务在网络访问前检查允许列表；即使目录搜索不可用，已注册 Provider 仍可核验单篇记录。结果是带全文候选的已核验成果，或一条分类失败。Provider 未注册时明确抛错；调用方取消会中止调用。
 

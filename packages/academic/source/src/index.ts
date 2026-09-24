@@ -195,6 +195,32 @@ export class AcademicSourceRuntime extends Service {
       ? [...this.providers.values()].filter(provider => provider.available())
       : this.searchProviderIds.map(configuredId => resolveProvider({ providers: this.providers, configuredId })))
       .sort((left, right) => left.id.localeCompare(right.id))
+    return this.searchSelected(request, providers, signal)
+  }
+
+  /**
+   * Search only the provider ids approved for this request, regardless of discovery configuration.
+   * Reject empty, duplicate, missing, or unavailable ids before any provider search starts.
+   * @param request - query and total result limit across selected providers.
+   * @param providerIds - provider ids approved for this search.
+   * @param signal - optional cancellation forwarded to each selected provider.
+   * @returns the aggregate batch outcome from the selected providers.
+   */
+  async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[],
+    signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
+    if (signal?.aborted) throw new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')
+    if (providerIds.length === 0 || providerIds.some(id => id.trim() === '')
+      || new Set(providerIds).size !== providerIds.length) {
+      throw new AcademicSourceError('providerIds must contain distinct, non-empty provider ids', 'ACADEMIC_SOURCE_INVALID_REQUEST')
+    }
+    const providers = providerIds.map(configuredId => resolveProvider({ providers: this.providers, configuredId }))
+      .sort((left, right) => left.id.localeCompare(right.id))
+    return this.searchSelected(request, providers, signal)
+  }
+
+  /** Merge results from a validated provider selection. */
+  private async searchSelected(request: AcademicSourceSearchRequest, providers: readonly AcademicSourceProvider[],
+    signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
     if (providers.length === 0) {
       throw new AcademicSourceError('no usable academic source provider is registered', 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE')
     }

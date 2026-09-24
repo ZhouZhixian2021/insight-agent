@@ -317,6 +317,31 @@ describe('AcademicSourceRuntime execution resolution', () => {
 })
 
 describe('AcademicSourceRuntime multi-provider execution', () => {
+  it('searches only request-approved providers and rejects bad selections before network access', async () => {
+    const { source } = await mountSource({ searchProviders: ['alpha'] })
+    const called: string[] = []
+    for (const id of ['alpha', 'beta', 'gamma']) {
+      source.registerSearchProvider(makeSearchProvider(id, available, () => {
+        called.push(id)
+        return Promise.resolve(searchResult(id))
+      }))
+    }
+
+    const result = await source.searchProviders({ query: 'retrieval' }, ['gamma', 'beta'])
+    expect(result.providers).toEqual(['beta', 'gamma'])
+    expect(result.works.map(work => work.academicWork.title)).toEqual(['beta', 'gamma'])
+    expect(called).toEqual(['beta', 'gamma'])
+
+    for (const ids of [[], ['beta', 'beta'], ['']]) {
+      await expect(source.searchProviders({ query: 'retrieval' }, ids)).rejects.toMatchObject({
+        code: 'ACADEMIC_SOURCE_INVALID_REQUEST',
+      })
+    }
+    await expect(source.searchProviders({ query: 'retrieval' }, ['beta', 'missing']))
+      .rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING' })
+    expect(called).toEqual(['beta', 'gamma'])
+  })
+
   it('searches every usable provider and interleaves the total result bound', async () => {
     const { source } = await mountSource()
     source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve({

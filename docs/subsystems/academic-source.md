@@ -21,7 +21,7 @@ Each seam request carries exactly one `query`. `maxResults` is a consumer-owned 
 
 ## Multi-provider batch results
 
-`searchAll()` runs every usable provider and aggregates the outcomes into `AcademicSourceSearchBatchResult`. One provider's failure never discards another provider's works: expected search failures become source-level `ProviderFailure` entries in `batch.failures` while surviving works stay in `batch.items`, so a round holding both is `partial_success`, all-success rounds (zero-result searches included) are `success`, and only-failure rounds are `failed` with every failure retained. The seam converts a rejected `AcademicSourceError` into a retryable upstream failure carrying the provider's credential-free message; unexpected rejection values surface as `unknown` and not retryable, and search-level failures never set `affectedWorkVersionId`. Configuration errors still throw their selection codes, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` rather than fabricating provider failures.
+`searchAll()` runs configured discovery providers, or every usable provider when unset. `searchProviders()` instead runs only the ids supplied for that request and rejects invalid selections before network access. Both aggregate outcomes into `AcademicSourceSearchBatchResult`. One provider's failure never discards another provider's works: expected search failures become source-level `ProviderFailure` entries in `batch.failures` while surviving works stay in `batch.items`, so a round holding both is `partial_success`, all-success rounds (zero-result searches included) are `success`, and only-failure rounds are `failed` with every failure retained. The seam converts a rejected `AcademicSourceError` into a retryable upstream failure carrying the provider's credential-free message; unexpected rejection values surface as `unknown` and not retryable, and search-level failures never set `affectedWorkVersionId`. Configuration errors still throw their selection codes, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` rather than fabricating provider failures.
 
 `providers` lists every id whose search was initiated — zero-result and failed providers included — sorted and deduplicated by id. `discoveredRecords` counts the records the providers returned before the aggregate `maxResults` bound, `truncated` is set when either a provider or the aggregate bound dropped records, and `limitations` carries each called provider's declared coverage limits (the provider interface's optional `limitations`) plus one aggregate-bound entry when the total bound dropped records. The inherited `works` and `truncated` fields mirror `batch.items` for the single-result adapter shape the workflow still consumes.
 
@@ -104,6 +104,16 @@ async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promis
  * @returns the aggregate batch outcome from all usable providers.
  */
 async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
+
+/**
+ * Search only the provider ids approved for this request, regardless of discovery configuration.
+ * Reject empty, duplicate, missing, or unavailable ids before any provider search starts.
+ * @param request - query and total result limit across selected providers.
+ * @param providerIds - provider ids approved for this search.
+ * @param signal - optional cancellation forwarded to each selected provider.
+ * @returns the aggregate batch outcome from the selected providers.
+ */
+async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Resolve full-text URLs through the provider named by a version's source records.

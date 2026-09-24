@@ -21,7 +21,7 @@ kind: "subsystem"
 
 ## 多提供方批次结果
 
-`searchAll()` 运行每个可用的提供方，并把结果聚合成 `AcademicSourceSearchBatchResult`。单个提供方的失败不会丢弃其他提供方的成果：可预期的搜索失败变成 `batch.failures` 中的来源级 `ProviderFailure`，而幸存的成果保留在 `batch.items` 中，因此两者同时存在的轮次是 `partial_success`，全部成功（包括零结果搜索）是 `success`，只有失败的轮次是 `failed` 且保留全部失败明细。seam 把被拒绝的 `AcademicSourceError` 转换为携带提供方不含凭据消息的可重试上游失败；非预期的拒绝值以 `unknown` 类别呈现且不可重试，搜索级失败从不设置 `affectedWorkVersionId`。配置错误仍然抛出对应的选择错误代码，调用方取消会让整轮以 `ACADEMIC_SOURCE_ABORTED` 中止，而不是编造提供方失败。
+`searchAll()` 运行配置的发现 Provider；未配置时运行每个可用 Provider。`searchProviders()` 则仅运行单次请求指定的 ID，并在网络访问前拒绝无效选择。两者都把结果聚合成 `AcademicSourceSearchBatchResult`。单个提供方的失败不会丢弃其他提供方的成果：可预期的搜索失败变成 `batch.failures` 中的来源级 `ProviderFailure`，而幸存的成果保留在 `batch.items` 中，因此两者同时存在的轮次是 `partial_success`，全部成功（包括零结果搜索）是 `success`，只有失败的轮次是 `failed` 且保留全部失败明细。seam 把被拒绝的 `AcademicSourceError` 转换为携带提供方不含凭据消息的可重试上游失败；非预期的拒绝值以 `unknown` 类别呈现且不可重试，搜索级失败从不设置 `affectedWorkVersionId`。配置错误仍然抛出对应的选择错误代码，调用方取消会让整轮以 `ACADEMIC_SOURCE_ABORTED` 中止，而不是编造提供方失败。
 
 `providers` 列出实际发起搜索的每个 id——包括零结果与失败的提供方——按提供方 id 排序并去重。`discoveredRecords` 统计应用聚合 `maxResults` 上限之前各提供方返回的记录数；`truncated` 在提供方或聚合上限丢弃记录时置位；`limitations` 携带每个被调用提供方声明的覆盖限制（即提供方接口的可选 `limitations` 字段），并在总上限丢弃记录时追加一条聚合上限条目。继承的 `works` 与 `truncated` 字段镜像 `batch.items`，供工作流仍在使用的单结果适配器形态消费。
 
@@ -104,6 +104,16 @@ async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promis
  * @returns the aggregate batch outcome from all usable providers.
  */
 async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
+
+/**
+ * Search only the provider ids approved for this request, regardless of discovery configuration.
+ * Reject empty, duplicate, missing, or unavailable ids before any provider search starts.
+ * @param request - query and total result limit across selected providers.
+ * @param providerIds - provider ids approved for this search.
+ * @param signal - optional cancellation forwarded to each selected provider.
+ * @returns the aggregate batch outcome from the selected providers.
+ */
+async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Resolve full-text URLs through the provider named by a version's source records.
