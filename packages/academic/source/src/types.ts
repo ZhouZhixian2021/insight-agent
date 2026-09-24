@@ -18,11 +18,17 @@ import type {
  * One provider-neutral work/version pair: the portable search-result item a
  * source provider returns. `academicWork` is a fresh work identity and
  * `workVersion` its single immutable version; cross-record linking and
- * deduplication belong to the ingestion increment, not to a provider.
+ * deduplication belong to ingestion. The hybrid workflow adds optional
+ * `verifiedDiscoveries` only after authoritative reference verification.
  */
 export interface AcademicSourceWork {
   readonly academicWork: AcademicWork
   readonly workVersion: WorkVersion
+  /** Verified Web discoveries added by a consumer after authoritative reference verification. */
+  readonly verifiedDiscoveries?: readonly {
+    readonly discoveryUrl: string
+    readonly verificationProvider: string
+  }[]
 }
 
 /**

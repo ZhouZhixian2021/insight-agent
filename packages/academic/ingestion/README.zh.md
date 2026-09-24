@@ -34,7 +34,9 @@ const first = ingestWorks(createIngestIndex(), recordsFromFirstSearch)
 const second = ingestWorks(first.index, recordsFromSecondSearch)
 ```
 
-每次结果都报告去重后的成果、重新指向身份的版本，以及记录新建、合并或疑似重复的审计。
+对于经 Academic Provider 核验的 Web 引用，混合检索工作流在记录的 `verifiedDiscoveries` 中加入 `{ discoveryUrl, verificationProvider }`。共享带 Provider 命名空间的记录 ID 的直接搜索记录和核验记录会归于同一版本；新增的已核验精确标识符与不同的发现 URL 仍保留在该版本上。`IngestOutcome.verifiedDiscoveries` 给出各 URL、核验 Provider、分配的成果 ID 和保留的版本 ID。摄取库不核验 URL 或 Provider 声明。
+
+每次结果还报告去重后的成果、重新指向身份的版本，以及记录新建、合并或疑似重复的审计。
 
 -----
 
@@ -43,11 +45,11 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 
 | 导出 | 角色 |
 |---|---|
-| `IngestRecord` | 一对提供方产出的 `{ academicWork, workVersion }`。 |
+| `IngestRecord` | 一对提供方产出的 `{ academicWork, workVersion }`，可附带已核验的 Web 发现轨迹。 |
 | `IngestIndex` | 内存中的去重与合并状态。 |
 | `createIngestIndex()` | 创建空索引。 |
 | `ingestWorks()` | 把一批记录去重进索引并返回结果。 |
-| `IngestOutcome` | 更新后的索引、去重成果与版本，以及审计。 |
+| `IngestOutcome` | 更新后的索引、去重成果与版本、已核验的 Web 发现轨迹，以及审计。 |
 | `dedupKeys()` | 为单个成果派生精确键与模糊键。 |
 | `selectCanonicalVersion()` | 按类型与日期挑选规范版本。 |
 | `reconcileWork()` | 把一个成果的多条记录调和为单个 `AcademicWork`。 |
