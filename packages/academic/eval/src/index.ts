@@ -1,4 +1,5 @@
 /** Evidence integrity and reviewer-aware assessment; reference existence is not semantic proof. */
+import { matchesAdmittedEvidence } from './admission.ts'
 import { checkClaimFreshness, createClaimAssessmentId, isExecutableResearchBrief,
   type ClaimRecord, type ClaimEvidenceLink, type ClaimAssessment, type ResearchBrief,
   type EvidenceRecord, type WorkVersion, type ClaimId, type SourceLocator,
@@ -6,6 +7,9 @@ import { checkClaimFreshness, createClaimAssessmentId, isExecutableResearchBrief
 
 /** Explicit inputs for evaluation; reviews are supplied by a human or separately validated evaluator. */
 export interface EvaluationInput {
+  /** Trusted original extraction batch from direct or scholarly-verified papers.
+   * Omission retains legacy checks; it does not certify Web verification. */
+  readonly admittedEvidence?: readonly EvidenceRecord[]
   readonly brief: ResearchBrief
   readonly claims: readonly ClaimRecord[]
   readonly links: readonly ClaimEvidenceLink[]
@@ -68,6 +72,10 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     for (const link of links) {
       const record = evidence.get(link.evidenceId)
       if (!record) { add(claimId, 'missing_evidence', `Evidence ${link.evidenceId} is missing.`); continue }
+      if (input.admittedEvidence !== undefined && !matchesAdmittedEvidence(record, input.admittedEvidence)) {
+        add(claimId, 'evidence_not_admitted', 'Evidence is absent from or differs from the trusted scholarly extraction batch.')
+        continue
+      }
       const version = versions.get(record.workVersionId)
       const locator = locators.get(record.sourceLocatorId)
       if (!locator || locator.workVersionId !== record.workVersionId) add(claimId, 'invalid_locator', 'Evidence locator is missing or refers to another version.')
