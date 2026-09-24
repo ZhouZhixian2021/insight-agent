@@ -38,7 +38,7 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 synthetic 标记；查询数还必须符合 Brief 的 `maximumSearchRounds`。它先按顺序执行查询，再执行合并去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
-`executeHybridSearch()` 是单条已批准查询的策略感知发现单元。它同时启动学术源直接检索与 DSH Web 发现，从有界 Web 候选中识别 DOI、arXiv、ACL、PMLR、CVF 引用，删除完全一致的重复引用，执行已批准的核验 Provider 白名单和尝试上限，并且只把核验成功的论文放入标准 Academic 批次。单个渠道或引用失败时保留其他成功结果；调用方取消会终止整个操作。返回的观察值分别统计学术记录、Web URL、已识别引用、核验尝试与核验结果，供后续 Remote 投影使用。调用方显式提供四项操作，因此 Provider 定位仍归 Academic Source，通用 Web 访问仍归 `ctx.web`。
+`executeHybridSearch()` 是单条已批准查询的策略感知发现单元。它同时启动学术源直接检索与 DSH Web 发现，从有界 Web 候选中识别 DOI、arXiv、ACL、PMLR、CVF 引用，删除完全一致的重复引用，执行已批准的核验 Provider 白名单和尝试上限，并且只把核验成功的论文放入 Academic 批次。重复引用只核验一次，但保留每个发现 URL 及其核验 Provider。直接检索与 Web 核验记录先按精确标识符归并，再把候选上限用于不同成果；每个保留成果的不同版本继续保留，因此返回的记录数可能超过 `maxResults`。单个渠道或引用失败时保留其他成功结果；调用方取消会终止整个操作。返回的观察值分别统计学术记录、Web URL、已识别引用、核验尝试与核验结果，供后续 Remote 投影使用。调用方显式提供四项操作，因此 Provider 定位仍归 Academic Source，通用 Web 访问仍归 `ctx.web`。
 
 调用方提供 search、selectPapers、fetcher、generator、synthesize 和 now。search 返回 `ctx.academicSource.searchAll()` 的 `AcademicSourceSearchBatchResult`，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿和预印本规则；其 `PaperSelectionResult` 记录候选选择器是否遗漏了另一篇符合条件的论文。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 
@@ -46,7 +46,7 @@ runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 sy
 
 输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。调用方负责模型与网络持久记录及取消；Plan 非空的 maximumElapsedMinutes 为检索、抽取和洞察共用的操作信号增加截止时间。
 
-Academic Controller 为已批准的第 3 版查询挂载混合执行器，并保留历史纯学术路径。`DraftSearchResult.hybridObservation` 经流水线进入可选的 `hybridSearch` 运行事实。已完成查询保留观察，中断查询仅在 RetrievalRun 限制和已启动查询中披露。实际进入的记录、精确合并记录和不同论文数从整轮论文上限应用前的 ingestion 结果结算。重复引用及被单查询上限排除的记录不算论文合并。Controller 投影这些事实，不返回原始 Web 内容。自动扩展查询、跨运行恢复、摘要降级和最终发布仍不属于本轮能力。
+Academic Controller 为已批准的第 3 版查询挂载混合执行器，并保留历史纯学术路径。`DraftSearchResult.hybridObservation` 经流水线进入可选的 `hybridSearch` 运行事实。已完成查询保留观察，中断查询仅在 RetrievalRun 限制和已启动查询中披露。实际进入的记录、精确合并记录和不同论文数从整轮论文上限应用前的 ingestion 结果结算。观察值保留单查询版本归并前的原始贡献记录，避免同一版本的归并抹掉重复计数。重复引用及被单查询上限排除的记录不算论文合并。Controller 投影这些事实，不返回原始 Web 内容。自动扩展查询、跨运行恢复、摘要降级和最终发布仍不属于本轮能力。
 
 ## 模型回答校验
 

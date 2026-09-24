@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-academic-ingestion-deduplication.md
-2026-09-11-academic-ingestion-deduplication.md: f7ff7f737030b0c3aefde2a4d253f2322ed5becb
-2026-09-11-academic-ingestion-deduplication.zh.md: f334b0d4f0756822599a80b246c27076a6f93e06
+2026-09-11-academic-ingestion-deduplication.md: 962b0c9edb0d3a46a416004b682349fb98aa0af4
+2026-09-11-academic-ingestion-deduplication.zh.md: c75298fbc3b038cc0fa6698f15743911399395a3

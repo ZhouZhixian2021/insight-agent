@@ -1,5 +1,6 @@
 /** Policy-aware Academic and Web discovery before the existing ingestion pass. */
 import { createBatchResult, createFailureId, type FailureCategory, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
+import { createIngestIndex, dedupKeys, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import type {
   AcademicReference,
   AcademicReferenceIdentificationResult,
@@ -78,6 +79,8 @@ export interface HybridSearchObservation {
   readonly verificationOutcomes: readonly AcademicReferenceVerificationOutcome[]
   /** Outcome indexes admitted after the per-query result bound; verification success alone is not admission. */
   readonly retainedVerificationIndexes: readonly number[]
+  /** Original contributing records of admitted works, before per-query version reconciliation. */
+  readonly admittedRecords: readonly AcademicSourceWork[]
   readonly skippedReferences: readonly {
     readonly reference: AcademicReference
     readonly reason: 'provider_not_approved' | 'verification_limit'
@@ -103,7 +106,7 @@ export interface HybridSearchResult {
  * @param policy - reviewed channels, providers, and Web/reference budgets.
  * @param adapters - direct search, Web discovery, identification, and verification operations.
  * @param signal - caller-owned cancellation and elapsed-time signal.
- * @returns A standard Academic search batch and separate hybrid-search observations.
+ * @returns A scholarly batch bounded by distinct works, retaining their versions and verified Web discoveries, and separate observations.
  */
 export async function executeHybridSearch(
   request: AcademicSourceSearchRequest,
@@ -146,16 +149,36 @@ export async function executeHybridSearch(
   }))
   throwIfAborted(signal)
 
-  const verified = verificationOutcomes.flatMap(outcome => outcome.status === 'verified' ? [outcome.value.work] : [])
+  const verified = verificationOutcomes.flatMap((outcome): readonly AcademicSourceWork[] => {
+    if (outcome.status !== 'verified') return []
+    const key = referenceKey(outcome.value.reference)
+    const discoveryUrls = new Set(references.filter(reference => referenceKey(reference) === key)
+      .map(reference => reference.discoveryUrl))
+    return [{ ...outcome.value.work, verifiedDiscoveries: [
+      ...(outcome.value.work.verifiedDiscoveries ?? []),
+      ...[...discoveryUrls].map(discoveryUrl => ({ discoveryUrl, verificationProvider: outcome.value.verificationProvider })),
+    ] }]
+  })
   for (const outcome of verificationOutcomes) {
     if (outcome.status === 'failed') failures.push(referenceProviderFailure(outcome.failure))
   }
   const allWorks = [...direct.works, ...verified]
-  const retained = request.maxResults === undefined ? allWorks : allWorks.slice(0, request.maxResults)
+  const merged = ingestWorks(createIngestIndex(), allWorks)
+  const retainedWorks = request.maxResults === undefined
+    ? [...merged.index.records] : [...merged.index.records].slice(0, request.maxResults)
+  const retained = retainedWorks.flatMap(([, records]) => records)
+  const retainedIds = new Set(retainedWorks.map(([id]) => id))
+  const admitted = allWorks.map(record => dedupKeys(record.academicWork).exact.some((key) => {
+    const id = merged.index.byExactKey.get(key)
+    return id !== undefined && retainedIds.has(id)
+  }) || retained.includes(record))
   let verifiedOffset = direct.works.length
   const retainedVerificationIndexes = verificationOutcomes.flatMap((outcome, index) =>
-    outcome.status === 'verified' && verifiedOffset++ < retained.length ? [index] : [])
-  const resultBoundTruncated = retained.length < allWorks.length
+    outcome.status === 'verified' && admitted[verifiedOffset++] ? [index] : [])
+  const originalRecords = [...direct.works, ...verificationOutcomes.flatMap(outcome =>
+    outcome.status === 'verified' ? [outcome.value.work] : [])]
+  const admittedRecords = originalRecords.filter((_, index) => admitted[index])
+  const resultBoundTruncated = retainedWorks.length < merged.works.length
   const verificationBoundTruncated = permitted.length > selected.length
   const limitations = [...direct.limitations]
   const discarded = identifications.filter(entry => entry.result.status === 'discarded').length
@@ -163,7 +186,7 @@ export async function executeHybridSearch(
   if (permitted.length < distinct.values.length) limitations.push(`${distinct.values.length - permitted.length} references require unapproved verification providers and were not verified.`)
   if (web.status === 'success' && web.value.truncated) limitations.push('Web discovery reached its approved result bound.')
   if (verificationBoundTruncated) limitations.push('Reference verification reached its approved attempt bound.')
-  if (resultBoundTruncated) limitations.push(`The aggregate result bound retained ${retained.length} of ${allWorks.length} discovered works.`)
+  if (resultBoundTruncated) limitations.push(`The aggregate result bound retained ${retainedWorks.length} of ${merged.works.length} deduplicated works.`)
   const batch = createBatchResult(retained, failures)
   return {
     search: {
@@ -192,6 +215,7 @@ export async function executeHybridSearch(
       attemptedVerifications: verificationOutcomes.length,
       verificationOutcomes,
       retainedVerificationIndexes,
+      admittedRecords,
       skippedReferences: distinct.values.filter(reference => !selected.includes(reference)).map(reference => ({
         reference, reason: policy.verificationProviders.includes(providerFor(reference))
           ? 'verification_limit' : 'provider_not_approved',

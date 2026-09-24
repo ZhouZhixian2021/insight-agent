@@ -32,6 +32,8 @@ interface RecordSpec {
   readonly venue?: string
   readonly status?: WorkVersion['status']
   readonly sourceRecordId?: string
+  readonly sourceProvider?: string
+  readonly verifiedDiscoveries?: IngestRecord['verifiedDiscoveries']
 }
 
 function makeRecord(spec: RecordSpec): IngestRecord {
@@ -42,6 +44,10 @@ function makeRecord(spec: RecordSpec): IngestRecord {
   if (spec.doi !== undefined) identifiers.push({ kind: 'doi', normalizedValue: spec.doi, originalValue: spec.doi, sourceProvider: 'test' })
   if (spec.openalexId !== undefined) identifiers.push({ kind: 'openalex', normalizedValue: spec.openalexId, originalValue: spec.openalexId, sourceProvider: 'openalex' })
   if (spec.arxivId !== undefined) identifiers.push({ kind: 'arxiv', normalizedValue: spec.arxivId, originalValue: spec.arxivId, sourceProvider: 'arxiv' })
+  if (spec.sourceRecordId !== undefined) identifiers.push({
+    kind: 'provider_record', normalizedValue: `${spec.sourceProvider ?? 'test'}:${spec.sourceRecordId}`,
+    originalValue: spec.sourceRecordId, sourceProvider: spec.sourceProvider ?? 'test',
+  })
 
   const date: Availability<PartialDate> = spec.date !== undefined
     ? { status: 'available', value: { iso: spec.date, precision: 'day' } }
@@ -75,14 +81,14 @@ function makeRecord(spec: RecordSpec): IngestRecord {
     versionType: spec.type ?? 'unknown',
     versionLabel: { status: 'unknown', reason: 'no label' },
     releaseDate: date,
-    externalIdentifiers: [],
-    sourceRecords: spec.sourceRecordId === undefined ? [] : [{ provider: 'test', recordId: spec.sourceRecordId }],
+    externalIdentifiers: identifiers,
+    sourceRecords: spec.sourceRecordId === undefined ? [] : [{ provider: spec.sourceProvider ?? 'test', recordId: spec.sourceRecordId }],
     contentHash: { status: 'not_extracted' },
     supersedesWorkVersionId: null,
     status: spec.status ?? 'active',
   }
 
-  return { academicWork, workVersion }
+  return { academicWork, workVersion, ...(spec.verifiedDiscoveries === undefined ? {} : { verifiedDiscoveries: spec.verifiedDiscoveries }) }
 }
 
 describe('dedupKeys', () => {
@@ -139,7 +145,8 @@ describe('ingestWorks', () => {
 
   it('merges records that share a DOI into one work with a canonical published version', () => {
     const preprint = makeRecord({ title: 'RAG survey', authors: ['Alice'], doi: '10.0000/rag', type: 'preprint', date: '2024-01-01', openalexId: 'W1' })
-    const published = makeRecord({ title: 'RAG survey', authors: ['Alice'], doi: '10.0000/rag', type: 'version_of_record', date: '2024-06-01', openalexId: 'W2' })
+    const published = makeRecord({ title: 'RAG survey', authors: ['Alice'], doi: '10.0000/rag', type: 'version_of_record', date: '2024-06-01', openalexId: 'W2',
+      verifiedDiscoveries: [{ discoveryUrl: 'https://doi.org/10.0000/rag', verificationProvider: 'openalex' }] })
 
     const outcome = ingestWorks(createIngestIndex(), [preprint, published])
 
@@ -149,6 +156,12 @@ describe('ingestWorks', () => {
     expect(work.canonicalVersionId).toBe(published.workVersion.workVersionId)
     expect(work.publicationStatus).toEqual({ status: 'available', value: 'published' })
     expect(work.externalIdentifiers).toHaveLength(3)
+    expect(outcome.verifiedDiscoveries).toEqual([{
+      academicWorkId: work.academicWorkId,
+      workVersionId: published.workVersion.workVersionId,
+      discoveryUrl: 'https://doi.org/10.0000/rag',
+      verificationProvider: 'openalex',
+    }])
     expect(outcome.audit.entries.map(entry => entry.kind)).toEqual(['new_work', 'merged_version'])
   })
 
@@ -201,9 +214,75 @@ describe('ingestWorks', () => {
     }])
   })
 
+  it('links verified Web URLs to one DOI-less official record shared with direct search', () => {
+    const recordId = '2024.acl-long.1'
+    const direct = makeRecord({ title: 'Official ACL paper', sourceProvider: 'acl', sourceRecordId: recordId })
+    const verified = makeRecord({
+      title: 'Official ACL paper', sourceProvider: 'acl', sourceRecordId: recordId,
+      verifiedDiscoveries: [{ discoveryUrl: 'https://aclanthology.org/2024.acl-long.1/', verificationProvider: 'acl' }],
+    })
+    const secondDiscovery = makeRecord({
+      title: 'Official ACL paper', sourceProvider: 'acl', sourceRecordId: recordId,
+      verifiedDiscoveries: [{ discoveryUrl: 'https://example.org/citation', verificationProvider: 'acl' }],
+    })
+    const first = ingestWorks(createIngestIndex(), [direct, verified, secondDiscovery])
+    const repeated = ingestWorks(first.index, [verified])
+
+    expect(first.works).toHaveLength(1)
+    expect(first.versions).toHaveLength(1)
+    expect(repeated.verifiedDiscoveries).toEqual([
+      {
+        academicWorkId: first.works[0]?.academicWorkId,
+        workVersionId: direct.workVersion.workVersionId,
+        discoveryUrl: 'https://aclanthology.org/2024.acl-long.1/',
+        verificationProvider: 'acl',
+      },
+      {
+        academicWorkId: first.works[0]?.academicWorkId,
+        workVersionId: direct.workVersion.workVersionId,
+        discoveryUrl: 'https://example.org/citation',
+        verificationProvider: 'acl',
+      },
+    ])
+  })
+
+  it('keeps an identifier added by verification when retained records are ingested again', () => {
+    const direct = makeRecord({ title: 'Official record', sourceProvider: 'acl', sourceRecordId: 'paper-1' })
+    const verified = makeRecord({ title: 'Official record', sourceProvider: 'acl', sourceRecordId: 'paper-1',
+      doi: '10.1000/verified', verifiedDiscoveries: [{ discoveryUrl: 'https://aclanthology.org/paper-1/',
+        verificationProvider: 'acl' }] })
+    const first = ingestWorks(createIngestIndex(), [direct, verified])
+    const replayed = ingestWorks(createIngestIndex(), [...first.index.records.values()].flat())
+    const otherProvider = makeRecord({ title: 'Other source', sourceProvider: 'openalex',
+      sourceRecordId: 'W1', doi: '10.1000/verified' })
+    const merged = ingestWorks(replayed.index, [otherProvider])
+
+    expect(merged.works).toHaveLength(1)
+    expect(merged.works[0]?.externalIdentifiers.map(identifier => identifier.normalizedValue)).toContain('10.1000/verified')
+    expect(merged.versions).toHaveLength(2)
+    expect(merged.versions.find(version => version.workVersionId === direct.workVersion.workVersionId)
+      ?.externalIdentifiers.map(identifier => identifier.normalizedValue)).toContain('10.1000/verified')
+    expect(merged.verifiedDiscoveries).toEqual([{
+      academicWorkId: merged.works[0]?.academicWorkId,
+      workVersionId: direct.workVersion.workVersionId,
+      discoveryUrl: 'https://aclanthology.org/paper-1/',
+      verificationProvider: 'acl',
+    }])
+  })
+
+  it('keeps provider record IDs in separate namespaces', () => {
+    const acl = makeRecord({ title: 'Shared title', sourceProvider: 'acl', sourceRecordId: 'paper-1' })
+    const pmlr = makeRecord({ title: 'Shared title', sourceProvider: 'pmlr', sourceRecordId: 'paper-1' })
+    const outcome = ingestWorks(createIngestIndex(), [acl, pmlr])
+
+    expect(outcome.works).toHaveLength(2)
+    expect(outcome.versions).toHaveLength(2)
+  })
+
   it('consolidates works when one record bridges their exact identifiers', () => {
     const arxiv = makeRecord({ title: 'Preprint', arxivId: '2406.12345', year: 2024 })
-    const published = makeRecord({ title: 'Published', doi: '10.0000/bridge', year: 2024 })
+    const published = makeRecord({ title: 'Published', doi: '10.0000/bridge', year: 2024,
+      verifiedDiscoveries: [{ discoveryUrl: 'https://doi.org/10.0000/bridge', verificationProvider: 'openalex' }] })
     const first = ingestWorks(createIngestIndex(), [arxiv, published])
     const bridge = makeRecord({ title: 'Bridge', doi: '10.0000/bridge', arxivId: '2406.12345', year: 2024 })
     const second = ingestWorks(first.index, [bridge])
@@ -213,6 +292,12 @@ describe('ingestWorks', () => {
     expect(second.works[0]?.academicWorkId).toBe(first.works[0]?.academicWorkId)
     expect(second.index.records.has(first.works[1]!.academicWorkId)).toBe(false)
     expect(second.versions).toHaveLength(3)
+    expect(second.verifiedDiscoveries).toEqual([{
+      academicWorkId: first.works[0]?.academicWorkId,
+      workVersionId: published.workVersion.workVersionId,
+      discoveryUrl: 'https://doi.org/10.0000/bridge',
+      verificationProvider: 'openalex',
+    }])
     expect(second.audit.entries.map(entry => entry.kind)).toEqual(['merged_work', 'merged_version'])
   })
 })

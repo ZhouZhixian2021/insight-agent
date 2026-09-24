@@ -3657,7 +3657,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicSourceWork',
-    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n}',
+    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n    readonly verifiedDiscoveries?: readonly {\n        readonly discoveryUrl: string;\n        readonly verificationProvider: string;\n    }[];\n}',
   },
   {
     name: 'AcademicVerifiedReference',

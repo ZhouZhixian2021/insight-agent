@@ -27,7 +27,7 @@ export function collectHybridRun(
   const observations = results.flatMap(result => result.hybridObservation === undefined ? []
     : [{ query: result.query, observation: result.hybridObservation }])
   if (observations.length === 0) return undefined
-  const returnedRecords = results.flatMap(result => result.batch.items)
+  const returnedRecords = results.flatMap(result => result.hybridObservation?.admittedRecords ?? result.batch.items)
   const groups = new Map<string, AcademicSourceWork[]>()
   for (const record of returnedRecords) {
     const id = dedupKeys(record.academicWork).exact.map(key => ingested.index.byExactKey.get(key))

@@ -5,7 +5,7 @@
  * @module @deepseek-ai/dsh-academic-ingestion
  */
 
-import { createAcademicWorkId } from '@deepseek-ai/dsh-academic-model'
+import { createAcademicWorkId, externalIdentifierDedupKey } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicWorkId, ExternalIdentifierDedupKey } from '@deepseek-ai/dsh-academic-model'
 
 import { dedupKeys } from './dedup.ts'
@@ -41,7 +41,7 @@ export function createIngestIndex(): IngestIndex {
  *
  * @param index - the current deduplication state (empty from {@link createIngestIndex}).
  * @param records - the provider records to ingest, in order.
- * @returns the updated index, the deduplicated works and versions, and the audit.
+ * @returns the updated index, deduplicated works and versions, verified Web discoveries, and audit.
  */
 export function ingestWorks(index: IngestIndex, records: readonly IngestRecord[]): IngestOutcome {
   const byExactKey = new Map(index.byExactKey)
@@ -81,11 +81,19 @@ export function ingestWorks(index: IngestIndex, records: readonly IngestRecord[]
 
   const works = [...recordsByWork].map(([workId, workRecords]) => reconcileWork(workId, workRecords))
   const versions = [...recordsByWork].flatMap(([workId, workRecords]) => workVersionsOf(workId, workRecords))
+  const verifiedDiscoveries = [...recordsByWork].flatMap(([academicWorkId, workRecords]) => workRecords.flatMap(
+    record => (record.verifiedDiscoveries ?? []).map(discovery => ({
+      ...discovery,
+      academicWorkId,
+      workVersionId: record.workVersion.workVersionId,
+    })),
+  ))
 
   return {
     index: { byExactKey, byFuzzyKey, records: recordsByWork },
     works,
     versions,
+    verifiedDiscoveries,
     audit: { entries },
   }
 }
@@ -114,7 +122,7 @@ function mergeWorkIdentity(
 ): void {
   const existing = recordsByWork.get(workId) as readonly IngestRecord[]
   const duplicate = recordsByWork.get(duplicateWorkId) as readonly IngestRecord[]
-  recordsByWork.set(workId, [...existing, ...duplicate.filter(record => matchingVersion(existing, record) === undefined)])
+  recordsByWork.set(workId, duplicate.reduce(appendRecord, existing))
   recordsByWork.delete(duplicateWorkId)
   for (const [key, id] of byExactKey) if (id === duplicateWorkId) byExactKey.set(key, workId)
   for (const [key, id] of byFuzzyKey) if (id === duplicateWorkId) byFuzzyKey.set(key, workId)
@@ -134,13 +142,52 @@ function mergeVersion(
 ): void {
   const existing = recordsByWork.get(workId) as readonly IngestRecord[]
   const matchedVersion = matchingVersion(existing, record)
-  if (matchedVersion === undefined) recordsByWork.set(workId, [...existing, record])
+  recordsByWork.set(workId, appendRecord(existing, record))
   for (const key of exactKeys) byExactKey.set(key, workId)
   if (fuzzyKey !== null && !byFuzzyKey.has(fuzzyKey)) byFuzzyKey.set(fuzzyKey, workId)
   entries.push({
     kind: 'merged_version',
     academicWorkId: workId,
     workVersionId: matchedVersion?.workVersion.workVersionId ?? record.workVersion.workVersionId,
+  })
+}
+
+/** Retains new identifiers and verified discoveries when a provider record repeats an existing version. */
+function appendRecord(records: readonly IngestRecord[], record: IngestRecord): readonly IngestRecord[] {
+  const matched = matchingVersion(records, record)
+  if (matched === undefined) return [...records, record]
+  const workIdentifiers = uniqueBy([
+    ...matched.academicWork.externalIdentifiers, ...record.academicWork.externalIdentifiers,
+  ], externalIdentifierDedupKey)
+  const versionIdentifiers = uniqueBy([
+    ...matched.workVersion.externalIdentifiers, ...record.workVersion.externalIdentifiers,
+  ], externalIdentifierDedupKey)
+  const sourceRecords = uniqueBy([
+    ...matched.workVersion.sourceRecords, ...record.workVersion.sourceRecords,
+  ], source => JSON.stringify([source.provider, source.recordId]))
+  const verifiedDiscoveries = uniqueBy([
+    ...(matched.verifiedDiscoveries ?? []), ...(record.verifiedDiscoveries ?? []),
+  ], discovery => JSON.stringify([discovery.discoveryUrl, discovery.verificationProvider]))
+  if (workIdentifiers.length === matched.academicWork.externalIdentifiers.length
+    && versionIdentifiers.length === matched.workVersion.externalIdentifiers.length
+    && sourceRecords.length === matched.workVersion.sourceRecords.length
+    && verifiedDiscoveries.length === (matched.verifiedDiscoveries?.length ?? 0)) return records
+  return records.map(existing => existing === matched ? {
+    ...existing,
+    academicWork: { ...existing.academicWork, externalIdentifiers: workIdentifiers },
+    workVersion: { ...existing.workVersion, externalIdentifiers: versionIdentifiers, sourceRecords },
+    verifiedDiscoveries,
+  } : existing)
+}
+
+/** Keep the first record for each exact key. */
+function uniqueBy<T>(values: readonly T[], keyOf: (value: T) => string): readonly T[] {
+  const seen = new Set<string>()
+  return values.filter((value) => {
+    const key = keyOf(value)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
   })
 }
 

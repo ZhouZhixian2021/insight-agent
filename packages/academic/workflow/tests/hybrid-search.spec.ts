@@ -3,8 +3,11 @@ import {
   createAcademicWorkId,
   createBatchResult,
   createWorkVersionId,
+  type ExternalIdentifier,
   type ProviderFailure,
 } from '@deepseek-ai/dsh-academic-model'
+import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
+import { normalizeAcademicCatalogRecord } from '@deepseek-ai/dsh-academic-source'
 import type {
   AcademicReference,
   AcademicReferenceIdentificationResult,
@@ -18,16 +21,19 @@ import {
   type HybridSearchAdapters,
 } from '../src/index.ts'
 
-function work(provider: string, recordId: string): AcademicSourceWork {
+function work(provider: string, recordId: string, doi?: string): AcademicSourceWork {
   const academicWorkId = createAcademicWorkId()
   const workVersionId = createWorkVersionId()
+  const identifiers: ExternalIdentifier[] = [{ kind: 'provider_record', normalizedValue: `${provider}:${recordId}`,
+    originalValue: recordId, sourceProvider: provider }]
+  if (doi !== undefined) identifiers.push({ kind: 'doi', normalizedValue: doi, originalValue: doi, sourceProvider: provider })
   return {
     academicWork: {
       schemaVersion: 1,
       academicWorkId,
       title: `${provider}:${recordId}`,
       authors: [],
-      externalIdentifiers: [],
+      externalIdentifiers: identifiers,
       workVersionIds: [workVersionId],
       canonicalVersionId: workVersionId,
       firstPublicDate: { status: 'unknown', reason: 'fixture' },
@@ -41,7 +47,7 @@ function work(provider: string, recordId: string): AcademicSourceWork {
       versionType: 'unknown',
       versionLabel: { status: 'unknown', reason: 'fixture' },
       releaseDate: { status: 'unknown', reason: 'fixture' },
-      externalIdentifiers: [],
+      externalIdentifiers: identifiers,
       sourceRecords: [{ provider, recordId }],
       contentHash: { status: 'not_extracted' },
       supersedesWorkVersionId: null,
@@ -149,6 +155,75 @@ describe('hybrid Academic discovery', () => {
     expect(configured.verifyReference).toHaveBeenCalledWith(doi, 'openalex', undefined)
     expect(result.observation).toMatchObject({ identifiedReferences: 3, duplicateReferences: 1,
       attemptedVerifications: 1, verifiedReferences: 1 })
+  })
+
+  it('retains every discovery URL for a verified DOI-less official record', async () => {
+    const configured = adapters()
+    const official = normalizeAcademicCatalogRecord('acl', { recordId: '2024.acl-long.1',
+      title: 'Official ACL paper', authors: ['Alice'], year: '2024', venue: 'ACL', doi: null })
+    const first: AcademicReference = { kind: 'provider_record', provider: 'acl',
+      recordId: '2024.acl-long.1', discoveryUrl: 'https://aclanthology.org/2024.acl-long.1/' }
+    const second = { ...first, discoveryUrl: 'https://example.org/citation' }
+    configured.searchAcademic = vi.fn<HybridSearchAdapters['searchAcademic']>(async () => searchBatch([]))
+    configured.searchWeb = vi.fn<HybridSearchAdapters['searchWeb']>(async () => ({ candidates: [
+      { url: first.discoveryUrl }, { url: second.discoveryUrl },
+    ], truncated: false }))
+    configured.identifyReferences = vi.fn<HybridSearchAdapters['identifyReferences']>(candidate => (
+      identified(candidate.url === first.discoveryUrl ? first : second)
+    ))
+    configured.verifyReference = vi.fn<HybridSearchAdapters['verifyReference']>(async (reference, provider) => (
+      verified(reference, provider, official)
+    ))
+
+    const result = await executeHybridSearch({ query: 'ACL paper', maxResults: 1 }, policy, configured)
+    const ingested = ingestWorks(createIngestIndex(), result.search.batch.items)
+
+    expect(configured.verifyReference).toHaveBeenCalledOnce()
+    expect(result.observation.duplicateReferences).toBe(1)
+    expect(ingested.works).toHaveLength(1)
+    expect(ingested.versions).toHaveLength(1)
+    expect(ingested.verifiedDiscoveries).toEqual([
+      { academicWorkId: ingested.works[0]?.academicWorkId, workVersionId: ingested.versions[0]?.workVersionId,
+        discoveryUrl: first.discoveryUrl, verificationProvider: 'acl' },
+      { academicWorkId: ingested.works[0]?.academicWorkId, workVersionId: ingested.versions[0]?.workVersionId,
+        discoveryUrl: second.discoveryUrl, verificationProvider: 'acl' },
+    ])
+  })
+
+  it('bounds distinct works after exact merging and keeps their versions', async () => {
+    const configured = adapters()
+    const direct = work('openalex', 'W1', '10.1000/example')
+    const published = work('openalex', 'W2', '10.1000/example')
+    const unrelated = work('openalex', 'W3', '10.1000/unrelated')
+    const reference: AcademicReference = { kind: 'doi', normalizedValue: '10.1000/example',
+      originalValue: '10.1000/example', discoveryUrl: 'https://doi.org/10.1000/example' }
+    const otherReference: AcademicReference = { kind: 'doi', normalizedValue: '10.1000/unrelated',
+      originalValue: '10.1000/unrelated', discoveryUrl: 'https://doi.org/10.1000/unrelated' }
+    configured.searchAcademic = vi.fn<HybridSearchAdapters['searchAcademic']>(async () => searchBatch([direct]))
+    configured.searchWeb = vi.fn<HybridSearchAdapters['searchWeb']>(async () => ({
+      candidates: [{ url: reference.discoveryUrl }, { url: otherReference.discoveryUrl }], truncated: false,
+    }))
+    configured.identifyReferences = vi.fn<HybridSearchAdapters['identifyReferences']>(candidate => (
+      identified(candidate.url === reference.discoveryUrl ? reference : otherReference)
+    ))
+    configured.verifyReference = vi.fn<HybridSearchAdapters['verifyReference']>(async (found, provider) => (
+      verified(found, provider, found === reference ? published : unrelated)
+    ))
+
+    const result = await executeHybridSearch({ query: 'paper', maxResults: 1 }, policy, configured)
+    const ingested = ingestWorks(createIngestIndex(), result.search.batch.items)
+
+    expect(result.search.works).toHaveLength(2)
+    expect(result.search.truncated).toBe(true)
+    expect(result.search.limitations).toContain('The aggregate result bound retained 1 of 2 deduplicated works.')
+    expect(ingested.works).toHaveLength(1)
+    expect(ingested.versions).toHaveLength(2)
+    expect(ingested.verifiedDiscoveries).toEqual([{
+      academicWorkId: ingested.works[0]?.academicWorkId,
+      workVersionId: published.workVersion.workVersionId,
+      discoveryUrl: reference.discoveryUrl,
+      verificationProvider: 'openalex',
+    }])
   })
 
   it('keeps verified Web works when direct Academic discovery fails', async () => {

@@ -70,7 +70,9 @@ describe('hybrid terminal projection', () => {
 
   it('does not count truncated records as merged duplicates and retains pre-cap distinct works', async () => {
     const fixture = draftFixture(3)
-    const first = upstream([fixture.records[0]!], [arxiv])
+    const first: HybridSearchAdapters = { ...upstream([fixture.records[0]!], [arxiv]),
+      verifyReference: async (reference, verificationProvider) => ({ status: 'verified',
+        value: { reference, verificationProvider, work: fixture.records[2]!, fullText: null } }) }
     const resultA = await search('one', first, 1)
     const resultB = await search('two', upstream([fixture.records[1]!], []), 1)
     fixture.adapters.search = vi.fn().mockResolvedValueOnce(resultA).mockResolvedValueOnce(resultB)
@@ -85,6 +87,23 @@ describe('hybrid terminal projection', () => {
     expect(view.references[0]?.message).toContain('omitted')
     expect(view.references[0]?.query).toBe('one')
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('retained 1 of 2')
+  })
+
+  it('retains same-version provenance and merge counts when the per-query cap is one work', async () => {
+    const fixture = draftFixture(1)
+    const completed = await search('one', upstream(fixture.records, [arxiv]), 1)
+    expect(completed.batch.items).toHaveLength(1)
+    expect(completed.batch.items[0]?.verifiedDiscoveries).toEqual([
+      { discoveryUrl: arxiv, verificationProvider: 'arxiv' },
+    ])
+    expect(completed.hybridObservation?.retainedVerificationIndexes).toEqual([0])
+    expect(completed.truncated).toBe(false)
+    fixture.adapters.search = async () => completed
+    const result = await runResearchDraft(fixture.input, fixture.adapters)
+    const view = hybridRetrievalView(result.hybridSearch!)
+    expect(view.counts).toMatchObject({ mergedDuplicates: 1, deduplicatedWorks: 1 })
+    expect(view.references[0]?.status).toBe('merged_duplicate')
+    expect(view.references[0]?.message).not.toContain('omitted')
   })
 
   it('retains earlier queries on cancellation without inventing failure or success for the interrupted query', async () => {

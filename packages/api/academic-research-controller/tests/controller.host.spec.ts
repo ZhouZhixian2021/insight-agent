@@ -348,7 +348,8 @@ describe('AcademicResearchController', () => {
       versionLabel: { status: 'available', value: 'v1' }, releaseDate: { status: 'available', value: { iso: '2026', precision: 'year' } },
       externalIdentifiers: [], sourceRecords: [{ provider: 'arxiv', recordId: '2406.12345v1' }],
       contentHash: { status: 'not_extracted' }, supersedesWorkVersionId: null, status: 'active' }],
-    index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() }, audit: { entries: [] } }, brief())
+    index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
+    verifiedDiscoveries: [], audit: { entries: [] } }, brief())
     expect(selected.papers[0]).toMatchObject({ sourceProvider: 'arxiv', urls: [
       'https://arxiv.org/html/2406.12345v1', 'https://arxiv.org/pdf/2406.12345v1',
     ] })
@@ -361,7 +362,7 @@ describe('AcademicResearchController', () => {
       releaseDate: { status: 'available', value: { iso: '2026', precision: 'year' } }, externalIdentifiers: [],
       sourceRecords: [{ provider: 'unregistered', recordId: 'missing' }], contentHash: { status: 'not_extracted' },
       supersedesWorkVersionId: null, status: 'active' }], index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
-    audit: { entries: [] } }, brief())).toEqual({ papers: [], truncated: false })
+    verifiedDiscoveries: [], audit: { entries: [] } }, brief())).toEqual({ papers: [], truncated: false })
   })
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
