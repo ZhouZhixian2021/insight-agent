@@ -1,0 +1,20 @@
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    persona: 'Run run_hybrid_fixture once and reply HYBRID_DONE.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: academic-source
+      name: '../../../packages/academic/source/lib/index.js'
+      config:
+        searchProviders: [openalex]
+    - id: web
+      name: '../../../packages/web/web/lib/index.js'
+      config:
+        searchProvider: academic-hybrid-fixture
+    - id: academic-hybrid-fixture
+      name: '../../../packages/api/academic-research-controller/tests/hybrid-search-plugin.ts'

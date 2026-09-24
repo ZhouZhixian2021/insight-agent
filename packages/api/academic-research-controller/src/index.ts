@@ -13,6 +13,8 @@ import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
+import { approvedSearchAdapter } from './search.ts'
+import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import type {
   AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus, AcademicResearchPlanView,
@@ -113,9 +115,6 @@ export class AcademicResearchController extends TypertRemoteService {
       searches = approved.searches
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       if (brief.researchBriefId !== request.researchBriefId) throw new Error('研究计划已更新，请重新打开学术研究，确认最新计划后再开始。')
-      if (searches.some(search => search.retrieval !== undefined)) {
-        throw new Error('当前版本尚未接入已批准的混合检索策略执行，请完成 A-H3 工作流接入后再开始研究。')
-      }
     } catch (cause: unknown) {
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
         { cause })
@@ -128,7 +127,7 @@ export class AcademicResearchController extends TypertRemoteService {
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
-      search: (search, operationSignal) => academicSource.searchAll(search, operationSignal),
+      search: approvedSearchAdapter(searches, academicSource, web),
       selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
         const fullText = academicSource.resolveFullText(version)
         if (fullText === null) return null
@@ -161,16 +160,21 @@ export class AcademicResearchController extends TypertRemoteService {
 }
 
 function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue {
-  const searchFailures = result.retrievalRun.failures.filter(failure => failure.operation === 'search').length
+  const searchFailures = result.retrievalRun.failures.filter(failure =>
+    ['search', 'web_search', 'verify_reference'].includes(failure.operation)).length
   const fulltextFailures = result.failures.filter(failure => failure.stage === 'fulltext').length
   const extractionFailures = result.failures.filter(failure => failure.stage === 'extraction').length
     + result.papers.filter(paper => paper.status === 'paused' || paper.status === 'partially_extracted').length
   const extractionSuccesses = result.papers.filter(paper => paper.status === 'extracted'
     || paper.status === 'partially_extracted' || paper.status === 'excluded').length
+  const incompleteSearch = result.completedSearchQueries !== undefined
+    && result.completedSearchQueries.length < result.retrievalRun.queries.length
   return { sessionId: result.sessionId, status: result.status, synthesis: result.synthesis,
+    ...result.hybridSearch === undefined ? {} : { hybridRetrieval: hybridRetrievalView(result.hybridSearch) },
     stages: {
-      search: settleStage(result.retrievalRun.queries.length > 0,
-        result.retrievalRun.coverageSummary.discoveredRecords, searchFailures),
+      search: incompleteSearch ? result.completedSearchQueries.length === 0 ? 'not_run' : 'partial_success'
+        : settleStage(result.retrievalRun.queries.length > 0,
+          result.retrievalRun.coverageSummary.discoveredRecords, searchFailures),
       fulltext: settleStage(result.retrievalRun.coverageSummary.availableFulltextWorks + fulltextFailures > 0,
         result.retrievalRun.coverageSummary.availableFulltextWorks, fulltextFailures),
       extraction: settleStage(result.retrievalRun.coverageSummary.availableFulltextWorks > 0,

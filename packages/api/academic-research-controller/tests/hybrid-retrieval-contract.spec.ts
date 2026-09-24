@@ -109,5 +109,8 @@ describe('Academic hybrid retrieval contract fixture', () => {
     })
     expect(sample.hybridRetrieval.references).toHaveLength(5)
     expect(sample.hybridRetrieval.stages.referenceVerification).toBe('partial_success')
+    expect(sample.hybridRetrieval.stages.referenceIdentification).toBe('partial_success')
+    expect([...sample.hybridRetrieval.webCandidates, ...sample.hybridRetrieval.references]
+      .every(row => row.query === sample.planView.searches[0]?.query)).toBe(true)
   })
 })

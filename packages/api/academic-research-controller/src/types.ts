@@ -43,7 +43,7 @@ export interface AcademicPlannedSearch {
   readonly purpose: string
   /** Research questions from the same Brief that this search supports. */
   readonly questions: readonly string[]
-  /** Absent on approved schema-version-2 plans; A-H2 makes this explicit in the next plan schema. */
+  /** Required in schema-version-3 plans; absent on legacy plans without an explicit retrieval policy. */
   readonly retrieval?: AcademicPlannedRetrieval
 }
 
@@ -182,12 +182,17 @@ export interface AcademicHybridRetrievalCounts {
   readonly verifiedReferences: number
   readonly failedVerifications: number
   readonly discardedWebCandidates: number
+  /** Ingested record count minus distinct works, before the run-wide cap; excludes repeated unverified links and truncated records. */
   readonly mergedDuplicates: number
+  /** Distinct works entering ingestion before the run-wide candidate cap, matching RetrievalRun coverage. */
   readonly deduplicatedWorks: number
 }
 
 /** Browser-safe settlement of one Web result before scholarly-reference verification. */
 export interface AcademicWebDiscoveryCandidateView {
+  /** Actual completed query; absent on older fixed samples. */
+  readonly query?: string
+  /** HTTP(S) URL without credentials, query or fragment; empty when unsafe or invalid. */
   readonly url: string
   readonly title: string | null
   readonly status: 'discovered' | 'references_identified' | 'discarded_non_paper'
@@ -200,6 +205,8 @@ export type AcademicReferenceViewKind = 'doi' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'
 
 /** Settlement of one Web-discovered reference without exposing raw page content. */
 export interface AcademicReferenceView {
+  /** Actual completed query; absent on older fixed samples. */
+  readonly query?: string
   readonly kind: AcademicReferenceViewKind
   readonly normalizedValue: string
   readonly discoveryUrl: string
@@ -208,7 +215,7 @@ export interface AcademicReferenceView {
   readonly message: string | null
 }
 
-/** Optional first-version projection populated only when a run executes hybrid retrieval. */
+/** Terminal projection of completed hybrid queries; interrupted queries are disclosed in RetrievalRun limitations. */
 export interface AcademicHybridRetrievalView {
   readonly schemaVersion: 1
   readonly stages: AcademicHybridRetrievalStageResults
@@ -227,7 +234,7 @@ export interface AcademicResearchRunValue {
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
   readonly stages: AcademicResearchStageResults
-  /** Absent for runs produced before or without the approved hybrid-retrieval policy. */
+  /** Absent when no hybrid query settled; cancellation can retain completed earlier queries only. */
   readonly hybridRetrieval?: AcademicHybridRetrievalView
   readonly retrievalRun: RetrievalRun
   readonly papers: readonly AcademicPaperResultView[]

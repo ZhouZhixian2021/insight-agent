@@ -121,6 +121,7 @@ interface SdkAssertions {
 
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
   'academic-parallel-papers': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
+  'academic-hybrid-search': { runtimeProfile: 'sdk-minimal', expectedTools: { run_hybrid_fixture: [], str_replace_editor: ['command', 'path'] } },
   'academic-plan-chinese': {
     runtimeProfile: 'sdk-minimal',
     environment: {
@@ -844,19 +845,31 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       }
 
       // Wire-shape invariants that must hold in every mode.
-      if (scenario.name === 'academic-replenishment' || scenario.name === 'academic-parallel-papers') {
+      if (['academic-replenishment', 'academic-parallel-papers', 'academic-hybrid-search'].includes(scenario.name)) {
         const rows = ordered[0]!.content.trim().split('\n').map(line => JSON.parse(line) as {
           type: string
           data: { message: { content: { isError: boolean; content: { text: string }[] }[] } }
         })
         const result = rows.find(row => row.type === 'tool/result')!.data.message.content[0]!
         expect(result.isError).toBe(false)
-        const concurrent = scenario.name === 'academic-parallel-papers'
-        expect(JSON.parse(result.content[0]!.text)).toMatchObject({
-          ...concurrent ? { peak: 3 } : {},
-          attempted: Array.from({ length: concurrent ? 5 : 4 }, (_, index) => `https://example.org/${index}`),
-          includedWorks: concurrent ? 3 : 2, failures: 1, synthesis: 'completed', hasReport: true,
-        })
+        if (scenario.name === 'academic-hybrid-search') {
+          expect(JSON.parse(result.content[0]!.text)).toMatchObject({
+            calls: ['academic:arxiv', 'web', 'verify:acl'], titles: ['Verified fixture paper'],
+            directProviders: ['arxiv'], hybridRetrieval: { counts: {
+              academicDiscoveredRecords: 0, webDiscoveredUrls: 2, identifiedReferences: 1,
+              attemptedVerifications: 1, verifiedReferences: 1, failedVerifications: 0,
+              discardedWebCandidates: 1, mergedDuplicates: 0, deduplicatedWorks: 1,
+            }, stages: { academicSearch: 'success', webDiscovery: 'success', referenceIdentification: 'partial_success',
+              referenceVerification: 'success', deduplication: 'success' } },
+          })
+        } else {
+          const concurrent = scenario.name === 'academic-parallel-papers'
+          expect(JSON.parse(result.content[0]!.text)).toMatchObject({
+            ...concurrent ? { peak: 3 } : {},
+            attempted: Array.from({ length: concurrent ? 5 : 4 }, (_, index) => `https://example.org/${index}`),
+            includedWorks: concurrent ? 3 : 2, failures: 1, synthesis: 'completed', hasReport: true,
+          })
+        }
       }
       if (scenario.manifest.workspace?.final === true) {
         const expectedWorkspace = await captureExpectedWorkspaceSnapshot(join(scenario.dir, 'workspace.expected'))

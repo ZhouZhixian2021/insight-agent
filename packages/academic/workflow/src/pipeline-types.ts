@@ -7,6 +7,13 @@ import type { PaperEvidenceGenerator } from './model-types.ts'
 import type { ResearchReport } from '@deepseek-ai/dsh-academic-report'
 import type { AnalysisResult } from '@deepseek-ai/dsh-academic-analysis'
 import type { PaperEvidenceResult } from './types.ts'
+import type { HybridSearchObservation } from './hybrid-search.ts'
+import type { HybridRunObservation } from './hybrid-run.ts'
+
+/** Source batch with optional observations from the approved hybrid executor. */
+export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
+  readonly hybridObservation?: HybridSearchObservation
+}
 
 /** One explicitly selected, reconciled version and its ordered full-text candidates. */
 export interface SelectedPaper {
@@ -33,7 +40,7 @@ export interface DraftPipelineAdapters {
   readonly synthesize: (input: import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisInput,
     signal?: AbortSignal) => Promise<import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisDraft>
   /** Return source-observed providers, counts, limits, successes, and failures for one explicit query. */
-  readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<AcademicSourceSearchBatchResult>
+  readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<DraftSearchResult>
   /** Return the ordered eligible candidate pool under maximumCandidateWorks; do not apply maximumIncludedWorks here. */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
   readonly fetcher: AcademicWebFetcher
@@ -59,6 +66,10 @@ export interface PaperProcessingFailure {
 
 /** Completed paper results and observed retrieval facts remain available when the caller cancels the pass. */
 export interface DraftPipelineResult {
+  /** Settled query expressions; older synthetic callers may omit this observation. */
+  readonly completedSearchQueries?: readonly string[]
+  /** Completed hybrid searches and actual ingestion facts, including on cancellation. Not a wire projection. */
+  readonly hybridSearch?: HybridRunObservation
   readonly synthesis: SynthesisSettlement
   readonly status: 'completed' | 'cancelled'
   readonly retrievalRun: RetrievalRun
