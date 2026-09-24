@@ -27,6 +27,8 @@ kind: "subsystem"
 
 分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测结合当前证据与明确的语义审核，报告在最终交付入口执行核验。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
 
+[摄取库](../../packages/academic/ingestion/README.zh.md)接收可附带已核验 Web 发现 URL 和核验 Provider ID 的 `IngestRecord`。按精确标识符去重后，`IngestOutcome.verifiedDiscoveries` 把这些值关联到分配的 `AcademicWorkId` 和保留的 `WorkVersionId`；不同版本仍可分别寻址。
+
 ## 初始阶段
 
 本模型定义不透明 ID、五态 `Availability<T>`、学术成果、不可变版本、部分日期、提供方记录、精确外部标识符去重键、必须获得当前版本批准的版本化研究简报、可追溯证据、六分区证据卡和不可变证据快照。不依赖提供方的失败、批处理结果和实际覆盖统计定义在[模型包](../../packages/academic/model/README.zh.md)。正常的空搜索结果仍是成功；部分失败保留成功项，截断覆盖必须说明原因。RetrievalRun 将按顺序执行的查询、提供方、覆盖统计和失败绑定到 Brief 版本。六阶段 ResearchStage 将生命周期与最终批处理结果区分；未结束的阶段不携带最终状态或结束时间。工作流消费者负责批准校验和阶段流转。ClaimRecord、ClaimEvidenceLink 和 ClaimAssessment 保存结论、支持或反对证据及评审来源。checkClaimFreshness 将分析快照与当前 Brief 和证据比较，不修改记录。已知变化为 stale，缺失证据或哈希为 unverifiable；current 不代表语义审核通过。持久化解析和执行仍不属于这些共享记录。

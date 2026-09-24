@@ -17,7 +17,7 @@ kind: "subsystem"
 
 ## 单条引用核验
 
-`AcademicReference` 标识从 Web 结果识别的一个 DOI、arXiv ID 或带命名空间的 ACL/PMLR/CVF 记录；其中发现 URL 只记录候选来自哪里，不作为论文元数据。`verifyReference()` 检查调用方的 Provider 允许列表，请对应的已注册 Provider 读取单篇官方记录，并返回 `AcademicReferenceVerificationOutcome`：包含可选全文 URL 的已核验 `AcademicSourceWork`，或一条分类失败。目录搜索不可用不影响已注册 Provider 核对精确记录。缺少核验方法属于配置错误；调用方取消会中止，而非生成失败结果。核验不下载全文，也不创建证据。
+`AcademicReference` 标识从 Web 结果识别的一个 DOI、arXiv ID 或带命名空间的 ACL/PMLR/CVF 记录；其中发现 URL 只记录候选来自哪里，不作为论文元数据。`verifyReference()` 检查调用方的 Provider 允许列表，请对应的已注册 Provider 读取单篇官方记录，并返回 `AcademicReferenceVerificationOutcome`：包含可选全文 URL 的已核验 `AcademicSourceWork`，或一条分类失败。混合检索工作流在摄取前把已核验的发现 URL 和核验 Provider 附加到 `AcademicSourceWork.verifiedDiscoveries`。目录搜索不可用不影响已注册 Provider 核对精确记录。缺少核验方法属于配置错误；调用方取消会中止，而非生成失败结果。核验不下载全文，也不创建证据。
 
 ## 多提供方批次结果
 

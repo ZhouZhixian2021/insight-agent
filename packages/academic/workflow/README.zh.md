@@ -38,7 +38,7 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 synthetic 标记；查询数还必须符合 Brief 的 `maximumSearchRounds`。它先按顺序执行查询，再执行合并去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
-`executeHybridSearch()` 是单条已批准查询的策略感知发现单元。它同时启动学术源直接检索与 DSH Web 发现，从有界 Web 候选中识别 DOI、arXiv、ACL、PMLR、CVF 引用，删除完全一致的重复引用，执行已批准的核验 Provider 白名单和尝试上限，并且只把核验成功的论文放入标准 Academic 批次。单个渠道或引用失败时保留其他成功结果；调用方取消会终止整个操作。返回的观察值分别统计学术记录、Web URL、已识别引用、核验尝试与核验结果，供后续 Remote 投影使用。调用方显式提供四项操作，因此 Provider 定位仍归 Academic Source，通用 Web 访问仍归 `ctx.web`。
+`executeHybridSearch()` 是单条已批准查询的策略感知发现单元。它同时启动学术源直接检索与 DSH Web 发现，从有界 Web 候选中识别 DOI、arXiv、ACL、PMLR、CVF 引用，删除完全一致的重复引用，执行已批准的核验 Provider 白名单和尝试上限，并且只把核验成功的论文放入 Academic 批次。重复引用只核验一次，但保留每个发现 URL 及其核验 Provider。直接检索与 Web 核验记录先按精确标识符归并，再把候选上限用于不同成果；每个保留成果的不同版本继续保留，因此返回的记录数可能超过 `maxResults`。单个渠道或引用失败时保留其他成功结果；调用方取消会终止整个操作。返回的观察值分别统计学术记录、Web URL、已识别引用、核验尝试与核验结果，供后续 Remote 投影使用。调用方显式提供四项操作，因此 Provider 定位仍归 Academic Source，通用 Web 访问仍归 `ctx.web`。
 
 调用方提供 search、selectPapers、fetcher、generator、synthesize 和 now。search 返回 `ctx.academicSource.searchAll()` 的 `AcademicSourceSearchBatchResult`，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿和预印本规则；其 `PaperSelectionResult` 记录候选选择器是否遗漏了另一篇符合条件的论文。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 

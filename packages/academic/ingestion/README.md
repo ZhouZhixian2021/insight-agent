@@ -34,7 +34,9 @@ const first = ingestWorks(createIngestIndex(), recordsFromFirstSearch)
 const second = ingestWorks(first.index, recordsFromSecondSearch)
 ```
 
-Each outcome reports the deduplicated works, the re-pointed versions, and an audit of what was created, merged, or flagged as suspected.
+For a Web reference verified by an Academic Provider, the hybrid workflow adds `{ discoveryUrl, verificationProvider }` to the record's `verifiedDiscoveries`. Repeated direct and verified records sharing a provider-namespaced record ID resolve to one version; newly verified exact identifiers and distinct discovery URLs remain on that version. `IngestOutcome.verifiedDiscoveries` exposes each URL, verification Provider, assigned work ID, and retained version ID. Ingestion does not verify URLs or provider claims.
+
+Each outcome also reports the deduplicated works, the re-pointed versions, and an audit of what was created, merged, or flagged as suspected.
 
 -----
 
@@ -43,11 +45,11 @@ Each outcome reports the deduplicated works, the re-pointed versions, and an aud
 
 | Export | Role |
 |---|---|
-| `IngestRecord` | One provider-produced `{ academicWork, workVersion }` pair. |
+| `IngestRecord` | One provider-produced `{ academicWork, workVersion }` pair, optionally carrying verified Web discoveries. |
 | `IngestIndex` | The in-memory deduplication and merge state. |
 | `createIngestIndex()` | Creates an empty index. |
 | `ingestWorks()` | Deduplicates a batch into the index and returns the outcome. |
-| `IngestOutcome` | Updated index, deduplicated works and versions, and the audit. |
+| `IngestOutcome` | Updated index, deduplicated works and versions, verified Web discoveries, and the audit. |
 | `dedupKeys()` | Derives exact and fuzzy keys for one work. |
 | `selectCanonicalVersion()` | Picks the canonical version by type and date. |
 | `reconcileWork()` | Reconciles one work's records into a single `AcademicWork`. |

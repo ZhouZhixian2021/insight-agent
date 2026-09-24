@@ -17,6 +17,11 @@ import type {
 export interface IngestRecord {
   readonly academicWork: AcademicWork
   readonly workVersion: WorkVersion
+  /** Web URLs that led to this version after an Academic Provider verified the reference. */
+  readonly verifiedDiscoveries?: readonly {
+    readonly discoveryUrl: string
+    readonly verificationProvider: string
+  }[]
 }
 
 /** Exact and fuzzy keys identifying one work for deduplication. */
@@ -36,7 +41,7 @@ export interface IngestIndex {
   readonly byExactKey: ReadonlyMap<ExternalIdentifierDedupKey, AcademicWorkId>
   /** Fuzzy title/author/year key to the work identity already assigned. */
   readonly byFuzzyKey: ReadonlyMap<string, AcademicWorkId>
-  /** Contributing provider records per assigned work identity, in ingestion order. */
+  /** Contributing provider records and verified Web discoveries per assigned work identity, in ingestion order. */
   readonly records: ReadonlyMap<AcademicWorkId, readonly IngestRecord[]>
 }
 
@@ -74,5 +79,12 @@ export interface IngestOutcome {
   readonly works: readonly AcademicWork[]
   /** Every version, re-pointed at its assigned work identity. */
   readonly versions: readonly WorkVersion[]
+  /** Verified Web discovery URLs linked to their deduplicated work and retained version identities. */
+  readonly verifiedDiscoveries: readonly {
+    readonly academicWorkId: AcademicWorkId
+    readonly workVersionId: WorkVersionId
+    readonly discoveryUrl: string
+    readonly verificationProvider: string
+  }[]
   readonly audit: IngestAudit
 }
