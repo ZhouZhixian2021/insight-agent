@@ -214,7 +214,7 @@ describe('AcademicResearchController', () => {
     fixture.webSearch.mockResolvedValue({ sources: [{ url: 'https://arxiv.org/abs/1706.03762', title: 'Untrusted title' },
       { url: 'https://example.org/blog', snippet: 'Not evidence' }], content: 'Generated answer is not evidence', truncated: false })
     fixture.verifyReference.mockImplementation(async reference => ({ status: 'verified', value: {
-      reference, verificationProvider: 'arxiv', work, fullText: null,
+      reference, verificationProvider: 'arxiv', work, fullText: null, fullTextFailure: null,
     } }))
     fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
     runAcademicResearchDraft.mockImplementation(async request => ({

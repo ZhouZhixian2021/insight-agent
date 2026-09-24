@@ -28,7 +28,7 @@ function upstream(works: readonly AcademicSourceWork[], urls: readonly string[])
   return { searchAcademic: async () => batch(works), searchWeb: async () => ({ candidates: urls.map(url => ({ url,
     title: 'Candidate title', snippet: 'private snippet' })), truncated: false }), identifyReferences: identifyAcademicReferences,
   verifyReference: async (reference, verificationProvider) => ({ status: 'verified', value: { reference,
-    verificationProvider, work: works[0]!, fullText: null } }) }
+    verificationProvider, work: works[0]!, fullText: null, fullTextFailure: null } }) }
 }
 async function search(query: string, configured: HybridSearchAdapters, maxResults = 10,
   selectedPolicy = policy): Promise<DraftSearchResult> {
@@ -48,7 +48,8 @@ describe('hybrid terminal projection', () => {
       ? { status: 'failed', failure: { reference, verificationProvider, category: 'not_found',
         message: 'raw diagnostic stays internal', retryable: false, retryAfter: null } }
       : { status: 'verified', value: { reference, verificationProvider,
-        work: verificationProvider === 'acl' ? b! : verificationProvider === 'cvf' ? c! : a!, fullText: null } }
+        work: verificationProvider === 'acl' ? b! : verificationProvider === 'cvf' ? c! : a!, fullText: null,
+        fullTextFailure: null } }
     fixture.adapters.search = async request => search(request.query, { ...configured, verifyReference: verify })
     const result = await runResearchDraft(fixture.input, fixture.adapters)
     const view = hybridRetrievalView(result.hybridSearch!)
@@ -72,7 +73,7 @@ describe('hybrid terminal projection', () => {
     const fixture = draftFixture(3)
     const first: HybridSearchAdapters = { ...upstream([fixture.records[0]!], [arxiv]),
       verifyReference: async (reference, verificationProvider) => ({ status: 'verified',
-        value: { reference, verificationProvider, work: fixture.records[2]!, fullText: null } }) }
+        value: { reference, verificationProvider, work: fixture.records[2]!, fullText: null, fullTextFailure: null } }) }
     const resultA = await search('one', first, 1)
     const resultB = await search('two', upstream([fixture.records[1]!], []), 1)
     fixture.adapters.search = vi.fn().mockResolvedValueOnce(resultA).mockResolvedValueOnce(resultB)
