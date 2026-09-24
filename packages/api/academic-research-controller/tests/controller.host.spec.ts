@@ -1,8 +1,10 @@
 import { Context } from '@deepseek-ai/cordis'
-import { createAcademicWorkId, createCoverageSummary, createResearchBriefId, createRetrievalRunId,
+import { createAcademicWorkId, createBatchResult, createCoverageSummary, createFailureId, createResearchBriefId, createRetrievalRunId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
+import type { AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
+import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
@@ -14,6 +16,9 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 
 import AcademicResearchController from '../src/index.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
+import type { AcademicPlannedRetrieval } from '../src/types.ts'
+import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
+import { runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 
 const contexts: Context[] = []
 afterEach(async () => {
@@ -76,12 +81,16 @@ async function harness(options: {
   resolveError?: boolean
   reasoning?: boolean
   hybridPlan?: boolean
+  retrieval?: AcademicPlannedRetrieval
 } = {}) {
   const ctx = new Context()
   contexts.push(ctx)
   const dispose = (): void => {}
   ctx.provide('typert', { lookups: { configure: () => dispose }, contexts: { configureHost: () => dispose } } as never)
   const search = vi.fn()
+  const searchProviders = vi.fn()
+  const verifyReference = vi.fn<AcademicSourceRuntime['verifyReference']>()
+  const webSearch = vi.fn()
   const resolveFullText = vi.fn((version: { sourceRecords: readonly { provider: string; recordId: string }[] }) => {
     const record = version.sourceRecords[0]
     return record === undefined || record.provider === 'unregistered' ? null : {
@@ -89,10 +98,10 @@ async function harness(options: {
       urls: [`https://arxiv.org/html/${record.recordId}`, `https://arxiv.org/pdf/${record.recordId}`],
     }
   })
-  const fetch = vi.fn()
+  const fetch = vi.fn<WebRuntime['fetch']>()
   await ctx.plugin((serviceCtx: Context) => {
-    serviceCtx.provide('academicSource', { searchAll: search, resolveFullText } as never)
-    serviceCtx.provide('web', { fetch } as never)
+    serviceCtx.provide('academicSource', { searchAll: search, searchProviders, verifyReference, resolveFullText } as never)
+    serviceCtx.provide('web', { fetch, search: webSearch } as never)
   })
   let agentContext: Context | undefined
   await ctx.plugin((agentCtx: Context) => { agentContext = agentCtx })
@@ -114,7 +123,7 @@ async function harness(options: {
           ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
           ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
             purpose: '查找相关研究', questions: briefPayload().questions,
-            ...options.hybridPlan === true ? { retrieval: {
+            ...options.hybridPlan === true ? { retrieval: options.retrieval ?? {
               channels: ['academic', 'web_discovery'],
               academicProviders: ['openalex', 'arxiv'],
               verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
@@ -136,7 +145,7 @@ async function harness(options: {
     extractionMaxTokens: 16_384,
     extractionMaxAttempts: 2,
   })
-  return { controller, search, fetch, sessionId, signal }
+  return { controller, search, searchProviders, verifyReference, webSearch, fetch, sessionId, signal }
 }
 
 describe('AcademicResearchController', () => {
@@ -196,8 +205,23 @@ describe('AcademicResearchController', () => {
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
-  it('previews an approved hybrid policy but refuses to execute it before A-H3', async () => {
+  it('executes the reviewed hybrid policy and hands verified works to the real paper pipeline', async () => {
     const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(1)
+    const work = pipeline.records[0]!
+    fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []),
+      providers: ['arxiv', 'openalex'], discoveredRecords: 0, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [{ url: 'https://arxiv.org/abs/1706.03762', title: 'Untrusted title' },
+      { url: 'https://example.org/blog', snippet: 'Not evidence' }], content: 'Generated answer is not evidence', truncated: false })
+    fixture.verifyReference.mockImplementation(async reference => ({ status: 'verified', value: {
+      reference, verificationProvider: 'arxiv', work, fullText: null,
+    } }))
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+      sessionId: request.session.id,
+    }))
     const preview = await fixture.controller.plan(fixture.sessionId)
     expect(preview.searches[0]?.retrieval).toEqual({
       channels: ['academic', 'web_discovery'],
@@ -206,11 +230,25 @@ describe('AcademicResearchController', () => {
       maximumWebDiscoveryResults: 8,
       maximumReferenceVerifications: 5,
     })
-    await expect(fixture.controller.run({ sessionId: fixture.sessionId,
-      researchBriefId: preview.researchBriefId, synthetic: false }, fixture.signal))
-      .rejects.toThrow('完成 A-H3 工作流接入')
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
     expect(fixture.search).not.toHaveBeenCalled()
-    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 3 },
+      ['openalex', 'arxiv'], expect.any(AbortSignal))
+    expect(fixture.webSearch).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 8 }, expect.any(AbortSignal))
+    expect(fixture.verifyReference).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: 'arxiv',
+      normalizedValue: '1706.03762' }), ['arxiv'], expect.any(AbortSignal))
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 1, deduplicatedWorks: 1,
+      availableFulltextWorks: 1, includedWorks: 1 })
+    expect(result.report).not.toBeNull()
+    expect(result.report?.markdown).not.toContain('Untrusted title')
+    expect(result.report?.markdown).not.toContain('Generated answer is not evidence')
+    expect(result.hybridRetrieval).toMatchObject({ counts: { academicDiscoveredRecords: 0,
+      webDiscoveredUrls: 2, identifiedReferences: 1, attemptedVerifications: 1, verifiedReferences: 1,
+      discardedWebCandidates: 1, mergedDuplicates: 0, deduplicatedWorks: 1 },
+    stages: { referenceIdentification: 'partial_success', referenceVerification: 'success', deduplication: 'success' } })
+    expect(result.hybridRetrieval?.references[0]).toMatchObject({ query: 'retrieval', kind: 'arxiv',
+      verificationProvider: 'arxiv', status: 'verified' })
   })
 
   it('requires legacy plans to be completed and approved instead of inventing search expressions', async () => {
@@ -221,6 +259,35 @@ describe('AcademicResearchController', () => {
       .rejects.toThrow('缺少检索方案')
     expect(fixture.search).not.toHaveBeenCalled()
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it.each(['web_search', 'verify_reference'])('includes %s failures in discovery stage settlement', async (operation) => {
+    const fixture = await harness({ hybridPlan: true })
+    const observed = retrievalRun()
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed',
+      sessionId: fixture.sessionId, retrievalRun: { ...observed, failures: [{ schemaVersion: 1,
+        failureId: createFailureId(), provider: 'web', operation, category: 'network_error', message: 'offline',
+        retryable: true, retryAfter: null }] }, papers: [], failures: [], analysis: null, report: null })
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    expect(result.stages.search).toBe('failed')
+    expect(result.retrievalRun.failures[0]?.operation).toBe(operation)
+  })
+
+  it.each([0, 1])('does not present an interrupted search as successful after %i completed queries', async (count) => {
+    const fixture = await harness({ hybridPlan: true })
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: ['Cancelled'] }, status: 'cancelled',
+      sessionId: fixture.sessionId, completedSearchQueries: count === 0 ? [] : ['one'],
+      retrievalRun: { ...retrievalRun(), queries: ['one', 'two'], stage: 'cancelled', status: 'success',
+        completedAt: '2026-09-24T00:00:00Z' },
+      papers: [], failures: [], analysis: null, report: null })
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    expect(result.status).toBe('cancelled')
+    expect(result.stages.search).toBe(count === 0 ? 'not_run' : 'partial_success')
+    expect(result.hybridRetrieval).toBeUndefined()
   })
 
   it.each(['partially_extracted', 'extraction_failed'] as const)('projects %s without presenting complete extraction success', async (status) => {
@@ -263,10 +330,11 @@ describe('AcademicResearchController', () => {
       input: { paperConcurrency: 3, brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
       searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })
-    await call.adapters.search({ query: 'x' }, fixture.signal)
+    await call.adapters.search({ query: 'retrieval' }, fixture.signal)
+    await expect(call.adapters.search({ query: 'unapproved' }, fixture.signal)).rejects.toThrow('not in the approved plan')
     await call.adapters.fetcher('https://arxiv.org/pdf/1', fixture.signal)
     expect(Date.parse(call.adapters.now())).not.toBeNaN()
-    expect(fixture.search).toHaveBeenCalledWith({ query: 'x' }, fixture.signal)
+    expect(fixture.search).toHaveBeenCalledExactlyOnceWith({ query: 'retrieval' }, fixture.signal)
     expect(fixture.fetch).toHaveBeenCalledWith(
       { url: 'https://arxiv.org/pdf/1' }, fixture.signal, { providerId: 'academic-raw' },
     )

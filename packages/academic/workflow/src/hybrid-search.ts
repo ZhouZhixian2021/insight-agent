@@ -76,6 +76,12 @@ export interface HybridSearchObservation {
   readonly duplicateReferences: number
   readonly attemptedVerifications: number
   readonly verificationOutcomes: readonly AcademicReferenceVerificationOutcome[]
+  /** Outcome indexes admitted after the per-query result bound; verification success alone is not admission. */
+  readonly retainedVerificationIndexes: readonly number[]
+  readonly skippedReferences: readonly {
+    readonly reference: AcademicReference
+    readonly reason: 'provider_not_approved' | 'verification_limit'
+  }[]
   readonly verifiedReferences: number
   readonly failedVerifications: number
   readonly discardedWebCandidates: number
@@ -146,9 +152,15 @@ export async function executeHybridSearch(
   }
   const allWorks = [...direct.works, ...verified]
   const retained = request.maxResults === undefined ? allWorks : allWorks.slice(0, request.maxResults)
+  let verifiedOffset = direct.works.length
+  const retainedVerificationIndexes = verificationOutcomes.flatMap((outcome, index) =>
+    outcome.status === 'verified' && verifiedOffset++ < retained.length ? [index] : [])
   const resultBoundTruncated = retained.length < allWorks.length
   const verificationBoundTruncated = permitted.length > selected.length
   const limitations = [...direct.limitations]
+  const discarded = identifications.filter(entry => entry.result.status === 'discarded').length
+  if (discarded > 0) limitations.push(`${discarded} Web candidates produced no supported scholarly reference; they were not admitted as papers.`)
+  if (permitted.length < distinct.values.length) limitations.push(`${distinct.values.length - permitted.length} references require unapproved verification providers and were not verified.`)
   if (web.status === 'success' && web.value.truncated) limitations.push('Web discovery reached its approved result bound.')
   if (verificationBoundTruncated) limitations.push('Reference verification reached its approved attempt bound.')
   if (resultBoundTruncated) limitations.push(`The aggregate result bound retained ${retained.length} of ${allWorks.length} discovered works.`)
@@ -179,9 +191,14 @@ export async function executeHybridSearch(
       duplicateReferences: distinct.duplicates,
       attemptedVerifications: verificationOutcomes.length,
       verificationOutcomes,
+      retainedVerificationIndexes,
+      skippedReferences: distinct.values.filter(reference => !selected.includes(reference)).map(reference => ({
+        reference, reason: policy.verificationProviders.includes(providerFor(reference))
+          ? 'verification_limit' : 'provider_not_approved',
+      })),
       verifiedReferences: verificationOutcomes.filter(outcome => outcome.status === 'verified').length,
       failedVerifications: verificationOutcomes.filter(outcome => outcome.status === 'failed').length,
-      discardedWebCandidates: identifications.filter(entry => entry.result.status === 'discarded').length,
+      discardedWebCandidates: discarded,
     },
   }
 }
@@ -236,11 +253,14 @@ function settlementStage<T>(settlement: Settlement<T>, batch?: AcademicSourceSea
 function identificationStage(
   entries: readonly { readonly result: AcademicReferenceIdentificationResult }[],
 ): HybridSearchStageStatus {
-  const discarded = entries.filter(entry => entry.result.status === 'discarded').length
-  return discarded === 0 ? 'success' : discarded === entries.length ? 'failed' : 'partial_success'
+  if (entries.length === 0) return 'not_run'
+  const issues = entries.filter(entry => entry.result.issues.length > 0).length
+  const successes = entries.filter(entry => entry.result.status === 'identified').length
+  return issues === 0 ? 'success' : successes === 0 ? 'failed' : 'partial_success'
 }
 
 function verificationStage(outcomes: readonly AcademicReferenceVerificationOutcome[]): HybridSearchStageStatus {
+  if (outcomes.length === 0) return 'not_run'
   const failed = outcomes.filter(outcome => outcome.status === 'failed').length
   return failed === 0 ? 'success' : failed === outcomes.length ? 'failed' : 'partial_success'
 }

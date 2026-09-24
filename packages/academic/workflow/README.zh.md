@@ -46,7 +46,7 @@ runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 sy
 
 输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。调用方负责模型与网络持久记录及取消；Plan 非空的 maximumElapsedMinutes 为检索、抽取和洞察共用的操作信号增加截止时间。
 
-Academic Controller 尚未挂载混合执行器：在 Academic Source 提供单次调用的直接 Provider 选择和权威引用核验前，第 3 版计划仍会拒绝运行；之后再由 A 接通适配器与 A-H4 投影。自动规划查询、自适应追加检索、跨运行索引恢复、停止条件的饱和判定留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用当前通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用既有纯学术路径。
+Academic Controller 为已批准的第 3 版查询挂载混合执行器，并保留历史纯学术路径。`DraftSearchResult.hybridObservation` 经流水线进入可选的 `hybridSearch` 运行事实。已完成查询保留观察，中断查询仅在 RetrievalRun 限制和已启动查询中披露。实际进入的记录、精确合并记录和不同论文数从整轮论文上限应用前的 ingestion 结果结算。重复引用及被单查询上限排除的记录不算论文合并。Controller 投影这些事实，不返回原始 Web 内容。自动扩展查询、跨运行恢复、摘要降级和最终发布仍不属于本轮能力。
 
 ## 模型回答校验
 

@@ -22,7 +22,7 @@
 - [`claim-freshness.sample.json`](claim-freshness.sample.json)：模拟证据版本变化后，旧 Claim 在使用时被判定为 `stale`。
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json)：固定 B 一次多来源搜索的部分成功目标结果。
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json)：固定 C 在正式接入前可使用的浏览器安全 Remote 目标结果，包括由生产方结算的来源检索、全文获取和证据抽取阶段状态。
-- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、明确的未识别/格式错误/含糊识别问题、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影；全部记录均为合成数据。
+- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、明确的未识别/格式错误/含糊识别问题、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影。A-H4 为候选／引用行增加可选的查询归属；计数区分重复引用观察和实际 ingestion 论文合并。全部记录均为合成数据。
 
 ## 样例覆盖
 

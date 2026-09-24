@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-hybrid-search
+profile: sdk
+composition: sdk-academic-hybrid-search
+recording: authored
+header:
+  class: academic-hybrid-search
+  pin: true

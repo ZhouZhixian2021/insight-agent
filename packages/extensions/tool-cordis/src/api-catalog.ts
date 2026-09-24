@@ -3601,7 +3601,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicReferenceView',
-    declaration: 'export interface AcademicReferenceView {\n    readonly kind: AcademicReferenceViewKind;\n    readonly normalizedValue: string;\n    readonly discoveryUrl: string;\n    readonly verificationProvider: string | null;\n    readonly status: \'identified\' | \'verified\' | \'verification_failed\' | \'merged_duplicate\';\n    readonly message: string | null;\n}',
+    declaration: 'export interface AcademicReferenceView {\n    readonly query?: string;\n    readonly kind: AcademicReferenceViewKind;\n    readonly normalizedValue: string;\n    readonly discoveryUrl: string;\n    readonly verificationProvider: string | null;\n    readonly status: \'identified\' | \'verified\' | \'verification_failed\' | \'merged_duplicate\';\n    readonly message: string | null;\n}',
   },
   {
     name: 'AcademicReferenceViewKind',
@@ -3665,7 +3665,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicWebDiscoveryCandidateView',
-    declaration: 'export interface AcademicWebDiscoveryCandidateView {\n    readonly url: string;\n    readonly title: string | null;\n    readonly status: \'discovered\' | \'references_identified\' | \'discarded_non_paper\';\n    readonly identifiedReferenceCount: number;\n    readonly message: string | null;\n}',
+    declaration: 'export interface AcademicWebDiscoveryCandidateView {\n    readonly query?: string;\n    readonly url: string;\n    readonly title: string | null;\n    readonly status: \'discovered\' | \'references_identified\' | \'discarded_non_paper\';\n    readonly identifiedReferenceCount: number;\n    readonly message: string | null;\n}',
   },
   {
     name: 'AcademicWork',

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.md
-2026-09-22-academic-hybrid-retrieval-contract.md: 9a3aa6789a6566180a236bdd4654141e7fe4f06c
-2026-09-22-academic-hybrid-retrieval-contract.zh.md: 5ca53fe6263b054567935e7fb977aab8493b1c74
+2026-09-22-academic-hybrid-retrieval-contract.md: da5f956292bba8b8267a28f5b0199137e9388fb4
+2026-09-22-academic-hybrid-retrieval-contract.zh.md: 88dacd3759831306b561b391265e16f779e61fe3

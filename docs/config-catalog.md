@@ -332,7 +332,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts:31`](../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/api/academic-research-controller/src/index.ts:33`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 
