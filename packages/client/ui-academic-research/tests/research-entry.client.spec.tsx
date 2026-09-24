@@ -85,7 +85,7 @@ describe('Session research request lifecycle', () => {
     expect(await screen.findByText(planned.topic)).toBeTruthy()
     expect(screen.getByText(planned.searches[0]!.purpose)).toBeTruthy()
     expect(screen.queryByRole('textbox')).toBeNull()
-    expect(screen.queryByText(planned.searches[0]!.query)).toBeNull()
+    expect(screen.getByText(planned.searches[0]!.query).closest('details')!.hasAttribute('open')).toBe(false)
     expect(run).not.toHaveBeenCalled()
     await start()
     await act(async () => { await Promise.resolve() })

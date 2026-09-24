@@ -2,34 +2,44 @@
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RunView } from './run-types.ts'
-import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+import type { AcademicPlannedSearch, AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import css from './RunPanel.module.css'
+import { HybridRetrieval } from './HybridRetrieval.tsx'
+import { reportWithRetrieval } from './retrieval-report.ts'
 
 type Copy = PropsLocale<'academicRun'>
 
 /** Presentation props; the caller owns request execution and cancellation. */
-export type RunPanelProps = Copy & { readonly view: RunView; readonly onCancel: () => void }
+export type RunPanelProps = Copy & {
+  readonly view: RunView
+  readonly onCancel: () => void
+  readonly plannedSearches?: readonly AcademicPlannedSearch[] | undefined
+}
 
 /**
  * Show a request or settled result, preserving the three independent status dimensions.
  * @param props Explicit view, localized copy and caller-owned cancel action.
  * @returns The running, error or settled content.
  */
-export function RunPanel({ view, onCancel, t }: RunPanelProps) {
+export function RunPanel({ view, onCancel, t, plannedSearches }: RunPanelProps) {
   if (view.phase === 'running') return <section aria-busy="true">
     <p role="status">{t('running')}</p><p>{t('waiting')}</p>
     <button type="button" disabled={view.cancelling} onClick={onCancel}>{t(view.cancelling ? 'cancelling' : 'cancel')}</button>
   </section>
   if (view.phase === 'error') return <section role="alert"><h3>{t('error')}</h3><p>{view.message}</p></section>
-  return <SettledRun value={view.value} t={t} />
+  return <SettledRun value={view.value} t={t} plannedSearches={plannedSearches} />
 }
 
 function Lines({ values, empty }: { readonly values: readonly string[]; readonly empty: string }) {
   return values.length === 0 ? <p>{empty}</p> : <ul>{values.map((value, index) => <li key={index}>{value}</li>)}</ul>
 }
 
-function SettledRun({ value, t }: Copy & { readonly value: AcademicResearchRunValue }) {
-  const { retrievalRun: run, report } = value
+function SettledRun({ value, t, plannedSearches }: Copy & {
+  readonly value: AcademicResearchRunValue
+  readonly plannedSearches: readonly AcademicPlannedSearch[] | undefined
+}) {
+  const { retrievalRun: run } = value
+  const report = reportWithRetrieval(value, t, plannedSearches)
   const coverage = run.coverageSummary
   const counts = ['discoveredRecords', 'deduplicatedWorks', 'includedWorks', 'availableFulltextWorks',
     'abstractOnlyWorks', 'metadataOnlyWorks', 'failedOperations'] as const
@@ -44,6 +54,7 @@ function SettledRun({ value, t }: Copy & { readonly value: AcademicResearchRunVa
       <div><dt>{t('quality')}</dt><dd>{report === null ? t('noReport') : t(report.evaluation.status)}</dd></div>
     </dl>
     <p className={css.notice}>{t('reviewNotice')}</p>
+    <HybridRetrieval value={value.hybridRetrieval} t={t} />
     {value.synthesis.reasons.length > 0 && <section><h3>{t('synthesisStage')}</h3>
       <Lines values={value.synthesis.reasons} empty={t('noLimits')} /></section>}
     <section><h3>{t('coverage')}</h3>

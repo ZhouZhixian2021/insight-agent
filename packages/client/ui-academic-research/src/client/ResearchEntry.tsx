@@ -4,6 +4,7 @@ import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { AcademicResearchPlanView, AcademicResearchRunRequest, AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { RunPanel } from './RunPanel.tsx'
+import { SearchPolicies } from './HybridRetrieval.tsx'
 import type { RunView } from './run-types.ts'
 import css from './RunPanel.module.css'
 
@@ -75,12 +76,12 @@ function ResearchForm({ sessionId, run, plan, t }: ResearchEntryInjected & Props
       <h3>{approved.topic}</h3>
       <ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
       <h4>{t('searchDirections')}</h4>
-      <ul>{approved.searches.map(search => <li key={search.query}>{search.purpose}</li>)}</ul>
+      <SearchPolicies searches={approved.searches} t={t} />
       <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
         <button type="submit" disabled={view?.phase === 'running'}>{t('start')}</button>
       </form>
     </>}
-    {view !== null && <RunPanel view={view} t={t} onCancel={() => {
+    {view !== null && <RunPanel view={view} t={t} plannedSearches={approved?.searches} onCancel={() => {
       active.current?.abort()
       setView({ phase: 'running', cancelling: true })
     }} />}

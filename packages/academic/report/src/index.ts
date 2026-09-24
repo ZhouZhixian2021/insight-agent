@@ -4,6 +4,9 @@ import type { AcademicWork, ClaimRecord, EvidenceRecord } from '@deepseek-ai/dsh
 import type { AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import type { CoverageSummary } from '@deepseek-ai/dsh-academic-model'
 import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
+import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval-disclosure.ts'
+export { appendRetrievalDisclosure } from './retrieval-disclosure.ts'
+export type { RetrievalDisclosure } from './retrieval-disclosure.ts'
 
 /** Report-owned delivery format, not a second paper or Claim model. */
 export interface ResearchReport {
@@ -19,6 +22,8 @@ export interface ResearchReport {
 
 /** Caller explicitly selects publication mode and discloses synthetic data. */
 export interface ReportInput extends EvaluationInput {
+  /** Producer-observed retrieval facts; omitted by legacy callers. */
+  readonly retrievalDisclosure?: RetrievalDisclosure
   /** Validated question-driven model analysis; legacy extractive callers may omit it. */
   readonly synthesis?: AcademicSynthesisDraft
   /** Observed retrieval counts, required with synthesis. */
@@ -39,6 +44,9 @@ export function generateReport(input: ReportInput): ResearchReport {
   let evaluation = evaluateClaims({ ...input,
     ...input.synthesis === undefined ? {} : { sourceStatements: input.synthesis.statements.filter(statement => statement.kind === 'source_statement') },
   })
+  if (evaluation.issues.some(issue => issue.code === 'evidence_not_admitted')) {
+    throw new Error('Unadmitted evidence cannot enter report claims or references, including drafts.')
+  }
   if (input.mode === 'final' && (evaluation.status !== 'ready' || input.synthetic)) {
     throw new Error('Final report requires supporting reviews, current evidence, sufficient coverage and non-synthetic data.')
   }
@@ -107,7 +115,8 @@ export function generateReport(input: ReportInput): ResearchReport {
       `来源：${url.startsWith('http') ? `<${url}>` : url}；定位：${escapeMarkdown(record.sourceLocatorId)}`, '',
       `> ${escapeMarkdown(record.verbatimExcerpt.status === 'available' ? record.verbatimExcerpt.value : '原文不可用，无法直接核验。')}`, '')
   }
-  const markdown = `${lines.join('\n').trimEnd()}\n`
+  const body = `${lines.join('\n').trimEnd()}\n`
+  const markdown = input.retrievalDisclosure === undefined ? body : appendRetrievalDisclosure(body, input.retrievalDisclosure)
   const target = input.brief.reportRequirements.targetLength
   if (input.mode === 'final' && (target.minimum !== null || target.maximum !== null)) {
     if (target.unit !== 'characters') throw new Error('Final length checks support characters only.')

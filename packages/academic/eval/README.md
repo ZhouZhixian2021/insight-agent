@@ -21,6 +21,8 @@ Evaluate evidence integrity and reconcile explicit semantic reviews before repor
 <a id="use-this-package"></a>
 ## Use this package
 
+Optional `admittedEvidence` is the trusted original extraction batch from direct or scholarly-verified papers. Cited records, including source statements, must match its unique evidence identity, work/version, locator, excerpt, hash, source and extraction method. Rejected records cannot contribute to work coverage. This check does not perform scholarly verification: the workflow must supply the independent producer batch, not a copy of the records under review. Current workflow callers do not supply this option; omitted input retains legacy integrity checks and proves no Web admission.
+
 Optional `sourceStatements` preserve single-paper attributions without minting cross-paper Claims. Each statement must have support; its references undergo the same current-version, locator, hash and source-depth checks and contribute to independent-work coverage. Source statements always retain a separate semantic-review requirement and cannot authorize final publication.
 
 `evaluateClaims()` — Pass the current brief, claims, links, evidence, versions, locators, review records and evaluation time. The function checks exact snapshot/link membership, freshness, provenance, evidence depth, preprint policy and minimum work counts. Missing or invalid evidence blocks delivery. Valid references without a matching semantic review produce needs_review, never automatic semantic approval. Caller-supplied reviews must come from a trusted reviewer; this function does not authenticate their author.

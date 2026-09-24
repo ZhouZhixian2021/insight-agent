@@ -1,0 +1,21 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`hybrid plan browser preview > shows approved channels and budgets through the real Remote without starting research 1`] = `
+"Web search discovers candidates only. Scholarly verification is required before admission; Web snippets are not paper evidence.
+
+查找检索增强生成减少幻觉的效果与局限
+
+Research questions: 检索何时能减少幻觉？
+
+Executed query
+Approved channels
+Direct academic search / Web discovery
+Direct search providers
+openalex, arxiv
+Approved verification providers
+openalex, arxiv, acl, pmlr, cvf
+Web URL limit per query
+8
+Reference verification limit per query
+5"
+`;
