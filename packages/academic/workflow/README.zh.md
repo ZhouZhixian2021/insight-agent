@@ -38,13 +38,15 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 runResearchDraft 接收已批准的 Brief、一至三条有序明确查询和 synthetic 标记；查询数还必须符合 Brief 的 `maximumSearchRounds`。它先按顺序执行查询，再执行合并去重 → 选择版本 → 逐篇全文解析与证据抽取 → 分析 → 带评测的草稿报告；每篇最多一个版本，全部选择先校验再开始全文获取。
 
+`executeHybridSearch()` 是单条已批准查询的策略感知发现单元。它同时启动学术源直接检索与 DSH Web 发现，从有界 Web 候选中识别 DOI、arXiv、ACL、PMLR、CVF 引用，删除完全一致的重复引用，执行已批准的核验 Provider 白名单和尝试上限，并且只把核验成功的论文放入标准 Academic 批次。单个渠道或引用失败时保留其他成功结果；调用方取消会终止整个操作。返回的观察值分别统计学术记录、Web URL、已识别引用、核验尝试与核验结果，供后续 Remote 投影使用。调用方显式提供四项操作，因此 Provider 定位仍归 Academic Source，通用 Web 访问仍归 `ctx.web`。
+
 调用方提供 search、selectPapers、fetcher、generator、synthesize 和 now。search 返回 `ctx.academicSource.searchAll()` 的 `AcademicSourceSearchBatchResult`，fetcher 可适配 ctx.web.fetch。`selectResearchPapers()` 通过由提供方负责的全文地址解析器应用确定性的版本、日期、论文类型、撤稿和预印本规则；其 `PaperSelectionResult` 记录候选选择器是否遗漏了另一篇符合条件的论文。生成器与时钟显式注入，不在本库读取密钥、创建网络客户端或添加通用调度框架。
 
 每条查询使用相同候选上限。已完成查询批次按轮转顺序合并，避免前一条查询独占全局名额；随后按精确标识符去重，再将 `maximumCandidateWorks` 与请求上限应用于去重结果。`coverageSummary.deduplicatedWorks` 记录各查询实际返回的记录经过跨查询去重、但尚未应用本轮全局候选上限时的数量；`academicWorkIds` 保存上限内保留的候选。选择返回 `maximumCandidateWorks` 内的合格候选池；处理在有可用证据的论文达到 `maximumIncludedWorks` 时停止。未批准输入、查询过多、重复选择同一成果、未知版本和撤稿等非法选择会被拒绝。某条查询得到来源失败批次时仍继续后续明确查询；配置错误或无法表达为批次结果的搜索错误仍向上抛出。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。已知抽取失败会在不暴露模型输出的前提下精确分类：非法模型 JSON/内容为 `parse_failed`，缺少模型预算为 `invalid_request`，模型输出未完成为 `upstream_error`，其他抽取失败为 `unknown`。终态 `RetrievalRun` 合并来源与论文失败、去重及纳入成果数、成功取得全文数、实际调用的 Provider、实际开始执行的查询和明确的截断原因。报告披露相同的不完整覆盖观察，不把结果标成完整覆盖。
 
 输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。调用方负责模型与网络持久记录及取消；Plan 非空的 maximumElapsedMinutes 为检索、抽取和洞察共用的操作信号增加截止时间。
 
-自动规划查询、自适应追加检索、跨运行索引恢复、停止条件的饱和判定留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用本工作流。
+Academic Controller 尚未挂载混合执行器：在 Academic Source 提供单次调用的直接 Provider 选择和权威引用核验前，第 3 版计划仍会拒绝运行；之后再由 A 接通适配器与 A-H4 投影。自动规划查询、自适应追加检索、跨运行索引恢复、停止条件的饱和判定留待下一阶段；本轮不自动降级摘要或交付最终报告。主 Web 应用当前通过 `@deepseek-ai/dsh-api-academic-research-controller` 调用既有纯学术路径。
 
 ## 模型回答校验
 
@@ -106,6 +108,6 @@ DSH 现有消息估算器计算完整包装后的输入。输入估算加已解�
 <details>
 <summary>Working context for maintainers</summary>
 
-设计与验证见[论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md)、[明确查询编排决策](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.zh.md)、[证据抽取恢复决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.zh.md)及[测试](tests/handoff.spec.ts)。
+设计与验证见[论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md)、[明确查询编排决策](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.zh.md)、[证据抽取恢复决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.zh.md)、[混合检索决策](../../../.agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.zh.md)及[测试](tests/handoff.spec.ts)。
 
 </details>

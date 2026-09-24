@@ -12,6 +12,17 @@ export type { PaperEvidenceResult, PaperPause, PaperExclusion } from './types.ts
 export { runResearchDraft } from './pipeline.ts'
 export { runModelResearchDraft } from './model-pipeline.ts'
 export { runAcademicResearchDraft } from './entry.ts'
+export { executeHybridSearch } from './hybrid-search.ts'
+export type {
+  HybridDirectSearchProvider,
+  HybridReferenceVerificationProvider,
+  HybridRetrievalPolicy,
+  HybridSearchAdapters,
+  HybridSearchObservation,
+  HybridSearchResult,
+  HybridSearchStageStatus,
+  HybridWebDiscoveryResult,
+} from './hybrid-search.ts'
 export { validateSynthesisRequirements as validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-analysis'
 export { selectResearchPapers } from './selection.ts'
 export { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
