@@ -20,6 +20,8 @@ extractPaperEvidence fills a first observed version hash before invoking the exi
 
 ## Use this package
 
+Progress types are exposed through the type-only `@deepseek-ai/dsh-academic-workflow/progress` entry. Browser consumers use this entry to avoid importing host Session declarations through the execution barrel.
+
 Warning admission does not satisfy the replenishment stop condition. After the candidate pool or inclusion cap is exhausted, `continue_with_warning` permits a limited draft from positive usable evidence; `stop_for_review` blocks synthesis. Warning drafts return `synthesis.status=partial_success` and host-owned reasons. Cancellation and zero usable evidence never start synthesis.
 
 `includedWorkTypes` filters `WorkVersion.versionType`: `preprint`, `accepted_manuscript`, or `version_of_record`. Conference and journal categories are not version states. `allowPreprints: false` takes precedence. The pipeline also rejects adapter-selected versions outside the approved list before fetching; venue labels do not determine eligibility. `validateResearchBriefRequirements()` exposes the shared analysis check for plan review callers.

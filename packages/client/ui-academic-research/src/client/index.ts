@@ -30,10 +30,6 @@ export function apply(ctx: Context): void {
       const result = await ctx.remote.academicResearch.plan(sessionId)
       if (!result.ok) throw result.error
       return result.value
-    }, run: async (request, signal) => {
-      const result = await ctx.remote.academicResearch.run(request, signal)
-      if (!result.ok) throw result.error
-      return result.value
-    } }),
+    }, runStream: (request, signal) => ctx.remote.academicResearch.runStream(request, signal) }),
   }, ResearchEntry))
 }

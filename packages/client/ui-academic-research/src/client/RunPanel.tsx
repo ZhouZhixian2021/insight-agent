@@ -6,6 +6,7 @@ import type { AcademicPlannedSearch, AcademicResearchRunValue } from '@deepseek-
 import css from './RunPanel.module.css'
 import { HybridRetrieval } from './HybridRetrieval.tsx'
 import { reportWithRetrieval } from './retrieval-report.ts'
+import { ProgressPanel } from './ProgressPanel.tsx'
 
 type Copy = PropsLocale<'academicRun'>
 
@@ -22,11 +23,20 @@ export type RunPanelProps = Copy & {
  * @returns The running, error or settled content.
  */
 export function RunPanel({ view, onCancel, t, plannedSearches }: RunPanelProps) {
+  return <>
+    {view.phase !== 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
+    {view.progress !== undefined && <ProgressPanel progress={view.progress} recent={view.recent} t={t} />}
+    {view.phase === 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
+  </>
+}
+
+function RunContent({ view, onCancel, t, plannedSearches }: RunPanelProps) {
   if (view.phase === 'running') return <section aria-busy="true">
     <p role="status">{t('running')}</p><p>{t('waiting')}</p>
     <button type="button" disabled={view.cancelling} onClick={onCancel}>{t(view.cancelling ? 'cancelling' : 'cancel')}</button>
   </section>
-  if (view.phase === 'error') return <section role="alert"><h3>{t('error')}</h3><p>{view.message}</p></section>
+  if (view.phase === 'error') return <section role="alert"><h3>{t(view.reason === 'connection' ? 'connectionUnknown'
+    : view.reason === 'cancelled' ? 'cancelled' : 'error')}</h3><p>{view.message}</p></section>
   return <SettledRun value={view.value} t={t} plannedSearches={plannedSearches} />
 }
 

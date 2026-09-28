@@ -20,6 +20,8 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 ## Use this package
 
+进度类型通过仅供类型导入的 `@deepseek-ai/dsh-academic-workflow/progress` 入口公开。浏览器消费者使用此入口，避免经由执行入口引入宿主 Session 声明。
+
 带警告准入不满足补选停止条件。候选池用完或达到纳入上限后，`continue_with_warning` 允许基于已有可用证据生成有限草稿；`stop_for_review` 阻止分析。带警告草稿返回 `synthesis.status=partial_success` 和程序生成的原因。取消或零可用证据时不启动分析。
 
 `includedWorkTypes` 按 `WorkVersion.versionType` 筛选：`preprint`、`accepted_manuscript` 或 `version_of_record`。会议与期刊类别不属于版本状态。`allowPreprints: false` 优先排除预印本。流水线也会在获取全文前拒绝适配器选出的、未被批准纳入的版本；发表场所名称不决定纳入资格。`validateResearchBriefRequirements()` 向计划审核调用方提供共用的分析要求检查。

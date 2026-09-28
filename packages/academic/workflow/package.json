@@ -18,6 +18,9 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./progress": {
+      "types": "./lib/types/progress.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [
