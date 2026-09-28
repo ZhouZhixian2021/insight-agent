@@ -13,6 +13,7 @@ import type {
   EvidenceCard,
   EvidenceRecord,
   ExtractionMethod,
+  FailureCategory,
   FindingEntry,
   LimitationEntry,
   MethodEntry,
@@ -190,6 +191,40 @@ export interface AcademicFullTextFetchInput extends Omit<FetchedAcademicFullText
 
 /** Caller-owned adapter over `ctx.web.fetch()`. */
 export type AcademicWebFetcher = (url: string, signal?: AbortSignal) => Promise<AcademicWebFetchResult>
+
+/** Observed lifecycle phase of one candidate full-text URL inside one acquisition call. */
+export type AcademicFullTextPhase = 'started' | 'settled'
+
+/** Terminal settlement of one candidate full-text URL attempt. */
+export type AcademicFullTextSettlement = 'success' | 'failed' | 'cancelled'
+
+/**
+ * One observed fact about a single candidate full-text URL. `started` carries null settlement,
+ * category, and body; a settled fact carries the attempt's outcome. Facts carry no timestamp;
+ * the progress owner stamps them.
+ */
+export interface AcademicFullTextObservation {
+  /** Candidate URL fetched, in preference order. */
+  readonly url: string
+  /** One-based position of this candidate in the ordered candidate list. */
+  readonly candidateIndex: number
+  /** Total candidates supplied to the acquisition call. */
+  readonly candidateCount: number
+  readonly phase: AcademicFullTextPhase
+  /** Terminal settlement on `settled`; `null` on `started`. */
+  readonly settlement: AcademicFullTextSettlement | null
+  /** Classified failure category on a failed settlement; `null` otherwise. */
+  readonly category: FailureCategory | null
+  /** Accepted body kind on success; `null` otherwise. */
+  readonly bodyKind: 'html' | 'pdf' | null
+}
+
+/**
+ * Synchronous observer of one acquisition call's candidate facts. Called when each candidate
+ * attempt starts and when it settles. Observer failures are isolated: a throwing observer never
+ * changes the acquisition result.
+ */
+export type AcademicFullTextObserver = (observation: AcademicFullTextObservation) => void
 
 /** One model draft withheld from evidence because its exact source could not be verified. */
 export interface EvidenceDraftRejection {
