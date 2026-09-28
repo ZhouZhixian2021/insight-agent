@@ -36,7 +36,7 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 
 对于经 Academic Provider 核验的 Web 引用，混合检索工作流在记录的 `verifiedDiscoveries` 中加入 `{ discoveryUrl, verificationProvider }`。共享带 Provider 命名空间的记录 ID 的直接搜索记录和核验记录会归于同一版本；新增的已核验精确标识符与不同的发现 URL 仍保留在该版本上。`IngestOutcome.verifiedDiscoveries` 给出各 URL、核验 Provider、分配的成果 ID 和保留的版本 ID。摄取库不核验 URL 或 Provider 声明。
 
-每次结果还报告去重后的成果、重新指向身份的版本，以及记录新建、合并或疑似重复的审计。
+每次结果还报告去重后的成果、重新指向身份的版本，以及记录新建、合并或疑似重复的审计。`summarizeIngestAudit()` 把该审计转换为进度计数，把合并的成果身份、合并的版本记录、疑似重复与最终保留的版本总数保留为四个互不混用的独立事实。
 
 -----
 
@@ -54,6 +54,8 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 | `selectCanonicalVersion()` | 按类型与日期挑选规范版本。 |
 | `reconcileWork()` | 把一个成果的多条记录调和为单个 `AcademicWork`。 |
 | `IngestAudit` / `IngestAuditEntry` | 可追溯的逐条决策。 |
+| `summarizeIngestAudit()` | 把一次结果的审计聚合为四个进度计数。 |
+| `IngestAuditCounts` | `mergedWorkIdentities`、`mergedVersionRecords`、`retainedWorkVersions`、`suspectedDuplicateRecords`，各只有一个含义。 |
 
 -----
 

@@ -17,6 +17,8 @@ import type {
   AcademicReferenceVerificationOutcome,
   AcademicSourceFullText,
   AcademicSourceProvider,
+  AcademicSourceProviderObservation,
+  AcademicSourceProviderObserver,
   AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest,
   AcademicSourceSearchResult,
@@ -28,6 +30,10 @@ export { AcademicSourceError } from './types.ts'
 export type {
   AcademicSourceFullText,
   AcademicSourceProvider,
+  AcademicSourceProviderObservation,
+  AcademicSourceProviderObserver,
+  AcademicSourceProviderPhase,
+  AcademicSourceProviderSettlement,
   AcademicReference,
   AcademicReferenceIdentificationIssue,
   AcademicReferenceIdentificationIssueCode,
@@ -188,15 +194,17 @@ export class AcademicSourceRuntime extends Service {
    * `truncated` fields mirror `batch.items` for the existing single-result adapter shape.
    * @param request - query and total result limit across providers.
    * @param signal - optional cancellation forwarded to every provider.
+   * @param onProvider - optional observer of per-provider started and settled facts.
    * @returns the aggregate batch outcome from all usable providers.
    */
-  async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
+  async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal,
+    onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult> {
     if (signal?.aborted) throw new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')
     const providers = (this.searchProviderIds === undefined
       ? [...this.providers.values()].filter(provider => provider.available())
       : this.searchProviderIds.map(configuredId => resolveProvider({ providers: this.providers, configuredId })))
       .sort((left, right) => left.id.localeCompare(right.id))
-    return this.searchSelected(request, providers, signal)
+    return this.searchSelected(request, providers, signal, onProvider)
   }
 
   /**
@@ -205,10 +213,11 @@ export class AcademicSourceRuntime extends Service {
    * @param request - query and total result limit across selected providers.
    * @param providerIds - provider ids approved for this search.
    * @param signal - optional cancellation forwarded to each selected provider.
+   * @param onProvider - optional observer of per-provider started and settled facts.
    * @returns the aggregate batch outcome from the selected providers.
    */
   async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[],
-    signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
+    signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult> {
     if (signal?.aborted) throw new AcademicSourceError('academic source search aborted', 'ACADEMIC_SOURCE_ABORTED')
     if (providerIds.length === 0 || providerIds.some(id => id.trim() === '')
       || new Set(providerIds).size !== providerIds.length) {
@@ -216,19 +225,36 @@ export class AcademicSourceRuntime extends Service {
     }
     const providers = providerIds.map(configuredId => resolveProvider({ providers: this.providers, configuredId }))
       .sort((left, right) => left.id.localeCompare(right.id))
-    return this.searchSelected(request, providers, signal)
+    return this.searchSelected(request, providers, signal, onProvider)
   }
 
-  /** Merge results from a validated provider selection. */
+  /**
+   * Merge results from a validated provider selection.
+   * @param request - query and total result limit across providers.
+   * @param providers - providers to search, already validated and sorted.
+   * @param signal - optional cancellation forwarded to each provider.
+   * @param onProvider - optional observer of per-provider started and settled facts.
+   * @returns the aggregate batch outcome.
+   */
   private async searchSelected(request: AcademicSourceSearchRequest, providers: readonly AcademicSourceProvider[],
-    signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult> {
+    signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult> {
     if (providers.length === 0) {
       throw new AcademicSourceError('no usable academic source provider is registered', 'ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE')
     }
     const settled = await Promise.all(providers.map(async (provider) => {
+      // Publish `started` when this provider's request actually begins, before awaiting it.
+      reportProvider(onProvider, { provider: provider.id, phase: 'started', settlement: null,
+        category: null, works: 0, truncated: false })
       try {
-        return { provider, result: await this.runSearch(provider, request, signal) }
+        const result = await this.runSearch(provider, request, signal)
+        reportProvider(onProvider, { provider: provider.id, phase: 'settled', settlement: 'success',
+          category: null, works: result.works.length, truncated: result.truncated })
+        return { provider, result }
       } catch (reason: unknown) {
+        const cancelled = reason instanceof AcademicSourceError && reason.code === 'ACADEMIC_SOURCE_ABORTED'
+        reportProvider(onProvider, { provider: provider.id, phase: 'settled',
+          settlement: cancelled ? 'cancelled' : 'failed', category: cancelled ? null : failureCategory(reason),
+          works: 0, truncated: false })
         return { provider, reason }
       }
     }))
@@ -477,10 +503,7 @@ function cancellationOf(settled: readonly SettledSearch[], signal: AbortSignal |
  */
 function searchFailure(provider: AcademicSourceProvider, reason: unknown): ProviderFailure {
   const expected = reason instanceof AcademicSourceError
-  const category: FailureCategory = !expected ? 'unknown' : reason.code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
-    : reason.code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
-      : reason.code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
-        : reason.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error' : 'upstream_error'
+  const category = failureCategory(reason)
   return {
     schemaVersion: 1,
     failureId: createFailureId(),
@@ -490,6 +513,35 @@ function searchFailure(provider: AcademicSourceProvider, reason: unknown): Provi
     message: expected ? reason.message : `${provider.id} search failed.`,
     retryable: ['rate_limited', 'timeout', 'network_error'].includes(category),
     retryAfter: null,
+  }
+}
+
+/**
+ * Classify a provider's rejection into the shared failure taxonomy. A missing or unexpected
+ * rejection is `unknown`; an `AcademicSourceError` maps by its stable code.
+ * @param reason - the provider's rejection value.
+ * @returns the shared failure category.
+ */
+function failureCategory(reason: unknown): FailureCategory {
+  if (!(reason instanceof AcademicSourceError)) return 'unknown'
+  return reason.code === 'ACADEMIC_SOURCE_TIMEOUT' ? 'timeout'
+    : reason.code === 'ACADEMIC_SOURCE_RATE_LIMIT' ? 'rate_limited'
+      : reason.code === 'ACADEMIC_SOURCE_PARSE_ERROR' ? 'parse_failed'
+        : reason.code === 'ACADEMIC_SOURCE_NETWORK_ERROR' ? 'network_error' : 'upstream_error'
+}
+
+/**
+ * Publish one provider observation. Progress is observational: a throwing observer never
+ * changes the round's results or interrupts sibling notifications.
+ * @param observer - the caller's observer, if any.
+ * @param observation - the fact to publish.
+ */
+function reportProvider(observer: AcademicSourceProviderObserver | undefined, observation: AcademicSourceProviderObservation): void {
+  if (observer === undefined) return
+  try {
+    observer(observation)
+  } catch {
+    // Progress is observational; a broken subscriber cannot change the search round.
   }
 }
 

@@ -168,6 +168,39 @@ export interface AcademicSourceSearchBatchResult extends AcademicSourceSearchRes
   readonly limitations: readonly string[]
 }
 
+/** Observed lifecycle phase of one provider's search inside a discovery round. */
+export type AcademicSourceProviderPhase = 'started' | 'settled'
+
+/** Terminal settlement of one provider's search inside a discovery round. */
+export type AcademicSourceProviderSettlement = 'success' | 'failed' | 'cancelled'
+
+/**
+ * One observed fact about a single provider's participation in a discovery round. A `started`
+ * fact carries `settlement: null` and its zeroed counts; a settled fact carries the provider's
+ * terminal settlement, its failure category when failed, and the works it returned. Facts carry
+ * no timestamp; the progress owner stamps them when it receives them.
+ */
+export interface AcademicSourceProviderObservation {
+  /** Provider id, such as `openalex` or `arxiv`. */
+  readonly provider: string
+  readonly phase: AcademicSourceProviderPhase
+  /** Terminal settlement on `settled`; `null` on `started`. */
+  readonly settlement: AcademicSourceProviderSettlement | null
+  /** Classified failure category on a failed settlement; `null` otherwise. */
+  readonly category: FailureCategory | null
+  /** Works returned by this provider; `0` until it settles. */
+  readonly works: number
+  /** Whether this provider dropped works to honor a bound; `false` until it settles. */
+  readonly truncated: boolean
+}
+
+/**
+ * Synchronous observer of one provider's discovery facts. Called when a provider's request
+ * starts and when it settles. Observer failures are isolated: a throwing observer never changes
+ * the round's results.
+ */
+export type AcademicSourceProviderObserver = (observation: AcademicSourceProviderObservation) => void
+
 /**
  * A source-capable backend. Registered with `ctx.academicSource.registerSearchProvider`.
  * `id` is a stable string, unique within the search capability kind.
