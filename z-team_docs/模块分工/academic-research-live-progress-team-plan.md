@@ -27,11 +27,11 @@ A 先完成共享接口，B、C 在接口合并后并行开发。A 不实现学�
 
 ### A-P1：固定进度字段
 
-**当前进度：已合并到 master。** A 定义公开阶段、状态、运行标识、事件时间、已运行时间、阶段计数、当前活动和最新事件字段，并为论文标识、全文状态、分段序号、尝试次数及证据计数保留字段。三篇论文并发时允许 `fulltext` 与 `extraction` 同时出现在 `activeStages`，`primaryStage` 只负责页面标题。固定 JSON 样例覆盖检索中、三篇论文并发、证据重试、部分成功和报告生成。B、C 不建立同义字段。
+**当前进度：已合并到 master，本次补充待合并。** A 定义公开阶段、状态、运行标识、事件时间、已运行时间、阶段计数、当前活动和最新事件字段，并为论文标识、全文状态、分段序号、尝试次数及证据计数保留字段。补充接口把 `mergedWorkIdentities`、`mergedVersionRecords`、`retainedWorkVersions` 和 `suspectedDuplicateRecords` 分开计数；论文活动同时携带 `AcademicWorkId` 与 `WorkVersionId`；检索阶段接受按 Provider 独立结算的活动。三篇论文并发时允许 `fulltext` 与 `extraction` 同时出现在 `activeStages`，`primaryStage` 只负责页面标题。固定 JSON 样例覆盖检索中、Provider 运行、三篇论文并发、证据重试、部分成功和报告生成。B、C 不建立同义字段。
 
 ### A-P2：工作流阶段结算
 
-**当前进度：已完成并由 A-P3 接入 Remote 流。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。模型内部尚未提供的分段和重试事实保持 `null`，由 B 后续补充，不伪造数值。
+**当前进度：已完成并由 A-P3 接入 Remote 流；Provider 接线等待 B-P1。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。A 已按摄取结果填写四类独立计数。B 的观察者合并后，Controller 的搜索适配器把 Provider 的开始与结算事实映射为 Provider 活动，并由整轮检索结果结算来源搜索的成功、部分成功或失败。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。证据模型内部尚未提供的分段和重试事实保持 `null`；后续由 A 的工作流模型适配层映射，不扩展 B 的 `EvidenceGenerator` 请求或返回类型。
 
 A 在 `academic-workflow` 中发布阶段开始、更新和结算事件。检索、筛选、全文、证据、分析和报告按真实调用顺序更新；并发论文分别保留状态，部分失败不清空其他论文和已验证证据。取消事件保留取消前已经提交的进展。
 
@@ -55,11 +55,13 @@ B 在 A-P1 合并后提供来源与论文处理的内部事实，不决定页面
 
 ### B-P1：来源与筛选事实
 
-B 提供学术来源请求的开始、成功、部分成功、失败和取消结果，以及摄取、精确去重和版本保留计数。Web 发现仍由 A 编排；B 只报告学术身份识别与核验结果。
+B 在 `AcademicSourceRuntime.searchAll()` 与 `searchProviders()` 增加可选、运行内的 Provider 观察者。每个实际发起的学术 Provider 在请求开始时发布一次 `started`，随后恰好发布一次 `success`、`failed` 或 `cancelled` 结算；零结果属于成功。观察者异常不得影响搜索结果，事实不带时间戳，由 A 接收时记录。该观察者只覆盖直接学术 Provider，不覆盖 `web_discovery`。摄取包提供纯函数统计 `mergedWorkIdentities`（`merged_work` 条目数）、`mergedVersionRecords`（`merged_version` 条目数）、`retainedWorkVersions`（`outcome.versions.length`）和 `suspectedDuplicateRecords`（`suspected_duplicate` 条目数）。不得把 `merged_work` 命名为 `mergedWorkRecords`，因为该审计项表示被合并的身份，不表示输入记录数。
 
 ### B-P2：全文与证据事实
 
-B 为每篇论文提供全文获取、解析、证据抽取和证据验证状态。长论文抽取提供当前分段、分段总数、当前尝试、超时、连接失败、输出不完整、已验证证据数和被拒绝草稿数。B 返回机器可读的原因，C 负责面向用户的中文说明。
+B 为每篇论文提供全文获取、解析、证据抽取和证据验证结果。B 保持现有 `EvidenceGenerator` 接口，不为工作流进度增加回调或改变返回类型。长论文分段、尝试与重试事实由 A 在工作流模型适配层根据已有批次及调用记录映射到进度；B 的结果继续提供机器可读失败原因，C 负责面向用户的中文说明。
+
+Web 发现、引用识别和逐条核验由 A 的混合检索编排层生产实时事实。A 在真正调用 `searchWeb()` 或 `verifyReference()` 前发布运行事实，在操作结算后发布终态；同步的 `identifyAcademicReferences()` 完成后发布识别计数。B 不给 `verifyReference()` 增加观察者，避免 Academic Source 同时承担 Web 编排和进度协议职责。
 
 B 的主要目录：
 

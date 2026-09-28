@@ -103,7 +103,7 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:71`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:106`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -114,7 +114,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:71`](../packages/academi
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:73`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:108`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 

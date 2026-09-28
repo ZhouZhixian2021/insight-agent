@@ -77,13 +77,14 @@ function progressSnapshot(
       report: pending,
     },
     counts: { completedQueries: status === 'success' ? 1 : 0, totalQueries: 1, discoveredRecords: 0,
-      deduplicatedWorks: 0, candidateWorks: 0, completedPapers: 0, totalPapers: null, includedPapers: 0,
+      deduplicatedWorks: 0, mergedWorkIdentities: 0, mergedVersionRecords: 0, retainedWorkVersions: 0,
+      suspectedDuplicateRecords: 0, candidateWorks: 0, completedPapers: 0, totalPapers: null, includedPapers: 0,
       availableFulltextPapers: 0, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0,
       completedQuestions: 0, totalQuestions: 1 },
     activities: [],
     latestEvent: { code: status === 'running' ? 'run_started' : 'stage_settled',
       occurredAt: `2026-09-28T00:00:0${String(sequence)}.000Z`, stage: 'retrieval',
-      workVersionId: null, failureCode: null },
+      academicWorkId: null, workVersionId: null, providerId: null, failureCode: null },
   }
 }
 

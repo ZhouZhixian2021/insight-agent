@@ -38,10 +38,26 @@ describe('Academic research progress contract fixture', () => {
     expect(progress?.activities).toHaveLength(3)
   })
 
+  it('represents one provider operation independently from its query', () => {
+    expect(sample.frames[0]?.progress.activities).toContainEqual({
+      kind: 'provider',
+      stage: 'retrieval',
+      queryIndex: 1,
+      queryCount: 3,
+      providerId: 'openalex',
+      status: 'running',
+      discoveredRecords: null,
+      failureCode: null,
+      startedAt: '2026-09-28T01:00:00.000Z',
+      completedAt: null,
+    })
+  })
+
   it('keeps one-based batch and retry facts with a sanitized failure code', () => {
     expect(sample.frames[1]?.progress.activities[0]).toEqual({
       kind: 'paper',
       stage: 'extraction',
+      academicWorkId: 'academic-work-progress-a',
       workVersionId: 'work-version-progress-a',
       title: 'Synthetic Paper A',
       operation: 'waiting_retry',

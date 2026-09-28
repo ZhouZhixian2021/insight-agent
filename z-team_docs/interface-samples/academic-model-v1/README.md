@@ -23,7 +23,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result, including producer-settled search, full-text, and evidence-extraction stages, that C can use before live integration.
 - [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, explicit unrecognized/invalid/ambiguous identification issues, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. A-H4 adds optional query attribution to candidate/reference rows; counts keep repeated reference observations separate from actual ingested work merges. All records are synthetic.
-- [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json): fixes A-P1's complete progress snapshots for retrieval start, overlapping full-text and evidence work with three active papers, a timeout retry, and report synthesis. It contains observed counts and elapsed time but no estimated percentage.
+- [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json): fixes A-P1's complete progress snapshots for retrieval start, one direct Provider activity, distinct ingestion audit counts, overlapping full-text and evidence work with three active papers, a timeout retry, and report synthesis. Paper activities carry work and version IDs. The sample contains observed counts and elapsed time but no estimated percentage.
 
 ## Sample coverage
 

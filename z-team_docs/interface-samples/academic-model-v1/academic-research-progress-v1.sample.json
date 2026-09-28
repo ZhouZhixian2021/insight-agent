@@ -27,6 +27,10 @@
           "totalQueries": 3,
           "discoveredRecords": 0,
           "deduplicatedWorks": 0,
+          "mergedWorkIdentities": 0,
+          "mergedVersionRecords": 0,
+          "retainedWorkVersions": 0,
+          "suspectedDuplicateRecords": 0,
           "candidateWorks": 0,
           "completedPapers": 0,
           "totalPapers": null,
@@ -46,13 +50,27 @@
             "query": "retrieval augmented generation hallucination",
             "channels": ["academic", "web_discovery"],
             "startedAt": "2026-09-28T01:00:00.000Z"
+          },
+          {
+            "kind": "provider",
+            "stage": "retrieval",
+            "queryIndex": 1,
+            "queryCount": 3,
+            "providerId": "openalex",
+            "status": "running",
+            "discoveredRecords": null,
+            "failureCode": null,
+            "startedAt": "2026-09-28T01:00:00.000Z",
+            "completedAt": null
           }
         ],
         "latestEvent": {
           "code": "run_started",
           "occurredAt": "2026-09-28T01:00:00.000Z",
           "stage": "retrieval",
+          "academicWorkId": null,
           "workVersionId": null,
+          "providerId": null,
           "failureCode": null
         }
       }
@@ -82,6 +100,10 @@
           "totalQueries": 3,
           "discoveredRecords": 62,
           "deduplicatedWorks": 41,
+          "mergedWorkIdentities": 2,
+          "mergedVersionRecords": 19,
+          "retainedWorkVersions": 45,
+          "suspectedDuplicateRecords": 1,
           "candidateWorks": 15,
           "completedPapers": 7,
           "totalPapers": 15,
@@ -96,6 +118,7 @@
           {
             "kind": "paper",
             "stage": "extraction",
+            "academicWorkId": "academic-work-progress-a",
             "workVersionId": "work-version-progress-a",
             "title": "Synthetic Paper A",
             "operation": "waiting_retry",
@@ -111,6 +134,7 @@
           {
             "kind": "paper",
             "stage": "fulltext",
+            "academicWorkId": "academic-work-progress-b",
             "workVersionId": "work-version-progress-b",
             "title": "Synthetic Paper B",
             "operation": "fulltext_fetch",
@@ -126,6 +150,7 @@
           {
             "kind": "paper",
             "stage": "extraction",
+            "academicWorkId": "academic-work-progress-c",
             "workVersionId": "work-version-progress-c",
             "title": "Synthetic Paper C",
             "operation": "evidence_extract",
@@ -143,7 +168,9 @@
           "code": "retry_scheduled",
           "occurredAt": "2026-09-28T01:18:32.000Z",
           "stage": "extraction",
+          "academicWorkId": "academic-work-progress-a",
           "workVersionId": "work-version-progress-a",
+          "providerId": null,
           "failureCode": "timeout"
         }
       }
@@ -173,6 +200,10 @@
           "totalQueries": 3,
           "discoveredRecords": 62,
           "deduplicatedWorks": 41,
+          "mergedWorkIdentities": 2,
+          "mergedVersionRecords": 19,
+          "retainedWorkVersions": 45,
+          "suspectedDuplicateRecords": 1,
           "candidateWorks": 15,
           "completedPapers": 15,
           "totalPapers": 15,
@@ -198,7 +229,9 @@
           "code": "stage_started",
           "occurredAt": "2026-09-28T01:30:00.000Z",
           "stage": "report",
+          "academicWorkId": null,
           "workVersionId": null,
+          "providerId": null,
           "failureCode": null
         }
       }
