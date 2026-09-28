@@ -855,6 +855,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         if (scenario.name === 'academic-hybrid-search') {
           expect(JSON.parse(result.content[0]!.text)).toMatchObject({
             calls: ['academic:arxiv', 'web', 'verify:acl'], titles: ['Verified fixture paper'],
+            screening: { deduplicatedWorks: 2, selectedWorks: 1, fetched: ['https://aclanthology.org/2024.acl-long.1.pdf'] },
             directProviders: ['arxiv'], hybridRetrieval: { counts: {
               academicDiscoveredRecords: 0, webDiscoveredUrls: 2, identifiedReferences: 1,
               attemptedVerifications: 1, verifiedReferences: 1, failedVerifications: 0,
@@ -868,6 +869,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
             ...concurrent ? { peak: 3 } : {},
             attempted: Array.from({ length: concurrent ? 5 : 4 }, (_, index) => `https://example.org/${index}`),
             includedWorks: concurrent ? 3 : 2, failures: 1, synthesis: 'completed', hasReport: true,
+            retrievalDisclosureIncluded: true,
           })
         }
       }

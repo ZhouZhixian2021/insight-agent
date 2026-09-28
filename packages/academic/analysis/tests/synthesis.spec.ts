@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, synthesisPrompt, synthesisSections,
-  type AcademicSynthesisInput } from '../src/index.ts'
+import { compactSynthesisPrompt, parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, synthesisPrompt,
+  synthesisSections, type AcademicSynthesisInput } from '../src/index.ts'
 
 const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
 const input = (): AcademicSynthesisInput => JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
@@ -70,6 +70,34 @@ describe('question-driven synthesis admission and model validation', () => {
     const prompt = synthesisPrompt(value)
     expect(JSON.parse(prompt.split('INPUT_JSON\n')[1]!)).toEqual(value)
     expect(prompt).toContain('untrusted data')
+    expect(prompt).toContain('Return at most 12 statements total and at most 2 statementIndexes per question.')
+    expect(prompt).toContain('Each statement may cite at most 3 representative evidence records.')
+    expect(prompt).toContain('Reuse the same statement across questionAnswers and sections')
+    expect(prompt).toContain('Do not enumerate evidence, plan quotas or explain your selection process')
+  })
+  it('retains citable materials while removing duplicate structures from output-limit recovery', () => {
+    const value = input(), complete = synthesisPrompt(value), compact = compactSynthesisPrompt(value)
+    const materials = JSON.parse(compact.split('INPUT_JSON\n')[1]!) as Record<string, unknown>
+    expect(compact.length).toBeLessThan(complete.length)
+    expect(materials).toMatchObject({ recoveryMode: 'output_limit_compact', brief: {
+      researchBriefId: value.brief.researchBriefId, questions: value.brief.questions,
+    }, analysisInput: { evidenceRecords: value.analysisInput.evidenceRecords.map(record => ({
+      evidenceId: record.evidenceId, academicWorkId: record.academicWorkId,
+      verbatimExcerpt: record.verbatimExcerpt, sourcedStatement: record.sourcedStatement,
+    })) } })
+    expect((materials.analysisInput as Record<string, unknown>).evidenceCards).toBeUndefined()
+    expect((materials.analysisInput as Record<string, unknown>).sourceLocators).toBeUndefined()
+    expect(compact).toContain('output-limit recovery request')
+  })
+  it('rejects a draft that exceeds the report or per-question statement bounds', () => {
+    const oversized = output()
+    const statements = oversized.statements as unknown[]
+    oversized.statements = Array.from({ length: 13 }, () => structuredClone(statements[0]))
+    expect(() => parseSynthesisDraft(JSON.stringify(oversized), input())).toThrow('At most 12 statements')
+    const crowded = output()
+    const answers = crowded.questionAnswers as { statementIndexes: number[] }[]
+    answers[0]!.statementIndexes = [0, 1, 2]
+    expect(() => parseSynthesisDraft(JSON.stringify(crowded), input())).toThrow('At most 2 statements')
   })
   it.each([
     [{ op: 'replace', path: '/questionAnswers/0/questionIndex', value: 1 }],

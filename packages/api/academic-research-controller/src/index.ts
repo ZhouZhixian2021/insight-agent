@@ -5,7 +5,6 @@ import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
   runAcademicResearchDraft,
-  selectResearchPapers,
   type AcademicResearchDraftResult,
   type DraftPipelineAdapters,
 } from '@deepseek-ai/dsh-academic-workflow'
@@ -13,7 +12,7 @@ import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
-import { approvedSearchAdapter } from './search.ts'
+import { approvedPaperAdapters } from './search.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import type {
@@ -37,8 +36,20 @@ export interface Config {
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
-  /** Total model attempts per paper. Only output-limit exhaustion is retried. Defaults to 2. */
+  /** Total model attempts per paper. Output-limit, connection, and timeout failures may retry. Defaults to 2. */
   readonly extractionMaxAttempts?: number
+  /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
+  readonly extractionRetryInitialDelayMs?: number
+  /** Maximum estimated input tokens in one evidence batch. Defaults to 12,000. */
+  readonly extractionBatchMaxInputTokens?: number
+  /** Repeated source characters at adjacent long-segment boundaries. Defaults to 512. */
+  readonly extractionBatchOverlapCharacters?: number
+  /** Maximum elapsed time for one evidence model attempt. Defaults to 120,000 ms. */
+  readonly extractionAttemptTimeoutMs?: number
+  /** Total final synthesis attempts. Connection and timeout failures are retried. Defaults to 3. */
+  readonly synthesisMaxAttempts?: number
+  /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
+  readonly synthesisRetryInitialDelayMs?: number
 }
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
@@ -50,12 +61,24 @@ export class AcademicResearchController extends TypertRemoteService {
     fulltextFetchProvider: z.string().default('http'),
     extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
     extractionMaxAttempts: z.number().step(1).min(1).max(2).default(2),
+    extractionRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(10_000),
+    extractionBatchMaxInputTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(12_000),
+    extractionBatchOverlapCharacters: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(512),
+    extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(120_000),
+    synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
+    synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
   })
 
   private readonly fulltextFetchProvider: string
   private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
   private readonly extractionMaxAttempts: number
+  private readonly extractionRetryInitialDelayMs: number
+  private readonly extractionBatchMaxInputTokens: number
+  private readonly extractionBatchOverlapCharacters: number
+  private readonly extractionAttemptTimeoutMs: number
+  private readonly synthesisMaxAttempts: number
+  private readonly synthesisRetryInitialDelayMs: number
 
   /**
    * @param ctx - Host context containing Session, Academic source, and Web fetch services.
@@ -67,6 +90,12 @@ export class AcademicResearchController extends TypertRemoteService {
     this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
     this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
     this.extractionMaxAttempts = config.extractionMaxAttempts ?? 2
+    this.extractionRetryInitialDelayMs = config.extractionRetryInitialDelayMs ?? 10_000
+    this.extractionBatchMaxInputTokens = config.extractionBatchMaxInputTokens ?? 12_000
+    this.extractionBatchOverlapCharacters = config.extractionBatchOverlapCharacters ?? 512
+    this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 120_000
+    this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
+    this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
     ctx.plugin(academicPlanValidation)
   }
 
@@ -127,13 +156,7 @@ export class AcademicResearchController extends TypertRemoteService {
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
-      search: approvedSearchAdapter(searches, academicSource, web),
-      selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
-        const fullText = academicSource.resolveFullText(version)
-        if (fullText === null) return null
-        return { ...fullText,
-          extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' }, hasHistoricalEvidence: false }
-      }),
+      ...approvedPaperAdapters(searches, academicSource, web),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
@@ -145,7 +168,15 @@ export class AcademicResearchController extends TypertRemoteService {
         ctx: agent.ctx,
         session: agent.session,
         model,
-        modelPolicy: { maxAttempts: this.extractionMaxAttempts },
+        modelPolicies: {
+          evidence: { maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
+            inputBatchTokenLimit: this.extractionBatchMaxInputTokens,
+            inputBatchOverlapCharacters: this.extractionBatchOverlapCharacters,
+            attemptTimeoutMs: this.extractionAttemptTimeoutMs,
+            transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: this.extractionRetryInitialDelayMs } },
+          synthesis: { maxAttempts: this.synthesisMaxAttempts, retryOutputLimit: true,
+            transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: this.synthesisRetryInitialDelayMs } },
+        },
         input: { brief, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
@@ -163,6 +194,7 @@ function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue
   const searchFailures = result.retrievalRun.failures.filter(failure =>
     ['search', 'web_search', 'verify_reference'].includes(failure.operation)).length
   const fulltextFailures = result.failures.filter(failure => failure.stage === 'fulltext').length
+    + result.retrievalRun.failures.filter(failure => failure.operation === 'resolve_fulltext').length
   const extractionFailures = result.failures.filter(failure => failure.stage === 'extraction').length
     + result.papers.filter(paper => paper.status === 'paused' || paper.status === 'partially_extracted').length
   const extractionSuccesses = result.papers.filter(paper => paper.status === 'extracted'

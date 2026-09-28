@@ -20,6 +20,11 @@ class SnapshotAdapter extends LlmAdapter {
   override async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
     const message = _options.messages[0]?.content[0]
     if (message?.type === 'text' && message.text.includes('INPUT_JSON\n')) {
+      if (!message.text.includes('output_limit_compact')) {
+        yield { type: 'text-delta', index: 0, text: '{' }
+        yield { type: 'finish', reason: { kind: 'max-tokens' } }
+        return
+      }
       yield { type: 'text-delta', index: 0, text: readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8') }
       yield { type: 'finish', reason: { kind: 'stop' } }
       return
@@ -66,7 +71,8 @@ export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): vo
       const admission = prepareSynthesisInput(limited)
       assert.equal(admission.status, config.limitedDraft ? 'ready_with_warning' : 'ready')
       const draft = await createModelSynthesisGenerator(ctx, agent.session,
-        { provider: 'academic-fixture', model: 'fixture', maxTokens: 4096 }, { maxAttempts: 1 })(admission.input)
+        { provider: 'academic-fixture', model: 'fixture', maxTokens: 4096 },
+        { maxAttempts: 2, retryOutputLimit: true })(admission.input)
       const analysis = synthesisAnalysis(admission.input, draft, '2026-09-20T00:00:00Z')
       const report = generateReport({ brief: limited.brief, claims: analysis.claims, links: analysis.links,
         evidence: input.analysisInput.evidenceRecords, versions: input.analysisInput.workVersions,
@@ -89,9 +95,9 @@ export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): vo
       const saved = await reader.read()
       assert.equal(saved.filter(event => event.type === 'academic/evidence-request').length, 1)
       assert.equal(saved.filter(event => event.type === 'academic/evidence-result').length, 1)
-      assert.equal(saved.filter(event => event.type === 'academic/synthesis-request').length, 1)
-      assert.equal(saved.filter(event => event.type === 'academic/synthesis-result').length, 1)
-      const synthesis = saved.find(event => event.type === 'academic/synthesis-result')
+      assert.equal(saved.filter(event => event.type === 'academic/synthesis-request').length, 2)
+      assert.equal(saved.filter(event => event.type === 'academic/synthesis-result').length, 2)
+      const synthesis = saved.findLast(event => event.type === 'academic/synthesis-result')
       assert.equal(synthesis?.data.status, 'partially_validated')
       assert.deepEqual(synthesis?.data.rejectedStatements, draft.rejectedStatements)
     }

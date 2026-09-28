@@ -39,11 +39,11 @@ export function draftFixture(count = 2) {
       const batch = createBatchResult(works, [])
       return { works: batch.items, truncated, providers: ['fixture'], discoveredRecords: records.length, batch,
         limitations: truncated ? [`The aggregate result bound retained ${works.length} of ${records.length} discovered records.`] : [] } }),
-    selectPapers: vi.fn<DraftPipelineAdapters['selectPapers']>((ingested) => { events.push('select'); return {
-      papers: ingested.versions.map(version => ({
+    selectPapers: vi.fn<DraftPipelineAdapters['selectPapers']>((ingested, brief) => { events.push('select'); return {
+      papers: ingested.versions.slice(0, brief.stopConditions.maximumCandidateWorks).map(version => ({
         workVersionId: version.workVersionId, urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`],
         sourceProvider: 'fixture', extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
-      truncated: false,
+      truncated: ingested.versions.length > brief.stopConditions.maximumCandidateWorks,
     } }),
     fetcher: vi.fn<DraftPipelineAdapters['fetcher']>(async (url) => { events.push(`fetch:${url.at(-1)}`); return { url, statusCode: 200, truncated: false,
       body: { kind: 'html', content: '<article><h2>Methods</h2><p>Uses reranking.</p></article>' } } }),

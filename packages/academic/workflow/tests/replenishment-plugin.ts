@@ -78,9 +78,13 @@ export function apply(ctx: Context, config: { paperConcurrency?: number } = {}):
       assert.equal(result.failures.length, 1)
       assert.equal(result.synthesis.status, 'completed')
       assert.ok(result.report)
+      assert.equal(result.report.retrievalDisclosureIncluded, true)
+      assert.ok(result.report.markdown.includes('## 检索渠道与覆盖说明'))
+      assert.ok(result.report.markdown.includes('extract\\_evidence'))
       return JSON.stringify({ ...concurrency === 3 ? { peak } : {}, attempted, papers: result.papers.map(paper => paper.status),
         includedWorks: result.retrievalRun.coverageSummary.includedWorks, failures: result.failures.length,
-        synthesis: result.synthesis.status, hasReport: result.report !== null,
+        synthesis: result.synthesis.status, hasReport: result.report !== null, retrievalDisclosureIncluded: true,
+        retrievalDisclosure: result.report.markdown.split('## 检索渠道与覆盖说明')[1],
         limitations: result.retrievalRun.coverageSummary.limitations })
     },
   })))

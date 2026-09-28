@@ -153,6 +153,10 @@
         fulltextFetchProvider: http
         extractionMaxTokens: 16384
         extractionMaxAttempts: 2
+        extractionRetryInitialDelayMs: 10000
+        extractionBatchMaxInputTokens: 12000
+        extractionBatchOverlapCharacters: 512
+        extractionAttemptTimeoutMs: 120000
 
     # Configuration-surface reads and writes over Typert Remote. Each method
     # reports an actionable error when its settings-domain provider is absent.

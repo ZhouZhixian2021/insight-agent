@@ -10,6 +10,8 @@ export type { RetrievalDisclosure } from './retrieval-disclosure.ts'
 
 /** Report-owned delivery format, not a second paper or Claim model. */
 export interface ResearchReport {
+  /** True when Markdown already includes the producer's retrieval disclosure appendix. */
+  readonly retrievalDisclosureIncluded?: true
   readonly title: string
   readonly mode: 'draft' | 'final'
   readonly synthetic: boolean
@@ -126,5 +128,6 @@ export function generateReport(input: ReportInput): ResearchReport {
     }
   }
   return { title: input.brief.topic, mode: input.mode, synthetic: input.synthetic, markdown,
+    ...input.retrievalDisclosure === undefined ? {} : { retrievalDisclosureIncluded: true as const },
     evaluation, claims: input.claims, evidence, limitations }
 }

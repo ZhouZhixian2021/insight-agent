@@ -14,6 +14,7 @@ export function reportWithRetrieval(
   value: AcademicResearchRunValue, t: PropsLocale<'academicRun'>['t'], searches?: readonly AcademicPlannedSearch[],
 ): AcademicResearchRunValue['report'] {
   if (value.report === null) return null
+  if (value.report.retrievalDisclosureIncluded === true) return value.report
   const hybrid = value.hybridRetrieval
   const coverage = value.retrievalRun.coverageSummary
   const counts = ['academicDiscoveredRecords', 'webDiscoveredUrls', 'identifiedReferences', 'attemptedVerifications',

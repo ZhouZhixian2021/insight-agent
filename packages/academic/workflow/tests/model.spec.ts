@@ -23,6 +23,7 @@ const script: StreamChunk[] = [{ type: 'text-delta', index: 0, text: output },
   { type: 'usage', usage: { inputTokens: 100, outputTokens: 30 } }, { type: 'finish', reason: { kind: 'stop' } }]
 const config = { provider: 'fixture', model: 'fixture', maxTokens: 500 }
 const policy = { maxAttempts: 1 }
+const policies = { evidence: policy, synthesis: policy }
 const scope = { inclusionRules: [], exclusionRules: [] }
 
 class Adapter extends LlmAdapter {
@@ -33,6 +34,7 @@ class Adapter extends LlmAdapter {
   synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
   afterChunk?: () => void
+  waitForAbort = false
   supportsReasoning = true
   override resolveModel(provider: string, model: string) {
     return Promise.resolve({ provider, id: model, name: model,
@@ -44,6 +46,23 @@ class Adapter extends LlmAdapter {
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     await this.beforeDispatch?.()
     this.calls.push(options)
+    if (this.waitForAbort) {
+      await new Promise<void>((_resolve, reject) => {
+        const signal = options.signal
+        if (signal === undefined) {
+          reject(new Error('missing attempt signal'))
+          return
+        }
+        const rejectSignal = () => {
+          reject(signal.reason instanceof Error ? signal.reason : new Error('model attempt aborted'))
+        }
+        if (signal.aborted) {
+          rejectSignal()
+          return
+        }
+        signal.addEventListener('abort', () => { rejectSignal() }, { once: true })
+      })
+    }
     const prompt = options.messages[0]?.content[0]
     const synthesis = prompt?.type === 'text' && prompt.text.includes('INPUT_JSON\n')
       ? JSON.stringify(this.synthesisTransform === undefined
@@ -126,7 +145,7 @@ describe('durable academic model extraction', () => {
           ? { ...answer, statementIndexes: [...answer.statementIndexes, value.statements.length] } : answer),
       }
     }
-    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
     expect(result.synthesis.status).toBe(mode === 'partial' ? 'partial_success' : 'failed')
     expect(result.synthesis.reasons.join(' ')).toContain('未纳入报告')
@@ -151,7 +170,7 @@ describe('durable academic model extraction', () => {
       const saved = await f.read()
       expect(saved.at(-1)?.type.endsWith('-request')).toBe(true)
     }
-    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
     expect(result.report).toBeNull()
     expect(result.synthesis.status).toBe('failed')
@@ -166,14 +185,21 @@ describe('durable academic model extraction', () => {
   })
   it('scopes the model request to a bounded answer for the supplied focus questions', async () => {
     const f = await fixture()
-    const block = evidenceMessages(f.request, scope)[0]?.content[0]
+    const block = evidenceMessages(f.request, scope, {
+      ...f.source, sourceProvider: 'arxiv', sourceUrl: 'https://arxiv.org/html/2309.15217v2',
+    })[0]?.content[0]
     if (block?.type !== 'text') throw new Error('missing model-visible evidence instructions')
     const visible = block.text
     expect(visible).toContain('select only evidence that directly answers the supplied')
     expect(visible).toContain(`Return at most 6 entries total and
 at most 3 entries primarily supporting any one focus question.`)
     expect(visible).toContain('Do not catalogue every extractable statement.')
+    expect(visible).toContain('Do not enumerate candidate excerpts, build a quota plan')
+    expect(visible).toContain('Prefer the\nsingle strongest entry for a focus question')
+    expect(visible).toContain('Use one card item in the most appropriate section')
     expect(visible).toContain('Preserve whitespace, Unicode characters, punctuation')
+    expect(visible).toContain('Use programOwnedSource to evaluate requirements for a stable identifier')
+    expect(visible).toContain('"programOwnedSource":{"sourceProvider":"arxiv","sourceUrl":"https://arxiv.org/html/2309.15217v2"}')
     expect(visible).toContain('"segments":[{"segmentIndex":0,"text":"Uses Method X."')
     expect(visible).toContain('"inclusionRules":[]')
     expect(visible).toContain('"focusQuestions":["Which method?"]')
@@ -181,7 +207,7 @@ at most 3 entries primarily supporting any one focus question.`)
   it('runs two parsed papers through the model and B evidence into C evaluated draft', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
-    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
     expect(result.status).toBe('completed')
     expect(result.failures).toEqual([])
     expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
@@ -207,7 +233,7 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     const result = await runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: config, modelPolicy: policy, input: draft.input, adapters: draft.adapters,
+      ctx: f.ctx, session: f.session, model: config, modelPolicies: policies, input: draft.input, adapters: draft.adapters,
     })
     expect(result).toMatchObject({ status: 'completed', sessionId: f.session.id, failures: [] })
     expect(f.adapter.calls).toHaveLength(3)
@@ -218,7 +244,7 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.supportsReasoning = false
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     await expect(runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: config, modelPolicy: policy, input: draft.input, adapters: draft.adapters,
+      ctx: f.ctx, session: f.session, model: config, modelPolicies: policies, input: draft.input, adapters: draft.adapters,
     })).resolves.toMatchObject({ status: 'completed', sessionId: f.session.id })
     expect(draft.adapters.search).toHaveBeenCalledOnce()
     expect(f.adapter.calls).toHaveLength(3)
@@ -228,7 +254,7 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), draft = draftFixture()
     f.adapter.supportsReasoning = false
     await expect(runAcademicResearchDraft({
-      ctx: f.ctx, session: f.session, model: { ...config, reasoningEffort: ReasoningEffortId('low') }, modelPolicy: policy,
+      ctx: f.ctx, session: f.session, model: { ...config, reasoningEffort: ReasoningEffortId('low') }, modelPolicies: policies,
       input: draft.input, adapters: draft.adapters,
     })).rejects.toMatchObject({ code: 'UNSUPPORTED_REASONING_EFFORT' })
     expect(draft.adapters.search).not.toHaveBeenCalled()
@@ -238,7 +264,7 @@ at most 3 entries primarily supporting any one focus question.`)
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     await runAcademicResearchDraft({ ctx: f.ctx, session: f.session,
-      model: { ...config, reasoningEffort: ReasoningEffortId('high') }, modelPolicy: policy,
+      model: { ...config, reasoningEffort: ReasoningEffortId('high') }, modelPolicies: policies,
       input: draft.input, adapters: draft.adapters })
     expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === 'high')).toBe(true)
@@ -250,7 +276,7 @@ at most 3 entries primarily supporting any one focus question.`)
     draft.adapters.fetcher = async (url, signal) => url.endsWith('/a')
       ? { url, statusCode: 200, truncated: false, body: { kind: 'html', content: `<article><h2>Methods</h2><p>${'oversized '.repeat(20000)}</p></article>` } }
       : fetch(url, signal)
-    const result = await runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters)
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
     expect(result.report?.evaluation.status).toBe('blocked')
     expect(result.report?.claims).toHaveLength(0)
@@ -267,7 +293,7 @@ at most 3 entries primarily supporting any one focus question.`)
       if (session.snapshotEvents().at(-1)?.type === 'academic/evidence-result') throw new Error('disk failure')
       return flush(session)
     })
-    await expect(runModelResearchDraft(f.ctx, f.session, config, policy, draft.input, draft.adapters))
+    await expect(runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters))
       .rejects.toBeInstanceOf(WorkflowLogError)
     expect(draft.adapters.fetcher).toHaveBeenCalledOnce()
     expect(f.adapter.calls).toHaveLength(1)
@@ -308,7 +334,11 @@ at most 3 entries primarily supporting any one focus question.`)
   })
   it('counts framing and output reserve at the exact admission boundary', async () => {
     const f = await fixture()
-    const tokens = evidenceMessages(f.request, scope).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
+    const tokens = evidenceMessages(f.request, scope, {
+      academicWorkId: f.source.academicWorkId, workVersionId: f.source.workVersionId,
+      contentHash: f.source.contentHash, sourceProvider: f.source.sourceProvider, sourceUrl: f.source.sourceUrl,
+      retrievedAt: f.source.retrievedAt, extractionMethod: f.source.extractionMethod,
+    }).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
     f.adapter.contextWindow = tokens + config.maxTokens
     await expect(f.generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' }, evidence: { length: 1 } })
     f.adapter.contextWindow--
@@ -322,6 +352,56 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(await extractPaperEvidence(f.version, f.source, false, f.generate, scope)).toMatchObject({ status: 'paused', pause: { reason: 'input_too_large' } })
     expect(f.version.contentHash.status).toBe('not_extracted')
     expect(f.adapter.calls).toHaveLength(0)
+  })
+  it('extracts ordered long-paper batches and maps local segment indexes back to the paper', async () => {
+    const f = await fixture()
+    const segments = [
+      { text: 'Uses Method X. First segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: 'Uses Method X. Second segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ]
+    const source = { ...f.source, segments }
+    const request = { ...f.request, segments }
+    const oneSegmentTokens = Math.max(...segments.map(segment => evidenceMessages(
+      { ...request, segments: [segment] }, scope, source,
+    ).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 1, inputBatchTokenLimit: oneSegmentTokens })
+    const response = await generate(request, source, scope)
+    expect(f.adapter.calls).toHaveLength(2)
+    expect(response.evidence.map(draft => draft.segmentIndex)).toEqual([0, 1])
+  })
+  it('keeps evidence from successful batches when another batch fails', async () => {
+    const f = await fixture()
+    const segments = [
+      { text: 'Uses Method X. First segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: 'Uses Method X. Second segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ]
+    const source = { ...f.source, segments }
+    const request = { ...f.request, segments }
+    const oneSegmentTokens = Math.max(...segments.map(segment => evidenceMessages(
+      { ...request, segments: [segment] }, scope, source,
+    ).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
+    f.adapter.script = [{ type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'batch failed' } } }]
+    f.adapter.afterChunk = () => { if (f.adapter.calls.length === 1) f.adapter.script = script }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 1, inputBatchTokenLimit: oneSegmentTokens })
+    await expect(generate(request, source, scope)).resolves.toMatchObject({
+      incompleteBatchCount: 1,
+      evidence: [{ segmentIndex: 1 }],
+    })
+    expect(f.adapter.calls).toHaveLength(2)
+  })
+  it('settles one hanging model attempt as a retryable timeout', async () => {
+    const f = await fixture()
+    f.adapter.waitForAbort = true
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 1, attemptTimeoutMs: 500 })
+    await expect(generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_TIMEOUT' })
+    expect(f.adapter.calls).toHaveLength(1)
+    expect((await f.read()).at(-1)?.data).toMatchObject({
+      status: 'failed', errorCode: 'EVIDENCE_MODEL_TIMEOUT',
+      finish: { kind: 'error', failure: { code: 'TIMEOUT' } },
+    })
   })
   it('records bad JSON without turning it into empty evidence', async () => {
     const f = await fixture()
@@ -342,7 +422,7 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.afterChunk = () => {
       if (f.adapter.calls.length === 1) f.adapter.script = script
     }
-    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2 })
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, retryOutputLimit: true })
     await expect(generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' } })
     expect(f.adapter.calls).toHaveLength(2)
     const attempts = (await f.read()).flatMap((event) => {
@@ -355,6 +435,153 @@ at most 3 entries primarily supporting any one focus question.`)
       { type: 'academic/evidence-request', attempt: 2, maxAttempts: 2 },
       { type: 'academic/evidence-result', attempt: 2, maxAttempts: 2 },
     ])
+  })
+  it.each(['TRANSPORT', 'TIMEOUT'] as const)('retries one paper after transient %s and keeps its successful evidence', async (code) => {
+    const f = await fixture()
+    f.adapter.script = [{ type: 'finish', reason: { kind: 'error', failure: { code, message: 'temporary failure' } } }]
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 1) f.adapter.script = script
+    }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 0 } })
+    await expect(generate(f.request, f.source, scope)).resolves.toMatchObject({
+      scope: { status: 'included' }, evidence: [{ sourcedStatement: 'Uses Method X.' }],
+    })
+    expect(f.adapter.calls).toHaveLength(2)
+    const events = (await f.read()).filter(event => event.type === 'academic/evidence-request'
+      || event.type === 'academic/evidence-result')
+    expect(events.map(event => ({ type: event.type, attempt: event.data.attempt, status: 'status' in event.data ? event.data.status : undefined })))
+      .toEqual([
+        { type: 'academic/evidence-request', attempt: 1, status: undefined },
+        { type: 'academic/evidence-result', attempt: 1, status: 'failed' },
+        { type: 'academic/evidence-request', attempt: 2, status: undefined },
+        { type: 'academic/evidence-result', attempt: 2, status: 'validated' },
+      ])
+  })
+  it.each(['TRANSPORT', 'TIMEOUT'] as const)('retries final synthesis after %s without repeating paper work', async (code) => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'finish', reason: { kind: 'error', failure: { code, message: 'temporary failure' } } }]
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 3) delete f.adapter.synthesisScript
+    }
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report?.markdown).toContain('合成基准样例')
+    expect(f.adapter.calls).toHaveLength(4)
+    expect(draft.adapters.search).toHaveBeenCalledOnce()
+    expect(draft.adapters.fetcher).toHaveBeenCalledTimes(2)
+    const attempts = (await f.read()).flatMap(event => event.type === 'academic/synthesis-request'
+      || event.type === 'academic/synthesis-result'
+      ? [{ type: event.type, attempt: event.data.attempt, maxAttempts: event.data.maxAttempts }]
+      : [])
+    expect(attempts).toEqual([
+      { type: 'academic/synthesis-request', attempt: 1, maxAttempts: 3 },
+      { type: 'academic/synthesis-result', attempt: 1, maxAttempts: 3 },
+      { type: 'academic/synthesis-request', attempt: 2, maxAttempts: 3 },
+      { type: 'academic/synthesis-result', attempt: 2, maxAttempts: 3 },
+    ])
+  })
+  it('does not repeat an identical final synthesis request after output-limit exhaustion', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'text-delta', index: 0, text: '{' },
+      { type: 'finish', reason: { kind: 'max-tokens' } }]
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3, retryOutputLimit: false,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('failed')
+    expect(f.adapter.calls).toHaveLength(3)
+    const events = (await f.read()).filter(event => event.type === 'academic/synthesis-request'
+      || event.type === 'academic/synthesis-result')
+    expect(events.map(event => ({ type: event.type, attempt: event.data.attempt }))).toEqual([
+      { type: 'academic/synthesis-request', attempt: 1 },
+      { type: 'academic/synthesis-result', attempt: 1 },
+    ])
+  })
+  it('retries output-limited synthesis once with smaller citable materials', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'text-delta', index: 0, text: '{' },
+      { type: 'finish', reason: { kind: 'max-tokens' } }]
+    f.adapter.afterChunk = () => { if (f.adapter.calls.length === 3) delete f.adapter.synthesisScript }
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3, retryOutputLimit: true,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report?.markdown).toContain('合成基准样例')
+    expect(f.adapter.calls).toHaveLength(4)
+    const requests = (await f.read()).filter(event => event.type === 'academic/synthesis-request')
+    expect(requests).toHaveLength(2)
+    expect(requests.map(event => event.data.attempt)).toEqual([1, 2])
+    expect(requests[1]!.data.estimatedInputTokens).toBeLessThan(requests[0]!.data.estimatedInputTokens)
+    const recovery = requests[1]!.data.messages[0]?.content[0]
+    expect(recovery?.type === 'text' ? recovery.text : '').toContain('output_limit_compact')
+  })
+  it('stops after one compact synthesis recovery and reports the output limit', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'text-delta', index: 0, text: '{' },
+      { type: 'finish', reason: { kind: 'max-tokens' } }]
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3, retryOutputLimit: true,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report).toBeNull()
+    expect(result.synthesis).toMatchObject({ status: 'failed' })
+    expect(result.synthesis.reasons.join(' ')).toContain('SYNTHESIS_MODEL_OUTPUT_LIMIT')
+    expect(f.adapter.calls).toHaveLength(4)
+    const events = (await f.read()).filter(event => event.type === 'academic/synthesis-request'
+      || event.type === 'academic/synthesis-result')
+    expect(events.map(event => ({ type: event.type, attempt: event.data.attempt }))).toEqual([
+      { type: 'academic/synthesis-request', attempt: 1 },
+      { type: 'academic/synthesis-result', attempt: 1 },
+      { type: 'academic/synthesis-request', attempt: 2 },
+      { type: 'academic/synthesis-result', attempt: 2 },
+    ])
+  })
+  it('stops after the bounded synthesis connection attempts are exhausted', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'finish', reason: { kind: 'error',
+      failure: { code: 'TRANSPORT', message: 'connection unavailable' } } }]
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report).toBeNull()
+    expect(result.synthesis.status).toBe('failed')
+    expect(f.adapter.calls).toHaveLength(5)
+    const results = (await f.read()).filter(event => event.type === 'academic/synthesis-result')
+    expect(results).toHaveLength(3)
+    expect(results.map(event => event.data.attempt)).toEqual([1, 2, 3])
+    expect(results.at(-1)?.data).toMatchObject({ status: 'failed', errorCode: 'EVIDENCE_MODEL_INCOMPLETE',
+      finish: { kind: 'error', failure: { code: 'TRANSPORT' } } })
+  })
+  it('does not retry a non-transient synthesis failure', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'finish', reason: { kind: 'error',
+      failure: { code: 'AUTH', message: 'invalid credentials' } } }]
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 0 } } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report).toBeNull()
+    expect(f.adapter.calls).toHaveLength(3)
+    expect((await f.read()).filter(event => event.type === 'academic/synthesis-result')).toHaveLength(1)
+  })
+  it('cancels synthesis during retry backoff without dispatching another attempt', async () => {
+    const f = await fixture(), draft = draftFixture(), controller = new AbortController()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisScript = [{ type: 'finish', reason: { kind: 'error',
+      failure: { code: 'TIMEOUT', message: 'temporary timeout' } } }]
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'] as const, initialDelayMs: 60_000 } } }
+    const running = runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters, controller.signal)
+    await vi.waitFor(() => { expect(f.adapter.calls).toHaveLength(3) })
+    controller.abort()
+    await expect(running).resolves.toMatchObject({ status: 'cancelled', report: null })
+    expect(f.adapter.calls).toHaveLength(3)
+    expect((await f.read()).filter(event => event.type === 'academic/synthesis-result')).toHaveLength(1)
   })
   it('retains rejected tool chunks without executing them', async () => {
     const f = await fixture()

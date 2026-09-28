@@ -41,7 +41,10 @@ export interface DraftPipelineAdapters {
     signal?: AbortSignal) => Promise<import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisDraft>
   /** Return source-observed providers, counts, limits, successes, and failures for one explicit query. */
   readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<DraftSearchResult>
-  /** Return the ordered eligible candidate pool under maximumCandidateWorks; do not apply maximumIncludedWorks here. */
+  /**
+   * Screen all returned deduplicated works, then cap eligible candidates at the effective maximumCandidateWorks.
+   * Do not apply maximumIncludedWorks here.
+   */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
   readonly fetcher: AcademicWebFetcher
   readonly generator: PaperEvidenceGenerator

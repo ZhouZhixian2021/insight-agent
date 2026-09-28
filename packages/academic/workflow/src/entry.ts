@@ -4,7 +4,7 @@ import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionId } from '@deepseek-ai/dsh-session'
 import { synthesisSections } from '@deepseek-ai/dsh-academic-analysis'
 import { runModelResearchDraft } from './model-pipeline.ts'
-import type { EvidenceModelPolicy } from './model-types.ts'
+import type { AcademicModelPolicies } from './model-types.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
 
 /** All caller-owned inputs for one bounded Academic research run. */
@@ -15,8 +15,8 @@ export interface AcademicResearchDraftRequest {
   readonly session: Session
   /** Exact model route and generation controls; omitted reasoning uses the model route default. */
   readonly model: LlmCallConfig
-  /** Bounded recovery policy for each paper's model extraction. */
-  readonly modelPolicy: EvidenceModelPolicy
+  /** Separate bounded recovery policies for evidence extraction and final synthesis. */
+  readonly modelPolicies: AcademicModelPolicies
   /** Approved Brief, search request and synthetic-data disclosure. */
   readonly input: DraftPipelineInput
   /** Search, selection, full-text acquisition and clock integrations. */
@@ -50,7 +50,7 @@ export async function runAcademicResearchDraft(
     request.ctx,
     request.session,
     model,
-    request.modelPolicy,
+    request.modelPolicies,
     request.input,
     request.adapters,
     request.signal,

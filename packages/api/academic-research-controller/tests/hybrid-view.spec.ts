@@ -37,6 +37,24 @@ async function search(query: string, configured: HybridSearchAdapters, maxResult
 }
 
 describe('hybrid terminal projection', () => {
+  it('retains successful identity verification beside a sanitized full-text resolution failure', async () => {
+    const fixture = draftFixture(1)
+    const configured = upstream(fixture.records, [arxiv])
+    const verify: HybridSearchAdapters['verifyReference'] = async (reference, verificationProvider) => ({ status: 'verified', value: {
+      reference, verificationProvider, work: fixture.records[0]!, fullText: null,
+      fullTextFailure: { reference, verificationProvider, category: 'parse_failed',
+        message: 'Private upstream diagnostic', retryable: false, retryAfter: null },
+    } })
+    fixture.adapters.search = async request => search(request.query, { ...configured, verifyReference: verify })
+    const result = await runResearchDraft(fixture.input, fixture.adapters)
+    const view = hybridRetrievalView(result.hybridSearch!)
+    expect(view.stages.referenceVerification).toBe('success')
+    expect(view.counts).toMatchObject({ verifiedReferences: 1, failedVerifications: 0 })
+    expect(view.references[0]?.message).toContain('full-text candidate resolution failed (parse_failed)')
+    expect(result.retrievalRun.failures).toMatchObject([{ operation: 'resolve_fulltext', category: 'parse_failed' }])
+    expect(JSON.stringify(view)).not.toContain('Private upstream diagnostic')
+    expect(result.report?.markdown).not.toContain('Private upstream diagnostic')
+  })
   it('separates five reference kinds, duplicate links, verification failures and actual merged works', async () => {
     const fixture = draftFixture(3)
     const [a, b, c] = fixture.records
@@ -84,10 +102,12 @@ describe('hybrid terminal projection', () => {
     expect(view.counts).toMatchObject({ academicDiscoveredRecords: 2, verifiedReferences: 1, mergedDuplicates: 0,
       deduplicatedWorks: 2 })
     expect(result.retrievalRun.academicWorkIds).toHaveLength(1)
+    expect(result.report?.markdown).toContain('批准候选上限: 3')
+    expect(result.report?.markdown).toContain('本轮候选上限: 1')
     expect(view.references[0]?.status).toBe('verified')
     expect(view.references[0]?.message).toContain('omitted')
     expect(view.references[0]?.query).toBe('one')
-    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('retained 1 of 2')
+    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('候选选择器限制了可处理的论文范围。')
   })
 
   it('retains same-version provenance and merge counts when the per-query cap is one work', async () => {

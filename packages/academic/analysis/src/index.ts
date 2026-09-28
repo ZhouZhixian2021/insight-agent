@@ -4,8 +4,9 @@ export { analyzeEvidence } from './analyze.ts'
 export type { AnalysisResult } from './analyze.ts'
 export { prepareSynthesisInput, synthesisSections, validateSynthesisRequirements } from './synthesis-input.ts'
 export { parseSynthesisDraft } from './synthesis-parse.ts'
-export { synthesisPrompt, synthesisAnalysis } from './synthesis.ts'
-export { SYNTHESIS_SECTIONS, SynthesisError } from './synthesis-types.ts'
+export { compactSynthesisPrompt, synthesisPrompt, synthesisAnalysis } from './synthesis.ts'
+export { MAX_SYNTHESIS_EVIDENCE_LINKS, MAX_SYNTHESIS_STATEMENTS, MAX_SYNTHESIS_STATEMENTS_PER_QUESTION,
+  SYNTHESIS_SECTIONS, SynthesisError } from './synthesis-types.ts'
 export type { AcademicSynthesisInput, AcademicSynthesisDraft, SynthesisStatement, SynthesisQuestionAnswer, SynthesisSectionId, RejectedSynthesisStatement } from './synthesis-types.ts'
 export type { SynthesisAdmission } from './synthesis-input.ts'
 

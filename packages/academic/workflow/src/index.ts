@@ -7,7 +7,8 @@ export type { SynthesisModelRequest, SynthesisModelResult } from './synthesis-mo
 export type { SynthesisSettlement } from './pipeline-types.ts'
 export { WorkflowLogError } from './model-errors.ts'
 export type { PaperEvidenceGenerator, PaperModelResponse, PaperScopeDecision, PaperScopeRules,
-  EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult, EvidenceModelPolicy } from './model-types.ts'
+  EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult, EvidenceModelPolicy, EvidenceExtractionModelPolicy, AcademicModelPolicies,
+  AcademicTransientFailureCode, AcademicTransientRetryPolicy } from './model-types.ts'
 export type { PaperEvidenceResult, PaperPause, PaperExclusion } from './types.ts'
 export { runResearchDraft } from './pipeline.ts'
 export { runModelResearchDraft } from './model-pipeline.ts'

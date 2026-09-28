@@ -21,7 +21,7 @@ Generate a traceable Chinese Markdown draft and gate final reports on current ev
 <a id="use-this-package"></a>
 ## Use this package
 
-`appendRetrievalDisclosure()` appends escaped, localized observations, limitations and failures while preserving the original Markdown body. `generateReport()` accepts the same optional `retrievalDisclosure`; it does not turn discovery URLs into references or change review eligibility. The main Web consumer supplies terminal facts for preview and export. Workflow-generated reports currently omit this optional input, so headless delivery requires owner integration before it carries the same detailed disclosure. Presentation observations are not an authoritative verification ledger or proof of complete coverage.
+`appendRetrievalDisclosure()` appends escaped, localized observations, limitations and failures while preserving the original Markdown body. `generateReport()` accepts the same optional `retrievalDisclosure`; it does not turn discovery URLs into references or change review eligibility. The workflow supplies completed query observations, approved budgets and failures for both Web and SDK reports. A report with this appendix returns `retrievalDisclosureIncluded: true`, allowing clients to preserve the Markdown without appending duplicate disclosure. Presentation observations are not an authoritative verification ledger or proof of complete coverage.
 
 Question-driven drafts disclose admitted, cited and supporting-work counts separately. Below-Plan supporting-work or full-text counts produce a prominent limited-evidence notice and `unmet_plan` issues. Such drafts remain viewable with blocked final delivery; neither the approved minimums nor citation integrity checks are relaxed.
 

@@ -3613,7 +3613,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchReportView',
-    declaration: 'export interface AcademicResearchReportView {\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
+    declaration: 'export interface AcademicResearchReportView {\n    readonly retrievalDisclosureIncluded?: true;\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
   },
   {
     name: 'AcademicResearchRunRequest',

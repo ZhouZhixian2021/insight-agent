@@ -46,9 +46,11 @@ export async function extractPaperEvidence(
   }
   try {
     let decision: PaperScopeDecision | undefined
+    let incompleteBatchCount = 0
     const evidence = await extractEvidenceFromContent(parsed, async (request) => {
       const response = await generator(request, parsed, scope)
       decision = response.scope
+      incompleteBatchCount = response.incompleteBatchCount ?? 0
       return response.evidence
     }, signal)
     if (decision?.status === 'excluded') {
@@ -56,8 +58,8 @@ export async function extractPaperEvidence(
         workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
         reason: decision.reason } }
     }
-    const status = evidence.rejectedDrafts.length === 0 ? 'extracted'
-      : evidence.evidenceRecords.length > 0 ? 'partially_extracted' : 'extraction_failed'
+    const status = evidence.evidenceRecords.length === 0 ? 'extraction_failed'
+      : evidence.rejectedDrafts.length > 0 || incompleteBatchCount > 0 ? 'partially_extracted' : 'extracted'
     return { status, version: current, evidence }
   } catch (error: unknown) {
     if (error instanceof EvidenceError && error.code === 'EVIDENCE_INPUT_TOO_LARGE') return pause('input_too_large')

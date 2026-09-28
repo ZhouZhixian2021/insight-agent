@@ -21,7 +21,7 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-`appendRetrievalDisclosure()` 在保留原始 Markdown 正文的同时，附加经过转义和本地化的观察结果、限制及失败。`generateReport()` 接受相同的可选 `retrievalDisclosure`，不会把发现 URL 转为参考文献，也不改变审核资格。主 Web 消费端为预览与导出提供终态事实。工作流生成报告时尚未传入该可选输入，因此无界面交付需要负责人接线后才能携带同样的详细披露。展示记录不是权威核验台账，也不证明完整覆盖。
+`appendRetrievalDisclosure()` 在保留原始 Markdown 正文的同时，附加经过转义和本地化的观察结果、限制及失败。`generateReport()` 接受相同的可选 `retrievalDisclosure`，不会把发现 URL 转为参考文献，也不改变审核资格。工作流为 Web 与 SDK 报告提供已完成查询的观察、批准预算及失败。含有该附录的报告返回 `retrievalDisclosureIncluded: true`，客户端据此保留 Markdown，不重复追加披露。展示记录不是权威核验台账，也不证明完整覆盖。
 
 逐题草稿分别披露纳入分析、正文引用和支持正文的论文数量。支持正文的论文或全文数量低于 Plan 要求时，显著显示证据有限提示及 `unmet_plan` 问题。这类草稿仍可查看，正式交付保持阻止状态；批准下限和引用完整性检查均不放宽。
 

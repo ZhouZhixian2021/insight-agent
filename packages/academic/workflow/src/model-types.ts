@@ -18,6 +18,8 @@ export type PaperScopeDecision =
 export interface PaperModelResponse {
   readonly scope: PaperScopeDecision
   readonly evidence: readonly EvidenceDraft[]
+  /** Batches that settled without a validated response while other batches remained usable. */
+  readonly incompleteBatchCount?: number
 }
 
 /** A's generator receives program-owned provenance without changing B's request interface. */
@@ -27,10 +29,43 @@ export type PaperEvidenceGenerator = (
   scope: PaperScopeRules,
 ) => Promise<PaperModelResponse>
 
-/** Bounded recovery policy for one paper's model extraction. */
+/** Provider-neutral failures that one Academic model operation may retry. */
+export type AcademicTransientFailureCode = 'TRANSPORT' | 'TIMEOUT'
+
+/** Optional bounded recovery for transient provider failures. */
+export interface AcademicTransientRetryPolicy {
+  /** Exact provider-neutral failure codes eligible for another attempt. */
+  readonly failureCodes: readonly AcademicTransientFailureCode[]
+  /** Delay before the first retry; each later retry doubles it. */
+  readonly initialDelayMs: number
+}
+
+/** Bounded recovery policy for one Academic model operation. */
 export interface EvidenceModelPolicy {
-  /** Total dispatch attempts. Only output-limit exhaustion is retried. */
+  /** Total dispatch attempts. */
   readonly maxAttempts: number
+  /** Maximum elapsed time for one dispatched attempt; omitted means no operation-local timeout. */
+  readonly attemptTimeoutMs?: number
+  /** Whether output-limit exhaustion may consume one recovery attempt. */
+  readonly retryOutputLimit?: boolean
+  /** Transient failures eligible for delayed retry; omitted means none. */
+  readonly transientRetry?: AcademicTransientRetryPolicy
+}
+
+/** Evidence extraction policy with deterministic full-text batching. */
+export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
+  /** Maximum estimated input tokens sent in one evidence batch; omitted keeps one request per paper. */
+  readonly inputBatchTokenLimit?: number
+  /** Repeated source characters at adjacent split boundaries. */
+  readonly inputBatchOverlapCharacters?: number
+}
+
+/** Separate model recovery policies for paper extraction and final synthesis. */
+export interface AcademicModelPolicies {
+  /** Per-paper scope review and evidence extraction recovery. */
+  readonly evidence: EvidenceExtractionModelPolicy
+  /** One final evidence-to-report synthesis recovery. */
+  readonly synthesis: EvidenceModelPolicy
 }
 
 /** Program-owned identity of the exact parsed content submitted for extraction. */

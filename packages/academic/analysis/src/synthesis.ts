@@ -4,6 +4,8 @@ import { createClaimId, createClaimEvidenceLinkId, createEvidenceSnapshotId,
 import { prepareAnalysisInput } from './prepare.ts'
 import type { AnalysisResult } from './analyze.ts'
 import { prepareSynthesisInput, synthesisSections } from './synthesis-input.ts'
+import { MAX_SYNTHESIS_EVIDENCE_LINKS, MAX_SYNTHESIS_STATEMENTS,
+  MAX_SYNTHESIS_STATEMENTS_PER_QUESTION } from './synthesis-types.ts'
 import type { AcademicSynthesisDraft, AcademicSynthesisInput } from './synthesis-types.ts'
 
 /**
@@ -12,6 +14,19 @@ import type { AcademicSynthesisDraft, AcademicSynthesisInput } from './synthesis
  * @returns Model-visible text; the transport must persist this exact string before dispatch.
  */
 export function synthesisPrompt(input: AcademicSynthesisInput): string {
+  return renderSynthesisPrompt(input, false)
+}
+
+/**
+ * Render one smaller synthesis request after a complete request exhausts its output budget.
+ * @param input Admitted evidence and observed retrieval outcomes.
+ * @returns Model-visible recovery text retaining questions, paper identities and verified excerpts.
+ */
+export function compactSynthesisPrompt(input: AcademicSynthesisInput): string {
+  return renderSynthesisPrompt(input, true)
+}
+
+function renderSynthesisPrompt(input: AcademicSynthesisInput, compact: boolean): string {
   const admission = prepareSynthesisInput(input)
   if (admission.status === 'blocked') throw new Error(`Synthesis is blocked: ${admission.reasons.join(' ')}`)
   return `Analyze the supplied evidence to answer EACH approved research question in Chinese (zh-CN).
@@ -21,7 +36,14 @@ Do not concatenate quotations into a report or invent performance rankings, cons
 Preserve opposing evidence. "No evidence in this run" does not mean "no research exists".
 Use source_statement (category:null) for supported single-paper explanations. Use synthesis for cross-paper conclusions;
 synthesis requires supports links to at least two independent works. Every substantive statement needs supports evidence.
-Provide concise but developed analytical paragraphs appropriate to the approved audience and body length. Do not pad missing evidence.
+Begin with the final JSON. Do not enumerate evidence, plan quotas or explain your selection process before producing it.
+${compact ? `This is an output-limit recovery request. The input omits redundant internal records. Use only the supplied
+paper metadata and verified evidence excerpts. Return the final JSON immediately and do not produce hidden planning.
+` : ''}Return at most ${MAX_SYNTHESIS_STATEMENTS} statements total and at most ${MAX_SYNTHESIS_STATEMENTS_PER_QUESTION} statementIndexes per question.
+Prefer one strongest statement per question. Reuse the same statement across questionAnswers and sections instead of
+creating section-specific restatements. Each statement may cite at most ${MAX_SYNTHESIS_EVIDENCE_LINKS} representative evidence records.
+Keep each statement concise but analytical. Keep scope, uncertainty and evidence-link rationale to one sentence each.
+Use partial or unanswered with an explicit reason when the limit cannot cover a question. Do not pad missing evidence.
 ${admission.status === 'ready_with_warning' ? `Evidence quantity is below the approved Plan. Produce only a limited draft under continue_with_warning.
 Host-verified limitations: ${JSON.stringify(admission.limitations)}
 State which questions are partially answered or unanswered; do not claim complete coverage or Plan fulfillment.
@@ -45,7 +67,29 @@ Describe gaps in THIS RUN in limitations, questionAnswers.reason or sections.mis
 For limitations or research_gaps sections without supported conclusions, use empty statementIndexes and an explicit missingReason.
 Background references alone never support a statement; do not relabel background evidence as supports to satisfy the format.
 All "answered" decisions are proposals, not semantic review. Synthetic materials cannot establish real research findings.
-INPUT_JSON\n${JSON.stringify(input)}`
+INPUT_JSON\n${JSON.stringify(compact ? compactSynthesisInput(admission.input) : input)}`
+}
+
+function compactSynthesisInput(input: AcademicSynthesisInput) {
+  return {
+    recoveryMode: 'output_limit_compact',
+    schemaVersion: input.schemaVersion,
+    synthetic: input.synthetic,
+    brief: input.brief,
+    retrievalRunId: input.retrievalRunId,
+    analysisInput: {
+      academicWorks: input.analysisInput.academicWorks.map(work => ({ academicWorkId: work.academicWorkId,
+        title: work.title, authors: work.authors, externalIdentifiers: work.externalIdentifiers,
+        firstPublicDate: work.firstPublicDate, publicationStatus: work.publicationStatus, venue: work.venue })),
+      evidenceRecords: input.analysisInput.evidenceRecords.map(record => ({ evidenceId: record.evidenceId,
+        academicWorkId: record.academicWorkId, workVersionId: record.workVersionId, level: record.level,
+        verbatimExcerpt: record.verbatimExcerpt, sourcedStatement: record.sourcedStatement,
+        qualityNotes: record.qualityNotes })),
+    },
+    coverageSummary: input.coverageSummary,
+    sourceFailures: input.sourceFailures.map(failure => ({ provider: failure.provider, operation: failure.operation,
+      category: failure.category, retryable: failure.retryable })),
+  }
 }
 
 /**
