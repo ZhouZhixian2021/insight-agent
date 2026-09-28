@@ -1,6 +1,7 @@
 /** Validate untrusted synthesis JSON without granting semantic approval. */
 import type { EvidenceId, EvidenceRecord } from '@deepseek-ai/dsh-academic-model'
-import { SYNTHESIS_SECTIONS, SynthesisError, type AcademicSynthesisDraft, type AcademicSynthesisInput,
+import { MAX_SYNTHESIS_EVIDENCE_LINKS, MAX_SYNTHESIS_STATEMENTS, MAX_SYNTHESIS_STATEMENTS_PER_QUESTION,
+  SYNTHESIS_SECTIONS, SynthesisError, type AcademicSynthesisDraft, type AcademicSynthesisInput,
   type SynthesisStatement, type RejectedSynthesisStatement } from './synthesis-types.ts'
 import { synthesisSections } from './synthesis-input.ts'
 
@@ -41,6 +42,7 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
   }
   const evidence = new Map(input.analysisInput.evidenceRecords.map(record => [record.evidenceId, record]))
   const candidates = array(root.statements)
+  if (candidates.length > MAX_SYNTHESIS_STATEMENTS) invalid(`At most ${MAX_SYNTHESIS_STATEMENTS} statements are allowed.`)
   const questionAnswers = parseQuestions(root.questionAnswers, input.brief.questions.length, candidates.length)
   const sections = parseSections(root.sections, candidates.length)
   if (synthesisSections(input.brief).some(required => !sections.some(section => section.sectionId === required))) {
@@ -95,6 +97,9 @@ function parseStatement(value: unknown, evidence: ReadonlyMap<EvidenceId, Eviden
     if (!evidence.has(evidenceId)) invalid('A statement references evidence outside the admitted request.')
     return { evidenceId, relation: choice(link.relation, ['supports', 'contradicts', 'background']), rationale: text(link.rationale) }
   })
+  if (evidenceLinks.length > MAX_SYNTHESIS_EVIDENCE_LINKS) {
+    invalid(`At most ${MAX_SYNTHESIS_EVIDENCE_LINKS} evidence links are allowed per statement.`)
+  }
   if (new Set(evidenceLinks.map(link => link.evidenceId)).size !== evidenceLinks.length) invalid('Duplicate evidence links.')
   const supportingWorks = new Set(evidenceLinks.filter(link => link.relation === 'supports').map(link => evidence.get(link.evidenceId)?.academicWorkId))
   if (supportingWorks.size < (kind === 'synthesis' ? 2 : 1)) invalid('Supporting independent works are insufficient for this statement kind.')
@@ -109,6 +114,9 @@ function parseQuestions(value: unknown, count: number, statementCount: number): 
     if (item.questionIndex !== index || index >= count) invalid('Questions must appear exactly once in approved order.')
     const status = choice(item.status, ['answered', 'partial', 'unanswered'])
     const statementIndexes = indexes(item.statementIndexes, statementCount)
+    if (statementIndexes.length > MAX_SYNTHESIS_STATEMENTS_PER_QUESTION) {
+      invalid(`At most ${MAX_SYNTHESIS_STATEMENTS_PER_QUESTION} statements are allowed per question.`)
+    }
     const reason = nullable(item.reason)
     if ((status === 'unanswered') !== (statementIndexes.length === 0)
       || (status === 'answered') !== (reason === null)) invalid('Question coverage, cited statements and missing-evidence reason disagree.')

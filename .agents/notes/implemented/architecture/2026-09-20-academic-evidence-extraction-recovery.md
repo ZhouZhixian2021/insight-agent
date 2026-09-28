@@ -10,7 +10,11 @@ Academic source search and full-text acquisition could succeed while the per-pap
 
 ## Decision
 
-The application supplies an explicit per-paper model-attempt bound. The Web deployment uses two total attempts. The workflow retries only when a recorded model result ends with `finish.kind: max-tokens`; every attempt has its own durable request and result record with `attempt` and `maxAttempts`. Invalid JSON, tool calls, unsupported output, admission failures, persistence failures and cancellation do not retry.
+The application supplies an explicit per-paper model-attempt bound. The Web deployment uses two total attempts. The workflow retries when a recorded model result ends with `finish.kind: max-tokens` or a configured `TRANSPORT` or `TIMEOUT` failure. The Web deployment waits 10 seconds before the second evidence attempt so a terminated long-running connection can clear before another dispatch. Every attempt has its own durable request and result record with `attempt` and `maxAttempts`. Invalid JSON, tool calls, unsupported output, admission failures, persistence failures and cancellation do not retry.
+
+The Web deployment partitions a long paper into ordered evidence batches whose complete framed input is estimated at no more than 12,000 tokens. A source segment that cannot fit is split with 512 repeated boundary characters, while every returned local segment index is mapped back to the original parsed segment before exact-quote verification. Each dispatched attempt has a 120-second operation-local timeout. A failed batch does not discard evidence from validated sibling batches; the paper settles as partially extracted. All batches failing still fails the paper, and an externally cancelled run remains cancelled rather than becoming a timeout.
+
+The extraction prompt spends the response budget on the final JSON. It forbids candidate-excerpt inventories and quota planning, prefers one strongest entry per focus question, and asks for one most appropriate card item per evidence entry unless the same excerpt directly supports a separate required fact. These bounds reduce reasoning latency without changing exact-quote validation or requiring every focus question to have evidence.
 
 Evidence verification keeps the requested segment when the verbatim excerpt matches it. When a valid segment index points elsewhere, the extractor may relocate the excerpt only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous quotes and normalized or OCR-altered text still fail.
 
@@ -30,4 +34,4 @@ The Academic Remote returns producer-owned `search`, `fulltext`, and `extraction
 
 ## Consequences
 
-One transient output-limit response can recover without repeating source search or full-text acquisition. Durable records reveal both attempts. A model-supplied locator typo can recover without accepting a changed quote. The Web can show “source search: success”, “full-text acquisition: success”, and “evidence extraction: failed” for the same completed run. Long-paper chunking, fuzzy quotation recovery and cross-run resume remain deferred.
+One transient output-limit, connection, or timeout response can recover without repeating source search or full-text acquisition. Long papers no longer depend on one unbounded stream, and validated batches survive a sibling timeout. Durable records reveal every attempt. A model-supplied locator typo can recover without accepting a changed quote. The Web can show “source search: success”, “full-text acquisition: success”, and “evidence extraction: failed” for the same completed run. The bounded answer may retain fewer secondary excerpts from one paper. Fuzzy quotation recovery and cross-run resume remain deferred.

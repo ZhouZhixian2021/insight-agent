@@ -72,6 +72,15 @@ describe('approved hybrid discovery presentation', () => {
     expect(screen.getByRole('button', { name: zh.download })).toBeTruthy()
     expect(reportWithRetrieval({ ...value, report: null }, t)).toBeNull()
   })
+  it('keeps a server-disclosed report unchanged for both preview and download', () => {
+    const original = sampleRun()
+    const value = { ...original, report: { ...original.report, retrievalDisclosureIncluded: true as const,
+      markdown: `${original.report.markdown}\n\n## 检索渠道与覆盖说明\n\n实际纳入: 2` } }
+    expect(reportWithRetrieval(value, t, sample.planView.searches)).toBe(value.report)
+    render(<RunPanel view={{ phase: 'settled', value }} onCancel={vi.fn()} t={t} />)
+    expect(screen.getByText((_text, element) => element?.tagName === 'PRE'
+      && element.textContent === value.report.markdown)).toBeTruthy()
+  })
   it('never renders terminal statistics while the request is still running', () => {
     render(<RunPanel view={{ phase: 'running' }} onCancel={vi.fn()} t={t} />)
     expect(screen.getByText(zh.waiting)).toBeTruthy()

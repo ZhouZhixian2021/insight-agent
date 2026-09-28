@@ -3,7 +3,7 @@ import { createAcademicWorkId, createBatchResult, createFailureId, createWorkVer
   type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceSearchBatchResult, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
-import { runResearchDraft, WorkflowLogError } from '../src/index.ts'
+import { runResearchDraft, selectResearchPapers, WorkflowLogError } from '../src/index.ts'
 import { draftFixture as fixture } from './pipeline-fixture.ts'
 
 function searchBatch(
@@ -36,6 +36,27 @@ function distinctRecord(base: AcademicSourceWork, key: string): AcademicSourceWo
 }
 
 describe('single-pass research draft', () => {
+  it('rejects evidence replaced during synthesis against the independently captured extraction batch', async () => {
+    const { input, adapters } = fixture()
+    const synthesize = adapters.synthesize
+    adapters.synthesize = async (request, signal) => {
+      Object.assign(request.analysisInput.evidenceRecords[0]!, { sourcedStatement: 'A Web snippet replaced the source evidence.' })
+      return synthesize(request, signal)
+    }
+    await expect(runResearchDraft(input, adapters)).rejects.toThrow('Unadmitted evidence')
+  })
+  it('includes producer-owned retrieval disclosure in a direct SDK report without promoting a search failure to evidence', async () => {
+    const { input, adapters, records } = fixture()
+    adapters.search = async () => searchBatch(records, { failures: [{ schemaVersion: 1, failureId: createFailureId(),
+      provider: 'web', operation: 'web_search', category: 'network_error', message: 'Web discovery failed.',
+      retryable: true, retryAfter: null }] })
+    const result = await runResearchDraft(input, adapters)
+    expect(result.report?.retrievalDisclosureIncluded).toBe(true)
+    expect(result.report?.markdown).toContain('## 检索渠道与覆盖说明')
+    expect(result.report?.markdown).toContain('web · web\\_search · network\\_error')
+    expect(result.report?.markdown).toContain('实际纳入: 2')
+    expect(result.report?.evidence.every(record => record.sourceProvider === 'fixture')).toBe(true)
+  })
   it('rejects unsupported report requirements before search or model work', async () => {
     const { input, adapters } = fixture()
     input.brief = { ...input.brief, reportRequirements: { ...input.brief.reportRequirements, language: 'unsupported' } }
@@ -196,6 +217,36 @@ describe('single-pass research draft', () => {
     expect(result.retrievalRun.coverageSummary.limitations).toContain('PMLR searches configured catalog pages only.')
     expect(result.retrievalRun.coverageSummary.limitations).toContain('Provider pmlr failed during search.')
   })
+  it('screens all returned works before eligible papers consume the global candidate bound', async () => {
+    const { input, adapters, records } = fixture(6)
+    const dated = records.map(record => ({ ...record, academicWork: { ...record.academicWork,
+      firstPublicDate: { status: 'available' as const, value: { iso: '2024', precision: 'year' as const } } } }))
+    dated[0] = { ...dated[0]!, academicWork: { ...dated[0]!.academicWork,
+      firstPublicDate: { status: 'available', value: { iso: '2010', precision: 'year' } } } }
+    dated[1] = { ...dated[1]!, workVersion: { ...dated[1]!.workVersion, status: 'retracted' } }
+    input.brief = { ...input.brief,
+      publicationWindow: { start: { iso: '2020', precision: 'year' }, end: null, dateBasis: 'first_public_release' },
+      stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 3, maximumCandidateWorks: 2 } }
+    input.searches = [{ query: 'first' }, { query: 'second' }, { query: 'third' }]
+    vi.mocked(adapters.search)
+      .mockResolvedValueOnce(searchBatch([dated[0], records[3]!]))
+      .mockResolvedValueOnce(searchBatch([dated[1], dated[4]!]))
+      .mockResolvedValueOnce(searchBatch([dated[2]!, dated[5]!]))
+    adapters.selectPapers = vi.fn<typeof adapters.selectPapers>((ingested, brief) =>
+      selectResearchPapers(ingested, brief, (_work, version) => {
+        const key = version.sourceRecords[0]!.recordId
+        return key === 'c' ? null : { urls: [`https://example.org/${key}`], sourceProvider: 'fixture',
+          extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false }
+      }))
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(vi.mocked(adapters.selectPapers).mock.calls[0]![0].works).toHaveLength(6)
+    expect(vi.mocked(adapters.search).mock.calls.map(call => call[0].maxResults)).toEqual([2, 2, 2])
+    expect(vi.mocked(adapters.fetcher).mock.calls.map(call => call[0])).toEqual(['https://example.org/e', 'https://example.org/f'])
+    expect(result.retrievalRun.academicWorkIds).toHaveLength(2)
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ deduplicatedWorks: 6, includedWorks: 2, truncated: false })
+  })
   it('executes explicit queries in order and round-robins their candidates under one global bound', async () => {
     const { input, adapters, records, events } = fixture()
     const c = distinctRecord(records[0]!, 'c')
@@ -217,7 +268,7 @@ describe('single-pass research draft', () => {
     expect(result.retrievalRun).toMatchObject({ queries: ['transformer', 'bert'], providers: ['arxiv', 'acl'],
       coverageSummary: { discoveredRecords: 4, deduplicatedWorks: 4, includedWorks: 3, truncated: true } })
     expect(result.retrievalRun.academicWorkIds).toHaveLength(3)
-    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('candidate-work bound')
+    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('候选选择器限制了可处理的论文范围。')
   })
   it('continues later explicit queries after an earlier source batch failed', async () => {
     const { input, adapters, records } = fixture()

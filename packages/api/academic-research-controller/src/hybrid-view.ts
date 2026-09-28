@@ -43,6 +43,10 @@ export function hybridRetrievalView(run: HybridRunObservation): AcademicHybridRe
           message = !retained
             ? 'Verified, but omitted by the per-query result limit before ingestion.'
             : status === 'merged_duplicate' ? 'Ingestion grouped this record with another record by exact scholarly identifiers.' : null
+          if (outcome.value.fullTextFailure !== null) {
+            message = [message, `Scholarly identity verified; full-text candidate resolution failed (${outcome.value.fullTextFailure.category}).`]
+              .filter(part => part !== null).join(' ')
+          }
         }
         references.push({ query, kind: reference.kind === 'provider_record' ? reference.provider : reference.kind,
           normalizedValue: reference.kind === 'provider_record'

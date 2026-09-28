@@ -30,7 +30,7 @@ kind: "package-reference"
 
 论文抽取结果返回 `extracted`、`partially_extracted` 或 `extraction_failed`，以及合格 `evidenceCount` 和 `rejectedDrafts`；后者包含从零开始的草稿/片段序号、稳定拒绝代码和原因。部分抽取结果同时向 `stages.extraction` 提供成功与失败观察，全部被拒的论文只贡献失败。即使没有合格证据，响应仍保留这些诊断，不会把被拒的模型陈述作为证据返回。
 
-将控制器与 `academicSource`、`sessionController`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 OpenAlex、arXiv、CVF、ACL Anthology 与 PMLR Provider。`fulltextFetchProvider` 默认为 `http`，只为 Academic 全文选择 Web 抓取 Provider，不改变部署中的普通 Web 抓取默认值。所选 Provider 必须保留有界的原始 HTML 或 PDF，因为证据包会拒绝转换后的文本和截断文档。`extractionMaxTokens` 默认为 16,384，只在 Session 模型选择未提供 `maxTokens` 时补充 Academic 抽取输出预留；Session 的明确值仍然优先。`extractionMaxAttempts` 默认为 2，且只允许 1 或 2；只有输出 token 用尽才消耗第二次尝试。先调用 `academicResearch.plan(sessionId)` 预览，再向 `academicResearch.run` 传入返回的 `researchBriefId`、Session ID、可选全局结果上限和合成数据声明。预览后批准身份发生变化时拒绝启动。查询只来自已批准计划，调用者不能替换；去除首尾空白后的完全重复查询只执行一次，查询数同时受三条硬上限与已批准 `maximumSearchRounds` 约束。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。开始运行前，控制器从 Agent 上下文解析 Academic 来源与 Web 服务；任一服务缺失时返回可用性错误。
+将控制器与 `academicSource`、`sessionController`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 OpenAlex、arXiv、CVF、ACL Anthology 与 PMLR Provider。`fulltextFetchProvider` 默认为 `http`，只为 Academic 全文选择 Web 抓取 Provider，不改变部署中的普通 Web 抓取默认值。所选 Provider 必须保留有界的原始 HTML 或 PDF，因为证据包会拒绝转换后的文本和截断文档。`extractionMaxTokens` 默认为 16,384，只在 Session 模型选择未提供 `maxTokens` 时补充 Academic 抽取输出预留；Session 的明确值仍然优先。`extractionMaxAttempts` 默认为 2，且只允许 1 或 2；输出 token 用尽和配置的瞬时故障可以消耗同一批次的第二次尝试。`extractionRetryInitialDelayMs` 默认为 10,000。长论文抽取使用 `extractionBatchMaxInputTokens` 12,000、`extractionBatchOverlapCharacters` 512 和 `extractionAttemptTimeoutMs` 120,000，在多批请求间保留原始片段定位。`synthesisMaxAttempts` 默认为 3，`synthesisRetryInitialDelayMs` 默认为 1,000；最终报告合成只重试连接和超时错误，每次失败后的等待时间加倍。先调用 `academicResearch.plan(sessionId)` 预览，再向 `academicResearch.run` 传入返回的 `researchBriefId`、Session ID、可选全局结果上限和合成数据声明。预览后批准身份发生变化时拒绝启动。查询只来自已批准计划，调用者不能替换；去除首尾空白后的完全重复查询只执行一次，查询数同时受三条硬上限与已批准 `maximumSearchRounds` 约束。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。开始运行前，控制器从 Agent 上下文解析 Academic 来源与 Web 服务；任一服务缺失时返回可用性错误。
 
 新结构化计划交接使用 `schemaVersion: 3`，必须包含 `searchPlan`；每项有 `query`、中文 `purpose`、与 Brief 完全一致的 `questions`，以及与查询一同审核的 `retrieval` 策略，覆盖所有研究问题。策略选择 `academic` 和／或 `web_discovery`，直接检索只允许 OpenAlex/arXiv，引用核验只允许 OpenAlex/arXiv/ACL/PMLR/CVF，Web 发现与核验上限均不得超过 8。依赖渠道的 Provider 列表和数量必须相符；重复值、不支持的值、未知字段、负数与超限值都会在审核前被拒绝。Controller 将交接投影为既有第 1 版领域 Brief 与独立流水线查询，不修改 model 包。旧第 1、2 版计划仍可读取，但缺少检索方案时不能预览或运行，提示用户让系统补齐并重新审核；运行时不额外调用模型生成查询。
 
@@ -41,6 +41,8 @@ kind: "package-reference"
 元数据选择使用规范版本、批准的论文类型、预印本策略、发表时间范围、撤稿状态和候选数量上限。每个来源 Provider 提供自己的有序全文候选。全文解析后，模型返回明确的纳入或排除决定及原因；被排除论文保留在论文结果中，但不向分析提供证据。顶层 `status` 表示调用已完成或取消；由生产方确定的 `stages.search`、`stages.fulltext` 与 `stages.extraction` 分别表达三个阶段，客户端不必根据计数猜测。`retrievalRun.status` 保留为整轮研究处理结论，`report.evaluation.status` 表示草稿质量。
 
 -----
+
+每轮按核验 Provider 和来源记录身份保留权威核验返回的全文候选。选文复用这些结果，包括明确无全文；仅核验的来源无需开启目录搜索，已失败的地址解析不会再次执行。其他来源记录使用来源运行时解析器。全文地址解析失败保留引用核验成功，在引用说明和 `retrievalRun.failures` 中以 `resolve_fulltext` 披露，并影响 `stages.fulltext`，不计入核验失败数。报告标记 `retrievalDisclosureIncluded: true` 表示已含后端检索附录。
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -53,7 +55,7 @@ kind: "package-reference"
 
 #### Token effect
 
-每篇被选论文产生一次有界的范围与证据请求；只有第一次回答达到输出 token 上限时才允许再试一次。如果估算输入加 Session 的明确输出上限或控制器的 `extractionMaxTokens` 预留超过所选模型的上下文窗口，工作流会在发送前暂停该论文。
+每篇被选论文产生一个或多个有序范围与证据批次。每批遵守配置的估算输入上限；单个来源片段必须切分时保留重叠，并拥有独立超时和有界重试。一个批次超时时，其他成功批次的证据仍然保留，不重复检索或全文获取。最终报告合成是独立调用，瞬时故障重试复用同一批已准入证据。
 
 #### KV Cache effect
 
@@ -64,7 +66,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
-- 一次 Remote 调用会保持到整轮结束。工作流续跑、进度流、RetrievalRun 持久记录、检索级重试和长论文分段留待后续。
+- 一次 Remote 调用会保持到整轮结束。工作流续跑、进度流、RetrievalRun 持久记录和检索级重试留待后续。
 - 混合计数累加已完成查询；中断查询不计入，并在 RetrievalRun 限制中披露。没有已完成混合查询时省略投影。`mergedDuplicates` 为整轮上限应用前的 ingestion 记录数减去不同论文数，不包含重复引用或被截断的记录。核验成功不代表保留为候选或纳入证据。持久化的发现到论文溯源仍属于 B-H3。
 - 当前每份获批计划都会建立版本 1，其身份由 Session 和获批计划调用共同确定；对已批准 Brief 进行后续版本修订留待后续。
 

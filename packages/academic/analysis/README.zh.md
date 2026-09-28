@@ -27,7 +27,7 @@ kind: "package-library"
 
 `validateSynthesisRequirements()` 检查拟议报告要求，不授予批准状态；返回支持的章节，或逐项指出不支持的语言、引用格式、篇幅单位、章节及版本状态。`synthesisSections()` 还要求当前计划已获批准。两者均不改写 Brief。
 
-`prepareSynthesisInput()` 按批准的论文与全文下限准入版本、定位和哈希一致的证据。`parseSynthesisDraft()` 拒绝无效 JSON、错误 Brief 版本以及无效的问题/章节结构。不合格段落隔离到主机生成的 `rejectedStatements`，保留从零开始的原始序号和原因；合格段落重新编号，受影响的问题覆盖状态降级，空缺章节说明证据不足。未知证据、仅背景引用或独立论文支持不足不会变成合格结论。`synthesisPrompt()` 要求把本轮缺口写入限制或缺失原因。`synthesisAnalysis()` 仅为至少两篇独立论文支持的结论创建共享 Claim，单篇解释仍是来源陈述。参见[洞察分析决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.zh.md)。
+`prepareSynthesisInput()` 按批准的论文与全文下限准入版本、定位和哈希一致的证据。`parseSynthesisDraft()` 拒绝无效 JSON、错误 Brief 版本、无效的问题/章节结构以及超过 12 条陈述的草稿。一个问题最多引用两条陈述，一条陈述最多引用三项代表性证据。不合格段落隔离到主机生成的 `rejectedStatements`，保留从零开始的原始序号和原因；合格段落重新编号，受影响的问题覆盖状态降级，空缺章节说明证据不足。未知证据、仅背景引用或独立论文支持不足不会变成合格结论。`synthesisPrompt()` 要求问题与章节复用陈述，并把本轮缺口写入限制或缺失原因。`compactSynthesisPrompt()` 保留批准的问题、论文身份和已核验摘录，同时移除重复的版本、定位与卡片结构，供输出达到上限后执行一次恢复尝试。`synthesisAnalysis()` 仅为至少两篇独立论文支持的结论创建共享 Claim，单篇解释仍是来源陈述。参见[洞察分析决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.zh.md)。
 
 按 [AnalysisInput](src/types.ts) 的字段名称传入具有类型的 `AcademicWork`、`WorkVersion`、`EvidenceRecord`、`EvidenceCard` 和 `SourceLocator` 数组。调用同进程函数前，外部 JSON 由其入口负责人校验。至少保留一个卡片条目时返回 `usable`，否则返回 `no_usable_input`；`usable` 不证明证据充分、内容真实或指标可以比较。
 
@@ -46,7 +46,7 @@ kind: "package-library"
 
 #### 模型看到的内容
 
-`synthesisPrompt()` 提供批准的 Brief、准入证据关系、观察到的覆盖统计和来源失败，作为无工具的结构化任务。论文内容是数据而非指令；消费方工作流负责记录和发送。`prepareAnalysisInput()` 本身不发送请求。
+`synthesisPrompt()` 提供批准的 Brief、准入证据关系、观察到的覆盖统计和来源失败，作为无工具的结构化任务。论文内容是数据而非指令。提示要求直接输出最终 JSON，限制段落与引用数量，并在报告布局中复用段落。`compactSynthesisPrompt()` 是仅在输出达到上限后使用的精简恢复形式，仍保留可引用材料。消费方工作流记录并发送每次准确请求；`prepareAnalysisInput()` 本身不发送请求。
 
 #### Token 影响
 

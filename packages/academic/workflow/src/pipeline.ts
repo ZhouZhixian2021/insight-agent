@@ -1,6 +1,6 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
-  type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
+  type EvidenceRecord, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import { EvidenceError, fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
@@ -8,6 +8,7 @@ import { prepareSynthesisInput, synthesisSections, synthesisAnalysis, SynthesisE
 import { generateReport } from '@deepseek-ai/dsh-academic-report'
 import { extractPaperEvidence } from './paper.ts'
 import { WorkflowLogError } from './model-errors.ts'
+import { researchRetrievalDisclosure } from './report-disclosure.ts'
 import { buildRetrievalRun, createPaperProviderFailure, evidenceRejectionLimitations,
   type RetrievalSearchObservation } from './retrieval-run.ts'
 import type { PaperEvidenceResult } from './types.ts'
@@ -49,6 +50,7 @@ export async function runResearchDraft(
   const retrievalRunId = createRetrievalRunId()
   const startedAt = adapters.now()
   const papers: PaperEvidenceResult[] = []
+  const admittedEvidence: EvidenceRecord[] = []
   const failures: PaperProcessingFailure[] = []
   const providerFailures: ProviderFailure[] = []
   const executedQueries: string[] = []
@@ -91,14 +93,14 @@ export async function runResearchDraft(
     }
     searchResults.push({ ...result, query: request.query })
     providerFailures.push(...result.batch.failures)
-    const aggregate = aggregateSearches(searchResults, maxResults)
+    const aggregate = aggregateSearches(searchResults)
     hybridSearch = aggregate.hybridSearch
     search = aggregate.search
     ingested = aggregate.ingested
-    academicWorkIds = ingested.works.map(work => work.academicWorkId)
     if (signal?.aborted) return settle(true)
   }
-  const selection = adapters.selectPapers(ingested, brief)
+  const selection = adapters.selectPapers(ingested, { ...brief,
+    stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
   const selected = selection.papers
   selectionTruncated = selection.truncated
   if (selection.truncated) selectionLimitations.push('候选选择器限制了可处理的论文范围。')
@@ -119,6 +121,7 @@ export async function runResearchDraft(
     selectedWorks.add(version.academicWorkId)
     return { paper, version }
   })
+  academicWorkIds = validated.map(item => item.version.academicWorkId)
   const evidenceAdmission = () => {
     const extracted = papers.filter(result => result.status === 'extracted' || result.status === 'partially_extracted')
     const successfulWorks = new Set(extracted.map(result => result.version.academicWorkId))
@@ -163,6 +166,10 @@ export async function runResearchDraft(
     if (outcome.providerFailure) providerFailures.push(outcome.providerFailure)
     if (outcome.result) {
       papers.push(outcome.result)
+      if (outcome.result.status === 'extracted' || outcome.result.status === 'partially_extracted') {
+        // Capture source-checked extraction before an analysis adapter receives the working evidence graph.
+        admittedEvidence.push(...structuredClone(outcome.result.evidence.evidenceRecords))
+      }
       if (outcome.result.status === 'partially_extracted' || outcome.result.status === 'extraction_failed') {
         providerFailures.push(createPaperProviderFailure(paper, 'extraction',
           new EvidenceError('Some model drafts failed source verification.', 'EVIDENCE_DRAFTS_REJECTED')))
@@ -240,6 +247,7 @@ export async function runResearchDraft(
     ...evidenceRejectionLimitations(papers)]
   if (search?.truncated === true) limitations.push('Search coverage or the candidate bound truncated results; coverage is incomplete.')
   const report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
+    admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
     evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
     sourceLocators: admission.input.analysisInput.sourceLocators,
     works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic })
@@ -283,10 +291,9 @@ function sharedCandidateLimit(searches: readonly AcademicSourceSearchRequest[], 
   return Math.min(approvedMaximum, ...bounds)
 }
 
-/** Merge completed query batches fairly, deduplicate exact identities, then apply the global work cap. */
+/** Merge completed query batches fairly, deduplicate exact identities, retain all returned works for eligibility screening. */
 function aggregateSearches(
   results: readonly (DraftSearchResult & { readonly query: string })[],
-  maxResults: number,
 ): {
   readonly ingested: IngestOutcome
   readonly search: RetrievalSearchObservation
@@ -294,33 +301,19 @@ function aggregateSearches(
 } {
   const records = roundRobin(results.map(result => result.batch.items))
   const complete = ingestWorks(createIngestIndex(), records)
-  const candidateTruncated = complete.works.length > maxResults
-  const ingested = candidateTruncated ? retainFirstWorks(complete, maxResults) : complete
   const limitations = unique(results.flatMap(result => result.limitations))
-  if (candidateTruncated) {
-    limitations.push(`The approved candidate-work bound retained ${maxResults} of ${complete.works.length} deduplicated works.`)
-  }
   return {
     hybridSearch: collectHybridRun(results, complete),
-    ingested,
+    ingested: complete,
     search: {
       providers: unique(results.flatMap(result => result.providers)),
       discoveredRecords: results.reduce((sum, result) => sum + result.discoveredRecords, 0),
       deduplicatedWorks: complete.works.length,
       failures: results.flatMap(result => result.batch.failures),
       limitations,
-      truncated: candidateTruncated || results.some(result => result.truncated),
+      truncated: results.some(result => result.truncated),
     },
   }
-}
-
-/** Rebuild a self-consistent ingestion outcome from the first retained deduplicated work identities. */
-function retainFirstWorks(outcome: IngestOutcome, maximum: number): IngestOutcome {
-  const retained = new Set(outcome.works.slice(0, maximum).map(work => work.academicWorkId))
-  const records = [...outcome.index.records]
-    .filter(([academicWorkId]) => retained.has(academicWorkId))
-    .flatMap(([, workRecords]) => workRecords)
-  return ingestWorks(createIngestIndex(), records)
 }
 
 /** Interleave query batches so an earlier query cannot consume the global candidate bound alone. */

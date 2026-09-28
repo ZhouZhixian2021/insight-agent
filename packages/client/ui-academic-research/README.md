@@ -21,7 +21,7 @@ The main Web sidebar starts Academic research in the selected saved Session and 
 <a id="use-this-package"></a>
 ## Use this package
 
-Approved search previews distinguish direct-search providers from reference-verification providers and show channels, questions and per-query budgets. `hybridRetrieval` is a terminal observation: the viewer renders its five stages and separate URL/reference/work counts without inferring live progress. Missing projections and legacy policies remain explicitly unknown. Candidate identification never implies verification. Report preview and Markdown download preserve the server body and append a labeled, escaped retrieval disclosure using the same actual result; quality is unchanged and Web candidate URLs never enter the bibliography.
+Approved search previews distinguish direct-search providers from reference-verification providers and show channels, questions and per-query budgets. `hybridRetrieval` is a terminal observation: the viewer renders its five stages and separate URL/reference/work counts without inferring live progress. Missing projections and legacy policies remain explicitly unknown. Candidate identification never implies verification. Report preview and Markdown download preserve server Markdown with `retrievalDisclosureIncluded: true` verbatim; otherwise they append a labeled, escaped retrieval disclosure using the same actual result; quality is unchanged and Web candidate URLs never enter the bibliography.
 
 A draft with an `insufficient_coverage` evaluation issue keeps its Markdown download and displays a localized limited-evidence notice. Blocked final delivery does not hide an existing draft.
 

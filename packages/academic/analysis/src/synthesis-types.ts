@@ -41,6 +41,15 @@ export const SYNTHESIS_SECTIONS = ['executive_summary', 'scope_and_method', 'tec
   'paper_landscape', 'cross_paper_analysis', 'key_findings', 'limitations', 'research_gaps',
   'references', 'evidence_appendix'] as const
 
+/** Maximum analytical paragraphs accepted in one model-generated report draft. */
+export const MAX_SYNTHESIS_STATEMENTS = 12
+
+/** Maximum analytical paragraphs that one approved research question may cite. */
+export const MAX_SYNTHESIS_STATEMENTS_PER_QUESTION = 2
+
+/** Maximum representative evidence records accepted for one analytical paragraph. */
+export const MAX_SYNTHESIS_EVIDENCE_LINKS = 3
+
 /** A supported section identifier after resolving explicit Plan aliases. */
 export type SynthesisSectionId = typeof SYNTHESIS_SECTIONS[number]
 

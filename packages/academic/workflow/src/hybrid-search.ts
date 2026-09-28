@@ -61,6 +61,8 @@ export type HybridSearchStageStatus = 'success' | 'partial_success' | 'failed' |
 
 /** Observations retained for A-H4 projection without mixing URLs, references, and works. */
 export interface HybridSearchObservation {
+  /** Approved policy actually used for this completed query. */
+  readonly policy: HybridRetrievalPolicy
   readonly stages: {
     readonly academicSearch: HybridSearchStageStatus
     readonly webDiscovery: HybridSearchStageStatus
@@ -161,6 +163,10 @@ export async function executeHybridSearch(
   })
   for (const outcome of verificationOutcomes) {
     if (outcome.status === 'failed') failures.push(referenceProviderFailure(outcome.failure))
+    else if (outcome.value.fullTextFailure !== null) {
+      failures.push({ ...referenceProviderFailure(outcome.value.fullTextFailure), operation: 'resolve_fulltext',
+        message: `Verified paper has no usable full-text candidate (${outcome.value.fullTextFailure.category}).` })
+    }
   }
   const allWorks = [...direct.works, ...verified]
   const merged = ingestWorks(createIngestIndex(), allWorks)
@@ -199,6 +205,7 @@ export async function executeHybridSearch(
       limitations,
     },
     observation: {
+      policy,
       stages: {
         academicSearch: settlementStage(academic, direct),
         webDiscovery: settlementStage(web),

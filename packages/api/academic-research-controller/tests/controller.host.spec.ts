@@ -144,8 +144,14 @@ async function harness(options: {
     fulltextFetchProvider: 'academic-raw',
     extractionMaxTokens: 16_384,
     extractionMaxAttempts: 2,
+    extractionRetryInitialDelayMs: 10_000,
+    extractionBatchMaxInputTokens: 12_000,
+    extractionBatchOverlapCharacters: 512,
+    extractionAttemptTimeoutMs: 120_000,
+    synthesisMaxAttempts: 3,
+    synthesisRetryInitialDelayMs: 1_000,
   })
-  return { controller, search, searchProviders, verifyReference, webSearch, fetch, sessionId, signal }
+  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal }
 }
 
 describe('AcademicResearchController', () => {
@@ -208,13 +214,16 @@ describe('AcademicResearchController', () => {
   it('executes the reviewed hybrid policy and hands verified works to the real paper pipeline', async () => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(1)
-    const work = pipeline.records[0]!
+    const original = pipeline.records[0]!
+    const work = { ...original, workVersion: { ...original.workVersion,
+      sourceRecords: [{ provider: 'arxiv', recordId: '1706.03762' }] } }
     fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []),
       providers: ['arxiv', 'openalex'], discoveredRecords: 0, limitations: [], truncated: false })
     fixture.webSearch.mockResolvedValue({ sources: [{ url: 'https://arxiv.org/abs/1706.03762', title: 'Untrusted title' },
       { url: 'https://example.org/blog', snippet: 'Not evidence' }], content: 'Generated answer is not evidence', truncated: false })
     fixture.verifyReference.mockImplementation(async reference => ({ status: 'verified', value: {
-      reference, verificationProvider: 'arxiv', work, fullText: null, fullTextFailure: null,
+      reference, verificationProvider: 'arxiv', work,
+      fullText: { sourceProvider: 'arxiv', urls: ['https://arxiv.org/html/1706.03762'] }, fullTextFailure: null,
     } }))
     fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
     runAcademicResearchDraft.mockImplementation(async request => ({
@@ -232,6 +241,7 @@ describe('AcademicResearchController', () => {
     })
     const result = await fixture.controller.run({ sessionId: fixture.sessionId,
       researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    expect(fixture.resolveFullText).not.toHaveBeenCalled()
     expect(fixture.search).not.toHaveBeenCalled()
     expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 3 },
       ['openalex', 'arxiv'], expect.any(AbortSignal))
@@ -241,6 +251,10 @@ describe('AcademicResearchController', () => {
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 1, deduplicatedWorks: 1,
       availableFulltextWorks: 1, includedWorks: 1 })
     expect(result.report).not.toBeNull()
+    expect(fixture.fetch).toHaveBeenCalledWith({ url: 'https://arxiv.org/html/1706.03762' },
+      expect.any(AbortSignal), { providerId: 'academic-raw' })
+    expect(result.report?.retrievalDisclosureIncluded).toBe(true)
+    expect(result.report?.markdown).toContain('Web 发现上限: 8')
     expect(result.report?.markdown).not.toContain('Untrusted title')
     expect(result.report?.markdown).not.toContain('Generated answer is not evidence')
     expect(result.hybridRetrieval).toMatchObject({ counts: { academicDiscoveredRecords: 0,
@@ -304,8 +318,46 @@ describe('AcademicResearchController', () => {
     expect(result.stages).toMatchObject({ fulltext: 'success', extraction: status === 'partially_extracted' ? 'partial_success' : 'failed' })
     expect(result.papers).toEqual([{ status, workVersionId, evidenceCount: status === 'partially_extracted' ? 2 : 0, rejectedDrafts }])
   })
+  it.each(['fulltext_unavailable', 'parse_failed'] as const)('retains %s beside verified identity and processes another paper', async (category) => {
+    const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(2)
+    const ids = ['1706.03762', '1810.04805']
+    const works = pipeline.records.map((record, index) => ({ ...record, workVersion: { ...record.workVersion,
+      sourceRecords: [{ provider: 'arxiv', recordId: ids[index]! }] } }))
+    fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []), providers: ['arxiv'],
+      discoveredRecords: 0, truncated: false, limitations: [] })
+    fixture.webSearch.mockResolvedValue({ sources: ids.map(id => ({ url: `https://arxiv.org/abs/${id}` })), truncated: false })
+    fixture.resolveFullText.mockImplementation(() => { throw new Error('Do not repeat verified full-text resolution') })
+    fixture.verifyReference.mockImplementation(async (reference) => {
+      const first = reference.kind === 'arxiv' && reference.normalizedValue === ids[0]
+      return { status: 'verified', value: { reference, verificationProvider: 'arxiv', work: works[first ? 0 : 1]!,
+        fullText: first ? null : { sourceProvider: 'arxiv', urls: ['https://arxiv.org/html/1810.04805'] },
+        fullTextFailure: first ? { reference, verificationProvider: 'arxiv', category,
+          message: 'Internal source diagnostic', retryable: false, retryAfter: null } : null } }
+    })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal), sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    expect(fixture.resolveFullText).not.toHaveBeenCalled()
+    expect(fixture.fetch).toHaveBeenCalledTimes(1)
+    expect(result.stages).toMatchObject({ search: 'success', fulltext: 'partial_success' })
+    expect(result.hybridRetrieval?.counts).toMatchObject({ verifiedReferences: 2, failedVerifications: 0 })
+    expect(result.hybridRetrieval?.references[0]?.status).toBe('verified')
+    expect(result.hybridRetrieval?.references[0]?.message).toContain(category)
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ deduplicatedWorks: 2, includedWorks: 1, failedOperations: 1 })
+    expect(result.retrievalRun.failures[0]).toMatchObject({ operation: 'resolve_fulltext', category })
+    expect(result.report?.markdown).toContain('检索渠道与覆盖说明')
+    expect(JSON.stringify(result)).not.toContain('Internal source diagnostic')
+  })
   it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = await harness()
+    fixture.search.mockResolvedValue({ works: [], batch: createBatchResult([], []), providers: [],
+      discoveredRecords: 0, truncated: false, limitations: [] })
     const resultWorkVersionId = createWorkVersionId()
     const observedRun = retrievalRun()
     runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId, retrievalRun: observedRun,
@@ -326,7 +378,13 @@ describe('AcademicResearchController', () => {
     const call = runAcademicResearchDraft.mock.calls[0]?.[0]
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
-      modelPolicy: { maxAttempts: 2 },
+      modelPolicies: {
+        evidence: { maxAttempts: 2, retryOutputLimit: true,
+          inputBatchTokenLimit: 12_000, inputBatchOverlapCharacters: 512, attemptTimeoutMs: 120_000,
+          transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 10_000 } },
+        synthesis: { maxAttempts: 3, retryOutputLimit: true,
+          transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 1_000 } },
+      },
       input: { paperConcurrency: 3, brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
       searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })

@@ -127,6 +127,8 @@ export interface AcademicEvaluationView {
 
 /** Report fields consumed by the Academic report renderer. */
 export interface AcademicResearchReportView {
+  /** True when server Markdown includes retrieval disclosure; clients must not append it again. */
+  readonly retrievalDisclosureIncluded?: true
   readonly title: string
   readonly mode: 'draft' | 'final'
   readonly synthetic: boolean
