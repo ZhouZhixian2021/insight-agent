@@ -7,6 +7,7 @@ import {
   runAcademicResearchDraft,
   type AcademicResearchDraftResult,
   type DraftPipelineAdapters,
+  type AcademicWorkflowProgressObserver,
 } from '@deepseek-ai/dsh-academic-workflow'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -15,8 +16,10 @@ import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
 import { approvedPaperAdapters } from './search.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
+import { AcademicResearchRunQueue } from './run-stream.ts'
 import type {
-  AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus, AcademicResearchPlanView,
+  AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
+  AcademicResearchPlanView,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -125,6 +128,50 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   @Remote('run')
   async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue> {
+    return runValue(await this.execute(request, signal))
+  }
+
+  /**
+   * Stream complete workflow progress snapshots followed by one final result.
+   * @param request - previewed approval identity, disclosure, and the Session containing the plan.
+   * @param signal - Remote caller lifetime; disconnect or cancellation aborts this one pass.
+   * @returns ordered progress frames and at most one terminal result frame.
+   */
+  @Remote({ mode: 'stream' })
+  runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame> {
+    return this.streamRun(request, signal)
+  }
+
+  private async *streamRun(
+    request: AcademicResearchRunRequest,
+    signal: AbortSignal,
+  ): AsyncIterable<AcademicResearchRunFrame> {
+    signal.throwIfAborted()
+    const queue = new AcademicResearchRunQueue()
+    const consumer = new AbortController()
+    const operationSignal = AbortSignal.any([signal, consumer.signal])
+    const onProgress: AcademicWorkflowProgressObserver = (progress) => {
+      queue.push({ type: 'progress', progress: { ...progress, sessionId: request.sessionId } })
+    }
+    const operation = this.execute(request, operationSignal, onProgress)
+    void operation.then((result) => {
+      const value = runValue(result)
+      queue.push({ type: 'result', retrievalRunId: value.retrievalRun.retrievalRunId, value })
+      queue.close()
+    }, (cause: unknown) => { queue.fail(cause) })
+    try {
+      yield* queue.read(signal)
+    } finally {
+      consumer.abort(new Error('Academic research stream consumer ended'))
+      await operation.catch(() => undefined)
+    }
+  }
+
+  private async execute(
+    request: AcademicResearchRunRequest,
+    signal: AbortSignal,
+    onProgress?: AcademicWorkflowProgressObserver,
+  ): Promise<AcademicResearchDraftResult> {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
@@ -161,6 +208,7 @@ export class AcademicResearchController extends TypertRemoteService {
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
       now: () => new Date().toISOString(),
+      ...(onProgress === undefined ? {} : { onProgress }),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
     try {
@@ -186,7 +234,7 @@ export class AcademicResearchController extends TypertRemoteService {
       throw new RemoteError('session/agent-busy', `session "${request.sessionId}" already has active work`,
         { reason: 'academic research requires an idle Session' }, { cause })
     }
-    return runValue(await maintenance)
+    return maintenance
   }
 }
 

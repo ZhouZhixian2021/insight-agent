@@ -1,9 +1,21 @@
 /** Browser-safe request and result vocabulary for Academic research runs. */
 import type {
   AcademicWorkId, Availability, ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId,
-  ExtractionMethod, FailureCategory, ResearchBriefId, RetrievalRun, RetrievalRunId, SourceLocatorId, WorkVersionId,
+  ExtractionMethod, ResearchBriefId, RetrievalRun, RetrievalRunId, SourceLocatorId, WorkVersionId,
 } from '@deepseek-ai/dsh-academic-model'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type {
+  AcademicWorkflowProgressActivity,
+  AcademicWorkflowProgressCounts,
+  AcademicWorkflowProgressEvent,
+  AcademicWorkflowProgressFailureCode,
+  AcademicWorkflowProgressSnapshot,
+  AcademicWorkflowProgressStage,
+  AcademicWorkflowProgressStages,
+  AcademicWorkflowProgressStageView,
+  AcademicWorkflowProgressStatus,
+  AcademicWorkflowProgressUnit,
+} from '@deepseek-ai/dsh-academic-workflow'
 
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
@@ -227,162 +239,38 @@ export interface AcademicHybridRetrievalView {
 }
 
 /** Ordered user-visible stages of one Academic research run. */
-export type AcademicResearchProgressStage =
-  | 'retrieval'
-  | 'screening'
-  | 'fulltext'
-  | 'extraction'
-  | 'analysis'
-  | 'report'
+export type AcademicResearchProgressStage = AcademicWorkflowProgressStage
 
 /** Live or terminal settlement of one progress stage. */
-export type AcademicResearchProgressStatus =
-  | 'pending'
-  | 'running'
-  | 'partial_success'
-  | 'success'
-  | 'failed'
-  | 'cancelled'
-  | 'not_run'
+export type AcademicResearchProgressStatus = AcademicWorkflowProgressStatus
 
-/** Unit attached to observed progress counts; no unit represents a stage without a count. */
-export type AcademicResearchProgressUnit = 'queries' | 'works' | 'papers' | 'batches' | 'questions' | 'report'
+/** Unit attached to observed progress counts. */
+export type AcademicResearchProgressUnit = AcademicWorkflowProgressUnit
 
 /** Complete current settlement of one progress stage. */
-export interface AcademicResearchProgressStageView {
-  readonly status: AcademicResearchProgressStatus
-  readonly startedAt: string | null
-  readonly completedAt: string | null
-  readonly completedItems: number
-  /** Null while the producer cannot determine a truthful total. */
-  readonly totalItems: number | null
-  readonly unit: AcademicResearchProgressUnit | null
-}
+export type AcademicResearchProgressStageView = AcademicWorkflowProgressStageView
 
 /** Complete fixed stage map carried by every progress snapshot. */
-export interface AcademicResearchProgressStages {
-  readonly retrieval: AcademicResearchProgressStageView
-  readonly screening: AcademicResearchProgressStageView
-  readonly fulltext: AcademicResearchProgressStageView
-  readonly extraction: AcademicResearchProgressStageView
-  readonly analysis: AcademicResearchProgressStageView
-  readonly report: AcademicResearchProgressStageView
-}
+export type AcademicResearchProgressStages = AcademicWorkflowProgressStages
 
 /** Observed run totals; clients must not derive stage settlement from these counters. */
-export interface AcademicResearchProgressCounts {
-  readonly completedQueries: number
-  readonly totalQueries: number
-  readonly discoveredRecords: number
-  readonly deduplicatedWorks: number
-  readonly candidateWorks: number
-  readonly completedPapers: number
-  /** Null until candidate selection determines the paper-processing total. */
-  readonly totalPapers: number | null
-  readonly includedPapers: number
-  readonly availableFulltextPapers: number
-  readonly validatedEvidenceRecords: number
-  readonly rejectedEvidenceDrafts: number
-  readonly completedQuestions: number
-  readonly totalQuestions: number
-}
+export type AcademicResearchProgressCounts = AcademicWorkflowProgressCounts
 
 /** Sanitized reason codes that a client can translate without exposing provider diagnostics. */
-export type AcademicResearchProgressFailureCode = FailureCategory
-  | 'cancelled'
-  | 'incomplete_output'
-  | 'output_limit'
-  | 'invalid_output'
+export type AcademicResearchProgressFailureCode = AcademicWorkflowProgressFailureCode
 
-/** Concurrent work that explains what an active stage is doing. Indexes are one-based. */
-export type AcademicResearchProgressActivityView =
-  | {
-    readonly kind: 'query'
-    readonly stage: 'retrieval'
-    readonly queryIndex: number
-    readonly queryCount: number
-    readonly query: string
-    readonly channels: readonly AcademicRetrievalChannel[]
-    readonly startedAt: string
-  }
-  | {
-    readonly kind: 'screening'
-    readonly stage: 'screening'
-    readonly operation: 'deduplication' | 'eligibility'
-    readonly startedAt: string
-  }
-  | {
-    readonly kind: 'paper'
-    readonly stage: 'fulltext' | 'extraction'
-    readonly workVersionId: WorkVersionId
-    readonly title: string | null
-    readonly operation: 'fulltext_fetch' | 'fulltext_parse' | 'evidence_extract' | 'evidence_validate' | 'waiting_retry'
-    readonly batchIndex: number | null
-    readonly batchCount: number | null
-    readonly attempt: number
-    readonly maximumAttempts: number
-    readonly lastFailure: AcademicResearchProgressFailureCode | null
-    readonly validatedEvidenceRecords: number
-    readonly rejectedEvidenceDrafts: number
-    readonly startedAt: string
-  }
-  | {
-    readonly kind: 'question'
-    readonly stage: 'analysis'
-    readonly questionIndex: number
-    readonly questionCount: number
-    readonly question: string
-    readonly startedAt: string
-  }
-  | {
-    readonly kind: 'report'
-    readonly stage: 'report'
-    readonly operation: 'synthesis' | 'evaluation' | 'rendering'
-    readonly attempt: number
-    readonly maximumAttempts: number
-    readonly lastFailure: AcademicResearchProgressFailureCode | null
-    readonly startedAt: string
-  }
+/** Concurrent work that explains what an active stage is doing. */
+export type AcademicResearchProgressActivityView = AcademicWorkflowProgressActivity
 
 /** Latest committed producer event represented by a complete progress snapshot. */
-export interface AcademicResearchProgressEventView {
-  readonly code:
-    | 'run_started'
-    | 'stage_started'
-    | 'stage_updated'
-    | 'stage_settled'
-    | 'paper_updated'
-    | 'retry_scheduled'
-    | 'run_completed'
-    | 'run_cancelled'
-  readonly occurredAt: string
-  readonly stage: AcademicResearchProgressStage
-  readonly workVersionId: WorkVersionId | null
-  readonly failureCode: AcademicResearchProgressFailureCode | null
-}
+export type AcademicResearchProgressEventView = AcademicWorkflowProgressEvent
 
 /** Complete browser-safe progress snapshot; later sequences replace earlier snapshots for the same run. */
-export interface AcademicResearchProgressView {
-  readonly schemaVersion: 1
-  readonly retrievalRunId: RetrievalRunId
+export interface AcademicResearchProgressView extends AcademicWorkflowProgressSnapshot {
   readonly sessionId: SessionId
-  /** Monotone sequence within this run; the first snapshot uses zero. */
-  readonly sequence: number
-  readonly startedAt: string
-  readonly updatedAt: string
-  /** Elapsed time observed when this snapshot was produced, never an estimate of remaining time. */
-  readonly elapsedMs: number
-  /** Headline stage; null after no stage remains active. */
-  readonly primaryStage: AcademicResearchProgressStage | null
-  /** All simultaneously running stages, ordered by the fixed stage order. */
-  readonly activeStages: readonly AcademicResearchProgressStage[]
-  readonly stages: AcademicResearchProgressStages
-  readonly counts: AcademicResearchProgressCounts
-  readonly activities: readonly AcademicResearchProgressActivityView[]
-  readonly latestEvent: AcademicResearchProgressEventView
 }
 
-/** Browser-safe progress and result frames; no Remote method emits them until live-stream integration is added. */
+/** Browser-safe frames emitted by `academicResearch.runStream` for one bounded research operation. */
 export type AcademicResearchRunFrame =
   | { readonly type: 'progress'; readonly progress: AcademicResearchProgressView }
   | { readonly type: 'result'; readonly retrievalRunId: RetrievalRunId; readonly value: AcademicResearchRunValue }

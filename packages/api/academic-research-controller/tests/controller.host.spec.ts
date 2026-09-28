@@ -5,6 +5,7 @@ import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import type { AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
+import type { AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
@@ -47,6 +48,43 @@ function retrievalRun(stage: 'completed' | 'cancelled' = 'completed'): Retrieval
     coverageSummary: createCoverageSummary({ discoveredRecords: 0, deduplicatedWorks: 0, includedWorks: 0,
       availableFulltextWorks: 0, abstractOnlyWorks: 0, metadataOnlyWorks: 0, failedOperations: 0,
       truncated: false, limitations: [], providerBreakdown: null }), failures: [] }
+}
+
+function progressSnapshot(
+  retrievalRunId: RetrievalRun['retrievalRunId'],
+  sequence: number,
+  status: 'running' | 'success' = 'running',
+): AcademicWorkflowProgressSnapshot {
+  const pending = { status: 'pending' as const, startedAt: null, completedAt: null,
+    completedItems: 0, totalItems: null, unit: null }
+  return {
+    schemaVersion: 1,
+    retrievalRunId,
+    sequence,
+    startedAt: '2026-09-28T00:00:00.000Z',
+    updatedAt: `2026-09-28T00:00:0${String(sequence)}.000Z`,
+    elapsedMs: sequence * 1000,
+    primaryStage: status === 'running' ? 'retrieval' : null,
+    activeStages: status === 'running' ? ['retrieval'] : [],
+    stages: {
+      retrieval: { status, startedAt: '2026-09-28T00:00:00.000Z',
+        completedAt: status === 'success' ? '2026-09-28T00:00:01.000Z' : null,
+        completedItems: status === 'success' ? 1 : 0, totalItems: 1, unit: 'queries' },
+      screening: pending,
+      fulltext: pending,
+      extraction: pending,
+      analysis: pending,
+      report: pending,
+    },
+    counts: { completedQueries: status === 'success' ? 1 : 0, totalQueries: 1, discoveredRecords: 0,
+      deduplicatedWorks: 0, candidateWorks: 0, completedPapers: 0, totalPapers: null, includedPapers: 0,
+      availableFulltextPapers: 0, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0,
+      completedQuestions: 0, totalQuestions: 1 },
+    activities: [],
+    latestEvent: { code: status === 'running' ? 'run_started' : 'stage_settled',
+      occurredAt: `2026-09-28T00:00:0${String(sequence)}.000Z`, stage: 'retrieval',
+      workVersionId: null, failureCode: null },
+  }
 }
 
 function briefPayload() {
@@ -421,6 +459,69 @@ describe('AcademicResearchController', () => {
       sourceRecords: [{ provider: 'unregistered', recordId: 'missing' }], contentHash: { status: 'not_extracted' },
       supersedesWorkVersionId: null, status: 'active' }], index: { byExactKey: new Map(), byFuzzyKey: new Map(), records: new Map() },
     verifiedDiscoveries: [], audit: { entries: [] } }, brief())).toEqual({ papers: [], truncated: false })
+  })
+
+  it('streams ordered progress snapshots and one final result from one workflow invocation', async () => {
+    const fixture = await harness()
+    const observed = retrievalRun()
+    runAcademicResearchDraft.mockImplementation(async (request) => {
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 1, 'success'))
+      return { synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+        retrievalRun: observed, papers: [], failures: [], analysis: null, report: null }
+    })
+
+    const stream = fixture.controller.runStream({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)
+    expect(stream[Symbol.asyncIterator]()).toBe(stream)
+    const frames = []
+    for await (const frame of stream) frames.push(frame)
+
+    expect(runAcademicResearchDraft).toHaveBeenCalledOnce()
+    expect(frames.map(frame => frame.type)).toEqual(['progress', 'progress', 'result'])
+    expect(frames[0]).toMatchObject({ type: 'progress', progress: {
+      sessionId: fixture.sessionId, retrievalRunId: observed.retrievalRunId, sequence: 0,
+    } })
+    expect(frames[1]).toMatchObject({ type: 'progress', progress: { sequence: 1 } })
+    expect(frames[2]).toMatchObject({ type: 'result', retrievalRunId: observed.retrievalRunId,
+      value: { sessionId: fixture.sessionId, retrievalRun: observed } })
+  })
+
+  it('cancels the sole workflow invocation when its stream caller disconnects', async () => {
+    const fixture = await harness()
+    const abort = new AbortController()
+    const observed = retrievalRun('cancelled')
+    let operationSignal: AbortSignal | undefined
+    runAcademicResearchDraft.mockImplementation(request => new Promise((resolve) => {
+      const signal = request.signal
+      if (signal === undefined) throw new Error('missing workflow cancellation signal')
+      operationSignal = signal
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      signal.addEventListener('abort', () => { resolve({
+        synthesis: { status: 'not_run', reasons: ['Cancelled'] }, status: 'cancelled', sessionId: fixture.sessionId,
+        retrievalRun: observed, papers: [], failures: [], analysis: null, report: null,
+      }) }, { once: true })
+    }))
+    const iterator = fixture.controller.runStream({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, abort.signal)[Symbol.asyncIterator]()
+
+    await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { type: 'progress' } })
+    abort.abort(new Error('caller disconnected'))
+    await expect(iterator.next()).resolves.toEqual({ done: true, value: undefined })
+    expect(operationSignal?.aborted).toBe(true)
+    expect(runAcademicResearchDraft).toHaveBeenCalledOnce()
+  })
+
+  it('surfaces workflow admission failures through the stream without a result frame', async () => {
+    const fixture = await harness({ busy: true })
+    const iterator = fixture.controller.runStream({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)[Symbol.asyncIterator]()
+
+    await expect(iterator.next()).rejects.toMatchObject({ code: 'session/agent-busy' })
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
   it('uses the Agent fallback selection before the Session has a request header', async () => {
