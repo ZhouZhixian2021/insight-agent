@@ -24,7 +24,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Pass ordered HTML/PDF URLs and a thin adapter over `ctx.web.fetch()` to `fetchAcademicFullText()`, then give its output to `extractEvidenceFromContent()`. The first confirmed full text wins: semantic HTML produces section-aware paragraph locators, while PDF produces page locators through PDF.js. Both paths reject non-2xx or truncated responses and attach the final URL plus a SHA-256 of the exact accepted content.
+Pass ordered HTML/PDF URLs and a thin adapter over `ctx.web.fetch()` to `fetchAcademicFullText()`, then give its output to `extractEvidenceFromContent()`. The first confirmed full text wins: semantic HTML produces section-aware paragraph locators, while PDF produces page locators through PDF.js. Both paths reject non-2xx or truncated responses and attach the final URL plus a SHA-256 of the exact accepted content. `fetchAcademicFullText()` accepts an optional per-candidate observer that publishes `started` when each candidate attempt begins and `settled` with `success`, `failed`, or `cancelled`, its failure category, and the accepted body kind; observer failures are isolated and never change the acquisition result.
 
 The caller supplies URLs resolved from the selected academic version's source records, never Web discovery URLs. A Web search snippet or provider-generated answer is not a fetched paper body. Direct calls to `extractEvidenceFromContent()` require caller-verified paper segments; exact excerpt matching checks a draft against those segments but cannot establish their origin.
 
@@ -73,6 +73,7 @@ Extraction rejects model source references individually. `EvidenceExtractionResu
 | Export | Role |
 |---|---|
 | `fetchAcademicFullText()` | Tries candidate URLs in order and prepares the first confirmed HTML or PDF full text. |
+| `AcademicFullTextObserver` / `AcademicFullTextObservation` | Optional per-candidate facts from `fetchAcademicFullText()`: `started` when each attempt begins, then `settled` with `success`/`failed`/`cancelled`, its `FailureCategory`, and the accepted `bodyKind`. Facts carry no timestamp; the observer owner stamps them. |
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | Validates one raw fetch and prepares paragraph- or page-located content plus a hash. |
 | `extractEvidenceFromContent()` | Runs semantic extraction, verifies exact excerpts, and builds one paper's records and card. |
 | `createSourceLocator()` | Builds one of the six locator variants with a fresh identity. |

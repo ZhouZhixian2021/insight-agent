@@ -24,7 +24,7 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-把按优先级排列的 HTML/PDF URL 与 `ctx.web.fetch()` 的薄适配器传给 `fetchAcademicFullText()`，再把其输出交给 `extractEvidenceFromContent()`。第一个确认的全文会被采用：语义化 HTML 生成带章节的段落定位，PDF 则由 PDF.js 生成页码定位。两条路径都拒绝非 2xx 或截断响应，并附上最终 URL 与已接受原始内容的 SHA-256。
+把按优先级排列的 HTML/PDF URL 与 `ctx.web.fetch()` 的薄适配器传给 `fetchAcademicFullText()`，再把其输出交给 `extractEvidenceFromContent()`。第一个确认的全文会被采用：语义化 HTML 生成带章节的段落定位，PDF 则由 PDF.js 生成页码定位。两条路径都拒绝非 2xx 或截断响应，并附上最终 URL 与已接受原始内容的 SHA-256。`fetchAcademicFullText()` 接受一个可选的逐候选观察者：每个候选尝试开始时发布 `started`，结束时发布 `settled`（`success`/`failed`/`cancelled`、失败类别与已接受正文类型）；观察者异常被隔离，绝不改变抓取结果。
 
 调用方只提供从所选学术版本的来源记录解析出的 URL，不提供 Web 发现 URL。Web 搜索摘要和 Provider 生成的答案都不是已抓取的论文正文。直接调用 `extractEvidenceFromContent()` 时，调用方必须先核验可定位的论文片段；逐字引文匹配只核对草稿与这些片段，不能单独证明片段的来源。
 
@@ -73,6 +73,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | 导出 | 角色 |
 |---|---|
 | `fetchAcademicFullText()` | 按顺序尝试候选 URL，准备第一个确认的 HTML 或 PDF 全文。 |
+| `AcademicFullTextObserver` / `AcademicFullTextObservation` | `fetchAcademicFullText()` 的可选逐候选事实：每次尝试开始时发布 `started`，结束时发布 `settled`（`success`/`failed`/`cancelled`、失败 `FailureCategory` 与已接受 `bodyKind`）。事实不带时间戳，由观察者持有方打戳。 |
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | 校验一次原始抓取，并准备带段落或页码定位的内容与哈希。 |
 | `extractEvidenceFromContent()` | 执行语义抽取、核验逐字引文，并构造单篇论文的记录与卡片。 |
 | `createSourceLocator()` | 构造六种定位变体之一，附带全新身份。 |
