@@ -1,8 +1,8 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
   type EvidenceRecord, type ProviderFailure, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
-import { createIngestIndex, ingestWorks, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
+import type { AcademicSourceProviderObservation, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
+import { createIngestIndex, ingestWorks, summarizeIngestAudit, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import { EvidenceError, fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import { prepareSynthesisInput, synthesisSections, synthesisAnalysis, SynthesisError } from '@deepseek-ai/dsh-academic-analysis'
 import { generateReport } from '@deepseek-ai/dsh-academic-report'
@@ -17,7 +17,7 @@ import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure,
   PaperSelectionResult, SelectedPaper } from './pipeline-types.ts'
 import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
-  type AcademicWorkflowProgressCounts, type AcademicWorkflowProgressStage,
+  type AcademicWorkflowProgressStage,
   type AcademicWorkflowProgressStatus } from './progress.ts'
 
 /**
@@ -96,9 +96,30 @@ export async function runResearchDraft(
     const queryKey = `query:${queryOffset}`
     progress.setActivity(queryKey, { kind: 'query', stage: 'retrieval', queryIndex: queryOffset + 1,
       queryCount: searches.length, query: request.query, channels: [], startedAt: adapters.now() })
+    const providerStartedAt = new Map<string, string>()
+    const observeProvider = (observation: AcademicSourceProviderObservation): void => {
+      const activityKey = `${queryKey}:provider:${observation.provider}`
+      const observedAt = adapters.now()
+      if (observation.phase === 'started') providerStartedAt.set(observation.provider, observedAt)
+      const status = observation.phase === 'started' ? 'running' : observation.settlement ?? 'failed'
+      const failureCode = status === 'failed' ? observation.category ?? 'unknown'
+        : status === 'cancelled' ? 'cancelled' : null
+      progress.setActivity(activityKey, {
+        kind: 'provider',
+        stage: 'retrieval',
+        queryIndex: queryOffset + 1,
+        queryCount: searches.length,
+        providerId: observation.provider,
+        status,
+        discoveredRecords: observation.phase === 'settled' ? observation.works : null,
+        failureCode,
+        startedAt: providerStartedAt.get(observation.provider) ?? observedAt,
+        completedAt: observation.phase === 'settled' ? observedAt : null,
+      })
+    }
     let result: DraftSearchResult
     try {
-      result = await adapters.search({ ...request, maxResults }, signal)
+      result = await adapters.search({ ...request, maxResults }, signal, observeProvider)
     } catch (error: unknown) {
       if (signal?.aborted) {
         selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
@@ -119,7 +140,7 @@ export async function runResearchDraft(
       completedQueries: searchResults.length,
       discoveredRecords: search.discoveredRecords,
       deduplicatedWorks: search.deduplicatedWorks,
-      ...ingestionProgressCounts(ingested),
+      ...summarizeIngestAudit(ingested),
     })
     if (signal?.aborted) return cancel()
   }
@@ -456,23 +477,6 @@ function sharedCandidateLimit(searches: readonly AcademicSourceSearchRequest[], 
     return [request.maxResults]
   })
   return Math.min(approvedMaximum, ...bounds)
-}
-
-/** Project ingestion audit decisions without overloading deduplicated work counts. */
-function ingestionProgressCounts(ingested: IngestOutcome): Pick<
-  AcademicWorkflowProgressCounts,
-  'mergedWorkIdentities' | 'mergedVersionRecords' | 'retainedWorkVersions' | 'suspectedDuplicateRecords'
-> {
-  let mergedWorkIdentities = 0
-  let mergedVersionRecords = 0
-  let suspectedDuplicateRecords = 0
-  for (const entry of ingested.audit.entries) {
-    if (entry.kind === 'merged_work') mergedWorkIdentities += 1
-    else if (entry.kind === 'merged_version') mergedVersionRecords += 1
-    else if (entry.kind === 'suspected_duplicate') suspectedDuplicateRecords += 1
-  }
-  return { mergedWorkIdentities, mergedVersionRecords,
-    retainedWorkVersions: ingested.versions.length, suspectedDuplicateRecords }
 }
 
 /** Merge completed query batches fairly, deduplicate exact identities, retain all returned works for eligibility screening. */

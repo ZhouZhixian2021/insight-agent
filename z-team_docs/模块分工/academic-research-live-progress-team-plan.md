@@ -27,17 +27,17 @@ A 先完成共享接口，B、C 在接口合并后并行开发。A 不实现学�
 
 ### A-P1：固定进度字段
 
-**当前进度：已合并到 master，本次补充待合并。** A 定义公开阶段、状态、运行标识、事件时间、已运行时间、阶段计数、当前活动和最新事件字段，并为论文标识、全文状态、分段序号、尝试次数及证据计数保留字段。补充接口把 `mergedWorkIdentities`、`mergedVersionRecords`、`retainedWorkVersions` 和 `suspectedDuplicateRecords` 分开计数；论文活动同时携带 `AcademicWorkId` 与 `WorkVersionId`；检索阶段接受按 Provider 独立结算的活动。三篇论文并发时允许 `fulltext` 与 `extraction` 同时出现在 `activeStages`，`primaryStage` 只负责页面标题。固定 JSON 样例覆盖检索中、Provider 运行、三篇论文并发、证据重试、部分成功和报告生成。B、C 不建立同义字段。
+**当前进度：已合并到 master。** A 定义公开阶段、状态、运行标识、事件时间、已运行时间、阶段计数、当前活动和最新事件字段，并为论文标识、全文状态、分段序号、尝试次数及证据计数保留字段。补充接口把 `mergedWorkIdentities`、`mergedVersionRecords`、`retainedWorkVersions` 和 `suspectedDuplicateRecords` 分开计数；论文活动同时携带 `AcademicWorkId` 与 `WorkVersionId`；检索阶段接受按 Provider 独立结算的活动。三篇论文并发时允许 `fulltext` 与 `extraction` 同时出现在 `activeStages`，`primaryStage` 只负责页面标题。固定 JSON 样例覆盖检索中、Provider 运行、三篇论文并发、证据重试、部分成功和报告生成。B、C 不建立同义字段。
 
 ### A-P2：工作流阶段结算
 
-**当前进度：已完成并由 A-P3 接入 Remote 流；Provider 接线等待 B-P1。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。A 已按摄取结果填写四类独立计数。B 的观察者合并后，Controller 的搜索适配器把 Provider 的开始与结算事实映射为 Provider 活动，并由整轮检索结果结算来源搜索的成功、部分成功或失败。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。证据模型内部尚未提供的分段和重试事实保持 `null`；后续由 A 的工作流模型适配层映射，不扩展 B 的 `EvidenceGenerator` 请求或返回类型。
+**当前进度：阶段编排、Provider 接线和摄取统计已完成。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。Controller 的搜索适配器把观察器传给 Academic Source，工作流为每个 Provider 的开始、成功、失败或取消事实补充查询位置和时间，并映射为 Provider 活动。工作流直接使用摄取包的 `summarizeIngestAudit()` 填写四类独立计数，避免重复解释审计记录。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。Web 发现、引用识别与核验的实时事实，以及证据模型内部的分段和重试事实仍待 A 接入；不扩展 B 的 `EvidenceGenerator` 请求或返回类型。
 
 A 在 `academic-workflow` 中发布阶段开始、更新和结算事件。检索、筛选、全文、证据、分析和报告按真实调用顺序更新；并发论文分别保留状态，部分失败不清空其他论文和已验证证据。取消事件保留取消前已经提交的进展。
 
 ### A-P3：Controller 实时传输
 
-**当前进度：已完成，等待 C 接入 Web。** `academicResearch.runStream` 在一次 Remote 流内发送完整进度快照和唯一最终结果；一条流只启动一个维护任务。关闭流、切换会话或调用方取消会中止同一任务，不会自动重连或重启。原一元 `run` 暂时保留，避免 C 接线前现有页面失效。
+**当前进度：已完成并由 C 的 Web 页面接入。** `academicResearch.runStream` 在一次 Remote 流内发送完整进度快照和唯一最终结果；一条流只启动一个维护任务。关闭流、切换会话或调用方取消会中止同一任务，不会自动重连或重启。原一元 `run` 暂时保留，避免其他调用方失效。
 
 A 在 Academic Controller 中使用 DSH 现有 Remote 流能力传输进度和最终结果。同一次用户操作只启动一个研究运行；连接或订阅变化不得重复启动工作流。第一版沿用页面关闭、切换会话或用户取消时中止请求的生命周期，运行恢复另行设计。
 

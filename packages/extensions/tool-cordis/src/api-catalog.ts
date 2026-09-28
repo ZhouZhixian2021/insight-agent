@@ -124,15 +124,15 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the provider\'s normalized works, capped to `request.maxResults`.',
       },
       {
-        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>',
+        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>',
         description: 'Search configured discovery providers, or every usable provider, and merge results round-robin.\n\nOne provider\'s failure never discards another provider\'s results: expected search failures become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining providers survive in `batch.items`. Every called provider succeeds — including zero-result searches — yields `batch.status: success`; at least one surviving work beside failures yields `partial_success`; only failures yields `failed` with every failure retained. Configuration failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of fabricating provider failures.\n\n`discoveredRecords` counts every record the providers returned before the aggregate `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound dropped records; `limitations` carries each called provider\'s declared coverage limits and one aggregate-bound entry when the total bound dropped records. The inherited `works` and `truncated` fields mirror `batch.items` for the existing single-result adapter shape.',
-        parameters: [{ name: 'request', description: 'query and total result limit across providers.' }, { name: 'signal', description: 'optional cancellation forwarded to every provider.' }],
+        parameters: [{ name: 'request', description: 'query and total result limit across providers.' }, { name: 'signal', description: 'optional cancellation forwarded to every provider.' }, { name: 'onProvider', description: 'optional observer of per-provider started and settled facts.' }],
         returns: 'the aggregate batch outcome from all usable providers.',
       },
       {
-        signature: 'async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>',
+        signature: 'async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>',
         description: 'Search only the provider ids approved for this request, regardless of discovery configuration. Reject empty, duplicate, missing, or unavailable ids before any provider search starts.',
-        parameters: [{ name: 'request', description: 'query and total result limit across selected providers.' }, { name: 'providerIds', description: 'provider ids approved for this search.' }, { name: 'signal', description: 'optional cancellation forwarded to each selected provider.' }],
+        parameters: [{ name: 'request', description: 'query and total result limit across selected providers.' }, { name: 'providerIds', description: 'provider ids approved for this search.' }, { name: 'signal', description: 'optional cancellation forwarded to each selected provider.' }, { name: 'onProvider', description: 'optional observer of per-provider started and settled facts.' }],
         returns: 'the aggregate batch outcome from the selected providers.',
       },
       {
@@ -3656,6 +3656,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicSourceProvider',
     declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    verifyReference?(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null>;\n    fullTextUrls(recordId: string): readonly string[];\n    readonly limitations?: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceProviderObservation',
+    declaration: 'export interface AcademicSourceProviderObservation {\n    readonly provider: string;\n    readonly phase: AcademicSourceProviderPhase;\n    readonly settlement: AcademicSourceProviderSettlement | null;\n    readonly category: FailureCategory | null;\n    readonly works: number;\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'AcademicSourceProviderObserver',
+    declaration: 'export type AcademicSourceProviderObserver = (observation: AcademicSourceProviderObservation) => void;',
+  },
+  {
+    name: 'AcademicSourceProviderPhase',
+    declaration: 'export type AcademicSourceProviderPhase = \'started\' | \'settled\';',
+  },
+  {
+    name: 'AcademicSourceProviderSettlement',
+    declaration: 'export type AcademicSourceProviderSettlement = \'success\' | \'failed\' | \'cancelled\';',
   },
   {
     name: 'AcademicSourceSearchBatchResult',

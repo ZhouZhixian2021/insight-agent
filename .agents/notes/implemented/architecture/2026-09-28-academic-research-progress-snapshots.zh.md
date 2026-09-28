@@ -16,7 +16,7 @@ Academic Research Controller 导出第 1 版浏览器进度格式。每个进度
 
 快照公开已观察数量、已运行时间、并发活动、从一开始的分段与尝试序号，以及清理后的失败代码。摄取计数分别表示被合并的论文身份、分配到已有论文的输入记录、最终保留版本和未解决的疑似重复。论文活动同时携带 `AcademicWorkId` 与 `WorkVersionId`；Provider 活动携带查询位置与单个 Provider 的结算状态。它不公开估算完成百分比或原始 Provider／模型诊断。阶段结论与汇总计数保持独立，已验证证据也与模型返回或被拒草稿保持不同含义。
 
-导出的 `AcademicResearchRunFrame` 包含进度帧和唯一最终结果帧。`academic-workflow` 接受可选的同步观察者，在检索、筛选、并发论文处理、分析、报告生成和取消的提交点发布完整运行内快照。进度只用于观察，因此订阅者异常会被隔离。工作流根据完整 `IngestOutcome` 计算摄取计数；在 Academic Source 提供运行内 Provider 观察器之前不产生 Provider 活动，模型内部的分段与重试值也在所属工作流适配器提供事实前保持为空。`academicResearch.runStream` 将同步观察者桥接到一个有序、单消费者 Remote 数据流；关闭数据流会中止该次操作。一元 `academicResearch.run` 暂时为客户端兼容保留，但不发送进度。
+导出的 `AcademicResearchRunFrame` 包含进度帧和唯一最终结果帧。`academic-workflow` 接受可选的同步观察者，在检索、筛选、并发论文处理、分析、报告生成和取消的提交点发布完整运行内快照。进度只用于观察，因此订阅者异常会被隔离。工作流使用摄取包提供的审计汇总填写摄取计数。它通过 Controller 适配器把一个运行内观察器传给 Academic Source，使用查询位置和工作流时钟为每个 Provider 的开始与结算事实补齐上下文，并把这些事实发布为 Provider 活动。模型内部的分段与重试值继续保持为空，直到所属工作流适配器提供事实。`academicResearch.runStream` 将同步观察者桥接到一个有序、单消费者 Remote 数据流；关闭数据流会中止该次操作。一元 `academicResearch.run` 暂时为客户端兼容保留，但不发送进度。
 
 ## 考虑过的替代方案
 

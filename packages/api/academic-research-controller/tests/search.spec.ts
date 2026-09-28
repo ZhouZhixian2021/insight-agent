@@ -39,7 +39,9 @@ describe('approved source adapters', () => {
   it('uses request providers instead of deployment defaults and enforces both Web budgets', async () => {
     const f = await fixture()
     const signal = new AbortController().signal
-    const result = await f.search(policy)({ query: 'reviewed', maxResults: 1 }, signal)
+    const providers: string[] = []
+    const result = await f.search(policy)({ query: 'reviewed', maxResults: 1 }, signal,
+      observation => providers.push(`${observation.provider}:${observation.phase}:${observation.settlement ?? 'running'}`))
     expect(f.direct).toHaveBeenCalledExactlyOnceWith({ query: 'reviewed', maxResults: 1 }, signal)
     expect(f.unapproved).not.toHaveBeenCalled()
     expect(f.webSearch).toHaveBeenCalledExactlyOnceWith({ query: 'reviewed', maxResults: 2 }, signal)
@@ -47,6 +49,7 @@ describe('approved source adapters', () => {
     expect(result).toMatchObject({ providers: ['arxiv'], truncated: true, discoveredRecords: 2 })
     expect(result.works).toHaveLength(1)
     expect(result.works[0]?.academicWork.title).toBe('Verified paper')
+    expect(providers).toEqual(['arxiv:started:running', 'arxiv:settled:success'])
   })
 
   it.each(['academic', 'web'] as const)('keeps the other channel when %s fails', async (channel) => {

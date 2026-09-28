@@ -101,9 +101,10 @@ async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promis
  * `truncated` fields mirror `batch.items` for the existing single-result adapter shape.
  * @param request - query and total result limit across providers.
  * @param signal - optional cancellation forwarded to every provider.
+ * @param onProvider - optional observer of per-provider started and settled facts.
  * @returns the aggregate batch outcome from all usable providers.
  */
-async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
+async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Search only the provider ids approved for this request, regardless of discovery configuration.
@@ -111,9 +112,10 @@ async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal): Pro
  * @param request - query and total result limit across selected providers.
  * @param providerIds - provider ids approved for this search.
  * @param signal - optional cancellation forwarded to each selected provider.
+ * @param onProvider - optional observer of per-provider started and settled facts.
  * @returns the aggregate batch outcome from the selected providers.
  */
-async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal): Promise<AcademicSourceSearchBatchResult>
+async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>
 
 /**
  * Resolve full-text URLs through the provider named by a version's source records.
