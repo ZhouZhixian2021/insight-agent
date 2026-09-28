@@ -88,3 +88,21 @@ export interface IngestOutcome {
   }[]
   readonly audit: IngestAudit
 }
+
+/**
+ * Aggregated ingestion facts for progress reporting. Each counter keeps one audit
+ * meaning: `mergedWorkIdentities` counts consolidated work identities, `mergedVersionRecords`
+ * counts records merged into an already-retained version, `suspectedDuplicateRecords` counts
+ * title/author/year collisions retained separately, and `retainedWorkVersions` is the distinct
+ * version total of this outcome. The counters are independent and never substituted for one another.
+ */
+export interface IngestAuditCounts {
+  /** Exact-identifier bridges that consolidated a later work identity into a retained one. */
+  readonly mergedWorkIdentities: number
+  /** Records merged into an already-retained version. */
+  readonly mergedVersionRecords: number
+  /** Distinct versions finally retained by this ingestion outcome. */
+  readonly retainedWorkVersions: number
+  /** Title/author/year collisions retained as separate suspected duplicates. */
+  readonly suspectedDuplicateRecords: number
+}

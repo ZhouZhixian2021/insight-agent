@@ -10,6 +10,7 @@ import AcademicSourceRuntime, {
   AcademicSourceError,
   type AcademicReference,
   type AcademicSourceProvider,
+  type AcademicSourceProviderObservation,
   type AcademicSourceSearchRequest,
   type AcademicSourceSearchResult,
   type AcademicSourceWork,
@@ -798,6 +799,95 @@ describe('AcademicSourceRuntime discovery selection and deadlines', () => {
     const { ctx, source } = await mountSource({ searchProviders: ['missing'] })
     try {
       await expect(source.searchAll({ query: 'test' })).rejects.toMatchObject({ code: 'ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING' })
+    } finally { await ctx.fiber.dispose() }
+  })
+})
+
+/** Collect provider observations from a run without assuming their resolution order. */
+function observeProvider(): {
+  observations: AcademicSourceProviderObservation[]
+  onProvider: (observation: AcademicSourceProviderObservation) => void
+} {
+  const observations: AcademicSourceProviderObservation[] = []
+  return { observations, onProvider: (observation) => { observations.push(observation) } }
+}
+
+describe('AcademicSourceRuntime provider observations', () => {
+  it('publishes started per provider before any settles, then success with returned counts', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const { observations, onProvider } = observeProvider()
+      source.registerSearchProvider(makeSearchProvider('beta', available, () => Promise.resolve({ works: [], truncated: false })))
+      source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve({
+        works: [makeWork('a1'), makeWork('a2')], truncated: true,
+      })))
+
+      await source.searchAll({ query: 'retrieval' }, undefined, onProvider)
+
+      expect(observations.slice(0, 2)).toEqual([
+        { provider: 'alpha', phase: 'started', settlement: null, category: null, works: 0, truncated: false },
+        { provider: 'beta', phase: 'started', settlement: null, category: null, works: 0, truncated: false },
+      ])
+      const settled = observations.slice(2)
+      expect(settled).toContainEqual({ provider: 'alpha', phase: 'settled', settlement: 'success',
+        category: null, works: 2, truncated: true })
+      expect(settled).toContainEqual({ provider: 'beta', phase: 'settled', settlement: 'success',
+        category: null, works: 0, truncated: false })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('classifies a failed provider with its category', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const { observations, onProvider } = observeProvider()
+      source.registerSearchProvider(makeSearchProvider('alpha', available,
+        () => Promise.reject(new AcademicSourceError('alpha rate limited', 'ACADEMIC_SOURCE_RATE_LIMIT'))))
+
+      const result = await source.searchAll({ query: 'retrieval' }, undefined, onProvider)
+
+      expect(observations.filter(observation => observation.phase === 'settled')).toEqual([
+        { provider: 'alpha', phase: 'settled', settlement: 'failed', category: 'rate_limited', works: 0, truncated: false },
+      ])
+      expect(result.batch.status).toBe('failed')
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('reports cancelled for a provider aborted by the caller', async () => {
+    const { ctx, source } = await mountSource()
+    const controller = new AbortController()
+    try {
+      const { observations, onProvider } = observeProvider()
+      source.registerSearchProvider(makeSearchProvider('alpha', available,
+        () => Promise.reject(new AcademicSourceError('alpha aborted', 'ACADEMIC_SOURCE_ABORTED'))))
+
+      await expect(source.searchAll({ query: 'retrieval' }, controller.signal, onProvider)).rejects
+        .toMatchObject({ code: 'ACADEMIC_SOURCE_ABORTED' })
+
+      expect(observations.filter(observation => observation.phase === 'settled')).toEqual([
+        { provider: 'alpha', phase: 'settled', settlement: 'cancelled', category: null, works: 0, truncated: false },
+      ])
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('isolates a throwing observer from the search result', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))))
+      await expect(source.searchAll({ query: 'retrieval' }, undefined, () => { throw new Error('observer down') }))
+        .resolves.toMatchObject({ batch: { status: 'success' } })
+    } finally { await ctx.fiber.dispose() }
+  })
+
+  it('supports the observer on searchProviders', async () => {
+    const { ctx, source } = await mountSource()
+    try {
+      const { observations, onProvider } = observeProvider()
+      source.registerSearchProvider(makeSearchProvider('alpha', available, () => Promise.resolve(searchResult('a1'))))
+
+      await source.searchProviders({ query: 'retrieval' }, ['alpha'], undefined, onProvider)
+
+      expect(observations.map(observation => observation.phase)).toEqual(['started', 'settled'])
+      expect(observations[0]?.provider).toBe('alpha')
     } finally { await ctx.fiber.dispose() }
   })
 })

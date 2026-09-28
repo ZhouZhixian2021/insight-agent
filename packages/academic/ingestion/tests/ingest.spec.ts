@@ -17,6 +17,7 @@ import {
   dedupKeys,
   ingestWorks,
   selectCanonicalVersion,
+  summarizeIngestAudit,
   type IngestRecord,
 } from '../src/index.ts'
 
@@ -299,5 +300,35 @@ describe('ingestWorks', () => {
       verificationProvider: 'openalex',
     }])
     expect(second.audit.entries.map(entry => entry.kind)).toEqual(['merged_work', 'merged_version'])
+  })
+})
+
+describe('summarizeIngestAudit', () => {
+  it('counts merged identities and merged versions against the retained version total', () => {
+    const arxiv = makeRecord({ title: 'Preprint', arxivId: '2406.12345', year: 2024 })
+    const published = makeRecord({ title: 'Published', doi: '10.0000/bridge', year: 2024 })
+    const first = ingestWorks(createIngestIndex(), [arxiv, published])
+    const bridge = makeRecord({ title: 'Bridge', doi: '10.0000/bridge', arxivId: '2406.12345', year: 2024 })
+    const second = ingestWorks(first.index, [bridge])
+
+    expect(summarizeIngestAudit(second)).toEqual({
+      mergedWorkIdentities: 1,
+      mergedVersionRecords: 1,
+      retainedWorkVersions: second.versions.length,
+      suspectedDuplicateRecords: 0,
+    })
+  })
+
+  it('counts suspected duplicates while retaining them as separate versions', () => {
+    const first = makeRecord({ title: 'Same title', authors: ['Alice'], year: 2024, openalexId: 'W1' })
+    const second = makeRecord({ title: 'Same title', authors: ['Alice'], year: 2024, openalexId: 'W2' })
+    const outcome = ingestWorks(createIngestIndex(), [first, second])
+
+    expect(summarizeIngestAudit(outcome)).toEqual({
+      mergedWorkIdentities: 0,
+      mergedVersionRecords: 0,
+      retainedWorkVersions: 2,
+      suspectedDuplicateRecords: 1,
+    })
   })
 })

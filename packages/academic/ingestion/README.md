@@ -36,7 +36,7 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 
 For a Web reference verified by an Academic Provider, the hybrid workflow adds `{ discoveryUrl, verificationProvider }` to the record's `verifiedDiscoveries`. Repeated direct and verified records sharing a provider-namespaced record ID resolve to one version; newly verified exact identifiers and distinct discovery URLs remain on that version. `IngestOutcome.verifiedDiscoveries` exposes each URL, verification Provider, assigned work ID, and retained version ID. Ingestion does not verify URLs or provider claims.
 
-Each outcome also reports the deduplicated works, the re-pointed versions, and an audit of what was created, merged, or flagged as suspected.
+Each outcome also reports the deduplicated works, the re-pointed versions, and an audit of what was created, merged, or flagged as suspected. `summarizeIngestAudit()` turns that audit into progress counters, keeping merged work identities, merged version records, suspected duplicates, and the retained version total as four independent facts.
 
 -----
 
@@ -54,6 +54,8 @@ Each outcome also reports the deduplicated works, the re-pointed versions, and a
 | `selectCanonicalVersion()` | Picks the canonical version by type and date. |
 | `reconcileWork()` | Reconciles one work's records into a single `AcademicWork`. |
 | `IngestAudit` / `IngestAuditEntry` | Traceable per-record decisions. |
+| `summarizeIngestAudit()` | Aggregates one outcome's audit into the four progress counters. |
+| `IngestAuditCounts` | `mergedWorkIdentities`, `mergedVersionRecords`, `retainedWorkVersions`, `suspectedDuplicateRecords`, each with one meaning. |
 
 -----
 

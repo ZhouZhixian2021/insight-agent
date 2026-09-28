@@ -40,7 +40,7 @@ kind: "package-reference"
 
 设置 `searchProviders: [openalex]` 可避免发现阶段下载目录，同时保留已挂载目录提供方供 `resolveFullText()` 使用。此列表不会把 OpenAlex 标识符映射成其他提供方的标识符。配置的提供方缺失或不可用时明确失败。设置 `searchTimeoutMs` 可隔离卡住的提供方：服务中止其子信号、记录 `timeout` 失败并保留其他结果。调用方取消仍中止整轮。提供方必须配合取消才能释放底层资源；服务可以停止等待，但无法终止任意提供方代码。
 
-三种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 使用配置的发现 Provider；未配置时调用全部可用 Provider。`searchProviders(request, providerIds, signal)` 仅搜索请求指定的 ID，不受发现配置影响；空列表、重复 ID、缺失或不可用的 Provider 都在网络请求前失败。多 Provider 搜索在部分来源失败时保留其他成果和来源失败，并报告实际调用列表、上限前记录数、截断状态与来源限制。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
+三种搜索方式都会返回规范化成果并执行总 `request.maxResults` 上限。`searchAll()` 使用配置的发现 Provider；未配置时调用全部可用 Provider。`searchProviders(request, providerIds, signal)` 仅搜索请求指定的 ID，不受发现配置影响；空列表、重复 ID、缺失或不可用的 Provider 都在网络请求前失败。多 Provider 搜索在部分来源失败时保留其他成果和来源失败，并报告实际调用列表、上限前记录数、截断状态与来源限制。`searchAll()` 与 `searchProviders()` 接受一个可选的逐 Provider 观察者用于实时进度：每个 Provider 真正发起请求时发布 `started`，结算后发布 `settled`（含结果、类别、返回成果数与截断）。观察者异常被隔离，绝不改变本轮结果。`resolveFullText()` 会把选中版本的来源记录映射回 Provider 拥有的有序 URL 候选。调用可传入转发给 Provider 的可选 `AbortSignal`。
 
 `verifyReference(reference, allowedProviders, signal)` 把已识别 DOI 交给 OpenAlex、arXiv ID 交给 arXiv、ACL/PMLR/CVF 官方记录交给对应 Provider。服务在网络访问前检查允许列表；即使目录搜索不可用，已注册 Provider 仍可核验单篇记录。结果是带全文候选的已核验成果，或一条分类失败。Provider 未注册时明确抛错；调用方取消会中止调用。
 
@@ -78,6 +78,8 @@ kind: "package-reference"
 | `AcademicSourceSearchRequest` | 一次学术查询，带可选 `maxResults` 上限。 |
 | `AcademicSourceSearchResult` | 规范化成果/版本对，外加 `truncated` 标记。 |
 | `AcademicSourceSearchBatchResult` | `searchAll()` 的聚合结果：实际调用的提供方、上限前记录数、成果与来源级失败组成的 `BatchResult`、截断状态与覆盖限制。 |
+| `AcademicSourceProviderObserver` / `AcademicSourceProviderObservation` | 可选的逐 Provider 发现事实：Provider 发起请求时发布 `started`，随后发布 `settled`（`success`/`failed`/`cancelled`、失败 `category`、返回成果数与截断）。事实不带时间戳，由观察者持有方打戳。 |
+| `AcademicSourceProviderPhase` / `AcademicSourceProviderSettlement` | 观察阶段（`started`/`settled`）与终态结算（`success`/`failed`/`cancelled`）。 |
 | `AcademicSourceWork` | 一对 Provider 中立的成果/版本记录；混合检索消费方可附加已核验的 Web 发现 URL 与核验 Provider ID。 |
 | `AcademicWebDiscoveryCandidate`、`AcademicReference`、`AcademicReferenceIdentifier` | 从 Web 结果到 DOI、arXiv 及带 ACL/PMLR/CVF 命名空间记录的纯识别边界；有效引用不因同批识别问题被丢弃，被丢弃的候选则保留明确的未识别、格式错误或含糊原因。发现文本绝不作为证据。 |
 | `identifyAcademicReferences()` | 从单条 Web 结果的 URL、标题和摘要片段识别引用，不抓取网页；含糊的 DOI 值不进入结果，其他有效引用仍保留。 |

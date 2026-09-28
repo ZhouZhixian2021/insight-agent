@@ -10,12 +10,13 @@ import type { AcademicWorkId, ExternalIdentifierDedupKey } from '@deepseek-ai/ds
 
 import { dedupKeys } from './dedup.ts'
 import { reconcileWork, workVersionsOf } from './merge.ts'
-import type { IngestAuditEntry, IngestIndex, IngestOutcome, IngestRecord } from './types.ts'
+import type { IngestAuditCounts, IngestAuditEntry, IngestIndex, IngestOutcome, IngestRecord } from './types.ts'
 
 export { dedupKeys } from './dedup.ts'
 export { reconcileWork, selectCanonicalVersion, workVersionsOf } from './merge.ts'
 export type {
   IngestAudit,
+  IngestAuditCounts,
   IngestAuditEntry,
   IngestIndex,
   IngestOutcome,
@@ -96,6 +97,27 @@ export function ingestWorks(index: IngestIndex, records: readonly IngestRecord[]
     verifiedDiscoveries,
     audit: { entries },
   }
+}
+
+/**
+ * Aggregate one ingestion outcome's audit into progress counters. Each counter reads one
+ * audit kind or field, so no two facts share a meaning: merged work identities, merged version
+ * records, suspected duplicates, and the outcome's distinct retained version total.
+ *
+ * @param outcome - one ingestion outcome, or its audit and retained versions.
+ * @returns the independent ingestion progress counters.
+ */
+export function summarizeIngestAudit(outcome: Pick<IngestOutcome, 'audit' | 'versions'>): IngestAuditCounts {
+  let mergedWorkIdentities = 0
+  let mergedVersionRecords = 0
+  let suspectedDuplicateRecords = 0
+  for (const entry of outcome.audit.entries) {
+    if (entry.kind === 'merged_work') mergedWorkIdentities += 1
+    else if (entry.kind === 'merged_version') mergedVersionRecords += 1
+    else if (entry.kind === 'suspected_duplicate') suspectedDuplicateRecords += 1
+  }
+  return { mergedWorkIdentities, mergedVersionRecords, retainedWorkVersions: outcome.versions.length,
+    suspectedDuplicateRecords }
 }
 
 /** Every distinct work identity matched by the record's exact keys. */
