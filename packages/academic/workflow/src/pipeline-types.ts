@@ -1,6 +1,7 @@
 /** Explicit adapters and results for one bounded research draft pass. */
 import type { ResearchBrief, RetrievalRun, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSourceSearchBatchResult, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
+import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
+  AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicWebFetcher } from '@deepseek-ai/dsh-academic-evidence'
 import type { PaperEvidenceGenerator } from './model-types.ts'
@@ -41,7 +42,11 @@ export interface DraftPipelineAdapters {
   readonly synthesize: (input: import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisInput,
     signal?: AbortSignal) => Promise<import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisDraft>
   /** Return source-observed providers, counts, limits, successes, and failures for one explicit query. */
-  readonly search: (request: AcademicSourceSearchRequest, signal?: AbortSignal) => Promise<DraftSearchResult>
+  readonly search: (
+    request: AcademicSourceSearchRequest,
+    signal?: AbortSignal,
+    onProvider?: AcademicSourceProviderObserver,
+  ) => Promise<DraftSearchResult>
   /**
    * Screen all returned deduplicated works, then cap eligible candidates at the effective maximumCandidateWorks.
    * Do not apply maximumIncludedWorks here.

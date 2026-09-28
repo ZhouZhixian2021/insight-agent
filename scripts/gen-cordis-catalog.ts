@@ -250,6 +250,8 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   AcademicReferenceVerificationOutcome: 'academic-source.md',
   AcademicSourceFullText: 'academic-source.md',
   AcademicSourceProvider: 'academic-source.md',
+  AcademicSourceProviderObservation: 'academic-source.md',
+  AcademicSourceProviderObserver: 'academic-source.md',
   AcademicSourceSearchBatchResult: 'academic-source.md',
   AcademicSourceSearchRequest: 'academic-source.md',
   AcademicSourceSearchResult: 'academic-source.md',

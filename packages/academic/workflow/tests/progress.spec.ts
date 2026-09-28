@@ -89,6 +89,66 @@ describe('Academic workflow progress', () => {
     })
   })
 
+  it('publishes provider lifecycle facts inside the owning query', async () => {
+    const { input, adapters, snapshots } = snapshotsOf()
+    const search = adapters.search
+    adapters.search = async (request, signal, onProvider) => {
+      onProvider?.({ provider: 'openalex', phase: 'started', settlement: null,
+        category: null, works: 0, truncated: false })
+      const result = await search(request, signal)
+      onProvider?.({ provider: 'openalex', phase: 'settled', settlement: 'success',
+        category: null, works: result.works.length, truncated: false })
+      return result
+    }
+
+    await runResearchDraft(input, adapters)
+
+    const started = snapshots.find(snapshot => snapshot.latestEvent.code === 'provider_updated'
+      && snapshot.latestEvent.providerId === 'openalex'
+      && snapshot.activities.some(activity => activity.kind === 'provider' && activity.status === 'running'))
+    const settled = snapshots.find(snapshot => snapshot.latestEvent.code === 'provider_updated'
+      && snapshot.latestEvent.providerId === 'openalex'
+      && snapshot.activities.some(activity => activity.kind === 'provider' && activity.status === 'success'))
+    expect(started?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'openalex',
+      queryIndex: 1, queryCount: 1, discoveredRecords: null, completedAt: null }))
+    expect(settled?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'openalex',
+      status: 'success', discoveredRecords: 2, failureCode: null }))
+  })
+
+  it('preserves failed and cancelled provider settlements before the query settles', async () => {
+    const failed = snapshotsOf()
+    const failedSearch = failed.adapters.search
+    failed.adapters.search = async (request, signal, onProvider) => {
+      onProvider?.({ provider: 'arxiv', phase: 'started', settlement: null,
+        category: null, works: 0, truncated: false })
+      const result = await failedSearch(request, signal)
+      onProvider?.({ provider: 'arxiv', phase: 'settled', settlement: 'failed',
+        category: 'rate_limited', works: 0, truncated: false })
+      return result
+    }
+    await runResearchDraft(failed.input, failed.adapters)
+    const failedSnapshot = failed.snapshots.find(snapshot => snapshot.latestEvent.code === 'provider_updated'
+      && snapshot.latestEvent.providerId === 'arxiv' && snapshot.latestEvent.failureCode === 'rate_limited')
+    expect(failedSnapshot?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'arxiv',
+      status: 'failed', discoveredRecords: 0, failureCode: 'rate_limited' }))
+
+    const cancelled = snapshotsOf()
+    const abort = new AbortController()
+    cancelled.adapters.search = async (_request, _signal, onProvider) => {
+      onProvider?.({ provider: 'openalex', phase: 'started', settlement: null,
+        category: null, works: 0, truncated: false })
+      onProvider?.({ provider: 'openalex', phase: 'settled', settlement: 'cancelled',
+        category: null, works: 0, truncated: false })
+      abort.abort(new DOMException('cancelled', 'AbortError'))
+      throw abort.signal.reason
+    }
+    await expect(runResearchDraft(cancelled.input, cancelled.adapters, abort.signal)).resolves.toMatchObject({ status: 'cancelled' })
+    const cancelledSnapshot = cancelled.snapshots.find(snapshot => snapshot.latestEvent.code === 'provider_updated'
+      && snapshot.latestEvent.providerId === 'openalex' && snapshot.latestEvent.failureCode === 'cancelled')
+    expect(cancelledSnapshot?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'openalex',
+      status: 'cancelled', failureCode: 'cancelled' }))
+  })
+
   it('keeps concurrent paper activities separate and preserves successes after one failure', async () => {
     const { input, adapters, snapshots } = snapshotsOf(3)
     input.paperConcurrency = 3
