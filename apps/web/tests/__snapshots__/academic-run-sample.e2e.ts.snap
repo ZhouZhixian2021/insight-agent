@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`hybrid plan browser preview > shows approved channels and budgets through the real Remote without starting research 1`] = `
+exports[`hybrid plan browser preview > streams real workflow progress and a blocked result through Remote with controlled external sources 1`] = `
 "Web search discovers candidates only. Scholarly verification is required before admission; Web snippets are not paper evidence.
 
 查找检索增强生成减少幻觉的效果与局限

@@ -2,7 +2,7 @@
 import { readFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { chromium } from 'playwright'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { launchWebScaffold, seedSession } from './scaffold.ts'
@@ -30,7 +30,7 @@ describe('hybrid plan browser preview', () => {
       } finally { await browser.close() }
     } finally { await scaffold.close() }
   })
-  it('shows approved channels and budgets through the real Remote without starting research', async () => {
+  it('streams real workflow progress and a blocked result through Remote with controlled external sources', async () => {
     const scaffold = await launchWebScaffold({})
     try {
       const raw = await readFile('snapshots/sdk/academic-plan-chinese/session.v2.jsonl', 'utf8')
@@ -60,6 +60,20 @@ describe('hybrid plan browser preview', () => {
       const id = SessionId('academic-hybrid-preview')
       await seedSession(scaffold, rows.map(row => JSON.stringify(row)).join('\n'), id)
       await scaffold.ctx.sessionController.rename({ sessionId: id, title: 'Synthetic hybrid preview (no network)' })
+      const resolved = await scaffold.ctx.sessionController.resolveAgent(id)
+      if ('error' in resolved) throw resolved.error
+      const source = resolved.agent.ctx.get('academicSource')
+      const web = resolved.agent.ctx.get('web')
+      if (source === undefined || web === undefined) throw new Error('Academic source and Web must be mounted by the real composition')
+      let finishSearch!: () => void
+      const searchGate = new Promise<void>((resolve) => { finishSearch = resolve })
+      // Mock only external discovery; Controller, workflow, Session and transport remain real.
+      const search = vi.spyOn(source, 'searchProviders').mockImplementation(async () => {
+        await searchGate
+        return { works: [], batch: { schemaVersion: 1, status: 'success', items: [], failures: [] },
+          providers: ['openalex', 'arxiv'], discoveredRecords: 0, limitations: ['Synthetic empty-source browser test'], truncated: false }
+      })
+      const webSearch = vi.spyOn(web, 'search').mockResolvedValue({ sources: [], content: '', truncated: false })
       const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
       try {
         const page = await newEnglishPage(browser)
@@ -86,10 +100,25 @@ describe('hybrid plan browser preview', () => {
           await page.screenshot({ path: join(capture, 'hybrid-plan.png') })
           await dialog.getByText('Executed query', { exact: true }).first().click()
           await page.screenshot({ path: join(capture, 'hybrid-query.png') })
-          await dialog.getByRole('button', { name: 'Close', exact: true }).click()
-          await page.screenshot({ path: join(capture, 'hybrid-closed.png') })
         }
-      } finally { await browser.close() }
+        await dialog.getByRole('button', { name: 'Start research from plan' }).click()
+        const progress = dialog.getByRole('region', { name: 'Research progress' })
+        try { await progress.waitFor({ timeout: 10_000 }) } catch (error) { throw new Error(await dialog.innerText(), { cause: error }) }
+        expect(await progress.innerText()).toContain('retrieval augmented generation hallucination')
+        expect(await dialog.getByRole('button', { name: 'Start research from plan' }).isDisabled()).toBe(true)
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'live-running.png') })
+        finishSearch()
+        await dialog.getByRole('heading', { name: 'Coverage', exact: true }).waitFor()
+        expect(search).toHaveBeenCalledTimes(1)
+        expect(webSearch).toHaveBeenCalledTimes(1)
+        expect(await progress.innerText()).toContain('not run')
+        expect(await dialog.getByRole('button', { name: 'Download Markdown' }).count()).toBe(0)
+        expect(await dialog.getByRole('progressbar').count()).toBe(0)
+        if (capture !== undefined) {
+          await progress.scrollIntoViewIfNeeded()
+          await page.screenshot({ path: join(capture, 'live-settled.png') })
+        }
+      } finally { finishSearch(); search.mockRestore(); webSearch.mockRestore(); await browser.close() }
     } finally { await scaffold.close() }
   })
 })

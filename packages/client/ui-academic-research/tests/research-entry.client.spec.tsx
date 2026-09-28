@@ -6,13 +6,17 @@ import { ResearchEntry, type ResearchEntryProps } from '../src/client/ResearchEn
 import { zh, type RunKey } from '../src/client/run-locales.ts'
 import { sampleRun } from './run-sample.ts'
 
+type LegacyRun = (request: { sessionId: AcademicResearchRunValue['sessionId']; researchBriefId: AcademicResearchRunValue['retrievalRun']['researchBriefId']; synthetic: boolean }, signal: AbortSignal) => Promise<AcademicResearchRunValue>
 const sid = sampleRun().sessionId
 const planned = { researchBriefId: sampleRun().retrievalRun.researchBriefId, topic: 'RAG 与幻觉',
   questions: ['何时能减少幻觉？'], searches: [{ query: 'retrieval hallucination', purpose: '查找减少幻觉的效果研究', questions: ['何时能减少幻觉？'] }] }
 const loadPlan: ResearchEntryProps['plan'] = async () => planned
-function props(run: ResearchEntryProps['run'], current: typeof sid | undefined = sid, blank = false): ResearchEntryProps {
-  return { wide: true, t: key => zh[key as RunKey], run, plan: loadPlan,
-    useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [sid]: { blank }, second: { blank: false } } })) as ResearchEntryProps['useSessions'],
+function props(run: LegacyRun, current: typeof sid | undefined = sid, blank = false): ResearchEntryProps {
+  return { wide: true, t: key => zh[key as RunKey], runStream: async function* (request, signal) {
+    const value = await run(request, signal)
+    yield { type: 'result', retrievalRunId: value.retrievalRun.retrievalRunId, value }
+  }, plan: loadPlan,
+  useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [sid]: { blank }, second: { blank: false } } })) as ResearchEntryProps['useSessions'],
   } as ResearchEntryProps
 }
 function deferred() {
@@ -80,7 +84,7 @@ describe('Session research request lifecycle', () => {
     expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
   })
   it('shows approved intent and directions without requiring a search expression', async () => {
-    const run = vi.fn<ResearchEntryProps['run']>().mockResolvedValue(sampleRun())
+    const run = vi.fn<LegacyRun>().mockResolvedValue(sampleRun())
     render(<ResearchEntry {...props(run)} />); open()
     expect(await screen.findByText(planned.topic)).toBeTruthy()
     expect(screen.getByText(planned.searches[0]!.purpose)).toBeTruthy()
@@ -120,7 +124,7 @@ describe('Session research request lifecycle', () => {
     expect(screen.queryByRole('button', { name: '下载 Markdown' })).toBeNull()
   })
   it('shows server errors and permits a new request without retaining the old report', async () => {
-    const run = vi.fn<ResearchEntryProps['run']>().mockRejectedValueOnce(new Error('Approve the brief first')).mockRejectedValueOnce('transport')
+    const run = vi.fn<LegacyRun>().mockRejectedValueOnce(new Error('Approve the brief first')).mockRejectedValueOnce('transport')
     render(<ResearchEntry {...props(run)} />); open()
     await start()
     await act(async () => { await Promise.resolve() })

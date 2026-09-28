@@ -15,7 +15,7 @@ import type {
   AcademicWorkflowProgressStageView,
   AcademicWorkflowProgressStatus,
   AcademicWorkflowProgressUnit,
-} from '@deepseek-ai/dsh-academic-workflow'
+} from '@deepseek-ai/dsh-academic-workflow/progress'
 
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
