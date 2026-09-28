@@ -12,6 +12,8 @@ kind: "package-reference"
 
 `@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
 
+本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量和已运行时间，不估算完成百分比。在进度 Remote 接通前，现有 `academicResearch.run` 仍只返回最终结果。
+
 ## 目录
 
 - [使用方式](#use-this-package)
@@ -66,7 +68,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
-- 一次 Remote 调用会保持到整轮结束。工作流续跑、进度流、RetrievalRun 持久记录和检索级重试留待后续。
+- 一次 Remote 调用会保持到整轮结束。实时进度帧格式已经导出，其 Remote 生产方、工作流续跑、RetrievalRun 持久记录和检索级重试留待后续。
 - 混合计数累加已完成查询；中断查询不计入，并在 RetrievalRun 限制中披露。没有已完成混合查询时省略投影。`mergedDuplicates` 为整轮上限应用前的 ingestion 记录数减去不同论文数，不包含重复引用或被截断的记录。核验成功不代表保留为候选或纳入证据。持久化的发现到论文溯源仍属于 B-H3。
 - 当前每份获批计划都会建立版本 1，其身份由 Session 和获批计划调用共同确定；对已批准 Brief 进行后续版本修订留待后续。
 

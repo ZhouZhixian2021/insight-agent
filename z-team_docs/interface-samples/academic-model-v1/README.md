@@ -7,11 +7,11 @@ English | [中文](README.zh.md)
 | Item | Value |
 |---|---|
 | Owner | A, `ZhouZhixian2021` |
-| Status | Fixed interface samples; synthesis samples also serve as executable test fixtures |
+| Status | Fixed interface samples; synthesis and progress samples also serve as executable test fixtures |
 | Data | Entirely fictional; does not represent real papers, sources, or retrieval results |
-| Source impact | Data only; analysis, report and Session tests consume the synthesis fixtures |
+| Source impact | Data and browser types; Controller tests consume the progress fixture |
 
-This directory uses fixed JSON to verify that member B's retrieval and evidence output can directly support member C's cross-paper analysis. Field names follow the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md) and [field reference](../../模块分工/academic-model-v1-field-reference.md); the field semantics are confirmed but are not a published source API.
+This directory uses fixed JSON to verify that member B's retrieval and evidence output can directly support member C's cross-paper analysis. Field names follow the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md) and [field reference](../../模块分工/academic-model-v1-field-reference.md). The progress sample implements the browser types exported by the Academic Research Controller; older domain samples remain handoff data unless an owning package exports their type.
 
 ## Files
 
@@ -23,6 +23,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 - [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result, including producer-settled search, full-text, and evidence-extraction stages, that C can use before live integration.
 - [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, explicit unrecognized/invalid/ambiguous identification issues, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. A-H4 adds optional query attribution to candidate/reference rows; counts keep repeated reference observations separate from actual ingested work merges. All records are synthetic.
+- [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json): fixes A-P1's complete progress snapshots for retrieval start, overlapping full-text and evidence work with three active papers, a timeout retry, and report synthesis. It contains observed counts and elapsed time but no estimated percentage.
 
 ## Sample coverage
 
@@ -39,6 +40,7 @@ This directory uses fixed JSON to verify that member B's retrieval and evidence 
 11. Search, full-text, and evidence-extraction results are settled independently, so a downstream failure does not relabel a successful search as failed.
 12. Web-discovered URLs, identified references, verification attempts, and deduplicated works remain separate units; DOI, arXiv, ACL, PMLR, and CVF references retain discovery and verification provenance.
 13. Reference identification retains successful references beside sibling issues; a discarded Web candidate carries an explicit unrecognized, invalid, or ambiguous issue instead of an unexplained empty array.
+14. Progress snapshots retain all six stage settlements, represent simultaneous full-text and evidence work, and use monotone sequences so a later snapshot replaces an earlier one.
 
 ## Confirmed field rules
 
@@ -57,5 +59,6 @@ The samples do not use `null` in place of a core field's missing-data state; an 
 - `metadata` evidence must not support experimental results or method details.
 - `partial_success` must contain successful IDs and item-level failures.
 - A version mismatch in the freshness sample must produce `stale`, and `mayEnterFinalReport` must be `false`.
+- Progress fixture sequences must increase, concurrent activities must remain separate, and no progress frame may contain an estimated percentage.
 
 Return to the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md).

@@ -12,6 +12,8 @@ English | [中文](README.zh.md)
 
 `@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run`. One call resolves an existing Session Agent, reconstructs the ResearchBrief approved through plan review, reuses the Session's selected model, executes the approved search directions, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
 
+The package exports the version-1 `AcademicResearchProgressView` and `AcademicResearchRunFrame` browser contract for live progress integration. Each progress frame is a complete monotone snapshot with the fixed retrieval, screening, full-text, extraction, analysis, and report stages. Concurrent full-text and extraction work appears in `activeStages`; the contract contains observed counts and elapsed time but no estimated completion percentage. The existing `academicResearch.run` method continues to return only its final value until the progress Remote is connected.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -66,7 +68,7 @@ Each paper is an independent request and does not replay the Session conversatio
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF, ACL Anthology, and PMLR search only the catalog pages configured by the Web composition; adding a conference or volume is a configuration change.
-- One Remote call remains open for the pass. Workflow resume, progress streaming, persisted RetrievalRun records, and search-level retries are deferred.
+- One Remote call remains open for the pass. The live-progress frame format is exported, while its Remote producer, workflow resume, persisted RetrievalRun records, and search-level retries are deferred.
 - Hybrid counts sum completed queries; an interrupted query is excluded and disclosed in RetrievalRun limitations. Zero completed hybrid queries omit the projection. `mergedDuplicates` counts ingested records minus distinct works before the run-wide cap, not repeated references or truncated records. Verification success does not imply candidate retention or evidence inclusion. Durable discovery-to-work provenance remains B-H3 work.
 - Each approved plan currently creates Brief version 1 with an identity derived from the Session and approved plan call. Editing an already approved Brief as a later version is deferred.
 

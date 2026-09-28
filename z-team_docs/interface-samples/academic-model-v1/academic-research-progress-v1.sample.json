@@ -1,0 +1,207 @@
+{
+  "sampleSchemaVersion": 1,
+  "synthetic": true,
+  "frames": [
+    {
+      "type": "progress",
+      "progress": {
+        "schemaVersion": 1,
+        "retrievalRunId": "retrieval-run-progress-1",
+        "sessionId": "session-progress-1",
+        "sequence": 0,
+        "startedAt": "2026-09-28T01:00:00.000Z",
+        "updatedAt": "2026-09-28T01:00:00.000Z",
+        "elapsedMs": 0,
+        "primaryStage": "retrieval",
+        "activeStages": ["retrieval"],
+        "stages": {
+          "retrieval": { "status": "running", "startedAt": "2026-09-28T01:00:00.000Z", "completedAt": null, "completedItems": 0, "totalItems": 3, "unit": "queries" },
+          "screening": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": null, "unit": "works" },
+          "fulltext": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": null, "unit": "papers" },
+          "extraction": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": null, "unit": "papers" },
+          "analysis": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": 3, "unit": "questions" },
+          "report": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": 1, "unit": "report" }
+        },
+        "counts": {
+          "completedQueries": 0,
+          "totalQueries": 3,
+          "discoveredRecords": 0,
+          "deduplicatedWorks": 0,
+          "candidateWorks": 0,
+          "completedPapers": 0,
+          "totalPapers": null,
+          "includedPapers": 0,
+          "availableFulltextPapers": 0,
+          "validatedEvidenceRecords": 0,
+          "rejectedEvidenceDrafts": 0,
+          "completedQuestions": 0,
+          "totalQuestions": 3
+        },
+        "activities": [
+          {
+            "kind": "query",
+            "stage": "retrieval",
+            "queryIndex": 1,
+            "queryCount": 3,
+            "query": "retrieval augmented generation hallucination",
+            "channels": ["academic", "web_discovery"],
+            "startedAt": "2026-09-28T01:00:00.000Z"
+          }
+        ],
+        "latestEvent": {
+          "code": "run_started",
+          "occurredAt": "2026-09-28T01:00:00.000Z",
+          "stage": "retrieval",
+          "workVersionId": null,
+          "failureCode": null
+        }
+      }
+    },
+    {
+      "type": "progress",
+      "progress": {
+        "schemaVersion": 1,
+        "retrievalRunId": "retrieval-run-progress-1",
+        "sessionId": "session-progress-1",
+        "sequence": 18,
+        "startedAt": "2026-09-28T01:00:00.000Z",
+        "updatedAt": "2026-09-28T01:18:32.000Z",
+        "elapsedMs": 1112000,
+        "primaryStage": "extraction",
+        "activeStages": ["fulltext", "extraction"],
+        "stages": {
+          "retrieval": { "status": "partial_success", "startedAt": "2026-09-28T01:00:00.000Z", "completedAt": "2026-09-28T01:02:40.000Z", "completedItems": 3, "totalItems": 3, "unit": "queries" },
+          "screening": { "status": "success", "startedAt": "2026-09-28T01:02:40.000Z", "completedAt": "2026-09-28T01:02:41.000Z", "completedItems": 15, "totalItems": 15, "unit": "works" },
+          "fulltext": { "status": "running", "startedAt": "2026-09-28T01:02:41.000Z", "completedAt": null, "completedItems": 7, "totalItems": 15, "unit": "papers" },
+          "extraction": { "status": "running", "startedAt": "2026-09-28T01:04:10.000Z", "completedAt": null, "completedItems": 4, "totalItems": 15, "unit": "papers" },
+          "analysis": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": 3, "unit": "questions" },
+          "report": { "status": "pending", "startedAt": null, "completedAt": null, "completedItems": 0, "totalItems": 1, "unit": "report" }
+        },
+        "counts": {
+          "completedQueries": 3,
+          "totalQueries": 3,
+          "discoveredRecords": 62,
+          "deduplicatedWorks": 41,
+          "candidateWorks": 15,
+          "completedPapers": 7,
+          "totalPapers": 15,
+          "includedPapers": 5,
+          "availableFulltextPapers": 7,
+          "validatedEvidenceRecords": 24,
+          "rejectedEvidenceDrafts": 3,
+          "completedQuestions": 0,
+          "totalQuestions": 3
+        },
+        "activities": [
+          {
+            "kind": "paper",
+            "stage": "extraction",
+            "workVersionId": "work-version-progress-a",
+            "title": "Synthetic Paper A",
+            "operation": "waiting_retry",
+            "batchIndex": 3,
+            "batchCount": 6,
+            "attempt": 1,
+            "maximumAttempts": 2,
+            "lastFailure": "timeout",
+            "validatedEvidenceRecords": 8,
+            "rejectedEvidenceDrafts": 2,
+            "startedAt": "2026-09-28T01:16:30.000Z"
+          },
+          {
+            "kind": "paper",
+            "stage": "fulltext",
+            "workVersionId": "work-version-progress-b",
+            "title": "Synthetic Paper B",
+            "operation": "fulltext_fetch",
+            "batchIndex": null,
+            "batchCount": null,
+            "attempt": 1,
+            "maximumAttempts": 1,
+            "lastFailure": null,
+            "validatedEvidenceRecords": 0,
+            "rejectedEvidenceDrafts": 0,
+            "startedAt": "2026-09-28T01:18:10.000Z"
+          },
+          {
+            "kind": "paper",
+            "stage": "extraction",
+            "workVersionId": "work-version-progress-c",
+            "title": "Synthetic Paper C",
+            "operation": "evidence_extract",
+            "batchIndex": 1,
+            "batchCount": 4,
+            "attempt": 1,
+            "maximumAttempts": 2,
+            "lastFailure": null,
+            "validatedEvidenceRecords": 0,
+            "rejectedEvidenceDrafts": 0,
+            "startedAt": "2026-09-28T01:18:20.000Z"
+          }
+        ],
+        "latestEvent": {
+          "code": "retry_scheduled",
+          "occurredAt": "2026-09-28T01:18:32.000Z",
+          "stage": "extraction",
+          "workVersionId": "work-version-progress-a",
+          "failureCode": "timeout"
+        }
+      }
+    },
+    {
+      "type": "progress",
+      "progress": {
+        "schemaVersion": 1,
+        "retrievalRunId": "retrieval-run-progress-1",
+        "sessionId": "session-progress-1",
+        "sequence": 42,
+        "startedAt": "2026-09-28T01:00:00.000Z",
+        "updatedAt": "2026-09-28T01:31:00.000Z",
+        "elapsedMs": 1860000,
+        "primaryStage": "report",
+        "activeStages": ["report"],
+        "stages": {
+          "retrieval": { "status": "partial_success", "startedAt": "2026-09-28T01:00:00.000Z", "completedAt": "2026-09-28T01:02:40.000Z", "completedItems": 3, "totalItems": 3, "unit": "queries" },
+          "screening": { "status": "success", "startedAt": "2026-09-28T01:02:40.000Z", "completedAt": "2026-09-28T01:02:41.000Z", "completedItems": 15, "totalItems": 15, "unit": "works" },
+          "fulltext": { "status": "partial_success", "startedAt": "2026-09-28T01:02:41.000Z", "completedAt": "2026-09-28T01:25:00.000Z", "completedItems": 15, "totalItems": 15, "unit": "papers" },
+          "extraction": { "status": "partial_success", "startedAt": "2026-09-28T01:04:10.000Z", "completedAt": "2026-09-28T01:27:00.000Z", "completedItems": 15, "totalItems": 15, "unit": "papers" },
+          "analysis": { "status": "success", "startedAt": "2026-09-28T01:27:00.000Z", "completedAt": "2026-09-28T01:30:00.000Z", "completedItems": 3, "totalItems": 3, "unit": "questions" },
+          "report": { "status": "running", "startedAt": "2026-09-28T01:30:00.000Z", "completedAt": null, "completedItems": 0, "totalItems": 1, "unit": "report" }
+        },
+        "counts": {
+          "completedQueries": 3,
+          "totalQueries": 3,
+          "discoveredRecords": 62,
+          "deduplicatedWorks": 41,
+          "candidateWorks": 15,
+          "completedPapers": 15,
+          "totalPapers": 15,
+          "includedPapers": 9,
+          "availableFulltextPapers": 12,
+          "validatedEvidenceRecords": 36,
+          "rejectedEvidenceDrafts": 8,
+          "completedQuestions": 3,
+          "totalQuestions": 3
+        },
+        "activities": [
+          {
+            "kind": "report",
+            "stage": "report",
+            "operation": "synthesis",
+            "attempt": 1,
+            "maximumAttempts": 3,
+            "lastFailure": null,
+            "startedAt": "2026-09-28T01:30:00.000Z"
+          }
+        ],
+        "latestEvent": {
+          "code": "stage_started",
+          "occurredAt": "2026-09-28T01:30:00.000Z",
+          "stage": "report",
+          "workVersionId": null,
+          "failureCode": null
+        }
+      }
+    }
+  ]
+}
