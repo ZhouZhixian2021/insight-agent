@@ -1,5 +1,5 @@
 /** Run-local progress facts emitted by the Academic workflow. */
-import type { FailureCategory, RetrievalRunId, WorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicWorkId, FailureCategory, RetrievalRunId, WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 
 /** Ordered stages observed during one Academic research run. */
 export type AcademicWorkflowProgressStage =
@@ -49,6 +49,14 @@ export interface AcademicWorkflowProgressCounts {
   readonly totalQueries: number
   readonly discoveredRecords: number
   readonly deduplicatedWorks: number
+  /** Work identities consolidated into another identity by exact-identifier bridges. */
+  readonly mergedWorkIdentities: number
+  /** Input records assigned to an existing work identity during ingestion. */
+  readonly mergedVersionRecords: number
+  /** Distinct version states retained by the current ingestion outcome. */
+  readonly retainedWorkVersions: number
+  /** Records retained separately after an unresolved fuzzy-identity match. */
+  readonly suspectedDuplicateRecords: number
   readonly candidateWorks: number
   readonly completedPapers: number
   readonly totalPapers: number | null
@@ -79,6 +87,18 @@ export type AcademicWorkflowProgressActivity =
     readonly startedAt: string
   }
   | {
+    readonly kind: 'provider'
+    readonly stage: 'retrieval'
+    readonly queryIndex: number
+    readonly queryCount: number
+    readonly providerId: string
+    readonly status: 'running' | 'success' | 'failed' | 'cancelled'
+    readonly discoveredRecords: number | null
+    readonly failureCode: AcademicWorkflowProgressFailureCode | null
+    readonly startedAt: string
+    readonly completedAt: string | null
+  }
+  | {
     readonly kind: 'screening'
     readonly stage: 'screening'
     readonly operation: 'deduplication' | 'eligibility'
@@ -87,6 +107,7 @@ export type AcademicWorkflowProgressActivity =
   | {
     readonly kind: 'paper'
     readonly stage: 'fulltext' | 'extraction'
+    readonly academicWorkId: AcademicWorkId
     readonly workVersionId: WorkVersionId
     readonly title: string | null
     readonly operation: 'fulltext_fetch' | 'fulltext_parse' | 'evidence_extract' | 'evidence_validate' | 'waiting_retry'
@@ -124,13 +145,16 @@ export interface AcademicWorkflowProgressEvent {
     | 'stage_started'
     | 'stage_updated'
     | 'stage_settled'
+    | 'provider_updated'
     | 'paper_updated'
     | 'retry_scheduled'
     | 'run_completed'
     | 'run_cancelled'
   readonly occurredAt: string
   readonly stage: AcademicWorkflowProgressStage
+  readonly academicWorkId: AcademicWorkId | null
   readonly workVersionId: WorkVersionId | null
+  readonly providerId: string | null
   readonly failureCode: AcademicWorkflowProgressFailureCode | null
 }
 
@@ -188,6 +212,10 @@ class ProgressPublisher {
       totalQueries,
       discoveredRecords: 0,
       deduplicatedWorks: 0,
+      mergedWorkIdentities: 0,
+      mergedVersionRecords: 0,
+      retainedWorkVersions: 0,
+      suspectedDuplicateRecords: 0,
       candidateWorks: 0,
       completedPapers: 0,
       totalPapers: null,
@@ -249,9 +277,12 @@ class ProgressPublisher {
     if (this.terminal) return
     this.activities.set(key, activity)
     this.primaryStage = activity.stage
-    this.emit(activity.kind === 'paper' ? 'paper_updated' : 'stage_updated', activity.stage,
-      activity.kind === 'paper' ? activity.workVersionId : null,
-      activity.kind === 'paper' ? activity.lastFailure : null)
+    const paper = activity.kind === 'paper' ? activity : null
+    const provider = activity.kind === 'provider' ? activity : null
+    const code = paper !== null ? 'paper_updated' : provider !== null ? 'provider_updated' : 'stage_updated'
+    this.emit(code, activity.stage, paper?.workVersionId ?? null,
+      paper?.lastFailure ?? provider?.failureCode ?? null, this.now(),
+      paper?.academicWorkId ?? null, provider?.providerId ?? null)
   }
 
   removeActivity(
@@ -259,11 +290,13 @@ class ProgressPublisher {
     stage: AcademicWorkflowProgressStage,
     workVersionId: WorkVersionId | null = null,
     failureCode: AcademicWorkflowProgressFailureCode | null = null,
+    academicWorkId: AcademicWorkId | null = null,
   ): void {
     if (this.terminal) return
     this.activities.delete(key)
     this.primaryStage = stage
-    this.emit(workVersionId === null ? 'stage_updated' : 'paper_updated', stage, workVersionId, failureCode)
+    this.emit(workVersionId === null ? 'stage_updated' : 'paper_updated', stage, workVersionId, failureCode,
+      this.now(), academicWorkId)
   }
 
   updateCounts(stage: AcademicWorkflowProgressStage, counts: CountsPatch): void {
@@ -314,6 +347,8 @@ class ProgressPublisher {
     workVersionId: WorkVersionId | null = null,
     failureCode: AcademicWorkflowProgressFailureCode | null = null,
     occurredAt: string = this.now(),
+    academicWorkId: AcademicWorkId | null = null,
+    providerId: string | null = null,
   ): void {
     if (this.observer === undefined) return
     const updatedAt = occurredAt
@@ -331,7 +366,7 @@ class ProgressPublisher {
       stages: structuredClone(this.stages),
       counts: { ...this.counts },
       activities: [...this.activities.values()].map(activity => structuredClone(activity)),
-      latestEvent: { code, occurredAt, stage, workVersionId, failureCode },
+      latestEvent: { code, occurredAt, stage, academicWorkId, workVersionId, providerId, failureCode },
     }
     try {
       this.observer(snapshot)

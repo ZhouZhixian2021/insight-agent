@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createBatchResult } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicWorkflowProgressSnapshot } from '../src/index.ts'
 import { runResearchDraft } from '../src/index.ts'
 import { draftFixture } from './pipeline-fixture.ts'
@@ -44,6 +45,10 @@ describe('Academic workflow progress', () => {
       },
       counts: {
         completedQueries: 1,
+        mergedWorkIdentities: 0,
+        mergedVersionRecords: 0,
+        retainedWorkVersions: 2,
+        suspectedDuplicateRecords: 0,
         candidateWorks: 2,
         completedPapers: 2,
         totalPapers: 2,
@@ -52,6 +57,35 @@ describe('Academic workflow progress', () => {
         validatedEvidenceRecords: 2,
         completedQuestions: 1,
       },
+    })
+  })
+
+  it('keeps merged records separate from the retained version total', async () => {
+    const { input, adapters, records, snapshots } = snapshotsOf()
+    const identifier = { kind: 'doi' as const, normalizedValue: '10.1000/progress',
+      originalValue: '10.1000/PROGRESS', sourceProvider: 'fixture' }
+    const repeatedWork = records.map(record => ({
+      academicWork: { ...record.academicWork, externalIdentifiers: [identifier] },
+      workVersion: { ...record.workVersion, externalIdentifiers: [identifier] },
+    }))
+    adapters.search = async () => {
+      const batch = createBatchResult(repeatedWork, [])
+      return { works: batch.items, batch, providers: ['fixture'], discoveredRecords: 2,
+        truncated: false, limitations: [] }
+    }
+    adapters.selectPapers = ingested => ({ papers: ingested.versions.slice(0, 1).map(version => ({
+      workVersionId: version.workVersionId, urls: ['https://example.org/a'], sourceProvider: 'fixture',
+      extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false,
+    })), truncated: ingested.versions.length > 1 })
+
+    await runResearchDraft(input, adapters)
+
+    expect(snapshots.at(-1)?.counts).toMatchObject({
+      deduplicatedWorks: 1,
+      mergedWorkIdentities: 0,
+      mergedVersionRecords: 1,
+      retainedWorkVersions: 2,
+      suspectedDuplicateRecords: 0,
     })
   })
 

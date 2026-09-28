@@ -17,7 +17,8 @@ import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure,
   PaperSelectionResult, SelectedPaper } from './pipeline-types.ts'
 import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
-  type AcademicWorkflowProgressStage, type AcademicWorkflowProgressStatus } from './progress.ts'
+  type AcademicWorkflowProgressCounts, type AcademicWorkflowProgressStage,
+  type AcademicWorkflowProgressStatus } from './progress.ts'
 
 /**
  * Search, reconcile, acquire and extract papers before analyzing and evaluating a draft.
@@ -118,6 +119,7 @@ export async function runResearchDraft(
       completedQueries: searchResults.length,
       discoveredRecords: search.discoveredRecords,
       deduplicatedWorks: search.deduplicatedWorks,
+      ...ingestionProgressCounts(ingested),
     })
     if (signal?.aborted) return cancel()
   }
@@ -196,8 +198,8 @@ export async function runResearchDraft(
     const title = workTitles.get(version.academicWorkId) ?? null
     latestStage = 'fulltext'
     progress.startStage('fulltext', plannedPapers, 'papers')
-    progress.setActivity(activityKey, { kind: 'paper', stage: 'fulltext', workVersionId: paper.workVersionId,
-      title, operation: 'fulltext_fetch', batchIndex: null, batchCount: null, attempt: 1, maximumAttempts: 1,
+    progress.setActivity(activityKey, { kind: 'paper', stage: 'fulltext', academicWorkId: version.academicWorkId,
+      workVersionId: paper.workVersionId, title, operation: 'fulltext_fetch', batchIndex: null, batchCount: null, attempt: 1, maximumAttempts: 1,
       lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
     try {
       const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
@@ -212,8 +214,8 @@ export async function runResearchDraft(
       stage = 'extraction'
       latestStage = 'extraction'
       progress.startStage('extraction', plannedPapers, 'papers')
-      progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', workVersionId: paper.workVersionId,
-        title, operation: 'evidence_extract', batchIndex: null, batchCount: null, attempt: null, maximumAttempts: null,
+      progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', academicWorkId: version.academicWorkId,
+        workVersionId: paper.workVersionId, title, operation: 'evidence_extract', batchIndex: null, batchCount: null, attempt: null, maximumAttempts: null,
         lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
         { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal)
@@ -232,7 +234,7 @@ export async function runResearchDraft(
       })
       const resultFailure = result.status === 'partially_extracted' || result.status === 'extraction_failed'
         ? 'parse_failed' : null
-      progress.removeActivity(activityKey, 'extraction', paper.workVersionId, resultFailure)
+      progress.removeActivity(activityKey, 'extraction', paper.workVersionId, resultFailure, version.academicWorkId)
       return { fulltext, result }
     } catch (error: unknown) {
       if (error instanceof WorkflowLogError) {
@@ -253,7 +255,7 @@ export async function runResearchDraft(
           completedPapers: observedCompletedPapers,
         })
       }
-      progress.removeActivity(activityKey, stage, paper.workVersionId, providerFailure.category)
+      progress.removeActivity(activityKey, stage, paper.workVersionId, providerFailure.category, version.academicWorkId)
       return { fulltext, failure: { workVersionId: paper.workVersionId, stage }, providerFailure }
     }
   }
@@ -454,6 +456,23 @@ function sharedCandidateLimit(searches: readonly AcademicSourceSearchRequest[], 
     return [request.maxResults]
   })
   return Math.min(approvedMaximum, ...bounds)
+}
+
+/** Project ingestion audit decisions without overloading deduplicated work counts. */
+function ingestionProgressCounts(ingested: IngestOutcome): Pick<
+  AcademicWorkflowProgressCounts,
+  'mergedWorkIdentities' | 'mergedVersionRecords' | 'retainedWorkVersions' | 'suspectedDuplicateRecords'
+> {
+  let mergedWorkIdentities = 0
+  let mergedVersionRecords = 0
+  let suspectedDuplicateRecords = 0
+  for (const entry of ingested.audit.entries) {
+    if (entry.kind === 'merged_work') mergedWorkIdentities += 1
+    else if (entry.kind === 'merged_version') mergedVersionRecords += 1
+    else if (entry.kind === 'suspected_duplicate') suspectedDuplicateRecords += 1
+  }
+  return { mergedWorkIdentities, mergedVersionRecords,
+    retainedWorkVersions: ingested.versions.length, suspectedDuplicateRecords }
 }
 
 /** Merge completed query batches fairly, deduplicate exact identities, retain all returned works for eligibility screening. */

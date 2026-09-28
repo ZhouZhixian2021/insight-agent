@@ -34,6 +34,14 @@ function pause() {
 afterEach(cleanup)
 
 describe('one-shot research progress', () => {
+  it('shows a direct academic Provider independently from its query', () => {
+    const progress = snapshot()
+    render(<ProgressPanel progress={progress} recent={[progress]} t={t} />)
+
+    expect(screen.getByText(`openalex · ${zh.progress_running}`)).toBeTruthy()
+    expect(screen.getByText(`${zh.discoveredRecords}: ${zh.progressUnknown}`)).toBeTruthy()
+  })
+
   it('shows concurrent papers, retry facts, all six stages and unknown values from the official fixture', () => {
     const progress = snapshot(1)
     render(<ProgressPanel progress={progress} recent={[progress]} t={t} />)

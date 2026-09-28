@@ -39,6 +39,9 @@ export function ProgressPanel({ progress, recent = [], t }: PropsLocale<'academi
       <strong>{t(`progress_${activity.stage}`)}</strong>
       {activity.kind === 'query' && <><p>{activity.query}</p><p>{pair(activity.queryIndex, activity.queryCount)}</p>
         <p>{activity.channels.map(channel => t(channel)).join(' / ')}</p></>}
+      {activity.kind === 'provider' && <><p>{activity.providerId} · {t(`progress_${activity.status}`)}</p>
+        <p>{t('discoveredRecords')}: {number(activity.discoveredRecords)}</p>
+        {activity.failureCode !== null && <p>{t('lastFailure')}: {t(`failure_${activity.failureCode}`)}</p>}</>}
       {activity.kind === 'screening' && <p>{t(`operation_${activity.operation}`)}</p>}
       {activity.kind === 'question' && <><p>{activity.question}</p><p>{pair(activity.questionIndex, activity.questionCount)}</p></>}
       {activity.kind === 'paper' && <>
@@ -55,6 +58,7 @@ export function ProgressPanel({ progress, recent = [], t }: PropsLocale<'academi
     <h4>{t('recentProgress')}</h4>
     <ol aria-label={t('recentProgress')}>{recent.map(snapshot => <li key={snapshot.sequence}>
       {snapshot.latestEvent.occurredAt} · {t(`progress_${snapshot.latestEvent.stage}`)} · {t(`event_${snapshot.latestEvent.code}`)}
+      {snapshot.latestEvent.providerId !== null && <> · {snapshot.latestEvent.providerId}</>}
       {snapshot.latestEvent.workVersionId !== null && <> · {snapshot.latestEvent.workVersionId}</>}
       {snapshot.latestEvent.failureCode !== null && <> · {t(`failure_${snapshot.latestEvent.failureCode}`)}</>}
     </li>)}</ol>

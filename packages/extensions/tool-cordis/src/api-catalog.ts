@@ -98,6 +98,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
         returns: 'completed or cancelled draft data with its observed retrieval run and durable Session identity.',
       },
+      {
+        signature: '@Remote({ mode: \'stream\' }) runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame>',
+        description: 'Stream complete workflow progress snapshots followed by one final result.',
+        parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts this one pass.' }],
+        returns: 'ordered progress frames and at most one terminal result frame.',
+      },
     ],
   },
   {
@@ -3612,8 +3618,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicResearchPlanView {\n    readonly researchBriefId: ResearchBriefId;\n    readonly topic: string;\n    readonly questions: readonly string[];\n    readonly searches: readonly AcademicPlannedSearch[];\n}',
   },
   {
+    name: 'AcademicResearchProgressView',
+    declaration: 'export interface AcademicResearchProgressView extends AcademicWorkflowProgressSnapshot {\n    readonly sessionId: SessionId;\n}',
+  },
+  {
     name: 'AcademicResearchReportView',
     declaration: 'export interface AcademicResearchReportView {\n    readonly retrievalDisclosureIncluded?: true;\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicResearchRunFrame',
+    declaration: 'export type AcademicResearchRunFrame = {\n    readonly type: \'progress\';\n    readonly progress: AcademicResearchProgressView;\n} | {\n    readonly type: \'result\';\n    readonly retrievalRunId: RetrievalRunId;\n    readonly value: AcademicResearchRunValue;\n};',
   },
   {
     name: 'AcademicResearchRunRequest',
@@ -3670,6 +3684,46 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicWork',
     declaration: 'export interface AcademicWork {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly title: string;\n    readonly authors: readonly string[];\n    readonly externalIdentifiers: readonly ExternalIdentifier[];\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly canonicalVersionId: WorkVersionId;\n    readonly firstPublicDate: Availability<PartialDate>;\n    readonly publicationStatus: Availability<PublicationStatus>;\n    readonly venue: Availability<string>;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressActivity',
+    declaration: 'export type AcademicWorkflowProgressActivity = {\n    readonly kind: \'query\';\n    readonly stage: \'retrieval\';\n    readonly queryIndex: number;\n    readonly queryCount: number;\n    readonly query: string;\n    readonly channels: readonly (\'academic\' | \'web_discovery\')[];\n    readonly startedAt: string;\n} | {\n    readonly kind: \'provider\';\n    readonly stage: \'retrieval\';\n    readonly queryIndex: number;\n    readonly queryCount: number;\n    readonly providerId: string;\n    readonly status: \'running\' | \'success\' | \'failed\' | \'cancelled\';\n    readonly discoveredRecords: number | null;\n    readonly failureCode: AcademicWorkflowProgressFailureCode | null;\n    readonly startedAt: string;\n    readonly completedAt: string | null;\n} | {\n    readonly kind: \'screening\';\n    readonly stage: \'screening\';\n    readonly operation: \'deduplication\' | \'eligibility\';\n    readonly startedAt: string;\n} | {\n    readonly kind: \'paper\';\n    readonly stage: \'fulltext\' | \'extraction\';\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly title: string | null;\n    readonly operation: \'fulltext_fetch\' | \'fulltext_parse\' | \'evidence_extract\' | \'evidence_validate\' | \'waiting_retry\';\n    readonly batchIndex: number | null;\n    readonly batchCount: number | null;\n    readonly attempt: number | null;\n    readonly maximumAttempts: number | null;\n    readonly lastFailure: AcademicWorkflowProgressFailureCode | null;\n    readonly validatedEvidenceRecords: number;\n    r /* …truncated — full shape in source */',
+  },
+  {
+    name: 'AcademicWorkflowProgressCounts',
+    declaration: 'export interface AcademicWorkflowProgressCounts {\n    readonly completedQueries: number;\n    readonly totalQueries: number;\n    readonly discoveredRecords: number;\n    readonly deduplicatedWorks: number;\n    readonly mergedWorkIdentities: number;\n    readonly mergedVersionRecords: number;\n    readonly retainedWorkVersions: number;\n    readonly suspectedDuplicateRecords: number;\n    readonly candidateWorks: number;\n    readonly completedPapers: number;\n    readonly totalPapers: number | null;\n    readonly includedPapers: number;\n    readonly availableFulltextPapers: number;\n    readonly validatedEvidenceRecords: number;\n    readonly rejectedEvidenceDrafts: number;\n    readonly completedQuestions: number;\n    readonly totalQuestions: number;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressEvent',
+    declaration: 'export interface AcademicWorkflowProgressEvent {\n    readonly code: \'run_started\' | \'stage_started\' | \'stage_updated\' | \'stage_settled\' | \'provider_updated\' | \'paper_updated\' | \'retry_scheduled\' | \'run_completed\' | \'run_cancelled\';\n    readonly occurredAt: string;\n    readonly stage: AcademicWorkflowProgressStage;\n    readonly academicWorkId: AcademicWorkId | null;\n    readonly workVersionId: WorkVersionId | null;\n    readonly providerId: string | null;\n    readonly failureCode: AcademicWorkflowProgressFailureCode | null;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressFailureCode',
+    declaration: 'export type AcademicWorkflowProgressFailureCode = FailureCategory | \'cancelled\' | \'incomplete_output\' | \'output_limit\' | \'invalid_output\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressSnapshot',
+    declaration: 'export interface AcademicWorkflowProgressSnapshot {\n    readonly schemaVersion: 1;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly sequence: number;\n    readonly startedAt: string;\n    readonly updatedAt: string;\n    readonly elapsedMs: number;\n    readonly primaryStage: AcademicWorkflowProgressStage | null;\n    readonly activeStages: readonly AcademicWorkflowProgressStage[];\n    readonly stages: AcademicWorkflowProgressStages;\n    readonly counts: AcademicWorkflowProgressCounts;\n    readonly activities: readonly AcademicWorkflowProgressActivity[];\n    readonly latestEvent: AcademicWorkflowProgressEvent;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStage',
+    declaration: 'export type AcademicWorkflowProgressStage = \'retrieval\' | \'screening\' | \'fulltext\' | \'extraction\' | \'analysis\' | \'report\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressStages',
+    declaration: 'export interface AcademicWorkflowProgressStages {\n    readonly retrieval: AcademicWorkflowProgressStageView;\n    readonly screening: AcademicWorkflowProgressStageView;\n    readonly fulltext: AcademicWorkflowProgressStageView;\n    readonly extraction: AcademicWorkflowProgressStageView;\n    readonly analysis: AcademicWorkflowProgressStageView;\n    readonly report: AcademicWorkflowProgressStageView;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStageView',
+    declaration: 'export interface AcademicWorkflowProgressStageView {\n    readonly status: AcademicWorkflowProgressStatus;\n    readonly startedAt: string | null;\n    readonly completedAt: string | null;\n    readonly completedItems: number;\n    readonly totalItems: number | null;\n    readonly unit: AcademicWorkflowProgressUnit | null;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStatus',
+    declaration: 'export type AcademicWorkflowProgressStatus = \'pending\' | \'running\' | \'partial_success\' | \'success\' | \'failed\' | \'cancelled\' | \'not_run\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressUnit',
+    declaration: 'export type AcademicWorkflowProgressUnit = \'queries\' | \'works\' | \'papers\' | \'batches\' | \'questions\' | \'report\';',
   },
   {
     name: 'AcademicWorkId',
@@ -5130,6 +5184,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RetrievalRun',
     declaration: 'export type RetrievalRun = RetrievalRunData & ({\n    readonly stage: \'planning\' | \'awaiting_approval\' | \'running\';\n    readonly status: null;\n    readonly completedAt: null;\n} | {\n    readonly stage: \'completed\' | \'failed\' | \'cancelled\';\n    readonly status: BatchStatus;\n    readonly completedAt: string;\n});',
+  },
+  {
+    name: 'RetrievalRunId',
+    declaration: 'export type RetrievalRunId = Branded<\'RetrievalRunId\'>;',
   },
   {
     name: 'RunnerFailureRule',
