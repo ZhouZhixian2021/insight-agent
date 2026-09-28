@@ -10,6 +10,19 @@ export type { PaperEvidenceGenerator, PaperModelResponse, PaperScopeDecision, Pa
   EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult, EvidenceModelPolicy, EvidenceExtractionModelPolicy, AcademicModelPolicies,
   AcademicTransientFailureCode, AcademicTransientRetryPolicy } from './model-types.ts'
 export type { PaperEvidenceResult, PaperPause, PaperExclusion } from './types.ts'
+export type {
+  AcademicWorkflowProgressActivity,
+  AcademicWorkflowProgressCounts,
+  AcademicWorkflowProgressEvent,
+  AcademicWorkflowProgressFailureCode,
+  AcademicWorkflowProgressObserver,
+  AcademicWorkflowProgressSnapshot,
+  AcademicWorkflowProgressStage,
+  AcademicWorkflowProgressStages,
+  AcademicWorkflowProgressStageView,
+  AcademicWorkflowProgressStatus,
+  AcademicWorkflowProgressUnit,
+} from './progress.ts'
 export { runResearchDraft } from './pipeline.ts'
 export { runModelResearchDraft } from './model-pipeline.ts'
 export { runAcademicResearchDraft } from './entry.ts'

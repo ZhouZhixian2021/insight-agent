@@ -1,6 +1,6 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
-  type EvidenceRecord, type ProviderFailure } from '@deepseek-ai/dsh-academic-model'
+  type EvidenceRecord, type ProviderFailure, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import { EvidenceError, fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
@@ -14,7 +14,10 @@ import { buildRetrievalRun, createPaperProviderFailure, evidenceRejectionLimitat
 import type { PaperEvidenceResult } from './types.ts'
 import { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
-import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure } from './pipeline-types.ts'
+import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure,
+  PaperSelectionResult, SelectedPaper } from './pipeline-types.ts'
+import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
+  type AcademicWorkflowProgressStage, type AcademicWorkflowProgressStatus } from './progress.ts'
 
 /**
  * Search, reconcile, acquire and extract papers before analyzing and evaluating a draft.
@@ -49,6 +52,9 @@ export async function runResearchDraft(
   const maxResults = sharedCandidateLimit(searches, limits.maximumCandidateWorks)
   const retrievalRunId = createRetrievalRunId()
   const startedAt = adapters.now()
+  const progress = createAcademicWorkflowProgressPublisher(retrievalRunId, startedAt, searches.length,
+    brief.questions.length, adapters.now, adapters.onProgress)
+  let latestStage: AcademicWorkflowProgressStage = 'retrieval'
   const papers: PaperEvidenceResult[] = []
   const admittedEvidence: EvidenceRecord[] = []
   const failures: PaperProcessingFailure[] = []
@@ -78,17 +84,27 @@ export async function runResearchDraft(
     analysis: null,
     report: null,
   })
-  if (signal?.aborted) return settle(true)
-  for (const request of searches) {
+  const cancel = (): DraftPipelineResult => {
+    progress.cancel(latestStage)
+    return settle(true)
+  }
+  if (signal?.aborted) return cancel()
+  progress.startStage('retrieval', searches.length, 'queries')
+  for (const [queryOffset, request] of searches.entries()) {
     executedQueries.push(request.query)
+    const queryKey = `query:${queryOffset}`
+    progress.setActivity(queryKey, { kind: 'query', stage: 'retrieval', queryIndex: queryOffset + 1,
+      queryCount: searches.length, query: request.query, channels: [], startedAt: adapters.now() })
     let result: DraftSearchResult
     try {
       result = await adapters.search({ ...request, maxResults }, signal)
     } catch (error: unknown) {
       if (signal?.aborted) {
         selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
-        return settle(true)
+        return cancel()
       }
+      progress.removeActivity(queryKey, 'retrieval', null, progressFailure(error))
+      progress.settleStage('retrieval', 'failed', searchResults.length, searches.length, {}, progressFailure(error))
       throw error
     }
     searchResults.push({ ...result, query: request.query })
@@ -97,31 +113,59 @@ export async function runResearchDraft(
     hybridSearch = aggregate.hybridSearch
     search = aggregate.search
     ingested = aggregate.ingested
-    if (signal?.aborted) return settle(true)
+    progress.removeActivity(queryKey, 'retrieval')
+    progress.updateStage('retrieval', searchResults.length, searches.length, {
+      completedQueries: searchResults.length,
+      discoveredRecords: search.discoveredRecords,
+      deduplicatedWorks: search.deduplicatedWorks,
+    })
+    if (signal?.aborted) return cancel()
   }
-  const selection = adapters.selectPapers(ingested, { ...brief,
-    stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
+  progress.settleStage('retrieval', progressSettlement(executedQueries.length > 0,
+    search?.discoveredRecords ?? 0, providerFailures.length), searchResults.length, searches.length)
+  latestStage = 'screening'
+  progress.startStage('screening', ingested.works.length, 'works')
+  progress.setActivity('screening', { kind: 'screening', stage: 'screening', operation: 'eligibility', startedAt: adapters.now() })
+  let selection: PaperSelectionResult
+  try {
+    selection = adapters.selectPapers(ingested, { ...brief,
+      stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
+  } catch (error: unknown) {
+    progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
+    throw error
+  }
   const selected = selection.papers
   selectionTruncated = selection.truncated
   if (selection.truncated) selectionLimitations.push('候选选择器限制了可处理的论文范围。')
-  if (signal?.aborted) return settle(true)
+  if (signal?.aborted) return cancel()
   if (selected.length > maxResults) throw new Error('Selection exceeds the approved candidate limit.')
   const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
   const selectedWorks = new Set<string>()
   // Validate the whole selection before spending network or model work on any paper.
-  const validated = selected.map((paper) => {
-    const version = versions.get(paper.workVersionId)
-    if (!version) throw new Error('Selection references a version outside this search pass.')
-    if (selectedWorks.has(version.academicWorkId)) throw new Error('Select only one version per work.')
-    if (version.status === 'retracted' || version.versionType === 'retracted'
-      || !brief.includedWorkTypes.includes(version.versionType)
-      || (!brief.evidenceRequirements.allowPreprints && version.versionType === 'preprint')) {
-      throw new Error('Selected version is excluded by the research brief or retraction state.')
-    }
-    selectedWorks.add(version.academicWorkId)
-    return { paper, version }
-  })
+  let validated: { readonly paper: SelectedPaper; readonly version: WorkVersion }[]
+  try {
+    validated = selected.map((paper) => {
+      const version = versions.get(paper.workVersionId)
+      if (!version) throw new Error('Selection references a version outside this search pass.')
+      if (selectedWorks.has(version.academicWorkId)) throw new Error('Select only one version per work.')
+      if (version.status === 'retracted' || version.versionType === 'retracted'
+        || !brief.includedWorkTypes.includes(version.versionType)
+        || (!brief.evidenceRequirements.allowPreprints && version.versionType === 'preprint')) {
+        throw new Error('Selected version is excluded by the research brief or retraction state.')
+      }
+      selectedWorks.add(version.academicWorkId)
+      return { paper, version }
+    })
+  } catch (error: unknown) {
+    progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
+    throw error
+  }
   academicWorkIds = validated.map(item => item.version.academicWorkId)
+  const plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+  progress.settleStage('screening', 'success', ingested.works.length, ingested.works.length, {
+    candidateWorks: validated.length,
+    totalPapers: plannedPapers,
+  })
   const evidenceAdmission = () => {
     const extracted = papers.filter(result => result.status === 'extracted' || result.status === 'partially_extracted')
     const successfulWorks = new Set(extracted.map(result => result.version.academicWorkId))
@@ -137,18 +181,58 @@ export async function runResearchDraft(
   }
   const paperAbort = new AbortController()
   const paperSignal = signal === undefined ? paperAbort.signal : AbortSignal.any([signal, paperAbort.signal])
+  const workTitles = new Map(ingested.works.map(work => [work.academicWorkId, work.title]))
   let fatal: WorkflowLogError | undefined
+  let observedFulltextSettlements = 0
+  let observedAvailableFulltext = 0
+  let observedExtractionSettlements = 0
+  let observedCompletedPapers = 0
+  let observedEvidenceRecords = 0
+  let observedRejectedDrafts = 0
   const processPaper = async ({ paper, version }: typeof validated[number]) => {
     let fulltext = false
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
+    const activityKey = `paper:${paper.workVersionId}`
+    const title = workTitles.get(version.academicWorkId) ?? null
+    latestStage = 'fulltext'
+    progress.startStage('fulltext', plannedPapers, 'papers')
+    progress.setActivity(activityKey, { kind: 'paper', stage: 'fulltext', workVersionId: paper.workVersionId,
+      title, operation: 'fulltext_fetch', batchIndex: null, batchCount: null, attempt: 1, maximumAttempts: 1,
+      lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
     try {
       const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
         retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, paperSignal)
       fulltext = true
+      observedFulltextSettlements += 1
+      observedAvailableFulltext += 1
+      progress.updateStage('fulltext', observedFulltextSettlements, plannedPapers, {
+        availableFulltextPapers: observedAvailableFulltext,
+      })
       if (paperSignal.aborted) return { fulltext }
       stage = 'extraction'
+      latestStage = 'extraction'
+      progress.startStage('extraction', plannedPapers, 'papers')
+      progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', workVersionId: paper.workVersionId,
+        title, operation: 'evidence_extract', batchIndex: null, batchCount: null, attempt: null, maximumAttempts: null,
+        lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
         { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal)
+      observedExtractionSettlements += 1
+      observedCompletedPapers += 1
+      const evidenceRecords = result.status === 'extracted' || result.status === 'partially_extracted'
+        || result.status === 'extraction_failed' ? result.evidence.evidenceRecords.length : 0
+      const rejectedDrafts = result.status === 'extracted' || result.status === 'partially_extracted'
+        || result.status === 'extraction_failed' ? result.evidence.rejectedDrafts.length : 0
+      observedEvidenceRecords += evidenceRecords
+      observedRejectedDrafts += rejectedDrafts
+      progress.updateStage('extraction', observedExtractionSettlements, plannedPapers, {
+        completedPapers: observedCompletedPapers,
+        validatedEvidenceRecords: observedEvidenceRecords,
+        rejectedEvidenceDrafts: observedRejectedDrafts,
+      })
+      const resultFailure = result.status === 'partially_extracted' || result.status === 'extraction_failed'
+        ? 'parse_failed' : null
+      progress.removeActivity(activityKey, 'extraction', paper.workVersionId, resultFailure)
       return { fulltext, result }
     } catch (error: unknown) {
       if (error instanceof WorkflowLogError) {
@@ -156,8 +240,21 @@ export async function runResearchDraft(
         paperAbort.abort(error)
       }
       if (paperSignal.aborted) return { fulltext }
-      return { fulltext, failure: { workVersionId: paper.workVersionId, stage },
-        providerFailure: createPaperProviderFailure(paper, stage, error) }
+      const providerFailure = createPaperProviderFailure(paper, stage, error)
+      observedCompletedPapers += 1
+      if (stage === 'fulltext') {
+        observedFulltextSettlements += 1
+        progress.updateStage('fulltext', observedFulltextSettlements, plannedPapers, {
+          completedPapers: observedCompletedPapers,
+        })
+      } else {
+        observedExtractionSettlements += 1
+        progress.updateStage('extraction', observedExtractionSettlements, plannedPapers, {
+          completedPapers: observedCompletedPapers,
+        })
+      }
+      progress.removeActivity(activityKey, stage, paper.workVersionId, providerFailure.category)
+      return { fulltext, failure: { workVersionId: paper.workVersionId, stage }, providerFailure }
     }
   }
   const collect = (paper: typeof validated[number]['paper'], outcome: Awaited<ReturnType<typeof processPaper>>) => {
@@ -177,6 +274,13 @@ export async function runResearchDraft(
       }
     }
     evidenceAdmission()
+    progress.updateCounts('extraction', {
+      includedPapers: usableWorkIds.length,
+      validatedEvidenceRecords: admittedEvidence.length,
+      rejectedEvidenceDrafts: papers.reduce((sum, result) => sum + (
+        result.status === 'extracted' || result.status === 'partially_extracted' || result.status === 'extraction_failed'
+          ? result.evidence.rejectedDrafts.length : 0), 0),
+    })
   }
   const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
   let attempted = 0
@@ -211,31 +315,80 @@ export async function runResearchDraft(
     paperAbort.abort()
     await Promise.all(pending.map(item => item.done))
   }
-  if (fatal) throw fatal
-  if (signal?.aborted) return settle(true)
+  if (fatal) {
+    progress.settleStage('fulltext', progressSettlement(attempted > 0, availableFulltextWorks,
+      failures.filter(failure => failure.stage === 'fulltext').length), observedFulltextSettlements, attempted)
+    progress.settleStage('extraction', 'failed', observedExtractionSettlements, attempted, {}, 'unknown')
+    throw fatal
+  }
+  if (signal?.aborted) return cancel()
   const admission = evidenceAdmission()
+  const fulltextFailures = failures.filter(failure => failure.stage === 'fulltext').length
+  const extractionFailures = failures.filter(failure => failure.stage === 'extraction').length
+    + papers.filter(paper => paper.status === 'paused' || paper.status === 'partially_extracted').length
+  const extractionSuccesses = papers.filter(paper => paper.status === 'extracted'
+    || paper.status === 'partially_extracted' || paper.status === 'excluded').length
+  progress.settleStage('fulltext', progressSettlement(attempted > 0, availableFulltextWorks, fulltextFailures),
+    observedFulltextSettlements, attempted, { totalPapers: attempted, availableFulltextPapers: availableFulltextWorks })
+  progress.settleStage('extraction', progressSettlement(availableFulltextWorks > 0, extractionSuccesses, extractionFailures),
+    observedExtractionSettlements, attempted, { completedPapers: observedCompletedPapers, totalPapers: attempted,
+      includedPapers: usableWorkIds.length, validatedEvidenceRecords: admittedEvidence.length,
+      rejectedEvidenceDrafts: observedRejectedDrafts })
   if (attempted === validated.length && admission.status !== 'ready') {
     selectionLimitations.push(`本次可处理候选已用完（${attempted} 篇），证据仍不足；未自动扩展检索。`)
   }
   const assessedAt = adapters.now()
   const completed = settle(false)
-  if (admission.status === 'blocked') return { ...completed, synthesis: { status: 'blocked', reasons: admission.reasons } }
+  if (admission.status === 'blocked') {
+    progress.settleStage('analysis', 'not_run')
+    progress.settleStage('report', 'not_run')
+    progress.complete('analysis')
+    return { ...completed, synthesis: { status: 'blocked', reasons: admission.reasons } }
+  }
+  latestStage = 'analysis'
+  progress.startStage('analysis', brief.questions.length, 'questions')
+  for (const [questionOffset, question] of brief.questions.entries()) {
+    progress.setActivity(`question:${questionOffset}`, { kind: 'question', stage: 'analysis',
+      questionIndex: questionOffset + 1, questionCount: brief.questions.length, question, startedAt: adapters.now() })
+  }
   let draft
   try {
     draft = await adapters.synthesize({ ...admission.input, coverageSummary: completed.retrievalRun.coverageSummary }, signal)
   } catch (error: unknown) {
-    if (error instanceof WorkflowLogError) throw error
-    if (signal?.aborted) return settle(true)
+    if (error instanceof WorkflowLogError) {
+      progress.settleStage('analysis', 'failed', 0, brief.questions.length, {}, progressFailure(error))
+      throw error
+    }
+    if (signal?.aborted) return cancel()
+    progress.settleStage('analysis', 'failed', 0, brief.questions.length, {}, progressFailure(error))
+    progress.settleStage('report', 'not_run')
+    progress.complete('analysis')
     return { ...settle(false), synthesis: { status: 'failed', reasons: [error instanceof SynthesisError
       ? `${error.code}: ${error.message}` : '洞察模型调用失败；已保留检索与论文处理结果，请查看会话调用记录。'] } }
   }
-  if (signal?.aborted) return settle(true)
+  if (signal?.aborted) return cancel()
   const synthesisReasons = [...(admission.status === 'ready_with_warning'
     ? ['证据未达到 Plan 数量要求；按 continue_with_warning 生成有限草稿，不代表正式交付通过。', ...admission.limitations] : []),
   ...draft.rejectedStatements.map(item => `模型候选段落 ${item.statementIndex + 1} 未纳入报告：${item.code} — ${item.reason}`)]
-  if (draft.statements.length === 0) return { ...settle(false),
-    synthesis: { status: 'failed', reasons: ['没有通过校验的洞察段落；已保留论文与证据。', ...synthesisReasons] } }
-  const analysis = synthesisAnalysis(admission.input, draft, assessedAt)
+  if (draft.statements.length === 0) {
+    progress.settleStage('analysis', 'failed', brief.questions.length, brief.questions.length,
+      { completedQuestions: brief.questions.length }, 'invalid_output')
+    progress.settleStage('report', 'not_run')
+    progress.complete('analysis')
+    return { ...settle(false),
+      synthesis: { status: 'failed', reasons: ['没有通过校验的洞察段落；已保留论文与证据。', ...synthesisReasons] } }
+  }
+  let analysis
+  try {
+    analysis = synthesisAnalysis(admission.input, draft, assessedAt)
+  } catch (error: unknown) {
+    progress.settleStage('analysis', 'failed', brief.questions.length, brief.questions.length,
+      { completedQuestions: brief.questions.length }, progressFailure(error))
+    throw error
+  }
+  const analysisPartial = admission.status === 'ready_with_warning' || draft.rejectedStatements.length > 0
+  progress.settleStage('analysis', analysisPartial ? 'partial_success' : 'success', brief.questions.length,
+    brief.questions.length, { completedQuestions: brief.questions.length })
   const limitations = [...admission.limitations, ...analysis.limitations,
     'Explicit queries only; no automatic query planning, retries or abstract fallback.',
     ...(search?.limitations ?? []),
@@ -246,11 +399,23 @@ export async function runResearchDraft(
     ...failures.map(failure => `Version ${failure.workVersionId} failed during ${failure.stage}.`),
     ...evidenceRejectionLimitations(papers)]
   if (search?.truncated === true) limitations.push('Search coverage or the candidate bound truncated results; coverage is incomplete.')
-  const report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
-    admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
-    evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
-    sourceLocators: admission.input.analysisInput.sourceLocators,
-    works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic })
+  latestStage = 'report'
+  progress.startStage('report', 1, 'report')
+  progress.setActivity('report', { kind: 'report', stage: 'report', operation: 'rendering', attempt: null,
+    maximumAttempts: null, lastFailure: null, startedAt: adapters.now() })
+  let report
+  try {
+    report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
+      admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
+      evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
+      sourceLocators: admission.input.analysisInput.sourceLocators,
+      works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic })
+  } catch (error: unknown) {
+    progress.settleStage('report', 'failed', 0, 1, {}, progressFailure(error))
+    throw error
+  }
+  progress.settleStage('report', 'success', 1, 1)
+  progress.complete('report')
   return { ...settle(false), analysis, report, synthesis: {
     status: admission.status === 'ready_with_warning' || draft.rejectedStatements.length > 0 ? 'partial_success' : 'completed', reasons: synthesisReasons } }
 }
@@ -333,4 +498,28 @@ function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
 
 function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)]
+}
+
+function progressSettlement(
+  ran: boolean,
+  successes: number,
+  failures: number,
+): Exclude<AcademicWorkflowProgressStatus, 'pending' | 'running'> {
+  if (!ran) return 'not_run'
+  if (failures > 0) return successes > 0 ? 'partial_success' : 'failed'
+  return 'success'
+}
+
+function progressFailure(error: unknown): AcademicWorkflowProgressFailureCode {
+  if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'
+  if (error instanceof DOMException && error.name === 'TimeoutError') return 'timeout'
+  if (error instanceof EvidenceError) {
+    if (error.code.includes('TIMEOUT')) return 'timeout'
+    if (error.code.includes('INCOMPLETE')) return 'incomplete_output'
+    if (error.code.includes('INPUT_TOO_LARGE') || error.code.includes('BUDGET')) return 'invalid_request'
+    if (error.code.includes('EXCERPT') || error.code.includes('DRAFT')) return 'parse_failed'
+    if (error.code.includes('UNEXPECTED') || error.code.includes('INVALID')) return 'invalid_output'
+  }
+  if (error instanceof SynthesisError && error.code.includes('INVALID')) return 'invalid_output'
+  return 'unknown'
 }

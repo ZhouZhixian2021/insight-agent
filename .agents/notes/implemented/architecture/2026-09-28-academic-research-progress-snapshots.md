@@ -16,7 +16,7 @@ The snapshot carries retrieval, screening, full-text, extraction, analysis, and 
 
 The snapshot exposes observed counts, elapsed time, concurrent activities, one-based batch and attempt indexes, and sanitized failure codes. It does not expose an estimated completion percentage or raw provider/model diagnostics. Stage settlement remains independent from aggregate counts, and validated evidence remains distinct from returned or rejected model drafts.
 
-The exported `AcademicResearchRunFrame` reserves a progress frame and a final result frame. The current `academicResearch.run` method still returns only its final value; workflow event production and the Remote stream are separate integration work.
+The exported `AcademicResearchRunFrame` contains progress frames and one final result frame. `academic-workflow` accepts an optional synchronous observer and emits complete run-local snapshots at the commit points for retrieval, screening, concurrent paper work, analysis, report generation and cancellation. Observer exceptions are contained because progress is observational. Model-internal batch and retry values remain null until the owning adapter supplies them. `academicResearch.runStream` bridges the synchronous observer to one ordered, single-consumer Remote stream; closing the stream aborts that operation. The unary `academicResearch.run` remains temporarily for client compatibility, but it does not emit progress.
 
 ## Alternatives considered
 
@@ -30,4 +30,4 @@ The exported `AcademicResearchRunFrame` reserves a progress frame and a final re
 
 ## Consequences
 
-B can publish source, paper, batch, attempt, and evidence facts without choosing UI text. C can build the progress interface against fixed synthetic snapshots before the live producer exists. Full snapshots repeat a bounded amount of state, but they simplify replacement, ordering, testing, and later reconnect support. This format does not provide background execution, persisted progress, reconnect recovery, or a live stream by itself.
+B can publish source, paper, batch, attempt, and evidence facts without choosing UI text. C can consume the real stream or continue building against fixed synthetic snapshots. Full snapshots repeat a bounded amount of state, but they simplify replacement and ordering. The workflow producer preserves completed sibling facts across paper failures and cancellation. The stream is deliberately one-shot: it provides neither automatic reconnection nor background execution, persisted progress, or recovery after the caller leaves.

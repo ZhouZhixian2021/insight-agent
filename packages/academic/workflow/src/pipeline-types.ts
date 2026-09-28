@@ -9,6 +9,7 @@ import type { AnalysisResult } from '@deepseek-ai/dsh-academic-analysis'
 import type { PaperEvidenceResult } from './types.ts'
 import type { HybridSearchObservation } from './hybrid-search.ts'
 import type { HybridRunObservation } from './hybrid-run.ts'
+import type { AcademicWorkflowProgressObserver } from './progress.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
@@ -50,6 +51,8 @@ export interface DraftPipelineAdapters {
   readonly generator: PaperEvidenceGenerator
   /** Current UTC ISO time for run settlement, acquisition, and report evaluation. */
   readonly now: () => string
+  /** Observe complete run-local progress snapshots; subscriber failures do not interrupt research. */
+  readonly onProgress?: AcademicWorkflowProgressObserver
 }
 
 /** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
