@@ -25,6 +25,18 @@ export interface LoggedModelRequest<T> {
   readonly parse: (text: string) => T
   readonly appendRequest: (data: Omit<EvidenceModelRequest, 'source'>) => SessionEvent & { readonly data: Omit<EvidenceModelRequest, 'source'> }
   readonly appendResult: (data: Omit<EvidenceModelResult, 'source'>) => SessionEvent
+  /** Observe attempts only after their request or result record is durable. */
+  readonly onAttempt?: (observation: LoggedModelAttemptObservation) => void
+}
+
+/** Durable attempt commit observed by an operation-specific progress adapter. */
+export interface LoggedModelAttemptObservation {
+  readonly phase: 'started' | 'settled' | 'retry_scheduled'
+  readonly attempt: number
+  readonly maximumAttempts: number
+  readonly status: EvidenceModelResult['status'] | null
+  readonly finish: EvidenceModelResult['finish'] | null
+  readonly errorCode: string | null
 }
 
 /**
@@ -112,6 +124,8 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
           messages, estimatedInputTokens, contextWindow, outputTokens, attempt, maxAttempts: policy.maxAttempts,
           decision: oversized ? 'skip_input_limit' : 'dispatch' }))
         requestSeq = logged.seq
+        reportAttempt(request.onAttempt, { phase: 'started', attempt, maximumAttempts: policy.maxAttempts,
+          status: null, finish: null, errorCode: null })
         attemptSignal?.throwIfAborted()
         if (oversized) {
           status = 'skipped'
@@ -155,6 +169,9 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         maxAttempts: policy.maxAttempts, status, stream: accumulator.snapshot(),
         ...finish === undefined ? {} : { finish }, ...assembler.usage === undefined ? {} : { usage: assembler.usage },
         ...errorCode === undefined ? {} : { errorCode } }))
+      const settled: LoggedModelAttemptObservation = { phase: 'settled', attempt, maximumAttempts: policy.maxAttempts,
+        status, finish: finish ?? null, errorCode: errorCode ?? null }
+      reportAttempt(request.onAttempt, settled)
       // A cancellation arriving during result persistence still prevents downstream extraction.
       request.signal?.throwIfAborted()
       if (result !== undefined) return result
@@ -165,6 +182,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       const retryTransient = transientFailureCode !== undefined
         && transientRetry?.failureCodes.includes(transientFailureCode) === true
       if ((!retryOutputLimit && !retryTransient) || attempt === policy.maxAttempts) throw failure
+      reportAttempt(request.onAttempt, { ...settled, phase: 'retry_scheduled' })
       if (retryOutputLimit) useOutputLimitRecovery = true
       if (retryTransient && transientRetry.initialDelayMs > 0) {
         await delay(transientRetry.initialDelayMs * 2 ** (attempt - 1), undefined,
@@ -172,5 +190,17 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       }
     }
     throw new Error('Academic extraction exhausted an invalid attempt range.')
+  }
+}
+
+function reportAttempt(
+  observer: LoggedModelRequest<unknown>['onAttempt'],
+  observation: LoggedModelAttemptObservation,
+): void {
+  if (observer === undefined) return
+  try {
+    observer(observation)
+  } catch {
+    // Attempt progress is observational; durable model execution remains authoritative.
   }
 }

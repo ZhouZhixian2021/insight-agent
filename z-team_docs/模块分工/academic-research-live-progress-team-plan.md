@@ -31,7 +31,7 @@ A 先完成共享接口，B、C 在接口合并后并行开发。A 不实现学�
 
 ### A-P2：工作流阶段结算
 
-**当前进度：阶段编排、Provider 接线和摄取统计已完成。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。Controller 的搜索适配器把观察器传给 Academic Source，工作流为每个 Provider 的开始、成功、失败或取消事实补充查询位置和时间，并映射为 Provider 活动。工作流直接使用摄取包的 `summarizeIngestAudit()` 填写四类独立计数，避免重复解释审计记录。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。Web 发现、引用识别与核验的实时事实，以及证据模型内部的分段和重试事实仍待 A 接入；不扩展 B 的 `EvidenceGenerator` 请求或返回类型。
+**当前进度：阶段编排、Provider、摄取统计、全文候选和证据模型接线已完成。** `academic-workflow` 通过可选 `onProgress` 发布完整运行内快照；检索、筛选、全文、证据、分析和报告在真实调用点开始、更新和结算。Controller 的搜索适配器把观察器传给 Academic Source，工作流为每个 Provider 的开始、成功、失败或取消事实补充查询位置和时间，并映射为 Provider 活动。工作流直接使用摄取包的 `summarizeIngestAudit()` 填写四类独立计数，避免重复解释审计记录。全文获取把 B-P2 的逐候选事实映射为 `fulltext_fetch`、`waiting_retry` 和 `fulltext_parse`，使用候选位置填写尝试次数，并在整轮取消前发布论文取消事实。证据阶段发布批次位置、已持久化的模型尝试、有限重试、超时、输出限制和来源核验计数；不扩展 B 的 `EvidenceGenerator` 请求或返回类型。三篇论文分别保留活动，单篇失败保留其他论文与合格证据，取消保留此前提交的计数。订阅者异常不会中断研究。Web 发现、引用识别与核验的实时事实仍待 A 接入。
 
 A 在 `academic-workflow` 中发布阶段开始、更新和结算事件。检索、筛选、全文、证据、分析和报告按真实调用顺序更新；并发论文分别保留状态，部分失败不清空其他论文和已验证证据。取消事件保留取消前已经提交的进展。
 
@@ -58,6 +58,8 @@ B 在 A-P1 合并后提供来源与论文处理的内部事实，不决定页面
 B 在 `AcademicSourceRuntime.searchAll()` 与 `searchProviders()` 增加可选、运行内的 Provider 观察者。每个实际发起的学术 Provider 在请求开始时发布一次 `started`，随后恰好发布一次 `success`、`failed` 或 `cancelled` 结算；零结果属于成功。观察者异常不得影响搜索结果，事实不带时间戳，由 A 接收时记录。该观察者只覆盖直接学术 Provider，不覆盖 `web_discovery`。摄取包提供纯函数统计 `mergedWorkIdentities`（`merged_work` 条目数）、`mergedVersionRecords`（`merged_version` 条目数）、`retainedWorkVersions`（`outcome.versions.length`）和 `suspectedDuplicateRecords`（`suspected_duplicate` 条目数）。不得把 `merged_work` 命名为 `mergedWorkRecords`，因为该审计项表示被合并的身份，不表示输入记录数。
 
 ### B-P2：全文与证据事实
+
+**当前进度：B 的逐候选全文事实与 A 的全文、证据模型映射已完成。** 候选开始、成功、失败和取消事实已经接入论文活动；A 的模型适配层已经接入分段、尝试、超时、输出限制、有限重试和来源核验计数。
 
 B 为每篇论文提供全文获取、解析、证据抽取和证据验证结果。B 保持现有 `EvidenceGenerator` 接口，不为工作流进度增加回调或改变返回类型。长论文分段、尝试与重试事实由 A 在工作流模型适配层根据已有批次及调用记录映射到进度；B 的结果继续提供机器可读失败原因，C 负责面向用户的中文说明。
 

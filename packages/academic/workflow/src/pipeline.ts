@@ -3,7 +3,7 @@ import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
   type EvidenceRecord, type ProviderFailure, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObservation, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, summarizeIngestAudit, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
-import { EvidenceError, fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
+import { EvidenceError, fetchAcademicFullText, type AcademicFullTextObservation } from '@deepseek-ai/dsh-academic-evidence'
 import { prepareSynthesisInput, synthesisSections, synthesisAnalysis, SynthesisError } from '@deepseek-ai/dsh-academic-analysis'
 import { generateReport } from '@deepseek-ai/dsh-academic-report'
 import { extractPaperEvidence } from './paper.ts'
@@ -12,6 +12,7 @@ import { researchRetrievalDisclosure } from './report-disclosure.ts'
 import { buildRetrievalRun, createPaperProviderFailure, evidenceRejectionLimitations,
   type RetrievalSearchObservation } from './retrieval-run.ts'
 import type { PaperEvidenceResult } from './types.ts'
+import type { PaperEvidenceProgressObservation } from './model-types.ts'
 import { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure,
@@ -217,14 +218,30 @@ export async function runResearchDraft(
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
     const activityKey = `paper:${paper.workVersionId}`
     const title = workTitles.get(version.academicWorkId) ?? null
+    let fulltextAttemptStartedAt = adapters.now()
     latestStage = 'fulltext'
     progress.startStage('fulltext', plannedPapers, 'papers')
     progress.setActivity(activityKey, { kind: 'paper', stage: 'fulltext', academicWorkId: version.academicWorkId,
-      workVersionId: paper.workVersionId, title, operation: 'fulltext_fetch', batchIndex: null, batchCount: null, attempt: 1, maximumAttempts: 1,
-      lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
+      workVersionId: paper.workVersionId, title, operation: 'fulltext_fetch', batchIndex: null, batchCount: null,
+      attempt: paper.urls.length === 0 ? null : 1, maximumAttempts: paper.urls.length,
+      lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: fulltextAttemptStartedAt })
+    const observeFulltext = (observation: AcademicFullTextObservation): void => {
+      const observedAt = adapters.now()
+      if (observation.phase === 'started') fulltextAttemptStartedAt = observedAt
+      const failure = observation.settlement === 'failed' ? observation.category ?? 'unknown'
+        : observation.settlement === 'cancelled' ? 'cancelled' : null
+      const operation = observation.phase === 'started' ? 'fulltext_fetch'
+        : observation.settlement === 'success' ? 'fulltext_parse'
+          : observation.settlement === 'failed' && observation.candidateIndex < observation.candidateCount
+            ? 'waiting_retry' : 'fulltext_fetch'
+      progress.setActivity(activityKey, { kind: 'paper', stage: 'fulltext', academicWorkId: version.academicWorkId,
+        workVersionId: paper.workVersionId, title, operation, batchIndex: null, batchCount: null,
+        attempt: observation.candidateIndex, maximumAttempts: observation.candidateCount, lastFailure: failure,
+        validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: fulltextAttemptStartedAt })
+    }
     try {
       const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
-        retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, paperSignal)
+        retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, paperSignal, observeFulltext)
       fulltext = true
       observedFulltextSettlements += 1
       observedAvailableFulltext += 1
@@ -235,11 +252,24 @@ export async function runResearchDraft(
       stage = 'extraction'
       latestStage = 'extraction'
       progress.startStage('extraction', plannedPapers, 'papers')
+      const extractionStartedAt = adapters.now()
       progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', academicWorkId: version.academicWorkId,
         workVersionId: paper.workVersionId, title, operation: 'evidence_extract', batchIndex: null, batchCount: null, attempt: null, maximumAttempts: null,
-        lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: adapters.now() })
+        lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: extractionStartedAt })
+      let observedBatchIndex: number | null = null
+      let observedBatchCount: number | null = null
+      const observeEvidence = (observation: PaperEvidenceProgressObservation): void => {
+        if (observation.batchIndex !== null) observedBatchIndex = observation.batchIndex
+        if (observation.batchCount !== null) observedBatchCount = observation.batchCount
+        progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', academicWorkId: version.academicWorkId,
+          workVersionId: paper.workVersionId, title, operation: observation.operation,
+          batchIndex: observedBatchIndex, batchCount: observedBatchCount, attempt: observation.attempt,
+          maximumAttempts: observation.maximumAttempts, lastFailure: observation.lastFailure,
+          validatedEvidenceRecords: observation.validatedEvidenceRecords,
+          rejectedEvidenceDrafts: observation.rejectedEvidenceDrafts, startedAt: extractionStartedAt })
+      }
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
-        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal)
+        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal, observeEvidence)
       observedExtractionSettlements += 1
       observedCompletedPapers += 1
       const evidenceRecords = result.status === 'extracted' || result.status === 'partially_extracted'

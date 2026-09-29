@@ -7,10 +7,13 @@ import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
 import { parsePaperModelResponse } from './parse-evidence.ts'
 import { evidenceMessages } from './model-prompt.ts'
 import { createLoggedModelRunner } from './model-call.ts'
+import type { LoggedModelAttemptObservation } from './model-call.ts'
 import { WorkflowLogError } from './model-errors.ts'
 import { MAX_EVIDENCE_DRAFTS } from './model-limits.ts'
+import { reportPaperEvidenceProgress } from './evidence-progress.ts'
 import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperEvidenceGenerator, PaperModelResponse,
   PaperScopeRules } from './model-types.ts'
+import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
 
 interface EvidenceSegmentPiece {
   readonly originalSegmentIndex: number
@@ -39,7 +42,7 @@ export function createModelEvidenceGenerator(
     && (!Number.isSafeInteger(policy.inputBatchOverlapCharacters) || policy.inputBatchOverlapCharacters < 0)) {
     throw new Error('Academic extraction inputBatchOverlapCharacters must be a non-negative safe integer.')
   }
-  return async (request, parsed, scope) => {
+  return async (request, parsed, scope, onProgress) => {
     const source: EvidenceModelSource = {
       academicWorkId: parsed.academicWorkId, workVersionId: parsed.workVersionId, contentHash: parsed.contentHash,
       sourceProvider: parsed.sourceProvider, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
@@ -49,8 +52,10 @@ export function createModelEvidenceGenerator(
       policy.inputBatchOverlapCharacters ?? 0, messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0))
     const responses: PaperModelResponse[] = []
     const failures: unknown[] = []
-    for (const batch of batches) {
+    for (const [batchOffset, batch] of batches.entries()) {
       request.signal?.throwIfAborted()
+      const batchIndex = batchOffset + 1
+      reportPaperEvidenceProgress(onProgress, evidenceProgress(batchIndex, batches.length))
       const batchRequest = withSegments(request, batch.map(piece => piece.segment))
       try {
         const response = await run({
@@ -59,6 +64,9 @@ export function createModelEvidenceGenerator(
           parse: parsePaperModelResponse,
           appendRequest: data => session.append('academic/evidence-request', { source, ...data }),
           appendResult: data => session.append('academic/evidence-result', { source, ...data }),
+          onAttempt: (observation) => {
+            reportPaperEvidenceProgress(onProgress, attemptProgress(batchIndex, batches.length, observation))
+          },
         })
         responses.push({ ...response, evidence: response.evidence.map(draft => remapDraft(draft, batch)) })
       } catch (error: unknown) {
@@ -81,6 +89,43 @@ export function createModelEvidenceGenerator(
       evidence,
       ...failures.length === 0 ? {} : { incompleteBatchCount: failures.length },
     }
+  }
+}
+
+function evidenceProgress(
+  batchIndex: number,
+  batchCount: number,
+): Parameters<typeof reportPaperEvidenceProgress>[1] {
+  return { operation: 'evidence_extract', batchIndex, batchCount, attempt: null, maximumAttempts: null,
+    lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 }
+}
+
+function attemptProgress(
+  batchIndex: number,
+  batchCount: number,
+  observation: LoggedModelAttemptObservation,
+): Parameters<typeof reportPaperEvidenceProgress>[1] {
+  return { operation: observation.phase === 'retry_scheduled' ? 'waiting_retry' : 'evidence_extract',
+    batchIndex, batchCount, attempt: observation.attempt, maximumAttempts: observation.maximumAttempts,
+    lastFailure: observation.phase === 'started' ? null : modelProgressFailure(observation),
+    validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 }
+}
+
+function modelProgressFailure(observation: LoggedModelAttemptObservation): AcademicWorkflowProgressFailureCode | null {
+  if (observation.status === null || observation.status === 'validated') return null
+  if (observation.status === 'cancelled') return 'cancelled'
+  if (observation.finish?.kind === 'max-tokens') return 'output_limit'
+  if (observation.finish?.kind === 'error') {
+    if (observation.finish.failure.code === 'TIMEOUT') return 'timeout'
+    if (observation.finish.failure.code === 'TRANSPORT') return 'network_error'
+  }
+  switch (observation.errorCode) {
+    case 'EVIDENCE_MODEL_TIMEOUT': return 'timeout'
+    case 'EVIDENCE_INPUT_TOO_LARGE': return 'output_limit'
+    case 'EVIDENCE_MODEL_INCOMPLETE': return 'incomplete_output'
+    case 'EVIDENCE_INVALID_MODEL_OUTPUT':
+    case 'EVIDENCE_MODEL_UNEXPECTED_CONTENT': return 'invalid_output'
+    default: return 'unknown'
   }
 }
 

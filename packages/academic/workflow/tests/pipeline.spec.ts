@@ -417,7 +417,9 @@ describe('single-pass research draft', () => {
   it('bounds candidates and discloses truncation without inventing a second search', async () => {
     const { input, adapters } = fixture()
     const result = await runResearchDraft({ ...input, searches: [{ ...input.searches[0]!, maxResults: 1 }] }, adapters)
-    expect(adapters.search).toHaveBeenCalledWith({ query: input.searches[0]!.query, maxResults: 1 }, undefined)
+    expect(adapters.search).toHaveBeenCalledWith(
+      { query: input.searches[0]!.query, maxResults: 1 }, undefined, expect.any(Function),
+    )
     expect(result.papers).toHaveLength(1)
     expect(result.report).not.toBeNull()
     expect(result.synthesis.status).toBe('partial_success')

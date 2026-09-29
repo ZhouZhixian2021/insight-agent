@@ -149,6 +149,72 @@ describe('Academic workflow progress', () => {
       status: 'cancelled', failureCode: 'cancelled' }))
   })
 
+  it('maps full-text candidate fallback and accepted parsing into paper activities', async () => {
+    const { input, adapters, snapshots } = snapshotsOf(1)
+    const select = adapters.selectPapers
+    adapters.selectPapers = (ingested, brief) => {
+      const selected = select(ingested, brief)
+      return { ...selected, papers: selected.papers.map(paper => ({ ...paper,
+        urls: ['https://example.org/missing', 'https://example.org/accepted'] })) }
+    }
+    const fetcher = adapters.fetcher
+    adapters.fetcher = async (url, signal) => url.endsWith('/missing')
+      ? { url, statusCode: 404, truncated: false, body: { kind: 'html', content: '<main>missing</main>' } }
+      : fetcher(url, signal)
+
+    await runResearchDraft(input, adapters)
+
+    const retry = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'waiting_retry'))
+    expect(retry?.latestEvent).toMatchObject({ code: 'paper_updated', stage: 'fulltext', failureCode: 'upstream_error' })
+    expect(retry?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'fulltext',
+      operation: 'waiting_retry', attempt: 1, maximumAttempts: 2, lastFailure: 'upstream_error' }))
+    const secondAttempt = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'fulltext_fetch' && activity.attempt === 2))
+    expect(secondAttempt?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'fulltext',
+      operation: 'fulltext_fetch', attempt: 2, maximumAttempts: 2, lastFailure: null }))
+    const parsed = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'fulltext_parse'))
+    expect(parsed?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'fulltext',
+      operation: 'fulltext_parse', attempt: 2, maximumAttempts: 2, lastFailure: null }))
+  })
+
+  it('maps evidence batches, retries and source validation into paper activities', async () => {
+    const { input, adapters, snapshots } = snapshotsOf(1)
+    const generate = adapters.generator
+    adapters.generator = async (request, source, scope, onProgress) => {
+      onProgress?.({ operation: 'evidence_extract', batchIndex: 1, batchCount: 2, attempt: null,
+        maximumAttempts: null, lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      onProgress?.({ operation: 'evidence_extract', batchIndex: 1, batchCount: 2, attempt: 1,
+        maximumAttempts: 2, lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      onProgress?.({ operation: 'waiting_retry', batchIndex: 1, batchCount: 2, attempt: 1,
+        maximumAttempts: 2, lastFailure: 'timeout', validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      onProgress?.({ operation: 'evidence_extract', batchIndex: 1, batchCount: 2, attempt: 2,
+        maximumAttempts: 2, lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      onProgress?.({ operation: 'evidence_extract', batchIndex: 2, batchCount: 2, attempt: 1,
+        maximumAttempts: 2, lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      const response = await generate(request, source, scope)
+      return { ...response, evidence: [...response.evidence, { segmentIndex: 0,
+        sourcedStatement: 'Unsupported.', verbatimExcerpt: 'Missing excerpt.', cardItems: [] }] }
+    }
+
+    await runResearchDraft(input, adapters)
+
+    const retry = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'waiting_retry'))
+    expect(retry?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'extraction',
+      batchIndex: 1, batchCount: 2, attempt: 1, maximumAttempts: 2, lastFailure: 'timeout' }))
+    const secondBatch = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'evidence_extract' && activity.batchIndex === 2))
+    expect(secondBatch?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'extraction',
+      batchIndex: 2, batchCount: 2, attempt: 1, maximumAttempts: 2 }))
+    const validation = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'paper'
+      && activity.operation === 'evidence_validate'))
+    expect(validation?.activities).toContainEqual(expect.objectContaining({ kind: 'paper', stage: 'extraction',
+      batchIndex: 2, batchCount: 2, attempt: null, maximumAttempts: null,
+      validatedEvidenceRecords: 1, rejectedEvidenceDrafts: 1 }))
+  })
+
   it('keeps concurrent paper activities separate and preserves successes after one failure', async () => {
     const { input, adapters, snapshots } = snapshotsOf(3)
     input.paperConcurrency = 3
@@ -207,6 +273,8 @@ describe('Academic workflow progress', () => {
       counts: { completedPapers: 1, includedPapers: 1, validatedEvidenceRecords: 1 },
     })
     expect(snapshots.at(-1)?.stages.report.status).toBe('not_run')
+    expect(snapshots.some(snapshot => snapshot.latestEvent.code === 'paper_updated'
+      && snapshot.latestEvent.failureCode === 'cancelled')).toBe(true)
   })
 
   it('contains observer exceptions without changing research settlement', async () => {
