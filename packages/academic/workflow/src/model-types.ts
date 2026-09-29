@@ -2,6 +2,7 @@
 import type { EvidenceExtractionInput, EvidenceGenerationRequest, EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
 import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
+import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
 
 /** Approved natural-language rules applied to one fetched paper. */
 export interface PaperScopeRules {
@@ -22,12 +23,28 @@ export interface PaperModelResponse {
   readonly incompleteBatchCount?: number
 }
 
-/** A's generator receives program-owned provenance without changing B's request interface. */
+/** A's generator receives program-owned provenance and optional progress without changing B's request interface. */
 export type PaperEvidenceGenerator = (
   request: EvidenceGenerationRequest,
   source: EvidenceExtractionInput,
   scope: PaperScopeRules,
+  onProgress?: PaperEvidenceProgressObserver,
 ) => Promise<PaperModelResponse>
+
+/** Complete paper-local extraction activity observed by A's workflow adapter. */
+export interface PaperEvidenceProgressObservation {
+  readonly operation: 'evidence_extract' | 'evidence_validate' | 'waiting_retry'
+  readonly batchIndex: number | null
+  readonly batchCount: number | null
+  readonly attempt: number | null
+  readonly maximumAttempts: number | null
+  readonly lastFailure: AcademicWorkflowProgressFailureCode | null
+  readonly validatedEvidenceRecords: number
+  readonly rejectedEvidenceDrafts: number
+}
+
+/** Optional synchronous observer for A-owned model and source-validation progress. */
+export type PaperEvidenceProgressObserver = (observation: PaperEvidenceProgressObservation) => void
 
 /** Provider-neutral failures that one Academic model operation may retry. */
 export type AcademicTransientFailureCode = 'TRANSPORT' | 'TIMEOUT'

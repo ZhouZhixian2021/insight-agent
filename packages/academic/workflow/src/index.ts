@@ -6,7 +6,8 @@ export { createModelSynthesisGenerator } from './synthesis-model.ts'
 export type { SynthesisModelRequest, SynthesisModelResult } from './synthesis-model.ts'
 export type { SynthesisSettlement } from './pipeline-types.ts'
 export { WorkflowLogError } from './model-errors.ts'
-export type { PaperEvidenceGenerator, PaperModelResponse, PaperScopeDecision, PaperScopeRules,
+export type { PaperEvidenceGenerator, PaperEvidenceProgressObservation, PaperEvidenceProgressObserver,
+  PaperModelResponse, PaperScopeDecision, PaperScopeRules,
   EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult, EvidenceModelPolicy, EvidenceExtractionModelPolicy, AcademicModelPolicies,
   AcademicTransientFailureCode, AcademicTransientRetryPolicy } from './model-types.ts'
 export type { PaperEvidenceResult, PaperPause, PaperExclusion } from './types.ts'

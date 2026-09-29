@@ -22,6 +22,10 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 进度类型通过仅供类型导入的 `@deepseek-ai/dsh-academic-workflow/progress` 入口公开。浏览器消费者使用此入口，避免经由执行入口引入宿主 Session 声明。
 
+工作流把每个全文候选观察映射到所属论文活动。候选开始时发布带一基尝试序号的 `fulltext_fetch`；候选失败且还有后续候选时发布 `waiting_retry` 和分类后的失败；接受 HTML 或 PDF 后在证据抽取开始前发布 `fulltext_parse`。取消时先发布论文取消事实，再结算整轮运行。
+
+`PaperEvidenceGenerator` 接受 A 持有的可选进度观察者，不改变证据包的 `EvidenceGenerator`。`createModelEvidenceGenerator()` 发布从一开始的批次位置；尝试开始与结算只在对应 `academic/evidence-request` 或 `academic/evidence-result` 完成持久化后发布；有限重试确定后发布 `waiting_retry`。超时、输出上限、输出不完整和输出无效使用共用的清理后失败代码。`extractPaperEvidence()` 在论文结算前发布来源核验接受数与拒绝数。观察者异常不会改变模型执行、核验或最终研究结果。
+
 带警告准入不满足补选停止条件。候选池用完或达到纳入上限后，`continue_with_warning` 允许基于已有可用证据生成有限草稿；`stop_for_review` 阻止分析。带警告草稿返回 `synthesis.status=partial_success` 和程序生成的原因。取消或零可用证据时不启动分析。
 
 `includedWorkTypes` 按 `WorkVersion.versionType` 筛选：`preprint`、`accepted_manuscript` 或 `version_of_record`。会议与期刊类别不属于版本状态。`allowPreprints: false` 优先排除预印本。流水线也会在获取全文前拒绝适配器选出的、未被批准纳入的版本；发表场所名称不决定纳入资格。`validateResearchBriefRequirements()` 向计划审核调用方提供共用的分析要求检查。

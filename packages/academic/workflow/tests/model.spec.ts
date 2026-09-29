@@ -10,7 +10,8 @@ import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { EvidenceExtractionInput, EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
-import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearchDraft, runModelResearchDraft, WorkflowLogError } from '../src/index.ts'
+import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearchDraft, runModelResearchDraft, WorkflowLogError,
+  type PaperEvidenceProgressObservation } from '../src/index.ts'
 import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages } from '../src/model-prompt.ts'
@@ -366,9 +367,14 @@ at most 3 entries primarily supporting any one focus question.`)
     ).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
       { maxAttempts: 1, inputBatchTokenLimit: oneSegmentTokens })
-    const response = await generate(request, source, scope)
+    const progress: PaperEvidenceProgressObservation[] = []
+    const response = await generate(request, source, scope, observation => progress.push(observation))
     expect(f.adapter.calls).toHaveLength(2)
     expect(response.evidence.map(draft => draft.segmentIndex)).toEqual([0, 1])
+    expect(progress.filter(observation => observation.attempt === null).map(observation => ({
+      batchIndex: observation.batchIndex, batchCount: observation.batchCount,
+    }))).toEqual([{ batchIndex: 1, batchCount: 2 }, { batchIndex: 2, batchCount: 2 }])
+    expect(progress.filter(observation => observation.attempt === 1)).toHaveLength(4)
   })
   it('keeps evidence from successful batches when another batch fails', async () => {
     const f = await fixture()
@@ -396,12 +402,16 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.waitForAbort = true
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
       { maxAttempts: 1, attemptTimeoutMs: 500 })
-    await expect(generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_TIMEOUT' })
+    const progress: PaperEvidenceProgressObservation[] = []
+    await expect(generate(f.request, f.source, scope, observation => progress.push(observation)))
+      .rejects.toMatchObject({ code: 'EVIDENCE_MODEL_TIMEOUT' })
     expect(f.adapter.calls).toHaveLength(1)
     expect((await f.read()).at(-1)?.data).toMatchObject({
       status: 'failed', errorCode: 'EVIDENCE_MODEL_TIMEOUT',
       finish: { kind: 'error', failure: { code: 'TIMEOUT' } },
     })
+    expect(progress.at(-1)).toMatchObject({ operation: 'evidence_extract', attempt: 1,
+      maximumAttempts: 1, lastFailure: 'timeout' })
   })
   it('records bad JSON without turning it into empty evidence', async () => {
     const f = await fixture()
@@ -423,7 +433,9 @@ at most 3 entries primarily supporting any one focus question.`)
       if (f.adapter.calls.length === 1) f.adapter.script = script
     }
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, retryOutputLimit: true })
-    await expect(generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' } })
+    const progress: PaperEvidenceProgressObservation[] = []
+    await expect(generate(f.request, f.source, scope, observation => progress.push(observation)))
+      .resolves.toMatchObject({ scope: { status: 'included' } })
     expect(f.adapter.calls).toHaveLength(2)
     const attempts = (await f.read()).flatMap((event) => {
       if (event.type !== 'academic/evidence-request' && event.type !== 'academic/evidence-result') return []
@@ -435,6 +447,10 @@ at most 3 entries primarily supporting any one focus question.`)
       { type: 'academic/evidence-request', attempt: 2, maxAttempts: 2 },
       { type: 'academic/evidence-result', attempt: 2, maxAttempts: 2 },
     ])
+    expect(progress).toContainEqual(expect.objectContaining({ operation: 'waiting_retry', attempt: 1,
+      maximumAttempts: 2, lastFailure: 'output_limit' }))
+    expect(progress).toContainEqual(expect.objectContaining({ operation: 'evidence_extract', attempt: 2,
+      maximumAttempts: 2, lastFailure: null }))
   })
   it.each(['TRANSPORT', 'TIMEOUT'] as const)('retries one paper after transient %s and keeps its successful evidence', async (code) => {
     const f = await fixture()
