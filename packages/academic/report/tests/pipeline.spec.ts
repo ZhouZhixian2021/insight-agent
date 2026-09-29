@@ -23,6 +23,15 @@ describe('fixed evidence to reviewed report', () => {
     expect(report.markdown).not.toContain('性能最好')
   })
 
+  it('reports evaluation and rendering at their execution points without trusting the observer', () => {
+    const { input } = benchmark()
+    const operations: string[] = []
+    const report = generateReport(input, (operation) => { operations.push(operation) })
+    expect(operations).toEqual(['evaluation', 'rendering'])
+    expect(report.markdown).toContain('## 参考文献')
+    expect(() => generateReport(input, () => { throw new Error('observer failed') })).not.toThrow()
+  })
+
   it('does not generate cross-paper conclusions from a single work', () => {
     const { input } = benchmark()
     const result = analyzeEvidence(batch(paper('one')), input.brief, input.assessedAt)

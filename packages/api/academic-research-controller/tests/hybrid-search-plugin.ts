@@ -47,7 +47,8 @@ export function apply(ctx: Context): void {
       ), 'utf8')) as { brief: ResearchBrief }
       const pipeline = await runResearchDraft({
         brief: { ...sample.brief, publicationWindow: { ...sample.brief.publicationWindow, start: null, end: null } },
-        synthetic: true, searches: [{ query: 'synthetic', maxResults: 3 }],
+        synthetic: true, searches: [{ query: 'synthetic', maxResults: 3,
+          channels: ['academic', 'web_discovery'] }],
       }, {
         ...adapters,
         fetcher: async () => { throw new Error('No paper was selected for this projection fixture') },
@@ -81,7 +82,8 @@ async function screeningFixture(brief: ResearchBrief, signal?: AbortSignal) {
   const result = await runResearchDraft({ synthetic: true, brief: { ...brief,
     publicationWindow: { start: { iso: '2020', precision: 'year' }, end: null, dateBasis: 'first_public_release' },
     includedWorkTypes: ['version_of_record'], stopConditions: { ...brief.stopConditions,
-      maximumSearchRounds: 2, maximumCandidateWorks: 1 } }, searches: [{ query: 'old' }, { query: 'recent' }] }, {
+      maximumSearchRounds: 2, maximumCandidateWorks: 1 } }, searches: [
+    { query: 'old', channels: ['academic'] }, { query: 'recent', channels: ['academic'] }] }, {
     search: async (request) => {
       assert.equal(request.maxResults, 1)
       const batch = createBatchResult([works[searches++]!], [])

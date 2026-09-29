@@ -110,9 +110,50 @@ describe('Academic workflow progress', () => {
       && snapshot.latestEvent.providerId === 'openalex'
       && snapshot.activities.some(activity => activity.kind === 'provider' && activity.status === 'success'))
     expect(started?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'openalex',
-      queryIndex: 1, queryCount: 1, discoveredRecords: null, completedAt: null }))
+      operation: 'academic_search', queryIndex: 1, queryCount: 1, itemIndex: null, itemCount: null,
+      discoveredRecords: null, completedAt: null }))
     expect(settled?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'openalex',
       status: 'success', discoveredRecords: 2, failureCode: null }))
+  })
+
+  it('maps hybrid Web operations into retrieval activities', async () => {
+    const { input, adapters, snapshots } = snapshotsOf()
+    const search = adapters.search
+    adapters.search = async (request, signal, onProvider, onHybrid) => {
+      onHybrid?.({ operation: 'web_discovery', phase: 'started', providerId: 'web', status: 'running',
+        itemIndex: null, itemCount: null, discoveredRecords: null, failureCode: null })
+      onHybrid?.({ operation: 'web_discovery', phase: 'settled', providerId: 'web', status: 'success',
+        itemIndex: null, itemCount: null, discoveredRecords: 4, failureCode: null })
+      onHybrid?.({ operation: 'reference_verification', phase: 'started', providerId: 'arxiv', status: 'running',
+        itemIndex: 1, itemCount: 2, discoveredRecords: null, failureCode: null })
+      onHybrid?.({ operation: 'reference_verification', phase: 'settled', providerId: 'arxiv', status: 'failed',
+        itemIndex: 1, itemCount: 2, discoveredRecords: 0, failureCode: 'not_found' })
+      return search(request, signal, onProvider)
+    }
+
+    await runResearchDraft(input, adapters)
+
+    const web = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'provider'
+      && activity.operation === 'web_discovery' && activity.status === 'success'))
+    expect(web?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'web',
+      operation: 'web_discovery', discoveredRecords: 4, itemIndex: null, itemCount: null }))
+    const verification = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'provider'
+      && activity.operation === 'reference_verification' && activity.status === 'failed'))
+    expect(verification?.activities).toContainEqual(expect.objectContaining({ kind: 'provider', providerId: 'arxiv',
+      operation: 'reference_verification', itemIndex: 1, itemCount: 2, failureCode: 'not_found' }))
+  })
+
+  it('publishes approved channels before a Web discovery failure settles the query', async () => {
+    const { input, adapters, snapshots } = snapshotsOf()
+    input.searches = [{ query: 'synthetic methods', channels: ['academic', 'web_discovery'] }]
+    adapters.search = async () => { throw new Error('web discovery failed') }
+
+    await expect(runResearchDraft(input, adapters)).rejects.toThrow('web discovery failed')
+
+    const started = snapshots.find(snapshot => snapshot.activities.some(activity => activity.kind === 'query'))
+    expect(started?.activities).toContainEqual(expect.objectContaining({ kind: 'query',
+      channels: ['academic', 'web_discovery'] }))
+    expect(snapshots.at(-1)?.stages.retrieval.status).toBe('failed')
   })
 
   it('preserves failed and cancelled provider settlements before the query settles', async () => {
@@ -285,5 +326,16 @@ describe('Academic workflow progress', () => {
       status: 'completed',
       synthesis: { status: 'completed' },
     })
+  })
+
+  it('publishes report evaluation before Markdown rendering', async () => {
+    const { input, adapters, snapshots } = snapshotsOf()
+
+    await runResearchDraft(input, adapters)
+
+    const operations = snapshots.flatMap(snapshot => snapshot.activities)
+      .filter(activity => activity.kind === 'report')
+      .map(activity => activity.operation)
+    expect(operations).toEqual(['evaluation', 'rendering'])
   })
 })

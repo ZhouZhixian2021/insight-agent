@@ -92,7 +92,10 @@ export type AcademicWorkflowProgressActivity =
     readonly queryIndex: number
     readonly queryCount: number
     readonly providerId: string
-    readonly status: 'running' | 'success' | 'failed' | 'cancelled'
+    readonly operation: 'academic_search' | 'web_discovery' | 'reference_identification' | 'reference_verification'
+    readonly status: 'running' | 'success' | 'partial_success' | 'failed' | 'cancelled'
+    readonly itemIndex: number | null
+    readonly itemCount: number | null
     readonly discoveredRecords: number | null
     readonly failureCode: AcademicWorkflowProgressFailureCode | null
     readonly startedAt: string
@@ -131,7 +134,7 @@ export type AcademicWorkflowProgressActivity =
   | {
     readonly kind: 'report'
     readonly stage: 'report'
-    readonly operation: 'synthesis' | 'evaluation' | 'rendering'
+    readonly operation: 'evaluation' | 'rendering'
     readonly attempt: number | null
     readonly maximumAttempts: number | null
     readonly lastFailure: AcademicWorkflowProgressFailureCode | null

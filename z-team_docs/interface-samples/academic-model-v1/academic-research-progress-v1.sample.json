@@ -57,7 +57,25 @@
             "queryIndex": 1,
             "queryCount": 3,
             "providerId": "openalex",
+            "operation": "academic_search",
             "status": "running",
+            "itemIndex": null,
+            "itemCount": null,
+            "discoveredRecords": null,
+            "failureCode": null,
+            "startedAt": "2026-09-28T01:00:00.000Z",
+            "completedAt": null
+          },
+          {
+            "kind": "provider",
+            "stage": "retrieval",
+            "queryIndex": 1,
+            "queryCount": 3,
+            "providerId": "web",
+            "operation": "web_discovery",
+            "status": "running",
+            "itemIndex": null,
+            "itemCount": null,
             "discoveredRecords": null,
             "failureCode": null,
             "startedAt": "2026-09-28T01:00:00.000Z",
@@ -218,9 +236,9 @@
           {
             "kind": "report",
             "stage": "report",
-            "operation": "synthesis",
-            "attempt": 1,
-            "maximumAttempts": 3,
+            "operation": "evaluation",
+            "attempt": null,
+            "maximumAttempts": null,
             "lastFailure": null,
             "startedAt": "2026-09-28T01:30:00.000Z"
           }

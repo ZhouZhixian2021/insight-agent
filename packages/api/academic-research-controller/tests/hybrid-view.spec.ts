@@ -97,7 +97,8 @@ describe('hybrid terminal projection', () => {
     fixture.adapters.search = vi.fn().mockResolvedValueOnce(resultA).mockResolvedValueOnce(resultB)
     const result = await runResearchDraft({ ...fixture.input,
       brief: { ...fixture.input.brief, stopConditions: { ...fixture.input.brief.stopConditions, maximumSearchRounds: 2 } },
-      searches: [{ query: 'one', maxResults: 1 }, { query: 'two', maxResults: 1 }] }, fixture.adapters)
+      searches: [{ query: 'one', maxResults: 1, channels: ['academic', 'web_discovery'] },
+        { query: 'two', maxResults: 1, channels: ['academic', 'web_discovery'] }] }, fixture.adapters)
     const view = hybridRetrievalView(result.hybridSearch!)
     expect(view.counts).toMatchObject({ academicDiscoveredRecords: 2, verifiedReferences: 1, mergedDuplicates: 0,
       deduplicatedWorks: 2 })
@@ -137,7 +138,8 @@ describe('hybrid terminal projection', () => {
     })
     const result = await runResearchDraft({ ...fixture.input,
       brief: { ...fixture.input.brief, stopConditions: { ...fixture.input.brief.stopConditions, maximumSearchRounds: 2 } },
-      searches: [{ query: 'one' }, { query: 'two' }] }, fixture.adapters, cancellation.signal)
+      searches: [{ query: 'one', channels: ['academic', 'web_discovery'] },
+        { query: 'two', channels: ['academic', 'web_discovery'] }] }, fixture.adapters, cancellation.signal)
     expect(result.status).toBe('cancelled')
     expect(result.retrievalRun.queries).toEqual(['one', 'two'])
     expect(result.hybridSearch?.queries.map(query => query.query)).toEqual(['one'])
@@ -195,7 +197,8 @@ describe('hybrid terminal projection', () => {
     fixture.adapters.search = vi.fn().mockResolvedValueOnce(failed).mockResolvedValueOnce(academicOnly)
     const mixed = await runResearchDraft({ ...fixture.input,
       brief: { ...fixture.input.brief, stopConditions: { ...fixture.input.brief.stopConditions, maximumSearchRounds: 2 } },
-      searches: [{ query: 'one' }, { query: 'two' }] }, fixture.adapters)
+      searches: [{ query: 'one', channels: ['academic', 'web_discovery'] },
+        { query: 'two', channels: ['academic'] }] }, fixture.adapters)
     expect(hybridRetrievalView(mixed.hybridSearch!).stages).toEqual({ academicSearch: 'partial_success', webDiscovery: 'failed',
       referenceIdentification: 'not_run', referenceVerification: 'not_run', deduplication: 'success' })
   })

@@ -13,9 +13,11 @@ import { buildRetrievalRun, createPaperProviderFailure, evidenceRejectionLimitat
   type RetrievalSearchObservation } from './retrieval-run.ts'
 import type { PaperEvidenceResult } from './types.ts'
 import type { PaperEvidenceProgressObservation } from './model-types.ts'
+import type { HybridSearchProgressObservation } from './hybrid-search.ts'
 import { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
-import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftSearchResult, PaperProcessingFailure,
+import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftPipelineSearch, DraftSearchResult,
+  PaperProcessingFailure,
   PaperSelectionResult, SelectedPaper } from './pipeline-types.ts'
 import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
   type AcademicWorkflowProgressStage,
@@ -96,7 +98,7 @@ export async function runResearchDraft(
     executedQueries.push(request.query)
     const queryKey = `query:${queryOffset}`
     progress.setActivity(queryKey, { kind: 'query', stage: 'retrieval', queryIndex: queryOffset + 1,
-      queryCount: searches.length, query: request.query, channels: [], startedAt: adapters.now() })
+      queryCount: searches.length, query: request.query, channels: request.channels, startedAt: adapters.now() })
     const providerStartedAt = new Map<string, string>()
     const observeProvider = (observation: AcademicSourceProviderObservation): void => {
       const activityKey = `${queryKey}:provider:${observation.provider}`
@@ -111,16 +113,41 @@ export async function runResearchDraft(
         queryIndex: queryOffset + 1,
         queryCount: searches.length,
         providerId: observation.provider,
+        operation: 'academic_search',
         status,
+        itemIndex: null,
+        itemCount: null,
         discoveredRecords: observation.phase === 'settled' ? observation.works : null,
         failureCode,
         startedAt: providerStartedAt.get(observation.provider) ?? observedAt,
         completedAt: observation.phase === 'settled' ? observedAt : null,
       })
     }
+    const hybridStartedAt = new Map<string, string>()
+    const observeHybrid = (observation: HybridSearchProgressObservation): void => {
+      const item = observation.itemIndex === null ? 'aggregate' : String(observation.itemIndex)
+      const activityKey = `${queryKey}:hybrid:${observation.operation}:${item}`
+      const observedAt = adapters.now()
+      if (observation.phase === 'started') hybridStartedAt.set(activityKey, observedAt)
+      progress.setActivity(activityKey, {
+        kind: 'provider',
+        stage: 'retrieval',
+        queryIndex: queryOffset + 1,
+        queryCount: searches.length,
+        providerId: observation.providerId,
+        operation: observation.operation,
+        status: observation.status,
+        itemIndex: observation.itemIndex,
+        itemCount: observation.itemCount,
+        discoveredRecords: observation.discoveredRecords,
+        failureCode: observation.failureCode,
+        startedAt: hybridStartedAt.get(activityKey) ?? observedAt,
+        completedAt: observation.phase === 'settled' ? observedAt : null,
+      })
+    }
     let result: DraftSearchResult
     try {
-      result = await adapters.search({ ...request, maxResults }, signal, observeProvider)
+      result = await adapters.search({ query: request.query, maxResults }, signal, observeProvider, observeHybrid)
     } catch (error: unknown) {
       if (signal?.aborted) {
         selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
@@ -454,15 +481,17 @@ export async function runResearchDraft(
   if (search?.truncated === true) limitations.push('Search coverage or the candidate bound truncated results; coverage is incomplete.')
   latestStage = 'report'
   progress.startStage('report', 1, 'report')
-  progress.setActivity('report', { kind: 'report', stage: 'report', operation: 'rendering', attempt: null,
-    maximumAttempts: null, lastFailure: null, startedAt: adapters.now() })
+  const reportStartedAt = adapters.now()
   let report
   try {
     report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
       admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
       evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
       sourceLocators: admission.input.analysisInput.sourceLocators,
-      works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic })
+      works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic }, (operation) => {
+      progress.setActivity('report', { kind: 'report', stage: 'report', operation, attempt: null,
+        maximumAttempts: null, lastFailure: null, startedAt: reportStartedAt })
+    })
   } catch (error: unknown) {
     progress.settleStage('report', 'failed', 0, 1, {}, progressFailure(error))
     throw error
@@ -475,10 +504,10 @@ export async function runResearchDraft(
 
 /** Normalize caller-owned queries once and enforce both the hard and approved round bounds. */
 function normalizeSearches(
-  searches: readonly AcademicSourceSearchRequest[],
+  searches: readonly DraftPipelineSearch[],
   approvedMaximumRounds: number,
-): readonly AcademicSourceSearchRequest[] {
-  const normalized: AcademicSourceSearchRequest[] = []
+): readonly DraftPipelineSearch[] {
+  const normalized: DraftPipelineSearch[] = []
   const queries = new Set<string>()
   for (const request of searches) {
     if (typeof request.query !== 'string' || request.query.trim().length === 0) {
@@ -487,7 +516,8 @@ function normalizeSearches(
     const query = request.query.trim()
     if (queries.has(query)) continue
     queries.add(query)
-    normalized.push({ query, ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })
+    normalized.push({ query, channels: [...request.channels],
+      ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })
   }
   if (normalized.length === 0) throw new Error('At least one search query is required.')
   const maximum = Math.min(MAX_DRAFT_SEARCH_QUERIES, approvedMaximumRounds)

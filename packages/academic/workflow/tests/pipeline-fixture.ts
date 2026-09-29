@@ -21,7 +21,7 @@ export function draftFixture(count = 2) {
     return { academicWork, workVersion }
   })
   const input: { -readonly [K in keyof DraftPipelineInput]: DraftPipelineInput[K] } = { synthetic: true,
-    searches: [{ query: 'synthetic methods' }], brief: {
+    searches: [{ query: 'synthetic methods', channels: ['academic'] }], brief: {
       schemaVersion: 1, researchBriefId: createResearchBriefId(), version: 1, topic: 'Synthetic comparison', aliases: [], questions: ['Compare methods'],
       publicationWindow: { start: null, end: null, dateBasis: 'first_public_release' }, includedWorkTypes: ['preprint'], inclusionRules: [], exclusionRules: [],
       evidenceRequirements: { minimumIncludedWorks: 2, minimumFulltextWorks: 2, minimumEvidenceLevel: 'fulltext', requireLocatableEvidence: true,

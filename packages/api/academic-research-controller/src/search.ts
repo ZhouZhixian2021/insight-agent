@@ -18,8 +18,8 @@ export function approvedPaperAdapters(
   const resolutions = new Map<string, AcademicSourceFullText | null>()
   const key = (provider: string, recordId: string) => JSON.stringify([provider, recordId])
   return {
-    search: async (request, signal, onProvider) => {
-      const result = await search(request, signal, onProvider)
+    search: async (request, signal, onProvider, onHybrid) => {
+      const result = await search(request, signal, onProvider, onHybrid)
       for (const outcome of result.hybridObservation?.verificationOutcomes ?? []) {
         if (outcome.status !== 'verified') continue
         for (const record of outcome.value.work.workVersion.sourceRecords) {
@@ -56,7 +56,7 @@ export function approvedSearchAdapter(
   web: WebRuntime,
 ): DraftPipelineAdapters['search'] {
   const approvedSearches = new Map(searches.map(search => [search.query, search]))
-  return async (search, operationSignal, onProvider) => {
+  return async (search, operationSignal, onProvider, onHybrid) => {
     const approved = approvedSearches.get(search.query)
     if (approved === undefined) throw new Error('Search expression is not in the approved plan.')
     if (approved.retrieval === undefined) return academicSource.searchAll(search, operationSignal, onProvider)
@@ -68,7 +68,7 @@ export function approvedSearchAdapter(
       },
       identifyReferences: identifyAcademicReferences,
       verifyReference: (reference, provider, signal) => academicSource.verifyReference(reference, [provider], signal),
-    }, operationSignal)
+    }, operationSignal, onHybrid)
     return { ...result.search, hybridObservation: result.observation }
   }
 }

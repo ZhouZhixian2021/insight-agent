@@ -86,7 +86,8 @@ describe('bounded candidate replenishment', () => {
   it('does not replenish outside a smaller request candidate bound', async () => {
     const { input, adapters } = fixture()
     vi.mocked(adapters.generator).mockResolvedValue({ scope: { status: 'excluded', reason: 'Out of scope.' }, evidence: [] })
-    const result = await runResearchDraft({ ...input, searches: [{ query: 'bounded', maxResults: 2 }] }, adapters)
+    const result = await runResearchDraft({ ...input, searches: [{ query: 'bounded', maxResults: 2,
+      channels: ['academic'] }] }, adapters)
     expect(adapters.generator).toHaveBeenCalledTimes(2)
     expect(result.report).toBeNull()
   })
