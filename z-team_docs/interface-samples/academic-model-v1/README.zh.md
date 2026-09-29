@@ -24,6 +24,7 @@
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json)：固定 C 在正式接入前可使用的浏览器安全 Remote 目标结果，包括由生产方结算的来源检索、全文获取和证据抽取阶段状态。
 - [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、明确的未识别/格式错误/含糊识别问题、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影。A-H4 为候选／引用行增加可选的查询归属；计数区分重复引用观察和实际 ingestion 论文合并。全部记录均为合成数据。
 - [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json)：固定 A-P1 的完整进度快照，覆盖检索开始、学术源直接搜索与 Web 发现活动、相互区分的摄取审计计数、全文与证据并行且三篇论文同时活动、超时重试和报告评测。论文活动同时携带论文与版本 ID。样例包含已观察数量与已运行时间，不包含估算百分比。
+- [`academic-query-workflow-v1.sample.json`](academic-query-workflow-v1.sample.json)：固定 Q1 不依赖提供方的检索计划、Brief 原始问题引用、最低／目标／最大纳入数量、集中排序策略、可解释的 P0/P1/排除候选、问题覆盖、一次轮次结算、停止决定和进度事件草案。全部记录均为合成数据。
 
 ## 样例覆盖
 
@@ -41,6 +42,9 @@
 12. Web 发现 URL、已识别引用、核验尝试与去重论文保持不同计数单位；DOI、arXiv、ACL、PMLR、CVF 引用保留发现来源与核验来源。
 13. 引用识别会在同批问题旁保留成功引用；被丢弃的 Web 候选必须携带明确的未识别、格式错误或含糊问题，不能只返回无说明的空数组。
 14. 进度快照保留全部六个阶段结论，表达同时运行的全文与证据工作，并使用单调递增序号让较新快照替换较旧快照。
+15. 计划查询具有各自稳定 ID；候选发现来源与轮次结算只能引用这些 ID。
+16. 候选优先级在硬过滤后遵循集中阈值，同时保留全部加权分项和决定理由。
+17. 问题覆盖保留绑定 Brief 版本中的原始问题；纳入数量满足“最低 <= 目标 <= 最大”。
 
 ## 已确认的字段规则
 
@@ -60,5 +64,6 @@
 - `partial_success` 必须同时包含成功 ID 和逐项失败。
 - freshness 样例中的版本不一致必须得到 `stale`，且 `mayEnterFinalReport` 必须为 `false`。
 - 进度夹具的序号必须递增，并发活动必须分别保留，进度帧不得包含估算百分比。
+- 查询工作流夹具必须保证查询引用有效、候选优先级符合共享策略、纳入目标顺序正确、进度序号递增，且最终进度原因与停止决定一致。
 
 返回 [Academic Model v1 设计基线](../../模块分工/academic-model-v1-design.md)。

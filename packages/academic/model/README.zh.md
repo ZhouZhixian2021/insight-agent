@@ -40,6 +40,7 @@ kind: "package-library"
 | `EvidenceId` | 一张证据卡片的稳定标识。 |
 | `ClaimId` | 一条报告论断的稳定标识。 |
 | `ResearchBriefId` | 一份已批准研究简报的稳定标识。 |
+| `SearchQueryId` | 计划查询在检索、排序和进度记录之间共用的稳定标识。 |
 | `Availability<T>` | 表达可用、来源未知、不适用、尚未抽取和抽取失败的五态结果。 |
 | `isAvailable()` | 把类型收窄到含值状态的判定函数。 |
 | `PartialDate` | 同时保留年、月或日精度的日期文本。 |
@@ -51,11 +52,17 @@ kind: "package-library"
 | `createWorkVersionId()` | 为不可变内容版本创建随机内部 ID。 |
 | `ResearchBrief` | 带版本的研究范围、证据要求、报告要求、停止条件和审核状态。 |
 | `createResearchBriefId()` | 为同一研究简报的全部版本创建共用随机内部 ID。 |
+| `createSearchQueryId()` | 为一条计划查询创建随机内部 ID。 |
 | `isExecutableResearchBrief()` | 只接受当前版本已获得明确批准的研究简报。 |
 | `EvidenceRecord` | 绑定实际成果版本和来源定位的可追溯原文及带来源陈述。 |
 | `SourceLocator` | 分别定位提供方记录、摘要、章节、段落、表格和图片的六种类型。 |
 | `EvidenceCard` | 从一个不可变成果版本提取的六个有证据分区。 |
 | `EvidenceSnapshot` | 一个 Brief 版本实际使用的证据、成果版本和内容哈希不可变集合。 |
+| `HybridSearchPlan` | 不依赖提供方且经过审核的查询、约束、纳入目标、排序策略和轮次上限。 |
+| `AcademicCandidateEvaluation` | 一个成果版本可解释的硬过滤、分类、评分、优先级和问题匹配结果。 |
+| `ResearchQuestionCoverageResult` | 绑定 Brief 版本中每个准确问题的证据覆盖和明确缺口。 |
+| `HybridSearchRound` / `SearchStopDecision` | 有界检索轮次结算及明确的继续／停止结果。 |
+| `QueryWorkflowProgressEvent` | 供界面使用的查询规划与候选漏斗实际进度事实。 |
 
 `ProviderFailure` 保存不依赖提供方的错误分类、重试资格和可空的绝对 UTC 重试时间。`createFailureId()` 创建与失败态 `Availability` 共用的标识。`createBatchResult()` 同时保留成功项和错误：没有错误时，即使零结果也为成功；成功项和错误并存时为部分成功；只有错误时为失败。它复制输入数组，但不复制数组中的对象。
 
@@ -66,6 +73,10 @@ kind: "package-library"
 `ClaimRecord` 保存结论、适用范围、有理由的置信等级和不可变证据快照。`ClaimEvidenceLink` 区分支持、反对与背景；`ClaimAssessment` 保存消费者产生的评审及其方法和版本。每种记录都有独立品牌 ID 和结构版本。消费者校验关联存在性和语义支撑，本模型不把背景关系解释为证明。
 
 `checkClaimFreshness(claim, currentBrief, currentEvidence)` 读取以 EvidenceId 为键的当前证据映射。仅当 Brief 身份/版本、证据身份、成果版本和非空白内容哈希全部一致时返回 current。已知差异或已存储的 stale Claim 返回 stale；证据缺失、空快照或哈希不可用返回 unverifiable。已知变化优先，同时保留全部原因。函数不改写历史。stale 和 unverifiable 均不能直接进入最终报告；current 仅通过当前性检查，不代表批准发布。
+
+Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。候选评估公开硬过滤决定、分类、全部加权分项、P0/P1/P2 优先级、匹配问题和决定理由。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
+
+问题覆盖、轮次结算、终止原因和 `QueryWorkflowProgressEvent` 只保存实际观测事实。模型不生成查询、不分类论文、不执行排序算法、不调度批次、不估算百分比，也不持久化进度；这些职责分别属于检索、工作流和 Web 消费者。
 
 -----
 
@@ -86,6 +97,7 @@ kind: "package-library"
 - **尚无持久去重映射**——去重键规则已经实现，但持久映射记录和合并审计字段仍需单独确认设计。
 - **不执行分析或语义评审**——消费者产生论断、关联和评估；证据版本一致不证明结论正确。
 - **尚无持久化解析器**——有类型保证的同进程调用方不需要重复运行时校验；持久化阶段会在不可信 JSON 入口执行校验。
+- **尚无查询或排序实现**——Q1 只冻结不依赖提供方的交接契约与默认策略；B 的规划器和排序器、A 的调度器及 C 的界面仍是独立工作包。
 
 <a id="dev-note"></a>
 ### 开发备注
