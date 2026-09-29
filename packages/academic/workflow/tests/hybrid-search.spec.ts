@@ -19,6 +19,7 @@ import {
   executeHybridSearch,
   type HybridRetrievalPolicy,
   type HybridSearchAdapters,
+  type HybridSearchProgressObservation,
 } from '../src/index.ts'
 
 function work(provider: string, recordId: string, doi?: string): AcademicSourceWork {
@@ -134,6 +135,38 @@ describe('hybrid Academic discovery', () => {
       referenceIdentification: 'success',
       referenceVerification: 'success',
     })
+  })
+
+  it('publishes Web discovery, reference identification and each verification at their execution points', async () => {
+    const configured = adapters()
+    const reference: AcademicReference = { kind: 'arxiv', normalizedValue: '1706.03762',
+      originalValue: '1706.03762', discoveryUrl: 'https://arxiv.org/abs/1706.03762' }
+    configured.searchWeb = vi.fn<HybridSearchAdapters['searchWeb']>(async () => ({
+      candidates: [{ url: reference.discoveryUrl }], truncated: false,
+    }))
+    configured.identifyReferences = vi.fn<HybridSearchAdapters['identifyReferences']>(() => identified(reference))
+    const observations: HybridSearchProgressObservation[] = []
+
+    await executeHybridSearch({ query: 'attention' }, policy, configured, undefined,
+      observation => observations.push(observation))
+
+    expect(observations.map(observation => [observation.operation, observation.status])).toEqual([
+      ['web_discovery', 'running'],
+      ['web_discovery', 'success'],
+      ['reference_identification', 'running'],
+      ['reference_identification', 'success'],
+      ['reference_verification', 'running'],
+      ['reference_verification', 'success'],
+    ])
+    expect(observations.at(-1)).toMatchObject({ providerId: 'arxiv', itemIndex: 1, itemCount: 1,
+      discoveredRecords: 1, failureCode: null })
+  })
+
+  it('contains hybrid progress observer failures', async () => {
+    const result = await executeHybridSearch({ query: 'attention' }, policy, adapters(), undefined, () => {
+      throw new Error('subscriber failed')
+    })
+    expect(result.search.works).toHaveLength(1)
   })
 
   it('deduplicates references, filters disallowed providers, and applies the verification budget', async () => {
@@ -253,14 +286,18 @@ describe('hybrid Academic discovery', () => {
   it('keeps direct Academic works when Web discovery fails', async () => {
     const configured = adapters()
     configured.searchWeb = vi.fn<HybridSearchAdapters['searchWeb']>(async () => { throw new Error('unavailable') })
+    const observations: HybridSearchProgressObservation[] = []
 
-    const result = await executeHybridSearch({ query: 'attention' }, policy, configured)
+    const result = await executeHybridSearch({ query: 'attention' }, policy, configured, undefined,
+      observation => observations.push(observation))
 
     expect(result.search.works.map(item => item.academicWork.title)).toEqual(['arxiv:direct'])
     expect(result.search.batch.status).toBe('partial_success')
     expect(result.search.batch.failures[0]).toMatchObject({ provider: 'web', operation: 'web_search' })
     expect(result.observation.stages).toMatchObject({ webDiscovery: 'failed',
       referenceIdentification: 'not_run', referenceVerification: 'not_run' })
+    expect(observations).toContainEqual(expect.objectContaining({ operation: 'web_discovery',
+      status: 'failed', discoveredRecords: 0, failureCode: 'unknown' }))
   })
 
   it('propagates caller cancellation instead of converting it to a source failure', async () => {

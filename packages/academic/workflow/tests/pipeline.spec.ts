@@ -151,7 +151,8 @@ describe('single-pass research draft', () => {
   })
   it('rejects an invalid explicit search bound before search', async () => {
     const { input, adapters } = fixture()
-    await expect(runResearchDraft({ ...input, searches: [{ query: 'x', maxResults: 0 }] }, adapters)).rejects.toThrow('positive integer')
+    await expect(runResearchDraft({ ...input, searches: [{ query: 'x', maxResults: 0,
+      channels: ['academic'] }] }, adapters)).rejects.toThrow('positive integer')
     expect(adapters.search).not.toHaveBeenCalled()
   })
   it.each(['resolve', 'reject'] as const)('handles cancellation when search adapters %s', async (outcome) => {
@@ -227,7 +228,8 @@ describe('single-pass research draft', () => {
     input.brief = { ...input.brief,
       publicationWindow: { start: { iso: '2020', precision: 'year' }, end: null, dateBasis: 'first_public_release' },
       stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 3, maximumCandidateWorks: 2 } }
-    input.searches = [{ query: 'first' }, { query: 'second' }, { query: 'third' }]
+    input.searches = [{ query: 'first', channels: ['academic'] }, { query: 'second', channels: ['academic'] },
+      { query: 'third', channels: ['academic'] }]
     vi.mocked(adapters.search)
       .mockResolvedValueOnce(searchBatch([dated[0], records[3]!]))
       .mockResolvedValueOnce(searchBatch([dated[1], dated[4]!]))
@@ -253,7 +255,7 @@ describe('single-pass research draft', () => {
     const d = distinctRecord(records[0]!, 'd')
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
       maximumSearchRounds: 2, maximumCandidateWorks: 3, maximumIncludedWorks: 3 } }
-    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    input.searches = [{ query: 'transformer', channels: ['academic'] }, { query: 'bert', channels: ['academic'] }]
     vi.mocked(adapters.search)
       .mockResolvedValueOnce(searchBatch([records[0]!, c], { providers: ['arxiv'] }))
       .mockResolvedValueOnce(searchBatch([records[1]!, d], { providers: ['acl'] }))
@@ -275,7 +277,7 @@ describe('single-pass research draft', () => {
     const failure: ProviderFailure = { schemaVersion: 1, failureId: createFailureId(), provider: 'arxiv', operation: 'search',
       category: 'upstream_error', message: 'network unavailable', retryable: true, retryAfter: null }
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
-    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    input.searches = [{ query: 'transformer', channels: ['academic'] }, { query: 'bert', channels: ['academic'] }]
     vi.mocked(adapters.search)
       .mockResolvedValueOnce(searchBatch([], { failures: [failure], providers: ['arxiv'] }))
       .mockResolvedValueOnce(searchBatch(records, { providers: ['acl'] }))
@@ -291,7 +293,7 @@ describe('single-pass research draft', () => {
     const first = distinctRecord(records[0]!, 'shared')
     const repeated = distinctRecord(records[0]!, 'shared')
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
-    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    input.searches = [{ query: 'transformer', channels: ['academic'] }, { query: 'bert', channels: ['academic'] }]
     vi.mocked(adapters.search)
       .mockResolvedValueOnce(searchBatch([first]))
       .mockResolvedValueOnce(searchBatch([repeated, records[1]!]))
@@ -305,7 +307,7 @@ describe('single-pass research draft', () => {
     const { input, adapters, records } = fixture()
     const controller = new AbortController()
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 2 } }
-    input.searches = [{ query: 'transformer' }, { query: 'bert' }]
+    input.searches = [{ query: 'transformer', channels: ['academic'] }, { query: 'bert', channels: ['academic'] }]
     adapters.search = vi.fn(async () => { controller.abort(); return searchBatch(records) })
 
     const result = await runResearchDraft(input, adapters, controller.signal)
@@ -317,9 +319,9 @@ describe('single-pass research draft', () => {
   it('rejects query counts above the hard or approved search-round bound before search', async () => {
     const { input, adapters } = fixture()
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 3 } }
-    input.searches = ['one', 'two', 'three', 'four'].map(query => ({ query }))
+    input.searches = ['one', 'two', 'three', 'four'].map(query => ({ query, channels: ['academic'] }))
     await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 3')
-    input.searches = [{ query: 'one' }, { query: 'two' }]
+    input.searches = [{ query: 'one', channels: ['academic'] }, { query: 'two', channels: ['academic'] }]
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 1 } }
     await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 1')
     expect(adapters.search).not.toHaveBeenCalled()
@@ -418,7 +420,7 @@ describe('single-pass research draft', () => {
     const { input, adapters } = fixture()
     const result = await runResearchDraft({ ...input, searches: [{ ...input.searches[0]!, maxResults: 1 }] }, adapters)
     expect(adapters.search).toHaveBeenCalledWith(
-      { query: input.searches[0]!.query, maxResults: 1 }, undefined, expect.any(Function),
+      { query: input.searches[0]!.query, maxResults: 1 }, undefined, expect.any(Function), expect.any(Function),
     )
     expect(result.papers).toHaveLength(1)
     expect(result.report).not.toBeNull()

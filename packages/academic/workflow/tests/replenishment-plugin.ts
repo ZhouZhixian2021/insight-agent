@@ -34,7 +34,8 @@ export function apply(ctx: Context, config: { paperConcurrency?: number } = {}):
       })
       const attempted: string[] = []
       let active = 0, peak = 0
-      const result = await runResearchDraft({ brief, paperConcurrency: concurrency, searches: [{ query: 'synthetic' }], synthetic: true }, {
+      const result = await runResearchDraft({ brief, paperConcurrency: concurrency,
+        searches: [{ query: 'synthetic', channels: ['academic'] }], synthetic: true }, {
         search: async () => ({ works: records, batch: createBatchResult(records, []), providers: ['fixture'],
           discoveredRecords: 5, truncated: false, limitations: [] }),
         selectPapers: (ingested, scope) => selectResearchPapers(ingested, scope, (_work, version) => ({

@@ -8,13 +8,18 @@ import type { PaperEvidenceGenerator } from './model-types.ts'
 import type { ResearchReport } from '@deepseek-ai/dsh-academic-report'
 import type { AnalysisResult } from '@deepseek-ai/dsh-academic-analysis'
 import type { PaperEvidenceResult } from './types.ts'
-import type { HybridSearchObservation } from './hybrid-search.ts'
+import type { HybridSearchObservation, HybridSearchProgressObserver } from './hybrid-search.ts'
 import type { HybridRunObservation } from './hybrid-run.ts'
 import type { AcademicWorkflowProgressObserver } from './progress.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
   readonly hybridObservation?: HybridSearchObservation
+}
+
+/** One approved search request with the channels known before execution begins. */
+export interface DraftPipelineSearch extends AcademicSourceSearchRequest {
+  readonly channels: readonly ('academic' | 'web_discovery')[]
 }
 
 /** One explicitly selected, reconciled version and its ordered full-text candidates. */
@@ -46,6 +51,7 @@ export interface DraftPipelineAdapters {
     request: AcademicSourceSearchRequest,
     signal?: AbortSignal,
     onProvider?: AcademicSourceProviderObserver,
+    onHybrid?: HybridSearchProgressObserver,
   ) => Promise<DraftSearchResult>
   /**
    * Screen all returned deduplicated works, then cap eligible candidates at the effective maximumCandidateWorks.
@@ -65,7 +71,7 @@ export interface DraftPipelineInput {
   /** Maximum concurrent paper acquisitions/extractions; omitted means serial execution. */
   readonly paperConcurrency?: number
   readonly brief: ResearchBrief
-  readonly searches: readonly AcademicSourceSearchRequest[]
+  readonly searches: readonly DraftPipelineSearch[]
   readonly synthetic: boolean
 }
 

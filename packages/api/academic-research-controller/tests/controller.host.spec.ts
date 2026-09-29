@@ -283,7 +283,7 @@ describe('AcademicResearchController', () => {
     expect(fixture.resolveFullText).not.toHaveBeenCalled()
     expect(fixture.search).not.toHaveBeenCalled()
     expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 3 },
-      ['openalex', 'arxiv'], expect.any(AbortSignal))
+      ['openalex', 'arxiv'], expect.any(AbortSignal), expect.any(Function))
     expect(fixture.webSearch).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 8 }, expect.any(AbortSignal))
     expect(fixture.verifyReference).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: 'arxiv',
       normalizedValue: '1706.03762' }), ['arxiv'], expect.any(AbortSignal))
@@ -426,12 +426,12 @@ describe('AcademicResearchController', () => {
       },
       input: { paperConcurrency: 3, brief: { topic: 'Retrieval', version: 1, approval: { status: 'approved', reviewedBy: 'session-user',
         approvedBriefVersion: 1, reviewedAt: '2026-09-16T00:00:01.000Z' } },
-      searches: [{ query: 'retrieval', maxResults: 2 }], synthetic: false } })
+      searches: [{ query: 'retrieval', channels: ['academic'], maxResults: 2 }], synthetic: false } })
     await call.adapters.search({ query: 'retrieval' }, fixture.signal)
     await expect(call.adapters.search({ query: 'unapproved' }, fixture.signal)).rejects.toThrow('not in the approved plan')
     await call.adapters.fetcher('https://arxiv.org/pdf/1', fixture.signal)
     expect(Date.parse(call.adapters.now())).not.toBeNaN()
-    expect(fixture.search).toHaveBeenCalledExactlyOnceWith({ query: 'retrieval' }, fixture.signal)
+    expect(fixture.search).toHaveBeenCalledExactlyOnceWith({ query: 'retrieval' }, fixture.signal, undefined)
     expect(fixture.fetch).toHaveBeenCalledWith(
       { url: 'https://arxiv.org/pdf/1' }, fixture.signal, { providerId: 'academic-raw' },
     )
@@ -564,8 +564,8 @@ describe('AcademicResearchController', () => {
       maxResults: 5, synthetic: false }, fixture.signal)
 
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].input.searches).toEqual([
-      { query: 'Transformer long-range dependencies', maxResults: 5 },
-      { query: 'BERT bidirectional pre-training', maxResults: 5 },
+      { query: 'Transformer long-range dependencies', channels: ['academic'], maxResults: 5 },
+      { query: 'BERT bidirectional pre-training', channels: ['academic'], maxResults: 5 },
     ])
   })
 

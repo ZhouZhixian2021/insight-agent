@@ -45,12 +45,18 @@ describe('Academic research progress contract fixture', () => {
       queryIndex: 1,
       queryCount: 3,
       providerId: 'openalex',
+      operation: 'academic_search',
       status: 'running',
+      itemIndex: null,
+      itemCount: null,
       discoveredRecords: null,
       failureCode: null,
       startedAt: '2026-09-28T01:00:00.000Z',
       completedAt: null,
     })
+    expect(sample.frames[0]?.progress.activities).toContainEqual(expect.objectContaining({
+      kind: 'provider', providerId: 'web', operation: 'web_discovery', status: 'running',
+    }))
   })
 
   it('keeps one-based batch and retry facts with a sanitized failure code', () => {

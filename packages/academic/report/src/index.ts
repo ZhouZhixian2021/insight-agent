@@ -36,13 +36,21 @@ export interface ReportInput extends EvaluationInput {
   readonly synthetic: boolean
 }
 
+/** Report-local operation observed at its actual execution point. */
+export type ReportGenerationOperation = 'evaluation' | 'rendering'
+
+/** Synchronous observer for report generation operations. */
+export type ReportGenerationObserver = (operation: ReportGenerationOperation) => void
+
 /**
  * Produce a Chinese Markdown research report and retain inspectable source records.
  * @param input Current evidence and reviews; final mode requires a ready evaluation.
+ * @param onOperation Optional observer called before evaluation and before Markdown rendering; observer errors are ignored.
  * @returns A report that discloses evidence and semantic-review limitations.
  * @throws Error if final publication is requested while evaluation is not ready.
  */
-export function generateReport(input: ReportInput): ResearchReport {
+export function generateReport(input: ReportInput, onOperation?: ReportGenerationObserver): ResearchReport {
+  reportOperation(onOperation, 'evaluation')
   let evaluation = evaluateClaims({ ...input,
     ...input.synthesis === undefined ? {} : { sourceStatements: input.synthesis.statements.filter(statement => statement.kind === 'source_statement') },
   })
@@ -65,15 +73,17 @@ export function generateReport(input: ReportInput): ResearchReport {
     ...input.synthesis?.statements.flatMap(statement => statement.evidenceLinks.map(link => link.evidenceId)) ?? []])
   const evidence = input.evidence.filter(record => cited.has(record.evidenceId))
   if (evidence.some(record => !byWork.has(record.academicWorkId))) throw new Error('Cited work bibliography is missing.')
+  const synthesisInput = input.synthesis === undefined ? null
+    : { draft: input.synthesis, coverage: requiredCoverage(input.coverage) }
   const workIds = [...new Set(evidence.map(record => record.academicWorkId))]
   const references = new Map(workIds.map((id, index) => [id, index + 1]))
   const limitations = [...input.limitations, ...evaluation.issues.map(issue => issue.message)]
+  reportOperation(onOperation, 'rendering')
   const lines = [`# ${escapeMarkdown(input.brief.topic)}`, '',
     input.mode === 'draft' ? '> 草稿：未经完整审核，不作为最终研究结论。' : '> 已完成当前证据与语义审核。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
-  if (input.synthesis !== undefined) {
-    if (input.coverage === undefined) throw new Error('Synthesis report requires observed coverage.')
-    const rendered = renderSynthesis(input.brief, input.synthesis, evidence, references, input.coverage)
+  if (synthesisInput !== null) {
+    const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage)
     lines.push(...rendered.lines)
     limitations.push(...rendered.unmet, '问题回答与单篇论文陈述尚未经过独立语义审核。')
     evaluation = { ...evaluation, status: evaluation.status === 'blocked' ? 'blocked' : 'needs_review',
@@ -130,4 +140,18 @@ export function generateReport(input: ReportInput): ResearchReport {
   return { title: input.brief.topic, mode: input.mode, synthetic: input.synthetic, markdown,
     ...input.retrievalDisclosure === undefined ? {} : { retrievalDisclosureIncluded: true as const },
     evaluation, claims: input.claims, evidence, limitations }
+}
+
+function reportOperation(observer: ReportGenerationObserver | undefined, operation: ReportGenerationOperation): void {
+  if (observer === undefined) return
+  try {
+    observer(operation)
+  } catch {
+    // Report progress is observational; a broken subscriber cannot change the generated report.
+  }
+}
+
+function requiredCoverage(coverage: CoverageSummary | undefined): CoverageSummary {
+  if (coverage === undefined) throw new Error('Synthesis report requires observed coverage.')
+  return coverage
 }

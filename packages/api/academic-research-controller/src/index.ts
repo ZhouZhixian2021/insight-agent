@@ -226,6 +226,7 @@ export class AcademicResearchController extends TypertRemoteService {
             transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: this.synthesisRetryInitialDelayMs } },
         },
         input: { brief, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
+          channels: search.retrieval?.channels ?? ['academic'],
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),

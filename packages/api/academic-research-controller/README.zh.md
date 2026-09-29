@@ -12,7 +12,7 @@ kind: "package-reference"
 
 `@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run` 与 `runStream`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
 
-本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、Provider 活动、论文／版本身份和已运行时间，不估算完成百分比。工作流生产共用的运行内字段；Provider 活动以及模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
+本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、检索操作活动、论文／版本身份和已运行时间，不估算完成百分比。学术 Provider 直接搜索、Web 发现、引用识别和每一条引用核验使用不同操作名；核验事实还携带从一开始的条目位置。工作流生产共用的运行内字段；模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
 
 ## 目录
 

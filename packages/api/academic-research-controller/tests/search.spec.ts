@@ -40,8 +40,10 @@ describe('approved source adapters', () => {
     const f = await fixture()
     const signal = new AbortController().signal
     const providers: string[] = []
+    const hybrid: string[] = []
     const result = await f.search(policy)({ query: 'reviewed', maxResults: 1 }, signal,
-      observation => providers.push(`${observation.provider}:${observation.phase}:${observation.settlement ?? 'running'}`))
+      observation => providers.push(`${observation.provider}:${observation.phase}:${observation.settlement ?? 'running'}`),
+      observation => hybrid.push(`${observation.operation}:${observation.status}`))
     expect(f.direct).toHaveBeenCalledExactlyOnceWith({ query: 'reviewed', maxResults: 1 }, signal)
     expect(f.unapproved).not.toHaveBeenCalled()
     expect(f.webSearch).toHaveBeenCalledExactlyOnceWith({ query: 'reviewed', maxResults: 2 }, signal)
@@ -50,6 +52,9 @@ describe('approved source adapters', () => {
     expect(result.works).toHaveLength(1)
     expect(result.works[0]?.academicWork.title).toBe('Verified paper')
     expect(providers).toEqual(['arxiv:started:running', 'arxiv:settled:success'])
+    expect(hybrid).toEqual(['web_discovery:running', 'web_discovery:success',
+      'reference_identification:running', 'reference_identification:success',
+      'reference_verification:running', 'reference_verification:success'])
   })
 
   it.each(['academic', 'web'] as const)('keeps the other channel when %s fails', async (channel) => {

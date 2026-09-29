@@ -59,6 +59,23 @@ export interface HybridSearchAdapters {
 /** Settlement status for one independently observable hybrid-search operation. */
 export type HybridSearchStageStatus = 'success' | 'partial_success' | 'failed' | 'not_run'
 
+/** One live fact emitted at a real Web-discovery orchestration boundary. */
+export interface HybridSearchProgressObservation {
+  readonly operation: 'web_discovery' | 'reference_identification' | 'reference_verification'
+  readonly phase: 'started' | 'settled'
+  readonly providerId: string
+  readonly status: 'running' | 'success' | 'partial_success' | 'failed' | 'cancelled'
+  /** One-based verification position; aggregate Web and identification operations use null. */
+  readonly itemIndex: number | null
+  readonly itemCount: number | null
+  /** URLs, identified references, or verified works produced by this operation. */
+  readonly discoveredRecords: number | null
+  readonly failureCode: FailureCategory | 'cancelled' | null
+}
+
+/** Synchronous observer for run-local hybrid-search facts; observer errors are contained. */
+export type HybridSearchProgressObserver = (observation: HybridSearchProgressObservation) => void
+
 /** Observations retained for A-H4 projection without mixing URLs, references, and works. */
 export interface HybridSearchObservation {
   /** Approved policy actually used for this completed query. */
@@ -108,6 +125,7 @@ export interface HybridSearchResult {
  * @param policy - reviewed channels, providers, and Web/reference budgets.
  * @param adapters - direct search, Web discovery, identification, and verification operations.
  * @param signal - caller-owned cancellation and elapsed-time signal.
+ * @param onProgress - optional observer for Web discovery, reference identification, and verification facts.
  * @returns A scholarly batch bounded by distinct works, retaining their versions and verified Web discoveries, and separate observations.
  */
 export async function executeHybridSearch(
@@ -115,6 +133,7 @@ export async function executeHybridSearch(
   policy: HybridRetrievalPolicy,
   adapters: HybridSearchAdapters,
   signal?: AbortSignal,
+  onProgress?: HybridSearchProgressObserver,
 ): Promise<HybridSearchResult> {
   throwIfAborted(signal)
   const academicEnabled = policy.channels.includes('academic')
@@ -124,7 +143,25 @@ export async function executeHybridSearch(
       ? settle(() => adapters.searchAcademic(request, policy.academicProviders, signal))
       : Promise.resolve<Settlement<AcademicSourceSearchBatchResult>>({ status: 'not_run' }),
     webEnabled
-      ? settle(() => adapters.searchWeb({ query: request.query, maxResults: policy.maximumWebDiscoveryResults }, signal))
+      ? settle(async () => {
+        publishProgress(onProgress, { operation: 'web_discovery', phase: 'started', providerId: 'web',
+          status: 'running', itemIndex: null, itemCount: null, discoveredRecords: null, failureCode: null })
+        try {
+          const result = await adapters.searchWeb(
+            { query: request.query, maxResults: policy.maximumWebDiscoveryResults }, signal,
+          )
+          publishProgress(onProgress, { operation: 'web_discovery', phase: 'settled', providerId: 'web',
+            status: 'success', itemIndex: null, itemCount: null,
+            discoveredRecords: result.candidates.length, failureCode: null })
+          return result
+        } catch (reason: unknown) {
+          const cancelled = signal?.aborted === true
+          publishProgress(onProgress, { operation: 'web_discovery', phase: 'settled', providerId: 'web',
+            status: cancelled ? 'cancelled' : 'failed', itemIndex: null, itemCount: null,
+            discoveredRecords: 0, failureCode: cancelled ? 'cancelled' : failureCategory(reason) })
+          throw reason
+        }
+      })
       : Promise.resolve<Settlement<HybridWebDiscoveryResult>>({ status: 'not_run' }),
   ])
   throwIfAborted(signal)
@@ -136,16 +173,49 @@ export async function executeHybridSearch(
   if (web.status === 'failed') failures.push(operationFailure('web', 'web_search', web.reason))
 
   const candidates = web.status === 'success' ? web.value.candidates : []
-  const identifications = candidates.map(candidate => ({ candidate, result: adapters.identifyReferences(candidate) }))
+  let identifications: readonly {
+    readonly candidate: AcademicWebDiscoveryCandidate
+    readonly result: AcademicReferenceIdentificationResult
+  }[] = []
+  if (candidates.length > 0) {
+    publishProgress(onProgress, { operation: 'reference_identification', phase: 'started', providerId: 'reference_identifier',
+      status: 'running', itemIndex: null, itemCount: candidates.length, discoveredRecords: null, failureCode: null })
+    try {
+      identifications = candidates.map(candidate => ({ candidate, result: adapters.identifyReferences(candidate) }))
+      const stage = identificationStage(identifications)
+      const status = stage === 'not_run' ? 'success' : stage
+      publishProgress(onProgress, { operation: 'reference_identification', phase: 'settled', providerId: 'reference_identifier',
+        status, itemIndex: null, itemCount: candidates.length,
+        discoveredRecords: identifications.reduce((count, entry) => count + entry.result.references.length, 0),
+        failureCode: status === 'success' ? null : 'parse_failed' })
+    } catch (reason: unknown) {
+      publishProgress(onProgress, { operation: 'reference_identification', phase: 'settled', providerId: 'reference_identifier',
+        status: 'failed', itemIndex: null, itemCount: candidates.length, discoveredRecords: 0,
+        failureCode: failureCategory(reason) })
+      throw reason
+    }
+  }
   const references = identifications.flatMap(entry => entry.result.references)
   const distinct = distinctReferences(references)
   const permitted = distinct.values.filter(reference => policy.verificationProviders.includes(providerFor(reference)))
   const selected = permitted.slice(0, policy.maximumReferenceVerifications)
-  const verificationOutcomes = await Promise.all(selected.map(async (reference): Promise<AcademicReferenceVerificationOutcome> => {
+  const verificationOutcomes = await Promise.all(selected.map(async (reference, index): Promise<AcademicReferenceVerificationOutcome> => {
     const provider = providerFor(reference)
+    publishProgress(onProgress, { operation: 'reference_verification', phase: 'started', providerId: provider,
+      status: 'running', itemIndex: index + 1, itemCount: selected.length,
+      discoveredRecords: null, failureCode: null })
     try {
-      return await adapters.verifyReference(reference, provider, signal)
+      const outcome = await adapters.verifyReference(reference, provider, signal)
+      publishProgress(onProgress, { operation: 'reference_verification', phase: 'settled', providerId: provider,
+        status: outcome.status === 'verified' ? 'success' : 'failed', itemIndex: index + 1,
+        itemCount: selected.length, discoveredRecords: outcome.status === 'verified' ? 1 : 0,
+        failureCode: outcome.status === 'verified' ? null : outcome.failure.category })
+      return outcome
     } catch (reason: unknown) {
+      const cancelled = signal?.aborted === true
+      publishProgress(onProgress, { operation: 'reference_verification', phase: 'settled', providerId: provider,
+        status: cancelled ? 'cancelled' : 'failed', itemIndex: index + 1, itemCount: selected.length,
+        discoveredRecords: 0, failureCode: cancelled ? 'cancelled' : failureCategory(reason) })
       return { status: 'failed', failure: verificationFailure(reference, provider, reason) }
     }
   }))
@@ -304,8 +374,21 @@ function failureCategory(reason: unknown): FailureCategory {
     if (code.includes('network') || code.includes('fetch')) return 'network_error'
     if (code.includes('parse')) return 'parse_failed'
     if (code.includes('not_found')) return 'not_found'
+    return 'upstream_error'
   }
-  return 'upstream_error'
+  return 'unknown'
+}
+
+function publishProgress(
+  observer: HybridSearchProgressObserver | undefined,
+  observation: HybridSearchProgressObservation,
+): void {
+  if (observer === undefined) return
+  try {
+    observer(observation)
+  } catch {
+    // Progress is observational; a broken subscriber cannot change retrieval settlement.
+  }
 }
 
 function operationFailure(provider: string, operation: string, reason: unknown): ProviderFailure {
