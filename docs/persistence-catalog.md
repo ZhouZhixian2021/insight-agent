@@ -103,7 +103,7 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:106`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:125`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -114,7 +114,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:106`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:108`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 
@@ -125,7 +125,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:108`](../packages/academ
 'academic/synthesis-request': SynthesisModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/synthesis-model.ts:26`](../packages/academic/workflow/src/synthesis-model.ts)
+Source: [`packages/academic/workflow/src/synthesis-model.ts:27`](../packages/academic/workflow/src/synthesis-model.ts)
 
 <a id="academicsynthesis-result--log-only"></a>
 
@@ -136,7 +136,7 @@ Source: [`packages/academic/workflow/src/synthesis-model.ts:26`](../packages/aca
 'academic/synthesis-result': SynthesisModelResult
 ```
 
-Source: [`packages/academic/workflow/src/synthesis-model.ts:28`](../packages/academic/workflow/src/synthesis-model.ts)
+Source: [`packages/academic/workflow/src/synthesis-model.ts:29`](../packages/academic/workflow/src/synthesis-model.ts)
 
 ### `agent/*`
 

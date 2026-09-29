@@ -21,6 +21,8 @@ export interface LoggedModelRequest<T> {
   readonly messages: Message[]
   /** Smaller request used once after output-limit exhaustion; omitted callers repeat their original request. */
   readonly outputLimitRetryMessages?: Message[]
+  /** Build a complete replacement request after structural validation rejects a settled response. */
+  readonly invalidOutputRetryMessages?: (error: unknown, compact: boolean) => Message[]
   readonly signal?: AbortSignal
   readonly parse: (text: string) => T
   readonly appendRequest: (data: Omit<EvidenceModelRequest, 'source'>) => SessionEvent & { readonly data: Omit<EvidenceModelRequest, 'source'> }
@@ -44,7 +46,7 @@ export interface LoggedModelAttemptObservation {
  * @param ctx DSH model, token-meter and persistence services.
  * @param session Live Session with a durable writer.
  * @param config Selected route and output-token reserve.
- * @param policy Total attempts plus optional transient-failure backoff.
+ * @param policy Total attempts plus optional output-limit, invalid-response and transient-failure recovery.
  * @returns A tool-free model runner using the exact persisted messages.
  */
 export function createLoggedModelRunner<T>(ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceModelPolicy) {
@@ -91,7 +93,11 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
 
   return async (request: LoggedModelRequest<T>) => {
     request.signal?.throwIfAborted()
+    if (policy.retryInvalidOutput === true && request.invalidOutputRetryMessages === undefined) {
+      throw new Error('Academic invalid-output retry requires recovery messages.')
+    }
     let useOutputLimitRecovery = false
+    let validationRecoveryMessages: Message[] | undefined
     for (let attempt = 1; attempt <= policy.maxAttempts; attempt++) {
       const timeoutController = policy.attemptTimeoutMs === undefined ? undefined : new AbortController()
       const timeout = timeoutController === undefined ? undefined : setTimeout(() => {
@@ -117,7 +123,8 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
           || !Number.isSafeInteger(outputTokens) || outputTokens <= 0) {
           throw new EvidenceError('Model context window and output-token cap are required.', 'EVIDENCE_MODEL_BUDGET_UNKNOWN')
         }
-        const messages = useOutputLimitRecovery ? request.outputLimitRetryMessages ?? request.messages : request.messages
+        const messages = validationRecoveryMessages
+          ?? (useOutputLimitRecovery ? request.outputLimitRetryMessages ?? request.messages : request.messages)
         const estimatedInputTokens = messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0)
         const oversized = estimatedInputTokens + outputTokens > contextWindow
         const logged = await record(() => request.appendRequest({ config: prepared.config,
@@ -181,9 +188,18 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT') ? finish.failure.code : undefined
       const retryTransient = transientFailureCode !== undefined
         && transientRetry?.failureCodes.includes(transientFailureCode) === true
-      if ((!retryOutputLimit && !retryTransient) || attempt === policy.maxAttempts) throw failure
+      const nextValidationRecovery = policy.retryInvalidOutput === true
+        && errorCode === 'SYNTHESIS_INVALID_MODEL_OUTPUT' && finish?.kind === 'stop'
+        ? request.invalidOutputRetryMessages?.(failure, useOutputLimitRecovery) : undefined
+      const retryInvalidOutput = nextValidationRecovery !== undefined
+      if ((!retryOutputLimit && !retryTransient && !retryInvalidOutput) || attempt === policy.maxAttempts) throw failure
       reportAttempt(request.onAttempt, { ...settled, phase: 'retry_scheduled' })
-      if (retryOutputLimit) useOutputLimitRecovery = true
+      if (retryOutputLimit) {
+        useOutputLimitRecovery = true
+        validationRecoveryMessages = undefined
+      } else if (retryInvalidOutput) {
+        validationRecoveryMessages = nextValidationRecovery
+      }
       if (retryTransient && transientRetry.initialDelayMs > 0) {
         await delay(transientRetry.initialDelayMs * 2 ** (attempt - 1), undefined,
           request.signal === undefined ? undefined : { signal: request.signal })

@@ -13,3 +13,5 @@
       name: '@deepseek-ai/dsh-token-meter'
     - id: academic-model-snapshot
       name: '../../../packages/academic/workflow/tests/snapshot-plugin.ts'
+      config:
+        invalidSynthesisFirst: true

@@ -13,6 +13,7 @@ import type {
   FailureId,
   ResearchBriefId,
   RetrievalRunId,
+  SearchQueryId,
   SourceLocatorId,
   WorkVersionId,
 } from './types.ts'
@@ -52,6 +53,14 @@ export function createFailureId(): FailureId {
  */
 export function createRetrievalRunId(): RetrievalRunId {
   return brandString<RetrievalRunId>(randomUUID())
+}
+
+/**
+ * Creates an identity for one planned search operation.
+ * @returns A new search-query identity independent of its provider expression.
+ */
+export function createSearchQueryId(): SearchQueryId {
+  return brandString<SearchQueryId>(randomUUID())
 }
 
 /**

@@ -2,8 +2,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { createUserMessage, type LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session } from '@deepseek-ai/dsh-session'
-import { compactSynthesisPrompt, parseSynthesisDraft, SynthesisError, synthesisPrompt, type AcademicSynthesisDraft,
-  type AcademicSynthesisInput, type RejectedSynthesisStatement } from '@deepseek-ai/dsh-academic-analysis'
+import { compactSynthesisPrompt, parseSynthesisDraft, SynthesisError, synthesisPrompt, synthesisRepairPrompt,
+  type AcademicSynthesisDraft, type AcademicSynthesisInput,
+  type RejectedSynthesisStatement } from '@deepseek-ai/dsh-academic-analysis'
 import { createLoggedModelRunner, ModelOutputLimitError } from './model-call.ts'
 import type { EvidenceModelPolicy, EvidenceModelRequest, EvidenceModelResult } from './model-types.ts'
 
@@ -34,7 +35,7 @@ declare module '@deepseek-ai/dsh-session/types' {
  * @param ctx DSH model and durable Session services.
  * @param session Live Session owning the request and response records.
  * @param config Selected model and output-token budget.
- * @param policy Bounded output-limit and transient-failure recovery policy.
+ * @param policy Bounded output-limit, invalid-response and transient-failure recovery policy.
  * @returns An adapter retaining valid paragraphs and recording local rejections; no template fallback or reference weakening.
  */
 export function createModelSynthesisGenerator(ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceModelPolicy):
@@ -48,6 +49,8 @@ export function createModelSynthesisGenerator(ctx: Context, session: Session, co
       return await run({
         messages: [message(synthesisPrompt(input))],
         outputLimitRetryMessages: [message(compactSynthesisPrompt(input))],
+        invalidOutputRetryMessages: (error, compact) => [message(synthesisRepairPrompt(input,
+          error instanceof SynthesisError ? error.message : 'The response failed structural validation.', compact))],
         ...signal === undefined ? {} : { signal },
         parse: (text) => { draft = parseSynthesisDraft(text, input); return draft },
         appendRequest: data => session.append('academic/synthesis-request', { input, ...data }),

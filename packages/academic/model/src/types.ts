@@ -36,6 +36,9 @@ export type ResearchBriefId = Branded<'ResearchBriefId'>
 /** Stable identity of one retrieval run under a particular research-brief version. */
 export type RetrievalRunId = Branded<'RetrievalRunId'>
 
+/** Stable identity of one planned search operation inside a research-brief version. */
+export type SearchQueryId = Branded<'SearchQueryId'>
+
 /** Stable identity of one provider or processing failure. */
 export type FailureId = Branded<'FailureId'>
 

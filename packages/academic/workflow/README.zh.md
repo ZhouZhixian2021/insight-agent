@@ -30,7 +30,7 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 `includedWorkTypes` 按 `WorkVersion.versionType` 筛选：`preprint`、`accepted_manuscript` 或 `version_of_record`。会议与期刊类别不属于版本状态。`allowPreprints: false` 优先排除预印本。流水线也会在获取全文前拒绝适配器选出的、未被批准纳入的版本；发表场所名称不决定纳入资格。`validateResearchBriefRequirements()` 向计划审核调用方提供共用的分析要求检查。
 
-正式入口准入证据后，使用会话模型执行逐题洞察。论文证据抽取可以重试输出截断以及配置的 `TRANSPORT` 和 `TIMEOUT` 失败，并复用同一篇已解析论文的请求，不重复检索或全文获取。最终报告合成可以独立配置对 `TRANSPORT` 和 `TIMEOUT` 失败执行指数退避重试，并复用已经准入的证据，不重复检索、全文获取或证据抽取。合成输出达到上限时最多消耗一次恢复尝试；精简请求保留批准的问题、论文身份和已核验摘录，移除重复的版本、定位与卡片数据。精简请求再次达到上限后以 `SYNTHESIS_MODEL_OUTPUT_LIMIT` 停止，不再原样重试。`academic/synthesis-request` 记录每次准确请求；`academic/synthesis-result` 记录每次尝试的原始输出、用量与拒绝诊断。段落部分合格记为 `partially_validated`；全部被拒记为 `failed` 和 `SYNTHESIS_NO_VALID_STATEMENTS`。早期事件及 JSON 解析前的失败不含 `rejectedStatements`。仍有合格段落时，Remote 返回 `partial_success`、拒绝原因与草稿；没有合格段落则不返回报告。整份响应无效、证据不足、重试耗尽或取消也不返回报告。持久化失败中止整轮。不使用模板回退、自动语义修复或放宽引用要求。
+正式入口准入证据后，使用会话模型执行逐题洞察。论文证据抽取可以重试输出截断以及配置的 `TRANSPORT` 和 `TIMEOUT` 失败，并复用同一篇已解析论文的请求，不重复检索或全文获取。最终报告合成可以独立配置对 `TRANSPORT` 和 `TIMEOUT` 失败执行指数退避重试，并复用已经准入的证据，不重复检索、全文获取或证据抽取。合成输出达到上限时最多消耗一次恢复尝试；精简请求保留批准的问题、论文身份和已核验摘录，移除重复的版本、定位与卡片数据。精简请求再次达到上限后以 `SYNTHESIS_MODEL_OUTPUT_LIMIT` 停止，不再原样重试。启用 `retryInvalidOutput` 后，已完成响应因 `SYNTHESIS_INVALID_MODEL_OUTPUT` 被拒时，可以在同一尝试次数上限内复用完整或精简的已准入输入，附加不含原响应文本的解析诊断，重新生成整份 JSON；系统不会修补或重新解释被拒响应。`academic/synthesis-request` 记录每次准确请求；`academic/synthesis-result` 记录每次尝试的原始输出、用量与拒绝诊断。段落部分合格记为 `partially_validated`；全部被拒记为 `failed` 和 `SYNTHESIS_NO_VALID_STATEMENTS`。早期事件及 JSON 解析前的失败不含 `rejectedStatements`。仍有合格段落时，Remote 返回 `partial_success`、拒绝原因与草稿；没有合格段落则不返回报告。达到配置次数后仍然结构无效、证据不足、重试耗尽或取消也不返回报告。持久化失败中止整轮。不使用模板回退、自动语义修复或放宽引用要求。
 
 传入归并后的 WorkVersion、成功解析的 EvidenceExtractionInput、是否已有历史内容或证据的明确布尔值、EvidenceGenerator 和可选取消信号。首次补齐只接受 not_extracted 且无历史绑定；相同哈希复用版本。返回 extracted 时，version 与 evidence 一起传给下游，不再传原始未补齐版本。
 
@@ -70,7 +70,7 @@ Academic Controller 为已批准的第 3 版查询挂载混合执行器，并保
 
 返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
-应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, modelPolicies, input, adapters, signal })`。`modelPolicies.evidence` 与 `modelPolicies.synthesis` 分别选择尝试次数、可重试的瞬时故障代码和首次等待时间。这个稳定入口会在检索或全文获取前检查准确模型路由。没有指定推理强度时使用模型路由默认值；调用方明确指定的值会被保留并校验。明确指定但不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
+应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, modelPolicies, input, adapters, signal })`。`modelPolicies.evidence` 与 `modelPolicies.synthesis` 分别选择尝试次数、可重试的瞬时故障代码和首次等待时间；合成还可通过 `retryInvalidOutput` 在同一次数上限内启用整份响应的结构恢复。这个稳定入口会在检索或全文获取前检查准确模型路由。没有指定推理强度时使用模型路由默认值；调用方明确指定的值会被保留并校验。明确指定但不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
 
 `runModelResearchDraft(ctx, session, config, policies, input, adapters, signal)` 继续作为较底层的组合入口。adapters 提供 search、selectPapers、fetcher 和 now；它按各自策略绑定抽取与合成生成器，沿用既有流水线连接 B 的解析/证据和 C 的分析/评测草稿。两个入口都不拥有 Session 生命周期。Brief 批准、选文策略、期限、报告保存和发布仍由调用方负责。
 

@@ -138,7 +138,9 @@ function parseSections(value: unknown, statementCount: number): AcademicSynthesi
     const missingReason = nullable(item.missingReason)
     const host = ['scope_and_method', 'references', 'evidence_appendix'].includes(sectionId)
     if (host ? statementIndexes.length !== 0 || missingReason !== null
-      : (statementIndexes.length === 0) !== (missingReason !== null)) invalid('Section statements and missing-evidence reason disagree.')
+      : (statementIndexes.length === 0) !== (missingReason !== null)) {
+      invalid(`Section "${sectionId}" statements and missing-evidence reason disagree.`)
+    }
     return { sectionId, title: text(item.title), statementIndexes, missingReason }
   })
 }

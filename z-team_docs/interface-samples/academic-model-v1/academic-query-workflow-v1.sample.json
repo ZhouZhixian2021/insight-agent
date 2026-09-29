@@ -1,0 +1,269 @@
+{
+  "sampleSchemaVersion": 1,
+  "synthetic": true,
+  "plan": {
+    "schemaVersion": 1,
+    "researchBriefId": "research-brief-query-workflow-1",
+    "researchBriefVersion": 1,
+    "constraints": {
+      "publicationWindow": {
+        "start": { "iso": "2020", "precision": "year" },
+        "end": { "iso": "2026", "precision": "year" },
+        "dateBasis": "first_public_release"
+      },
+      "includedWorkTypes": ["preprint", "accepted_manuscript", "version_of_record"],
+      "inclusionRules": ["Include research that evaluates retrieval-grounded generation."],
+      "exclusionRules": ["Exclude product pages without a scholarly work."],
+      "requiredTerms": ["retrieval", "generation"],
+      "excludedTerms": ["marketing"]
+    },
+    "inclusionTargets": { "minimum": 2, "target": 4, "maximum": 6 },
+    "rankingPolicy": {
+      "schemaVersion": 1,
+      "weights": {
+        "topicRelevance": 30,
+        "questionMatch": 20,
+        "evidencePotential": 15,
+        "methodMatch": 10,
+        "workTypeFit": 8,
+        "sourceQuality": 7,
+        "recency": 5,
+        "fulltextAvailability": 5
+      },
+      "thresholds": { "p0": 80, "p1": 65, "p2": 50 }
+    },
+    "queries": [
+      {
+        "kind": "academic",
+        "searchQueryId": "search-query-core-1",
+        "expression": "retrieval augmented generation faithfulness",
+        "purpose": "core",
+        "questions": ["How does retrieval affect factual faithfulness?"],
+        "roundIndex": 1,
+        "providers": ["openalex", "arxiv"]
+      },
+      {
+        "kind": "web_discovery",
+        "searchQueryId": "search-query-web-1",
+        "expression": "retrieval augmented generation hallucination evaluation paper",
+        "purpose": "synonym_expansion",
+        "questions": ["How does retrieval affect factual faithfulness?"],
+        "roundIndex": 1,
+        "maximumResults": 8
+      },
+      {
+        "kind": "site_restricted",
+        "searchQueryId": "search-query-site-1",
+        "expression": "retrieval grounded generation evaluation",
+        "purpose": "site_restricted",
+        "questions": ["Which evaluation methods expose remaining failure modes?"],
+        "roundIndex": 1,
+        "siteHost": "aclanthology.org",
+        "maximumResults": 4
+      }
+    ],
+    "citationExpansionSeeds": [
+      {
+        "academicWorkId": "academic-work-seed-1",
+        "workVersionId": "work-version-seed-1",
+        "direction": "related",
+        "purpose": "citation_expansion",
+        "questions": ["Which evaluation methods expose remaining failure modes?"],
+        "roundIndex": 2,
+        "maximumResults": 4
+      }
+    ],
+    "maximumSearchRounds": 3
+  },
+  "candidates": [
+    {
+      "schemaVersion": 1,
+      "academicWorkId": "academic-work-candidate-a",
+      "workVersionId": "work-version-candidate-a",
+      "discoveredBy": ["search-query-core-1", "search-query-web-1"],
+      "classification": "empirical_evaluation",
+      "hardFilter": { "status": "eligible", "reasons": ["Publication window and work type match."] },
+      "score": {
+        "topicRelevance": 28,
+        "questionMatch": 18,
+        "evidencePotential": 13,
+        "methodMatch": 9,
+        "workTypeFit": 7,
+        "sourceQuality": 6,
+        "recency": 4,
+        "fulltextAvailability": 5,
+        "total": 90
+      },
+      "priority": "p0",
+      "matchedQuestions": ["How does retrieval affect factual faithfulness?"],
+      "diversityTags": ["empirical", "faithfulness"],
+      "decisionReasons": ["Directly evaluates the primary question with accessible full text."]
+    },
+    {
+      "schemaVersion": 1,
+      "academicWorkId": "academic-work-candidate-b",
+      "workVersionId": "work-version-candidate-b",
+      "discoveredBy": ["search-query-site-1"],
+      "classification": "review",
+      "hardFilter": { "status": "eligible", "reasons": ["Publication window and work type match."] },
+      "score": {
+        "topicRelevance": 22,
+        "questionMatch": 16,
+        "evidencePotential": 10,
+        "methodMatch": 7,
+        "workTypeFit": 7,
+        "sourceQuality": 7,
+        "recency": 3,
+        "fulltextAvailability": 5,
+        "total": 77
+      },
+      "priority": "p1",
+      "matchedQuestions": ["Which evaluation methods expose remaining failure modes?"],
+      "diversityTags": ["review", "evaluation"],
+      "decisionReasons": ["Broadens method coverage but is not primary empirical evidence."]
+    },
+    {
+      "schemaVersion": 1,
+      "academicWorkId": "academic-work-candidate-c",
+      "workVersionId": "work-version-candidate-c",
+      "discoveredBy": ["search-query-web-1"],
+      "classification": "irrelevant",
+      "hardFilter": { "status": "excluded", "reasons": ["The record is a product page rather than a scholarly work."] },
+      "score": {
+        "topicRelevance": 10,
+        "questionMatch": 4,
+        "evidencePotential": 0,
+        "methodMatch": 1,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 3,
+        "fulltextAvailability": 0,
+        "total": 18
+      },
+      "priority": "excluded",
+      "matchedQuestions": [],
+      "diversityTags": [],
+      "decisionReasons": ["A hard exclusion rule prevents this candidate from entering a full-text batch."]
+    }
+  ],
+  "coverage": {
+    "schemaVersion": 1,
+    "researchBriefId": "research-brief-query-workflow-1",
+    "researchBriefVersion": 1,
+    "assessedAt": "2026-09-29T02:00:00.000Z",
+    "questions": [
+      {
+        "question": "How does retrieval affect factual faithfulness?",
+        "status": "covered",
+        "supportingWorkIds": ["academic-work-candidate-a"],
+        "evidenceIds": ["evidence-candidate-a-1"],
+        "gaps": []
+      },
+      {
+        "question": "Which evaluation methods expose remaining failure modes?",
+        "status": "partial",
+        "supportingWorkIds": ["academic-work-candidate-b"],
+        "evidenceIds": ["evidence-candidate-b-1"],
+        "gaps": ["No independent empirical comparison is available."]
+      }
+    ],
+    "evidenceRequirementsMet": true,
+    "allQuestionsCovered": false
+  },
+  "round": {
+    "roundIndex": 1,
+    "purpose": "core",
+    "searchQueryIds": ["search-query-core-1", "search-query-web-1", "search-query-site-1"],
+    "status": "partial_success",
+    "startedAt": "2026-09-29T01:00:00.000Z",
+    "completedAt": "2026-09-29T01:03:00.000Z"
+  },
+  "stopDecision": {
+    "shouldStop": true,
+    "reason": "candidate_exhausted",
+    "details": ["No eligible unprocessed candidate remains; the uncovered evidence gap is retained."]
+  },
+  "progressEvents": [
+    {
+      "schemaVersion": 1,
+      "retrievalRunId": "retrieval-run-query-workflow-1",
+      "sequence": 0,
+      "occurredAt": "2026-09-29T01:00:00.000Z",
+      "phase": "query_planning",
+      "status": "success",
+      "roundIndex": 1,
+      "searchQueryId": null,
+      "batchIndex": null,
+      "batchCount": null,
+      "academicWorkId": null,
+      "candidateCounts": {
+        "discoveredRecords": 0,
+        "verifiedWorks": 0,
+        "deduplicatedWorks": 0,
+        "eligibleWorks": 0,
+        "p0Works": 0,
+        "p1Works": 0,
+        "p2Works": 0,
+        "excludedWorks": 0,
+        "scheduledFulltextWorks": 0,
+        "includedWorks": 0
+      },
+      "questionCoverage": { "total": 2, "covered": 0, "partial": 0, "uncovered": 2 },
+      "stopReason": null
+    },
+    {
+      "schemaVersion": 1,
+      "retrievalRunId": "retrieval-run-query-workflow-1",
+      "sequence": 1,
+      "occurredAt": "2026-09-29T01:04:00.000Z",
+      "phase": "candidate_ranking",
+      "status": "success",
+      "roundIndex": 1,
+      "searchQueryId": null,
+      "batchIndex": null,
+      "batchCount": null,
+      "academicWorkId": null,
+      "candidateCounts": {
+        "discoveredRecords": 12,
+        "verifiedWorks": 5,
+        "deduplicatedWorks": 3,
+        "eligibleWorks": 2,
+        "p0Works": 1,
+        "p1Works": 1,
+        "p2Works": 0,
+        "excludedWorks": 1,
+        "scheduledFulltextWorks": 0,
+        "includedWorks": 0
+      },
+      "questionCoverage": { "total": 2, "covered": 0, "partial": 0, "uncovered": 2 },
+      "stopReason": null
+    },
+    {
+      "schemaVersion": 1,
+      "retrievalRunId": "retrieval-run-query-workflow-1",
+      "sequence": 2,
+      "occurredAt": "2026-09-29T02:01:00.000Z",
+      "phase": "settlement",
+      "status": "partial_success",
+      "roundIndex": 1,
+      "searchQueryId": null,
+      "batchIndex": 1,
+      "batchCount": 1,
+      "academicWorkId": null,
+      "candidateCounts": {
+        "discoveredRecords": 12,
+        "verifiedWorks": 5,
+        "deduplicatedWorks": 3,
+        "eligibleWorks": 2,
+        "p0Works": 1,
+        "p1Works": 1,
+        "p2Works": 0,
+        "excludedWorks": 1,
+        "scheduledFulltextWorks": 2,
+        "includedWorks": 2
+      },
+      "questionCoverage": { "total": 2, "covered": 1, "partial": 1, "uncovered": 0 },
+      "stopReason": "candidate_exhausted"
+    }
+  ]
+}
