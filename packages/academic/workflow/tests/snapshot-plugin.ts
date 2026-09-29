@@ -14,12 +14,32 @@ export const inject = ['llm', 'sessions', 'sessionPersistence', 'tokenMeter']
 const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
 
 class SnapshotAdapter extends LlmAdapter {
+  readonly #invalidSynthesisFirst: boolean
+
+  constructor(invalidSynthesisFirst: boolean) {
+    super()
+    this.#invalidSynthesisFirst = invalidSynthesisFirst
+  }
+
   override resolveModel(provider: string, model: string) {
     return Promise.resolve({ provider, id: model, name: model, context: { contextWindow: 32768 } })
   }
   override async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
     const message = _options.messages[0]?.content[0]
     if (message?.type === 'text' && message.text.includes('INPUT_JSON\n')) {
+      if (this.#invalidSynthesisFirst) {
+        const output = JSON.parse(readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8')) as {
+          sections: Array<{ sectionId: string; statementIndexes: number[]; missingReason: string | null }>
+        }
+        if (!message.text.includes('structural-validation recovery request')) {
+          const limitations = output.sections.find(section => section.sectionId === 'limitations')
+          assert.ok(limitations)
+          limitations.statementIndexes = [0]
+        }
+        yield { type: 'text-delta', index: 0, text: JSON.stringify(output) }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+        return
+      }
       if (!message.text.includes('output_limit_compact')) {
         yield { type: 'text-delta', index: 0, text: '{' }
         yield { type: 'finish', reason: { kind: 'max-tokens' } }
@@ -41,8 +61,8 @@ class SnapshotAdapter extends LlmAdapter {
   }
 }
 
-export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): void {
-  ctx.effect(() => ctx.llm.registerAdapter(['academic-fixture'], new SnapshotAdapter()))
+export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; limitedDraft?: boolean } = {}): void {
+  ctx.effect(() => ctx.llm.registerAdapter(['academic-fixture'], new SnapshotAdapter(config.invalidSynthesisFirst === true)))
   ctx.on('agent/pre-step', async ({ agent }, next) => {
     if (!agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-result')) {
       const academicWorkId = 'synthetic-work' as AcademicWorkId, workVersionId = 'synthetic-version' as WorkVersionId
@@ -72,7 +92,7 @@ export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): vo
       assert.equal(admission.status, config.limitedDraft ? 'ready_with_warning' : 'ready')
       const draft = await createModelSynthesisGenerator(ctx, agent.session,
         { provider: 'academic-fixture', model: 'fixture', maxTokens: 4096 },
-        { maxAttempts: 2, retryOutputLimit: true })(admission.input)
+        { maxAttempts: 2, retryOutputLimit: true, retryInvalidOutput: true })(admission.input)
       const analysis = synthesisAnalysis(admission.input, draft, '2026-09-20T00:00:00Z')
       const report = generateReport({ brief: limited.brief, claims: analysis.claims, links: analysis.links,
         evidence: input.analysisInput.evidenceRecords, versions: input.analysisInput.workVersions,
@@ -97,6 +117,16 @@ export function apply(ctx: Context, config: { limitedDraft?: boolean } = {}): vo
       assert.equal(saved.filter(event => event.type === 'academic/evidence-result').length, 1)
       assert.equal(saved.filter(event => event.type === 'academic/synthesis-request').length, 2)
       assert.equal(saved.filter(event => event.type === 'academic/synthesis-result').length, 2)
+      if (config.invalidSynthesisFirst === true) {
+        const requests = saved.filter(event => event.type === 'academic/synthesis-request')
+        const results = saved.filter(event => event.type === 'academic/synthesis-result')
+        assert.equal(results[0]?.data.errorCode, 'SYNTHESIS_INVALID_MODEL_OUTPUT')
+        const content = requests[1]?.data.messages[0]?.content[0]
+        assert.equal(content?.type, 'text')
+        if (content?.type === 'text') {
+          assert.ok(content.text.includes('Section "limitations" statements and missing-evidence reason disagree.'))
+        }
+      }
       const synthesis = saved.findLast(event => event.type === 'academic/synthesis-result')
       assert.equal(synthesis?.data.status, 'partially_validated')
       assert.deepEqual(synthesis?.data.rejectedStatements, draft.rejectedStatements)

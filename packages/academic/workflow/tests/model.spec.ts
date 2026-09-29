@@ -499,6 +499,48 @@ at most 3 entries primarily supporting any one focus question.`)
       { type: 'academic/synthesis-result', attempt: 2, maxAttempts: 3 },
     ])
   })
+  it('regenerates complete synthesis JSON after a structural validation failure', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisTransform = value => ({ ...value, sections: value.sections.map(section =>
+      section.sectionId === 'limitations' ? { ...section, missingReason: 'conflicts with cited statements' } : section) })
+    f.adapter.afterChunk = () => { if (f.adapter.calls.length === 3) delete f.adapter.synthesisTransform }
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3, retryInvalidOutput: true } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report?.markdown).toContain('合成基准样例')
+    expect(f.adapter.calls).toHaveLength(4)
+    expect(draft.adapters.search).toHaveBeenCalledOnce()
+    expect(draft.adapters.fetcher).toHaveBeenCalledTimes(2)
+    const events = (await f.read()).filter(event => event.type === 'academic/synthesis-request'
+      || event.type === 'academic/synthesis-result')
+    expect(events.map(event => ({ type: event.type, attempt: event.data.attempt, status: 'status' in event.data
+      ? event.data.status : undefined, errorCode: 'errorCode' in event.data ? event.data.errorCode : undefined }))).toEqual([
+      { type: 'academic/synthesis-request', attempt: 1, status: undefined, errorCode: undefined },
+      { type: 'academic/synthesis-result', attempt: 1, status: 'failed', errorCode: 'SYNTHESIS_INVALID_MODEL_OUTPUT' },
+      { type: 'academic/synthesis-request', attempt: 2, status: undefined, errorCode: undefined },
+      { type: 'academic/synthesis-result', attempt: 2, status: 'validated', errorCode: undefined },
+    ])
+    const repair = events[2]?.type === 'academic/synthesis-request' ? events[2].data.messages[0]?.content[0] : undefined
+    expect(repair?.type === 'text' ? repair.text : '').toContain('Section "limitations" statements and missing-evidence reason disagree.')
+  })
+  it('stops after the bounded invalid-synthesis attempts are exhausted', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    f.adapter.synthesisTransform = value => ({ ...value, sections: value.sections.map(section =>
+      section.sectionId === 'limitations' ? { ...section, missingReason: 'conflicts with cited statements' } : section) })
+    const retryPolicies = { evidence: policy, synthesis: { maxAttempts: 3, retryInvalidOutput: true } }
+    const result = await runModelResearchDraft(f.ctx, f.session, config, retryPolicies, draft.input, draft.adapters)
+    expect(result.report).toBeNull()
+    expect(result.synthesis.reasons.join(' ')).toContain('SYNTHESIS_INVALID_MODEL_OUTPUT')
+    expect(f.adapter.calls).toHaveLength(5)
+    const results = (await f.read()).filter(event => event.type === 'academic/synthesis-result')
+    expect(results.map(event => ({ attempt: event.data.attempt, status: event.data.status,
+      errorCode: event.data.errorCode }))).toEqual([
+      { attempt: 1, status: 'failed', errorCode: 'SYNTHESIS_INVALID_MODEL_OUTPUT' },
+      { attempt: 2, status: 'failed', errorCode: 'SYNTHESIS_INVALID_MODEL_OUTPUT' },
+      { attempt: 3, status: 'failed', errorCode: 'SYNTHESIS_INVALID_MODEL_OUTPUT' },
+    ])
+  })
   it('does not repeat an identical final synthesis request after output-limit exhaustion', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]

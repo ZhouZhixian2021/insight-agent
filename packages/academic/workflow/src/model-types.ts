@@ -65,6 +65,8 @@ export interface EvidenceModelPolicy {
   readonly attemptTimeoutMs?: number
   /** Whether output-limit exhaustion may consume one recovery attempt. */
   readonly retryOutputLimit?: boolean
+  /** Whether a complete synthesis response rejected by structural validation may consume another attempt. */
+  readonly retryInvalidOutput?: boolean
   /** Transient failures eligible for delayed retry; omitted means none. */
   readonly transientRetry?: AcademicTransientRetryPolicy
 }

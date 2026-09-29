@@ -337,7 +337,7 @@ export interface Config {
   readonly extractionBatchOverlapCharacters?: number
   /** Maximum elapsed time for one evidence model attempt. Defaults to 120,000 ms. */
   readonly extractionAttemptTimeoutMs?: number
-  /** Total final synthesis attempts. Connection and timeout failures are retried. Defaults to 3. */
+  /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
   readonly synthesisRetryInitialDelayMs?: number

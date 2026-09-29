@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { compactSynthesisPrompt, parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, synthesisPrompt,
-  synthesisSections, type AcademicSynthesisInput } from '../src/index.ts'
+  synthesisRepairPrompt, synthesisSections, type AcademicSynthesisInput } from '../src/index.ts'
 
 const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
 const input = (): AcademicSynthesisInput => JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
@@ -74,6 +74,17 @@ describe('question-driven synthesis admission and model validation', () => {
     expect(prompt).toContain('Each statement may cite at most 3 representative evidence records.')
     expect(prompt).toContain('Reuse the same statement across questionAnswers and sections')
     expect(prompt).toContain('Do not enumerate evidence, plan quotas or explain your selection process')
+    expect(prompt).toContain('statementIndexes and missingReason are mutually exclusive')
+    expect(prompt).toContain('Non-empty statementIndexes require\nmissingReason:null')
+  })
+  it('renders a complete repair request with the exact structural diagnostic', () => {
+    const value = input()
+    const prompt = synthesisRepairPrompt(value,
+      'Section "limitations" statements and missing-evidence reason disagree.', false)
+    expect(prompt).toContain('structural-validation recovery request')
+    expect(prompt).toContain('Section "limitations" statements and missing-evidence reason disagree.')
+    expect(prompt).toContain('Regenerate the entire JSON object')
+    expect(JSON.parse(prompt.split('INPUT_JSON\n')[1]!)).toEqual(value)
   })
   it('retains citable materials while removing duplicate structures from output-limit recovery', () => {
     const value = input(), complete = synthesisPrompt(value), compact = compactSynthesisPrompt(value)
@@ -106,6 +117,12 @@ describe('question-driven synthesis admission and model validation', () => {
     [{ op: 'replace', path: '/limitations', value: [] }],
   ] satisfies Patch[][])('rejects inconsistent statements or coverage: %j', (...operations) => {
     expect(() => parseSynthesisDraft(JSON.stringify(patch(output(), operations)), input())).toThrow()
+  })
+  it('names the section whose statements conflict with its missing-evidence reason', () => {
+    const value = output()
+    patch(value, [{ op: 'replace', path: '/sections/5/statementIndexes', value: [0] }])
+    expect(() => parseSynthesisDraft(JSON.stringify(value), input()))
+      .toThrow('Section "limitations" statements and missing-evidence reason disagree.')
   })
   it('retains contradicting evidence and requires uncertainty', () => {
     const value = output()

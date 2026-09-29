@@ -105,7 +105,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:71`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:125`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -116,7 +116,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:73`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 
@@ -127,7 +127,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/synthesis-request': SynthesisModelRequest
 ```
 
-来源： [`packages/academic/workflow/src/synthesis-model.ts:22`](../packages/academic/workflow/src/synthesis-model.ts)
+来源： [`packages/academic/workflow/src/synthesis-model.ts:27`](../packages/academic/workflow/src/synthesis-model.ts)
 
 <a id="academicsynthesis-result--log-only"></a>
 
@@ -138,7 +138,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/synthesis-result': SynthesisModelResult
 ```
 
-来源： [`packages/academic/workflow/src/synthesis-model.ts:24`](../packages/academic/workflow/src/synthesis-model.ts)
+来源： [`packages/academic/workflow/src/synthesis-model.ts:29`](../packages/academic/workflow/src/synthesis-model.ts)
 
 ### `agent/*`
 
