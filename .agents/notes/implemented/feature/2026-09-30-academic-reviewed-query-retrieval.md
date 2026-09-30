@@ -14,7 +14,7 @@ The `dsh-academic-retrieval` library derives a first-round plan from an approved
 
 The round executor dispatches each query to its channel. Web results become works only after reference identification and verification by an allowed scholarly provider. Each query reports discovery, identification, verification, failure, and limit facts. Ingestion performs exact-identifier deduplication and version merging; optional `IngestRecord.discoveredBy` query IDs survive a repeated-version merge, so the returned work-to-query mapping reflects every contributing record.
 
-The Academic controller owns plan review, Session events, runtime adapters, candidate ranking, and later batch decisions. The library performs no model call and publishes no Session event.
+The Academic controller owns plan review, Session events, runtime adapters, and later batch decisions. The library performs no model call and publishes no Session event.
 
 ## Alternatives considered
 

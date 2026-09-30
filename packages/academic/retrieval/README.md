@@ -1,5 +1,5 @@
 ---
-description: "Plan reviewed Academic, Web, and site queries from an approved ResearchBrief, then retrieve verified and deduplicated scholarly candidates with query provenance."
+description: "Plan reviewed Academic, Web, and site queries, retrieve verified candidates, and rank them with explainable priority queues."
 kind: "package-library"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Academic workflow callers can create channel-specific searches from an approved ResearchBrief and execute one approved round against their Academic Source and Web adapters. The result contains provider-normalized works, verified Web discoveries, ingestion decisions, and the query IDs that discovered each work. The library does not register a Cordis service or start a research run.
+Academic workflow callers can create channel-specific searches from an approved ResearchBrief, retrieve verified works, and rank them into explainable P0/P1/P2 queues. Results retain verified Web discoveries, ingestion decisions, query provenance, and each candidate's filtering and scoring reasons. The library does not register a Cordis service or start a research run.
 
 ## Table of Contents
 
@@ -27,11 +27,11 @@ Academic workflow callers can create channel-specific searches from an approved 
 
 ### When to use it
 
-The Academic controller or workflow supplies the approved Brief, reviewed expansion terms, provider IDs, result bounds, and adapters. `planHybridSearch()` returns a `HybridSearchPlanningOutput` for review; `executePlannedSearchRound()` runs only the selected round after approval. `extendPlanForEvidenceGaps()` adds bounded queries from coverage of the same Brief version. See the [public exports](src/index.ts) for exact signatures.
+The Academic controller or workflow supplies the approved Brief, reviewed expansion terms, provider IDs, result bounds, and adapters. `planHybridSearch()` returns a `HybridSearchPlanningOutput` for review; `executePlannedSearchRound()` runs only the selected round after approval. `rankPlannedCandidates()` applies the approved hard filters and ranking policy to the verified works and caller-reviewed semantic assessments. `extendPlanForEvidenceGaps()` adds bounded queries from coverage of the same Brief version. See the [public exports](src/index.ts) for exact signatures.
 
 ### Entry point
 
-Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningInput`. A valid result contains separate academic, Web, and requested-site queries with stable IDs. Invalid approval, hostnames, limits, or question links throw `RangeError`; optional expansions beyond the query limit produce a warning. Pass the reviewed plan, a round index, explicit verification limits, and adapters to `executePlannedSearchRound()`. A missing configured Academic provider or caller cancellation rejects execution; expected Web and reference failures remain in per-query results beside successful siblings.
+Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningInput`. A valid result contains separate academic, Web, and requested-site queries with stable IDs. Invalid approval, hostnames, limits, or question links throw `RangeError`; optional expansions beyond the query limit produce a warning. Pass the reviewed plan, a round index, explicit verification limits, and adapters to `executePlannedSearchRound()`. Then pass the result, the same Brief, and exactly one `CandidateAssessment` per verified work to `rankPlannedCandidates()`. A missing Academic provider or cancellation rejects retrieval; incomplete semantic assessments reject ranking.
 
 -----
 
@@ -41,7 +41,7 @@ Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningIn
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The [planner](src/planner.ts) uses Brief aliases and caller-reviewed synonym or method terms; it does not infer terminology from prose. The [executor](src/execute.ts) sends each query to its specified channel, identifies Web references, verifies them through an approved scholarly provider, and passes only provider records to [ingestion](../ingestion/README.md). Ingestion merges exact identifiers and versions, retaining query IDs and verified discovery URLs. The caller owns plan review, Session events, batching, ranking, and model-visible rendering.
+The [planner](src/planner.ts) uses Brief aliases and caller-reviewed synonym or method terms; it does not infer terminology from prose. The [executor](src/execute.ts) sends each query to its specified channel, identifies Web references, verifies them through an approved scholarly provider, and passes only provider records to [ingestion](../ingestion/README.md). Ingestion merges exact identifiers and versions, retaining query IDs and verified discovery URLs. The [ranker](src/rank.ts) applies deterministic date, type, retraction, lexical, and reviewed rule decisions; it weights semantic fractions with the plan's policy, assigns priorities, and promotes source, team, question, and topic diversity within each queue. The caller owns semantic assessment, plan review, Session events, batching, and model-visible rendering.
 
 </details>
 
@@ -70,6 +70,7 @@ No direct invalidation; the workflow owns logged model-visible inputs.
 - **No semantic term inference** — callers supply reviewed synonym and method terms; Brief aliases are used directly.
 - **No citation API execution** — citation expansion seeds remain in the shared plan for a later provider integration.
 - **No durable run state** — the caller records approved plans, query settlements, and ingestion output in Session data.
+- **Semantic assessments are required** — abstract and keyword evidence, rule decisions, relevance fractions, and contribution signals come from the caller's reviewed classifier; this library does not infer them from sparse provider metadata.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -81,4 +82,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion is published. This pure library owns no persistent event stream; focused tests pin approval, query limits, verification, and deduplication behavior.
+**Runtime invariant:** No companion is published. This pure library owns no persistent event stream; focused tests pin approval, query limits, verification, deduplication, filtering, and ranking behavior.
