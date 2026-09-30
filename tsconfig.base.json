@@ -244,6 +244,7 @@
       "@deepseek-ai/dsh-client-ui-academic-research": ["./packages/client/ui-academic-research/src"],
       "@deepseek-ai/dsh-academic-evidence": ["./packages/academic/evidence/src"],
       "@deepseek-ai/dsh-academic-ingestion": ["./packages/academic/ingestion/src"],
+      "@deepseek-ai/dsh-academic-retrieval": ["./packages/academic/retrieval/src"],
       "@deepseek-ai/dsh-academic-source": ["./packages/academic/source/src"],
       "@deepseek-ai/dsh-academic-source-acl": ["./packages/academic/source-acl/src"],
       "@deepseek-ai/dsh-academic-source-arxiv": ["./packages/academic/source-arxiv/src"],

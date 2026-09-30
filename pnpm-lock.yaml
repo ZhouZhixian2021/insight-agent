@@ -647,6 +647,21 @@ importers:
         specifier: workspace:^
         version: link:../../util/brand
 
+  packages/academic/retrieval:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-ingestion':
+        specifier: workspace:^
+        version: link:../ingestion
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:^
+        version: link:../model
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:^
+        version: link:../source
+
   packages/academic/source:
     dependencies:
       '@deepseek-ai/schemastery':
