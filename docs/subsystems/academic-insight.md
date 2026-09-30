@@ -29,7 +29,7 @@ The [analysis library](../../packages/academic/analysis/README.md) returns attri
 
 The [ingestion library](../../packages/academic/ingestion/README.md) accepts an `IngestRecord` with optional verified Web discovery URLs and verification Provider IDs. `IngestOutcome.verifiedDiscoveries` links those values to the assigned `AcademicWorkId` and retained `WorkVersionId` after exact-identifier deduplication; separate versions remain addressable.
 
-The [retrieval library](../../packages/academic/retrieval/README.md) derives channel-specific queries from an approved Brief and caller-reviewed expansion terms. Its round executor admits Web discoveries only after scholarly reference verification, then delegates exact-identifier and version merging to ingestion. Query IDs remain attached to the reconciled work; the Academic controller owns plan review and Session recording.
+The [retrieval library](../../packages/academic/retrieval/README.md) derives channel-specific queries from an approved Brief and caller-reviewed expansion terms. Its round executor admits Web discoveries only after scholarly reference verification, then delegates exact-identifier and version merging to ingestion. Its ranker applies approved hard filters and weighted P0/P1/P2 thresholds to reviewed semantic assessments, then orders each queue for source, team, question, and topic diversity. Query IDs remain attached to the evaluated work; the Academic controller owns plan review and Session recording.
 
 ## Initial model increment
 

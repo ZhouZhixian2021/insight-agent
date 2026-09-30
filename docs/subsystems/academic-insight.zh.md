@@ -29,7 +29,7 @@ kind: "subsystem"
 
 [摄取库](../../packages/academic/ingestion/README.zh.md)接收可附带已核验 Web 发现 URL 和核验 Provider ID 的 `IngestRecord`。按精确标识符去重后，`IngestOutcome.verifiedDiscoveries` 把这些值关联到分配的 `AcademicWorkId` 和保留的 `WorkVersionId`；不同版本仍可分别寻址。
 
-[检索库](../../packages/academic/retrieval/README.zh.md)根据已批准 Brief 与调用方审核过的扩展词生成按渠道区分的查询。单轮执行器只在学术引用完成核验后纳入 Web 发现结果，再交由摄取库按精确标识符和版本合并。查询 ID 保留在调和后的成果上；Academic Controller 负责计划审核与 Session 记录。
+[检索库](../../packages/academic/retrieval/README.zh.md)根据已批准 Brief 与调用方审核过的扩展词生成按渠道区分的查询。单轮执行器只在学术引用完成核验后纳入 Web 发现结果，再交由摄取库按精确标识符和版本合并。排序器对审核过的语义判断应用批准的硬过滤和加权 P0/P1/P2 阈值，再按来源、团队、问题和主题多样性排列各队列。查询 ID 保留在评估后的成果上；Academic Controller 负责计划审核与 Session 记录。
 
 ## 初始阶段
 
