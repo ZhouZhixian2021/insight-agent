@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-academic-ingestion` deduplicates provider-normalized `AcademicWork`/`WorkVersion` records into stable work identities and merges their versions. It is a library, not a Cordis service or plugin, and performs no network requests or model calls. Exact external-identifier collisions merge automatically; a title/author/year collision without a shared identifier is reported and retained as a separate suspected duplicate.
+`dsh-academic-ingestion` deduplicates provider-normalized `AcademicWork`/`WorkVersion` records into stable work identities and merges their versions. It is a library, not a Cordis service or plugin, and performs no network requests or model calls. Exact external-identifier collisions merge automatically; a title/author/year collision without a shared identifier is reported and retained as a separate suspected duplicate. Planned query IDs on contributing records remain available after version merging.
 
 ## Table of Contents
 
@@ -45,7 +45,7 @@ Each outcome also reports the deduplicated works, the re-pointed versions, and a
 
 | Export | Role |
 |---|---|
-| `IngestRecord` | One provider-produced `{ academicWork, workVersion }` pair, optionally carrying verified Web discoveries. |
+| `IngestRecord` | One provider-produced `{ academicWork, workVersion }` pair, optionally carrying planned query IDs and verified Web discoveries. |
 | `IngestIndex` | The in-memory deduplication and merge state. |
 | `createIngestIndex()` | Creates an empty index. |
 | `ingestWorks()` | Deduplicates a batch into the index and returns the outcome. |

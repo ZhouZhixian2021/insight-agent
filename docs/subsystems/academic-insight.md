@@ -17,7 +17,7 @@ Academic insight is an optional business subsystem built on harness extension po
 
 ## Member ownership
 
-Member A owns the shared model, workflow contracts, and integration decisions. Member B owns provider normalization and single-paper evidence production. Member C owns cross-paper claims, coverage assessment, and report presentation.
+Member A owns the shared model, workflow contracts, and integration decisions. Member B owns scholarly retrieval, candidate assessment, and provider normalization. Member C owns the research-plan and candidate interfaces. Existing evidence, analysis, and report packages retain their package-level ownership.
 
 Shared record changes land through member A so provider-specific and report-specific concerns do not leak into the common model.
 
@@ -28,6 +28,8 @@ The [evidence library](../../packages/academic/evidence/README.md) returns accep
 The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) reconciles current evidence with explicit semantic reviews; the [report library](../../packages/academic/report/README.md) executes evaluation at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
 
 The [ingestion library](../../packages/academic/ingestion/README.md) accepts an `IngestRecord` with optional verified Web discovery URLs and verification Provider IDs. `IngestOutcome.verifiedDiscoveries` links those values to the assigned `AcademicWorkId` and retained `WorkVersionId` after exact-identifier deduplication; separate versions remain addressable.
+
+The [retrieval library](../../packages/academic/retrieval/README.md) derives channel-specific queries from an approved Brief and caller-reviewed expansion terms. Its round executor admits Web discoveries only after scholarly reference verification, then delegates exact-identifier and version merging to ingestion. Query IDs remain attached to the reconciled work; the Academic controller owns plan review and Session recording.
 
 ## Initial model increment
 

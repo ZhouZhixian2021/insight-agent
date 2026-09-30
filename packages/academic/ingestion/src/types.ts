@@ -11,12 +11,15 @@ import type {
   ExternalIdentifierDedupKey,
   WorkVersion,
   WorkVersionId,
+  SearchQueryId,
 } from '@deepseek-ai/dsh-academic-model'
 
 /** One provider-produced work/version pair handed to ingestion. */
 export interface IngestRecord {
   readonly academicWork: AcademicWork
   readonly workVersion: WorkVersion
+  /** Planned queries that discovered this record; retained when duplicate versions merge. */
+  readonly discoveredBy?: readonly SearchQueryId[]
   /** Web URLs that led to this version after an Academic Provider verified the reference. */
   readonly verifiedDiscoveries?: readonly {
     readonly discoveryUrl: string

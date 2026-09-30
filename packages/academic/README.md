@@ -35,6 +35,7 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | [`source-acl`](source-acl/README.md) | ACL Anthology catalog and PDF provider | injects `academicSource` |
 | [`source-pmlr`](source-pmlr/README.md) | PMLR catalog and PDF provider | injects `academicSource` |
 | [`ingestion`](ingestion/README.md) | Deduplication and version merging over provider-normalized records | no service key |
+| [`retrieval`](retrieval/README.md) | Reviewed channel queries and verified candidate acquisition | no service key |
 | [`evidence`](evidence/README.md) | Source-locator, evidence-record, and evidence-card construction | no service key |
 
 -----

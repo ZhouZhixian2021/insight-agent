@@ -139,6 +139,7 @@
     { "path": "./packages/academic/report" },
     { "path": "./packages/academic/evidence" },
     { "path": "./packages/academic/ingestion" },
+    { "path": "./packages/academic/retrieval" },
     { "path": "./packages/academic/source" },
     { "path": "./packages/academic/source-acl" },
     { "path": "./packages/academic/source-arxiv" },

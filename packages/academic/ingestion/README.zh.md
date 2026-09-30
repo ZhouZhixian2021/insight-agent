@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-`dsh-academic-ingestion` 把提供方规范化的 `AcademicWork`/`WorkVersion` 记录去重为稳定的成果身份，并合并它们的版本。它是库，不是 Cordis 服务或插件，也不执行网络请求或模型调用。精确的外部标识符冲突会自动合并；没有共享标识符、仅靠标题/作者/年份碰撞的记录会作为疑似重复上报并以独立身份保留。
+`dsh-academic-ingestion` 把提供方规范化的 `AcademicWork`/`WorkVersion` 记录去重为稳定的成果身份，并合并它们的版本。它是库，不是 Cordis 服务或插件，也不执行网络请求或模型调用。精确的外部标识符冲突会自动合并；没有共享标识符、仅靠标题/作者/年份碰撞的记录会作为疑似重复上报并以独立身份保留。贡献记录中的计划查询 ID 在版本合并后仍可读取。
 
 ## 目录
 
@@ -45,7 +45,7 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 
 | 导出 | 角色 |
 |---|---|
-| `IngestRecord` | 一对提供方产出的 `{ academicWork, workVersion }`，可附带已核验的 Web 发现轨迹。 |
+| `IngestRecord` | 一对提供方产出的 `{ academicWork, workVersion }`，可附带计划查询 ID 和已核验的 Web 发现轨迹。 |
 | `IngestIndex` | 内存中的去重与合并状态。 |
 | `createIngestIndex()` | 创建空索引。 |
 | `ingestWorks()` | 把一批记录去重进索引并返回结果。 |

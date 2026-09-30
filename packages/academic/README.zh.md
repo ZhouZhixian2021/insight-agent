@@ -35,6 +35,7 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 | [`source-acl`](source-acl/README.zh.md) | ACL Anthology 目录与 PDF Provider | 注入 `academicSource` |
 | [`source-pmlr`](source-pmlr/README.zh.md) | PMLR 目录与 PDF Provider | 注入 `academicSource` |
 | [`ingestion`](ingestion/README.zh.md) | 对提供方规范化后的记录进行去重与版本合并 | 无服务键 |
+| [`retrieval`](retrieval/README.zh.md) | 经审核的渠道查询与已核验候选获取 | 无服务键 |
 | [`evidence`](evidence/README.zh.md) | 来源定位、证据记录与证据卡片的构造 | 无服务键 |
 
 -----

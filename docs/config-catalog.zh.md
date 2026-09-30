@@ -3599,6 +3599,7 @@ export interface Config {
 - `@deepseek-ai/dsh-academic-ingestion`（[`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts)）
 - `@deepseek-ai/dsh-academic-model`（[`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts)）
 - `@deepseek-ai/dsh-academic-report`（[`packages/academic/report/src/index.ts`](../packages/academic/report/src/index.ts)）
+- `@deepseek-ai/dsh-academic-retrieval`（[`packages/academic/retrieval/src/index.ts`](../packages/academic/retrieval/src/index.ts)）
 - `@deepseek-ai/dsh-academic-workflow`（[`packages/academic/workflow/src/index.ts`](../packages/academic/workflow/src/index.ts)）
 - `@deepseek-ai/dsh-agent-loop-testkit`（[`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts)）
 - `@deepseek-ai/dsh-anonymous-user-id`（[`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts)）

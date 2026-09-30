@@ -56,6 +56,7 @@ const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
   'packages/academic/model': 'Provider-neutral academic records and pure helpers.',
   'packages/academic/evidence': 'Source-locator, evidence-record, and evidence-card construction; plain function exports.',
   'packages/academic/ingestion': 'Deduplication and version merging over provider-normalized records; plain function exports.',
+  'packages/academic/retrieval': 'Pure approved-query planning and verified candidate acquisition; plain function exports.',
   'packages/boot/app-boot': 'Boot library the app bins import; plain helper exports.',
   'packages/boot/cmdline': 'Command-line library the app bins import; plain module exports.',
   'packages/client/store': 'Browser-side state primitives; plain function/type exports.',

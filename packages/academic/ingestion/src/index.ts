@@ -190,15 +190,20 @@ function appendRecord(records: readonly IngestRecord[], record: IngestRecord): r
   const verifiedDiscoveries = uniqueBy([
     ...(matched.verifiedDiscoveries ?? []), ...(record.verifiedDiscoveries ?? []),
   ], discovery => JSON.stringify([discovery.discoveryUrl, discovery.verificationProvider]))
+  const discoveredBy = uniqueBy([
+    ...(matched.discoveredBy ?? []), ...(record.discoveredBy ?? []),
+  ], queryId => queryId)
   if (workIdentifiers.length === matched.academicWork.externalIdentifiers.length
     && versionIdentifiers.length === matched.workVersion.externalIdentifiers.length
     && sourceRecords.length === matched.workVersion.sourceRecords.length
-    && verifiedDiscoveries.length === (matched.verifiedDiscoveries?.length ?? 0)) return records
+    && verifiedDiscoveries.length === (matched.verifiedDiscoveries?.length ?? 0)
+    && discoveredBy.length === (matched.discoveredBy?.length ?? 0)) return records
   return records.map(existing => existing === matched ? {
     ...existing,
     academicWork: { ...existing.academicWork, externalIdentifiers: workIdentifiers },
     workVersion: { ...existing.workVersion, externalIdentifiers: versionIdentifiers, sourceRecords },
     verifiedDiscoveries,
+    discoveredBy,
   } : existing)
 }
 

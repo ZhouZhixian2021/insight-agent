@@ -17,7 +17,7 @@ kind: "subsystem"
 
 ## 成员所有权
 
-成员 A 负责共享模型、工作流接口和集成决策。成员 B 负责提供方规范化与单篇论文证据生产。成员 C 负责跨论文论断、覆盖度评估与报告呈现。
+成员 A 负责共享模型、工作流接口和集成决策。成员 B 负责学术检索、候选评估与提供方规范化。成员 C 负责研究计划与候选界面。现有证据、分析和报告包继续由各自模块维护。
 
 共享记录变更由成员 A 维护，防止提供方和报告专用逻辑进入通用模型。
 
@@ -28,6 +28,8 @@ kind: "subsystem"
 分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测结合当前证据与明确的语义审核，报告在最终交付入口执行核验。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
 
 [摄取库](../../packages/academic/ingestion/README.zh.md)接收可附带已核验 Web 发现 URL 和核验 Provider ID 的 `IngestRecord`。按精确标识符去重后，`IngestOutcome.verifiedDiscoveries` 把这些值关联到分配的 `AcademicWorkId` 和保留的 `WorkVersionId`；不同版本仍可分别寻址。
+
+[检索库](../../packages/academic/retrieval/README.zh.md)根据已批准 Brief 与调用方审核过的扩展词生成按渠道区分的查询。单轮执行器只在学术引用完成核验后纳入 Web 发现结果，再交由摄取库按精确标识符和版本合并。查询 ID 保留在调和后的成果上；Academic Controller 负责计划审核与 Session 记录。
 
 ## 初始阶段
 
