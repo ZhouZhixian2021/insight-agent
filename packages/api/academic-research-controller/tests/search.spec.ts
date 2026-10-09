@@ -62,7 +62,9 @@ function setup(options: {
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
   batchPolicy, gapPolicy)
-  return { adapters, brief, searchProviders, works }
+  const replenishCandidates = adapters.replenishCandidates
+  if (replenishCandidates === undefined) throw new Error('expected evidence-gap replenishment adapter')
+  return { adapters, brief, searchProviders, works, replenishCandidates }
 }
 
 async function initialState(setupResult: ReturnType<typeof setup>) {
@@ -153,7 +155,7 @@ describe('Q5 evidence-gap replenishment', () => {
         limitations: [], truncated: false }
     })
 
-    const replenished = await prepared.adapters.replenishCandidates(
+    const replenished = await prepared.replenishCandidates(
       state.scheduling, state.ingested, uncovered(prepared.brief), 2,
     )
 
@@ -167,7 +169,7 @@ describe('Q5 evidence-gap replenishment', () => {
     const prepared = setup({ failGapSearch: true })
     const state = await initialState(prepared)
 
-    const replenished = await prepared.adapters.replenishCandidates(
+    const replenished = await prepared.replenishCandidates(
       state.scheduling, state.ingested, uncovered(prepared.brief), 2,
     )
 
@@ -180,7 +182,7 @@ describe('Q5 evidence-gap replenishment', () => {
     const prepared = setup({ unresolved: new Set(['fixture-2']) })
     const state = await initialState(prepared)
 
-    const replenished = await prepared.adapters.replenishCandidates(
+    const replenished = await prepared.replenishCandidates(
       state.scheduling, state.ingested, uncovered(prepared.brief), 2,
     )
 
@@ -199,7 +201,7 @@ describe('Q5 evidence-gap replenishment', () => {
       queries: state.scheduling.plan.queries.map(query => query.kind === 'academic'
         ? { ...query, providers: ['acl'] } : query) } } as typeof state.scheduling
 
-    await expect(prepared.adapters.replenishCandidates(
+    await expect(prepared.replenishCandidates(
       scheduling, state.ingested, uncovered(prepared.brief), 2,
     )).rejects.toThrow('Evidence-gap search requires an approved direct provider, received "acl".')
   })
