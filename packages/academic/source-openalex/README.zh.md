@@ -13,6 +13,8 @@ kind: "package-reference"
 
 `verifyReference()` 通过 DOI 单篇端点读取一条 OpenAlex 成果，核对返回的 DOI，并保留对应版本的全文候选。该查询不受发现阶段搜索模式和发表年份过滤影响，也不下载全文。
 
+发现与 DOI 核验均按连续词元位置重建 `abstract_inverted_index`，并在 `metadata` 中保留 OpenAlex 关键词标签。位置歧义或关键词记录格式错误会触发解析错误；缺失字段保持未知。OpenAlex 关键词是自动生成的主题标签，不能证明贡献类型。
+
 ## 目录
 
 - [使用本包](#use-this-package)

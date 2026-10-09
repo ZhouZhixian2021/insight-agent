@@ -38,6 +38,8 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 
 每次结果还报告去重后的成果、重新指向身份的版本，以及记录新建、合并或疑似重复的审计。`summarizeIngestAudit()` 把该审计转换为进度计数，把合并的成果身份、合并的版本记录、疑似重复与最终保留的版本总数保留为四个互不混用的独立事实。
 
+`metadataForVersion(index, version)` 读取该版本保留的学术摘要与关键词。同版本重复记录保留首份可用摘要，并合并可用关键词；不可用字段不覆盖已知值。其他版本（包括预印本）的元数据不补充规范发表版本缺失的摘要。
+
 -----
 
 <a id="api"></a>
@@ -46,6 +48,7 @@ const second = ingestWorks(first.index, recordsFromSecondSearch)
 | 导出 | 角色 |
 |---|---|
 | `IngestRecord` | 一对提供方产出的 `{ academicWork, workVersion }`，可附带计划查询 ID 和已核验的 Web 发现轨迹。 |
+| `metadataForVersion()` | 从保留记录读取指定版本的学术摘要与关键词可用状态。 |
 | `IngestIndex` | 内存中的去重与合并状态。 |
 | `createIngestIndex()` | 创建空索引。 |
 | `ingestWorks()` | 把一批记录去重进索引并返回结果。 |

@@ -11,6 +11,8 @@ kind: "package-reference"
 
 任何学术包都可以通过 `dsh-academic-source`（`ctx.academicSource`）搜索学术 Provider，而无需绑定厂商 API。调用方可以用 `search()` 选择单个 Provider、用 `searchAll()` 聚合配置的 Provider，或用 `searchProviders()` 按请求指定 Provider，再从选中版本解析有序全文候选。服务本身不发起网络请求，也不注册面向模型的工具；网络传输和来源专用解析由 Provider 负责。
 
+提供方记录可携带属于对应版本的 `metadata.abstract` 与 `metadata.keywords` 可用状态。检索聚合与引用核验保留这些学术字段、日期和来源身份。Web 摘要不补充这些字段；缺失值明确保持未知。
+
 ## 目录
 
 - [使用本包](#use-this-package)

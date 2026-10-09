@@ -27,6 +27,38 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null
 }
 
+/** Reconstruct an upstream abstract only when every supplied token position is unambiguous and contiguous. */
+function scholarlyMetadata(raw: JsonObject): NonNullable<AcademicSourceWork['metadata']> {
+  const tokens = new Map<number, string>()
+  if (raw.abstract_inverted_index != null) {
+    for (const [word, positions] of Object.entries(object(raw.abstract_inverted_index))) {
+      if (!word.trim() || !Array.isArray(positions) || positions.length === 0) invalid()
+      for (const position of positions) {
+        if (typeof position !== 'number' || !Number.isSafeInteger(position) || position < 0 || tokens.has(position)) invalid()
+        tokens.set(position, word)
+      }
+    }
+  }
+  const ordered = [...tokens].sort(([left], [right]) => left - right)
+  if (ordered.some(([position], index) => position !== index)) invalid()
+  const abstract = ordered.map(([, word]) => word).join(' ')
+  const keywords: string[] = []
+  if (raw.keywords != null) {
+    if (!Array.isArray(raw.keywords)) invalid()
+    for (const item of raw.keywords) {
+      const keyword = text(object(item).display_name)
+      if (keyword === null) invalid()
+      if (!keywords.includes(keyword)) keywords.push(keyword)
+    }
+  }
+  return {
+    abstract: abstract ? { status: 'available', value: abstract }
+      : { status: 'unknown', reason: 'The OpenAlex record supplies no abstract.' },
+    keywords: keywords.length > 0 ? { status: 'available', value: keywords }
+      : { status: 'unknown', reason: 'The OpenAlex record supplies no keywords.' },
+  }
+}
+
 function arxivId(value: unknown): string | undefined {
   const href = publicUrl(value)
   if (href === null) return undefined
@@ -157,6 +189,7 @@ export function normalizeOpenAlexWork(value: unknown): OpenAlexRecord {
   return {
     id, urls: [...new Set(urls)],
     work: {
+      metadata: scholarlyMetadata(raw),
       academicWork: { ...base.academicWork, externalIdentifiers: identifiers,
         firstPublicDate: { status: 'unknown', reason: 'OpenAlex aggregate publication date does not establish the first public release.' },
         publicationStatus: raw.is_retracted === true ? { status: 'available', value: 'retracted' }

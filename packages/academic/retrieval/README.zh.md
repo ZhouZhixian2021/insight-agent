@@ -29,6 +29,17 @@ kind: "package-library"
 
 Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词、提供方 ID、结果上限与适配器。`planHybridSearch()` 返回供审核的 `HybridSearchPlanningOutput`；`executePlannedSearchRound()` 在批准后只执行指定轮次，并可发布 Web 发现、引用识别和引用核验的实时事实。`rankPlannedCandidates()` 对已核验成果与调用方审核的语义判断应用批准的硬过滤和排序策略。`extendPlanForEvidenceGaps()` 根据同一 Brief 版本的覆盖结果添加有数量上限的查询。准确签名见[公开导出](src/index.ts)。
 
+### 元数据初筛
+
+`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配，问题的全部概念命中后才算匹配问题。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径、`asOfYear` 与 `recencyWindowYears`。
+
+```text
+const assessments = assessPlannedCandidates(plan, brief, round, reviewedCriteria, fulltextFacts)
+const ranking = rankPlannedCandidates(plan, brief, round, assessments)
+```
+
+[初筛测试](tests/rank.spec.ts)提供可执行交接样例，包含已审核中英文别名、只匹配一个问题的 P0 论文、无关排除论文，以及明确缺失的元数据。Controller 负责术语审核、全文解析、接入与日志；元数据匹配不代表证据覆盖。
+
 ### 入口
 
 向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限、适配器和可选进度观察器交给 `executePlannedSearchRound()`。正式的第 3 版 Controller 路径在已批准轮次和有界证据缺口轮次中都使用该执行器；没有明确检索策略的旧计划继续使用兼容适配器。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。结果绑定 Brief 版本，为每项成果保留一份完整评估，并以 `WorkVersionId` 返回有序队列。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
@@ -41,7 +52,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[规划器](src/planner.ts)使用 Brief 别名与调用方审核过的同义词或方法名，不从自然语言规则中推断术语。[执行器](src/execute.ts)按查询指定的渠道检索、识别 Web 引用、经批准的学术提供方核验，并只把提供方记录交给[摄取库](../ingestion/README.zh.md)。摄取库按精确标识符合并成果和版本，同时保留查询 ID 与已核验发现 URL。[排序器](src/rank.ts)应用确定性的时间、类型、撤稿、词项及经审核的规则判断；自然语言判断为 `null` 时只记录限制，不把候选硬排除。它按计划策略加权语义评分、分配优先级，并在各队列中提升来源、团队、问题和主题的多样性。调用方负责语义判断、计划审核、Session 事件、批次和模型可见内容的渲染。
+[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)读取保留的元数据，不依赖查询与问题的关联。[排序器](src/rank.ts)应用硬过滤、按计划策略加权判断比例，并生成兼顾多样性的优先级队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
 
 </details>
 
@@ -70,7 +81,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 - **不推断语义扩展词** — 调用方提供审核过的同义词与方法名；Brief 别名直接使用。
 - **不执行引文 API** — 引文扩展种子保留在共享计划中，等待后续提供方集成。
 - **不持久化运行状态** — 调用方在 Session 数据中记录已批准计划、查询结果与摄取输出。
-- **需要语义判断** — 摘要与关键词证据、规则判断、相关性比例和贡献信号由调用方审核的分类器提供；本库不从稀疏的提供方元数据中猜测。
+- **词项初筛是初步判断** — 已审核别名必须明确提供；缺失元数据、否定表述和方法声明需要证据审核。全文可用性本身不提高证据潜力分。
 
 <a id="dev-note"></a>
 ### 开发备注

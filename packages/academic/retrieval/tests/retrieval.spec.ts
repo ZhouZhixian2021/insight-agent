@@ -12,6 +12,7 @@ import {
   type WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
+import { metadataForVersion } from '@deepseek-ai/dsh-academic-ingestion'
 import { executePlannedSearchRound, extendPlanForEvidenceGaps, planHybridSearch,
   type PlannedSearchAdapters, type QueryPlanningOptions } from '../src/index.ts'
 
@@ -108,13 +109,16 @@ describe('planned Academic retrieval', () => {
   it('keeps only verified Web works, merges duplicate versions, and retains every discovering query', async () => {
     const approved = plan()
     const direct = record('10.1000/one', 'openalex')
-    const webCopy = record('10.1000/one', 'openalex')
+    const webCopy = { ...record('10.1000/one', 'openalex'), metadata: {
+      abstract: { status: 'available' as const, value: 'Verified scholarly summary.' },
+      keywords: { status: 'available' as const, value: ['retrieval'] },
+    } }
     const webQueries: string[] = []
     const adapters: PlannedSearchAdapters = {
       searchAcademic: async () => ({ works: [direct], batch: createBatchResult([direct], []),
         providers: ['openalex', 'arxiv'], discoveredRecords: 1, truncated: false, limitations: [] }),
       searchWeb: async (query) => { webQueries.push(query); return { candidates: [
-        { url: 'https://doi.org/10.1000/one' }, { url: 'https://example.org/product' },
+        { url: 'https://doi.org/10.1000/one', snippet: 'Untrusted Web snippet.' }, { url: 'https://example.org/product' },
       ], truncated: false } },
       identifyReferences: candidate => candidate.url.includes('doi.org')
         ? { status: 'identified', references: [{ kind: 'doi', normalizedValue: '10.1000/one',
@@ -128,6 +132,7 @@ describe('planned Academic retrieval', () => {
       verificationProviders: ['openalex'],
     }, adapters)
     expect(result.ingested.works).toHaveLength(1)
+    expect(metadataForVersion(result.ingested.index, result.ingested.versions[0]!)).toEqual(webCopy.metadata)
     expect(result.ingested.verifiedDiscoveries.map(item => item.discoveryUrl))
       .toEqual(['https://doi.org/10.1000/one'])
     expect(result.discoveredBy[0]?.searchQueryIds).toEqual(approved.queries.map(query => query.searchQueryId))

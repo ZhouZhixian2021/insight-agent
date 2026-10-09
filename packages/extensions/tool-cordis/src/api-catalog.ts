@@ -3719,7 +3719,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicSourceWork',
-    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n    readonly verifiedDiscoveries?: readonly {\n        readonly discoveryUrl: string;\n        readonly verificationProvider: string;\n    }[];\n}',
+    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n    readonly metadata?: {\n        readonly abstract: Availability<string>;\n        readonly keywords: Availability<readonly string[]>;\n    };\n    readonly verifiedDiscoveries?: readonly {\n        readonly discoveryUrl: string;\n        readonly verificationProvider: string;\n    }[];\n}',
   },
   {
     name: 'AcademicVerifiedReference',

@@ -126,5 +126,12 @@ export function normalizeArxivWork(raw: ArxivRawWork): NormalizedArxivWork {
     supersedesWorkVersionId: null,
     status: 'active',
   }
-  return { academicWork, workVersion }
+  const abstract = raw.abstract?.trim()
+  const keywords = [...new Set(raw.keywords?.map(keyword => keyword.trim()).filter(Boolean) ?? [])]
+  return { academicWork, workVersion, metadata: {
+    abstract: abstract ? { status: 'available', value: abstract }
+      : { status: 'unknown', reason: 'The arXiv record supplies no abstract.' },
+    keywords: keywords.length > 0 ? { status: 'available', value: keywords }
+      : { status: 'unknown', reason: 'The arXiv record supplies no subject categories.' },
+  } }
 }

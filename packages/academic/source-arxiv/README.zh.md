@@ -13,6 +13,8 @@ kind: "package-reference"
 
 `verifyReference()` 通过 `id_list` 查询单个 arXiv ID，并核对返回的 ID；明确指定 `vN` 时必须匹配该版本。它返回规范化记录及 HTML/PDF 候选，不下载全文。
 
+检索与 ID 核验把 Atom `summary` 保留为学术摘要，把 `category` 词项保留为主题关键词，存入记录的 `metadata`。缺失字段保持未知；主题分类不等于作者提供的贡献类型。
+
 ## 目录
 
 - [使用本包](#use-this-package)

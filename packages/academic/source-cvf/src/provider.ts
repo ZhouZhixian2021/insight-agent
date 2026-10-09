@@ -52,10 +52,11 @@ export class CvfProvider implements AcademicSourceProvider {
     const url = new URL(reference.recordId)
     const html = await fetchAcademicPaperPage(this.id, url, signal)
     if (html === null) return null
-    const citation = parseAcademicPaperCitation(html)
+    const citation = parseAcademicPaperCitation(html, this.id)
     if (citation.pdfUrl !== this.fullTextUrls(reference.recordId)[0]) return null
     return normalizeAcademicCatalogRecord(this.id, { recordId: reference.recordId, title: citation.title,
-      authors: citation.authors, year: citation.year, venue: citation.venue, doi: citation.doi })
+      authors: citation.authors, year: citation.year, venue: citation.venue, doi: citation.doi,
+      abstract: citation.abstract, keywords: citation.keywords })
   }
 
   fullTextUrls(recordId: string): readonly string[] {

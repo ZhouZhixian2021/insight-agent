@@ -45,7 +45,8 @@ describe('PMLR provider', () => {
       + '<meta name="citation_publication_date" content="2026/06/29">'
       + '<meta name="citation_conference_title" content="COLT 2026">'
       + '<meta name="citation_abstract_html_url" content="https://proceedings.mlr.press/v336/applebaum26a.html">'
-      + `<meta name="citation_pdf_url" content="${pdf}">`))
+      + `<meta name="citation_pdf_url" content="${pdf}">`
+      + '<div id="abstract">Official learning evaluation.</div>'))
     vi.stubGlobal('fetch', fetch)
     const provider = new PmlrProvider(() => ({ baseURL: 'https://proceedings.mlr.press', catalogUrls: [], maxCachedRecords: 1 }))
     expect(provider.available()).toBe(false)
@@ -54,6 +55,7 @@ describe('PMLR provider', () => {
     const work = await provider.verifyReference(reference)
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(work?.academicWork).toMatchObject({ title: 'Attribution Sets', authors: ['Lorne Applebaum'] })
+    expect(work?.metadata?.abstract).toEqual({ status: 'available', value: 'Official learning evaluation.' })
     expect(provider.fullTextUrls(reference.recordId)).toEqual([pdf])
   })
 

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createResearchBriefId,
   createSearchQueryId, createWorkVersionId, type AcademicWork, type ExecutableResearchBrief,
   type HybridSearchPlan, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
-import { createIngestIndex } from '@deepseek-ai/dsh-academic-ingestion'
-import { rankPlannedCandidates, type CandidateAssessment, type PlannedSearchRoundResult } from '../src/index.ts'
+import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
+import { normalizeAcademicCatalogRecord } from '@deepseek-ai/dsh-academic-source'
+import { assessPlannedCandidates, rankPlannedCandidates, type CandidateAssessment,
+  type CandidateScreeningCriteria, type PlannedSearchRoundResult } from '../src/index.ts'
 
 const question = 'Which retrieval methods improve faithfulness?'
 const queryId = createSearchQueryId()
@@ -127,5 +129,100 @@ describe('planned candidate ranking', () => {
     expect(() => rankPlannedCandidates(plan, brief, input,
       [assessment(item.work, { topicRelevance: 1.2 })])).toThrow(/between zero and one/u)
     expect(() => rankPlannedCandidates(plan, brief, input, [])).toThrow(/exactly one assessment/u)
+  })
+})
+
+describe('scholarly metadata screening', () => {
+  const specializedBrief = { ...brief, questions: [question, 'How much does retrieval cost?', 'Which datasets are used?'] }
+  const criteria: CandidateScreeningCriteria = {
+    topic: [['retrieval', '检索'], ['faithfulness', '忠实性']],
+    questions: [{ question, concepts: [['retrieval', '检索'], ['faithfulness', '忠实性']] },
+      { question: specializedBrief.questions[1]!, concepts: [['cost']] },
+      { question: specializedBrief.questions[2]!, concepts: [['datasets']] }],
+    methods: [['retrieval', '检索']], evidence: [['evaluation', '评估']],
+    contributions: [{ classification: 'empirical_evaluation', concepts: [['evaluation', '评估']] }],
+    asOfYear: 2025, recencyWindowYears: 5,
+  }
+
+  function inputs(title: string, abstract?: string, keywords?: readonly string[]) {
+    const source = normalizeAcademicCatalogRecord('acl', { recordId: title, title, authors: ['A. Researcher'],
+      venue: 'ACL', year: '2025', doi: '10.1000/example',
+      ...(abstract === undefined ? {} : { abstract }), ...(keywords === undefined ? {} : { keywords }) })
+    const ingested = ingestWorks(createIngestIndex(), [source])
+    const input: PlannedSearchRoundResult = { ingested, queries: [],
+      discoveredBy: ingested.works.map(work => ({ academicWorkId: work.academicWorkId, searchQueryIds: [queryId] })) }
+    const facts = new Map(ingested.versions.map(version => [version.workVersionId, { status: 'resolvable' as const }]))
+    return { input, facts }
+  }
+
+  it('keeps a specialized one-question paper at P0 with an explained assessment', () => {
+    const { input, facts } = inputs('Retrieval faithfulness', 'Retrieval evaluation improves faithfulness.', ['retrieval'])
+    const assessments = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)
+    expect(assessments[0]).toMatchObject({ topicRelevance: 1, matchedQuestions: [question],
+      methodMatch: 1, evidencePotential: 1, sourceQuality: 1, contributionSignals: ['empirical_evaluation'],
+      inclusionRuleMatches: [null], exclusionRuleMatches: [null] })
+    const result = rankPlannedCandidates(plan, specializedBrief, input, assessments)
+    expect(result.evaluations[0]).toMatchObject({ priority: 'p0', classification: 'empirical_evaluation' })
+    expect(result.evaluations[0]?.score.total).toBeCloseTo(86.67, 2)
+    expect(result.limitations.join(' ')).toContain('defers 1 inclusion and 1 exclusion rule decision')
+    expect(assessments[0]?.reasons[0]).toContain('does not confirm evidence or scientific quality')
+  })
+
+  it('excludes an unrelated evaluation despite sharing the discovering query', () => {
+    const { input, facts } = inputs('Economic forecasting', 'An evaluation of commodity prices.', ['economics'])
+    const semanticPlan = { ...plan, constraints: { ...plan.constraints, requiredTerms: [] } }
+    const assessments = assessPlannedCandidates(semanticPlan, specializedBrief, input, criteria, facts)
+    expect(assessments[0]).toMatchObject({ topicRelevance: 0, matchedQuestions: [], methodMatch: 0 })
+    const result = rankPlannedCandidates(semanticPlan, specializedBrief, input, assessments)
+    expect(result.evaluations[0]).toMatchObject({ priority: 'excluded', classification: 'irrelevant',
+      hardFilter: { status: 'eligible' } })
+  })
+
+  it('retains missing metadata explicitly and distinguishes title matches from evidence cues', () => {
+    const { input, facts } = inputs('Retrieval faithfulness')
+    const assessment = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)[0]!
+    expect(assessment).toMatchObject({ abstract: { status: 'unknown' }, keywords: { status: 'unknown' },
+      topicRelevance: 1, methodMatch: 1, evidencePotential: 0, contributionSignals: [] })
+    expect(assessment.sourceQuality).toBeCloseTo(4 / 6)
+    expect(assessment.reasons.join(' ')).toContain('Abstract unavailable:')
+    expect(assessment.reasons.join(' ')).toContain('Keywords unavailable:')
+  })
+
+  it('matches reviewed multilingual phrases and token boundaries without inventing aliases', () => {
+    const chinese = inputs('检索与忠实性', '我们评估检索的忠实性。', ['检索'])
+    expect(assessPlannedCandidates(plan, specializedBrief, chinese.input, criteria, chinese.facts)[0])
+      .toMatchObject({ topicRelevance: 1, matchedQuestions: [question], evidencePotential: 1 })
+    const substring = inputs('Retrievals and unfaithfulness', 'Unevaluated claims.', ['other'])
+    expect(assessPlannedCandidates(plan, specializedBrief, substring.input, criteria, substring.facts)[0])
+      .toMatchObject({ topicRelevance: 0, matchedQuestions: [], evidencePotential: 0 })
+  })
+
+  it('leaves unspecified cues and unavailable dates unassessed instead of treating full text as evidence', () => {
+    const { input, facts } = inputs('Retrieval faithfulness')
+    const undated = { ...input, ingested: { ...input.ingested,
+      works: input.ingested.works.map(work => ({ ...work, firstPublicDate: { status: 'unknown' as const, reason: 'No date.' } })) } }
+    const assessment = assessPlannedCandidates(plan, specializedBrief, undated,
+      { ...criteria, methods: [], evidence: [], contributions: [] }, facts)[0]!
+    expect(assessment).toMatchObject({ methodMatch: 0, evidencePotential: 0, recency: 0,
+      fulltextAvailability: { status: 'resolvable' } })
+    expect(assessment.reasons.join(' ')).toContain('Publication date unavailable; recency scores zero.')
+    const publishedPlan = { ...plan, constraints: { ...plan.constraints, publicationWindow: {
+      ...plan.constraints.publicationWindow, dateBasis: 'published' as const,
+    } } }
+    expect(assessPlannedCandidates(publishedPlan, specializedBrief, undated, criteria, facts)[0]?.recency).toBe(1)
+  })
+
+  it('rejects mismatched review scope, empty concepts, invalid recency, and missing resolution facts', () => {
+    const { input, facts } = inputs('Retrieval faithfulness')
+    const run = (value = criteria) => assessPlannedCandidates(plan, specializedBrief, input, value, facts)
+    expect(() => run({ ...criteria, questions: criteria.questions.slice(1) })).toThrow(/every distinct approved question/u)
+    expect(() => run({ ...criteria, questions: [criteria.questions[0]!, criteria.questions[0]!, criteria.questions[2]!] }))
+      .toThrow(/every distinct approved question/u)
+    expect(() => run({ ...criteria, topic: [[' ']] })).toThrow(/non-empty/u)
+    expect(() => run({ ...criteria, topic: [] })).toThrow(/non-empty/u)
+    expect(() => run({ ...criteria, recencyWindowYears: 0 })).toThrow(/recency window/u)
+    expect(() => assessPlannedCandidates(plan, { ...specializedBrief, version: 2 }, input, criteria, facts))
+      .toThrow(/approved Brief version/u)
+    expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, new Map())).toThrow(/resolution fact/u)
   })
 })
