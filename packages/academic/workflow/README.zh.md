@@ -116,7 +116,7 @@ DSH 现有消息估算器计算完整包装后的输入。启用分批后，每�
 
 ## Known Limitations and Deferred Work
 
-- 该库提供有界明确查询草稿流水线、单篇交接和显式启用的模型适配器。Session 记录覆盖模型请求与结果；返回的 RetrievalRun、证据/卡片身份及完整工作流状态尚未持久化以供恢复。自适应查询规划、工作流级恢复及最终语义审核留待后续；来源 Provider 可以在自身配置上限内重试临时传输失败。它不证明文件的学术身份，也不判断格式差异或内容改版。
+- 该库提供有界明确查询草稿流水线、单篇交接和显式启用的模型适配器。`@deepseek-ai/dsh-academic-workflow/recovery` 类型入口固定归一化恢复契约，根入口导出的 `reconstructAcademicResearchRecoveryState()` 则从一份完整且有序的 Session 日志执行纯 A-S2 重建。A-S3 会在每个排序批次开始前和结算后持久化可安全序列化为 JSON 的可执行检查点。Session 后端接受 `resumeRetrievalRunId`，取得 Session 写入句柄，校验检查点与已批准计划及已提交批次历史一致，跳过检索和筛选，保留原运行身份，不重复已结算批次，并把一个未结算批次作为整体重新执行。没有检查点的历史未完成运行返回 `candidate_state_missing`。恢复后的保留候选池不会开启新的证据缺口检索轮次，因为来源运行时解析缓存尚未持久化。自适应查询规划和最终语义审核仍留待后续；来源 Provider 可以在自身配置上限内重试临时传输失败。它不证明文件的学术身份，也不判断格式差异或内容改版。
 
 <a id="dev-note"></a>
 ### 开发备注
@@ -124,6 +124,6 @@ DSH 现有消息估算器计算完整包装后的输入。启用分批后，每�
 <details>
 <summary>Working context for maintainers</summary>
 
-设计与验证见[论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md)、[明确查询编排决策](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.zh.md)、[证据抽取恢复决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.zh.md)、[混合检索决策](../../../.agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.zh.md)及[测试](tests/handoff.spec.ts)。
+设计与验证见[论文交接决策](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.zh.md)、[明确查询编排决策](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.zh.md)、[证据抽取恢复决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.zh.md)、[混合检索决策](../../../.agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.zh.md)、[研究恢复状态决策](../../../.agents/notes/implemented/architecture/2026-10-09-academic-research-recovery-state.zh.md)及[测试](tests/handoff.spec.ts)。
 
 </details>

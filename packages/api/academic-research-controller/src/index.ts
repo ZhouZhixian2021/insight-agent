@@ -5,7 +5,9 @@ import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
   runAcademicResearchDraft,
+  reconstructAcademicResearchRecoveryState,
   type AcademicResearchDraftResult,
+  type AcademicResearchRecoveryCheckpoint,
   type AcademicQueryWorkflowObserver,
   type AcademicSearchPlanEvent,
   type AcademicSettlementObserver,
@@ -235,6 +237,26 @@ export class AcademicResearchController extends TypertRemoteService {
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid Academic Research Brief', {},
         { cause })
     }
+    let recovery: AcademicResearchRecoveryCheckpoint | undefined
+    if (request.resumeRetrievalRunId !== undefined) {
+      const reconstructed = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+        retrievalRunId: request.resumeRetrievalRunId,
+        researchBriefId: brief.researchBriefId,
+        researchBriefVersion: brief.version,
+      })
+      if (reconstructed.status === 'failed') {
+        throw new RemoteError('gateway/bad-request',
+          `无法恢复学术研究：${reconstructed.failure.code} — ${reconstructed.failure.reason}`, {})
+      }
+      if (reconstructed.status !== 'resumable') {
+        throw new RemoteError('gateway/bad-request', `学术研究已${reconstructed.status === 'completed' ? '完成' : '取消'}，无需恢复。`, {})
+      }
+      if (reconstructed.input.checkpoint === null) {
+        throw new RemoteError('gateway/bad-request',
+          '无法恢复学术研究：candidate_state_missing — 该历史运行没有可执行候选检查点，请开始一次新的研究运行。', {})
+      }
+      recovery = reconstructed.input.checkpoint
+    }
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
     if (selectedModel.provider === undefined || selectedModel.model === undefined) {
       throw new RemoteError('gateway/bad-request', 'the Session has no selected model', {})
@@ -251,12 +273,13 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
       ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
-        plan => agent.session.append('academic/search-plan', searchPlanEvent(plan))),
+        recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
       now: () => new Date().toISOString(),
       onSettlement,
+      onRecoveryCheckpoint: checkpoint => agent.session.append('academic/recovery-checkpoint', checkpoint),
       ...(onProgress === undefined ? {} : { onProgress }),
       ...(onQueryWorkflow === undefined ? {} : { onQueryWorkflow }),
     }
@@ -277,7 +300,8 @@ export class AcademicResearchController extends TypertRemoteService {
         },
         input: { brief, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
           channels: search.retrieval?.channels ?? ['academic'],
-          ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic },
+          ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic,
+        ...(recovery === undefined ? {} : { recovery }) },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),
       }))

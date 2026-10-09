@@ -103,7 +103,7 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 'academic/candidate-batch-decision': AcademicBatchDecisionEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:60`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:43`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academiccandidate-batch-settlement--log-only"></a>
 
@@ -114,7 +114,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:60`](../packages/a
 'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:62`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -138,6 +138,17 @@ Source: [`packages/academic/workflow/src/model-types.ts:125`](../packages/academ
 
 Source: [`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
 
+<a id="academicrecovery-checkpoint--log-only"></a>
+
+#### `academic/recovery-checkpoint` — log-only
+
+```ts persistence-catalog
+/** Durable A-S3 state captured at a scheduled or settled batch boundary. */
+'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:49`](../packages/academic/workflow/src/settlement-events.ts)
+
 <a id="academicrun-settlement--log-only"></a>
 
 #### `academic/run-settlement` — log-only
@@ -147,7 +158,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:127`](../packages/academ
 'academic/run-settlement': AcademicRunSettlementEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:64`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:47`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsearch-plan--log-only"></a>
 
@@ -158,7 +169,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:64`](../packages/a
 'academic/search-plan': AcademicSearchPlanEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:58`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:41`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 

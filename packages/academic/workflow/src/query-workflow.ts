@@ -28,7 +28,10 @@ export interface AcademicBatchSettlementEvent {
   readonly retrievalRunId: RetrievalRunId
   /** One-based batch number matching its scheduling decision. */
   readonly batchIndex: number
+  /** Cumulative admitted evidence count when this batch settled. */
   readonly admittedEvidence: number
+  /** Coverage committed with this settlement; absent on events written before A-S2. */
+  readonly coverage?: ResearchQuestionCoverageResult
   readonly completedAt: string
 }
 

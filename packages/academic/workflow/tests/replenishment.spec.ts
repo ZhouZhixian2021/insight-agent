@@ -182,6 +182,54 @@ describe('bounded candidate replenishment', () => {
     expect(result.queryWorkflow).toEqual(observations.at(-1))
   })
 
+  it('resumes a pending ranked batch without repeating retrieval or screening', async () => {
+    const { input, adapters, records } = fixture()
+    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
+      maximumCandidateWorks: 5, maximumIncludedWorks: 2, stopWhenEvidenceRequirementsMet: true } }
+    const queryId = createSearchQueryId()
+    const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
+      researchBriefVersion: input.brief.version,
+      constraints: { publicationWindow: input.brief.publicationWindow,
+        includedWorkTypes: input.brief.includedWorkTypes, inclusionRules: [], exclusionRules: [],
+        requiredTerms: [], excludedTerms: [] }, inclusionTargets: { minimum: 2, target: 2, maximum: 2 },
+      rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+      queries: [{ kind: 'academic', searchQueryId: queryId, expression: 'synthetic methods', purpose: 'core',
+        questions: input.brief.questions, roundIndex: 1, providers: ['fixture'] }],
+      citationExpansionSeeds: [], maximumSearchRounds: 1 }
+    const evaluations = records.map(({ academicWork, workVersion }, index): AcademicCandidateEvaluation => ({
+      schemaVersion: 1, academicWorkId: academicWork.academicWorkId, workVersionId: workVersion.workVersionId,
+      discoveredBy: [queryId], classification: 'background', hardFilter: { status: 'eligible', reasons: [] },
+      score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
+        workTypeFit: 8, sourceQuality: 7, recency: 5, fulltextAvailability: 5, total: 100 - index },
+      priority: 'p0', matchedQuestions: input.brief.questions, fulltextAvailability: { status: 'resolvable' },
+      diversityTags: [`candidate:${index}`], decisionReasons: ['fixture'],
+    }))
+    const ranking: AcademicCandidateRankingResult = { schemaVersion: 1,
+      researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
+      evaluations, queues: { p0: evaluations.map(item => item.workVersionId), p1: [], p2: [], excluded: [] },
+      limitations: [] }
+    adapters.selectPapers = vi.fn<DraftPipelineAdapters['selectPapers']>(ingested => ({
+      papers: ingested.versions.map(version => ({ workVersionId: version.workVersionId,
+        urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
+        extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
+      truncated: false, candidateScheduling: { plan, assessments: [], ranking,
+        policy: { initialBatchSize: 2, evidenceGapBatchSize: 1, replenishmentBatchSize: 1,
+          minimumQuestionSupportingWorks: 1 } },
+    }))
+    let checkpoint: Parameters<NonNullable<DraftPipelineAdapters['onRecoveryCheckpoint']>>[0] | undefined
+    adapters.onRecoveryCheckpoint = (value) => { checkpoint = value; throw new Error('simulated process exit') }
+    await expect(runResearchDraft(input, adapters)).rejects.toThrow('simulated process exit')
+    expect(checkpoint).toMatchObject({ pendingBatchIndex: 1, completedBatchCount: 0 })
+    expect(adapters.fetcher).not.toHaveBeenCalled()
+    adapters.onRecoveryCheckpoint = vi.fn()
+    const result = await runResearchDraft({ ...input, recovery: checkpoint! }, adapters)
+    expect(adapters.search).toHaveBeenCalledOnce()
+    expect(adapters.selectPapers).toHaveBeenCalledOnce()
+    expect(adapters.fetcher).toHaveBeenCalledTimes(2)
+    expect(result.retrievalRun.retrievalRunId).toBe(checkpoint!.retrievalRunId)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
+  })
+
   it('drives a gap round instead of stopping when the ranked pool cannot cover a question', async () => {
     const { input, adapters, records } = fixture()
     input.searches = [{ query: 'synthetic methods', channels: ['academic'] },

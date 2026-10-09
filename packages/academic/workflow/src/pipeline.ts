@@ -60,25 +60,38 @@ export async function runResearchDraft(
     signal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
   }
   const maxResults = sharedCandidateLimit(searches, limits.maximumCandidateWorks)
-  const retrievalRunId = createRetrievalRunId()
-  const startedAt = adapters.now()
+  const recovery = input.recovery
+  if (recovery !== undefined && (recovery.plan.researchBriefId !== brief.researchBriefId
+    || recovery.plan.researchBriefVersion !== brief.version)) {
+    throw new Error('Recovery checkpoint belongs to a different ResearchBrief version.')
+  }
+  const retrievalRunId = recovery?.retrievalRunId ?? createRetrievalRunId()
+  const startedAt = recovery?.startedAt ?? adapters.now()
   const progress = createAcademicWorkflowProgressPublisher(retrievalRunId, startedAt, searches.length,
     brief.questions.length, adapters.now, adapters.onProgress)
   let latestStage: AcademicWorkflowProgressStage = 'retrieval'
-  const papers: PaperEvidenceResult[] = []
-  const admittedEvidence: EvidenceRecord[] = []
-  const failures: PaperProcessingFailure[] = []
-  const providerFailures: ProviderFailure[] = []
-  const executedQueries: string[] = []
+  const papers: PaperEvidenceResult[] = [...(recovery?.papers ?? [])]
+  const admittedEvidence: EvidenceRecord[] = papers.flatMap(result =>
+    result.status === 'extracted' || result.status === 'partially_extracted'
+      ? result.evidence.evidenceRecords : [])
+  const failures: PaperProcessingFailure[] = [...(recovery?.paperFailures ?? [])]
+  const providerFailures: ProviderFailure[] = [...(recovery?.providerFailures ?? [])]
+  const executedQueries: string[] = [...(recovery?.executedQueries ?? [])]
   const searchResults: (DraftSearchResult & { readonly query: string })[] = []
   let hybridSearch: HybridRunObservation | undefined
-  let search: RetrievalSearchObservation | null = null
-  let ingested = ingestWorks(createIngestIndex(), [])
-  let academicWorkIds: readonly AcademicWorkId[] = []
-  let availableFulltextWorks = 0
-  let selectionTruncated = false
+  let search: RetrievalSearchObservation | null = recovery?.search ?? null
+  let ingested: IngestOutcome = recovery === undefined ? ingestWorks(createIngestIndex(), []) : {
+    index: createIngestIndex(),
+    works: recovery.works,
+    versions: recovery.versions,
+    verifiedDiscoveries: [],
+    audit: { entries: [] },
+  }
+  let academicWorkIds: readonly AcademicWorkId[] = recovery?.candidates.map(candidate => candidate.version.academicWorkId) ?? []
+  let availableFulltextWorks = recovery?.availableFulltextWorks ?? 0
+  let selectionTruncated = recovery?.selectionTruncated ?? false
   let usableWorkIds: readonly AcademicWorkId[] = []
-  const selectionLimitations: string[] = []
+  const selectionLimitations: string[] = [...(recovery?.selectionLimitations ?? [])]
   let queryWorkflow: AcademicQueryWorkflowObservation | undefined
   const publishQueryWorkflow = (
     value: Omit<AcademicQueryWorkflowObservation, 'sequence' | 'observedAt'>,
@@ -97,7 +110,7 @@ export async function runResearchDraft(
     publishQueryWorkflow({ ...queryWorkflow, ...value })
   }
   const settle = (cancelled: boolean): DraftPipelineResult => ({
-    completedSearchQueries: searchResults.map(result => result.query),
+    completedSearchQueries: executedQueries,
     ...hybridSearch === undefined ? {} : { hybridSearch },
     ...queryWorkflow === undefined ? {} : { queryWorkflow },
     status: cancelled ? 'cancelled' : 'completed',
@@ -118,97 +131,116 @@ export async function runResearchDraft(
     return settle(true)
   }
   if (signal?.aborted) return cancel()
-  progress.startStage('retrieval', searches.length, 'queries')
-  for (const [queryOffset, request] of searches.entries()) {
-    executedQueries.push(request.query)
-    const queryKey = `query:${queryOffset}`
-    progress.setActivity(queryKey, { kind: 'query', stage: 'retrieval', queryIndex: queryOffset + 1,
-      queryCount: searches.length, query: request.query, channels: request.channels, startedAt: adapters.now() })
-    const providerStartedAt = new Map<string, string>()
-    const observeProvider = (observation: AcademicSourceProviderObservation): void => {
-      const activityKey = `${queryKey}:provider:${observation.provider}`
-      const observedAt = adapters.now()
-      if (observation.phase === 'started') providerStartedAt.set(observation.provider, observedAt)
-      const status = observation.phase === 'started' ? 'running' : observation.settlement ?? 'failed'
-      const failureCode = status === 'failed' ? observation.category ?? 'unknown'
-        : status === 'cancelled' ? 'cancelled' : null
-      progress.setActivity(activityKey, {
-        kind: 'provider',
-        stage: 'retrieval',
-        queryIndex: queryOffset + 1,
-        queryCount: searches.length,
-        providerId: observation.provider,
-        operation: 'academic_search',
-        status,
-        itemIndex: null,
-        itemCount: null,
-        discoveredRecords: observation.phase === 'settled' ? observation.works : null,
-        failureCode,
-        startedAt: providerStartedAt.get(observation.provider) ?? observedAt,
-        completedAt: observation.phase === 'settled' ? observedAt : null,
-      })
-    }
-    const hybridStartedAt = new Map<string, string>()
-    const observeHybrid = (observation: HybridSearchProgressObservation): void => {
-      const item = observation.itemIndex === null ? 'aggregate' : String(observation.itemIndex)
-      const activityKey = `${queryKey}:hybrid:${observation.operation}:${item}`
-      const observedAt = adapters.now()
-      if (observation.phase === 'started') hybridStartedAt.set(activityKey, observedAt)
-      progress.setActivity(activityKey, {
-        kind: 'provider',
-        stage: 'retrieval',
-        queryIndex: queryOffset + 1,
-        queryCount: searches.length,
-        providerId: observation.providerId,
-        operation: observation.operation,
-        status: observation.status,
-        itemIndex: observation.itemIndex,
-        itemCount: observation.itemCount,
-        discoveredRecords: observation.discoveredRecords,
-        failureCode: observation.failureCode,
-        startedAt: hybridStartedAt.get(activityKey) ?? observedAt,
-        completedAt: observation.phase === 'settled' ? observedAt : null,
-      })
-    }
-    let result: DraftSearchResult
-    try {
-      result = await adapters.search({ query: request.query, maxResults }, signal, observeProvider, observeHybrid)
-    } catch (error: unknown) {
-      if (signal?.aborted) {
-        selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
-        return cancel()
+  if (recovery === undefined) {
+    progress.startStage('retrieval', searches.length, 'queries')
+    for (const [queryOffset, request] of searches.entries()) {
+      executedQueries.push(request.query)
+      const queryKey = `query:${queryOffset}`
+      progress.setActivity(queryKey, { kind: 'query', stage: 'retrieval', queryIndex: queryOffset + 1,
+        queryCount: searches.length, query: request.query, channels: request.channels, startedAt: adapters.now() })
+      const providerStartedAt = new Map<string, string>()
+      const observeProvider = (observation: AcademicSourceProviderObservation): void => {
+        const activityKey = `${queryKey}:provider:${observation.provider}`
+        const observedAt = adapters.now()
+        if (observation.phase === 'started') providerStartedAt.set(observation.provider, observedAt)
+        const status = observation.phase === 'started' ? 'running' : observation.settlement ?? 'failed'
+        const failureCode = status === 'failed' ? observation.category ?? 'unknown'
+          : status === 'cancelled' ? 'cancelled' : null
+        progress.setActivity(activityKey, {
+          kind: 'provider',
+          stage: 'retrieval',
+          queryIndex: queryOffset + 1,
+          queryCount: searches.length,
+          providerId: observation.provider,
+          operation: 'academic_search',
+          status,
+          itemIndex: null,
+          itemCount: null,
+          discoveredRecords: observation.phase === 'settled' ? observation.works : null,
+          failureCode,
+          startedAt: providerStartedAt.get(observation.provider) ?? observedAt,
+          completedAt: observation.phase === 'settled' ? observedAt : null,
+        })
       }
-      progress.removeActivity(queryKey, 'retrieval', null, progressFailure(error))
-      progress.settleStage('retrieval', 'failed', searchResults.length, searches.length, {}, progressFailure(error))
-      throw error
+      const hybridStartedAt = new Map<string, string>()
+      const observeHybrid = (observation: HybridSearchProgressObservation): void => {
+        const item = observation.itemIndex === null ? 'aggregate' : String(observation.itemIndex)
+        const activityKey = `${queryKey}:hybrid:${observation.operation}:${item}`
+        const observedAt = adapters.now()
+        if (observation.phase === 'started') hybridStartedAt.set(activityKey, observedAt)
+        progress.setActivity(activityKey, {
+          kind: 'provider',
+          stage: 'retrieval',
+          queryIndex: queryOffset + 1,
+          queryCount: searches.length,
+          providerId: observation.providerId,
+          operation: observation.operation,
+          status: observation.status,
+          itemIndex: observation.itemIndex,
+          itemCount: observation.itemCount,
+          discoveredRecords: observation.discoveredRecords,
+          failureCode: observation.failureCode,
+          startedAt: hybridStartedAt.get(activityKey) ?? observedAt,
+          completedAt: observation.phase === 'settled' ? observedAt : null,
+        })
+      }
+      let result: DraftSearchResult
+      try {
+        result = await adapters.search({ query: request.query, maxResults }, signal, observeProvider, observeHybrid)
+      } catch (error: unknown) {
+        if (signal?.aborted) {
+          selectionLimitations.push(`Search query ${executedQueries.length} was interrupted; its unsettled hybrid observations are not included.`)
+          return cancel()
+        }
+        progress.removeActivity(queryKey, 'retrieval', null, progressFailure(error))
+        progress.settleStage('retrieval', 'failed', searchResults.length, searches.length, {}, progressFailure(error))
+        throw error
+      }
+      searchResults.push({ ...result, query: request.query })
+      providerFailures.push(...result.batch.failures)
+      const aggregate = aggregateSearches(searchResults)
+      hybridSearch = aggregate.hybridSearch
+      search = aggregate.search
+      ingested = aggregate.ingested
+      progress.removeActivity(queryKey, 'retrieval')
+      progress.updateStage('retrieval', searchResults.length, searches.length, {
+        completedQueries: searchResults.length,
+        discoveredRecords: search.discoveredRecords,
+        deduplicatedWorks: search.deduplicatedWorks,
+        ...summarizeIngestAudit(ingested),
+      })
+      if (signal?.aborted) return cancel()
     }
-    searchResults.push({ ...result, query: request.query })
-    providerFailures.push(...result.batch.failures)
-    const aggregate = aggregateSearches(searchResults)
-    hybridSearch = aggregate.hybridSearch
-    search = aggregate.search
-    ingested = aggregate.ingested
-    progress.removeActivity(queryKey, 'retrieval')
-    progress.updateStage('retrieval', searchResults.length, searches.length, {
-      completedQueries: searchResults.length,
-      discoveredRecords: search.discoveredRecords,
-      deduplicatedWorks: search.deduplicatedWorks,
-      ...summarizeIngestAudit(ingested),
-    })
-    if (signal?.aborted) return cancel()
+    progress.settleStage('retrieval', progressSettlement(executedQueries.length > 0,
+      search?.discoveredRecords ?? 0, providerFailures.length), searchResults.length, searches.length)
+  } else {
+    progress.startStage('retrieval', executedQueries.length, 'queries')
+    progress.settleStage('retrieval', progressSettlement(executedQueries.length > 0,
+      search?.discoveredRecords ?? 0, providerFailures.length), executedQueries.length, executedQueries.length)
   }
-  progress.settleStage('retrieval', progressSettlement(executedQueries.length > 0,
-    search?.discoveredRecords ?? 0, providerFailures.length), searchResults.length, searches.length)
   latestStage = 'screening'
   progress.startStage('screening', ingested.works.length, 'works')
   progress.setActivity('screening', { kind: 'screening', stage: 'screening', operation: 'eligibility', startedAt: adapters.now() })
   let selection: PaperSelectionResult
-  try {
-    selection = adapters.selectPapers(ingested, { ...brief,
-      stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
-  } catch (error: unknown) {
-    progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
-    throw error
+  if (recovery === undefined) {
+    try {
+      selection = adapters.selectPapers(ingested, { ...brief,
+        stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
+    } catch (error: unknown) {
+      progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
+      throw error
+    }
+  } else {
+    selection = {
+      papers: recovery.candidates.map(({ version: _version, ...paper }) => paper),
+      truncated: recovery.selectionTruncated,
+      candidateScheduling: {
+        plan: recovery.plan,
+        assessments: recovery.assessments,
+        ranking: recovery.ranking,
+        policy: recovery.policy,
+      },
+    }
   }
   const selected = selection.papers
   const candidateScheduling = selection.candidateScheduling
@@ -223,11 +255,11 @@ export async function runResearchDraft(
       versions: ingested.versions,
       assessments: candidateScheduling.assessments,
       ranking: candidateScheduling.ranking,
-      rounds: completedRounds(candidateScheduling.plan, startedAt, completedAt,
+      rounds: recovery?.rounds ?? completedRounds(candidateScheduling.plan, startedAt, completedAt,
         providerFailures.length === 0 ? 'success' : ingested.works.length === 0 ? 'failed' : 'partial_success'),
-      decisions: [],
-      settlements: [],
-      coverage: null,
+      decisions: recovery?.decisions ?? [],
+      settlements: recovery?.settlements ?? [],
+      coverage: recovery?.coverage ?? null,
       stopDecision: null,
       limitations: [],
     })
@@ -269,12 +301,18 @@ export async function runResearchDraft(
   const paperSignal = signal === undefined ? paperAbort.signal : AbortSignal.any([signal, paperAbort.signal])
   const workTitles = new Map(ingested.works.map(work => [work.academicWorkId, work.title]))
   let fatal: WorkflowLogError | undefined
-  let observedFulltextSettlements = 0
-  let observedAvailableFulltext = 0
-  let observedExtractionSettlements = 0
-  let observedCompletedPapers = 0
-  let observedEvidenceRecords = 0
-  let observedRejectedDrafts = 0
+  const resumedAttemptIds = new Set<WorkVersionId>([
+    ...papers.map(paperWorkVersionId),
+    ...failures.map(failure => failure.workVersionId),
+  ])
+  let observedFulltextSettlements = resumedAttemptIds.size
+  let observedAvailableFulltext = availableFulltextWorks
+  let observedExtractionSettlements = papers.length
+  let observedCompletedPapers = papers.length
+  let observedEvidenceRecords = admittedEvidence.length
+  let observedRejectedDrafts = papers.reduce((sum, result) => sum + (
+    result.status === 'extracted' || result.status === 'partially_extracted' || result.status === 'extraction_failed'
+      ? result.evidence.rejectedDrafts.length : 0), 0)
   const processPaper = async ({ paper, version }: typeof validated[number]) => {
     let fulltext = false
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
@@ -397,7 +435,7 @@ export async function runResearchDraft(
           ? result.evidence.rejectedDrafts.length : 0), 0),
     })
   }
-  let attempted = 0
+  let attempted = resumedAttemptIds.size
   let stopped = false
   const processGroup = async (group: readonly typeof validated[number][]) => {
     const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
@@ -459,12 +497,73 @@ export async function runResearchDraft(
     } else {
       let scheduling: CandidateScheduling = candidateScheduling
       const byVersion = new Map(validated.map(candidate => [candidate.paper.workVersionId, candidate]))
-      const scheduled: WorkVersionId[] = []
-      let completedBatchCount = 0
-      let consecutiveBatchesWithoutEvidence = 0
+      const scheduled: WorkVersionId[] = [...(recovery?.scheduledWorkVersionIds ?? [])]
+      let completedBatchCount = recovery?.completedBatchCount ?? 0
+      let consecutiveBatchesWithoutEvidence = recovery?.consecutiveBatchesWithoutEvidence ?? 0
       // Multiple approved query directions make up the same initial search round. Count
       // completed rounds from the plan, never from the number of executed expressions.
-      let completedSearchRounds = Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
+      let completedSearchRounds = recovery?.completedSearchRounds
+        ?? Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
+      const persistCheckpoint = (pendingBatchIndex: number | null): void => {
+        adapters.onRecoveryCheckpoint?.({
+          schemaVersion: 1,
+          retrievalRunId,
+          startedAt,
+          executedQueries,
+          search,
+          works: ingested.works,
+          versions: ingested.versions,
+          candidates: validated.map(({ paper, version }) => ({ ...paper, version })),
+          plan: scheduling.plan,
+          assessments: scheduling.assessments,
+          ranking: scheduling.ranking,
+          policy: scheduling.policy,
+          rounds: queryWorkflow?.rounds ?? [],
+          decisions: queryWorkflow?.decisions ?? [],
+          settlements: queryWorkflow?.settlements ?? [],
+          coverage: queryWorkflow?.coverage ?? null,
+          papers,
+          paperFailures: failures,
+          providerFailures,
+          availableFulltextWorks,
+          selectionTruncated,
+          selectionLimitations,
+          scheduledWorkVersionIds: scheduled,
+          completedBatchCount,
+          consecutiveBatchesWithoutEvidence,
+          completedSearchRounds,
+          pendingBatchIndex,
+        })
+      }
+      const settleBatch = async (batchIndex: number, workVersionIds: readonly WorkVersionId[]): Promise<void> => {
+        const group = workVersionIds.map((workVersionId) => {
+          const candidate = byVersion.get(workVersionId)
+          if (candidate === undefined) throw new Error('Scheduled candidate has no selected full-text handoff.')
+          return candidate
+        })
+        const evidenceBefore = admittedEvidence.length
+        await processGroup(group)
+        completedBatchCount += 1
+        consecutiveBatchesWithoutEvidence = admittedEvidence.length === evidenceBefore
+          ? consecutiveBatchesWithoutEvidence + 1 : 0
+        const settlementCoverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready',
+          scheduling.policy.minimumQuestionSupportingWorks, adapters.now())
+        const settlementEvent: AcademicBatchSettlementEvent = {
+          retrievalRunId, batchIndex, admittedEvidence: admittedEvidence.length,
+          coverage: settlementCoverage,
+          completedAt: adapters.now(),
+        }
+        adapters.onSettlement?.({ kind: 'batch-settlement', event: settlementEvent })
+        updateQueryWorkflow({ coverage: settlementCoverage,
+          settlements: [...(queryWorkflow?.settlements ?? []), settlementEvent] })
+        persistCheckpoint(null)
+      }
+      if (recovery?.pendingBatchIndex !== null && recovery?.pendingBatchIndex !== undefined) {
+        const pendingDecision = recovery.decisions.find(decision => decision.action === 'schedule_batch'
+          && decision.batchIndex === recovery.pendingBatchIndex)
+        if (pendingDecision === undefined) throw new Error('Recovery checkpoint has no matching pending batch decision.')
+        await settleBatch(recovery.pendingBatchIndex, pendingDecision.workVersionIds)
+      }
       while (!paperSignal.aborted) {
         const coverage = rankedCoverage(brief, papers,
           evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
@@ -501,7 +600,7 @@ export async function runResearchDraft(
           break
         }
         if (decision.action === 'search_evidence_gap') {
-          const replenish = adapters.replenishCandidates
+          const replenish = recovery === undefined ? adapters.replenishCandidates : undefined
           const nextRoundIndex = completedSearchRounds + 1
           if (replenish === undefined || nextRoundIndex > scheduling.plan.maximumSearchRounds) {
             stopped = true
@@ -553,23 +652,9 @@ export async function runResearchDraft(
           for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
           continue
         }
-        const group = decision.batch.workVersionIds.map((workVersionId) => {
-          const candidate = byVersion.get(workVersionId)
-          if (candidate === undefined) throw new Error('Scheduled candidate has no selected full-text handoff.')
-          return candidate
-        })
         scheduled.push(...decision.batch.workVersionIds)
-        const evidenceBefore = admittedEvidence.length
-        await processGroup(group)
-        completedBatchCount += 1
-        consecutiveBatchesWithoutEvidence = admittedEvidence.length === evidenceBefore
-          ? consecutiveBatchesWithoutEvidence + 1 : 0
-        const settlementEvent: AcademicBatchSettlementEvent = {
-          retrievalRunId, batchIndex: decision.batch.batchIndex, admittedEvidence: admittedEvidence.length,
-          completedAt: adapters.now(),
-        }
-        adapters.onSettlement?.({ kind: 'batch-settlement', event: settlementEvent })
-        updateQueryWorkflow({ settlements: [...(queryWorkflow?.settlements ?? []), settlementEvent] })
+        persistCheckpoint(decision.batch.batchIndex)
+        await settleBatch(decision.batch.batchIndex, decision.batch.workVersionIds)
         if (fatal !== undefined) break
       }
     }
@@ -786,6 +871,12 @@ function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
 
 function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)]
+}
+
+function paperWorkVersionId(paper: PaperEvidenceResult): WorkVersionId {
+  if (paper.status === 'excluded') return paper.exclusion.workVersionId
+  if (paper.status === 'paused') return paper.pause.workVersionId
+  return paper.version.workVersionId
 }
 
 /** Validate selected papers against the approved brief and one-version-per-work invariant, mutating the seen set. */

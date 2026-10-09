@@ -16,6 +16,7 @@ import type { AcademicWorkflowProgressObserver } from './progress.ts'
 import type { CandidateBatchPolicy } from './candidate-batches.ts'
 import type { AcademicSettlementObserver } from './settlement-events.ts'
 import type { AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'
+import type { AcademicRecoveryCheckpointObserver, AcademicResearchRecoveryCheckpoint } from './recovery-checkpoint.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
@@ -105,6 +106,8 @@ export interface DraftPipelineAdapters {
   readonly onSettlement?: AcademicSettlementObserver
   /** Observe complete Q5 facts for browser projection; subscriber failures do not interrupt research. */
   readonly onQueryWorkflow?: AcademicQueryWorkflowObserver
+  /** Persist a recovery checkpoint at every scheduled and settled batch boundary. */
+  readonly onRecoveryCheckpoint?: AcademicRecoveryCheckpointObserver
 }
 
 /** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
@@ -114,6 +117,8 @@ export interface DraftPipelineInput {
   readonly brief: ResearchBrief
   readonly searches: readonly DraftPipelineSearch[]
   readonly synthetic: boolean
+  /** A-S3 checkpoint; when present, retrieval and screening are not repeated. */
+  readonly recovery?: AcademicResearchRecoveryCheckpoint
 }
 
 /** A paper-local failure; raw transport/model errors are not copied into report text. */
