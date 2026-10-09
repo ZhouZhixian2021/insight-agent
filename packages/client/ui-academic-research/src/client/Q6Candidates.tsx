@@ -1,8 +1,8 @@
 /** Filters change only the visible subset; producer queue order and scoring remain intact. */
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import type { AcademicCandidateEvaluation } from '@deepseek-ai/dsh-academic-model'
-import type { Q6Sample } from './q6-types.ts'
+import type { AcademicQ6CandidateEvaluationView } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+import type { Q6CandidateData } from './q6-types.ts'
 import css from './RunPanel.module.css'
 
 const priorities = ['p0', 'p1', 'p2', 'excluded'] as const
@@ -10,15 +10,16 @@ const scores = ['topicRelevance', 'questionMatch', 'evidencePotential', 'methodM
 
 /**
  * Explain the authoritative queues using shared evaluations and trusted metadata.
- * @param props Synthetic input and localized copy.
+ * @param props Formal or synthetic candidate facts and localized copy.
  * @returns Read-only priority groups with local search and inspectable reasons.
  */
-export function Q6Candidates({ data, t }: PropsLocale<'academicRun'> & { readonly data: Q6Sample }) {
+export function Q6Candidates({ data, t }: PropsLocale<'academicRun'> & { readonly data: Q6CandidateData }) {
   const [query, setQuery] = useState('')
   const [priority, setPriority] = useState('all')
   const ranking = data.rankingResult
   const evaluations = new Map(ranking.evaluations.map(item => [item.workVersionId, item]))
-  const matches = (item: AcademicCandidateEvaluation) => [item.academicWorkId, item.workVersionId, t(`q6_${item.classification}`),
+  const matches = (item: AcademicQ6CandidateEvaluationView) => [item.academicWorkId, item.workVersionId,
+    data.works?.find(work => work.academicWorkId === item.academicWorkId)?.title ?? '', t(`q6_${item.classification}`),
     ...item.decisionReasons, ...item.matchedQuestions].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
   const visible = priorities.filter(key => priority === 'all' || priority === key)
   const noMatches = visible.every(key => ranking.queues[key].every((id) => {
@@ -33,7 +34,7 @@ export function Q6Candidates({ data, t }: PropsLocale<'academicRun'> & { readonl
         <option value="all">{t('q6_allQueues')}</option>{priorities.map(key => <option key={key} value={key}>{t(`q6_${key}`)}</option>)}
       </select></label>
     </div>
-    <p>{t('q6_missingTitles')}</p>
+    {data.works === undefined && <p>{t('q6_missingTitles')}</p>}
     {visible.map(key => <section key={key} aria-label={t(`q6_${key}`)}>
       <h4>{t(`q6_${key}`)} · {ranking.queues[key].length}</h4>
       {ranking.queues[key].length === 0 && <p>{t('q6_emptyQueue')}</p>}
@@ -42,8 +43,13 @@ export function Q6Candidates({ data, t }: PropsLocale<'academicRun'> & { readonl
         if (item === undefined) return <li key={id}>{id} · {t('q6_missingEvaluation')}</li>
         if (!matches(item)) return null
         const assessment = data.assessments.find(a => a.academicWorkId === item.academicWorkId)
+        const work = data.works?.find(w => w.academicWorkId === item.academicWorkId)
+        const version = data.versions?.find(v => v.workVersionId === item.workVersionId)
         return <li className={css.card} key={id} value={index + 1}>
-          <h5>{item.workVersionId}</h5><p>{item.academicWorkId} · {t(`q6_${item.classification}`)}</p>
+          <h5>{work?.title ?? item.workVersionId}</h5><p>{item.academicWorkId} · {item.workVersionId} · {t(`q6_${item.classification}`)}</p>
+          {work !== undefined && <p>{work.authors.join(', ')}</p>}
+          {version !== undefined && <p>{t('version')}: {version.versionType} · {version.versionLabel.status === 'available'
+            ? version.versionLabel.value : t('progressUnknown')}</p>}
           <p>{t('q6_totalScore')}: {item.score.total} · {t('q6_hardFilter')}: {t(`q6_${item.hardFilter.status}`)}</p>
           <p>{t('coveredQuestions')}: {item.matchedQuestions.join('；') || t('q6_none')}</p>
           <ul>{item.decisionReasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul>
