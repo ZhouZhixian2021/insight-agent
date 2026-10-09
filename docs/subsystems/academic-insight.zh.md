@@ -81,4 +81,6 @@ Source: [`packages/api/academic-research-controller/src/index.ts`](../../package
 
 逐题洞察由[分析库](../../packages/academic/analysis/README.zh.md)负责，通过[工作流](../../packages/academic/workflow/README.zh.md)调用模型。`AcademicSynthesisInput` 绑定批准的 Brief 版本、RetrievalRun 身份、准入分析记录与观察到的覆盖统计。`AcademicSynthesisDraft` 包含带引用的陈述、每个问题按序对应的回答、章节及局限。Remote 增加 `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`；检索统计仍只描述检索。问题回答不代表语义审核通过。
 
+工作流导出 `AcademicResearchRecoveryState` 契约和纯 A-S2 折叠函数 `reconstructAcademicResearchRecoveryState()`。输入完整、有序的 Session 日志以及准确运行／Brief 身份后，它会重建已批准计划、已完成批次、有序待处理候选、最近一次已提交的覆盖和运行终态。A-S3 在排序批次边界增加持久化的可执行检查点。`run` 和 `runStream` 接受可选的 `resumeRetrievalRunId`；Controller 取得 Session 写入句柄、校验最近检查点、跳过检索和筛选、保留原运行身份、避开已结算批次，并把一个未结算批次作为整体重新执行。没有检查点载荷的历史未完成运行会明确返回 `candidate_state_missing`。
+
 工作流在分析前保存通过原文核对的抽取结果，以 `admittedEvidence` 交给报告评测。后端报告追加实际检索披露，并返回可选的 `report.retrievalDisclosureIncluded: true`；客户端据此原样保留 Markdown，不再追加第二份附录。全文不可用的论文仍保留身份核验成功；`resolve_fulltext` 失败影响全文阶段，并在引用说明中保留分类。

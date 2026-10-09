@@ -390,7 +390,7 @@ describe('AcademicResearchController', () => {
     expect(result.report).not.toBeNull()
     expect(fixture.sessionEvents.map(([name]) => name)).toEqual(expect.arrayContaining([
       'academic/search-plan', 'academic/candidate-batch-decision',
-      'academic/candidate-batch-settlement', 'academic/run-settlement',
+      'academic/recovery-checkpoint', 'academic/candidate-batch-settlement', 'academic/run-settlement',
     ]))
     expect(fixture.sessionEvents.some(([name, event]) => name === 'academic/candidate-batch-decision'
       && (event as { action?: string }).action === 'search_evidence_gap')).toBe(true)

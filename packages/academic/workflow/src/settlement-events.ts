@@ -1,6 +1,7 @@
 /** Durable Q5 scheduling settlement facts and the approved search-plan event. */
 import type { ResearchBriefId, RetrievalRunId, SearchQueryId } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent } from './query-workflow.ts'
+import type { AcademicResearchRecoveryCheckpoint } from './recovery-checkpoint.ts'
 
 /** One stable search-query identity persisted with the approved plan so a resumed run reuses it. */
 export interface AcademicSearchPlanQueryEvent {
@@ -44,6 +45,8 @@ declare module '@deepseek-ai/dsh-session/types' {
     'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
     /** Log-only terminal settlement of one research run. */
     'academic/run-settlement': AcademicRunSettlementEvent
+    /** Durable A-S3 state captured at a scheduled or settled batch boundary. */
+    'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
   }
 }
 

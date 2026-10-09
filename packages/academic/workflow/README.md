@@ -116,7 +116,7 @@ No model cache policy changes.
 
 ## Known Limitations and Deferred Work
 
-- This library provides a bounded explicit-query draft pipeline, paper handoff and opt-in model adapter. Session logging covers model requests and settlements; the returned RetrievalRun, evidence/card identities, and complete workflow state are not persisted for recovery. Adaptive query planning, workflow-level recovery and final semantic review remain subsequent work; a source provider may repeat transient transport attempts within its own configured bound. It does not prove scholarly identity or distinguish format changes from content revisions.
+- This library provides a bounded explicit-query draft pipeline, paper handoff and opt-in model adapter. The `@deepseek-ai/dsh-academic-workflow/recovery` type entry fixes the normalized recovery contract, while the root `reconstructAcademicResearchRecoveryState()` export performs pure A-S2 reconstruction from one complete ordered Session log. A-S3 persists a JSON-safe executable checkpoint before and after every ranked batch. The Session-backed Controller accepts `resumeRetrievalRunId`, acquires the Session write handle, validates the checkpoint against the approved plan and committed batch history, skips retrieval and screening, preserves the original run identity, does not repeat settled batches, and retries one unsettled batch as a unit. Historical incomplete runs without a checkpoint fail with `candidate_state_missing`. A resumed retained pool does not start a new evidence-gap search round because source-runtime resolution caches are not persisted. Adaptive query planning and final semantic review remain subsequent work; a source provider may repeat transient transport attempts within its own configured bound. It does not prove scholarly identity or distinguish format changes from content revisions.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -124,6 +124,6 @@ No model cache policy changes.
 <details>
 <summary>Working context for maintainers</summary>
 
-See the [paper handoff decision](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.md), the [explicit query orchestration decision](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.md), the [evidence recovery decision](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.md), the [hybrid retrieval decision](../../../.agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.md), and [tests](tests/handoff.spec.ts).
+See the [paper handoff decision](../../../.agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.md), the [explicit query orchestration decision](../../../.agents/notes/implemented/architecture/2026-09-18-academic-explicit-query-orchestration.md), the [evidence recovery decision](../../../.agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.md), the [hybrid retrieval decision](../../../.agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.md), the [research recovery-state decision](../../../.agents/notes/implemented/architecture/2026-10-09-academic-research-recovery-state.md), and [tests](tests/handoff.spec.ts).
 
 </details>

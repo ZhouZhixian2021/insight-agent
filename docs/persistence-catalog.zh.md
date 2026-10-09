@@ -96,6 +96,28 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 ### `academic/*`
 
+<a id="academiccandidate-batch-decision--log-only"></a>
+
+#### `academic/candidate-batch-decision` — log-only
+
+```ts persistence-catalog
+/** Log-only Q5 scheduling decision (schedule, gap round, or stop). */
+'academic/candidate-batch-decision': AcademicBatchDecisionEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:43`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academiccandidate-batch-settlement--log-only"></a>
+
+#### `academic/candidate-batch-settlement` — log-only
+
+```ts persistence-catalog
+/** Log-only Q5 batch settlement after one batch finishes processing. */
+'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
+
 <a id="academicevidence-request--log-only"></a>
 
 #### `academic/evidence-request` — log-only
@@ -117,6 +139,39 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 ```
 
 来源：[`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicrecovery-checkpoint--log-only"></a>
+
+#### `academic/recovery-checkpoint` — log-only
+
+```ts persistence-catalog
+/** Durable A-S3 state captured at a scheduled or settled batch boundary. */
+'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:49`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academicrun-settlement--log-only"></a>
+
+#### `academic/run-settlement` — log-only
+
+```ts persistence-catalog
+/** Log-only terminal settlement of one research run. */
+'academic/run-settlement': AcademicRunSettlementEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:47`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academicsearch-plan--log-only"></a>
+
+#### `academic/search-plan` — log-only
+
+```ts persistence-catalog
+/** Log-only approved search plan with stable query identities for cross-restart recovery. */
+'academic/search-plan': AcademicSearchPlanEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:41`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 

@@ -27,6 +27,8 @@ export interface AcademicResearchRunRequest {
   readonly sessionId: SessionId
   /** Identity returned by plan preview; a newer approved plan requires another preview. */
   readonly researchBriefId: ResearchBriefId
+  /** Existing interrupted run to continue from its latest durable checkpoint. Omit to start a new run. */
+  readonly resumeRetrievalRunId?: RetrievalRunId
   /** Global deduplicated candidate-work bound for the complete run. */
   readonly maxResults?: number
   readonly synthetic: boolean
@@ -167,6 +169,7 @@ export type AcademicPaperResultView =
       readonly draftIndex: number
       readonly segmentIndex: number
       readonly code: 'EVIDENCE_EMPTY_EXCERPT' | 'EVIDENCE_INVALID_SEGMENT_INDEX' | 'EVIDENCE_EXCERPT_NOT_FOUND'
+        | 'EVIDENCE_INVALID_QUESTION_INDEX'
       readonly reason: string
     }[]
   }

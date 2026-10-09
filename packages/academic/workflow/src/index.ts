@@ -65,3 +65,19 @@ export type {
 } from './settlement-events.ts'
 export type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent,
   AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'
+export type {
+  AcademicCompletedBatchRecoveryState,
+  AcademicPendingCandidateRecoveryState,
+  AcademicResearchRecoveryFailure,
+  AcademicResearchRecoveryFailureCode,
+  AcademicResearchRecoveryInput,
+  AcademicResearchRecoveryState,
+  AcademicResearchRecoveryTarget,
+} from './recovery.ts'
+export { reconstructAcademicResearchRecoveryState } from './recovery.ts'
+export type {
+  AcademicRecoveryCandidateCheckpoint,
+  AcademicRecoveryCheckpointObserver,
+  AcademicRecoverySearchCheckpoint,
+  AcademicResearchRecoveryCheckpoint,
+} from './recovery-checkpoint.ts'

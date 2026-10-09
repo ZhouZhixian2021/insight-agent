@@ -3543,15 +3543,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicBatchSettlementEvent',
-    declaration: 'export interface AcademicBatchSettlementEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number;\n    readonly admittedEvidence: number;\n    readonly completedAt: string;\n}',
-  },
-  {
-    name: 'AcademicCandidateEvaluation',
-    declaration: 'export interface AcademicCandidateEvaluation {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly discoveredBy: readonly SearchQueryId[];\n    readonly classification: CandidateClassification;\n    readonly hardFilter: CandidateHardFilterResult;\n    readonly score: CandidateScoreBreakdown;\n    readonly priority: CandidatePriority;\n    readonly matchedQuestions: readonly string[];\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly diversityTags: readonly string[];\n    readonly decisionReasons: readonly [\n        string,\n        ...string[]\n    ];\n}',
-  },
-  {
-    name: 'AcademicCandidateRankingResult',
-    declaration: 'export interface AcademicCandidateRankingResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly evaluations: readonly AcademicCandidateEvaluation[];\n    readonly queues: CandidatePriorityQueues;\n    readonly limitations: readonly string[];\n}',
+    declaration: 'export interface AcademicBatchSettlementEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number;\n    readonly admittedEvidence: number;\n    readonly coverage?: ResearchQuestionCoverageResult;\n    readonly completedAt: string;\n}',
   },
   {
     name: 'AcademicClaimAssessmentView',
@@ -3595,7 +3587,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicPaperResultView',
-    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
+    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\' | \'EVIDENCE_INVALID_QUESTION_INDEX\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
   },
   {
     name: 'AcademicPlannedRetrieval',
@@ -3606,12 +3598,24 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
   },
   {
+    name: 'AcademicQ6CandidateAssessmentView',
+    declaration: 'export interface AcademicQ6CandidateAssessmentView {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6CandidateEvaluationView',
+    declaration: 'export interface AcademicQ6CandidateEvaluationView {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly discoveredBy: readonly SearchQueryId[];\n    readonly classification: CandidateClassification;\n    readonly hardFilter: {\n        readonly status: \'eligible\';\n        readonly reasons: readonly CandidateHardFilterReason[];\n    } | {\n        readonly status: \'excluded\';\n        readonly reasons: readonly CandidateHardFilterReason[];\n    };\n    readonly score: CandidateScoreBreakdown;\n    readonly priority: CandidatePriority;\n    readonly matchedQuestions: readonly string[];\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly diversityTags: readonly string[];\n    readonly decisionReasons: readonly string[];\n}',
+  },
+  {
     name: 'AcademicQ6CandidateView',
-    declaration: 'export interface AcademicQ6CandidateView {\n    readonly work: AcademicWork;\n    readonly version: WorkVersion;\n    readonly assessment: CandidateAssessment;\n    readonly evaluation: AcademicCandidateEvaluation;\n}',
+    declaration: 'export interface AcademicQ6CandidateView {\n    readonly work: AcademicWork;\n    readonly version: WorkVersion;\n    readonly assessment: AcademicQ6CandidateAssessmentView;\n    readonly evaluation: AcademicQ6CandidateEvaluationView;\n}',
   },
   {
     name: 'AcademicQ6Projection',
-    declaration: 'export interface AcademicQ6Projection {\n    readonly schemaVersion: 1;\n    readonly sessionId: SessionId;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly sequence: number;\n    readonly updatedAt: string;\n    readonly status: \'running\' | \'settled\' | \'cancelled\';\n    readonly plan: HybridSearchPlan;\n    readonly candidates: AcademicQ6Section<{\n        readonly items: readonly AcademicQ6CandidateView[];\n        readonly ranking: AcademicCandidateRankingResult;\n    }>;\n    readonly rounds: AcademicQ6Section<readonly HybridSearchRound[]>;\n    readonly batches: AcademicQ6Section<{\n        readonly decisions: readonly AcademicBatchDecisionEvent[];\n        readonly settlements: readonly AcademicBatchSettlementEvent[];\n    }>;\n    readonly coverage: AcademicQ6Section<ResearchQuestionCoverageResult>;\n    readonly stopDecision: AcademicQ6Section<SearchStopDecision>;\n    readonly limitations: readonly string[];\n}',
+    declaration: 'export interface AcademicQ6Projection {\n    readonly schemaVersion: 1;\n    readonly sessionId: SessionId;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly sequence: number;\n    readonly updatedAt: string;\n    readonly status: \'running\' | \'settled\' | \'cancelled\';\n    readonly plan: HybridSearchPlan;\n    readonly candidates: AcademicQ6Section<{\n        readonly items: readonly AcademicQ6CandidateView[];\n        readonly ranking: AcademicQ6RankingView;\n    }>;\n    readonly rounds: AcademicQ6Section<readonly HybridSearchRound[]>;\n    readonly batches: AcademicQ6Section<{\n        readonly decisions: readonly AcademicBatchDecisionEvent[];\n        readonly settlements: readonly AcademicBatchSettlementEvent[];\n    }>;\n    readonly coverage: AcademicQ6Section<ResearchQuestionCoverageResult>;\n    readonly stopDecision: AcademicQ6Section<SearchStopDecision>;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6RankingView',
+    declaration: 'export interface AcademicQ6RankingView {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly queues: CandidatePriorityQueues;\n    readonly limitations: readonly string[];\n}',
   },
   {
     name: 'AcademicQ6Section',
@@ -3659,7 +3663,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunRequest',
-    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
+    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly resumeRetrievalRunId?: RetrievalRunId;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
   },
   {
     name: 'AcademicResearchRunValue',
@@ -4034,10 +4038,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
   },
   {
-    name: 'CandidateAssessment',
-    declaration: 'export interface CandidateAssessment {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly [\n        string,\n        ...string[]\n    ];\n}',
-  },
-  {
     name: 'CandidateClassification',
     declaration: 'export type CandidateClassification = \'core_method\' | \'empirical_evaluation\' | \'benchmark_or_dataset\' | \'review\' | \'application\' | \'adjacent_technology\' | \'background\' | \'irrelevant\';',
   },
@@ -4052,10 +4052,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CandidateHardFilterReasonCode',
     declaration: 'export type CandidateHardFilterReasonCode = \'work_retracted\' | \'version_retracted\' | \'preprint_not_allowed\' | \'work_type_not_included\' | \'before_publication_window\' | \'after_publication_window\' | \'publication_date_unknown\' | \'required_term_missing\' | \'excluded_term_matched\' | \'inclusion_rule_not_met\' | \'exclusion_rule_matched\';',
-  },
-  {
-    name: 'CandidateHardFilterResult',
-    declaration: 'export type CandidateHardFilterResult = {\n    readonly status: \'eligible\';\n    readonly reasons: readonly CandidateHardFilterReason[];\n} | {\n    readonly status: \'excluded\';\n    readonly reasons: readonly [\n        CandidateHardFilterReason,\n        ...CandidateHardFilterReason[]\n    ];\n};',
   },
   {
     name: 'CandidatePriority',
