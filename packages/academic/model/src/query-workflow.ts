@@ -1,6 +1,7 @@
 /** Provider-neutral contracts for planned queries, candidate ranking, coverage, and bounded search rounds. */
 import type {
   AcademicWorkId,
+  Availability,
   EvidenceId,
   ExecutableResearchBrief,
   PublicationWindow,
@@ -145,10 +146,66 @@ export type CandidateClassification =
 /** Queue priority after hard filtering and explainable scoring. */
 export type CandidatePriority = 'p0' | 'p1' | 'p2' | 'excluded'
 
-/** Result of date, work-type, retraction, and explicit inclusion/exclusion checks. */
+/** Stable reason codes for deterministic candidate rejection and localized presentation. */
+export type CandidateHardFilterReasonCode =
+  | 'work_retracted'
+  | 'version_retracted'
+  | 'preprint_not_allowed'
+  | 'work_type_not_included'
+  | 'before_publication_window'
+  | 'after_publication_window'
+  | 'publication_date_unknown'
+  | 'required_term_missing'
+  | 'excluded_term_matched'
+  | 'inclusion_rule_not_met'
+  | 'exclusion_rule_matched'
+
+/** One stable rejection code with optional reviewed detail for audit and presentation. */
+export interface CandidateHardFilterReason {
+  readonly code: CandidateHardFilterReasonCode
+  readonly detail?: string
+}
+
+/** Current Controller-prepared full-text resolution fact; unresolved does not prove that no full text exists. */
+export type CandidateFulltextAvailability =
+  | { readonly status: 'resolvable' }
+  | { readonly status: 'unresolved'; readonly reason: string }
+  | { readonly status: 'unknown'; readonly reason: string }
+
+/** Reviewed semantic facts supplied for one verified work after Q3 ingestion. */
+export interface CandidateAssessment {
+  readonly academicWorkId: AcademicWorkId
+  /** Trusted scholarly-provider abstract only; Web discovery snippets are never accepted here. */
+  readonly abstract: Availability<string>
+  /** Trusted scholarly-provider keywords only; unavailable values retain their explicit state. */
+  readonly keywords: Availability<readonly string[]>
+  readonly fulltextAvailability: CandidateFulltextAvailability
+  readonly matchedQuestions: readonly string[]
+  readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
+  /** Unit-interval assessments; the ranker applies the reviewed policy weights. */
+  readonly topicRelevance: number
+  readonly evidencePotential: number
+  readonly methodMatch: number
+  readonly sourceQuality: number
+  readonly recency: number
+  /** One decision per natural-language rule, in plan order; null defers it to full-text scope validation. */
+  readonly inclusionRuleMatches: readonly (boolean | null)[]
+  readonly exclusionRuleMatches: readonly (boolean | null)[]
+  /** Reviewed method or topic labels used to diversify each priority queue. */
+  readonly diversityTags: readonly string[]
+  readonly reasons: readonly [string, ...string[]]
+}
+
+/** Result of date, work-type, retraction, and reviewed lexical checks. */
 export type CandidateHardFilterResult =
-  | { readonly status: 'eligible'; readonly reasons: readonly string[] }
-  | { readonly status: 'excluded'; readonly reasons: readonly [string, ...string[]] }
+  | {
+    readonly status: 'eligible'
+    readonly reasons: readonly CandidateHardFilterReason[]
+  }
+  | {
+    readonly status: 'excluded'
+    readonly reasons: readonly [CandidateHardFilterReason, ...CandidateHardFilterReason[]]
+  }
 
 /** B-owned candidate evaluation returned through A's shared contract. */
 export interface AcademicCandidateEvaluation {
@@ -161,8 +218,27 @@ export interface AcademicCandidateEvaluation {
   readonly score: CandidateScoreBreakdown
   readonly priority: CandidatePriority
   readonly matchedQuestions: readonly string[]
+  readonly fulltextAvailability: CandidateFulltextAvailability
   readonly diversityTags: readonly string[]
   readonly decisionReasons: readonly [string, ...string[]]
+}
+
+/** Authoritative, ordered queues consumed by A's batch scheduler and C's explanation UI. */
+export interface CandidatePriorityQueues {
+  readonly p0: readonly WorkVersionId[]
+  readonly p1: readonly WorkVersionId[]
+  readonly p2: readonly WorkVersionId[]
+  readonly excluded: readonly WorkVersionId[]
+}
+
+/** B-owned complete ranking result bound to one exact reviewed plan. */
+export interface AcademicCandidateRankingResult {
+  readonly schemaVersion: 1
+  readonly researchBriefId: ResearchBriefId
+  readonly researchBriefVersion: number
+  readonly evaluations: readonly AcademicCandidateEvaluation[]
+  readonly queues: CandidatePriorityQueues
+  readonly limitations: readonly string[]
 }
 
 /** Coverage state for one exact question in the bound ResearchBrief version. */
@@ -357,6 +433,93 @@ export function candidatePriorityForScore(
   return 'p2'
 }
 
+/**
+ * Validates and copies one complete candidate-ranking result against its reviewed plan and questions.
+ * @param result - Evaluations, ordered priority queues, and non-blocking limitations from B's ranker.
+ * @param plan - Exact reviewed plan used to produce the result.
+ * @param approvedQuestions - Exact questions from the plan-bound ResearchBrief version.
+ * @returns A copied result with one correctly queued entry for every evaluation.
+ * @throws {RangeError} Plan binding, scores, priorities, provenance, or queue membership are inconsistent.
+ */
+export function createCandidateRankingResult(
+  result: AcademicCandidateRankingResult,
+  plan: HybridSearchPlan,
+  approvedQuestions: readonly string[],
+): AcademicCandidateRankingResult {
+  if (result.researchBriefId !== plan.researchBriefId
+    || result.researchBriefVersion !== plan.researchBriefVersion) {
+    throw new RangeError('candidate ranking result must target the reviewed plan')
+  }
+  const queryIds = new Set(plan.queries.map(query => query.searchQueryId))
+  const questions = new Set(approvedQuestions)
+  const evaluatedWorks = new Set<AcademicWorkId>()
+  const evaluations = new Map<WorkVersionId, AcademicCandidateEvaluation>()
+  for (const evaluation of result.evaluations) {
+    if (evaluations.has(evaluation.workVersionId)) {
+      throw new RangeError('candidate evaluations must contain distinct work versions')
+    }
+    if (evaluatedWorks.has(evaluation.academicWorkId)) {
+      throw new RangeError('candidate evaluations must contain distinct works')
+    }
+    evaluatedWorks.add(evaluation.academicWorkId)
+    if (evaluation.discoveredBy.length === 0
+      || new Set(evaluation.discoveredBy).size !== evaluation.discoveredBy.length) {
+      throw new RangeError('candidate provenance must contain distinct planned queries')
+    }
+    for (const queryId of evaluation.discoveredBy) {
+      if (!queryIds.has(queryId)) throw new RangeError('candidate provenance must reference a planned query')
+    }
+    for (const question of evaluation.matchedQuestions) {
+      if (!questions.has(question)) throw new RangeError('matchedQuestions must use exact reviewed questions')
+    }
+    const { total, ...values } = evaluation.score
+    if (createCandidateScoreBreakdown(values, plan.rankingPolicy).total !== total) {
+      throw new RangeError('candidate score total must equal its visible components')
+    }
+    const expectedPriority = candidatePriorityForScore(total,
+      evaluation.hardFilter.status === 'excluded', plan.rankingPolicy)
+    if (evaluation.priority !== expectedPriority) {
+      throw new RangeError('candidate priority must match its hard filter and score')
+    }
+    evaluations.set(evaluation.workVersionId, evaluation)
+  }
+  const queued = new Set<WorkVersionId>()
+  for (const priority of candidatePriorityKeys) {
+    for (const workVersionId of result.queues[priority]) {
+      if (queued.has(workVersionId)) throw new RangeError('a candidate can appear in only one priority queue')
+      const evaluation = evaluations.get(workVersionId)
+      if (evaluation === undefined) throw new RangeError('priority queues must reference candidate evaluations')
+      if (evaluation.priority !== priority) throw new RangeError('candidate queue must match its priority')
+      queued.add(workVersionId)
+    }
+  }
+  if (queued.size !== evaluations.size) throw new RangeError('every candidate evaluation must appear in one queue')
+  return {
+    ...result,
+    evaluations: result.evaluations.map((evaluation) => {
+      const hardFilter: CandidateHardFilterResult = evaluation.hardFilter.status === 'excluded'
+        ? { status: 'excluded', reasons: evaluation.hardFilter.reasons.map(reason => ({ ...reason })) as [
+          CandidateHardFilterReason, ...CandidateHardFilterReason[]] }
+        : { status: 'eligible', reasons: evaluation.hardFilter.reasons.map(reason => ({ ...reason })) }
+      return {
+        ...evaluation,
+        discoveredBy: [...evaluation.discoveredBy],
+        hardFilter,
+        matchedQuestions: [...evaluation.matchedQuestions],
+        diversityTags: [...evaluation.diversityTags],
+        decisionReasons: [...evaluation.decisionReasons] as [string, ...string[]],
+      }
+    }),
+    queues: {
+      p0: [...result.queues.p0],
+      p1: [...result.queues.p1],
+      p2: [...result.queues.p2],
+      excluded: [...result.queues.excluded],
+    },
+    limitations: [...result.limitations],
+  }
+}
+
 const candidateScoreKeys = [
   'topicRelevance',
   'questionMatch',
@@ -367,6 +530,8 @@ const candidateScoreKeys = [
   'recency',
   'fulltextAvailability',
 ] as const
+
+const candidatePriorityKeys = ['p0', 'p1', 'p2', 'excluded'] as const
 
 function validateRankingPolicy(policy: CandidateRankingPolicy): void {
   const total = candidateScoreKeys.reduce((sum, key) => {

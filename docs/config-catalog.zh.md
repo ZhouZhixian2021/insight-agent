@@ -343,10 +343,18 @@ export interface Config {
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
   readonly synthesisRetryInitialDelayMs?: number
+  /** Maximum P0 candidates scheduled in the first ranked full-text batch. Defaults to 8. */
+  readonly initialCandidateBatchSize?: number
+  /** Maximum candidates scheduled to address observed question gaps. Defaults to 4. */
+  readonly evidenceGapCandidateBatchSize?: number
+  /** Maximum candidates scheduled when the inclusion target is still unmet. Defaults to 4. */
+  readonly replenishmentCandidateBatchSize?: number
+  /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
+  readonly minimumQuestionSupportingWorks?: number
 }
 ```
 
-来源：[`packages/api/academic-research-controller/src/index.ts:32`](../packages/api/academic-research-controller/src/index.ts)
+来源：[`packages/api/academic-research-controller/src/index.ts:35`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

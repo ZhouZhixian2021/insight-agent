@@ -43,10 +43,23 @@ export type {
 } from './hybrid-search.ts'
 export { validateSynthesisRequirements as validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-analysis'
 export { selectResearchPapers } from './selection.ts'
+export { planCandidateBatch } from './candidate-batches.ts'
+export type {
+  CandidateBatchDecision,
+  CandidateBatchPlanningInput,
+  CandidateBatchPolicy,
+  CandidateBatchReason,
+  CandidateFulltextBatch,
+} from './candidate-batches.ts'
 export { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 export type { PaperCandidateResolver } from './selection.ts'
 export type { AcademicResearchDraftRequest, AcademicResearchDraftResult } from './entry.ts'
 export type {
+  CandidateScheduling,
   DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftPipelineSearch, DraftSearchResult,
-  PaperProcessingFailure, PaperSelectionResult, SelectedPaper,
+  PaperProcessingFailure, PaperSelectionResult, ReplenishedCandidates, SelectedPaper,
 } from './pipeline-types.ts'
+export type {
+  AcademicBatchDecisionEvent, AcademicBatchSettlementEvent, AcademicRunSettlementEvent,
+  AcademicSearchPlanEvent, AcademicSearchPlanQueryEvent, AcademicSettlementFact, AcademicSettlementObserver,
+} from './settlement-events.ts'

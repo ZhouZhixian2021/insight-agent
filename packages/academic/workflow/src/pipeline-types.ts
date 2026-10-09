@@ -1,5 +1,6 @@
 /** Explicit adapters and results for one bounded research draft pass. */
-import type { ResearchBrief, RetrievalRun, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicCandidateRankingResult, HybridSearchPlan, ResearchBrief, ResearchQuestionCoverageResult,
+  RetrievalRun, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
@@ -11,6 +12,8 @@ import type { PaperEvidenceResult } from './types.ts'
 import type { HybridSearchObservation, HybridSearchProgressObserver } from './hybrid-search.ts'
 import type { HybridRunObservation } from './hybrid-run.ts'
 import type { AcademicWorkflowProgressObserver } from './progress.ts'
+import type { CandidateBatchPolicy } from './candidate-batches.ts'
+import type { AcademicSettlementObserver } from './settlement-events.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
@@ -36,6 +39,25 @@ export interface PaperSelectionResult {
   readonly papers: readonly SelectedPaper[]
   /** True when the selector omitted another eligible, resolvable candidate. */
   readonly truncated: boolean
+  /** Optional Q5 inputs; when present, the pipeline schedules these papers in ranked batches. */
+  readonly candidateScheduling?: CandidateScheduling
+}
+
+/** Q5 ranked-scheduling inputs carried through one bounded pass. */
+export interface CandidateScheduling {
+  readonly plan: HybridSearchPlan
+  readonly ranking: AcademicCandidateRankingResult
+  readonly policy: CandidateBatchPolicy
+}
+
+/** Result of one evidence-gap replenishment round: an extended plan, merged re-ranking, and newly selected papers. */
+export interface ReplenishedCandidates {
+  /** Extended plan with the gap round appended, plus the re-ranked merged candidate queues. */
+  readonly scheduling: CandidateScheduling
+  /** Merged ingestion containing works and versions from every completed round. */
+  readonly ingested: IngestOutcome
+  /** Newly selected papers from this gap round, ready for full-text processing. */
+  readonly papers: readonly SelectedPaper[]
 }
 
 /** Hard safety bound for explicit queries in one draft pass. */
@@ -58,12 +80,26 @@ export interface DraftPipelineAdapters {
    * Do not apply maximumIncludedWorks here.
    */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
+  /**
+   * Execute one evidence-gap replenishment round and re-rank the merged candidate pool.
+   * Invoked only when Q5 scheduling requests more evidence and another search round remains.
+   * Omitted adapters keep the single-round behavior and stop with an evidence-gap limitation.
+   */
+  readonly replenishCandidates?: (
+    scheduling: CandidateScheduling,
+    ingested: IngestOutcome,
+    coverage: ResearchQuestionCoverageResult,
+    nextRoundIndex: number,
+    signal?: AbortSignal,
+  ) => Promise<ReplenishedCandidates>
   readonly fetcher: AcademicWebFetcher
   readonly generator: PaperEvidenceGenerator
   /** Current UTC ISO time for run settlement, acquisition, and report evaluation. */
   readonly now: () => string
   /** Observe complete run-local progress snapshots; subscriber failures do not interrupt research. */
   readonly onProgress?: AcademicWorkflowProgressObserver
+  /** Observe Q5 scheduling decisions and batch settlements; subscriber failures do not interrupt research. */
+  readonly onSettlement?: AcademicSettlementObserver
 }
 
 /** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */

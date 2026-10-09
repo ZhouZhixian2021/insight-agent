@@ -1,37 +1,11 @@
 /** Explainable candidate evaluation over verified, deduplicated scholarly works. */
-import { candidatePriorityForScore, createCandidateScoreBreakdown, type AcademicCandidateEvaluation,
-  type AcademicWork, type AcademicWorkId, type CandidateClassification, type CandidatePriority,
-  type ExecutableResearchBrief, type HybridSearchPlan, type PartialDate, type WorkVersion,
+import { candidatePriorityForScore, createCandidateRankingResult, createCandidateScoreBreakdown,
+  type AcademicCandidateEvaluation, type AcademicCandidateRankingResult, type AcademicWork,
+  type CandidateAssessment, type CandidateClassification, type CandidateHardFilterReason,
+  type ExecutableResearchBrief, type HybridSearchPlan, type PartialDate,
+  type WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 import type { PlannedSearchRoundResult } from './execute.ts'
-
-/** Reviewed semantic facts supplied after title, abstract, keyword, and metadata inspection. */
-export interface CandidateAssessment {
-  readonly academicWorkId: AcademicWorkId
-  readonly abstract: string | null
-  readonly keywords: readonly string[]
-  readonly matchedQuestions: readonly string[]
-  readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
-  /** Unit-interval assessments; the ranker applies the approved policy weights. */
-  readonly topicRelevance: number
-  readonly evidencePotential: number
-  readonly methodMatch: number
-  readonly sourceQuality: number
-  readonly recency: number
-  readonly fulltextAvailable: boolean
-  /** One decision per approved natural-language rule, in plan order. */
-  readonly inclusionRuleMatches: readonly boolean[]
-  readonly exclusionRuleMatches: readonly boolean[]
-  /** Reviewed method or topic labels used to diversify each priority queue. */
-  readonly diversityTags: readonly string[]
-  readonly reasons: readonly [string, ...string[]]
-}
-
-/** Evaluations and complete priority queues; queue order promotes distinct sources, teams, and topics. */
-export interface CandidateRankingResult {
-  readonly evaluations: readonly AcademicCandidateEvaluation[]
-  readonly queues: Readonly<Record<CandidatePriority, readonly AcademicCandidateEvaluation[]>>
-}
 
 /**
  * Evaluate each verified work against the exact approved Brief and plan.
@@ -49,7 +23,7 @@ export function rankPlannedCandidates(
   brief: ExecutableResearchBrief,
   round: PlannedSearchRoundResult,
   assessments: readonly CandidateAssessment[],
-): CandidateRankingResult {
+): AcademicCandidateRankingResult {
   if (brief.researchBriefId !== plan.researchBriefId || brief.version !== plan.researchBriefVersion
     || brief.approval.approvedBriefVersion !== brief.version) {
     throw new RangeError('ranking requires the approved Brief version bound to the plan')
@@ -73,8 +47,9 @@ export function rankPlannedCandidates(
     validateAssessment(assessment, plan, approvedQuestions)
     const exclusions = hardExclusions(work, version, plan, brief, assessment)
     const hardFilter = exclusions.length === 0
-      ? { status: 'eligible' as const, reasons: ['Approved metadata and rules match.'] }
-      : { status: 'excluded' as const, reasons: exclusions as [string, ...string[]] }
+      ? { status: 'eligible' as const, reasons: [] }
+      : { status: 'excluded' as const,
+        reasons: exclusions as [CandidateHardFilterReason, ...CandidateHardFilterReason[]] }
     const score = createCandidateScoreBreakdown({
       topicRelevance: points(plan.rankingPolicy.weights.topicRelevance, assessment.topicRelevance),
       questionMatch: points(plan.rankingPolicy.weights.questionMatch,
@@ -85,7 +60,7 @@ export function rankPlannedCandidates(
       sourceQuality: points(plan.rankingPolicy.weights.sourceQuality, assessment.sourceQuality),
       recency: points(plan.rankingPolicy.weights.recency, assessment.recency),
       fulltextAvailability: points(plan.rankingPolicy.weights.fulltextAvailability,
-        assessment.fulltextAvailable ? 1 : 0),
+        assessment.fulltextAvailability.status === 'resolvable' ? 1 : 0),
     }, plan.rankingPolicy)
     const priority = candidatePriorityForScore(score.total, hardFilter.status === 'excluded', plan.rankingPolicy)
     const classification = classify(assessment)
@@ -100,10 +75,10 @@ export function rankPlannedCandidates(
     ])]
     return { schemaVersion: 1, academicWorkId: work.academicWorkId, workVersionId: version.workVersionId,
       discoveredBy: queryIds, classification, hardFilter, score, priority,
-      matchedQuestions: assessment.matchedQuestions, diversityTags,
+      matchedQuestions: assessment.matchedQuestions, fulltextAvailability: assessment.fulltextAvailability, diversityTags,
       decisionReasons: [
         `Classified as ${classification}; weighted score ${score.total} gives ${priority}.`,
-        ...exclusions,
+        ...exclusions.map(describeHardFilterReason),
         ...assessment.reasons,
       ] }
   })
@@ -112,7 +87,19 @@ export function rankPlannedCandidates(
   for (const evaluation of evaluations) queues[evaluation.priority].push(evaluation)
   for (const priority of ['p0', 'p1', 'p2'] as const) queues[priority] = diversify(queues[priority])
   queues.excluded.sort(compareScore)
-  return { evaluations, queues }
+  return createCandidateRankingResult({
+    schemaVersion: 1,
+    researchBriefId: brief.researchBriefId,
+    researchBriefVersion: brief.version,
+    evaluations,
+    queues: {
+      p0: queues.p0.map(evaluation => evaluation.workVersionId),
+      p1: queues.p1.map(evaluation => evaluation.workVersionId),
+      p2: queues.p2.map(evaluation => evaluation.workVersionId),
+      excluded: queues.excluded.map(evaluation => evaluation.workVersionId),
+    },
+    limitations: [...new Set(assessments.flatMap(assessmentLimitations))],
+  }, plan, approvedQuestions)
 }
 
 function validateAssessment(assessment: CandidateAssessment, plan: HybridSearchPlan,
@@ -140,37 +127,89 @@ function validateAssessment(assessment: CandidateAssessment, plan: HybridSearchP
 }
 
 function hardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSearchPlan,
-  brief: ExecutableResearchBrief, assessment: CandidateAssessment): string[] {
-  const reasons: string[] = []
-  if (version.status === 'retracted' || version.versionType === 'retracted'
-    || work.publicationStatus.status === 'available' && work.publicationStatus.value === 'retracted') {
-    reasons.push('Work or canonical version is retracted.')
+  brief: ExecutableResearchBrief, assessment: CandidateAssessment): CandidateHardFilterReason[] {
+  const reasons: CandidateHardFilterReason[] = []
+  if (work.publicationStatus.status === 'available' && work.publicationStatus.value === 'retracted') {
+    reasons.push({ code: 'work_retracted' })
   }
-  if (!workTypeFits(version, plan, brief)) {
-    reasons.push('Work type is outside the approved scope.')
+  if (version.status === 'retracted' || version.versionType === 'retracted') {
+    reasons.push({ code: 'version_retracted' })
+  }
+  if (version.versionType === 'preprint' && !brief.evidenceRequirements.allowPreprints) {
+    reasons.push({ code: 'preprint_not_allowed' })
+  }
+  if (!plan.constraints.includedWorkTypes.includes(version.versionType)) {
+    reasons.push({ code: 'work_type_not_included', detail: version.versionType })
   }
   const { publicationWindow } = plan.constraints
   if (publicationWindow.start !== null || publicationWindow.end !== null) {
     const date = publicationWindow.dateBasis === 'first_public_release' ? work.firstPublicDate : version.releaseDate
-    if (date.status !== 'available') reasons.push('Publication date is unavailable for the approved window.')
-    else if (!overlaps(date.value, publicationWindow.start, publicationWindow.end)) {
-      reasons.push('Publication date is outside the approved window.')
+    if (date.status !== 'available') reasons.push({ code: 'publication_date_unknown' })
+    else {
+      const bounds = dateBounds(date.value)
+      if (publicationWindow.start !== null && bounds.end < dateBounds(publicationWindow.start).start) {
+        reasons.push({ code: 'before_publication_window' })
+      }
+      if (publicationWindow.end !== null && bounds.start > dateBounds(publicationWindow.end).end) {
+        reasons.push({ code: 'after_publication_window' })
+      }
     }
   }
-  const text = [work.title, assessment.abstract ?? '', ...assessment.keywords].join(' ').toLowerCase()
+  const abstract = assessment.abstract.status === 'available' ? assessment.abstract.value : ''
+  const keywords = assessment.keywords.status === 'available' ? assessment.keywords.value : []
+  const text = [work.title, abstract, ...keywords].join(' ').toLowerCase()
   for (const term of plan.constraints.requiredTerms) {
-    if (!text.includes(term.trim().toLowerCase())) reasons.push(`Required term is absent: ${term}.`)
+    if (!text.includes(term.trim().toLowerCase())) reasons.push({ code: 'required_term_missing', detail: term })
   }
   for (const term of plan.constraints.excludedTerms) {
-    if (text.includes(term.trim().toLowerCase())) reasons.push(`Excluded term is present: ${term}.`)
+    if (text.includes(term.trim().toLowerCase())) reasons.push({ code: 'excluded_term_matched', detail: term })
   }
   assessment.inclusionRuleMatches.forEach((matched, index) => {
-    if (!matched) reasons.push(`Inclusion rule is not met: ${plan.constraints.inclusionRules[index]}.`)
+    const detail = plan.constraints.inclusionRules[index]
+    if (matched === false && detail !== undefined) reasons.push({ code: 'inclusion_rule_not_met', detail })
   })
   assessment.exclusionRuleMatches.forEach((matched, index) => {
-    if (matched) reasons.push(`Exclusion rule applies: ${plan.constraints.exclusionRules[index]}.`)
+    const detail = plan.constraints.exclusionRules[index]
+    if (matched === true && detail !== undefined) reasons.push({ code: 'exclusion_rule_matched', detail })
   })
   return reasons
+}
+
+function describeHardFilterReason(reason: CandidateHardFilterReason): string {
+  const detail = reason.detail === undefined ? '' : `: ${reason.detail}`
+  switch (reason.code) {
+    case 'work_retracted': return 'The work is retracted.'
+    case 'version_retracted': return 'The canonical version is retracted.'
+    case 'preprint_not_allowed': return 'The reviewed Brief does not allow preprints.'
+    case 'work_type_not_included': return `The work type is outside the reviewed scope${detail}.`
+    case 'before_publication_window': return 'The publication date is before the reviewed window.'
+    case 'after_publication_window': return 'The publication date is after the reviewed window.'
+    case 'publication_date_unknown': return 'The publication date is unavailable for the reviewed window.'
+    case 'required_term_missing': return `A required term is absent${detail}.`
+    case 'excluded_term_matched': return `An excluded term is present${detail}.`
+    case 'inclusion_rule_not_met': return `An inclusion rule is not met${detail}.`
+    case 'exclusion_rule_matched': return `An exclusion rule applies${detail}.`
+    default: return assertNever(reason.code)
+  }
+}
+
+function assessmentLimitations(assessment: CandidateAssessment): string[] {
+  const limitations: string[] = []
+  if (assessment.abstract.status !== 'available') {
+    limitations.push(`Work ${assessment.academicWorkId} has no usable provider abstract (${assessment.abstract.status}).`)
+  }
+  if (assessment.keywords.status !== 'available') {
+    limitations.push(`Work ${assessment.academicWorkId} has no usable provider keywords (${assessment.keywords.status}).`)
+  }
+  if (assessment.fulltextAvailability.status !== 'resolvable') {
+    limitations.push(`Work ${assessment.academicWorkId} full text is ${assessment.fulltextAvailability.status}: ${assessment.fulltextAvailability.reason}`)
+  }
+  const deferredInclusionRules = assessment.inclusionRuleMatches.filter(match => match === null).length
+  const deferredExclusionRules = assessment.exclusionRuleMatches.filter(match => match === null).length
+  if (deferredInclusionRules + deferredExclusionRules > 0) {
+    limitations.push(`Work ${assessment.academicWorkId} defers ${deferredInclusionRules} inclusion and ${deferredExclusionRules} exclusion rule decision(s) to full-text scope validation.`)
+  }
+  return limitations
 }
 
 function workTypeFits(version: WorkVersion, plan: HybridSearchPlan, brief: ExecutableResearchBrief): boolean {
@@ -191,19 +230,17 @@ function points(weight: number, fraction: number): number {
   return Math.round(weight * fraction * 100) / 100
 }
 
-function overlaps(candidate: PartialDate, start: PartialDate | null, end: PartialDate | null): boolean {
-  const bounds = dateBounds(candidate)
-  if (start !== null && bounds.end < dateBounds(start).start) return false
-  if (end !== null && bounds.start > dateBounds(end).end) return false
-  return true
-}
-
 function dateBounds(date: PartialDate): { readonly start: string; readonly end: string } {
   switch (date.precision) {
     case 'year': return { start: `${date.iso}-01-01`, end: `${date.iso}-12-31` }
     case 'month': return { start: `${date.iso}-01`, end: `${date.iso}-31` }
     case 'day': return { start: date.iso, end: date.iso }
+    default: return assertNever(date.precision)
   }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`unexpected candidate-ranking value: ${String(value)}`)
 }
 
 function compareScore(left: AcademicCandidateEvaluation, right: AcademicCandidateEvaluation): number {

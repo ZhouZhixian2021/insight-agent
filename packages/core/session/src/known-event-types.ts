@@ -20,8 +20,12 @@
  * `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`.
  */
 export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'academic/candidate-batch-decision',
+  'academic/candidate-batch-settlement',
   'academic/evidence-request',
   'academic/evidence-result',
+  'academic/run-settlement',
+  'academic/search-plan',
   'academic/synthesis-request',
   'academic/synthesis-result',
   'agent-preset/selected',

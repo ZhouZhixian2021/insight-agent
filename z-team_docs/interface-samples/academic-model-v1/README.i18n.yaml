@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write z-team_docs/interface-samples/academic-model-v1/README.md
-README.md: 7a5d85c11edd809d9a84dd434602be5a4611b3b3
-README.zh.md: 99476fd197a41307321b2b0b5b54418216f769d0
+README.md: c7119763f295fae20c5a1c622a8a5e83939f85df
+README.zh.md: febbe3054e6225e55cf4e6005f0f63db677c7f0d

@@ -75,14 +75,71 @@
     ],
     "maximumSearchRounds": 3
   },
-  "candidates": [
+  "assessments": [
+    {
+      "academicWorkId": "academic-work-candidate-a",
+      "abstract": { "status": "available", "value": "This study evaluates factual faithfulness in retrieval-grounded generation." },
+      "keywords": { "status": "available", "value": ["retrieval", "generation", "faithfulness"] },
+      "fulltextAvailability": { "status": "resolvable" },
+      "matchedQuestions": ["How does retrieval affect factual faithfulness?"],
+      "contributionSignals": ["empirical_evaluation"],
+      "topicRelevance": 0.93,
+      "evidencePotential": 0.87,
+      "methodMatch": 0.9,
+      "sourceQuality": 0.86,
+      "recency": 0.8,
+      "inclusionRuleMatches": [true],
+      "exclusionRuleMatches": [false],
+      "diversityTags": ["empirical", "faithfulness"],
+      "reasons": ["Directly evaluates the primary question with accessible full text."]
+    },
+    {
+      "academicWorkId": "academic-work-candidate-b",
+      "abstract": { "status": "available", "value": "This review compares evaluation methods for retrieval-augmented generation." },
+      "keywords": { "status": "not_extracted", "reason": "The provider adapter does not retain keywords." },
+      "fulltextAvailability": { "status": "resolvable" },
+      "matchedQuestions": ["Which evaluation methods expose remaining failure modes?"],
+      "contributionSignals": ["review"],
+      "topicRelevance": 0.73,
+      "evidencePotential": 0.67,
+      "methodMatch": 0.7,
+      "sourceQuality": 1,
+      "recency": 0.6,
+      "inclusionRuleMatches": [true],
+      "exclusionRuleMatches": [false],
+      "diversityTags": ["review", "evaluation"],
+      "reasons": ["Broadens method coverage but is not primary empirical evidence."]
+    },
+    {
+      "academicWorkId": "academic-work-candidate-c",
+      "abstract": { "status": "available", "value": "This paper studies marketing claims for retrieval products." },
+      "keywords": { "status": "available", "value": ["marketing", "retrieval"] },
+      "fulltextAvailability": { "status": "unresolved", "reason": "No provider-owned full-text URL was resolved." },
+      "matchedQuestions": [],
+      "contributionSignals": [],
+      "topicRelevance": 0.33,
+      "evidencePotential": 0,
+      "methodMatch": 0.1,
+      "sourceQuality": 0,
+      "recency": 0.6,
+      "inclusionRuleMatches": [false],
+      "exclusionRuleMatches": [true],
+      "diversityTags": [],
+      "reasons": ["A reviewed excluded term prevents this candidate from entering a full-text batch."]
+    }
+  ],
+  "rankingResult": {
+    "schemaVersion": 1,
+    "researchBriefId": "research-brief-query-workflow-1",
+    "researchBriefVersion": 1,
+    "evaluations": [
     {
       "schemaVersion": 1,
       "academicWorkId": "academic-work-candidate-a",
       "workVersionId": "work-version-candidate-a",
       "discoveredBy": ["search-query-core-1", "search-query-web-1"],
       "classification": "empirical_evaluation",
-      "hardFilter": { "status": "eligible", "reasons": ["Publication window and work type match."] },
+      "hardFilter": { "status": "eligible", "reasons": [] },
       "score": {
         "topicRelevance": 28,
         "questionMatch": 18,
@@ -96,6 +153,7 @@
       },
       "priority": "p0",
       "matchedQuestions": ["How does retrieval affect factual faithfulness?"],
+      "fulltextAvailability": { "status": "resolvable" },
       "diversityTags": ["empirical", "faithfulness"],
       "decisionReasons": ["Directly evaluates the primary question with accessible full text."]
     },
@@ -105,7 +163,7 @@
       "workVersionId": "work-version-candidate-b",
       "discoveredBy": ["search-query-site-1"],
       "classification": "review",
-      "hardFilter": { "status": "eligible", "reasons": ["Publication window and work type match."] },
+      "hardFilter": { "status": "eligible", "reasons": [] },
       "score": {
         "topicRelevance": 22,
         "questionMatch": 16,
@@ -119,6 +177,7 @@
       },
       "priority": "p1",
       "matchedQuestions": ["Which evaluation methods expose remaining failure modes?"],
+      "fulltextAvailability": { "status": "resolvable" },
       "diversityTags": ["review", "evaluation"],
       "decisionReasons": ["Broadens method coverage but is not primary empirical evidence."]
     },
@@ -128,7 +187,7 @@
       "workVersionId": "work-version-candidate-c",
       "discoveredBy": ["search-query-web-1"],
       "classification": "irrelevant",
-      "hardFilter": { "status": "excluded", "reasons": ["The record is a product page rather than a scholarly work."] },
+      "hardFilter": { "status": "excluded", "reasons": [{ "code": "excluded_term_matched", "detail": "marketing" }] },
       "score": {
         "topicRelevance": 10,
         "questionMatch": 4,
@@ -142,10 +201,19 @@
       },
       "priority": "excluded",
       "matchedQuestions": [],
+      "fulltextAvailability": { "status": "unresolved", "reason": "No provider full-text candidate was resolved." },
       "diversityTags": [],
-      "decisionReasons": ["A hard exclusion rule prevents this candidate from entering a full-text batch."]
+      "decisionReasons": ["A reviewed excluded term prevents this candidate from entering a full-text batch."]
     }
-  ],
+    ],
+    "queues": {
+      "p0": ["work-version-candidate-a"],
+      "p1": ["work-version-candidate-b"],
+      "p2": [],
+      "excluded": ["work-version-candidate-c"]
+    },
+    "limitations": ["Candidate B has no provider-supplied keywords; its score uses title, abstract, and metadata only."]
+  },
   "coverage": {
     "schemaVersion": 1,
     "researchBriefId": "research-brief-query-workflow-1",

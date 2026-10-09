@@ -6,6 +6,7 @@ import { createIngestIndex } from '@deepseek-ai/dsh-academic-ingestion'
 import { rankPlannedCandidates, type CandidateAssessment, type PlannedSearchRoundResult } from '../src/index.ts'
 
 const question = 'Which retrieval methods improve faithfulness?'
+const queryId = createSearchQueryId()
 const brief: ExecutableResearchBrief = {
   schemaVersion: 1, researchBriefId: createResearchBriefId(), version: 1,
   topic: 'retrieval methods', aliases: [], questions: [question],
@@ -33,7 +34,9 @@ const plan: HybridSearchPlan = {
     exclusionRules: brief.exclusionRules, requiredTerms: ['retrieval'], excludedTerms: ['marketing'] },
   inclusionTargets: { minimum: 1, target: 3, maximum: 6 },
   rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
-  queries: [], citationExpansionSeeds: [], maximumSearchRounds: 2,
+  queries: [{ kind: 'academic', searchQueryId: queryId, expression: 'retrieval faithfulness',
+    purpose: 'core', questions: [question], roundIndex: 1, providers: ['openalex'] }],
+  citationExpansionSeeds: [], maximumSearchRounds: 2,
 }
 
 function candidate(title: string, author: string, provider: string, year = '2025',
@@ -51,16 +54,16 @@ function candidate(title: string, author: string, provider: string, year = '2025
 }
 
 function assessment(work: AcademicWork, changes: Partial<CandidateAssessment> = {}): CandidateAssessment {
-  return { academicWorkId: work.academicWorkId, abstract: 'Retrieval evaluation with empirical results.',
-    keywords: ['retrieval'], matchedQuestions: [question],
+  return { academicWorkId: work.academicWorkId,
+    abstract: { status: 'available', value: 'Retrieval evaluation with empirical results.' },
+    keywords: { status: 'available', value: ['retrieval'] }, matchedQuestions: [question],
     contributionSignals: ['empirical_evaluation'], topicRelevance: 1, evidencePotential: 1,
-    methodMatch: 1, sourceQuality: 1, recency: 1, fulltextAvailable: true,
+    methodMatch: 1, sourceQuality: 1, recency: 1, fulltextAvailability: { status: 'resolvable' },
     inclusionRuleMatches: [true], exclusionRuleMatches: [false],
     diversityTags: ['retrieval'], reasons: ['Evaluation is described in the abstract.'], ...changes }
 }
 
 function round(candidates: readonly ReturnType<typeof candidate>[]): PlannedSearchRoundResult {
-  const queryId = createSearchQueryId()
   return { ingested: { index: createIngestIndex(), works: candidates.map(item => item.work),
     versions: candidates.map(item => item.version), verifiedDiscoveries: [], audit: { entries: [] } },
   discoveredBy: candidates.map(item => ({ academicWorkId: item.work.academicWorkId,
@@ -75,25 +78,30 @@ describe('planned candidate ranking', () => {
     const excludedBase = candidate('Marketing retrieval page', 'Third Team', 'openalex', '2018', 'retracted')
     const excluded = { ...excludedBase, version: { ...excludedBase.version, versionType: 'preprint' as const } }
     const result = rankPlannedCandidates(plan, brief, round([first, similar, distinct, excluded]), [
-      assessment(first.work),
+      assessment(first.work, { inclusionRuleMatches: [null], exclusionRuleMatches: [null] }),
       assessment(similar.work, { topicRelevance: 0.9 }),
       assessment(distinct.work, { topicRelevance: 0.8,
         contributionSignals: ['benchmark_or_dataset'], diversityTags: ['benchmark'] }),
-      assessment(excluded.work, { abstract: 'Marketing page.', inclusionRuleMatches: [false],
+      assessment(excluded.work, { abstract: { status: 'available', value: 'Marketing page.' },
+        inclusionRuleMatches: [false],
         exclusionRuleMatches: [true], matchedQuestions: [], topicRelevance: 0 }),
     ])
-    expect(result.queues.p0.map(item => item.academicWorkId)).toEqual([
-      first.work.academicWorkId, distinct.work.academicWorkId, similar.work.academicWorkId,
+    expect(result.queues.p0).toEqual([
+      first.version.workVersionId, distinct.version.workVersionId, similar.version.workVersionId,
     ])
     expect(result.queues.excluded).toHaveLength(1)
-    expect(result.queues.excluded[0]).toMatchObject({ classification: 'irrelevant',
+    const excludedEvaluation = result.evaluations.find(item => item.workVersionId === excluded.version.workVersionId)
+    expect(excludedEvaluation).toMatchObject({ classification: 'irrelevant',
       hardFilter: { status: 'excluded' }, priority: 'excluded' })
-    expect(result.queues.excluded[0]?.hardFilter.reasons).toEqual(expect.arrayContaining([
-      'Work or canonical version is retracted.', 'Publication date is outside the approved window.',
-      'Work type is outside the approved scope.', 'Excluded term is present: marketing.',
+    expect(excludedEvaluation?.hardFilter.reasons).toEqual(expect.arrayContaining([
+      { code: 'version_retracted' }, { code: 'before_publication_window' },
+      { code: 'preprint_not_allowed' }, { code: 'work_type_not_included', detail: 'preprint' },
+      { code: 'excluded_term_matched', detail: 'marketing' },
     ]))
-    expect(result.queues.p0[0]?.score.total).toBe(100)
-    expect(result.queues.p0[0]?.decisionReasons[0]).toContain('weighted score 100')
+    const firstEvaluation = result.evaluations.find(item => item.workVersionId === first.version.workVersionId)
+    expect(firstEvaluation?.score.total).toBe(100)
+    expect(firstEvaluation?.decisionReasons[0]).toContain('weighted score 100')
+    expect(result.limitations.join(' ')).toContain('defers 1 inclusion and 1 exclusion rule decision')
   })
 
   it('retains every eligible work at its approved score threshold', () => {
@@ -105,8 +113,8 @@ describe('planned candidate ranking', () => {
       assessment(p2.work, { topicRelevance: 0.35, evidencePotential: 0.35, methodMatch: 0.35,
         sourceQuality: 0.35, recency: 0.35 }),
     ])
-    expect(result.queues.p1.map(item => item.academicWorkId)).toEqual([p1.work.academicWorkId])
-    expect(result.queues.p2.map(item => item.academicWorkId)).toEqual([p2.work.academicWorkId])
+    expect(result.queues.p1).toEqual([p1.version.workVersionId])
+    expect(result.queues.p2).toEqual([p2.version.workVersionId])
   })
 
   it('refuses incomplete or stale semantic decisions', () => {

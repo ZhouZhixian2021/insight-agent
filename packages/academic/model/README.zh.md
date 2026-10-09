@@ -59,7 +59,9 @@ kind: "package-library"
 | `EvidenceCard` | 从一个不可变成果版本提取的六个有证据分区。 |
 | `EvidenceSnapshot` | 一个 Brief 版本实际使用的证据、成果版本和内容哈希不可变集合。 |
 | `HybridSearchPlan` | 不依赖提供方且经过审核的查询、约束、纳入目标、排序策略和轮次上限。 |
+| `CandidateAssessment` | 一项已核验成果的可信元数据、语义比例、规则判定和全文解析状态。 |
 | `AcademicCandidateEvaluation` | 一个成果版本可解释的硬过滤、分类、评分、优先级和问题匹配结果。 |
+| `AcademicCandidateRankingResult` | 绑定计划的评估及有权威顺序的 P0/P1/P2/excluded 队列。 |
 | `ResearchQuestionCoverageResult` | 绑定 Brief 版本中每个准确问题的证据覆盖和明确缺口。 |
 | `HybridSearchRound` / `SearchStopDecision` | 有界检索轮次结算及明确的继续／停止结果。 |
 | `QueryWorkflowProgressEvent` | 供界面使用的查询规划与候选漏斗实际进度事实。 |
@@ -74,7 +76,11 @@ kind: "package-library"
 
 `checkClaimFreshness(claim, currentBrief, currentEvidence)` 读取以 EvidenceId 为键的当前证据映射。仅当 Brief 身份/版本、证据身份、成果版本和非空白内容哈希全部一致时返回 current。已知差异或已存储的 stale Claim 返回 stale；证据缺失、空快照或哈希不可用返回 unverifiable。已知变化优先，同时保留全部原因。函数不改写历史。stale 和 unverifiable 均不能直接进入最终报告；current 仅通过当前性检查，不代表批准发布。
 
-Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。候选评估公开硬过滤决定、分类、全部加权分项、P0/P1/P2 优先级、匹配问题和决定理由。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
+Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。
+
+`CandidateAssessment` 补充 Q3 轮次结果，不再复制其中的成果、规范版本或查询来源。摘要和关键词保留 `Availability` 状态，全文事实区分可解析、未解析和未知。全文未解析不证明全文不存在。Web 发现摘要绝不进入学术摘要或关键词字段。可信元数据无法判断自然语言规则时使用 `null`，这些延期规则仍由全文范围校验负责。
+
+候选评估以稳定代码和可选审核细节公开硬过滤原因，同时公开分类、全部加权分项、优先级、匹配问题、当前全文解析状态、多样性标签和决定理由。`AcademicCandidateRankingResult` 把评估绑定到一个 Brief 版本，有序队列通过 `WorkVersionId` 引用评估而不复制对象。`createCandidateRankingResult()` 校验 Brief 绑定、公开总分、优先级、已审核原始问题、查询来源和队列成员关系。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
 
 问题覆盖、轮次结算、终止原因和 `QueryWorkflowProgressEvent` 只保存实际观测事实。模型不生成查询、不分类论文、不执行排序算法、不调度批次、不估算百分比，也不持久化进度；这些职责分别属于检索、工作流和 Web 消费者。
 

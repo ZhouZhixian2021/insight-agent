@@ -98,11 +98,17 @@ export {
 export { isExecutableResearchBrief } from './research-brief.ts'
 export type {
   AcademicCandidateEvaluation,
+  AcademicCandidateRankingResult,
   AcademicSearchQuery,
+  CandidateAssessment,
   CandidateClassification,
+  CandidateFulltextAvailability,
   CandidateFunnelCounts,
+  CandidateHardFilterReason,
+  CandidateHardFilterReasonCode,
   CandidateHardFilterResult,
   CandidatePriority,
+  CandidatePriorityQueues,
   CandidatePriorityThresholds,
   CandidateRankingPolicy,
   CandidateScoreBreakdown,
@@ -131,6 +137,7 @@ export type {
 export {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
   candidatePriorityForScore,
+  createCandidateRankingResult,
   createCandidateScoreBreakdown,
   createInclusionTargets,
 } from './query-workflow.ts'

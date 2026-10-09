@@ -16,6 +16,8 @@ The round executor dispatches each query to its channel. Web results become work
 
 The Academic controller owns plan review, Session events, runtime adapters, and later batch decisions. The library performs no model call and publishes no Session event.
 
+The Controller bridge converts schema-version-3 Session searches after approval instead of invoking the query generator again. It preserves each reviewed expression and exact Brief question, splits the approved channels into distinct Academic and Web query records, and assigns one round per reviewed search direction. The current Brief provides a minimum included-work requirement and an absolute maximum but no separate desired count, so the bridge uses the maximum as the transitional desired target. Its query IDs remain run-local until Q5 adds durable Session storage. Legacy searches without explicit retrieval policy remain on the existing adapter.
+
 ## Alternatives considered
 
 **Put planning in Academic Source.** That would make a provider-selection service own ResearchBrief semantics and ingestion decisions.
@@ -27,3 +29,5 @@ The Academic controller owns plan review, Session events, runtime adapters, and 
 ## Consequences
 
 The controller can integrate Q2/Q3 through a plain library API while retaining its own review and logging responsibilities. Callers must supply reviewed expansion terms, execution adapters, and budgets. Citation-seed execution and durable progress remain separate work. Focused tests cover query bounds and channel assignment, coverage identity, unverified Web exclusion, partial failures, deduplication, and merged query provenance.
+
+The bridge prevents a post-approval planner call from changing executed text and gives Q5 a tested execution boundary. It does not activate the new scheduler: candidate ranking, persistent query identities, Session recovery, and batch selection still depend on Q4 and Q5.
