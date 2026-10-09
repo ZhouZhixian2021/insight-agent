@@ -14,6 +14,8 @@ The application supplies an explicit per-paper model-attempt bound. The Web depl
 
 The Web deployment partitions a long paper into ordered evidence batches whose complete framed input is estimated at no more than 12,000 tokens. A source segment that cannot fit is split with 512 repeated boundary characters, while every returned local segment index is mapped back to the original parsed segment before exact-quote verification. Each dispatched attempt has a 120-second operation-local timeout. A failed batch does not discard evidence from validated sibling batches; the paper settles as partially extracted. All batches failing still fails the paper, and an externally cancelled run remains cancelled rather than becoming a timeout.
 
+Batch deduplication compares the original segment index, exact excerpt, sourced statement and question-index set. Different question associations remain separate drafts so source validation can reject an out-of-range association without discarding a valid sibling. Reordering the same indexes does not create another draft. Distinct associations share the existing six-draft paper limit.
+
 The extraction prompt spends the response budget on the final JSON. It forbids candidate-excerpt inventories and quota planning, prefers one strongest entry per focus question, and asks for one most appropriate card item per evidence entry unless the same excerpt directly supports a separate required fact. These bounds reduce reasoning latency without changing exact-quote validation or requiring every focus question to have evidence.
 
 Evidence verification keeps the requested segment when the verbatim excerpt matches it. When a valid segment index points elsewhere, the extractor may relocate the excerpt only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous quotes and normalized or OCR-altered text still fail.
@@ -27,6 +29,8 @@ The Academic Remote returns producer-owned `search`, `fulltext`, and `extraction
 **Discard the paper on the first unmatched excerpt.** Rejected because one rewritten formula does not invalidate independently verifiable excerpts from the same version. Partial acceptance preserves exact-source requirements without treating the whole paper as fully verified.
 
 **Raise the output-token cap again.** Rejected as the recovery policy because it increases cost and context reservation without distinguishing an occasional incomplete answer from consistently unbounded output.
+
+**Union question indexes before source validation.** Rejected because one invalid index would reject an otherwise valid association to the same excerpt.
 
 **Accept fuzzy or normalized excerpts.** Rejected because changing Unicode, whitespace, punctuation, or OCR artifacts would weaken source traceability.
 

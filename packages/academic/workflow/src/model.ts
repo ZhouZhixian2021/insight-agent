@@ -198,7 +198,8 @@ function remapDraft(draft: EvidenceDraft, batch: readonly EvidenceSegmentPiece[]
 function deduplicateDrafts(drafts: readonly EvidenceDraft[]): EvidenceDraft[] {
   const seen = new Set<string>()
   return drafts.filter((draft) => {
-    const key = `${draft.segmentIndex}\u0000${draft.verbatimExcerpt}\u0000${draft.sourcedStatement}`
+    const questionIndexes = draft.questionIndexes?.toSorted((left, right) => left - right)
+    const key = JSON.stringify([draft.segmentIndex, draft.verbatimExcerpt, draft.sourcedStatement, questionIndexes])
     if (seen.has(key)) return false
     seen.add(key)
     return true
