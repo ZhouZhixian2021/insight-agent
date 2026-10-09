@@ -876,6 +876,9 @@ importers:
       '@deepseek-ai/dsh-academic-model':
         specifier: workspace:^
         version: link:../../academic/model
+      '@deepseek-ai/dsh-academic-retrieval':
+        specifier: workspace:^
+        version: link:../../academic/retrieval
       '@deepseek-ai/dsh-academic-source':
         specifier: workspace:^
         version: link:../../academic/source

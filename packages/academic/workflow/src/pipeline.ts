@@ -1,6 +1,8 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
-  type EvidenceRecord, type ProviderFailure, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
+  type AcademicCandidateRankingResult, type EvidenceRecord, type ProviderFailure, type ResearchBrief,
+  type ResearchQuestionCoverageResult,
+  type WorkVersion, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObservation, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, summarizeIngestAudit, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import { EvidenceError, fetchAcademicFullText, type AcademicFullTextObservation } from '@deepseek-ai/dsh-academic-evidence'
@@ -18,10 +20,11 @@ import { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 import { collectHybridRun, type HybridRunObservation } from './hybrid-run.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftPipelineSearch, DraftSearchResult,
   PaperProcessingFailure,
-  PaperSelectionResult, SelectedPaper } from './pipeline-types.ts'
+  CandidateScheduling, PaperSelectionResult, ReplenishedCandidates, SelectedPaper } from './pipeline-types.ts'
 import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
   type AcademicWorkflowProgressStage,
   type AcademicWorkflowProgressStatus } from './progress.ts'
+import { planCandidateBatch } from './candidate-batches.ts'
 
 /**
  * Search, reconcile, acquire and extract papers before analyzing and evaluating a draft.
@@ -186,6 +189,7 @@ export async function runResearchDraft(
     throw error
   }
   const selected = selection.papers
+  const candidateScheduling = selection.candidateScheduling
   selectionTruncated = selection.truncated
   if (selection.truncated) selectionLimitations.push('候选选择器限制了可处理的论文范围。')
   if (signal?.aborted) return cancel()
@@ -195,24 +199,13 @@ export async function runResearchDraft(
   // Validate the whole selection before spending network or model work on any paper.
   let validated: { readonly paper: SelectedPaper; readonly version: WorkVersion }[]
   try {
-    validated = selected.map((paper) => {
-      const version = versions.get(paper.workVersionId)
-      if (!version) throw new Error('Selection references a version outside this search pass.')
-      if (selectedWorks.has(version.academicWorkId)) throw new Error('Select only one version per work.')
-      if (version.status === 'retracted' || version.versionType === 'retracted'
-        || !brief.includedWorkTypes.includes(version.versionType)
-        || (!brief.evidenceRequirements.allowPreprints && version.versionType === 'preprint')) {
-        throw new Error('Selected version is excluded by the research brief or retraction state.')
-      }
-      selectedWorks.add(version.academicWorkId)
-      return { paper, version }
-    })
+    validated = reconcileSelectedPapers(selected, versions, selectedWorks, brief)
   } catch (error: unknown) {
     progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
     throw error
   }
   academicWorkIds = validated.map(item => item.version.academicWorkId)
-  const plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+  let plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
   progress.settleStage('screening', 'success', ingested.works.length, ingested.works.length, {
     candidateWorks: validated.length,
     totalPapers: plannedPapers,
@@ -362,38 +355,150 @@ export async function runResearchDraft(
           ? result.evidence.rejectedDrafts.length : 0), 0),
     })
   }
-  const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
   let attempted = 0
   let stopped = false
+  const processGroup = async (group: readonly typeof validated[number][]) => {
+    const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
+    let offset = 0
+    try {
+      while (offset < group.length || pending.length > 0) {
+        while (!paperSignal.aborted && offset < group.length && pending.length < paperConcurrency
+          && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
+          const candidate = group[offset++]
+          if (candidate === undefined) break
+          attempted += 1
+          pending.push({ paper: candidate.paper, done: processPaper(candidate) })
+        }
+        const next = pending.shift()
+        if (!next) break
+        collect(next.paper, await next.done)
+      }
+    } catch (error: unknown) {
+      paperAbort.abort(error)
+      await Promise.all(pending.map(item => item.done))
+      throw error
+    }
+  }
   try {
-    while (attempted < validated.length || pending.length > 0) {
-      const admission = evidenceAdmission()
-      if (!stopped && attempted < validated.length && !paperSignal.aborted) {
-        if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready') {
-          stopped = true
-          selectionTruncated = true
-          selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
-        } else if (usableWorkIds.length >= limits.maximumIncludedWorks) {
-          stopped = true
-          selectionTruncated = true
-          selectionLimitations.push(`达到成功纳入上限 ${limits.maximumIncludedWorks} 篇，停止补选。`)
+    if (candidateScheduling === undefined) {
+      const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
+      try {
+        while (attempted < validated.length || pending.length > 0) {
+          const admission = evidenceAdmission()
+          if (!stopped && attempted < validated.length && !paperSignal.aborted) {
+            if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready') {
+              stopped = true
+              selectionTruncated = true
+              selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
+            } else if (usableWorkIds.length >= limits.maximumIncludedWorks) {
+              stopped = true
+              selectionTruncated = true
+              selectionLimitations.push(`达到成功纳入上限 ${limits.maximumIncludedWorks} 篇，停止补选。`)
+            }
+          }
+          // Every unsettled candidate reserves an inclusion slot; completion order cannot change selection.
+          while (!stopped && !paperSignal.aborted && attempted < validated.length
+            && pending.length < paperConcurrency && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
+            const candidate = validated[attempted++]
+            if (candidate === undefined) break
+            pending.push({ paper: candidate.paper, done: processPaper(candidate) })
+          }
+          const next = pending.shift()
+          if (!next) break
+          collect(next.paper, await next.done)
+        }
+      } finally {
+        if (pending.length > 0) {
+          paperAbort.abort()
+          await Promise.all(pending.map(item => item.done))
         }
       }
-      // Every unsettled candidate reserves an inclusion slot; completion order cannot change selection.
-      while (!stopped && !paperSignal.aborted && attempted < validated.length
-        && pending.length < paperConcurrency && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
-        const candidate = validated[attempted++]
-        if (candidate === undefined) break
-        pending.push({ paper: candidate.paper, done: processPaper(candidate) })
+    } else {
+      let scheduling: CandidateScheduling = candidateScheduling
+      const byVersion = new Map(validated.map(candidate => [candidate.paper.workVersionId, candidate]))
+      const scheduled: WorkVersionId[] = []
+      let completedBatchCount = 0
+      let consecutiveBatchesWithoutEvidence = 0
+      let completedSearchRounds = executedQueries.length
+      while (!paperSignal.aborted) {
+        const coverage = rankedCoverage(brief, scheduling.ranking, papers,
+          evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
+          adapters.now())
+        const decision = planCandidateBatch({ brief, plan: scheduling.plan,
+          ranking: scheduling.ranking, coverage, policy: scheduling.policy,
+          scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
+          includedWorks: usableWorkIds.length, completedSearchRounds,
+          cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
+        adapters.onSettlement?.({ kind: 'batch-decision', event: {
+          retrievalRunId,
+          batchIndex: decision.action === 'schedule_batch' ? decision.batch.batchIndex : null,
+          action: decision.action,
+          workVersionIds: decision.action === 'schedule_batch' ? decision.batch.workVersionIds : [],
+          searchQuestions: decision.searchQuestions,
+          reason: decision.action === 'schedule_batch' ? decision.batch.reason : decision.stop.reason,
+        } })
+        if (decision.action === 'stop') {
+          stopped = true
+          if (decision.stop.reason !== 'target_and_coverage_met') selectionTruncated = true
+          selectionLimitations.push(...decision.stop.details)
+          break
+        }
+        if (decision.action === 'search_evidence_gap') {
+          const replenish = adapters.replenishCandidates
+          const nextRoundIndex = completedSearchRounds + 1
+          if (replenish === undefined || nextRoundIndex > scheduling.plan.maximumSearchRounds) {
+            stopped = true
+            selectionTruncated = true
+            selectionLimitations.push(`现有排序候选无法补足 ${decision.searchQuestions.length} 个研究问题；需要执行下一轮证据缺口补检。`)
+            break
+          }
+          let replenished: ReplenishedCandidates
+          try {
+            replenished = await replenish(scheduling, ingested, coverage, nextRoundIndex, paperSignal)
+          } catch (error: unknown) {
+            if (signal?.aborted) return cancel()
+            if (error instanceof WorkflowLogError) throw error
+            stopped = true
+            selectionTruncated = true
+            selectionLimitations.push(`证据缺口补检第 ${nextRoundIndex} 轮失败，停止选文。`)
+            break
+          }
+          scheduling = replenished.scheduling
+          ingested = replenished.ingested
+          completedSearchRounds = nextRoundIndex
+          for (const version of replenished.ingested.versions) {
+            if (!versions.has(version.workVersionId)) versions.set(version.workVersionId, version)
+          }
+          for (const work of replenished.ingested.works) {
+            if (!workTitles.has(work.academicWorkId)) workTitles.set(work.academicWorkId, work.title)
+          }
+          const appended = reconcileSelectedPapers(replenished.papers, versions, selectedWorks, brief)
+          validated = [...validated, ...appended]
+          academicWorkIds = validated.map(item => item.version.academicWorkId)
+          plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+          for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
+          continue
+        }
+        const group = decision.batch.workVersionIds.map((workVersionId) => {
+          const candidate = byVersion.get(workVersionId)
+          if (candidate === undefined) throw new Error('Scheduled candidate has no selected full-text handoff.')
+          return candidate
+        })
+        scheduled.push(...decision.batch.workVersionIds)
+        const evidenceBefore = admittedEvidence.length
+        await processGroup(group)
+        completedBatchCount += 1
+        consecutiveBatchesWithoutEvidence = admittedEvidence.length === evidenceBefore
+          ? consecutiveBatchesWithoutEvidence + 1 : 0
+        adapters.onSettlement?.({ kind: 'batch-settlement', event: {
+          retrievalRunId, batchIndex: decision.batch.batchIndex, admittedEvidence: admittedEvidence.length,
+          completedAt: adapters.now(),
+        } })
+        if (fatal !== undefined) break
       }
-      const next = pending.shift()
-      if (!next) break
-      collect(next.paper, await next.done)
     }
   } finally {
-    // On any coordinator failure, abort and join siblings before exposing failure to the caller.
     paperAbort.abort()
-    await Promise.all(pending.map(item => item.done))
   }
   if (fatal) {
     progress.settleStage('fulltext', progressSettlement(attempted > 0, availableFulltextWorks,
@@ -581,6 +686,56 @@ function roundRobin<T>(groups: readonly (readonly T[])[]): T[] {
 
 function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)]
+}
+
+/** Validate selected papers against the approved brief and one-version-per-work invariant, mutating the seen set. */
+function reconcileSelectedPapers(
+  papers: readonly SelectedPaper[],
+  versions: ReadonlyMap<WorkVersionId, WorkVersion>,
+  selectedWorks: Set<string>,
+  brief: ResearchBrief,
+): { readonly paper: SelectedPaper; readonly version: WorkVersion }[] {
+  return papers.map((paper) => {
+    const version = versions.get(paper.workVersionId)
+    if (!version) throw new Error('Selection references a version outside this search pass.')
+    if (selectedWorks.has(version.academicWorkId)) throw new Error('Select only one version per work.')
+    if (version.status === 'retracted' || version.versionType === 'retracted'
+      || !brief.includedWorkTypes.includes(version.versionType)
+      || (!brief.evidenceRequirements.allowPreprints && version.versionType === 'preprint')) {
+      throw new Error('Selected version is excluded by the research brief or retraction state.')
+    }
+    selectedWorks.add(version.academicWorkId)
+    return { paper, version }
+  })
+}
+
+/** Build conservative batch-to-batch coverage from validated evidence and reviewed candidate-question links. */
+function rankedCoverage(
+  brief: ResearchBrief,
+  ranking: AcademicCandidateRankingResult,
+  papers: readonly PaperEvidenceResult[],
+  evidenceRequirementsMet: boolean,
+  minimumQuestionSupportingWorks: number,
+  assessedAt: string,
+): ResearchQuestionCoverageResult {
+  const evaluations = new Map(ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
+  const evidencePapers = papers.flatMap((paper) => {
+    if (paper.status !== 'extracted' && paper.status !== 'partially_extracted') return []
+    if (paper.evidence.evidenceRecords.length === 0) return []
+    return [{ paper, evaluation: evaluations.get(paper.version.workVersionId) }]
+  })
+  const questions = brief.questions.map((question) => {
+    const supporting = evidencePapers.filter(item => item.evaluation?.matchedQuestions.includes(question) === true)
+    const supportingWorkIds = unique(supporting.map(item => item.paper.version.academicWorkId))
+    const evidenceIds = unique(supporting.flatMap(item => item.paper.evidence.evidenceRecords.map(record => record.evidenceId)))
+    const status = supportingWorkIds.length === 0 ? 'uncovered' as const
+      : supportingWorkIds.length >= minimumQuestionSupportingWorks ? 'covered' as const : 'partial' as const
+    return { question, status, supportingWorkIds, evidenceIds,
+      gaps: status === 'covered' ? [] : [question] }
+  })
+  return { schemaVersion: 1, researchBriefId: brief.researchBriefId,
+    researchBriefVersion: brief.version, assessedAt, questions, evidenceRequirementsMet,
+    allQuestionsCovered: questions.every(question => question.status === 'covered') }
 }
 
 function progressSettlement(

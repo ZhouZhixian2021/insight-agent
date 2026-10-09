@@ -39,12 +39,15 @@ export function apply(ctx: Context): void {
     description: 'Run a synthetic approved hybrid search without network access.', parameters: {},
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
     execute: async (_args, { signal }) => {
-      const adapters = approvedPaperAdapters([{ query: 'synthetic', purpose: '核验合成论文', questions: ['论文是否可核验？'],
-        retrieval: { channels: ['academic', 'web_discovery'], academicProviders: ['arxiv'], verificationProviders: ['acl'],
-          maximumWebDiscoveryResults: 2, maximumReferenceVerifications: 1 } }], ctx.academicSource, ctx.web)
       const sample = JSON.parse(readFileSync(new URL(
         '../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url,
       ), 'utf8')) as { brief: ResearchBrief }
+      const adapters = approvedPaperAdapters(sample.brief, [{ query: 'synthetic', purpose: '核验合成论文',
+        questions: ['论文是否可核验？'],
+        retrieval: { channels: ['academic', 'web_discovery'], academicProviders: ['arxiv'], verificationProviders: ['acl'],
+          maximumWebDiscoveryResults: 2, maximumReferenceVerifications: 1 } }], ctx.academicSource, ctx.web,
+      { initialBatchSize: 2, evidenceGapBatchSize: 2, replenishmentBatchSize: 2, minimumQuestionSupportingWorks: 1 },
+      { maximumQueriesPerRound: 4, maximumAcademicResultsPerQuery: 20 })
       const pipeline = await runResearchDraft({
         brief: { ...sample.brief, publicationWindow: { ...sample.brief.publicationWindow, start: null, end: null } },
         synthetic: true, searches: [{ query: 'synthetic', maxResults: 3,

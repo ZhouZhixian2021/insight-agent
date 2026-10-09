@@ -31,7 +31,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 ### 入口
 
-向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限与适配器交给 `executePlannedSearchRound()`。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
+向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限与适配器交给 `executePlannedSearchRound()`。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。结果绑定 Brief 版本，为每项成果保留一份完整评估，并以 `WorkVersionId` 返回有序队列。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
 
 -----
 
@@ -41,7 +41,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[规划器](src/planner.ts)使用 Brief 别名与调用方审核过的同义词或方法名，不从自然语言规则中推断术语。[执行器](src/execute.ts)按查询指定的渠道检索、识别 Web 引用、经批准的学术提供方核验，并只把提供方记录交给[摄取库](../ingestion/README.zh.md)。摄取库按精确标识符合并成果和版本，同时保留查询 ID 与已核验发现 URL。[排序器](src/rank.ts)应用确定性的时间、类型、撤稿、词项及经审核的规则判断；它按计划策略加权语义评分、分配优先级，并在各队列中提升来源、团队、问题和主题的多样性。调用方负责语义判断、计划审核、Session 事件、批次和模型可见内容的渲染。
+[规划器](src/planner.ts)使用 Brief 别名与调用方审核过的同义词或方法名，不从自然语言规则中推断术语。[执行器](src/execute.ts)按查询指定的渠道检索、识别 Web 引用、经批准的学术提供方核验，并只把提供方记录交给[摄取库](../ingestion/README.zh.md)。摄取库按精确标识符合并成果和版本，同时保留查询 ID 与已核验发现 URL。[排序器](src/rank.ts)应用确定性的时间、类型、撤稿、词项及经审核的规则判断；自然语言判断为 `null` 时只记录限制，不把候选硬排除。它按计划策略加权语义评分、分配优先级，并在各队列中提升来源、团队、问题和主题的多样性。调用方负责语义判断、计划审核、Session 事件、批次和模型可见内容的渲染。
 
 </details>
 

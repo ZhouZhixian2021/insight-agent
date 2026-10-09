@@ -9,6 +9,7 @@
     { "path": "../../llm/llm" },
     { "path": "../../core/session" },
     { "path": "../../academic/model" },
+    { "path": "../../academic/retrieval" },
     { "path": "../../academic/source" },
     { "path": "../../academic/source-arxiv" },
     { "path": "../../academic/workflow" },

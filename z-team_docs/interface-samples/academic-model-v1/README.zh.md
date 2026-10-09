@@ -24,7 +24,7 @@
 - [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json)：固定 C 在正式接入前可使用的浏览器安全 Remote 目标结果，包括由生产方结算的来源检索、全文获取和证据抽取阶段状态。
 - [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、明确的未识别/格式错误/含糊识别问题、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影。A-H4 为候选／引用行增加可选的查询归属；计数区分重复引用观察和实际 ingestion 论文合并。全部记录均为合成数据。
 - [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json)：固定 A-P1 的完整进度快照，覆盖检索开始、学术源直接搜索与 Web 发现活动、相互区分的摄取审计计数、全文与证据并行且三篇论文同时活动、超时重试和报告评测。论文活动同时携带论文与版本 ID。样例包含已观察数量与已运行时间，不包含估算百分比。
-- [`academic-query-workflow-v1.sample.json`](academic-query-workflow-v1.sample.json)：固定 Q1 不依赖提供方的检索计划、Brief 原始问题引用、最低／目标／最大纳入数量、集中排序策略、可解释的 P0/P1/排除候选、问题覆盖、一次轮次结算、停止决定和进度事件草案。全部记录均为合成数据。
+- [`academic-query-workflow-v1.sample.json`](academic-query-workflow-v1.sample.json)：固定 Q1 不依赖提供方的检索计划、规范版本候选事实、可信摘要与关键词状态、全文解析事实、可解释评估、有权威顺序的 P0/P1/excluded 队列、问题覆盖、一次轮次结算、停止决定和进度事件草案。全部记录均为合成数据。
 
 ## 样例覆盖
 

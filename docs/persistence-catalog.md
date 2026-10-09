@@ -94,6 +94,28 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 
 ### `academic/*`
 
+<a id="academiccandidate-batch-decision--log-only"></a>
+
+#### `academic/candidate-batch-decision` — log-only
+
+```ts persistence-catalog
+/** Log-only Q5 scheduling decision (schedule, gap round, or stop). */
+'academic/candidate-batch-decision': AcademicBatchDecisionEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:60`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academiccandidate-batch-settlement--log-only"></a>
+
+#### `academic/candidate-batch-settlement` — log-only
+
+```ts persistence-catalog
+/** Log-only Q5 batch settlement after one batch finishes processing. */
+'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:62`](../packages/academic/workflow/src/settlement-events.ts)
+
 <a id="academicevidence-request--log-only"></a>
 
 #### `academic/evidence-request` — log-only
@@ -115,6 +137,28 @@ Source: [`packages/academic/workflow/src/model-types.ts:125`](../packages/academ
 ```
 
 Source: [`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
+
+<a id="academicrun-settlement--log-only"></a>
+
+#### `academic/run-settlement` — log-only
+
+```ts persistence-catalog
+/** Log-only terminal settlement of one research run. */
+'academic/run-settlement': AcademicRunSettlementEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:64`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academicsearch-plan--log-only"></a>
+
+#### `academic/search-plan` — log-only
+
+```ts persistence-catalog
+/** Log-only approved search plan with stable query identities for cross-restart recovery. */
+'academic/search-plan': AcademicSearchPlanEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:58`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 

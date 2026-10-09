@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
   candidatePriorityForScore,
+  createCandidateRankingResult,
   createCandidateScoreBreakdown,
   createInclusionTargets,
   createSearchQueryId,
-  type AcademicCandidateEvaluation,
+  type AcademicCandidateRankingResult,
+  type CandidateAssessment,
   type CandidateRankingPolicy,
   type HybridSearchPlan,
   type HybridSearchRound,
@@ -19,7 +21,8 @@ interface QueryWorkflowSample {
   readonly sampleSchemaVersion: 1
   readonly synthetic: true
   readonly plan: HybridSearchPlan
-  readonly candidates: readonly AcademicCandidateEvaluation[]
+  readonly assessments: readonly CandidateAssessment[]
+  readonly rankingResult: AcademicCandidateRankingResult
   readonly coverage: ResearchQuestionCoverageResult
   readonly round: HybridSearchRound
   readonly stopDecision: SearchStopDecision
@@ -87,14 +90,23 @@ describe('Academic query-workflow shared rules', () => {
   it('keeps the fixed Q1 handoff internally consistent for B and C', () => {
     const queryIds = new Set(sample.plan.queries.map(query => query.searchQueryId))
     expect(queryIds.size).toBe(sample.plan.queries.length)
-    expect(sample.candidates.every(candidate => candidate.discoveredBy.every(queryId => queryIds.has(queryId)))).toBe(true)
-    for (const candidate of sample.candidates) {
+    expect(sample.rankingResult.evaluations.every(candidate =>
+      candidate.discoveredBy.every(queryId => queryIds.has(queryId)))).toBe(true)
+    const questions = sample.coverage.questions.map(item => item.question)
+    const ranking = createCandidateRankingResult(sample.rankingResult, sample.plan, questions)
+    for (const candidate of ranking.evaluations) {
       const { total, ...components } = candidate.score
       expect(createCandidateScoreBreakdown(components, sample.plan.rankingPolicy).total).toBe(total)
       const expected = candidatePriorityForScore(candidate.score.total,
         candidate.hardFilter.status === 'excluded', sample.plan.rankingPolicy)
       expect(candidate.priority).toBe(expected)
     }
+    expect(ranking.queues).toEqual({
+      p0: ['work-version-candidate-a'],
+      p1: ['work-version-candidate-b'],
+      p2: [],
+      excluded: ['work-version-candidate-c'],
+    })
     expect(createInclusionTargets(sample.plan.inclusionTargets)).toEqual({ minimum: 2, target: 4, maximum: 6 })
     expect(sample.coverage.questions.map(question => question.question)).toEqual([
       'How does retrieval affect factual faithfulness?',
@@ -104,5 +116,13 @@ describe('Academic query-workflow shared rules', () => {
     expect(sample.stopDecision).toMatchObject({ shouldStop: true, reason: 'candidate_exhausted' })
     expect(sample.progressEvents.map(event => event.sequence)).toEqual([0, 1, 2])
     expect(sample.progressEvents.at(-1)?.stopReason).toBe(sample.stopDecision.reason)
+  })
+
+  it('rejects inconsistent queue membership', () => {
+    expect(() => createCandidateRankingResult({
+      ...sample.rankingResult,
+      queues: { ...sample.rankingResult.queues, p0: [], p1: ['work-version-candidate-a' as never,
+        ...sample.rankingResult.queues.p1] },
+    }, sample.plan, sample.coverage.questions.map(item => item.question))).toThrow('queue must match its priority')
   })
 })

@@ -110,6 +110,8 @@ function nativePlanEvents(plan: string, options: { isError?: boolean; time?: num
 
 async function harness(options: {
   searches?: readonly string[]
+  questions?: readonly string[]
+  saturationRounds?: number
   legacyPlan?: boolean
   busy?: boolean
   header?: boolean
@@ -147,6 +149,8 @@ async function harness(options: {
   if (agentContext === undefined) throw new Error('missing Agent context fixture')
   const sessionId = SessionId('academic-session')
   const signal = new AbortController().signal
+  const sessionEvents: unknown[][] = []
+  const planQuestions = [...options.questions ?? briefPayload().questions]
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
   const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
@@ -158,10 +162,13 @@ async function harness(options: {
       id: sessionId,
       snapshotEvents: () => {
         if (options.eventsError === true) throw 'invalid event source'
-        return options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(),
+        return options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(), questions: planQuestions,
+          ...options.saturationRounds === undefined ? {} : { stopConditions: {
+            ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
+          } },
           ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
           ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
-            purpose: '查找相关研究', questions: briefPayload().questions,
+            purpose: '查找相关研究', questions: planQuestions,
             ...options.hybridPlan === true ? { retrieval: options.retrieval ?? {
               channels: ['academic', 'web_discovery'],
               academicProviders: ['openalex', 'arxiv'],
@@ -173,6 +180,7 @@ async function harness(options: {
         }))
       },
       requestHeader: () => options.header === false ? undefined : { config: selected },
+      append: (...args: unknown[]) => { sessionEvents.push(args) },
     },
     runMaintenance: options.busy ? () => { throw new Error('already has active work') }
       : (task: (maintenanceSignal: AbortSignal) => Promise<unknown>) => task(signal),
@@ -190,7 +198,7 @@ async function harness(options: {
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
   })
-  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal }
+  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents }
 }
 
 describe('AcademicResearchController', () => {
@@ -304,6 +312,44 @@ describe('AcademicResearchController', () => {
       verificationProvider: 'arxiv', status: 'verified' })
   })
 
+  it('replenishes an evidence gap through the real Controller adapters and records settlements', async () => {
+    const questions = ['Which method works?']
+    const fixture = await harness({ hybridPlan: true, questions, saturationRounds: 3 })
+    const pipeline = draftFixture(2)
+    const works = pipeline.records.map((record, index) => ({ ...record, workVersion: { ...record.workVersion,
+      sourceRecords: [{ provider: 'arxiv', recordId: ['1706.03762', '1810.04805'][index]! }] } }))
+    fixture.searchProviders.mockImplementation(async ({ query }: { query: string }) => {
+      const selected = query === 'retrieval' ? [works[0]!] : works.slice(1)
+      const batch = createBatchResult(selected, [])
+      return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
+        limitations: [], truncated: false }
+    })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    vi.mocked(pipeline.adapters.generator).mockImplementationOnce(async () => ({
+      scope: { status: 'excluded', reason: 'The first candidate does not satisfy the evidence scope.' }, evidence: [],
+    }))
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+      sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    expect(fixture.searchProviders.mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(fixture.searchProviders.mock.calls.some(([request]) =>
+      (request as { query: string }).query !== 'retrieval')).toBe(true)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBeGreaterThanOrEqual(1)
+    expect(result.report).not.toBeNull()
+    expect(fixture.sessionEvents.map(([name]) => name)).toEqual(expect.arrayContaining([
+      'academic/search-plan', 'academic/candidate-batch-decision',
+      'academic/candidate-batch-settlement', 'academic/run-settlement',
+    ]))
+    expect(fixture.sessionEvents.some(([name, event]) => name === 'academic/candidate-batch-decision'
+      && (event as { action?: string }).action === 'search_evidence_gap')).toBe(true)
+  })
+
   it('requires legacy plans to be completed and approved instead of inventing search expressions', async () => {
     const fixture = await harness({ legacyPlan: true })
     await expect(fixture.controller.plan(fixture.sessionId)).rejects.toThrow('缺少检索方案')
@@ -323,7 +369,7 @@ describe('AcademicResearchController', () => {
         retryable: true, retryAfter: null }] }, papers: [], failures: [], analysis: null, report: null })
     const preview = await fixture.controller.plan(fixture.sessionId)
     const result = await fixture.controller.run({ sessionId: fixture.sessionId,
-      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+      researchBriefId: preview.researchBriefId, synthetic: true, maxResults: 1 }, fixture.signal)
     expect(result.stages.search).toBe('failed')
     expect(result.retrievalRun.failures[0]?.operation).toBe(operation)
   })

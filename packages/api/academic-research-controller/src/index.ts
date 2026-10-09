@@ -6,14 +6,17 @@ import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
   runAcademicResearchDraft,
   type AcademicResearchDraftResult,
-  type DraftPipelineAdapters,
+  type AcademicSearchPlanEvent,
+  type AcademicSettlementObserver,
   type AcademicWorkflowProgressObserver,
+  type DraftPipelineAdapters,
 } from '@deepseek-ai/dsh-academic-workflow'
+import type { HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
-import { approvedPaperAdapters } from './search.ts'
+import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
@@ -53,6 +56,18 @@ export interface Config {
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
   readonly synthesisRetryInitialDelayMs?: number
+  /** Maximum P0 candidates scheduled in the first ranked full-text batch. Defaults to 8. */
+  readonly initialCandidateBatchSize?: number
+  /** Maximum candidates scheduled to address observed question gaps. Defaults to 4. */
+  readonly evidenceGapCandidateBatchSize?: number
+  /** Maximum candidates scheduled when the inclusion target is still unmet. Defaults to 4. */
+  readonly replenishmentCandidateBatchSize?: number
+  /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
+  readonly minimumQuestionSupportingWorks?: number
+  /** Maximum queries generated in one evidence-gap replenishment round. Defaults to 4. */
+  readonly gapRoundMaximumQueriesPerRound?: number
+  /** Maximum Academic results per gap-round query. Defaults to 20. */
+  readonly gapRoundMaximumAcademicResultsPerQuery?: number
 }
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
@@ -70,6 +85,12 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(120_000),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
     synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
+    initialCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
+    evidenceGapCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
+    replenishmentCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
+    minimumQuestionSupportingWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(1),
+    gapRoundMaximumQueriesPerRound: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
+    gapRoundMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(20),
   })
 
   private readonly fulltextFetchProvider: string
@@ -82,6 +103,8 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly extractionAttemptTimeoutMs: number
   private readonly synthesisMaxAttempts: number
   private readonly synthesisRetryInitialDelayMs: number
+  private readonly candidateBatchPolicy: import('@deepseek-ai/dsh-academic-workflow').CandidateBatchPolicy
+  private readonly gapRoundPolicy: GapRoundPolicy
 
   /**
    * @param ctx - Host context containing Session, Academic source, and Web fetch services.
@@ -99,6 +122,16 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 120_000
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
+    this.candidateBatchPolicy = {
+      initialBatchSize: config.initialCandidateBatchSize ?? 8,
+      evidenceGapBatchSize: config.evidenceGapCandidateBatchSize ?? 4,
+      replenishmentBatchSize: config.replenishmentCandidateBatchSize ?? 4,
+      minimumQuestionSupportingWorks: config.minimumQuestionSupportingWorks ?? 1,
+    }
+    this.gapRoundPolicy = {
+      maximumQueriesPerRound: config.gapRoundMaximumQueriesPerRound ?? 4,
+      maximumAcademicResultsPerQuery: config.gapRoundMaximumAcademicResultsPerQuery ?? 20,
+    }
     ctx.plugin(academicPlanValidation)
   }
 
@@ -202,12 +235,21 @@ export class AcademicResearchController extends TypertRemoteService {
     const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
+    const onSettlement: AcademicSettlementObserver = (fact) => {
+      if (fact.kind === 'batch-decision') {
+        agent.session.append('academic/candidate-batch-decision', fact.event)
+      } else {
+        agent.session.append('academic/candidate-batch-settlement', fact.event)
+      }
+    }
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
-      ...approvedPaperAdapters(searches, academicSource, web),
+      ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
+        plan => agent.session.append('academic/search-plan', searchPlanEvent(plan))),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
       now: () => new Date().toISOString(),
+      onSettlement,
       ...(onProgress === undefined ? {} : { onProgress }),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
@@ -235,7 +277,34 @@ export class AcademicResearchController extends TypertRemoteService {
       throw new RemoteError('session/agent-busy', `session "${request.sessionId}" already has active work`,
         { reason: 'academic research requires an idle Session' }, { cause })
     }
-    return maintenance
+    const result = await maintenance
+    agent.session.append('academic/run-settlement', {
+      retrievalRunId: result.retrievalRun.retrievalRunId,
+      status: result.status,
+      completedAt: new Date().toISOString(),
+    })
+    return result
+  }
+}
+
+/** Project one approved plan into its durable search-plan event payload. */
+function searchPlanEvent(plan: HybridSearchPlan): AcademicSearchPlanEvent {
+  return {
+    schemaVersion: 1,
+    researchBriefId: plan.researchBriefId,
+    researchBriefVersion: plan.researchBriefVersion,
+    maximumSearchRounds: plan.maximumSearchRounds,
+    queries: plan.queries.map(query => ({
+      searchQueryId: query.searchQueryId,
+      kind: query.kind,
+      expression: query.expression,
+      purpose: query.purpose,
+      questions: query.questions,
+      roundIndex: query.roundIndex,
+      providers: query.kind === 'academic' ? query.providers : [],
+      maximumResults: query.kind === 'web_discovery' || query.kind === 'site_restricted' ? query.maximumResults : null,
+      siteHost: query.kind === 'site_restricted' ? query.siteHost : null,
+    })),
   }
 }
 

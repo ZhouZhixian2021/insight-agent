@@ -31,7 +31,7 @@ The Academic controller or workflow supplies the approved Brief, reviewed expans
 
 ### Entry point
 
-Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningInput`. A valid result contains separate academic, Web, and requested-site queries with stable IDs. Invalid approval, hostnames, limits, or question links throw `RangeError`; optional expansions beyond the query limit produce a warning. Pass the reviewed plan, a round index, explicit verification limits, and adapters to `executePlannedSearchRound()`. Then pass the result, the same Brief, and exactly one `CandidateAssessment` per verified work to `rankPlannedCandidates()`. A missing Academic provider or cancellation rejects retrieval; incomplete semantic assessments reject ranking.
+Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningInput`. A valid result contains separate academic, Web, and requested-site queries with stable IDs. Invalid approval, hostnames, limits, or question links throw `RangeError`; optional expansions beyond the query limit produce a warning. Pass the reviewed plan, a round index, explicit verification limits, and adapters to `executePlannedSearchRound()`. Then pass the result, the same Brief, and exactly one `CandidateAssessment` per verified work to `rankPlannedCandidates()`. The result binds the Brief version, retains one complete evaluation per work, and returns ordered queues of `WorkVersionId` values. A missing Academic provider or cancellation rejects retrieval; incomplete semantic assessments reject ranking.
 
 -----
 
@@ -41,7 +41,7 @@ Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningIn
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The [planner](src/planner.ts) uses Brief aliases and caller-reviewed synonym or method terms; it does not infer terminology from prose. The [executor](src/execute.ts) sends each query to its specified channel, identifies Web references, verifies them through an approved scholarly provider, and passes only provider records to [ingestion](../ingestion/README.md). Ingestion merges exact identifiers and versions, retaining query IDs and verified discovery URLs. The [ranker](src/rank.ts) applies deterministic date, type, retraction, lexical, and reviewed rule decisions; it weights semantic fractions with the plan's policy, assigns priorities, and promotes source, team, question, and topic diversity within each queue. The caller owns semantic assessment, plan review, Session events, batching, and model-visible rendering.
+The [planner](src/planner.ts) uses Brief aliases and caller-reviewed synonym or method terms; it does not infer terminology from prose. The [executor](src/execute.ts) sends each query to its specified channel, identifies Web references, verifies them through an approved scholarly provider, and passes only provider records to [ingestion](../ingestion/README.md). Ingestion merges exact identifiers and versions, retaining query IDs and verified discovery URLs. The [ranker](src/rank.ts) applies deterministic date, type, retraction, lexical, and reviewed rule decisions; a `null` natural-language decision is retained as a limitation and does not hard-exclude the candidate. It weights semantic fractions with the plan's policy, assigns priorities, and promotes source, team, question, and topic diversity within each queue. The caller owns semantic assessment, plan review, Session events, batching, and model-visible rendering.
 
 </details>
 
