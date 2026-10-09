@@ -24,6 +24,8 @@ export interface AcademicCatalogRecord {
   readonly venue: string | null
   readonly doi: string | null
   readonly searchText?: string
+  readonly abstract?: string | null
+  readonly keywords?: readonly string[]
 }
 
 /** Inputs shared by catalog-backed providers. */
@@ -42,6 +44,8 @@ export interface AcademicPaperCitation {
   readonly doi: string | null
   readonly pdfUrl: string | null
   readonly abstractUrl: string | null
+  readonly abstract: string | null
+  readonly keywords: readonly string[]
 }
 
 /**
@@ -75,9 +79,10 @@ export async function fetchAcademicPaperPage(providerId: string, url: URL, signa
 /**
  * Read citation metadata from one official paper page.
  * @param html - official paper-page HTML.
- * @returns title, authors, date, venue, DOI, and page-provided URLs.
+ * @param provider - owning official site, selecting its published abstract block when citation tags omit it.
+ * @returns Bibliography, scholarly abstract and keywords, and page-provided URLs.
  */
-export function parseAcademicPaperCitation(html: string): AcademicPaperCitation {
+export function parseAcademicPaperCitation(html: string, provider?: 'acl' | 'pmlr' | 'cvf'): AcademicPaperCitation {
   const fields = new Map<string, string[]>()
   for (const tag of html.matchAll(/<meta\b[^>]*>/giu)) {
     const attributes = new Map<string, string>()
@@ -86,7 +91,7 @@ export function parseAcademicPaperCitation(html: string): AcademicPaperCitation 
     }
     const name = attributes.get('name')?.toLowerCase()
     const value = attributes.get('content')
-    if (name?.startsWith('citation_') && value !== undefined) {
+    if (name !== undefined && value !== undefined) {
       fields.set(name, [...(fields.get(name) ?? []), value])
     }
   }
@@ -100,7 +105,23 @@ export function parseAcademicPaperCitation(html: string): AcademicPaperCitation 
   return { title, authors, year,
     venue: first('citation_conference_title') ?? first('citation_journal_title') ?? first('citation_inbook_title'),
     doi: first('citation_doi'), pdfUrl: first('citation_pdf_url'),
-    abstractUrl: first('citation_abstract_html_url') }
+    abstractUrl: first('citation_abstract_html_url'),
+    abstract: first('citation_abstract') ?? first('dc.description') ?? paperAbstract(html, provider),
+    keywords: (fields.get('citation_keywords') ?? fields.get('dc.subject') ?? [])
+      .flatMap(value => value.split(/[,;]/u).map(keyword => keyword.trim()).filter(Boolean)) }
+}
+
+/** Official-site selectors exclude generic descriptions, scripts, and citation-export copies. */
+function paperAbstract(html: string, provider: 'acl' | 'pmlr' | 'cvf' | undefined): string | null {
+  if (provider === undefined) return null
+  const patterns = {
+    acl: /<div\b[^>]*class=["'][^"']*\bacl-abstract\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/iu,
+    pmlr: /<div\b[^>]*id=["']abstract["'][^>]*>([\s\S]*?)<\/div>/iu,
+    cvf: /<div\b[^>]*id=["']abstract["'][^>]*>([\s\S]*?)<\/div>/iu,
+  }
+  const block = html.match(patterns[provider])?.[1]
+  return block === undefined ? null
+    : academicCatalogHtmlText(block.replace(/<h[1-6]\b[^>]*>[\s\S]*?<\/h[1-6]>/giu, '')) || null
 }
 
 /**
@@ -163,7 +184,15 @@ export function normalizeAcademicCatalogRecord(
     })
   }
   const releaseDate = yearAvailability(record.year, `${providerId} catalog record carries no publication year.`)
+  const abstract = record.abstract?.trim()
+  const keywords = [...new Set(record.keywords?.map(keyword => keyword.trim()).filter(Boolean) ?? [])]
   return {
+    metadata: {
+      abstract: abstract ? { status: 'available', value: abstract }
+        : { status: 'unknown', reason: `${providerId} record supplies no abstract.` },
+      keywords: keywords.length > 0 ? { status: 'available', value: keywords }
+        : { status: 'unknown', reason: `${providerId} record supplies no keywords.` },
+    },
     academicWork: {
       schemaVersion: 1,
       academicWorkId,

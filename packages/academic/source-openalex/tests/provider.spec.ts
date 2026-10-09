@@ -27,6 +27,34 @@ function response(results: unknown[] = [bert()], count = results.length) {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('OpenAlex discovery', () => {
+  it('retains reconstructed abstracts and keywords through both search and DOI verification', async () => {
+    const raw = { ...bert(), abstract_inverted_index: { evaluation: [1], Retrieval: [0, 3], improves: [2] },
+      keywords: [{ display_name: 'Retrieval' }, { display_name: 'Faithfulness' }, { display_name: 'Retrieval' }] }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response([raw]))
+      .mockResolvedValueOnce(new Response(JSON.stringify(raw))))
+    const provider = new OpenAlexProvider(options)
+    const searched = (await provider.search({ query: 'retrieval' })).works[0]!
+    const verified = await provider.verifyReference({ kind: 'doi', normalizedValue: '10.18653/v1/n19-1423',
+      originalValue: '10.18653/v1/n19-1423', discoveryUrl: 'https://doi.org/10.18653/v1/n19-1423' })
+    const metadata = { abstract: { status: 'available', value: 'Retrieval evaluation improves Retrieval' },
+      keywords: { status: 'available', value: ['Retrieval', 'Faithfulness'] } }
+    expect(searched.metadata).toEqual(metadata)
+    expect(verified?.metadata).toEqual(metadata)
+    expect(normalizeOpenAlexWork(bert()).work.metadata).toMatchObject({ abstract: { status: 'unknown' }, keywords: { status: 'unknown' } })
+  })
+
+  it('rejects ambiguous, sparse, or malformed scholarly metadata without allocating sparse arrays', () => {
+    for (const abstract_inverted_index of [{ word: [1] }, { word: [0], other: [0] },
+      { word: [-1] }, { word: [Number.MAX_SAFE_INTEGER] }, { word: ['0'] }, { word: [] }]) {
+      expect(() => normalizeOpenAlexWork({ ...bert(), abstract_inverted_index }))
+        .toThrow(expect.objectContaining({ code: 'ACADEMIC_SOURCE_PARSE_ERROR' }))
+    }
+    for (const keywords of ['retrieval', [{}], [{ display_name: ' ' }]]) {
+      expect(() => normalizeOpenAlexWork({ ...bert(), keywords }))
+        .toThrow(expect.objectContaining({ code: 'ACADEMIC_SOURCE_PARSE_ERROR' }))
+    }
+  })
+
   it('sends exactly one unchanged query, caps upstream results, reports truncation, and resolves an ACL DOI', async () => {
     const fetch = vi.fn().mockResolvedValue(response([bert()], 120))
     vi.stubGlobal('fetch', fetch)

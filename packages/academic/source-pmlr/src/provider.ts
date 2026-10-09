@@ -58,7 +58,7 @@ export class PmlrProvider implements AcademicSourceProvider {
     const url = new URL(`${recordId}.html`, `${this.resolveOptions().baseURL.replace(/\/$/u, '')}/`)
     const html = await fetchAcademicPaperPage(this.id, url, signal)
     if (html === null) return null
-    const citation = parseAcademicPaperCitation(html)
+    const citation = parseAcademicPaperCitation(html, this.id)
     if (citation.abstractUrl !== url.href) return null
     const pdf = citation.pdfUrl === null ? null : URL.canParse(citation.pdfUrl) ? new URL(citation.pdfUrl) : null
     const urls = pdf?.protocol === 'https:' && !pdf.username && !pdf.password ? [pdf.href] : []
@@ -68,7 +68,8 @@ export class PmlrProvider implements AcademicSourceProvider {
       this.verifiedUrls.delete(this.verifiedUrls.keys().next().value as string)
     }
     return normalizeAcademicCatalogRecord(this.id, { recordId, title: citation.title, authors: citation.authors,
-      year: citation.year, venue: citation.venue, doi: citation.doi })
+      year: citation.year, venue: citation.venue, doi: citation.doi,
+      abstract: citation.abstract, keywords: citation.keywords })
   }
 
   fullTextUrls(recordId: string): readonly string[] {

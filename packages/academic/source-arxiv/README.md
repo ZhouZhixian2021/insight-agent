@@ -13,6 +13,8 @@ English | [中文](README.zh.md)
 
 `verifyReference()` queries one arXiv ID through `id_list` and compares the returned ID; an explicit `vN` must match that version. It returns the normalized record and HTML/PDF candidates without downloading full text.
 
+Search and ID verification retain Atom `summary` as the scholarly abstract and `category` terms as subject keywords in the record's `metadata`. Missing fields remain unknown; subject categories are not author-provided contribution classifications.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

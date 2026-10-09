@@ -9,6 +9,7 @@
 
 import type {
   AcademicWork,
+  Availability,
   BatchResult,
   FailureCategory,
   WorkVersion,
@@ -24,6 +25,11 @@ import type {
 export interface AcademicSourceWork {
   readonly academicWork: AcademicWork
   readonly workVersion: WorkVersion
+  /** Abstract and keywords from this version's scholarly record; absent on records without metadata support. */
+  readonly metadata?: {
+    readonly abstract: Availability<string>
+    readonly keywords: Availability<readonly string[]>
+  }
   /** Verified Web discoveries added by a consumer after authoritative reference verification. */
   readonly verifiedDiscoveries?: readonly {
     readonly discoveryUrl: string

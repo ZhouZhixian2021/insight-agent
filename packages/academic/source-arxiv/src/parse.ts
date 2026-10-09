@@ -21,6 +21,11 @@ interface ParsedAuthor {
   readonly name?: string
 }
 
+/** A subject category from one parsed Atom element. */
+interface ParsedCategory {
+  readonly '@_term'?: string
+}
+
 /** One parsed arXiv Atom entry after namespace removal. */
 interface ParsedEntry {
   readonly id?: string
@@ -29,6 +34,8 @@ interface ParsedEntry {
   readonly updated?: string
   readonly author?: ParsedAuthor | ParsedAuthor[]
   readonly doi?: string | { readonly '#text'?: string }
+  readonly summary?: string | { readonly '#text'?: string }
+  readonly category?: ParsedCategory | ParsedCategory[]
 }
 
 /** `<opensearch:totalResults>` after namespace removal: scalar, or an object when it carries attributes. */
@@ -64,6 +71,8 @@ function mapEntry(entry: ParsedEntry): ArxivRawWork {
   const authors = entry.author === undefined
     ? []
     : Array.isArray(entry.author) ? entry.author : [entry.author]
+  const categories = entry.category === undefined
+    ? [] : Array.isArray(entry.category) ? entry.category : [entry.category]
   return {
     id: entry.id ?? '',
     title: textOf(entry.title) ?? '',
@@ -71,6 +80,8 @@ function mapEntry(entry: ParsedEntry): ArxivRawWork {
     published: entry.published ?? null,
     updated: entry.updated ?? null,
     doi: textOf(entry.doi),
+    abstract: textOf(entry.summary)?.trim() || null,
+    keywords: categories.flatMap(category => category['@_term']?.trim() ? [category['@_term'].trim()] : []),
   }
 }
 

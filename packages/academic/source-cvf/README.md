@@ -13,6 +13,8 @@ This package adds CVF Open Access papers to `ctx.academicSource`. It searches co
 
 `verifyReference()` reads one official paper page, including workshop paths, and checks its citation PDF URL against the paper ID. It works without conference catalogs and does not download the PDF.
 
+Verification retains scholarly abstract tags or the official `abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

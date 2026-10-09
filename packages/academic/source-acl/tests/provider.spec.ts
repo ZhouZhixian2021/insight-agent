@@ -36,7 +36,8 @@ describe('ACL provider', () => {
       + '<meta name=citation_publication_date content="2024/8">'
       + '<meta name=citation_conference_title content="ACL 2024">'
       + '<meta name=citation_doi content="10.18653/v1/2024.acl-long.1">'
-      + '<meta name=citation_pdf_url content="https://aclanthology.org/2024.acl-long.1.pdf">'))
+      + '<meta name=citation_pdf_url content="https://aclanthology.org/2024.acl-long.1.pdf">'
+      + '<div class="card-body acl-abstract"><h5>Abstract</h5><span>Official retrieval evaluation.</span></div>'))
     vi.stubGlobal('fetch', fetch)
     const provider = new AclProvider(() => ({ baseURL: 'https://aclanthology.org', catalogUrls: [] }))
     expect(provider.available()).toBe(false)
@@ -48,6 +49,8 @@ describe('ACL provider', () => {
     expect(work?.academicWork).toMatchObject({ title: 'Official ACL Paper', authors: ['Alice Example'] })
     expect(work?.academicWork.externalIdentifiers).toContainEqual(expect.objectContaining({ kind: 'doi' }))
     expect(work?.workVersion.sourceRecords).toEqual([{ provider: 'acl', recordId: reference.recordId }])
+    expect(work?.metadata).toMatchObject({ abstract: { status: 'available', value: 'Official retrieval evaluation.' },
+      keywords: { status: 'unknown' } })
   })
 
   it('rejects a missing or mismatched official ACL record', async () => {

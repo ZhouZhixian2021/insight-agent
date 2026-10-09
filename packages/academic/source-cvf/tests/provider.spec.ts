@@ -36,7 +36,8 @@ describe('CVF provider', () => {
       + '<meta name="citation_author" content="Chen, Junhong">'
       + '<meta name="citation_publication_date" content="2025">'
       + '<meta name="citation_conference_title" content="CVPR Workshops">'
-      + `<meta name="citation_pdf_url" content="${pdf}">`))
+      + `<meta name="citation_pdf_url" content="${pdf}">`
+      + '<div id="abstract">Official robotic evaluation.</div>'))
     vi.stubGlobal('fetch', fetch)
     const provider = new CvfProvider(() => ({ catalogUrls: [] }))
     expect(provider.available()).toBe(false)
@@ -46,6 +47,7 @@ describe('CVF provider', () => {
     expect(work?.academicWork).toMatchObject({ title: 'Multi-Agent Systems for Robotic Autonomy with LLMs',
       authors: ['Chen, Junhong'] })
     expect(work?.workVersion.sourceRecords).toEqual([{ provider: 'cvf', recordId: url }])
+    expect(work?.metadata?.abstract).toEqual({ status: 'available', value: 'Official robotic evaluation.' })
   })
 
   it('rejects noncanonical CVF URLs before a network request', async () => {

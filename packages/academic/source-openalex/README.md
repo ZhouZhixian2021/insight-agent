@@ -13,6 +13,8 @@ Search OpenAlex without downloading conference catalogs for each query. Each tra
 
 `verifyReference()` retrieves one OpenAlex work through its DOI singleton endpoint, checks the returned DOI, and retains its version-specific full-text candidates. This lookup ignores discovery search mode and publication-year filters; it does not download full text.
 
+Both discovery and DOI verification reconstruct `abstract_inverted_index` by contiguous token position and retain OpenAlex keyword labels in `metadata`. Ambiguous positions or malformed keyword records cause a parse error; absent fields remain unknown. OpenAlex keywords are automatically generated topic labels, not evidence of a contribution type.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

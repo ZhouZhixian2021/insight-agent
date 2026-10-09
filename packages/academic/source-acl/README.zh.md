@@ -13,6 +13,8 @@ kind: "package-reference"
 
 `verifyReference()` 按 Anthology ID 读取单篇官方页面，检查引用元数据后返回成果。未配置论文集目录也可核验；此操作不下载 PDF。
 
+核验把学术摘要标签或官方 `acl-abstract` 块及引用关键词保留在 `metadata` 中。不含这些字段的目录记录明确保持未知；普通页面描述和 Web 摘要不充当学术摘要。
+
 ## 目录
 
 - [使用本包](#use-this-package)

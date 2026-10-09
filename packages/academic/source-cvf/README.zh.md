@@ -13,6 +13,8 @@ kind: "package-reference"
 
 `verifyReference()` 读取单篇官方页面（含 workshop 路径），并检查引用元数据中的 PDF URL 与论文 ID 是否对应。未配置会议目录也可核验；此操作不下载 PDF。
 
+核验把学术摘要标签或官方 `abstract` 块及引用关键词保留在 `metadata` 中。不含这些字段的目录记录明确保持未知；普通页面描述和 Web 摘要不充当学术摘要。
+
 ## 目录
 
 - [使用本包](#use-this-package)

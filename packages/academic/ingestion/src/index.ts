@@ -10,10 +10,12 @@ import type { AcademicWorkId, ExternalIdentifierDedupKey } from '@deepseek-ai/ds
 
 import { dedupKeys } from './dedup.ts'
 import { reconcileWork, workVersionsOf } from './merge.ts'
+import { mergeRecordMetadata } from './metadata.ts'
 import type { IngestAuditCounts, IngestAuditEntry, IngestIndex, IngestOutcome, IngestRecord } from './types.ts'
 
 export { dedupKeys } from './dedup.ts'
 export { reconcileWork, selectCanonicalVersion, workVersionsOf } from './merge.ts'
+export { metadataForVersion } from './metadata.ts'
 export type {
   IngestAudit,
   IngestAuditCounts,
@@ -193,17 +195,20 @@ function appendRecord(records: readonly IngestRecord[], record: IngestRecord): r
   const discoveredBy = uniqueBy([
     ...(matched.discoveredBy ?? []), ...(record.discoveredBy ?? []),
   ], queryId => queryId)
+  const metadata = mergeRecordMetadata(matched.metadata, record.metadata)
   if (workIdentifiers.length === matched.academicWork.externalIdentifiers.length
     && versionIdentifiers.length === matched.workVersion.externalIdentifiers.length
     && sourceRecords.length === matched.workVersion.sourceRecords.length
     && verifiedDiscoveries.length === (matched.verifiedDiscoveries?.length ?? 0)
-    && discoveredBy.length === (matched.discoveredBy?.length ?? 0)) return records
+    && discoveredBy.length === (matched.discoveredBy?.length ?? 0)
+    && metadata === matched.metadata) return records
   return records.map(existing => existing === matched ? {
     ...existing,
     academicWork: { ...existing.academicWork, externalIdentifiers: workIdentifiers },
     workVersion: { ...existing.workVersion, externalIdentifiers: versionIdentifiers, sourceRecords },
     verifiedDiscoveries,
     discoveredBy,
+    ...(metadata === undefined ? {} : { metadata }),
   } : existing)
 }
 

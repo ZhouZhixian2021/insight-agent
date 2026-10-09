@@ -54,10 +54,11 @@ export class AclProvider implements AcademicSourceProvider {
     const url = new URL(`${recordId}/`, `${this.resolveOptions().baseURL.replace(/\/$/u, '')}/`)
     const html = await fetchAcademicPaperPage(this.id, url, signal)
     if (html === null) return null
-    const citation = parseAcademicPaperCitation(html)
+    const citation = parseAcademicPaperCitation(html, this.id)
     if (citation.pdfUrl !== `https://aclanthology.org/${recordId}.pdf`) return null
     return normalizeAcademicCatalogRecord(this.id, { recordId, title: citation.title, authors: citation.authors,
-      year: citation.year, venue: citation.venue, doi: citation.doi })
+      year: citation.year, venue: citation.venue, doi: citation.doi,
+      abstract: citation.abstract, keywords: citation.keywords })
   }
 
   fullTextUrls(recordId: string): readonly string[] {

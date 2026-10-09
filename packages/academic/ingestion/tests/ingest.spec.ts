@@ -16,6 +16,7 @@ import {
   createIngestIndex,
   dedupKeys,
   ingestWorks,
+  metadataForVersion,
   selectCanonicalVersion,
   summarizeIngestAudit,
   type IngestRecord,
@@ -127,6 +128,52 @@ describe('selectCanonicalVersion', () => {
 })
 
 describe('ingestWorks', () => {
+  it('fills missing same-version metadata and never replaces known fields with unavailable values', () => {
+    const base = makeRecord({ title: 'Sparse metadata', doi: '10.1000/sparse', sourceRecordId: 'sparse' })
+    const unknown = { status: 'unknown' as const, reason: 'Absent upstream.' }
+    const first = ingestWorks(createIngestIndex(), [{ ...base, metadata: { abstract: unknown, keywords: unknown } }])
+    const second = ingestWorks(first.index, [{ ...base, metadata: {
+      abstract: { status: 'available', value: 'Scholarly summary.' }, keywords: unknown,
+    } }])
+    const third = ingestWorks(second.index, [{ ...base, metadata: { abstract: unknown,
+      keywords: { status: 'available', value: ['retrieval'] } } }])
+    const fourth = ingestWorks(third.index, [{ ...base, metadata: { abstract: unknown, keywords: unknown } }, base])
+    expect(metadataForVersion(fourth.index, fourth.versions[0]!)).toEqual({
+      abstract: { status: 'available', value: 'Scholarly summary.' }, keywords: { status: 'available', value: ['retrieval'] },
+    })
+    expect(metadataForVersion(createIngestIndex(), fourth.versions[0]!)).toMatchObject({
+      abstract: { status: 'unknown' }, keywords: { status: 'unknown' },
+    })
+  })
+
+  it('merges same-version metadata without borrowing a preprint abstract for the published version', () => {
+    const preprint = { ...makeRecord({ title: 'A study', doi: '10.1000/study', type: 'preprint',
+      sourceProvider: 'arxiv', sourceRecordId: '2401.00001v1' }), metadata: {
+      abstract: { status: 'available' as const, value: 'Preprint-only summary.' },
+      keywords: { status: 'available' as const, value: ['preprint'] },
+    } }
+    const published = makeRecord({ title: 'A study', doi: '10.1000/study', type: 'version_of_record',
+      sourceProvider: 'acl', sourceRecordId: '2025.acl.1' })
+    const first = ingestWorks(createIngestIndex(), [preprint, published])
+    const canonical = first.versions.find(version => version.workVersionId === first.works[0]!.canonicalVersionId)!
+    expect(metadataForVersion(first.index, canonical)).toMatchObject({ abstract: { status: 'unknown' }, keywords: { status: 'unknown' } })
+    const enriched = { ...published, metadata: {
+      abstract: { status: 'available' as const, value: 'Published summary.' },
+      keywords: { status: 'available' as const, value: ['retrieval'] },
+    } }
+    const second = ingestWorks(first.index, [enriched, { ...enriched, metadata: {
+      abstract: { status: 'available' as const, value: 'Another summary.' },
+      keywords: { status: 'available' as const, value: ['retrieval', 'evaluation'] },
+    } }])
+    expect(second.versions).toHaveLength(2)
+    expect(metadataForVersion(second.index, canonical)).toEqual({
+      abstract: { status: 'available', value: 'Published summary.' },
+      keywords: { status: 'available', value: ['retrieval', 'evaluation'] },
+    })
+    const original = second.versions.find(version => version.versionType === 'preprint')!
+    expect(metadataForVersion(second.index, original)).toEqual(preprint.metadata)
+  })
+
   it('starts a new work for a record with no collision', () => {
     const record = makeRecord({ title: 'A novel method', doi: '10.0000/a', year: 2024 })
     const outcome = ingestWorks(createIngestIndex(), [record])

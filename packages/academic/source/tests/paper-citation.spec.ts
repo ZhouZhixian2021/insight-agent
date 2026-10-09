@@ -54,6 +54,7 @@ describe('official paper pages', () => {
       title: 'Forecasting & Planning', authors: ['Alice Example', 'Bob Researcher'],
       year: '2024', venue: 'Time Series Conference', doi: '10.1000/example',
       pdfUrl: 'https://example.org/paper.pdf', abstractUrl: 'https://example.org/paper',
+      abstract: null, keywords: [],
     })
   })
 
@@ -65,6 +66,29 @@ describe('official paper pages', () => {
     expect(parseAcademicPaperCitation('<meta name=citation_title content="A Paper">'
       + '<meta name=citation_author content="Alice">'
       + '<meta name=citation_inbook_title content="Book">')).toMatchObject({ venue: 'Book', doi: null })
+  })
+
+  it('reads scholarly abstract tags and keywords without adopting a generic page description', () => {
+    const base = '<meta name=citation_title content="A Paper"><meta name=citation_author content="Alice">'
+    expect(parseAcademicPaperCitation(base + '<meta name=description content="Promotional snippet">'
+      + '<meta name=keywords content="Generic site keywords">'))
+      .toMatchObject({ abstract: null, keywords: [] })
+    expect(parseAcademicPaperCitation(base + '<meta name=citation_abstract content="An empirical &amp; scholarly abstract.">'
+      + '<meta name=citation_keywords content="retrieval; faithfulness, evaluation">'))
+      .toMatchObject({ abstract: 'An empirical & scholarly abstract.', keywords: ['retrieval', 'faithfulness', 'evaluation'] })
+    expect(parseAcademicPaperCitation(base + '<meta name="DC.Description" content="Scholarly summary">'))
+      .toMatchObject({ abstract: 'Scholarly summary' })
+  })
+
+  it.each(['acl', 'pmlr', 'cvf'] as const)('reads only the %s official abstract block', (provider) => {
+    const base = '<meta name=citation_title content="A Paper"><meta name=citation_author content="Alice">'
+    const selector = provider === 'acl' ? 'class="card-body acl-abstract"' : 'id="abstract"'
+    expect(parseAcademicPaperCitation(base + `<div ${selector}><h5>Abstract</h5>`
+      + '<span>Scholarly <b>retrieval</b> &amp; evaluation.</span></div><p>Unrelated page text.</p>', provider))
+      .toMatchObject({ abstract: 'Scholarly retrieval & evaluation.' })
+    expect(parseAcademicPaperCitation(base + '<div id="unrelated">Website description.</div>', provider))
+      .toMatchObject({ abstract: null })
+    expect(parseAcademicPaperCitation(base + `<div ${selector}> </div>`, provider).abstract).toBeNull()
   })
 
   it('rejects a page without a title or authors', () => {

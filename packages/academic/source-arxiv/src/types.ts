@@ -1,4 +1,4 @@
-import type { AcademicWork, WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 
 /** One arXiv Atom entry distilled into the fields this provider consumes. */
 export interface ArxivRawWork {
@@ -8,6 +8,8 @@ export interface ArxivRawWork {
   readonly published: string | null
   readonly updated: string | null
   readonly doi: string | null
+  readonly abstract?: string | null
+  readonly keywords?: readonly string[]
 }
 
 /** One parsed arXiv Atom search feed: distilled entries plus the upstream match count. */
@@ -22,7 +24,4 @@ export interface ArxivFeedResult {
 }
 
 /** One arXiv entry translated into shared academic-model records. */
-export interface NormalizedArxivWork {
-  readonly academicWork: AcademicWork
-  readonly workVersion: WorkVersion
-}
+export type NormalizedArxivWork = AcademicSourceWork
