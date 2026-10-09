@@ -51,12 +51,13 @@ class SnapshotAdapter extends LlmAdapter {
     }
     yield { type: 'text-delta', index: 0, text: JSON.stringify({
       scope: { status: 'included', reason: 'No approved rule excludes the paper.' }, evidence: [{ segmentIndex: 0,
+        questionIndexes: [0],
         sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
         cardItems: [{ section: 'methods', statement: 'Uses Method X.',
           methodName: { status: 'available', value: 'Method X' },
           methodRole: { status: 'available', value: 'proposed' } }] },
-      { segmentIndex: 0, sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', cardItems: [] },
-      { segmentIndex: 0, sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Method X', cardItems: [] }] }) }
+      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', cardItems: [] },
+      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Method X', cardItems: [] }] }) }
     yield { type: 'finish', reason: { kind: 'stop' } }
   }
 }

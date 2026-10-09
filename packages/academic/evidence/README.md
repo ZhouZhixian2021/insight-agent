@@ -46,7 +46,7 @@ const result = await extractEvidenceFromContent({
 }, generator)
 ```
 
-The result contains `sourceLocators`, `evidenceRecords`, and one `evidenceCard`. Each excerpt must occur exactly in its referenced segment. When a valid segment index points to the wrong segment, the extractor repairs it only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous, normalized, absent, empty, or invalidly indexed excerpts fail with `EvidenceError` before untraceable evidence reaches analysis. The lower-level constructors remain available when a caller already owns verified evidence:
+The result contains `sourceLocators`, `evidenceRecords`, run-specific `questionLinks`, and one `evidenceCard`. A draft's optional `questionIndexes` identifies the supplied focus questions directly supported by that exact excerpt. The extractor validates every index and copies the approved question text into `questionLinks`; invalid relations reject only that draft. The durable `EvidenceRecord` remains independent of a particular Brief. Each excerpt must occur exactly in its referenced segment. When a valid segment index points to the wrong segment, the extractor repairs it only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous, normalized, absent, empty, or invalidly indexed excerpts fail with `EvidenceError` before untraceable evidence reaches analysis. The lower-level constructors remain available when a caller already owns verified evidence:
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -83,7 +83,7 @@ Extraction rejects model source references individually. `EvidenceExtractionResu
 | `EvidenceRecordInput` / `EvidenceCardInput` | The record and card construction inputs. |
 | `EvidenceExtractionInput` / `EvidenceExtractionResult` | Locatable paper input and the verified single-paper result. |
 | `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | Structural fetch result and paper provenance accepted by HTML/PDF preparation. |
-| `EvidenceGenerator` / `EvidenceDraft` | Caller-owned semantic generation and its typed output. |
+| `EvidenceGenerator` / `EvidenceDraft` / `EvidenceQuestionLink` | Caller-owned semantic generation, its typed output, and the run-specific accepted evidence-to-question relation. |
 | `EvidenceError` | Typed construction failure carrying a stable `code`. |
 
 -----

@@ -111,18 +111,31 @@ function metricValue(value: unknown, path: string): string | number {
 }
 
 function draft(value: unknown, path: string): EvidenceDraft {
-  const item = object(value, path, ['segmentIndex', 'sourcedStatement', 'verbatimExcerpt', 'cardItems', 'qualityNotes'])
+  const item = object(value, path, ['segmentIndex', 'questionIndexes', 'sourcedStatement', 'verbatimExcerpt', 'cardItems', 'qualityNotes'])
   const index = item.segmentIndex
   if (typeof index !== 'number' || !Number.isSafeInteger(index) || index < 0) {
     invalid(`${path}.segmentIndex`, 'expected non-negative safe integer')
   }
   return {
     segmentIndex: index,
+    questionIndexes: questionIndexes(item.questionIndexes, `${path}.questionIndexes`),
     sourcedStatement: nonempty(item.sourcedStatement, `${path}.sourcedStatement`),
     verbatimExcerpt: nonempty(item.verbatimExcerpt, `${path}.verbatimExcerpt`),
     cardItems: array(item.cardItems, `${path}.cardItems`, cardItem),
     ...item.qualityNotes === undefined ? {} : { qualityNotes: array(item.qualityNotes, `${path}.qualityNotes`, string) },
   }
+}
+
+function questionIndexes(value: unknown, path: string): readonly number[] {
+  const indexes = array(value, path, (entry, entryPath) => {
+    if (typeof entry !== 'number' || !Number.isSafeInteger(entry) || entry < 0) {
+      invalid(entryPath, 'expected non-negative safe integer')
+    }
+    return entry
+  })
+  if (indexes.length === 0) invalid(path, 'expected at least one focus-question index')
+  if (new Set(indexes).size !== indexes.length) invalid(path, 'expected distinct focus-question indexes')
+  return indexes
 }
 
 function cardItem(value: unknown, path: string): EvidenceCardItemDraft {

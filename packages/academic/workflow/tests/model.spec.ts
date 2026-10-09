@@ -17,7 +17,7 @@ import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages } from '../src/model-prompt.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
-  { segmentIndex: 0, sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
+  { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
     cardItems: [{ section: 'methods', statement: 'Uses Method X.', methodName: { status: 'available', value: 'Method X' },
       methodRole: { status: 'available', value: 'proposed' } }] }] })
 const script: StreamChunk[] = [{ type: 'text-delta', index: 0, text: output },
@@ -97,6 +97,7 @@ async function fixture(writer = true) {
   const source: EvidenceExtractionInput = { academicWorkId: createAcademicWorkId(), workVersionId: createWorkVersionId(),
     contentHash: 'fixture-content-hash', sourceProvider: 'fixture', sourceUrl: 'https://example.org/paper',
     retrievedAt: '2026-09-15T00:00:00Z', extractionMethod: { method: 'fixture', methodVersion: '1' },
+    focusQuestions: ['Which method?'],
     segments: [{ text: 'Uses Method X.', locator: { kind: 'paragraph', paragraphNumber: 1 } }] }
   const request: EvidenceGenerationRequest = { instruction: 'Extract supported methods.', focusQuestions: ['Which method?'], segments: source.segments }
   const generate = createModelEvidenceGenerator(ctx, session, config, policy)

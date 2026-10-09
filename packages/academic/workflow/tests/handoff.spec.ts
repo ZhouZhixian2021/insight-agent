@@ -10,13 +10,14 @@ function fixture() {
     versionType: 'preprint', versionLabel: { status: 'available', value: 'v1' }, releaseDate: { status: 'unknown', reason: 'fixture' },
     externalIdentifiers: [], sourceRecords: [], contentHash: { status: 'not_extracted', reason: 'not fetched' },
     supersedesWorkVersionId: null, status: 'active' }
-  const parsed = prepareFetchedAcademicFullText({ academicWorkId: version.academicWorkId, workVersionId: version.workVersionId,
+  const parsed = { ...prepareFetchedAcademicFullText({ academicWorkId: version.academicWorkId, workVersionId: version.workVersionId,
     sourceProvider: 'fixture', retrievedAt: '2026-09-15T00:00:00Z', extractionMethod: { method: 'fixture', methodVersion: '1' },
     fetched: { url: 'https://example.org/paper', statusCode: 200, truncated: false,
-      body: { kind: 'html', content: '<article><h2>Methods</h2><p>The method uses reranking.</p></article>' } } })
+      body: { kind: 'html', content: '<article><h2>Methods</h2><p>The method uses reranking.</p></article>' } } }),
+  focusQuestions: ['Which method is used?'] }
   const generator = vi.fn<PaperEvidenceGenerator>(async () => ({
     scope: { status: 'included', reason: 'No approved rule excludes the paper.' },
-    evidence: [{ segmentIndex: 0, sourcedStatement: 'The method uses reranking.',
+    evidence: [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'The method uses reranking.',
       verbatimExcerpt: 'The method uses reranking.', cardItems: [{ section: 'methods', statement: 'The method uses reranking.',
         methodName: { status: 'available', value: 'reranking' }, methodRole: { status: 'available', value: 'proposed' } }] }],
   }))

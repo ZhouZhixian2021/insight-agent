@@ -11,6 +11,7 @@ import type {
   Availability,
   DatasetEntry,
   EvidenceCard,
+  EvidenceId,
   EvidenceRecord,
   ExtractionMethod,
   FailureCategory,
@@ -130,6 +131,8 @@ export type EvidenceCardItemDraft =
 /** Structured extraction for one exact excerpt in a source segment. */
 export interface EvidenceDraft {
   readonly segmentIndex: number
+  /** Zero-based indexes of the supplied focus questions directly supported by this excerpt. */
+  readonly questionIndexes?: readonly number[]
   readonly sourcedStatement: string
   readonly verbatimExcerpt: string
   readonly cardItems: readonly EvidenceCardItemDraft[]
@@ -232,14 +235,23 @@ export interface EvidenceDraftRejection {
   readonly draftIndex: number
   readonly segmentIndex: number
   readonly code: 'EVIDENCE_EMPTY_EXCERPT' | 'EVIDENCE_INVALID_SEGMENT_INDEX' | 'EVIDENCE_EXCERPT_NOT_FOUND'
+    | 'EVIDENCE_INVALID_QUESTION_INDEX'
   /** Diagnostic without the rejected source text or model statement. */
   readonly reason: string
 }
 
-/** Accepted records and card items, plus individually rejected source references. */
+/** Run-specific relation from one accepted evidence record to an approved research question. */
+export interface EvidenceQuestionLink {
+  readonly evidenceId: EvidenceId
+  /** Exact question copied from the extraction request; model-authored variants are not accepted. */
+  readonly question: string
+}
+
+/** Accepted records and card items, explicit question links, plus individually rejected drafts. */
 export interface EvidenceExtractionResult {
   readonly sourceLocators: readonly SourceLocator[]
   readonly evidenceRecords: readonly EvidenceRecord[]
+  readonly questionLinks: readonly EvidenceQuestionLink[]
   readonly evidenceCard: EvidenceCard
   readonly rejectedDrafts: readonly EvidenceDraftRejection[]
 }

@@ -20,6 +20,7 @@ export type {
   EvidenceContentSegment,
   EvidenceDraft,
   EvidenceDraftRejection,
+  EvidenceQuestionLink,
   EvidenceExtractionInput,
   EvidenceExtractionResult,
   AcademicWebFetchResult,

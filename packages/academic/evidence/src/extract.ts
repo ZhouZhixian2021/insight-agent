@@ -42,7 +42,7 @@ type CardSections = {
  * @param signal - optional cancellation signal forwarded to the generator.
  * Invalid model source references are rejected individually; accepted drafts continue.
  * Generator failures, cancellation and invalid program-owned provenance still reject the call.
- * @returns verified locators, records, one six-section card, and rejected draft diagnostics.
+ * @returns verified locators, records, run-specific question links, one six-section card, and rejected draft diagnostics.
  */
 export async function extractEvidenceFromContent(
   input: EvidenceExtractionInput,
@@ -65,6 +65,7 @@ export async function extractEvidenceFromContent(
   const sourceLocators: SourceLocator[] = []
   const rejectedDrafts: EvidenceDraftRejection[] = []
   const evidenceRecords: EvidenceExtractionResult['evidenceRecords'][number][] = []
+  const questionLinks: EvidenceExtractionResult['questionLinks'][number][] = []
   const sections: CardSections = {
     researchQuestions: [],
     methods: [],
@@ -78,11 +79,14 @@ export async function extractEvidenceFromContent(
     signal?.throwIfAborted()
     const excerpt = draft.verbatimExcerpt.trim()
     let located: ReturnType<typeof locateExcerpt>
+    let questions: readonly string[]
     try {
+      questions = questionsForDraft(input.focusQuestions ?? [], draft.questionIndexes)
       located = locateExcerpt(input.segments, draft.segmentIndex, excerpt)
     } catch (error: unknown) {
       if (!(error instanceof EvidenceError) || (error.code !== 'EVIDENCE_EMPTY_EXCERPT'
-        && error.code !== 'EVIDENCE_INVALID_SEGMENT_INDEX' && error.code !== 'EVIDENCE_EXCERPT_NOT_FOUND')) throw error
+        && error.code !== 'EVIDENCE_INVALID_SEGMENT_INDEX' && error.code !== 'EVIDENCE_EXCERPT_NOT_FOUND'
+        && error.code !== 'EVIDENCE_INVALID_QUESTION_INDEX')) throw error
       rejectedDrafts.push({ draftIndex, segmentIndex: draft.segmentIndex, code: error.code, reason: error.message })
       continue
     }
@@ -105,6 +109,7 @@ export async function extractEvidenceFromContent(
     })
     sourceLocators.push(sourceLocator)
     evidenceRecords.push(evidenceRecord)
+    for (const question of questions) questionLinks.push({ evidenceId: evidenceRecord.evidenceId, question })
     for (const item of draft.cardItems) addCardItem(sections, item, evidenceRecord.evidenceId)
   }
 
@@ -112,12 +117,28 @@ export async function extractEvidenceFromContent(
     rejectedDrafts,
     sourceLocators,
     evidenceRecords,
+    questionLinks,
     evidenceCard: createEvidenceCard({
       academicWorkId: input.academicWorkId,
       workVersionId: input.workVersionId,
       ...sections,
     }),
   }
+}
+
+function questionsForDraft(
+  focusQuestions: readonly string[],
+  questionIndexes: readonly number[] | undefined,
+): readonly string[] {
+  if (questionIndexes === undefined) return []
+  const seen = new Set<number>()
+  return questionIndexes.map((index) => {
+    if (!Number.isSafeInteger(index) || index < 0 || seen.has(index) || focusQuestions[index] === undefined) {
+      invalid(`questionIndex ${index} does not uniquely identify a supplied focus question`, 'EVIDENCE_INVALID_QUESTION_INDEX')
+    }
+    seen.add(index)
+    return focusQuestions[index]
+  })
 }
 
 /** Keep a valid model locator, or repair only an unambiguous exact match elsewhere. */
