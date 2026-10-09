@@ -212,6 +212,16 @@ describe('scholarly metadata screening', () => {
     expect(assessPlannedCandidates(publishedPlan, specializedBrief, undated, criteria, facts)[0]?.recency).toBe(1)
   })
 
+  it('disables recency when the reviewed publication window has no complete range', () => {
+    const { input, facts } = inputs('Retrieval faithfulness')
+    const { asOfYear: _asOfYear, recencyWindowYears: _recencyWindowYears, ...withoutRecency } = criteria
+    const assessment = assessPlannedCandidates(plan, specializedBrief, input,
+      withoutRecency, facts)[0]!
+    expect(assessment.recency).toBe(0)
+    expect(assessment.reasons.join(' '))
+      .toContain('Recency scoring is disabled because the reviewed publication window has no complete year range.')
+  })
+
   it('rejects mismatched review scope, empty concepts, invalid recency, and missing resolution facts', () => {
     const { input, facts } = inputs('Retrieval faithfulness')
     const run = (value = criteria) => assessPlannedCandidates(plan, specializedBrief, input, value, facts)
@@ -221,6 +231,8 @@ describe('scholarly metadata screening', () => {
     expect(() => run({ ...criteria, topic: [[' ']] })).toThrow(/non-empty/u)
     expect(() => run({ ...criteria, topic: [] })).toThrow(/non-empty/u)
     expect(() => run({ ...criteria, recencyWindowYears: 0 })).toThrow(/recency window/u)
+    const { recencyWindowYears: _recencyWindowYears, ...missingRecencyWindow } = criteria
+    expect(() => run(missingRecencyWindow)).toThrow(/recency window/u)
     expect(() => assessPlannedCandidates(plan, { ...specializedBrief, version: 2 }, input, criteria, facts))
       .toThrow(/approved Brief version/u)
     expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, new Map())).toThrow(/resolution fact/u)

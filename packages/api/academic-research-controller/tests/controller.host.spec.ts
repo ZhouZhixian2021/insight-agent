@@ -4,7 +4,7 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatch
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
-import type { AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
+import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -40,6 +40,18 @@ function brief() {
       maximumIncludedWorks: 2, maximumElapsedMinutes: null, saturationRounds: 1, stopWhenEvidenceRequirementsMet: false },
     assumptions: [], approval: { status: 'approved' as const, reviewedBy: 'tester', reviewedAt: '2026-09-16T00:00:00Z',
       approvedBriefVersion: 1, comment: null } }
+}
+
+function retrievalWork(record: AcademicSourceWork, recordId: string): AcademicSourceWork {
+  return {
+    ...record,
+    academicWork: { ...record.academicWork, title: `Retrieval study ${recordId}` },
+    workVersion: { ...record.workVersion, sourceRecords: [{ provider: 'arxiv', recordId }] },
+    metadata: {
+      abstract: { status: 'available', value: 'This retrieval study compares methods and reports results.' },
+      keywords: { status: 'available', value: ['retrieval', 'methods'] },
+    },
+  }
 }
 
 function retrievalRun(stage: 'completed' | 'cancelled' = 'completed'): RetrievalRun {
@@ -297,9 +309,7 @@ describe('AcademicResearchController', () => {
   it('executes the reviewed hybrid policy and hands verified works to the real paper pipeline', async () => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(1)
-    const original = pipeline.records[0]!
-    const work = { ...original, workVersion: { ...original.workVersion,
-      sourceRecords: [{ provider: 'arxiv', recordId: '1706.03762' }] } }
+    const work = retrievalWork(pipeline.records[0]!, '1706.03762')
     fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []),
       providers: ['arxiv', 'openalex'], discoveredRecords: 0, limitations: [], truncated: false })
     fixture.webSearch.mockResolvedValue({ sources: [{ url: 'https://arxiv.org/abs/1706.03762', title: 'Untrusted title' },
@@ -352,8 +362,8 @@ describe('AcademicResearchController', () => {
     const questions = ['Which method works?']
     const fixture = await harness({ hybridPlan: true, questions, saturationRounds: 3 })
     const pipeline = draftFixture(2)
-    const works = pipeline.records.map((record, index) => ({ ...record, workVersion: { ...record.workVersion,
-      sourceRecords: [{ provider: 'arxiv', recordId: ['1706.03762', '1810.04805'][index]! }] } }))
+    const works = pipeline.records.map((record, index) =>
+      retrievalWork(record, ['1706.03762', '1810.04805'][index]!))
     fixture.searchProviders.mockImplementation(async ({ query }: { query: string }) => {
       const selected = query === 'retrieval' ? [works[0]!] : works.slice(1)
       const batch = createBatchResult(selected, [])
@@ -443,8 +453,7 @@ describe('AcademicResearchController', () => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(2)
     const ids = ['1706.03762', '1810.04805']
-    const works = pipeline.records.map((record, index) => ({ ...record, workVersion: { ...record.workVersion,
-      sourceRecords: [{ provider: 'arxiv', recordId: ids[index]! }] } }))
+    const works = pipeline.records.map((record, index) => retrievalWork(record, ids[index]!))
     fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []), providers: ['arxiv'],
       discoveredRecords: 0, truncated: false, limitations: [] })
     fixture.webSearch.mockResolvedValue({ sources: ids.map(id => ({ url: `https://arxiv.org/abs/${id}` })), truncated: false })

@@ -31,7 +31,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 ### 元数据初筛
 
-`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配，问题的全部概念命中后才算匹配问题。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径、`asOfYear` 与 `recencyWindowYears`。
+`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配，问题的全部概念命中后才算匹配问题。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径，以及可选的 `asOfYear`/`recencyWindowYears` 配对。已审核发表时间缺少任一边界时应同时省略两者，时效分记零，不虚构参考时段。
 
 ```text
 const assessments = assessPlannedCandidates(plan, brief, round, reviewedCriteria, fulltextFacts)
