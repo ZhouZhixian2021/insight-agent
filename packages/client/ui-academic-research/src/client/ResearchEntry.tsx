@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { AcademicResearchPlanView, AcademicResearchRunRequest, AcademicResearchRunFrame, AcademicResearchProgressView } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+import type { AcademicResearchPlanView, AcademicResearchRunRequest, AcademicResearchRunFrame,
+  AcademicResearchProgressView, AcademicQ6Projection } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { RunPanel } from './RunPanel.tsx'
 import { SearchPolicies } from './HybridRetrieval.tsx'
 import type { RunView } from './run-types.ts'
@@ -62,22 +63,36 @@ function ResearchForm({ sessionId, runStream, plan, t }: ResearchEntryInjected &
     setView({ phase: 'running' })
     let progress: AcademicResearchProgressView | undefined
     let recent: AcademicResearchProgressView[] = []
-    const observed = () => progress === undefined ? {} : { progress, recent }
+    let q6: AcademicQ6Projection | undefined
+    let runId: AcademicResearchProgressView['retrievalRunId'] | undefined
+    const observed = () => ({ ...progress === undefined ? {} : { progress, recent }, ...q6 === undefined ? {} : { q6 } })
+    const checkIdentity = (id: AcademicResearchProgressView['retrievalRunId'], owner: typeof sessionId) => {
+      if (owner !== sessionId || (runId !== undefined && id !== runId)) throw new Error(t('streamMismatch'))
+      runId = id
+    }
+    const receiveQ6 = (projection: AcademicQ6Projection) => {
+      checkIdentity(projection.retrievalRunId, projection.sessionId)
+      if (projection.researchBriefId !== approved.researchBriefId
+        || (q6 !== undefined && projection.researchBriefVersion !== q6.researchBriefVersion)) throw new Error(t('streamMismatch'))
+      if (q6 === undefined || projection.sequence > q6.sequence) q6 = projection
+    }
     try {
       for await (const frame of runStream({ sessionId, researchBriefId: approved.researchBriefId, synthetic: false }, operation.signal)) {
         if (active.current !== operation) return
         if (frame.type === 'progress') {
-          if (frame.progress.sessionId !== sessionId
-            || (progress !== undefined && frame.progress.retrievalRunId !== progress.retrievalRunId)) {
-            throw new Error(t('streamMismatch'))
-          }
+          checkIdentity(frame.progress.retrievalRunId, frame.progress.sessionId)
           if (progress !== undefined && frame.progress.sequence <= progress.sequence) continue
           progress = frame.progress
           recent = [...recent, progress].slice(-20)
           setView({ phase: 'running', cancelling: operation.signal.aborted, ...observed() })
-        } else if (frame.type === 'result') {
-          if (frame.value.sessionId !== sessionId || frame.retrievalRunId !== frame.value.retrievalRun.retrievalRunId
-            || (progress !== undefined && frame.retrievalRunId !== progress.retrievalRunId)) throw new Error(t('streamMismatch'))
+        } else if (frame.type === 'q6') {
+          receiveQ6(frame.projection)
+          setView({ phase: 'running', cancelling: operation.signal.aborted, ...observed() })
+        } else {
+          checkIdentity(frame.retrievalRunId, frame.value.sessionId)
+          if (frame.retrievalRunId !== frame.value.retrievalRun.retrievalRunId) throw new Error(t('streamMismatch'))
+          if (frame.value.q6 != null) receiveQ6(frame.value.q6)
+          else q6 = undefined
           setView({ phase: 'settled', value: frame.value, ...observed() })
           return
         }

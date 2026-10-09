@@ -8,11 +8,11 @@ import css from './RunPanel.module.css'
  * @param props Shared plan and localized labels.
  * @returns Scope, distinct inclusion targets and channel-specific queries.
  */
-export function Q6Plan({ plan, t }: PropsLocale<'academicRun'> & { readonly plan: HybridSearchPlan }) {
+export function Q6Plan({ plan, t, demo = true }: PropsLocale<'academicRun'> & { readonly plan: HybridSearchPlan; readonly demo?: boolean }) {
   const c = plan.constraints
   return <section aria-label={t('q6_plan')}>
     <h3>{t('q6_plan')}</h3><p>{plan.researchBriefId} · {t('version')}: {plan.researchBriefVersion}</p>
-    <p className={css.notice}>{t('q6_approvalUnknown')}</p>
+    <p className={css.notice}>{t(demo ? 'q6_approvalUnknown' : 'q6_boundPlan')}</p>
     <dl className={css.stats}>
       {(['minimum', 'target', 'maximum'] as const).map(key => <div key={key}><dt>{t(`q6_${key}`)}</dt><dd>{plan.inclusionTargets[key]}</dd></div>)}
       <div><dt>{t('q6_roundLimit')}</dt><dd>{plan.maximumSearchRounds}</dd></div>

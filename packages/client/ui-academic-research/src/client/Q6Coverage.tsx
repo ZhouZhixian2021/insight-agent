@@ -1,5 +1,6 @@
 /** Coverage and stop decisions are producer facts, independent of candidate relevance. */
 import { useState } from 'react'
+import type { ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { Q6Sample } from './q6-types.ts'
 import css from './RunPanel.module.css'
@@ -30,12 +31,30 @@ export function Q6Coverage({ data, t }: PropsLocale<'academicRun'> & { readonly 
         <p>{t('q6_stop')}: {event.stopReason === null ? t('q6_noStopReported') : t(`q6_stop_${event.stopReason}`)}</p>
       </>}
     </section>
-    <section aria-label={t('q6_coverage')}><h3>{t('q6_coverage')}</h3><p>{t('q6_coverageNotice')}</p>
-      <p>{t('observedAt')}: {data.coverage.assessedAt}</p>
-      <p>{t('q6_evidenceRequirements')}: {t(data.coverage.evidenceRequirementsMet ? 'q6_yes' : 'q6_no')}
-        {' · '}{t('q6_allCovered')}: {t(data.coverage.allQuestionsCovered ? 'q6_yes' : 'q6_no')}</p>
-      {data.coverage.questions.length === 0 && <p>{t('q6_noCoverage')}</p>}
-      {data.coverage.questions.map(question => <article className={css.card} key={question.question}>
+    <Q6EvidenceCoverage coverage={data.coverage} t={t} />
+    <section aria-label={t('q6_stop')}><h3>{t('q6_stop')}</h3>
+      <p>{t(data.stopDecision.shouldStop ? `q6_stop_${data.stopDecision.reason}` : 'q6_continue')}</p>
+      <ul>{data.stopDecision.details.map((detail, i) => <li key={i}>{detail}</li>)}</ul><p>{t('q6_gapActionUnknown')}</p>
+    </section>
+  </>
+}
+
+/**
+ * Render exactly the evidence-to-question associations settled by the producer.
+ * @param props Coverage result and localized copy; demo changes disclosure only.
+ * @returns Per-question support and gaps without deriving support from candidate matches.
+ */
+export function Q6EvidenceCoverage({ coverage, t, demo = true }: PropsLocale<'academicRun'> & {
+  readonly coverage: ResearchQuestionCoverageResult
+  readonly demo?: boolean
+}) {
+  return (
+    <section aria-label={t('q6_coverage')}><h3>{t('q6_coverage')}</h3><p>{t(demo ? 'q6_coverageNotice' : 'q6_liveCoverageNotice')}</p>
+      <p>{t('observedAt')}: {coverage.assessedAt}</p>
+      <p>{t('q6_evidenceRequirements')}: {t(coverage.evidenceRequirementsMet ? 'q6_yes' : 'q6_no')}
+        {' · '}{t('q6_allCovered')}: {t(coverage.allQuestionsCovered ? 'q6_yes' : 'q6_no')}</p>
+      {coverage.questions.length === 0 && <p>{t('q6_noCoverage')}</p>}
+      {coverage.questions.map(question => <article className={css.card} key={question.question}>
         <h4>{question.question}</h4><p>{t(`q6_${question.status}`)}</p>
         <p>{t('q6_supportingWorks')}: {question.supportingWorkIds.join(', ') || t('q6_none')}</p>
         <p>{t('evidence')}: {question.evidenceIds.join(', ') || t('q6_none')}</p>
@@ -43,9 +62,5 @@ export function Q6Coverage({ data, t }: PropsLocale<'academicRun'> & { readonly 
           : <ul>{question.gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul>}
       </article>)}
     </section>
-    <section aria-label={t('q6_stop')}><h3>{t('q6_stop')}</h3>
-      <p>{t(data.stopDecision.shouldStop ? `q6_stop_${data.stopDecision.reason}` : 'q6_continue')}</p>
-      <ul>{data.stopDecision.details.map((detail, i) => <li key={i}>{detail}</li>)}</ul><p>{t('q6_gapActionUnknown')}</p>
-    </section>
-  </>
+  )
 }

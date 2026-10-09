@@ -147,6 +147,12 @@ describe('hybrid plan browser preview', () => {
         if (capture !== undefined) await page.screenshot({ path: join(capture, 'live-running.png') })
         finishSearch()
         await dialog.getByRole('heading', { name: 'Coverage', exact: true }).waitFor()
+        const q6 = dialog.getByRole('region', { name: 'Q6 results for this research run' })
+        await q6.waitFor()
+        const evidenceCoverage = q6.getByRole('region', { name: 'Evidence coverage by question' })
+        expect(await evidenceCoverage.innerText()).toContain('Uncovered')
+        expect(await evidenceCoverage.innerText()).toContain('No entries')
+        expect(await q6.getByRole('note').count()).toBe(0)
         // Q5 may issue a distinct gap query; the approved initial query must still run only once.
         expect(search.mock.calls.filter(([request]) => request.query === 'retrieval augmented generation hallucination')).toHaveLength(1)
         expect(webSearch).toHaveBeenCalledTimes(1)
@@ -156,6 +162,8 @@ describe('hybrid plan browser preview', () => {
         if (capture !== undefined) {
           await progress.scrollIntoViewIfNeeded()
           await page.screenshot({ path: join(capture, 'live-settled.png') })
+          await q6.scrollIntoViewIfNeeded()
+          await page.screenshot({ path: join(capture, 'q6-live-coverage.png') })
         }
       } finally { finishSearch(); search.mockRestore(); webSearch.mockRestore(); await browser.close() }
     } finally { await scaffold.close() }

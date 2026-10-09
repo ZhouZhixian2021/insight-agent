@@ -7,6 +7,7 @@ import css from './RunPanel.module.css'
 import { HybridRetrieval } from './HybridRetrieval.tsx'
 import { reportWithRetrieval } from './retrieval-report.ts'
 import { ProgressPanel } from './ProgressPanel.tsx'
+import { Q6Live } from './Q6Live.tsx'
 
 type Copy = PropsLocale<'academicRun'>
 
@@ -23,9 +24,12 @@ export type RunPanelProps = Copy & {
  * @returns The running, error or settled content.
  */
 export function RunPanel({ view, onCancel, t, plannedSearches }: RunPanelProps) {
+  const q6 = view.q6 ?? (view.phase === 'settled' ? view.value.q6 : null)
   return <>
     {view.phase !== 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
     {view.progress !== undefined && <ProgressPanel progress={view.progress} recent={view.recent} t={t} />}
+    {q6 != null && <Q6Live key={q6.retrievalRunId} projection={q6} t={t} />}
+    {view.phase === 'settled' && q6 == null && <p>{t('q6_liveUnavailable')}</p>}
     {view.phase === 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
   </>
 }
