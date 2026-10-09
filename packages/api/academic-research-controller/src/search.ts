@@ -1,8 +1,8 @@
 /** Adapt approved plan searches to Session-owned Academic and DSH Web services. */
 import { createBatchResult, isExecutableResearchBrief, type AcademicCandidateRankingResult,
-  type CandidateAssessment, type ExecutableResearchBrief, type HybridSearchPlan,
-  type ResearchBrief, type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
-import { executePlannedSearchRound, extendPlanForEvidenceGaps, rankPlannedCandidates,
+  type CandidateAssessment, type CandidateFulltextAvailability, type ExecutableResearchBrief, type HybridSearchPlan,
+  type ResearchBrief, type ResearchQuestionCoverageResult, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps, rankPlannedCandidates,
   type PlannedSearchAdapters, type PlannedSearchRoundResult,
   type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
 import { dedupKeys, ingestWorks, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
@@ -14,6 +14,7 @@ import { executeHybridSearch, type CandidateBatchPolicy, type CandidateSchedulin
   type ReplenishedCandidates, selectResearchPapers, type SelectedPaper } from '@deepseek-ai/dsh-academic-workflow'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from './planned-retrieval.ts'
+import { approvedCandidateScreeningCriteria } from './candidate-screening.ts'
 import type { AcademicPlannedSearch } from './types.ts'
 
 /** Deployment-owned bounds for one evidence-gap replenishment round. */
@@ -125,7 +126,7 @@ function rankedPaperSelection(
   }
 }
 
-/** Build conservative assessments and a Q4 ranking for one deduplicated ingestion outcome. */
+/** Build trusted metadata assessments and a Q4 ranking for one deduplicated ingestion outcome. */
 function buildRanking(
   approvedBrief: ExecutableResearchBrief,
   plan: HybridSearchPlan,
@@ -138,7 +139,6 @@ function buildRanking(
   readonly ranking: AcademicCandidateRankingResult
   readonly papers: ReadonlyMap<string, SelectedPaper> } {
   const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
-  const queryQuestions = new Map(plan.queries.map(query => [query.searchQueryId, query.questions]))
   const discoveredBy = ingested.works.map((work) => {
     const records = ingested.index.records.get(work.academicWorkId)
     /* v8 ignore next -- ingestWorks creates one records entry for every reconciled work in the same outcome. */
@@ -148,7 +148,8 @@ function buildRanking(
   })
   const provenance = new Map(discoveredBy.map(item => [item.academicWorkId, item.searchQueryIds]))
   const papers = new Map<string, SelectedPaper>()
-  const assessments: CandidateAssessment[] = ingested.works.map((work) => {
+  const fulltextFacts = new Map<WorkVersionId, CandidateFulltextAvailability>()
+  for (const work of ingested.works) {
     const version = versions.get(work.canonicalVersionId)
     /* v8 ignore next -- ingestWorks reconciles every canonicalVersionId into the versions collection returned beside the work. */
     if (version === undefined) throw new Error('Ranked candidate requires its canonical version.')
@@ -156,7 +157,6 @@ function buildRanking(
     const queryIds = provenance.get(work.academicWorkId)
     /* v8 ignore next -- provenance is built from the same ingested.works iteration immediately above. */
     if (queryIds === undefined) throw new Error('Ranked candidate requires query provenance.')
-    const matchedQuestions = [...new Set(queryIds.flatMap(queryId => queryQuestions.get(queryId) ?? []))]
     const sourceProviders = [...new Set(version.sourceRecords.map(record => record.provider))]
     papers.set(version.workVersionId, {
       workVersionId: version.workVersionId,
@@ -165,33 +165,13 @@ function buildRanking(
       extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' },
       hasHistoricalEvidence: false,
     })
-    const topicRelevance = Math.min(1, matchedQuestions.length / Math.max(1, approvedBrief.questions.length))
-    return {
-      academicWorkId: work.academicWorkId,
-      abstract: { status: 'unknown', reason: 'The normalized provider record does not carry an abstract.' },
-      keywords: { status: 'unknown', reason: 'The normalized provider record does not carry keywords.' },
-      fulltextAvailability: resolved === null
-        ? { status: 'unresolved', reason: 'No configured Academic provider returned a full-text candidate.' }
-        : { status: 'resolvable' },
-      matchedQuestions,
-      contributionSignals: [],
-      topicRelevance,
-      evidencePotential: resolved === null ? 0 : 0.5,
-      methodMatch: 0,
-      sourceQuality: 1,
-      recency: 0.5,
-      inclusionRuleMatches: plan.constraints.inclusionRules.map(() => null),
-      exclusionRuleMatches: plan.constraints.exclusionRules.map(() => null),
-      diversityTags: sourceProviders,
-      reasons: [
-        matchedQuestions.length > 0
-          ? 'Candidate question matches come from reviewed query provenance.'
-          : 'No reviewed query-question provenance was retained for this candidate.',
-        'Natural-language scope rules are deferred to full-text validation because trusted abstract metadata is unavailable.',
-      ],
-    }
-  })
+    fulltextFacts.set(version.workVersionId, resolved === null
+      ? { status: 'unresolved', reason: 'No configured Academic provider returned a full-text candidate.' }
+      : { status: 'resolvable' })
+  }
   const round: PlannedSearchRoundResult = { ingested, discoveredBy, queries: [] }
+  const assessments = assessPlannedCandidates(plan, approvedBrief, round,
+    approvedCandidateScreeningCriteria(approvedBrief, plan), fulltextFacts)
   const ranking = rankPlannedCandidates(plan, approvedBrief, round, assessments)
   return { assessments, ranking, papers }
 }

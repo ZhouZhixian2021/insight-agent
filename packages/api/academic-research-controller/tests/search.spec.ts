@@ -33,10 +33,14 @@ function setup(options: {
   readonly gapWorks?: readonly AcademicSourceWork[]
   readonly failGapSearch?: boolean
   readonly unresolved?: ReadonlySet<string>
+  readonly metadata?: NonNullable<AcademicSourceWork['metadata']>
 } = {}) {
   const fixture = draftFixture(3)
   const questions = [...options.questions ?? ['Which method works?']]
-  const works = fixture.records.map((record, index) => identified(record, `fixture-${index + 1}`))
+  const works = fixture.records.map((record, index) => {
+    const work = identified(record, `fixture-${index + 1}`)
+    return index === 0 && options.metadata !== undefined ? { ...work, metadata: options.metadata } : work
+  })
   const brief = { ...fixture.input.brief, questions,
     stopConditions: { ...fixture.input.brief.stopConditions, maximumSearchRounds: 2,
       maximumCandidateWorks: 3, maximumIncludedWorks: 2, saturationRounds: 3 } }
@@ -91,6 +95,28 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
+  it('uses retained scholarly metadata and conservative reviewed criteria in formal ranking', async () => {
+    const prepared = setup({ metadata: {
+      abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
+      keywords: { status: 'available', value: ['synthetic', 'comparison'] },
+    } })
+
+    const state = await initialState(prepared)
+    expect(state.scheduling.assessments).toHaveLength(1)
+    expect(state.scheduling.assessments[0]).toMatchObject({
+      abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
+      keywords: { status: 'available', value: ['synthetic', 'comparison'] },
+      methodMatch: 0,
+      evidencePotential: 0,
+      contributionSignals: [],
+      recency: 0,
+      fulltextAvailability: { status: 'resolvable' },
+    })
+    expect(state.scheduling.assessments[0]?.matchedQuestions).toEqual(prepared.brief.questions)
+    expect(state.scheduling.assessments[0]?.reasons.join(' '))
+      .toContain('Recency scoring is disabled because the reviewed publication window has no complete year range.')
+  })
+
   it('requires an approved executable Brief for ranked scheduling', () => {
     const prepared = setup()
     expect(() => approvedPaperAdapters({ ...prepared.brief,

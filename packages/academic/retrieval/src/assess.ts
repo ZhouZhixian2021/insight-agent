@@ -19,8 +19,9 @@ export interface CandidateScreeningCriteria {
     readonly classification: Exclude<CandidateClassification, 'background' | 'irrelevant'>
     readonly concepts: CandidateTermConcepts
   }[]
-  readonly asOfYear: number
-  readonly recencyWindowYears: number
+  /** Omit both values when the reviewed publication window cannot support a recency score. */
+  readonly asOfYear?: number
+  readonly recencyWindowYears?: number
 }
 
 /**
@@ -72,7 +73,8 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       methodMatch: fraction(methods.length, criteria.methods.length),
       evidencePotential: fraction(evidence.length, criteria.evidence.length),
       sourceQuality: completeFields.filter(Boolean).length / completeFields.length,
-      recency: publicationYear === undefined ? 0
+      recency: publicationYear === undefined || criteria.asOfYear === undefined
+        || criteria.recencyWindowYears === undefined ? 0
         : Math.max(0, Math.min(1, 1 - (criteria.asOfYear - publicationYear) / criteria.recencyWindowYears)),
       inclusionRuleMatches: plan.constraints.inclusionRules.map(() => null),
       exclusionRuleMatches: plan.constraints.exclusionRules.map(() => null),
@@ -86,8 +88,10 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
         metadata.abstract.status === 'available' ? 'Scholarly abstract available.' : `Abstract unavailable: ${metadata.abstract.reason}`,
         metadata.keywords.status === 'available' ? 'Scholarly keywords available.' : `Keywords unavailable: ${metadata.keywords.reason}`,
         `Source quality is bibliographic completeness: ${completeFields.filter(Boolean).length}/${completeFields.length} fields available.`,
-        publicationYear === undefined ? 'Publication date unavailable; recency scores zero.'
-          : `Recency uses publication year ${publicationYear}, reference year ${criteria.asOfYear}, and window ${criteria.recencyWindowYears} years.`,
+        criteria.asOfYear === undefined || criteria.recencyWindowYears === undefined
+          ? 'Recency scoring is disabled because the reviewed publication window has no complete year range.'
+          : publicationYear === undefined ? 'Publication date unavailable; recency scores zero.'
+            : `Recency uses publication year ${publicationYear}, reference year ${criteria.asOfYear}, and window ${criteria.recencyWindowYears} years.`,
       ],
     }
   })
@@ -111,8 +115,10 @@ function validateCriteria(plan: HybridSearchPlan, brief: ExecutableResearchBrief
       concepts.some(aliases => aliases.length === 0 || aliases.some(alias => normalize(alias) === '')))) {
     throw new RangeError('screening requires non-empty concepts and aliases for topics, questions, and contribution cues')
   }
-  if (!Number.isSafeInteger(criteria.asOfYear) || criteria.asOfYear < 1
-    || !Number.isFinite(criteria.recencyWindowYears) || criteria.recencyWindowYears <= 0) {
+  if ((criteria.asOfYear === undefined) !== (criteria.recencyWindowYears === undefined)
+    || (criteria.asOfYear !== undefined && (!Number.isSafeInteger(criteria.asOfYear) || criteria.asOfYear < 1))
+    || (criteria.recencyWindowYears !== undefined
+      && (!Number.isFinite(criteria.recencyWindowYears) || criteria.recencyWindowYears <= 0))) {
     throw new RangeError('screening requires a positive reference year and recency window')
   }
 }
