@@ -1,7 +1,10 @@
 /** Browser-safe request and result vocabulary for Academic research runs. */
 import type {
-  AcademicWorkId, Availability, ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId,
-  ExtractionMethod, ResearchBriefId, RetrievalRun, RetrievalRunId, SourceLocatorId, WorkVersionId,
+  AcademicWork, AcademicWorkId, Availability, CandidateClassification, CandidateFulltextAvailability,
+  CandidateHardFilterReason, CandidatePriority, CandidatePriorityQueues, CandidateScoreBreakdown,
+  ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId, ExtractionMethod, HybridSearchPlan,
+  HybridSearchRound, ResearchBriefId, ResearchQuestionCoverageResult, RetrievalRun, RetrievalRunId,
+  SearchQueryId, SearchStopDecision, SourceLocatorId, WorkVersion, WorkVersionId,
 } from '@deepseek-ai/dsh-academic-model'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {
@@ -16,6 +19,8 @@ import type {
   AcademicWorkflowProgressStatus,
   AcademicWorkflowProgressUnit,
 } from '@deepseek-ai/dsh-academic-workflow/progress'
+import type { AcademicBatchDecisionEvent,
+  AcademicBatchSettlementEvent } from '@deepseek-ai/dsh-academic-workflow/query-workflow'
 
 /** One bounded Academic research run attached to an existing Session. */
 export interface AcademicResearchRunRequest {
@@ -270,9 +275,97 @@ export interface AcademicResearchProgressView extends AcademicWorkflowProgressSn
   readonly sessionId: SessionId
 }
 
+/** Availability of one independently produced Q6 section; an available empty value is a completed result. */
+export type AcademicQ6Section<T> =
+  | { readonly state: 'pending' }
+  | { readonly state: 'available'; readonly value: T }
+  | { readonly state: 'truncated'; readonly value: T; readonly reason: string }
+  | { readonly state: 'failed'; readonly code: string; readonly message: string; readonly retryable: boolean }
+
+/** Browser-safe assessment facts; non-empty model tuples cross the Remote boundary as ordinary arrays. */
+export interface AcademicQ6CandidateAssessmentView {
+  readonly academicWorkId: AcademicWorkId
+  readonly abstract: Availability<string>
+  readonly keywords: Availability<readonly string[]>
+  readonly fulltextAvailability: CandidateFulltextAvailability
+  readonly matchedQuestions: readonly string[]
+  readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
+  readonly topicRelevance: number
+  readonly evidencePotential: number
+  readonly methodMatch: number
+  readonly sourceQuality: number
+  readonly recency: number
+  readonly inclusionRuleMatches: readonly (boolean | null)[]
+  readonly exclusionRuleMatches: readonly (boolean | null)[]
+  readonly diversityTags: readonly string[]
+  readonly reasons: readonly string[]
+}
+
+/** Browser-safe ranked evaluation with stable array fields for Typert and JSON transports. */
+export interface AcademicQ6CandidateEvaluationView {
+  readonly schemaVersion: 1
+  readonly academicWorkId: AcademicWorkId
+  readonly workVersionId: WorkVersionId
+  readonly discoveredBy: readonly SearchQueryId[]
+  readonly classification: CandidateClassification
+  readonly hardFilter:
+    | { readonly status: 'eligible'; readonly reasons: readonly CandidateHardFilterReason[] }
+    | { readonly status: 'excluded'; readonly reasons: readonly CandidateHardFilterReason[] }
+  readonly score: CandidateScoreBreakdown
+  readonly priority: CandidatePriority
+  readonly matchedQuestions: readonly string[]
+  readonly fulltextAvailability: CandidateFulltextAvailability
+  readonly diversityTags: readonly string[]
+  readonly decisionReasons: readonly string[]
+}
+
+/** One ranked candidate joined to the exact work, version, assessment, and evaluation used by Q5. */
+export interface AcademicQ6CandidateView {
+  readonly work: AcademicWork
+  readonly version: WorkVersion
+  readonly assessment: AcademicQ6CandidateAssessmentView
+  readonly evaluation: AcademicQ6CandidateEvaluationView
+}
+
+/** Ranking metadata shared by all joined candidate rows without duplicating evaluations. */
+export interface AcademicQ6RankingView {
+  readonly schemaVersion: 1
+  readonly researchBriefId: ResearchBriefId
+  readonly researchBriefVersion: number
+  readonly queues: CandidatePriorityQueues
+  readonly limitations: readonly string[]
+}
+
+/** Complete read-only Q6 snapshot derived from one live query-workflow observation. */
+export interface AcademicQ6Projection {
+  readonly schemaVersion: 1
+  readonly sessionId: SessionId
+  readonly retrievalRunId: RetrievalRunId
+  readonly researchBriefId: ResearchBriefId
+  readonly researchBriefVersion: number
+  /** Monotonic only within this retrievalRunId. */
+  readonly sequence: number
+  readonly updatedAt: string
+  readonly status: 'running' | 'settled' | 'cancelled'
+  readonly plan: HybridSearchPlan
+  readonly candidates: AcademicQ6Section<{
+    readonly items: readonly AcademicQ6CandidateView[]
+    readonly ranking: AcademicQ6RankingView
+  }>
+  readonly rounds: AcademicQ6Section<readonly HybridSearchRound[]>
+  readonly batches: AcademicQ6Section<{
+    readonly decisions: readonly AcademicBatchDecisionEvent[]
+    readonly settlements: readonly AcademicBatchSettlementEvent[]
+  }>
+  readonly coverage: AcademicQ6Section<ResearchQuestionCoverageResult>
+  readonly stopDecision: AcademicQ6Section<SearchStopDecision>
+  readonly limitations: readonly string[]
+}
+
 /** Browser-safe frames emitted by `academicResearch.runStream` for one bounded research operation. */
 export type AcademicResearchRunFrame =
   | { readonly type: 'progress'; readonly progress: AcademicResearchProgressView }
+  | { readonly type: 'q6'; readonly projection: AcademicQ6Projection }
   | { readonly type: 'result'; readonly retrievalRunId: RetrievalRunId; readonly value: AcademicResearchRunValue }
 
 /** Completed or cancelled Academic draft, observed retrieval run, and owning Session. */
@@ -284,6 +377,8 @@ export interface AcademicResearchRunValue {
   }
   readonly sessionId: SessionId
   readonly status: 'completed' | 'cancelled'
+  /** Latest Q6 snapshot for this run; null when a legacy selector produced no ranked workflow. */
+  readonly q6: AcademicQ6Projection | null
   readonly stages: AcademicResearchStageResults
   /** Absent when no hybrid query settled; cancellation can retain completed earlier queries only. */
   readonly hybridRetrieval?: AcademicHybridRetrievalView

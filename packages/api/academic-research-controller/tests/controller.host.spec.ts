@@ -1,11 +1,12 @@
 import { Context } from '@deepseek-ai/cordis'
-import { createAcademicWorkId, createBatchResult, createCoverageSummary, createFailureId, createResearchBriefId, createRetrievalRunId,
+import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createCoverageSummary,
+  createFailureId, createResearchBriefId, createRetrievalRunId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import type { AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
-import type { AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
+import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
@@ -85,6 +86,41 @@ function progressSnapshot(
     latestEvent: { code: status === 'running' ? 'run_started' : 'stage_settled',
       occurredAt: `2026-09-28T00:00:0${String(sequence)}.000Z`, stage: 'retrieval',
       academicWorkId: null, workVersionId: null, providerId: null, failureCode: null },
+  }
+}
+
+function queryWorkflowObservation(retrievalRunId: RetrievalRun['retrievalRunId']): AcademicQueryWorkflowObservation {
+  const researchBriefId = createResearchBriefId()
+  const plan = {
+    schemaVersion: 1 as const,
+    researchBriefId,
+    researchBriefVersion: 1,
+    constraints: { publicationWindow: { start: null, end: null, dateBasis: 'first_public_release' as const },
+      includedWorkTypes: ['preprint'], inclusionRules: [], exclusionRules: [], requiredTerms: [], excludedTerms: [] },
+    inclusionTargets: { minimum: 1, target: 1, maximum: 2 },
+    rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+    queries: [],
+    citationExpansionSeeds: [],
+    maximumSearchRounds: 1,
+  }
+  return {
+    schemaVersion: 1,
+    retrievalRunId,
+    sequence: 0,
+    observedAt: '2026-10-09T00:00:00.000Z',
+    status: 'running',
+    plan,
+    works: [],
+    versions: [],
+    assessments: [],
+    ranking: { schemaVersion: 1, researchBriefId, researchBriefVersion: 1, evaluations: [],
+      queues: { p0: [], p1: [], p2: [], excluded: [] }, limitations: [] },
+    rounds: [],
+    decisions: [],
+    settlements: [],
+    coverage: null,
+    stopDecision: null,
+    limitations: [],
   }
 }
 
@@ -513,9 +549,11 @@ describe('AcademicResearchController', () => {
     const observed = retrievalRun()
     runAcademicResearchDraft.mockImplementation(async (request) => {
       request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      request.adapters.onQueryWorkflow?.(queryWorkflowObservation(observed.retrievalRunId))
       request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 1, 'success'))
       return { synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
-        retrievalRun: observed, papers: [], failures: [], analysis: null, report: null }
+        retrievalRun: observed, queryWorkflow: queryWorkflowObservation(observed.retrievalRunId),
+        papers: [], failures: [], analysis: null, report: null }
     })
 
     const stream = fixture.controller.runStream({ sessionId: fixture.sessionId,
@@ -526,13 +564,17 @@ describe('AcademicResearchController', () => {
     for await (const frame of stream) frames.push(frame)
 
     expect(runAcademicResearchDraft).toHaveBeenCalledOnce()
-    expect(frames.map(frame => frame.type)).toEqual(['progress', 'progress', 'result'])
+    expect(frames.map(frame => frame.type)).toEqual(['progress', 'q6', 'progress', 'result'])
     expect(frames[0]).toMatchObject({ type: 'progress', progress: {
       sessionId: fixture.sessionId, retrievalRunId: observed.retrievalRunId, sequence: 0,
     } })
-    expect(frames[1]).toMatchObject({ type: 'progress', progress: { sequence: 1 } })
-    expect(frames[2]).toMatchObject({ type: 'result', retrievalRunId: observed.retrievalRunId,
-      value: { sessionId: fixture.sessionId, retrievalRun: observed } })
+    expect(frames[1]).toMatchObject({ type: 'q6', projection: {
+      sessionId: fixture.sessionId, retrievalRunId: observed.retrievalRunId, sequence: 0,
+    } })
+    expect(frames[2]).toMatchObject({ type: 'progress', progress: { sequence: 1 } })
+    expect(frames[3]).toMatchObject({ type: 'result', retrievalRunId: observed.retrievalRunId,
+      value: { sessionId: fixture.sessionId, retrievalRun: observed,
+        q6: { retrievalRunId: observed.retrievalRunId } } })
   })
 
   it('cancels the sole workflow invocation when its stream caller disconnects', async () => {
@@ -744,7 +786,7 @@ describe('approved Research Brief plan handoff', () => {
     ['object', null, 'must be an object'],
     ['missing field', omitTopic(), 'missing: topic'],
     ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
-    ['schema version', { ...briefPayload(), schemaVersion: 4 }, 'schemaVersion must be 1, 2, or 3'],
+    ['schema version', { ...briefPayload(), schemaVersion: 5 }, 'schemaVersion must be 1, 2, 3, or 4'],
     ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
     ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
     ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],
@@ -775,6 +817,38 @@ describe('approved Research Brief plan handoff', () => {
     ['stop boolean', withStop({ stopWhenEvidenceRequirementsMet: 'yes' }), 'stopWhenEvidenceRequirementsMet must be a boolean'],
   ])('rejects an invalid %s field', (_label, payload, message) => {
     expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(payload)))).toThrow(message)
+  })
+
+  it('requires and validates the distinct inclusion target in version 4 plans', () => {
+    const base = briefPayload()
+    const current = { ...base, schemaVersion: 4, searchPlan: [{ query: 'retrieval', purpose: '检索',
+      questions: base.questions, retrieval: { channels: ['academic'], academicProviders: ['openalex'],
+        verificationProviders: [], maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0 } }] }
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan(current))))
+      .toThrow('missing: targetIncludedWorks')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan({ ...current,
+      evidenceRequirements: { ...current.evidenceRequirements, targetIncludedWorks: 0 } }))))
+      .toThrow('targetIncludedWorks must be a positive integer')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan({ ...current,
+      evidenceRequirements: { ...current.evidenceRequirements, targetIncludedWorks: 3,
+        minimumIncludedWorks: 4 } }))))
+      .toThrow('minimumIncludedWorks must not exceed targetIncludedWorks')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan({ ...current,
+      evidenceRequirements: { ...current.evidenceRequirements, targetIncludedWorks: 3 },
+      stopConditions: { ...current.stopConditions, maximumIncludedWorks: 2 } }))))
+      .toThrow('targetIncludedWorks must not exceed stopConditions.maximumIncludedWorks')
+    expect(() => researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan({ ...current,
+      evidenceRequirements: { ...current.evidenceRequirements, targetIncludedWorks: 3 },
+      stopConditions: { ...current.stopConditions, maximumCandidateWorks: 2, maximumIncludedWorks: 4 } }))))
+      .toThrow('targetIncludedWorks must not exceed stopConditions.maximumCandidateWorks')
+    expect(researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan({ ...current,
+      evidenceRequirements: { ...current.evidenceRequirements, targetIncludedWorks: 2 } })))
+      .evidenceRequirements.targetIncludedWorks).toBe(2)
+  })
+
+  it('migrates version 1 to 3 plans by preserving the former maximum-as-target behavior', () => {
+    expect(researchBriefFromApprovedPlan('session-1', nativePlanEvents(briefPlan()))
+      .evidenceRequirements.targetIncludedWorks).toBe(briefPayload().stopConditions.maximumIncludedWorks)
   })
 })
 

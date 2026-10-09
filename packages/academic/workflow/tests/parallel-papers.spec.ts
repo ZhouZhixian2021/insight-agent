@@ -67,6 +67,18 @@ describe('bounded concurrent papers', () => {
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('停止补选')
   })
 
+  it('continues beyond the minimum until the distinct inclusion target is met', async () => {
+    const f = parallelFixture()
+    f.input.paperConcurrency = 1
+    f.input.brief = { ...f.input.brief,
+      stopConditions: { ...f.input.brief.stopConditions, stopWhenEvidenceRequirementsMet: true },
+      evidenceRequirements: { ...f.input.brief.evidenceRequirements,
+        minimumIncludedWorks: 1, targetIncludedWorks: 3, minimumFulltextWorks: 1 } }
+    const result = await runResearchDraft(f.input, f.adapters)
+    expect(f.adapters.fetcher).toHaveBeenCalledTimes(3)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(3)
+  })
+
   it('replaces failed candidates while preserving the other successful papers', async () => {
     const f = parallelFixture(), original = f.adapters.generator
     f.adapters.generator = async (...args) => {

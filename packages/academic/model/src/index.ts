@@ -95,7 +95,7 @@ export {
   createSourceLocatorId,
   createWorkVersionId,
 } from './ids.ts'
-export { isExecutableResearchBrief } from './research-brief.ts'
+export { isExecutableResearchBrief, targetIncludedWorks } from './research-brief.ts'
 export type {
   AcademicCandidateEvaluation,
   AcademicCandidateRankingResult,

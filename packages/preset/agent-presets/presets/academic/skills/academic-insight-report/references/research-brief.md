@@ -20,7 +20,7 @@
 - 纳入条件：
 - 排除条件：
 - 用户提供的资料（没有则说明）：
-- 所需来源与证据层级，以及最低论文数和全文数：
+- 所需来源与证据层级，以及最低论文数、目标论文数和最低全文数：
 - 检索渠道及其用途（学术源直接检索、通用 Web 候选发现）：
 - 直接检索的学术来源与 Web 引用核验来源：
 - 每条检索方向的 Web 发现上限与引用核验上限：
@@ -46,7 +46,7 @@
 
 ## 完成条件与限制
 
-- 检索轮次、候选论文数和纳入论文数的上限，以及其他停止条件：
+- 检索轮次、候选论文数和纳入论文数的目标与上限，以及其他停止条件：
 - 必须达到的论文和全文覆盖要求：
 - 证据不足时的处理：有有效证据时是否带警告继续；没有有效证据时停止，不编造结论：
 - 质量检查与未达到要求时的披露：
@@ -57,13 +57,13 @@
 
 这一部分由系统根据上述计划生成，无需用户填写。所有影响范围、数量、证据不足处理和交付要求的决定，都必须先在上面的中文计划中说明。
 
-以下约束仅供系统填写执行块，不要复制进用户计划正文：`includedWorkTypes` 只允许 `preprint`、`accepted_manuscript`、`version_of_record`，分别对应预印本、录用稿、正式发表版本，不表示会议或期刊分类。`allowPreprints: false` 优先排除预印本。不得承诺系统没有可靠字段支持的严格会议／期刊筛选，不得悄悄修改已经批准的范围。
+以下约束仅供系统填写执行块，不要复制进用户计划正文：`includedWorkTypes` 只允许 `preprint`、`accepted_manuscript`、`version_of_record`，分别对应预印本、录用稿、正式发表版本，不表示会议或期刊分类。`allowPreprints: false` 优先排除预印本。`minimumIncludedWorks` 不得超过 `targetIncludedWorks`，目标不得超过候选数量和最终纳入数量上限。不得承诺系统没有可靠字段支持的严格会议／期刊筛选，不得悄悄修改已经批准的范围。
 
 当前可执行报告使用 `language: "zh-CN"`、`citationStyle: "numeric"` 和 `targetLength.unit: "characters"`。支持的章节为 `executive_summary`、`scope_and_method`、`technology_overview`、`paper_landscape`、`cross_paper_analysis`、`key_findings`、`limitations`、`research_gaps`、`references`、`evidence_appendix`；`research_scope` 和 `directions` 分别是 `scope_and_method` 和 `technology_overview` 的别名。无法表达的要求应先用中文说明限制，再请用户选择，不要承诺不可执行的格式。
 
 ```academic-research-brief-json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "topic": "<中文研究主题>",
   "aliases": ["<系统整理的检索别名>"],
   "questions": ["<中文研究问题>"],
@@ -91,6 +91,7 @@
   "exclusionRules": ["<中文排除条件>"],
   "evidenceRequirements": {
     "minimumIncludedWorks": 3,
+    "targetIncludedWorks": 6,
     "minimumFulltextWorks": 2,
     "minimumEvidenceLevel": "fulltext",
     "requireLocatableEvidence": true,

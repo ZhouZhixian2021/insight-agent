@@ -27,11 +27,11 @@ kind: "package-library"
 
 ### 适用场景
 
-Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词、提供方 ID、结果上限与适配器。`planHybridSearch()` 返回供审核的 `HybridSearchPlanningOutput`；`executePlannedSearchRound()` 在批准后只执行指定轮次。`rankPlannedCandidates()` 对已核验成果与调用方审核的语义判断应用批准的硬过滤和排序策略。`extendPlanForEvidenceGaps()` 根据同一 Brief 版本的覆盖结果添加有数量上限的查询。准确签名见[公开导出](src/index.ts)。
+Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词、提供方 ID、结果上限与适配器。`planHybridSearch()` 返回供审核的 `HybridSearchPlanningOutput`；`executePlannedSearchRound()` 在批准后只执行指定轮次，并可发布 Web 发现、引用识别和引用核验的实时事实。`rankPlannedCandidates()` 对已核验成果与调用方审核的语义判断应用批准的硬过滤和排序策略。`extendPlanForEvidenceGaps()` 根据同一 Brief 版本的覆盖结果添加有数量上限的查询。准确签名见[公开导出](src/index.ts)。
 
 ### 入口
 
-向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限与适配器交给 `executePlannedSearchRound()`。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。结果绑定 Brief 版本，为每项成果保留一份完整评估，并以 `WorkVersionId` 返回有序队列。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
+向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限、适配器和可选进度观察器交给 `executePlannedSearchRound()`。正式的第 3 版 Controller 路径在已批准轮次和有界证据缺口轮次中都使用该执行器；没有明确检索策略的旧计划继续使用兼容适配器。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。结果绑定 Brief 版本，为每项成果保留一份完整评估，并以 `WorkVersionId` 返回有序队列。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
 
 -----
 

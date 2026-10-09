@@ -54,6 +54,7 @@ kind: "package-library"
 | `createResearchBriefId()` | 为同一研究简报的全部版本创建共用随机内部 ID。 |
 | `createSearchQueryId()` | 为一条计划查询创建随机内部 ID。 |
 | `isExecutableResearchBrief()` | 只接受当前版本已获得明确批准的研究简报。 |
+| `targetIncludedWorks()` | 解析已批准的目标数量；缺少该字段的已发布 Brief 保持按最低要求停止的行为。 |
 | `EvidenceRecord` | 绑定实际成果版本和来源定位的可追溯原文及带来源陈述。 |
 | `SourceLocator` | 分别定位提供方记录、摘要、章节、段落、表格和图片的六种类型。 |
 | `EvidenceCard` | 从一个不可变成果版本提取的六个有证据分区。 |
@@ -76,7 +77,7 @@ kind: "package-library"
 
 `checkClaimFreshness(claim, currentBrief, currentEvidence)` 读取以 EvidenceId 为键的当前证据映射。仅当 Brief 身份/版本、证据身份、成果版本和非空白内容哈希全部一致时返回 current。已知差异或已存储的 stale Claim 返回 stale；证据缺失、空快照或哈希不可用返回 unverifiable。已知变化优先，同时保留全部原因。函数不改写历史。stale 和 unverifiable 均不能直接进入最终报告；current 仅通过当前性检查，不代表批准发布。
 
-Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。
+Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`EvidenceRequirements.targetIncludedWorks` 保存介于证据充足最低值和强制停止上限之间的正常目标数量。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。
 
 `CandidateAssessment` 补充 Q3 轮次结果，不再复制其中的成果、规范版本或查询来源。摘要和关键词保留 `Availability` 状态，全文事实区分可解析、未解析和未知。全文未解析不证明全文不存在。Web 发现摘要绝不进入学术摘要或关键词字段。可信元数据无法判断自然语言规则时使用 `null`，这些延期规则仍由全文范围校验负责。
 

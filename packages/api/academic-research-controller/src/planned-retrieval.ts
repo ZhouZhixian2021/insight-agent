@@ -3,21 +3,27 @@ import {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
   createSearchQueryId,
   isExecutableResearchBrief,
+  targetIncludedWorks,
   type HybridSearchPlan,
   type HybridSearchQuery,
   type ResearchBrief,
+  type SearchQueryId,
 } from '@deepseek-ai/dsh-academic-model'
 import {
   executePlannedSearchRound,
   type PlannedSearchAdapters,
   type PlannedSearchLimits,
+  type PlannedSearchProgressObserver,
   type PlannedSearchRoundResult,
 } from '@deepseek-ai/dsh-academic-retrieval'
 import type { AcademicPlannedSearch } from './types.ts'
 
-/** Reviewed per-round policy that is not carried by a channel-specific query record. */
-export interface ApprovedSearchRoundPolicy {
-  readonly roundIndex: number
+/** Reviewed per-direction policy that is not carried by a channel-specific query record. */
+export interface ApprovedSearchDirectionPolicy {
+  /** Zero-based position in the reviewed Session search plan. */
+  readonly directionIndex: number
+  /** Channel-specific Q3 query identities generated for this reviewed direction. */
+  readonly searchQueryIds: readonly SearchQueryId[]
   readonly verificationProviders: readonly string[]
   readonly maximumReferenceVerificationsPerQuery: number
 }
@@ -25,7 +31,7 @@ export interface ApprovedSearchRoundPolicy {
 /** Transitional Q2/Q3 handoff; Q5 will persist the plan and add ranked candidate scheduling. */
 export interface ApprovedHybridSearchHandoff {
   readonly plan: HybridSearchPlan
-  readonly rounds: readonly ApprovedSearchRoundPolicy[]
+  readonly directions: readonly ApprovedSearchDirectionPolicy[]
 }
 
 /**
@@ -44,33 +50,39 @@ export function approvedHybridSearchHandoff(
 ): ApprovedHybridSearchHandoff {
   if (!isExecutableResearchBrief(brief)) throw new RangeError('ResearchBrief must approve its current version.')
   if (searches.length === 0) throw new RangeError('The approved search plan must contain at least one search.')
-  if (searches.length > brief.stopConditions.maximumSearchRounds) {
-    throw new RangeError('The approved search plan exceeds the ResearchBrief search-round limit.')
-  }
   const minimum = brief.evidenceRequirements.minimumIncludedWorks
+  const target = targetIncludedWorks(brief)
   const maximum = brief.stopConditions.maximumIncludedWorks
-  if (minimum > maximum) {
-    throw new RangeError('The minimum included-work requirement exceeds the maximum included-work limit.')
+  if (minimum > target || target > maximum || target > brief.stopConditions.maximumCandidateWorks) {
+    throw new RangeError('The included-work counts must satisfy minimum <= target <= maximum and target <= candidate maximum.')
   }
   const queries: HybridSearchQuery[] = []
-  const rounds: ApprovedSearchRoundPolicy[] = []
+  const directions: ApprovedSearchDirectionPolicy[] = []
   for (const [offset, search] of searches.entries()) {
     const retrieval = search.retrieval
     if (retrieval === undefined) {
       throw new RangeError('Legacy searches without an explicit retrieval policy must use the legacy search adapter.')
     }
-    const roundIndex = offset + 1
+    // Every user-reviewed direction belongs to the initial retrieval round. Later round
+    // indexes are reserved for evidence-gap replenishment after evidence has been assessed.
+    const roundIndex = 1
+    const searchQueryIds: SearchQueryId[] = []
     if (retrieval.channels.includes('academic')) {
-      queries.push({ kind: 'academic', searchQueryId: createSearchQueryId(), expression: search.query,
+      const searchQueryId = createSearchQueryId()
+      searchQueryIds.push(searchQueryId)
+      queries.push({ kind: 'academic', searchQueryId, expression: search.query,
         purpose: 'core', questions: [...search.questions], roundIndex,
         providers: [...retrieval.academicProviders] })
     }
     if (retrieval.channels.includes('web_discovery')) {
-      queries.push({ kind: 'web_discovery', searchQueryId: createSearchQueryId(), expression: search.query,
+      const searchQueryId = createSearchQueryId()
+      searchQueryIds.push(searchQueryId)
+      queries.push({ kind: 'web_discovery', searchQueryId, expression: search.query,
         purpose: 'core', questions: [...search.questions], roundIndex,
         maximumResults: retrieval.maximumWebDiscoveryResults })
     }
-    rounds.push({ roundIndex, verificationProviders: [...retrieval.verificationProviders],
+    directions.push({ directionIndex: offset, searchQueryIds,
+      verificationProviders: [...retrieval.verificationProviders],
       maximumReferenceVerificationsPerQuery: retrieval.maximumReferenceVerifications })
   }
   return {
@@ -86,37 +98,40 @@ export function approvedHybridSearchHandoff(
         requiredTerms: [],
         excludedTerms: [],
       },
-      // The current reviewed Brief has a minimum and a hard ceiling, but no separate desired count.
-      // Until the plan schema adds one, the reviewed ceiling is also the desired target.
-      inclusionTargets: { minimum, target: maximum, maximum },
+      inclusionTargets: { minimum, target, maximum },
       rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
       queries,
       citationExpansionSeeds: [],
       maximumSearchRounds: brief.stopConditions.maximumSearchRounds,
     },
-    rounds,
+    directions,
   }
 }
 
 /**
- * Execute one reviewed bridge round through B's Q3 retrieval boundary.
- * @param handoff Transient plan and per-round policies produced from one approved Session plan.
- * @param roundIndex One-based approved search direction to execute.
+ * Execute one reviewed search direction within the initial Q3 retrieval round.
+ * @param handoff Transient plan and per-direction policies produced from one approved Session plan.
+ * @param directionIndex Zero-based approved search direction to execute.
  * @param maximumAcademicResultsPerQuery Current scheduler-owned direct-search result bound.
  * @param adapters Session-owned Academic source and Web operations.
  * @param signal Caller cancellation propagated through the retrieval package.
+ * @param onProgress Optional observer forwarded to the Q3 round executor.
  * @returns Verified, ingested candidates and per-query settlement facts.
  */
-export function executeApprovedSearchRound(
+export function executeApprovedSearchDirection(
   handoff: ApprovedHybridSearchHandoff,
-  roundIndex: number,
+  directionIndex: number,
   maximumAcademicResultsPerQuery: number,
   adapters: PlannedSearchAdapters,
   signal?: AbortSignal,
+  onProgress?: PlannedSearchProgressObserver,
 ): Promise<PlannedSearchRoundResult> {
-  const policy = handoff.rounds.find(round => round.roundIndex === roundIndex)
-  if (policy === undefined) throw new RangeError('roundIndex is not present in the approved Session search plan.')
-  const hasWebQuery = handoff.plan.queries.some(query => query.roundIndex === roundIndex && query.kind !== 'academic')
+  const policy = handoff.directions.find(direction => direction.directionIndex === directionIndex)
+  if (policy === undefined) throw new RangeError('directionIndex is not present in the approved Session search plan.')
+  const queryIds = new Set(policy.searchQueryIds)
+  const queries = handoff.plan.queries.filter(query => queryIds.has(query.searchQueryId))
+  const scopedPlan = { ...handoff.plan, queries }
+  const hasWebQuery = queries.some(query => query.kind !== 'academic')
   const limits: PlannedSearchLimits = {
     maximumAcademicResultsPerQuery,
     // Q3 validates this field as positive even when a round has no Web query. A value of one
@@ -125,5 +140,5 @@ export function executeApprovedSearchRound(
       ? policy.maximumReferenceVerificationsPerQuery : Math.max(1, policy.maximumReferenceVerificationsPerQuery),
     verificationProviders: policy.verificationProviders,
   }
-  return executePlannedSearchRound(handoff.plan, roundIndex, limits, adapters, signal)
+  return executePlannedSearchRound(scopedPlan, 1, limits, adapters, signal, onProgress)
 }

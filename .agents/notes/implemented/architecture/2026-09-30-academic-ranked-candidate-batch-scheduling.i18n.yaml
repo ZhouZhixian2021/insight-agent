@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-30-academic-ranked-candidate-batch-scheduling.md
-2026-09-30-academic-ranked-candidate-batch-scheduling.md: 42822d5c199360400e9a4aea28abbacd7d586c48
-2026-09-30-academic-ranked-candidate-batch-scheduling.zh.md: 64b605f6451c7e8b158bd7f25c41faad58e323ce
+2026-09-30-academic-ranked-candidate-batch-scheduling.md: 51c05c0e16cf9a8a75061c7a8591f443c1d65c2a
+2026-09-30-academic-ranked-candidate-batch-scheduling.zh.md: 4830963bebff2c9dd37e8960e4937d6e93d12d67

@@ -6,6 +6,7 @@ import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import {
   runAcademicResearchDraft,
   type AcademicResearchDraftResult,
+  type AcademicQueryWorkflowObserver,
   type AcademicSearchPlanEvent,
   type AcademicSettlementObserver,
   type AcademicWorkflowProgressObserver,
@@ -20,12 +21,14 @@ import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
+import { academicQ6Projection } from './q6-projection.ts'
 import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
   AcademicResearchPlanView,
 } from './types.ts'
 
 export type * from './types.ts'
+export { academicQ6Projection } from './q6-projection.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -186,7 +189,10 @@ export class AcademicResearchController extends TypertRemoteService {
     const onProgress: AcademicWorkflowProgressObserver = (progress) => {
       queue.push({ type: 'progress', progress: { ...progress, sessionId: request.sessionId } })
     }
-    const operation = this.execute(request, operationSignal, onProgress)
+    const onQueryWorkflow: AcademicQueryWorkflowObserver = (observation) => {
+      queue.push({ type: 'q6', projection: academicQ6Projection(request.sessionId, observation) })
+    }
+    const operation = this.execute(request, operationSignal, onProgress, onQueryWorkflow)
     void operation.then((result) => {
       const value = runValue(result)
       queue.push({ type: 'result', retrievalRunId: value.retrievalRun.retrievalRunId, value })
@@ -204,6 +210,7 @@ export class AcademicResearchController extends TypertRemoteService {
     request: AcademicResearchRunRequest,
     signal: AbortSignal,
     onProgress?: AcademicWorkflowProgressObserver,
+    onQueryWorkflow?: AcademicQueryWorkflowObserver,
   ): Promise<AcademicResearchDraftResult> {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
@@ -251,6 +258,7 @@ export class AcademicResearchController extends TypertRemoteService {
       now: () => new Date().toISOString(),
       onSettlement,
       ...(onProgress === undefined ? {} : { onProgress }),
+      ...(onQueryWorkflow === undefined ? {} : { onQueryWorkflow }),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
     try {
@@ -320,6 +328,7 @@ function runValue(result: AcademicResearchDraftResult): AcademicResearchRunValue
   const incompleteSearch = result.completedSearchQueries !== undefined
     && result.completedSearchQueries.length < result.retrievalRun.queries.length
   return { sessionId: result.sessionId, status: result.status, synthesis: result.synthesis,
+    q6: result.queryWorkflow === undefined ? null : academicQ6Projection(result.sessionId, result.queryWorkflow),
     ...result.hybridSearch === undefined ? {} : { hybridRetrieval: hybridRetrievalView(result.hybridSearch) },
     stages: {
       search: incompleteSearch ? result.completedSearchQueries.length === 0 ? 'not_run' : 'partial_success'

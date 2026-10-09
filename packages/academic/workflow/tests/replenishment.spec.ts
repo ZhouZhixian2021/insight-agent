@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createSearchQueryId,
+import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createSearchQueryId,
   createWorkVersionId, type AcademicCandidateEvaluation, type AcademicCandidateRankingResult,
   type HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { runResearchDraft, selectResearchPapers, type DraftPipelineAdapters } from '../src/index.ts'
@@ -120,6 +120,8 @@ describe('bounded candidate replenishment', () => {
 
   it('runs Q5 ranked full-text batches and stops before a later batch after coverage is met', async () => {
     const { input, adapters, records } = fixture()
+    const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
+    adapters.onQueryWorkflow = observation => observations.push(observation)
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
       maximumCandidateWorks: 5, maximumIncludedWorks: 5, stopWhenEvidenceRequirementsMet: true } }
     const queryId = createSearchQueryId()
@@ -151,22 +153,35 @@ describe('bounded candidate replenishment', () => {
         urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
         extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
       truncated: false,
-      candidateScheduling: { plan, ranking, policy: { initialBatchSize: 2, evidenceGapBatchSize: 1,
+      candidateScheduling: { plan, assessments: [], ranking, policy: { initialBatchSize: 2, evidenceGapBatchSize: 1,
         replenishmentBatchSize: 1, minimumQuestionSupportingWorks: 1 } },
     })
     const result = await runResearchDraft(input, adapters)
     expect(adapters.fetcher).toHaveBeenCalledTimes(2)
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
+    expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
+    expect(observations.at(-1)).toMatchObject({ status: 'settled',
+      stopDecision: { shouldStop: true, reason: 'target_and_coverage_met' } })
+    expect(result.queryWorkflow).toEqual(observations.at(-1))
   })
 
   it('drives a gap round instead of stopping when the ranked pool cannot cover a question', async () => {
     const { input, adapters, records } = fixture()
+    input.searches = [{ query: 'synthetic methods', channels: ['academic'] },
+      { query: 'synthetic limitations', channels: ['academic'] }]
+    const search = adapters.search
+    adapters.search = vi.fn<typeof adapters.search>(async (...args) => {
+      if (args[0].query !== 'synthetic limitations') return search(...args)
+      const batch = createBatchResult([], [])
+      return { works: batch.items, truncated: false, providers: ['fixture'], discoveredRecords: 0,
+        batch, limitations: [] }
+    })
     vi.mocked(adapters.generator).mockResolvedValue({ scope: { status: 'excluded', reason: 'Out of scope.' }, evidence: [] })
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
       maximumCandidateWorks: 10, maximumIncludedWorks: 5, maximumSearchRounds: 2, saturationRounds: 10,
       stopWhenEvidenceRequirementsMet: true } }
-    const queryId = createSearchQueryId()
+    const queryId = createSearchQueryId(), secondQueryId = createSearchQueryId()
     const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
       researchBriefVersion: input.brief.version,
       constraints: { publicationWindow: input.brief.publicationWindow,
@@ -174,6 +189,8 @@ describe('bounded candidate replenishment', () => {
         requiredTerms: [], excludedTerms: [] }, inclusionTargets: { minimum: 2, target: 2, maximum: 5 },
       rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
       queries: [{ kind: 'academic', searchQueryId: queryId, expression: 'synthetic methods', purpose: 'core',
+        questions: input.brief.questions, roundIndex: 1, providers: ['fixture'] },
+      { kind: 'academic', searchQueryId: secondQueryId, expression: 'synthetic limitations', purpose: 'core',
         questions: input.brief.questions, roundIndex: 1, providers: ['fixture'] }],
       citationExpansionSeeds: [], maximumSearchRounds: 2 }
     const evaluations = records.map(({ academicWork, workVersion }): AcademicCandidateEvaluation => ({
@@ -196,13 +213,15 @@ describe('bounded candidate replenishment', () => {
       papers: ingested.versions.map(version => ({ workVersionId: version.workVersionId,
         urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
         extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
-      truncated: false, candidateScheduling: { plan, ranking, policy },
+      truncated: false, candidateScheduling: { plan, assessments: [], ranking, policy },
     })
     const replenish = vi.fn<NonNullable<DraftPipelineAdapters['replenishCandidates']>>(async (scheduling, ingested) => (
       { scheduling, ingested, papers: [] }))
     adapters.replenishCandidates = replenish
     const result = await runResearchDraft(input, adapters)
     expect(replenish).toHaveBeenCalledOnce()
+    expect(replenish).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything(), 2,
+      expect.any(AbortSignal))
     expect(adapters.generator).toHaveBeenCalledTimes(5)
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('The approved search-round limit has been reached.')
   })

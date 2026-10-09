@@ -3538,6 +3538,22 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AcademicBatchDecisionEvent',
+    declaration: 'export interface AcademicBatchDecisionEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number | null;\n    readonly action: \'schedule_batch\' | \'search_evidence_gap\' | \'stop\';\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly searchQuestions: readonly string[];\n    readonly reason: string | null;\n}',
+  },
+  {
+    name: 'AcademicBatchSettlementEvent',
+    declaration: 'export interface AcademicBatchSettlementEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number;\n    readonly admittedEvidence: number;\n    readonly completedAt: string;\n}',
+  },
+  {
+    name: 'AcademicCandidateEvaluation',
+    declaration: 'export interface AcademicCandidateEvaluation {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly discoveredBy: readonly SearchQueryId[];\n    readonly classification: CandidateClassification;\n    readonly hardFilter: CandidateHardFilterResult;\n    readonly score: CandidateScoreBreakdown;\n    readonly priority: CandidatePriority;\n    readonly matchedQuestions: readonly string[];\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly diversityTags: readonly string[];\n    readonly decisionReasons: readonly [\n        string,\n        ...string[]\n    ];\n}',
+  },
+  {
+    name: 'AcademicCandidateRankingResult',
+    declaration: 'export interface AcademicCandidateRankingResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly evaluations: readonly AcademicCandidateEvaluation[];\n    readonly queues: CandidatePriorityQueues;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
     name: 'AcademicClaimAssessmentView',
     declaration: 'export interface AcademicClaimAssessmentView {\n    readonly schemaVersion: 1;\n    readonly claimAssessmentId: ClaimAssessmentId;\n    readonly claimId: ClaimId;\n    readonly status: \'supported\' | \'partially_supported\' | \'contradicted\' | \'unsupported\' | \'insufficient\';\n    readonly reason: string;\n    readonly method: string;\n    readonly methodVersion: string;\n    readonly assessedEvidenceIds: readonly EvidenceId[];\n    readonly assessedAt: string;\n}',
   },
@@ -3590,6 +3606,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
   },
   {
+    name: 'AcademicQ6CandidateView',
+    declaration: 'export interface AcademicQ6CandidateView {\n    readonly work: AcademicWork;\n    readonly version: WorkVersion;\n    readonly assessment: CandidateAssessment;\n    readonly evaluation: AcademicCandidateEvaluation;\n}',
+  },
+  {
+    name: 'AcademicQ6Projection',
+    declaration: 'export interface AcademicQ6Projection {\n    readonly schemaVersion: 1;\n    readonly sessionId: SessionId;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly sequence: number;\n    readonly updatedAt: string;\n    readonly status: \'running\' | \'settled\' | \'cancelled\';\n    readonly plan: HybridSearchPlan;\n    readonly candidates: AcademicQ6Section<{\n        readonly items: readonly AcademicQ6CandidateView[];\n        readonly ranking: AcademicCandidateRankingResult;\n    }>;\n    readonly rounds: AcademicQ6Section<readonly HybridSearchRound[]>;\n    readonly batches: AcademicQ6Section<{\n        readonly decisions: readonly AcademicBatchDecisionEvent[];\n        readonly settlements: readonly AcademicBatchSettlementEvent[];\n    }>;\n    readonly coverage: AcademicQ6Section<ResearchQuestionCoverageResult>;\n    readonly stopDecision: AcademicQ6Section<SearchStopDecision>;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6Section',
+    declaration: 'export type AcademicQ6Section<T> = {\n    readonly state: \'pending\';\n} | {\n    readonly state: \'available\';\n    readonly value: T;\n} | {\n    readonly state: \'truncated\';\n    readonly value: T;\n    readonly reason: string;\n} | {\n    readonly state: \'failed\';\n    readonly code: string;\n    readonly message: string;\n    readonly retryable: boolean;\n};',
+  },
+  {
     name: 'AcademicReference',
     declaration: 'export type AcademicReference = {\n    readonly kind: \'doi\' | \'arxiv\';\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly discoveryUrl: string;\n} | {\n    readonly kind: \'provider_record\';\n    readonly provider: \'acl\' | \'pmlr\' | \'cvf\';\n    readonly recordId: string;\n    readonly discoveryUrl: string;\n};',
   },
@@ -3627,7 +3655,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunFrame',
-    declaration: 'export type AcademicResearchRunFrame = {\n    readonly type: \'progress\';\n    readonly progress: AcademicResearchProgressView;\n} | {\n    readonly type: \'result\';\n    readonly retrievalRunId: RetrievalRunId;\n    readonly value: AcademicResearchRunValue;\n};',
+    declaration: 'export type AcademicResearchRunFrame = {\n    readonly type: \'progress\';\n    readonly progress: AcademicResearchProgressView;\n} | {\n    readonly type: \'q6\';\n    readonly projection: AcademicQ6Projection;\n} | {\n    readonly type: \'result\';\n    readonly retrievalRunId: RetrievalRunId;\n    readonly value: AcademicResearchRunValue;\n};',
   },
   {
     name: 'AcademicResearchRunRequest',
@@ -3635,7 +3663,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchRunValue',
-    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly stages: AcademicResearchStageResults;\n    readonly hybridRetrieval?: AcademicHybridRetrievalView;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly q6: AcademicQ6Projection | null;\n    readonly stages: AcademicResearchStageResults;\n    readonly hybridRetrieval?: AcademicHybridRetrievalView;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
   },
   {
     name: 'AcademicResearchStageResults',
@@ -3648,6 +3676,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicRetrievalChannel',
     declaration: 'export type AcademicRetrievalChannel = \'academic\' | \'web_discovery\';',
+  },
+  {
+    name: 'AcademicSearchQuery',
+    declaration: 'export interface AcademicSearchQuery extends SearchQueryBase {\n    readonly kind: \'academic\';\n    readonly providers: readonly string[];\n}',
   },
   {
     name: 'AcademicSourceFullText',
@@ -4000,6 +4032,62 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BrandedNumber',
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
+  },
+  {
+    name: 'CandidateAssessment',
+    declaration: 'export interface CandidateAssessment {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly [\n        string,\n        ...string[]\n    ];\n}',
+  },
+  {
+    name: 'CandidateClassification',
+    declaration: 'export type CandidateClassification = \'core_method\' | \'empirical_evaluation\' | \'benchmark_or_dataset\' | \'review\' | \'application\' | \'adjacent_technology\' | \'background\' | \'irrelevant\';',
+  },
+  {
+    name: 'CandidateFulltextAvailability',
+    declaration: 'export type CandidateFulltextAvailability = {\n    readonly status: \'resolvable\';\n} | {\n    readonly status: \'unresolved\';\n    readonly reason: string;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'CandidateHardFilterReason',
+    declaration: 'export interface CandidateHardFilterReason {\n    readonly code: CandidateHardFilterReasonCode;\n    readonly detail?: string;\n}',
+  },
+  {
+    name: 'CandidateHardFilterReasonCode',
+    declaration: 'export type CandidateHardFilterReasonCode = \'work_retracted\' | \'version_retracted\' | \'preprint_not_allowed\' | \'work_type_not_included\' | \'before_publication_window\' | \'after_publication_window\' | \'publication_date_unknown\' | \'required_term_missing\' | \'excluded_term_matched\' | \'inclusion_rule_not_met\' | \'exclusion_rule_matched\';',
+  },
+  {
+    name: 'CandidateHardFilterResult',
+    declaration: 'export type CandidateHardFilterResult = {\n    readonly status: \'eligible\';\n    readonly reasons: readonly CandidateHardFilterReason[];\n} | {\n    readonly status: \'excluded\';\n    readonly reasons: readonly [\n        CandidateHardFilterReason,\n        ...CandidateHardFilterReason[]\n    ];\n};',
+  },
+  {
+    name: 'CandidatePriority',
+    declaration: 'export type CandidatePriority = \'p0\' | \'p1\' | \'p2\' | \'excluded\';',
+  },
+  {
+    name: 'CandidatePriorityQueues',
+    declaration: 'export interface CandidatePriorityQueues {\n    readonly p0: readonly WorkVersionId[];\n    readonly p1: readonly WorkVersionId[];\n    readonly p2: readonly WorkVersionId[];\n    readonly excluded: readonly WorkVersionId[];\n}',
+  },
+  {
+    name: 'CandidatePriorityThresholds',
+    declaration: 'export interface CandidatePriorityThresholds {\n    readonly p0: number;\n    readonly p1: number;\n    readonly p2: number;\n}',
+  },
+  {
+    name: 'CandidateRankingPolicy',
+    declaration: 'export interface CandidateRankingPolicy {\n    readonly schemaVersion: 1;\n    readonly weights: CandidateScoreWeights;\n    readonly thresholds: CandidatePriorityThresholds;\n}',
+  },
+  {
+    name: 'CandidateScoreBreakdown',
+    declaration: 'export interface CandidateScoreBreakdown extends CandidateScoreValues {\n    readonly total: number;\n}',
+  },
+  {
+    name: 'CandidateScoreValues',
+    declaration: 'export interface CandidateScoreValues {\n    readonly topicRelevance: number;\n    readonly questionMatch: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly workTypeFit: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly fulltextAvailability: number;\n}',
+  },
+  {
+    name: 'CandidateScoreWeights',
+    declaration: 'export type CandidateScoreWeights = CandidateScoreValues;',
+  },
+  {
+    name: 'CitationExpansionSeed',
+    declaration: 'export interface CitationExpansionSeed {\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly direction: \'references\' | \'citations\' | \'related\';\n    readonly purpose: SearchRoundPurpose;\n    readonly questions: readonly string[];\n    readonly roundIndex: number;\n    readonly maximumResults: number;\n}',
   },
   {
     name: 'ClaimAssessmentId',
@@ -4566,6 +4654,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GrantRecord {\n    readonly kind: \'grant\';\n    readonly payload: unknown;\n}',
   },
   {
+    name: 'HybridSearchConstraints',
+    declaration: 'export interface HybridSearchConstraints {\n    readonly publicationWindow: PublicationWindow;\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly requiredTerms: readonly string[];\n    readonly excludedTerms: readonly string[];\n}',
+  },
+  {
+    name: 'HybridSearchPlan',
+    declaration: 'export interface HybridSearchPlan {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly constraints: HybridSearchConstraints;\n    readonly inclusionTargets: InclusionTargets;\n    readonly rankingPolicy: CandidateRankingPolicy;\n    readonly queries: readonly HybridSearchQuery[];\n    readonly citationExpansionSeeds: readonly CitationExpansionSeed[];\n    readonly maximumSearchRounds: number;\n}',
+  },
+  {
+    name: 'HybridSearchQuery',
+    declaration: 'export type HybridSearchQuery = AcademicSearchQuery | WebDiscoveryQuery | SiteRestrictedQuery;',
+  },
+  {
+    name: 'HybridSearchRound',
+    declaration: 'export interface HybridSearchRound {\n    readonly roundIndex: number;\n    readonly purpose: SearchRoundPurpose;\n    readonly searchQueryIds: readonly SearchQueryId[];\n    readonly status: \'planned\' | \'running\' | \'success\' | \'partial_success\' | \'failed\' | \'cancelled\';\n    readonly startedAt: string | null;\n    readonly completedAt: string | null;\n}',
+  },
+  {
     name: 'ImageAttachmentLimits',
     declaration: 'export interface ImageAttachmentLimits {\n    maxImageBytes: number;\n    maxImagesPerMessage: number;\n    maxMessageImageBytes: number;\n    maxImagePixels: number;\n    maxImageDimension: number;\n    mediaTypes: readonly ImageMediaType[];\n}',
   },
@@ -4588,6 +4692,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ImageVariantId',
     declaration: 'export type ImageVariantId = Branded<\'ImageVariantId\'>;',
+  },
+  {
+    name: 'InclusionTargets',
+    declaration: 'export interface InclusionTargets {\n    readonly minimum: number;\n    readonly target: number;\n    readonly maximum: number;\n}',
   },
   {
     name: 'IndexInjection',
@@ -5098,8 +5206,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcDispatchLog {\n    readonly exec: ToolExecution;\n    readonly agent?: Agent;\n    readonly subCallId: ToolCallId;\n    readonly name: string;\n    readonly isError: boolean;\n    readonly content: ContentBlock[];\n}',
   },
   {
+    name: 'PublicationDateBasis',
+    declaration: 'export type PublicationDateBasis = \'published\' | \'first_public_release\';',
+  },
+  {
     name: 'PublicationStatus',
     declaration: 'export type PublicationStatus = \'preprint\' | \'accepted\' | \'published\' | \'corrected\' | \'retracted\' | \'unknown\';',
+  },
+  {
+    name: 'PublicationWindow',
+    declaration: 'export interface PublicationWindow {\n    readonly start: PartialDate | null;\n    readonly end: PartialDate | null;\n    readonly dateBasis: PublicationDateBasis;\n}',
   },
   {
     name: 'ReadFileLine',
@@ -5164,6 +5280,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ResearchBriefId',
     declaration: 'export type ResearchBriefId = Branded<\'ResearchBriefId\'>;',
+  },
+  {
+    name: 'ResearchQuestionCoverage',
+    declaration: 'export interface ResearchQuestionCoverage {\n    readonly question: string;\n    readonly status: \'uncovered\' | \'partial\' | \'covered\';\n    readonly supportingWorkIds: readonly AcademicWorkId[];\n    readonly evidenceIds: readonly EvidenceId[];\n    readonly gaps: readonly string[];\n}',
+  },
+  {
+    name: 'ResearchQuestionCoverageResult',
+    declaration: 'export interface ResearchQuestionCoverageResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly assessedAt: string;\n    readonly questions: readonly ResearchQuestionCoverage[];\n    readonly evidenceRequirementsMet: boolean;\n    readonly allQuestionsCovered: boolean;\n}',
   },
   {
     name: 'ResolvedAlwaysRetryPolicy',
@@ -5278,8 +5402,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SearchPathsResultView {\n    card: \'search\';\n    shape: \'paths\';\n    title?: string;\n    paths: string[];\n    truncated: boolean;\n    total: number;\n}',
   },
   {
+    name: 'SearchQueryBase',
+    declaration: 'export interface SearchQueryBase {\n    readonly searchQueryId: SearchQueryId;\n    readonly expression: string;\n    readonly purpose: SearchRoundPurpose;\n    readonly questions: readonly string[];\n    readonly roundIndex: number;\n}',
+  },
+  {
+    name: 'SearchQueryId',
+    declaration: 'export type SearchQueryId = Branded<\'SearchQueryId\'>;',
+  },
+  {
     name: 'SearchResultView',
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
+  },
+  {
+    name: 'SearchRoundPurpose',
+    declaration: 'export type SearchRoundPurpose = \'core\' | \'synonym_expansion\' | \'site_restricted\' | \'citation_expansion\' | \'evidence_gap\';',
+  },
+  {
+    name: 'SearchStopDecision',
+    declaration: 'export type SearchStopDecision = {\n    readonly shouldStop: false;\n    readonly reason: null;\n    readonly details: readonly string[];\n} | {\n    readonly shouldStop: true;\n    readonly reason: SearchStopReason;\n    readonly details: readonly string[];\n};',
+  },
+  {
+    name: 'SearchStopReason',
+    declaration: 'export type SearchStopReason = \'target_and_coverage_met\' | \'saturated\' | \'candidate_exhausted\' | \'maximum_search_rounds\' | \'maximum_candidate_works\' | \'maximum_included_works\' | \'maximum_elapsed_time\' | \'cancelled\' | \'review_required\';',
   },
   {
     name: 'SendTeamMessageRequest',
@@ -5836,6 +5980,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ShellSandboxInfo',
     declaration: 'export interface ShellSandboxInfo {\n    mode: SandboxMode;\n    denied: boolean;\n    enforcement?: SandboxEnforcement;\n    runnerFailed?: boolean;\n}',
+  },
+  {
+    name: 'SiteRestrictedQuery',
+    declaration: 'export interface SiteRestrictedQuery extends SearchQueryBase {\n    readonly kind: \'site_restricted\';\n    readonly siteHost: string;\n    readonly maximumResults: number;\n}',
   },
   {
     name: 'SkillCandidate',
@@ -6496,6 +6644,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WebBootGraph',
     declaration: 'export interface WebBootGraph {\n    rev: string;\n    entries: WebBootEntry[];\n    batches: WebBootBatch[];\n}',
+  },
+  {
+    name: 'WebDiscoveryQuery',
+    declaration: 'export interface WebDiscoveryQuery extends SearchQueryBase {\n    readonly kind: \'web_discovery\';\n    readonly maximumResults: number;\n}',
   },
   {
     name: 'WebFetchBody',

@@ -1,5 +1,5 @@
 /** Adapt completed workflow observations to the report-owned retrieval appendix. */
-import type { ResearchBrief, RetrievalRun } from '@deepseek-ai/dsh-academic-model'
+import { targetIncludedWorks, type ResearchBrief, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import type { RetrievalDisclosure } from '@deepseek-ai/dsh-academic-report'
 import type { HybridRunObservation } from './hybrid-run.ts'
 import type { HybridSearchStageStatus } from './hybrid-search.ts'
@@ -24,6 +24,7 @@ export function researchRetrievalDisclosure(
     { label: '可用全文', value: coverage.availableFulltextWorks },
     { label: '批准候选上限', value: brief.stopConditions.maximumCandidateWorks },
     { label: '本轮候选上限', value: candidateLimit },
+    { label: '目标纳入论文', value: targetIncludedWorks(brief) },
     { label: '最终纳入上限', value: brief.stopConditions.maximumIncludedWorks },
   ]
   const status: Record<HybridSearchStageStatus, string> = {

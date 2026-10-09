@@ -55,6 +55,7 @@ describe('single-pass research draft', () => {
     expect(result.report?.markdown).toContain('## 检索渠道与覆盖说明')
     expect(result.report?.markdown).toContain('web · web\\_search · network\\_error')
     expect(result.report?.markdown).toContain('实际纳入: 2')
+    expect(result.report?.markdown).toContain('目标纳入论文: 2')
     expect(result.report?.evidence.every(record => record.sourceProvider === 'fixture')).toBe(true)
   })
   it('rejects unsupported report requirements before search or model work', async () => {
@@ -316,15 +317,24 @@ describe('single-pass research draft', () => {
     expect(result.retrievalRun.queries).toEqual(['transformer'])
     expect(result.status).toBe('cancelled')
   })
-  it('rejects query counts above the hard or approved search-round bound before search', async () => {
+  it('rejects query counts above the hard per-round bound before search', async () => {
     const { input, adapters } = fixture()
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 3 } }
     input.searches = ['one', 'two', 'three', 'four'].map(query => ({ query, channels: ['academic'] }))
     await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 3')
+    expect(adapters.search).not.toHaveBeenCalled()
+  })
+  it('allows multiple query directions in one approved search round', async () => {
+    const { input, adapters } = fixture()
+    const controller = new AbortController()
     input.searches = [{ query: 'one', channels: ['academic'] }, { query: 'two', channels: ['academic'] }]
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumSearchRounds: 1 } }
-    await expect(runResearchDraft(input, adapters)).rejects.toThrow('bound of 1')
-    expect(adapters.search).not.toHaveBeenCalled()
+    adapters.search = vi.fn(async () => { controller.abort(); return searchBatch([]) })
+
+    const result = await runResearchDraft(input, adapters, controller.signal)
+
+    expect(adapters.search).toHaveBeenCalledOnce()
+    expect(result.status).toBe('cancelled')
   })
   it('marks declared source coverage limits without inventing provider counts', async () => {
     const { input, adapters, records } = fixture()

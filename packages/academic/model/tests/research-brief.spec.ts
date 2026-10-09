@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createResearchBriefId,
   isExecutableResearchBrief,
+  targetIncludedWorks,
   type ResearchBrief,
   type ResearchBriefId,
 } from '../src/index.ts'
@@ -26,6 +27,7 @@ function createBrief(): ResearchBrief {
     exclusionRules: ['Exclude promotional material without research evidence.'],
     evidenceRequirements: {
       minimumIncludedWorks: 2,
+      targetIncludedWorks: 6,
       minimumFulltextWorks: 1,
       minimumEvidenceLevel: 'abstract',
       requireLocatableEvidence: true,
@@ -57,6 +59,13 @@ function createBrief(): ResearchBrief {
 }
 
 describe('isExecutableResearchBrief', () => {
+  it('resolves an explicit target and preserves minimum-based behavior for released briefs', () => {
+    const brief = createBrief()
+    expect(targetIncludedWorks(brief)).toBe(6)
+    const { targetIncludedWorks: _target, ...releasedRequirements } = brief.evidenceRequirements
+    expect(targetIncludedWorks({ ...brief, evidenceRequirements: releasedRequirements })).toBe(2)
+  })
+
   it('creates a random identity shared by brief versions', () => {
     expect(createResearchBriefId()).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u,

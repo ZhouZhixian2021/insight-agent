@@ -54,6 +54,7 @@ Academic packages import these types instead of declaring provider-specific subs
 | `createResearchBriefId()` | Random internal identity shared by all versions of one research brief. |
 | `createSearchQueryId()` | Random internal identity for one planned query. |
 | `isExecutableResearchBrief()` | Predicate that accepts only a brief whose current version has explicit approval. |
+| `targetIncludedWorks()` | Resolves the approved desired count while retaining minimum-based behavior for released briefs without that field. |
 | `EvidenceRecord` | Traceable excerpt and sourced statement bound to the exact work version and source locator. |
 | `SourceLocator` | Six locator variants for provider records, abstracts, sections, paragraphs, tables, and figures. |
 | `EvidenceCard` | Six evidence-backed sections extracted from one immutable work version. |
@@ -76,7 +77,7 @@ Academic packages import these types instead of declaring provider-specific subs
 
 `checkClaimFreshness(claim, currentBrief, currentEvidence)` reads a map of current evidence keyed by EvidenceId. It returns current only when the brief identity/version, evidence identities, work versions, and non-blank content hashes all match. Known differences or a stored stale claim return stale; absent evidence, an empty snapshot, or unavailable hashes return unverifiable. Known changes take precedence while all reasons are retained. The function never rewrites history. Neither stale nor unverifiable may directly enter a final report; current is only a freshness check, not publication approval.
 
-The Q1 query-workflow contract binds a `HybridSearchPlan` to an exact approved Brief version. Academic, Web-discovery, and site-restricted queries carry stable `SearchQueryId` values and exact Brief questions; verified citation expansion uses separate work-version seeds. `InclusionTargets` keeps minimum, desired, and absolute maximum counts distinct. `createInclusionTargets()` validates their order.
+The Q1 query-workflow contract binds a `HybridSearchPlan` to an exact approved Brief version. Academic, Web-discovery, and site-restricted queries carry stable `SearchQueryId` values and exact Brief questions; verified citation expansion uses separate work-version seeds. `EvidenceRequirements.targetIncludedWorks` records the normal desired count between the evidence-sufficiency minimum and the hard stop maximum. `InclusionTargets` keeps minimum, desired, and absolute maximum counts distinct. `createInclusionTargets()` validates their order.
 
 `CandidateAssessment` supplements the Q3 round instead of repeating its works, canonical versions, or query provenance. Its abstract and keywords preserve `Availability` states, and its full-text fact distinguishes resolvable, unresolved, and unknown. An unresolved candidate does not establish that no full text exists. Web discovery snippets never enter the abstract or keyword fields. Natural-language rule decisions use `null` when trusted metadata cannot decide them; the full-text scope validator remains responsible for those deferred rules.
 

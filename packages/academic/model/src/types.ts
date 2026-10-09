@@ -84,6 +84,8 @@ export type InsufficientEvidencePolicy = 'continue_with_warning' | 'stop_for_rev
 /** Minimum evidence quantity, depth, and traceability approved for one research run. */
 export interface EvidenceRequirements {
   readonly minimumIncludedWorks: number
+  /** Desired included-work count; absent released briefs retain their legacy minimum-based stop behavior. */
+  readonly targetIncludedWorks?: number
   readonly minimumFulltextWorks: number
   readonly minimumEvidenceLevel: RequiredEvidenceLevel
   readonly requireLocatableEvidence: boolean

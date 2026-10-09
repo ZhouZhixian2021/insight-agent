@@ -149,8 +149,8 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     throw new Error(`the ${BRIEF_FENCE} block must contain valid JSON`)
   }
   const root = record(value, 'Research Brief')
-  if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3) {
-    throw new Error('schemaVersion must be 1, 2, or 3')
+  if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3 && root.schemaVersion !== 4) {
+    throw new Error('schemaVersion must be 1, 2, 3, or 4')
   }
   exactKeys(root, [
     'schemaVersion', 'topic', 'aliases', 'questions', 'publicationWindow', 'includedWorkTypes',
@@ -159,6 +159,17 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
   ], 'Research Brief')
   const questions = nonEmptyStringArray(root.questions, 'questions')
   const limits = stopConditions(root.stopConditions)
+  const requirements = evidenceRequirements(root.evidenceRequirements, root.schemaVersion >= 4,
+    limits.maximumIncludedWorks)
+  if (requirements.minimumIncludedWorks > requirements.targetIncludedWorks) {
+    throw new Error('evidenceRequirements.minimumIncludedWorks must not exceed targetIncludedWorks')
+  }
+  if (requirements.targetIncludedWorks > limits.maximumIncludedWorks) {
+    throw new Error('evidenceRequirements.targetIncludedWorks must not exceed stopConditions.maximumIncludedWorks')
+  }
+  if (requirements.targetIncludedWorks > limits.maximumCandidateWorks) {
+    throw new Error('evidenceRequirements.targetIncludedWorks must not exceed stopConditions.maximumCandidateWorks')
+  }
   return {
     schemaVersion: 1,
     topic: nonEmptyString(root.topic, 'topic'),
@@ -168,7 +179,7 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     includedWorkTypes: nonEmptyStringArray(root.includedWorkTypes, 'includedWorkTypes'),
     inclusionRules: stringArray(root.inclusionRules, 'inclusionRules'),
     exclusionRules: stringArray(root.exclusionRules, 'exclusionRules'),
-    evidenceRequirements: evidenceRequirements(root.evidenceRequirements),
+    evidenceRequirements: requirements,
     targetAudience: nonEmptyString(root.targetAudience, 'targetAudience'),
     reportRequirements: reportRequirements(root.reportRequirements),
     stopConditions: limits,
@@ -177,7 +188,7 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
       root.searchPlan,
       questions,
       limits.maximumSearchRounds,
-      root.schemaVersion === 3,
+      root.schemaVersion >= 3,
     ) } : {},
   }
 }
@@ -280,12 +291,20 @@ function partialDate(value: unknown, label: string): ResearchBrief['publicationW
     precision: oneOf(item.precision, ['year', 'month', 'day'] as const, `${label}.precision`) }
 }
 
-function evidenceRequirements(value: unknown): ResearchBrief['evidenceRequirements'] {
+function evidenceRequirements(
+  value: unknown,
+  requireTarget: boolean,
+  legacyTarget: number,
+): ResearchBrief['evidenceRequirements'] & { readonly targetIncludedWorks: number } {
   const item = record(value, 'evidenceRequirements')
-  exactKeys(item, ['minimumIncludedWorks', 'minimumFulltextWorks', 'minimumEvidenceLevel', 'requireLocatableEvidence',
+  exactKeys(item, ['minimumIncludedWorks', ...(requireTarget ? ['targetIncludedWorks'] : []),
+    'minimumFulltextWorks', 'minimumEvidenceLevel', 'requireLocatableEvidence',
     'allowPreprints', 'insufficientEvidencePolicy'], 'evidenceRequirements')
   return {
     minimumIncludedWorks: nonNegativeInteger(item.minimumIncludedWorks, 'evidenceRequirements.minimumIncludedWorks'),
+    targetIncludedWorks: requireTarget
+      ? positiveInteger(item.targetIncludedWorks, 'evidenceRequirements.targetIncludedWorks')
+      : legacyTarget,
     minimumFulltextWorks: nonNegativeInteger(item.minimumFulltextWorks, 'evidenceRequirements.minimumFulltextWorks'),
     minimumEvidenceLevel: oneOf(item.minimumEvidenceLevel, ['abstract', 'fulltext'] as const,
       'evidenceRequirements.minimumEvidenceLevel'),
