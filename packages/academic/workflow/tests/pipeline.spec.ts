@@ -86,7 +86,7 @@ describe('single-pass research draft', () => {
     adapters.generator = async (...args) => {
       const response = await original(...args)
       if (calls++ > 0) return response
-      const rejected = { segmentIndex: 0, sourcedStatement: 'Unsupported statement.', verbatimExcerpt: 'Not in the source.', cardItems: [] }
+      const rejected = { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unsupported statement.', verbatimExcerpt: 'Not in the source.', cardItems: [] }
       return { ...response, evidence: mode === 'partial'
         ? [rejected, ...response.evidence] : [rejected] }
     }
@@ -115,7 +115,7 @@ describe('single-pass research draft', () => {
   it('reports failure with no included works when all papers have only rejected drafts', async () => {
     const { input, adapters } = fixture()
     adapters.generator = async () => ({ scope: { status: 'included', reason: 'In scope.' }, evidence: [
-      { segmentIndex: 99, sourcedStatement: 'Unsupported.', verbatimExcerpt: 'Not present.', cardItems: [] },
+      { segmentIndex: 99, questionIndexes: [0], sourcedStatement: 'Unsupported.', verbatimExcerpt: 'Not present.', cardItems: [] },
     ] })
     const result = await runResearchDraft(input, adapters)
     expect(result.papers.map(paper => paper.status)).toEqual(['extraction_failed', 'extraction_failed'])

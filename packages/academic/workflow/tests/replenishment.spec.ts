@@ -31,7 +31,7 @@ describe('bounded candidate replenishment', () => {
       if (kind === 'failed') generated.mockRejectedValueOnce(new Error('model failed'))
       else generated.mockResolvedValueOnce({ scope: { status: kind === 'excluded' ? 'excluded' : 'included', reason: 'Synthetic scope.' },
         evidence: kind === 'all_rejected' || kind === 'unlinked'
-          ? [{ segmentIndex: 0, sourcedStatement: 'Uses reranking.',
+          ? [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses reranking.',
             verbatimExcerpt: kind === 'unlinked' ? 'Uses reranking.' : 'Missing excerpt.', cardItems: [] }] : [] })
     }
     const result = await runResearchDraft(input, adapters)
@@ -122,8 +122,16 @@ describe('bounded candidate replenishment', () => {
     const { input, adapters, records } = fixture()
     const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
     adapters.onQueryWorkflow = observation => observations.push(observation)
-    input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
-      maximumCandidateWorks: 5, maximumIncludedWorks: 5, stopWhenEvidenceRequirementsMet: true } }
+    input.brief = { ...input.brief, questions: ['Compare methods', 'Identify limitations'],
+      stopConditions: { ...input.brief.stopConditions,
+        maximumCandidateWorks: 5, maximumIncludedWorks: 5, stopWhenEvidenceRequirementsMet: true } }
+    const generate = adapters.generator
+    let extractionCall = 0
+    adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => {
+      const response = await generate(...args)
+      const questionIndex = extractionCall++
+      return { ...response, evidence: response.evidence.map(draft => ({ ...draft, questionIndexes: [questionIndex] })) }
+    })
     const queryId = createSearchQueryId()
     const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
       researchBriefVersion: input.brief.version,
@@ -163,6 +171,14 @@ describe('bounded candidate replenishment', () => {
     expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
     expect(observations.at(-1)).toMatchObject({ status: 'settled',
       stopDecision: { shouldStop: true, reason: 'target_and_coverage_met' } })
+    const coverage = observations.at(-1)?.coverage
+    expect(coverage?.questions).toEqual([
+      expect.objectContaining({ question: 'Compare methods', status: 'covered' }),
+      expect.objectContaining({ question: 'Identify limitations', status: 'covered' }),
+    ])
+    expect(coverage?.questions[0]?.evidenceIds).toHaveLength(1)
+    expect(coverage?.questions[1]?.evidenceIds).toHaveLength(1)
+    expect(coverage?.questions[0]?.evidenceIds).not.toEqual(coverage?.questions[1]?.evidenceIds)
     expect(result.queryWorkflow).toEqual(observations.at(-1))
   })
 

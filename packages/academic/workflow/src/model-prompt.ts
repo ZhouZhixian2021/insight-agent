@@ -26,7 +26,9 @@ Copy verbatimExcerpt exactly from the selected segment. Preserve whitespace, Uni
 spelling, OCR artifacts and duplicated math text; never clean up or rewrite the source. If exact copying is
 uncertain, choose a shorter exact substring that still supports the statement.
 Each supplied segment carries an explicit segmentIndex. Copy that value into the matching evidence entry; do not
-derive or recount the array position. Each entry also has sourcedStatement (non-empty string),
+derive or recount the array position. Each entry also has questionIndexes, a non-empty array of distinct zero-based
+indexes into focusQuestions. Include every and only focus question directly supported by the same excerpt. Omit the
+entry when it supports no supplied focus question. Each entry also has sourcedStatement (non-empty string),
 verbatimExcerpt (exact non-empty original excerpt), cardItems (array), and optional qualityNotes (string array).
 Each card item has section, statement (non-empty string), and every field listed for its section:
 researchQuestions: questionType (descriptive|comparative|causal|exploratory|other).

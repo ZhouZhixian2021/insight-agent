@@ -53,7 +53,7 @@ export function apply(ctx: Context, config: { paperConcurrency?: number } = {}):
           if (parsed.sourceUrl.endsWith('/0')) return { scope: { status: 'excluded', reason: 'Outside synthetic scope.' }, evidence: [] }
           if (parsed.sourceUrl.endsWith('/1')) throw new Error('Synthetic extraction failure')
           return { scope: { status: 'included', reason: 'Relevant synthetic methods.' }, evidence: [
-            { segmentIndex: 0, sourcedStatement: 'Uses reranking.', verbatimExcerpt: 'Uses reranking.', cardItems: [
+            { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses reranking.', verbatimExcerpt: 'Uses reranking.', cardItems: [
               { section: 'methods', statement: 'Uses reranking.', methodName: { status: 'available', value: 'reranking' },
                 methodRole: { status: 'available', value: 'proposed' } },
             ] },

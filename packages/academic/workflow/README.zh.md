@@ -44,7 +44,7 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 排序调度在权威排序旁保留审核过的 `CandidateAssessment`。排序、覆盖、批次决定、批次结算、缺口轮次或终态停止发生变化时，`runResearchDraft()` 发布完整的 `AcademicQueryWorkflowObservation` 快照。每份快照包含单一运行身份、运行内单调序号、准确计划和 Brief 版本、关联的论文与版本、权威队列、已完成轮次、绝对批次事实、当前逐题覆盖和已记录的停止决定。浏览器类型消费者通过仅含类型的 `@deepseek-ai/dsh-academic-workflow/query-workflow` 入口导入这些字段。最新快照保留在 `DraftPipelineResult.queryWorkflow`；没有排序调度的旧选择器不提供该字段。观察者异常不能改变研究结算。
 
-当 `PaperSelectionResult.candidateScheduling` 存在时，`runResearchDraft()` 按调度器批次逐批执行所选全文候选。每批完成后，工作流依据通过原文核对的证据和排序结果中已审核的问题关联重建覆盖，统计独立支持论文数，再向调度器请求下一步。当前没有可解析全文交接的候选不占用有界 Q5 队列。调度器要求证据缺口补检时，本次草稿运行以明确限制结束；自动执行新增检索轮次及为 Session 恢复持久化批次决定仍留待后续。
+当 `PaperSelectionResult.candidateScheduling` 存在时，`runResearchDraft()` 按调度器批次逐批执行所选全文候选。每批完成后，工作流只依据通过原文核对、且本次运行的 `EvidenceQuestionLink` 明确指向该批准问题的证据重建覆盖，统计独立支持论文数，再向调度器请求下一步。候选级 `matchedQuestions` 可以调度可能相关的论文，但不能证明证据支持。未覆盖和部分覆盖的问题保留明确的结构化缺口。当前没有可解析全文交接的候选不占用有界 Q5 队列。调度器要求证据缺口补检时，本次草稿运行以明确限制结束；自动执行新增检索轮次及为 Session 恢复持久化批次决定仍留待后续。
 
 候选按选择顺序启动并结算，最多同时进行 `paperConcurrency` 篇获取和抽取（省略为 1）。前序慢论文可能延迟按序结算与补选。每篇未结算候选预留一个纳入名额，可用证据论文加预留数不得超过批准的纳入上限；排除、暂停、失败和空证据释放名额。每次结算后检查独立论文与全文下限。启用 `stopWhenEvidenceRequirementsMet` 且这些下限及 `targetIncludedWorks` 均达标时不再启动新论文，已启动论文完成后再分析，因此可在纳入上限内超过目标数量。取消停止新任务并等待在途任务收尾；持久记录失败中止其他任务，等待收尾后向上抛出。覆盖说明区分证据达标、纳入上限、选择器截断和候选耗尽，不只统计下载。查询及研究要求保持不变。
 
@@ -64,7 +64,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 ## 模型回答校验
 
-`parsePaperModelResponse(text)` 接收一个包含范围决定、原因和最多六项证据的 JSON 对象；`parseEvidenceDrafts(text)` 返回其中的 EvidenceDraft 值。校验要求被排除论文的证据数组为空，并在返回任何草稿前检查数量限制、六类卡片、必填字段、枚举和 Availability 值。接受空证据和空 cardItems；条目超限、未知字段、编造身份、failed 可用性及格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。错误指出字段位置，不复制模型回答内容。
+`parsePaperModelResponse(text)` 接收一个包含范围决定、原因和最多六项证据的 JSON 对象；每项必须携带非空且互不重复、从零开始的 `questionIndexes`，抽取阶段把它们映射回获批关注问题原文，并逐条拒绝越界关联。`parseEvidenceDrafts(text)` 返回其中的 EvidenceDraft 值。校验要求被排除论文的证据数组为空，并在返回任何草稿前检查数量限制、六类卡片、必填字段、枚举和 Availability 值。接受空证据和空 cardItems；条目超限、未知字段、编造身份、failed 可用性及格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。错误指出字段位置，不复制模型回答内容。
 
 模型没有生产方生成的真实失败 ID，因此拒绝 failed 可用性；缺失信息仍可使用 unknown、not_applicable 和 not_extracted。段落索引范围和原文摘录检查继续由 B 负责。解析本身不验证语义支持、流式输出是否完整或输入预算；调用方必须在解析前拒绝未完整结束的模型输出，并自行持久记录原始回答。该函数不调用模型，也不记录 Session。
 

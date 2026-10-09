@@ -46,6 +46,7 @@ describe('extractEvidenceFromContent', () => {
       return [
         {
           segmentIndex: 0,
+          questionIndexes: [0],
           sourcedStatement: 'Retrieval improves grounding.',
           verbatimExcerpt: 'retrieval improves grounding',
           qualityNotes: ['Abstract-level evidence.'],
@@ -128,6 +129,8 @@ describe('extractEvidenceFromContent', () => {
     expect(result.sourceLocators[0]).toMatchObject({ characterStart: 24, characterEnd: 52 })
     expect(result.sourceLocators[1]).toMatchObject({ characterStart: 7, characterEnd: 23 })
     expect(result.evidenceRecords).toHaveLength(6)
+    expect(result.questionLinks).toEqual([{ evidenceId: result.evidenceRecords[0]?.evidenceId,
+      question: 'How is retrieval evaluated?' }])
     expect(result.evidenceRecords[0]).toMatchObject({
       level: 'abstract',
       verbatimExcerpt: { status: 'available', value: 'retrieval improves grounding' },
@@ -176,6 +179,23 @@ describe('extractEvidenceFromContent', () => {
       verbatimExcerpt: 'missing',
       cardItems: [],
     }])).resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ draftIndex: 0, code: 'EVIDENCE_EXCERPT_NOT_FOUND' }] })
+  })
+
+  it('rejects an invalid question relation without discarding valid sibling evidence', async () => {
+    const source = { ...input([{ text: 'First supported fact. Second supported fact.', locator: { kind: 'abstract' } }]),
+      focusQuestions: ['What is supported?'] }
+    const result = await extractEvidenceFromContent(source, async () => [
+      { segmentIndex: 0, questionIndexes: [1], sourcedStatement: 'First fact.',
+        verbatimExcerpt: 'First supported fact.', cardItems: [] },
+      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Second fact.',
+        verbatimExcerpt: 'Second supported fact.', cardItems: [] },
+    ])
+    expect(result.evidenceRecords).toHaveLength(1)
+    expect(result.rejectedDrafts).toEqual([{ draftIndex: 0, segmentIndex: 0,
+      code: 'EVIDENCE_INVALID_QUESTION_INDEX',
+      reason: 'questionIndex 1 does not uniquely identify a supplied focus question' }])
+    expect(result.questionLinks).toEqual([{ evidenceId: result.evidenceRecords[0]?.evidenceId,
+      question: 'What is supported?' }])
   })
 
   it('repairs a wrong segment index only when the excerpt has one exact source match', async () => {

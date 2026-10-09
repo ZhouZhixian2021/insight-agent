@@ -46,7 +46,7 @@ const result = await extractEvidenceFromContent({
 }, generator)
 ```
 
-结果包含 `sourceLocators`、`evidenceRecords` 和一张 `evidenceCard`。每段引文必须逐字存在于所引用的片段中。有效片段索引指错位置时，只有未经改写的引文在全部输入片段中恰好出现一次，抽取器才会纠正定位；歧义、规范化改写、不存在、空内容或非法索引仍会在不可追溯证据进入分析前以 `EvidenceError` 失败。当调用方已有经过验证的证据时，仍可使用底层构造函数：
+结果包含 `sourceLocators`、`evidenceRecords`、本次运行专用的 `questionLinks` 和一张 `evidenceCard`。草稿的可选 `questionIndexes` 指明同一段逐字引文直接支持哪些输入关注问题。抽取器校验每个序号，并把批准问题的原文复制到 `questionLinks`；无效关联只拒绝该条草稿。持久化 `EvidenceRecord` 仍与某一版 Brief 无关。每段引文必须逐字存在于所引用的片段中。有效片段索引指错位置时，只有未经改写的引文在全部输入片段中恰好出现一次，抽取器才会纠正定位；歧义、规范化改写、不存在、空内容或非法索引仍会在不可追溯证据进入分析前以 `EvidenceError` 失败。当调用方已有经过验证的证据时，仍可使用底层构造函数：
 
 ```text
 const locator = createSourceLocator({ kind: 'paragraph', workVersionId, paragraphNumber: 4 })
@@ -83,7 +83,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | `EvidenceRecordInput` / `EvidenceCardInput` | 记录与卡片的构造输入。 |
 | `EvidenceExtractionInput` / `EvidenceExtractionResult` | 可定位论文输入与已验证的单篇论文结果。 |
 | `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | HTML/PDF 准备接受的结构化抓取结果与论文来源信息。 |
-| `EvidenceGenerator` / `EvidenceDraft` | 调用方拥有的语义生成器及其有类型输出。 |
+| `EvidenceGenerator` / `EvidenceDraft` / `EvidenceQuestionLink` | 调用方拥有的语义生成器、有类型输出，以及本次运行中已接受的证据—问题关联。 |
 | `EvidenceError` | 携带稳定 `code` 的类型化构造失败。 |
 
 -----

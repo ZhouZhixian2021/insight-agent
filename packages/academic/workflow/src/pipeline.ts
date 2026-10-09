@@ -1,6 +1,6 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, targetIncludedWorks, type AcademicWorkId,
-  type AcademicCandidateRankingResult, type EvidenceRecord, type HybridSearchRound, type ProviderFailure,
+  type EvidenceRecord, type HybridSearchRound, type ProviderFailure,
   type ResearchBrief, type ResearchQuestionCoverageResult,
   type WorkVersion, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObservation, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
@@ -466,7 +466,7 @@ export async function runResearchDraft(
       // completed rounds from the plan, never from the number of executed expressions.
       let completedSearchRounds = Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
       while (!paperSignal.aborted) {
-        const coverage = rankedCoverage(brief, scheduling.ranking, papers,
+        const coverage = rankedCoverage(brief, papers,
           evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
           adapters.now())
         updateQueryWorkflow({
@@ -809,29 +809,35 @@ function reconcileSelectedPapers(
   })
 }
 
-/** Build conservative batch-to-batch coverage from validated evidence and reviewed candidate-question links. */
+/** Build conservative batch-to-batch coverage from validated run-specific evidence-question links. */
 function rankedCoverage(
   brief: ResearchBrief,
-  ranking: AcademicCandidateRankingResult,
   papers: readonly PaperEvidenceResult[],
   evidenceRequirementsMet: boolean,
   minimumQuestionSupportingWorks: number,
   assessedAt: string,
 ): ResearchQuestionCoverageResult {
-  const evaluations = new Map(ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const evidencePapers = papers.flatMap((paper) => {
     if (paper.status !== 'extracted' && paper.status !== 'partially_extracted') return []
     if (paper.evidence.evidenceRecords.length === 0) return []
-    return [{ paper, evaluation: evaluations.get(paper.version.workVersionId) }]
+    return [paper]
   })
   const questions = brief.questions.map((question) => {
-    const supporting = evidencePapers.filter(item => item.evaluation?.matchedQuestions.includes(question) === true)
+    const supporting = evidencePapers.flatMap((paper) => {
+      const acceptedEvidenceIds = new Set(paper.evidence.evidenceRecords.map(record => record.evidenceId))
+      const evidenceIds = unique(paper.evidence.questionLinks
+        .filter(link => link.question === question && acceptedEvidenceIds.has(link.evidenceId))
+        .map(link => link.evidenceId))
+      return evidenceIds.length === 0 ? [] : [{ paper, evidenceIds }]
+    })
     const supportingWorkIds = unique(supporting.map(item => item.paper.version.academicWorkId))
-    const evidenceIds = unique(supporting.flatMap(item => item.paper.evidence.evidenceRecords.map(record => record.evidenceId)))
+    const evidenceIds = unique(supporting.flatMap(item => item.evidenceIds))
     const status = supportingWorkIds.length === 0 ? 'uncovered' as const
       : supportingWorkIds.length >= minimumQuestionSupportingWorks ? 'covered' as const : 'partial' as const
     return { question, status, supportingWorkIds, evidenceIds,
-      gaps: status === 'covered' ? [] : [question] }
+      gaps: status === 'covered' ? [] : [status === 'uncovered'
+        ? 'No validated evidence directly supports this question.'
+        : `Validated evidence directly supports this question from ${supportingWorkIds.length} independent work(s); ${minimumQuestionSupportingWorks} required.`] }
   })
   return { schemaVersion: 1, researchBriefId: brief.researchBriefId,
     researchBriefVersion: brief.version, assessedAt, questions, evidenceRequirementsMet,

@@ -6,7 +6,7 @@ import { parseEvidenceDrafts, parsePaperModelResponse } from '../src/index.ts'
 const available = <T>(value: T) => ({ status: 'available' as const, value })
 const absent = { status: 'unknown' as const, reason: 'Not specified in the supplied segment.' }
 const excerpt = 'Method X achieves 91% accuracy on Dataset Y, but requires labeled examples.'
-const drafts: readonly EvidenceDraft[] = [{ segmentIndex: 0, sourcedStatement: excerpt, verbatimExcerpt: excerpt,
+const drafts: readonly EvidenceDraft[] = [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: excerpt, verbatimExcerpt: excerpt,
   qualityNotes: ['Synthetic test evidence.'], cardItems: [
     { section: 'researchQuestions', statement: 'Investigate classification accuracy.', questionType: available('descriptive') },
     { section: 'methods', statement: 'Uses Method X.', methodName: available('Method X'), methodRole: available('proposed') },
@@ -26,7 +26,7 @@ function response(evidence: unknown, scope: unknown = included): string {
 }
 
 function reply(patch: Record<string, unknown> = {}): string {
-  return response([{ segmentIndex: 0, sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [], ...patch }])
+  return response([{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [], ...patch }])
 }
 
 function itemReply(item: Record<string, unknown>): string {
@@ -58,6 +58,8 @@ describe('model evidence JSON', () => {
     response([], { status: 'other', reason: 'x' }), response([null]), response([[]]),
     reply({ segmentIndex: -1 }), reply({ segmentIndex: 0.5 }), reply({ segmentIndex: '0' }),
     reply({ segmentIndex: 9007199254740992 }), reply({ segmentIndex: undefined }),
+    reply({ questionIndexes: undefined }), reply({ questionIndexes: [] }), reply({ questionIndexes: [0, 0] }),
+    reply({ questionIndexes: [-1] }), reply({ questionIndexes: [0.5] }), reply({ questionIndexes: ['0'] }),
     reply({ sourcedStatement: '  ' }), reply({ sourcedStatement: 3 }), reply({ verbatimExcerpt: '' }),
     reply({ cardItems: undefined }), reply({ cardItems: {} }), reply({ cardItems: [null] }),
     reply({ qualityNotes: 'note' }), reply({ qualityNotes: [3] }), reply({ evidenceId: 'invented' }),
@@ -84,6 +86,7 @@ describe('model evidence JSON', () => {
   it('accepts at most six focused drafts from one paper', () => {
     const items = (length: number) => Array.from({ length }, (_, segmentIndex) => ({
       segmentIndex, sourcedStatement: excerpt, verbatimExcerpt: excerpt, cardItems: [],
+      questionIndexes: [0],
     }))
     expect(parseEvidenceDrafts(response(items(6)))).toHaveLength(6)
     expect(() => parseEvidenceDrafts(response(items(7)))).toThrow('$: expected at most 6 entries')
@@ -97,9 +100,12 @@ describe('model evidence JSON', () => {
     const input = { academicWorkId: createAcademicWorkId(), workVersionId: createWorkVersionId(),
       sourceProvider: 'fixture', sourceUrl: 'https://example.org/paper', retrievedAt: '2026-09-15T00:00:00Z',
       contentHash: 'fixture-hash', extractionMethod: { method: 'fixture', methodVersion: '1' },
+      focusQuestions: ['How accurate is Method X?'],
       segments: [{ text: excerpt, locator: { kind: 'paragraph' as const, paragraphNumber: 1 } }] }
     const result = await extractEvidenceFromContent(input, async () => parseEvidenceDrafts(response(drafts)))
     expect(result.evidenceRecords).toHaveLength(1)
+    expect(result.questionLinks).toEqual([{ evidenceId: result.evidenceRecords[0]?.evidenceId,
+      question: 'How accurate is Method X?' }])
     expect(result.evidenceCard.methods[0]?.evidenceIds).toEqual([result.evidenceRecords[0]?.evidenceId])
     await expect(extractEvidenceFromContent(input, async () => parseEvidenceDrafts(reply({ segmentIndex: 1 }))))
       .resolves.toMatchObject({ evidenceRecords: [], rejectedDrafts: [{ code: 'EVIDENCE_INVALID_SEGMENT_INDEX' }] })

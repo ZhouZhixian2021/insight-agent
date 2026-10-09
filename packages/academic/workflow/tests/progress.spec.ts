@@ -235,7 +235,7 @@ describe('Academic workflow progress', () => {
       onProgress?.({ operation: 'evidence_extract', batchIndex: 2, batchCount: 2, attempt: 1,
         maximumAttempts: 2, lastFailure: null, validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
       const response = await generate(request, source, scope)
-      return { ...response, evidence: [...response.evidence, { segmentIndex: 0,
+      return { ...response, evidence: [...response.evidence, { segmentIndex: 0, questionIndexes: [0],
         sourcedStatement: 'Unsupported.', verbatimExcerpt: 'Missing excerpt.', cardItems: [] }] }
     }
 
