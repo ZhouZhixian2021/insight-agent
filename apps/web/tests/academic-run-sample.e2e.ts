@@ -9,6 +9,44 @@ import { launchWebScaffold, seedSession } from './scaffold.ts'
 import { newEnglishPage } from './support.ts'
 
 describe('hybrid plan browser preview', () => {
+  it('opens the Q6 fixed JSON demo, filters candidates and inspects coverage without starting research', async () => {
+    const scaffold = await launchWebScaffold({})
+    const controller = scaffold.ctx.get('academicResearchController')
+    if (controller === undefined) { await scaffold.close(); throw new Error('Academic Controller is required') }
+    const plan = vi.spyOn(controller, 'plan'), run = vi.spyOn(controller, 'runStream')
+    try {
+      const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
+      try {
+        const page = await newEnglishPage(browser)
+        await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+        await page.getByRole('button', { name: 'Q6 read-only demo', exact: true }).click()
+        const dialog = page.getByRole('dialog', { name: 'Q6 plan and candidate preview' })
+        await dialog.waitFor()
+        expect(await dialog.getByRole('note').innerText()).toContain('Fixed synthetic JSON')
+        expect(await dialog.getByRole('button', { name: 'Start research from plan' }).count()).toBe(0)
+        const capture = process.env.DSH_Q6_CAPTURE_DIR
+        if (capture !== undefined) {
+          await mkdir(capture, { recursive: true })
+          await page.screenshot({ path: join(capture, 'q6-plan.png') })
+        }
+        await dialog.getByRole('button', { name: 'Candidate classification and queues', exact: true }).click()
+        await dialog.getByRole('searchbox', { name: 'Search candidates' }).fill('work-version-candidate-b')
+        await dialog.getByText('Inspect scores and provenance', { exact: true }).click()
+        expect(await dialog.getByText('The provider adapter does not retain keywords.', { exact: false }).count()).toBe(1)
+        expect(await dialog.getByRole('heading', { name: 'work-version-candidate-a', exact: true }).count()).toBe(0)
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'q6-candidates.png') })
+        await dialog.getByRole('button', { name: 'Evidence coverage by question', exact: true }).click()
+        await dialog.getByRole('combobox', { name: 'Demo snapshot' }).selectOption('2')
+        expect(await dialog.getByText('No independent empirical comparison is available.', { exact: true }).count()).toBe(1)
+        expect(await dialog.getByRole('progressbar').count()).toBe(0)
+        expect(await dialog.getByRole('region', { name: 'Funnel snapshots' }).innerText()).toMatchSnapshot()
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'q6-coverage.png') })
+        expect(plan).not.toHaveBeenCalled(); expect(run).not.toHaveBeenCalled()
+        await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+        expect(await page.getByRole('dialog').count()).toBe(0)
+      } finally { await browser.close() }
+    } finally { plan.mockRestore(); run.mockRestore(); await scaffold.close() }
+  })
   it('shows the real prerequisite error for a Session without an approved plan', async () => {
     const scaffold = await launchWebScaffold({})
     try {
@@ -109,7 +147,8 @@ describe('hybrid plan browser preview', () => {
         if (capture !== undefined) await page.screenshot({ path: join(capture, 'live-running.png') })
         finishSearch()
         await dialog.getByRole('heading', { name: 'Coverage', exact: true }).waitFor()
-        expect(search).toHaveBeenCalledTimes(1)
+        // Q5 may issue a distinct gap query; the approved initial query must still run only once.
+        expect(search.mock.calls.filter(([request]) => request.query === 'retrieval augmented generation hallucination')).toHaveLength(1)
         expect(webSearch).toHaveBeenCalledTimes(1)
         expect(await progress.innerText()).toContain('not run')
         expect(await dialog.getByRole('button', { name: 'Download Markdown' }).count()).toBe(0)

@@ -7,6 +7,7 @@ import { RunPanel } from './RunPanel.tsx'
 import { SearchPolicies } from './HybridRetrieval.tsx'
 import type { RunView } from './run-types.ts'
 import css from './RunPanel.module.css'
+import { Q6DemoEntry } from './Q6Page.tsx'
 
 /** Transport callback supplied by the plugin's Remote injection. */
 export interface ResearchEntryInjected {
@@ -25,6 +26,7 @@ export function ResearchEntry({ t, useSessions, runStream, plan }: ResearchEntry
   const [open, setOpen] = useState(false)
   const sessionId = useSessions(s => s.current !== undefined && s.byId[s.current]?.blank === false ? s.current : undefined)
   return <>
+    <Q6DemoEntry t={t} />
     <button className={css.entry} type="button" title={t('entry')} onClick={() => { setOpen(true) }}>{t('entry')}</button>
     <Modal open={open} onClose={() => { setOpen(false) }} title={t('title')} closeLabel={t('close')}
       description={t('disclosure')} className={css.dialog} contentClassName={css.body}>
