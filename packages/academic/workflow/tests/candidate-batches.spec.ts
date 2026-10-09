@@ -29,7 +29,7 @@ function fixture(): CandidateBatchPlanningInput {
     includedWorkTypes: ['version_of_record'],
     inclusionRules: [],
     exclusionRules: [],
-    evidenceRequirements: { minimumIncludedWorks: 2, minimumFulltextWorks: 2,
+    evidenceRequirements: { minimumIncludedWorks: 2, targetIncludedWorks: 3, minimumFulltextWorks: 2,
       minimumEvidenceLevel: 'fulltext', requireLocatableEvidence: true, allowPreprints: false,
       insufficientEvidencePolicy: 'continue_with_warning' },
     targetAudience: 'researcher',

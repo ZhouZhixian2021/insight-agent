@@ -19,7 +19,7 @@
 ## 实际完成
 
 - 在 `packages/academic/workflow/src/pipeline-types.ts` 抽出 `CandidateScheduling`，新增 `ReplenishedCandidates` 与可选适配器 `replenishCandidates`；在 `pipeline.ts` 的 Q5 循环里，`search_evidence_gap` 现在调用该适配器执行补检并 `continue`，未注册适配器或无轮次余量时保持原来的“可见限制结束”行为。补检后按增量 `ingestWorks` 合并版本与作品标题，用 `reconcileSelectedPapers` 把新论文并入 `validated`/`byVersion`。
-- 在 `packages/api/academic-research-controller/src/search.ts` 实现 `replenishRankedCandidates`：`extendPlanForEvidenceGaps` → 复用与正式轮相同的 `executeHybridSearch` 执行器 → 仅保留“精确标识未命中既有索引”的缺口记录做增量 `ingestWorks`（避免改变已排名作品的正则版本）→ 重建保守评估 → `rankPlannedCandidates` 重排 → 只返回本轮新解析论文。同时把评估构造抽成 `buildRanking`、把源/Web 绑定抽成 `hybridSearchAdapters`，供首轮与补检共用（决策：两套检索执行器合一）。
+- 在 `packages/api/academic-research-controller/src/search.ts` 实现 `replenishRankedCandidates`：`extendPlanForEvidenceGaps` → 执行有界缺口轮 → 仅保留“精确标识未命中既有索引”的缺口记录做增量 `ingestWorks`（避免改变已排名作品的规范版本）→ 重建保守评估 → `rankPlannedCandidates` 重排 → 只返回本轮新解析论文。2026-10-09 收尾时确认原实现仍让正式运行调用旧 `executeHybridSearch`，现已把获批首轮和缺口补检统一切换为 Q3 `executePlannedSearchRound`，由同一执行器负责查询结算、稳定查询来源、Web 核验事实和摄取；旧第 1、2 版计划继续走兼容适配器。
 - 在 `packages/api/academic-research-controller/src/index.ts` 接入：新增 `gapRoundMaximumQueriesPerRound`（默认 4）与 `gapRoundMaximumAcademicResultsPerQuery`（默认 20）两个 Config，`approvedPaperAdapters` 增加 `onPlan` 回调和 `replenishCandidates` 返回。
 - 新增 `packages/academic/workflow/src/settlement-events.ts`，声明四类 Session 事件：`academic/search-plan`、`academic/candidate-batch-decision`、`academic/candidate-batch-settlement`、`academic/run-settlement`，并定义 `AcademicSettlementObserver`。Controller 在运行前写 `search-plan`，在 Q5 循环里写批次决定与结算，在 `execute()` 结束时写 `run-settlement`。
 - 手工把四个事件名补入 `packages/core/session/src/known-event-types.ts`（仍需跑生成器复核）。

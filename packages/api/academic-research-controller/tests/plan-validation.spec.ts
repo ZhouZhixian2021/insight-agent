@@ -35,9 +35,10 @@ describe('Academic plan compatibility before review', () => {
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('missing: searchPlan')
   })
 
-  it('projects the version-3 hybrid policy from the shipped Chinese plan template', () => {
+  it('projects the version-4 target and hybrid policy from the shipped Chinese plan template', () => {
     const payload = templatePayload()
-    expect(payload.schemaVersion).toBe(3)
+    expect(payload.schemaVersion).toBe(4)
+    expect((payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks).toBe(6)
     expect(retrievalOf(payload)).toEqual({
       channels: ['academic', 'web_discovery'],
       academicProviders: ['openalex', 'arxiv'],
@@ -51,6 +52,7 @@ describe('Academic plan compatibility before review', () => {
   it('continues to read a version-2 approved search plan without inventing a retrieval policy', () => {
     const payload = structuredClone(templatePayload())
     payload.schemaVersion = 2
+    delete (payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks
     for (const search of payload.searchPlan as Record<string, unknown>[]) delete search.retrieval
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
   })

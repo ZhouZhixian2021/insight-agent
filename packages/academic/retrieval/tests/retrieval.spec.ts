@@ -137,7 +137,8 @@ describe('planned Academic retrieval', () => {
       .toEqual(['https://doi.org/10.1000/one'])
     expect(result.discoveredBy[0]?.searchQueryIds).toEqual(approved.queries.map(query => query.searchQueryId))
     expect(result.queries.every(query => query.status === 'success')).toBe(true)
-    expect(result.queries.flatMap(query => query.identifications).some(item => item.status === 'discarded')).toBe(true)
+    expect(result.queries.flatMap(query => query.identifications)
+      .some(item => item.result.status === 'discarded')).toBe(true)
     expect(result.queries.flatMap(query => query.verifications).every(item => item.status === 'verified')).toBe(true)
     expect(webQueries).toContain('site:aclanthology.org retrieval augmented generation')
     await expect(executePlannedSearchRound(approved, 1, {

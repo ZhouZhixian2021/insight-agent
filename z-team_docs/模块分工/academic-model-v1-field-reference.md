@@ -120,6 +120,7 @@ PartialDate 的 iso 保存真实已知部分，例如 2025 或 2025-06；precisi
 ### 5.2 EvidenceRequirements
 
 - minimumIncludedWorks：最终至少纳入的有效论文数量。
+- targetIncludedWorks：证据充足后正常结束时希望纳入的论文数量；必须介于最低数量和最高上限之间。
 - minimumFulltextWorks：至少取得全文的论文数量。
 - minimumEvidenceLevel：abstract 或 fulltext，表示实质性学术结论所需的最低证据层级。
 - requireLocatableEvidence：证据是否必须能定位到摘要、章节、页码、段落、表格或图片。

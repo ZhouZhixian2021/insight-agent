@@ -1,6 +1,7 @@
 /** Explicit adapters and results for one bounded research draft pass. */
-import type { AcademicCandidateRankingResult, HybridSearchPlan, ResearchBrief, ResearchQuestionCoverageResult,
-  RetrievalRun, WorkVersionId, ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicCandidateRankingResult, CandidateAssessment, HybridSearchPlan,
+  ResearchBrief, ResearchQuestionCoverageResult, RetrievalRun, WorkVersionId,
+  ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
@@ -14,6 +15,7 @@ import type { HybridRunObservation } from './hybrid-run.ts'
 import type { AcademicWorkflowProgressObserver } from './progress.ts'
 import type { CandidateBatchPolicy } from './candidate-batches.ts'
 import type { AcademicSettlementObserver } from './settlement-events.ts'
+import type { AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
@@ -46,6 +48,7 @@ export interface PaperSelectionResult {
 /** Q5 ranked-scheduling inputs carried through one bounded pass. */
 export interface CandidateScheduling {
   readonly plan: HybridSearchPlan
+  readonly assessments: readonly CandidateAssessment[]
   readonly ranking: AcademicCandidateRankingResult
   readonly policy: CandidateBatchPolicy
 }
@@ -100,6 +103,8 @@ export interface DraftPipelineAdapters {
   readonly onProgress?: AcademicWorkflowProgressObserver
   /** Observe Q5 scheduling decisions and batch settlements; subscriber failures do not interrupt research. */
   readonly onSettlement?: AcademicSettlementObserver
+  /** Observe complete Q5 facts for browser projection; subscriber failures do not interrupt research. */
+  readonly onQueryWorkflow?: AcademicQueryWorkflowObserver
 }
 
 /** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
@@ -123,6 +128,8 @@ export interface DraftPipelineResult {
   readonly completedSearchQueries?: readonly string[]
   /** Completed hybrid searches and actual ingestion facts, including on cancellation. Not a wire projection. */
   readonly hybridSearch?: HybridRunObservation
+  /** Latest complete Q5 observation; absent for legacy selectors without ranked scheduling. */
+  readonly queryWorkflow?: AcademicQueryWorkflowObservation
   readonly synthesis: SynthesisSettlement
   readonly status: 'completed' | 'cancelled'
   readonly retrievalRun: RetrievalRun

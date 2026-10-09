@@ -1,12 +1,11 @@
 /** Deterministic Q5 scheduling over B's authoritative candidate queues. */
-import type {
-  AcademicCandidateRankingResult,
-  ExecutableResearchBrief,
-  HybridSearchPlan,
-  ResearchQuestionCoverageResult,
-  SearchStopDecision,
-  WorkVersionId,
-} from '@deepseek-ai/dsh-academic-model'
+import { targetIncludedWorks,
+  type AcademicCandidateRankingResult,
+  type ExecutableResearchBrief,
+  type HybridSearchPlan,
+  type ResearchQuestionCoverageResult,
+  type SearchStopDecision,
+  type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 
 /** Caller-owned batch sizes; deployments may tune them without changing scheduling semantics. */
 export interface CandidateBatchPolicy {
@@ -176,9 +175,11 @@ function validateInput(input: CandidateBatchPlanningInput): void {
     || brief.approval.approvedBriefVersion !== brief.version) {
     throw new RangeError('Batch scheduling requires one exact approved ResearchBrief version.')
   }
-  if (plan.inclusionTargets.maximum > brief.stopConditions.maximumIncludedWorks
+  if (plan.inclusionTargets.minimum !== brief.evidenceRequirements.minimumIncludedWorks
+    || plan.inclusionTargets.target !== targetIncludedWorks(brief)
+    || plan.inclusionTargets.maximum !== brief.stopConditions.maximumIncludedWorks
     || plan.maximumSearchRounds > brief.stopConditions.maximumSearchRounds) {
-    throw new RangeError('The search plan exceeds the approved ResearchBrief limits.')
+    throw new RangeError('The search plan does not preserve the approved ResearchBrief inclusion counts and limits.')
   }
   for (const [name, value] of Object.entries(policy)) {
     if (!Number.isInteger(value) || value <= 0) throw new RangeError(`${name} must be a positive integer.`)

@@ -1,9 +1,9 @@
 /** Executes one approved query round and admits only provider-verified scholarly records. */
-import { createBatchResult, createFailureId, type AcademicWorkId, type HybridSearchPlan,
+import { createBatchResult, createFailureId, type AcademicWorkId, type FailureCategory, type HybridSearchPlan,
   type HybridSearchQuery, type ProviderFailure, type SearchQueryId } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicReference, AcademicReferenceIdentificationResult, AcademicReferenceVerificationOutcome,
-  AcademicReferenceIdentificationIssueCode, AcademicSourceSearchBatchResult,
+  AcademicReferenceIdentificationIssueCode, AcademicSourceSearchBatchResult, AcademicSourceWork,
   AcademicWebDiscoveryCandidate } from '@deepseek-ai/dsh-academic-source'
 
 /** Source and Web operations supplied by the owning Academic controller. */
@@ -39,11 +39,23 @@ export interface PlannedSearchRoundResult {
     readonly unverifiedReferences: number
     readonly failures: readonly ProviderFailure[]
     readonly limitations: readonly string[]
+    readonly truncated: boolean
+    /** Provider-owned records admitted by this query before round-wide ingestion. */
+    readonly admittedRecords: readonly AcademicSourceWork[]
+    /** Web candidates retained only for browser-safe discovery reporting. */
+    readonly webCandidates: readonly AcademicWebDiscoveryCandidate[]
     readonly identifications: readonly {
+      /** Compatibility projection retained for existing Q3 consumers. */
       readonly discoveryUrl: string
+      /** Compatibility projection retained for existing Q3 consumers. */
       readonly status: 'identified' | 'discarded'
+      /** Compatibility projection retained for existing Q3 consumers. */
       readonly issues: readonly AcademicReferenceIdentificationIssueCode[]
+      readonly candidate: AcademicWebDiscoveryCandidate
+      readonly result: AcademicReferenceIdentificationResult
     }[]
+    readonly duplicateReferences: number
+    readonly verificationOutcomes: readonly AcademicReferenceVerificationOutcome[]
     readonly verifications: readonly {
       readonly reference: AcademicReference
       readonly status: 'verified' | 'failed' | 'skipped'
@@ -51,6 +63,21 @@ export interface PlannedSearchRoundResult {
     }[]
   }[]
 }
+
+/** Live Q3 operation fact mapped by callers into their own progress presentation. */
+export interface PlannedSearchProgressObservation {
+  readonly operation: 'web_discovery' | 'reference_identification' | 'reference_verification'
+  readonly phase: 'started' | 'settled'
+  readonly providerId: string
+  readonly status: 'running' | 'success' | 'partial_success' | 'failed' | 'cancelled'
+  readonly itemIndex: number | null
+  readonly itemCount: number | null
+  readonly discoveredRecords: number | null
+  readonly failureCode: FailureCategory | 'cancelled' | null
+}
+
+/** Synchronous observer for one planned search round; observer failures cannot interrupt retrieval. */
+export type PlannedSearchProgressObserver = (observation: PlannedSearchProgressObservation) => void
 
 type QueryResult = PlannedSearchRoundResult['queries'][number] & {
   readonly records: readonly IngestRecord[]
@@ -65,6 +92,7 @@ type QueryResult = PlannedSearchRoundResult['queries'][number] & {
  * @param limits - Explicit Academic-result and verification-attempt bounds.
  * @param adapters - Session-owned Academic and Web operations.
  * @param signal - Caller cancellation propagated to each operation.
+ * @param onProgress - Optional observer for live Web discovery, identification, and verification facts.
  * @returns Deduplicated candidates, verified discoveries, query provenance, and per-query facts.
  */
 export async function executePlannedSearchRound(
@@ -73,6 +101,7 @@ export async function executePlannedSearchRound(
   limits: PlannedSearchLimits,
   adapters: PlannedSearchAdapters,
   signal?: AbortSignal,
+  onProgress?: PlannedSearchProgressObserver,
 ): Promise<PlannedSearchRoundResult> {
   validateLimits(limits)
   if (!Number.isSafeInteger(roundIndex) || roundIndex < 1 || roundIndex > plan.maximumSearchRounds) {
@@ -87,7 +116,7 @@ export async function executePlannedSearchRound(
   // ponytail: execute queries in plan order; add bounded query concurrency only if latency warrants it.
   for (const query of queries) {
     throwIfAborted(signal)
-    results.push(await executeQuery(query, limits, adapters, signal))
+    results.push(await executeQuery(query, limits, adapters, signal, onProgress))
   }
   throwIfAborted(signal)
   const ingested = ingestWorks(createIngestIndex(), results.flatMap(result => result.records))
@@ -101,7 +130,8 @@ export async function executePlannedSearchRound(
 }
 
 async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimits,
-  adapters: PlannedSearchAdapters, signal?: AbortSignal): Promise<QueryResult> {
+  adapters: PlannedSearchAdapters, signal?: AbortSignal,
+  onProgress?: PlannedSearchProgressObserver): Promise<QueryResult> {
   if (query.kind === 'academic') {
     if (query.providers.length === 0) throw new RangeError('academic query requires providers')
     const result = await adapters.searchAcademic(query.expression, query.providers,
@@ -109,7 +139,8 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
     return { searchQueryId: query.searchQueryId, status: result.batch.status,
       discoveredRecords: result.discoveredRecords, verifiedWorks: result.batch.items.length,
       unverifiedReferences: 0, failures: result.batch.failures, limitations: result.limitations,
-      identifications: [], verifications: [],
+      truncated: result.truncated, admittedRecords: result.batch.items, webCandidates: [],
+      identifications: [], duplicateReferences: 0, verificationOutcomes: [], verifications: [],
       records: result.batch.items.map(record => ({ ...record, discoveredBy: [query.searchQueryId] })) }
   }
   if (!Number.isSafeInteger(query.maximumResults) || query.maximumResults < 1) {
@@ -118,19 +149,37 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
   const expression = query.kind === 'site_restricted'
     ? `site:${query.siteHost} ${query.expression}` : query.expression
   let discovery: Awaited<ReturnType<PlannedSearchAdapters['searchWeb']>>
+  publishProgress(onProgress, { operation: 'web_discovery', phase: 'started', providerId: 'web', status: 'running',
+    itemIndex: null, itemCount: null, discoveredRecords: null, failureCode: null })
   try {
     discovery = await adapters.searchWeb(expression, query.maximumResults, signal)
+    publishProgress(onProgress, { operation: 'web_discovery', phase: 'settled', providerId: 'web', status: 'success',
+      itemIndex: null, itemCount: null, discoveredRecords: discovery.candidates.length, failureCode: null })
   } catch {
     throwIfAborted(signal)
+    publishProgress(onProgress, { operation: 'web_discovery', phase: 'settled', providerId: 'web', status: 'failed',
+      itemIndex: null, itemCount: null, discoveredRecords: 0, failureCode: 'unknown' })
     const failures = [failure('web', 'web_search', 'Web discovery failed.')]
     return { searchQueryId: query.searchQueryId, status: 'failed', discoveredRecords: 0,
       verifiedWorks: 0, unverifiedReferences: 0, failures, limitations: [],
-      identifications: [], verifications: [], records: [] }
+      truncated: false, admittedRecords: [], webCandidates: [], identifications: [], duplicateReferences: 0,
+      verificationOutcomes: [], verifications: [], records: [] }
   }
   throwIfAborted(signal)
   const candidates = discovery.candidates.slice(0, query.maximumResults)
-  const identifications = candidates.map(candidate => ({ candidate, result: adapters.identifyReferences(candidate) }))
+  publishProgress(onProgress, { operation: 'reference_identification', phase: 'started', providerId: 'reference_identifier',
+    status: 'running', itemIndex: null, itemCount: candidates.length, discoveredRecords: null, failureCode: null })
+  const identifications = candidates.map((candidate) => {
+    const result = adapters.identifyReferences(candidate)
+    return { discoveryUrl: candidate.url, status: result.status,
+      issues: result.issues.map(issue => issue.code), candidate, result }
+  })
   const references = identifications.flatMap(entry => entry.result.references)
+  const discarded = identifications.filter(entry => entry.result.status === 'discarded').length
+  publishProgress(onProgress, { operation: 'reference_identification', phase: 'settled', providerId: 'reference_identifier',
+    status: discarded === 0 ? 'success' : references.length === 0 ? 'failed' : 'partial_success',
+    itemIndex: null, itemCount: candidates.length, discoveredRecords: references.length,
+    failureCode: discarded === 0 ? null : 'parse_failed' })
   const byReference = new Map<string, { reference: AcademicReference; urls: Set<string> }>()
   for (const reference of references) {
     const key = referenceKey(reference)
@@ -142,6 +191,8 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
   const selected = permitted.slice(0, limits.maximumReferenceVerificationsPerQuery)
   const failures: ProviderFailure[] = []
   const records: IngestRecord[] = []
+  const admittedRecords: AcademicSourceWork[] = []
+  const verificationOutcomes: AcademicReferenceVerificationOutcome[] = []
   const verifications: PlannedSearchRoundResult['queries'][number]['verifications'][number][] = []
   for (const entry of byReference.values()) {
     if (!limits.verificationProviders.includes(providerFor(entry.reference))) {
@@ -150,9 +201,12 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
       verifications.push({ reference: entry.reference, status: 'skipped', reason: 'verification_limit' })
     }
   }
-  for (const entry of selected) {
+  for (const [index, entry] of selected.entries()) {
     throwIfAborted(signal)
     const provider = providerFor(entry.reference)
+    publishProgress(onProgress, { operation: 'reference_verification', phase: 'started', providerId: provider,
+      status: 'running', itemIndex: index + 1, itemCount: selected.length,
+      discoveredRecords: null, failureCode: null })
     let outcome: AcademicReferenceVerificationOutcome
     try {
       outcome = await adapters.verifyReference(entry.reference, provider, signal)
@@ -160,27 +214,39 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
       throwIfAborted(signal)
       failures.push(failure(provider, 'verify_reference', 'Reference verification failed.'))
       verifications.push({ reference: entry.reference, status: 'failed', reason: 'verification_failed' })
+      publishProgress(onProgress, { operation: 'reference_verification', phase: 'settled', providerId: provider,
+        status: 'failed', itemIndex: index + 1, itemCount: selected.length,
+        discoveredRecords: 0, failureCode: 'unknown' })
       continue
     }
+    verificationOutcomes.push(outcome)
     if (outcome.status === 'failed') {
       failures.push({ schemaVersion: 1, failureId: createFailureId(), provider,
         operation: 'verify_reference', category: outcome.failure.category,
         message: outcome.failure.message, retryable: outcome.failure.retryable,
         retryAfter: outcome.failure.retryAfter })
       verifications.push({ reference: entry.reference, status: 'failed', reason: 'verification_failed' })
+      publishProgress(onProgress, { operation: 'reference_verification', phase: 'settled', providerId: provider,
+        status: 'failed', itemIndex: index + 1, itemCount: selected.length,
+        discoveredRecords: 0, failureCode: outcome.failure.category })
       continue
     }
     if (outcome.value.verificationProvider !== provider) {
       throw new Error('Reference verification returned a different provider.')
     }
     verifications.push({ reference: entry.reference, status: 'verified', reason: null })
-    records.push({ ...outcome.value.work, discoveredBy: [query.searchQueryId],
+    const admitted = { ...outcome.value.work,
       verifiedDiscoveries: [...(outcome.value.work.verifiedDiscoveries ?? []),
-        ...[...entry.urls].map(discoveryUrl => ({ discoveryUrl, verificationProvider: provider }))] })
+        ...[...entry.urls].map(discoveryUrl => ({ discoveryUrl, verificationProvider: provider }))] }
+    admittedRecords.push(admitted)
+    records.push({ ...admitted, discoveredBy: [query.searchQueryId] })
+    publishProgress(onProgress, { operation: 'reference_verification', phase: 'settled', providerId: provider,
+      status: 'success', itemIndex: index + 1, itemCount: selected.length,
+      discoveredRecords: 1, failureCode: null })
     if (outcome.value.fullTextFailure !== null) {
       failures.push({ schemaVersion: 1, failureId: createFailureId(), provider,
         operation: 'resolve_fulltext', category: outcome.value.fullTextFailure.category,
-        message: outcome.value.fullTextFailure.message,
+        message: `Verified paper has no usable full-text candidate (${outcome.value.fullTextFailure.category}).`,
         retryable: outcome.value.fullTextFailure.retryable,
         retryAfter: outcome.value.fullTextFailure.retryAfter })
     }
@@ -195,9 +261,8 @@ async function executeQuery(query: HybridSearchQuery, limits: PlannedSearchLimit
   return { searchQueryId: query.searchQueryId, status: createBatchResult(records, failures).status,
     discoveredRecords: discovery.candidates.length, verifiedWorks: records.length,
     unverifiedReferences: byReference.size - records.length, failures, limitations,
-    identifications: identifications.map(({ candidate, result }) => ({ discoveryUrl: candidate.url,
-      status: result.status, issues: result.issues.map(issue => issue.code) })),
-    verifications, records }
+    truncated: discovery.truncated, admittedRecords, webCandidates: candidates, identifications,
+    duplicateReferences: references.length - byReference.size, verificationOutcomes, verifications, records }
 }
 
 function referenceKey(reference: AcademicReference): string {
@@ -217,6 +282,11 @@ function failure(provider: string, operation: string, message: string): Provider
 
 function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted) throw signal.reason ?? new DOMException('Search aborted.', 'AbortError')
+}
+
+function publishProgress(observer: PlannedSearchProgressObserver | undefined,
+  observation: PlannedSearchProgressObservation): void {
+  try { observer?.(observation) } catch { /* Observers cannot interrupt retrieval. */ }
 }
 
 function validateLimits(limits: PlannedSearchLimits): void {

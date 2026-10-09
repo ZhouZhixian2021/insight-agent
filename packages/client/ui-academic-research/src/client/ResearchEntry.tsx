@@ -75,7 +75,7 @@ function ResearchForm({ sessionId, runStream, plan, t }: ResearchEntryInjected &
           progress = frame.progress
           recent = [...recent, progress].slice(-20)
           setView({ phase: 'running', cancelling: operation.signal.aborted, ...observed() })
-        } else {
+        } else if (frame.type === 'result') {
           if (frame.value.sessionId !== sessionId || frame.retrievalRunId !== frame.value.retrievalRun.retrievalRunId
             || (progress !== undefined && frame.retrievalRunId !== progress.retrievalRunId)) throw new Error(t('streamMismatch'))
           setView({ phase: 'settled', value: frame.value, ...observed() })

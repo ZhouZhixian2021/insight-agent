@@ -2,16 +2,18 @@
 import { createBatchResult, isExecutableResearchBrief, type AcademicCandidateRankingResult,
   type CandidateAssessment, type ExecutableResearchBrief, type HybridSearchPlan,
   type ResearchBrief, type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
-import { extendPlanForEvidenceGaps, rankPlannedCandidates,
-  type PlannedSearchRoundResult, type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
+import { executePlannedSearchRound, extendPlanForEvidenceGaps, rankPlannedCandidates,
+  type PlannedSearchAdapters, type PlannedSearchRoundResult,
+  type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
 import { dedupKeys, ingestWorks, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
 import { identifyAcademicReferences, type AcademicSourceFullText, type AcademicSourceProviderObserver,
   type AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
 import { executeHybridSearch, type CandidateBatchPolicy, type CandidateScheduling, type DraftPipelineAdapters,
-  type HybridDirectSearchProvider, type HybridRetrievalPolicy, type HybridSearchAdapters,
+  type DraftSearchResult, type HybridDirectSearchProvider,
+  type HybridSearchAdapters, type HybridSearchObservation, type HybridSearchStageStatus,
   type ReplenishedCandidates, selectResearchPapers, type SelectedPaper } from '@deepseek-ai/dsh-academic-workflow'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
-import { approvedHybridSearchHandoff } from './planned-retrieval.ts'
+import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from './planned-retrieval.ts'
 import type { AcademicPlannedSearch } from './types.ts'
 
 /** Deployment-owned bounds for one evidence-gap replenishment round. */
@@ -29,6 +31,8 @@ export interface GapRoundPolicy {
  * @param academicSource Session-owned source runtime, also used for direct-search candidates.
  * @param web Session-owned Web discovery runtime.
  * @param candidateBatchPolicy Explicit Q5 batch sizes and per-question coverage threshold.
+ * @param gapRoundPolicy Bounds for one Q5 evidence-gap replenishment round.
+ * @param onPlan Optional observer for the exact reviewed plan used by formal execution.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -47,15 +51,20 @@ export function approvedPaperAdapters(
   const approvedBrief: ExecutableResearchBrief = brief
   const handoff = approvedHybridSearchHandoff(approvedBrief, searches)
   onPlan?.(handoff.plan)
-  const search = approvedSearchAdapter(searches, academicSource, web)
   const resolutions = new Map<string, AcademicSourceFullText | null>()
   const key = (provider: string, recordId: string) => JSON.stringify([provider, recordId])
   return {
     search: async (request, signal, onProvider, onHybrid) => {
-      const result = await search(request, signal, onProvider, onHybrid)
-      const verificationOutcomes = result.hybridObservation?.verificationOutcomes
-      /* v8 ignore next -- ranked adapters are created only for explicit retrieval policies, which always produce this observation. */
-      if (verificationOutcomes === undefined) throw new Error('Ranked search requires a hybrid observation.')
+      const directionIndex = searches.findIndex(search => search.query === request.query)
+      const approvedSearch = searches[directionIndex]
+      if (directionIndex < 0 || approvedSearch === undefined) {
+        throw new Error('Search expression is not in the approved plan.')
+      }
+      const result = await executeApprovedSearchDirection(handoff, directionIndex,
+        request.maxResults ?? approvedBrief.stopConditions.maximumCandidateWorks,
+        plannedSearchAdapters(academicSource, web, onProvider), signal, onHybrid)
+      const projected = plannedRoundDraftResult(handoff.plan, approvedSearch, result)
+      const verificationOutcomes = projected.hybridObservation?.verificationOutcomes ?? []
       for (const outcome of verificationOutcomes) {
         if (outcome.status !== 'verified') continue
         for (const record of outcome.value.work.workVersion.sourceRecords) {
@@ -64,11 +73,7 @@ export function approvedPaperAdapters(
           if (resolutions.get(identity) == null) resolutions.set(identity, outcome.value.fullText)
         }
       }
-      const discoveredBy = handoff.plan.queries.filter(query => query.expression === request.query)
-        .map(query => query.searchQueryId)
-      const items = result.batch.items.map(item => ({ ...item, discoveredBy }))
-      const batch = createBatchResult(items, result.batch.failures)
-      return { ...result, works: batch.items, batch }
+      return projected
     },
     selectPapers: (ingested, effectiveBrief) => rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
       ingested, resolutions, academicSource, key, candidateBatchPolicy),
@@ -116,7 +121,7 @@ function rankedPaperSelection(
       return paper
     }),
     truncated: resolvable.length > bounded.length,
-    candidateScheduling: { plan, ranking: built.ranking, policy },
+    candidateScheduling: { plan, assessments: built.assessments, ranking: built.ranking, policy },
   }
 }
 
@@ -128,7 +133,10 @@ function buildRanking(
   resolutions: ReadonlyMap<string, AcademicSourceFullText | null>,
   academicSource: AcademicSourceRuntime,
   key: (provider: string, recordId: string) => string,
-): { readonly ranking: AcademicCandidateRankingResult; readonly papers: ReadonlyMap<string, SelectedPaper> } {
+): {
+  readonly assessments: readonly CandidateAssessment[]
+  readonly ranking: AcademicCandidateRankingResult
+  readonly papers: ReadonlyMap<string, SelectedPaper> } {
   const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
   const queryQuestions = new Map(plan.queries.map(query => [query.searchQueryId, query.questions]))
   const discoveredBy = ingested.works.map((work) => {
@@ -185,7 +193,7 @@ function buildRanking(
   })
   const round: PlannedSearchRoundResult = { ingested, discoveredBy, queries: [] }
   const ranking = rankPlannedCandidates(plan, approvedBrief, round, assessments)
-  return { ranking, papers }
+  return { assessments, ranking, papers }
 }
 
 /** Execute one evidence-gap replenishment round and re-rank the merged candidate pool. */
@@ -211,25 +219,17 @@ async function replenishRankedCandidates(
     expansions: [],
   }
   const { plan } = extendPlanForEvidenceGaps(scheduling.plan, coverage, nextRoundIndex, options)
-  // Evidence-gap queries are Academic-only by construction; execute them through the same
-  // hybrid-search path as the approved round so direct search has one owner.
-  const discoveredRecords: IngestRecord[] = []
-  for (const query of plan.queries.filter(candidate => candidate.roundIndex === nextRoundIndex)) {
-    /* v8 ignore next -- extendPlanForEvidenceGaps creates Academic queries only for the newly requested round. */
-    if (query.kind !== 'academic') continue
-    const policy: HybridRetrievalPolicy = {
-      channels: ['academic'],
-      academicProviders: directSearchProviders(query.providers),
-      verificationProviders: [],
-      maximumWebDiscoveryResults: 0,
-      maximumReferenceVerifications: 0,
-    }
-    const executed = await executeHybridSearch(
-      { query: query.expression, maxResults: gapPolicy.maximumAcademicResultsPerQuery },
-      policy, hybridSearchAdapters(academicSource, web), signal,
-    )
-    discoveredRecords.push(...executed.search.works.map(record => ({ ...record, discoveredBy: [query.searchQueryId] })))
-  }
+  // Evidence-gap queries are Academic-only by construction. Q3 remains the single owner of
+  // query settlement, provenance, and ingestion for both the approved and replenishment rounds.
+  const executed = await executePlannedSearchRound(plan, nextRoundIndex, {
+    maximumAcademicResultsPerQuery: gapPolicy.maximumAcademicResultsPerQuery,
+    // The Q3 contract requires a positive bound. No Web query or verification provider exists
+    // in a generated gap round, so this value cannot authorize a verification attempt.
+    maximumReferenceVerificationsPerQuery: 1,
+    verificationProviders: [],
+  }, plannedSearchAdapters(academicSource, web), signal)
+  const discoveredRecords: IngestRecord[] = executed.queries.flatMap(query =>
+    query.admittedRecords.map(record => ({ ...record, discoveredBy: [query.searchQueryId] })))
   // Keep already-ranked works' canonical versions stable: a gap round that re-finds an
   // already-ingested work through its exact identifiers must not re-shape that work.
   const gapKeys = new Set<string>()
@@ -257,7 +257,7 @@ async function replenishRankedCandidates(
       if (paper === undefined) throw new Error('Ranked candidate has no full-text handoff.')
       return paper
     })
-  return { scheduling: { plan, ranking: built.ranking, policy: candidateBatchPolicy },
+  return { scheduling: { plan, assessments: built.assessments, ranking: built.ranking, policy: candidateBatchPolicy },
     ingested: mergedIngested, papers }
 }
 
@@ -277,6 +277,116 @@ function hybridSearchAdapters(
     identifyReferences: identifyAcademicReferences,
     verifyReference: (reference, provider, signal) => academicSource.verifyReference(reference, [provider], signal),
   }
+}
+
+/** Bind the provider-neutral Q3 executor to the Session-owned Academic and Web runtimes. */
+function plannedSearchAdapters(
+  academicSource: AcademicSourceRuntime,
+  web: WebRuntime,
+  onProvider?: AcademicSourceProviderObserver,
+): PlannedSearchAdapters {
+  return {
+    searchAcademic: (query, providers, maximumResults, signal) =>
+      academicSource.searchProviders({ query, maxResults: maximumResults },
+        directSearchProviders(providers), signal, onProvider),
+    searchWeb: async (query, maximumResults, signal) => {
+      const result = await web.search({ query, maxResults: maximumResults }, signal)
+      return { candidates: result.sources, truncated: result.truncated }
+    },
+    identifyReferences: identifyAcademicReferences,
+    verifyReference: (reference, provider, signal) =>
+      academicSource.verifyReference(reference, [provider], signal),
+  }
+}
+
+/** Project one Q3 round into the stable workflow result and browser observation contracts. */
+function plannedRoundDraftResult(
+  plan: HybridSearchPlan,
+  approvedSearch: AcademicPlannedSearch,
+  result: PlannedSearchRoundResult,
+): DraftSearchResult {
+  const retrieval = approvedSearch.retrieval
+  /* v8 ignore next -- callers route legacy searches away before constructing a Q3 handoff. */
+  if (retrieval === undefined) throw new Error('Q3 execution requires an explicit retrieval policy.')
+  const queryKinds = new Map(plan.queries.map(query => [query.searchQueryId, query.kind]))
+  const academicQueries = result.queries.filter(query => queryKinds.get(query.searchQueryId) === 'academic')
+  const webQueries = result.queries.filter(query => queryKinds.get(query.searchQueryId) !== 'academic')
+  const records: IngestRecord[] = result.queries.flatMap(query =>
+    query.admittedRecords.map(record => ({ ...record, discoveredBy: [query.searchQueryId] })))
+  const failures = result.queries.flatMap(query => query.failures)
+  const identifications = webQueries.flatMap(query => query.identifications)
+  const verificationOutcomes = webQueries.flatMap(query => query.verificationOutcomes)
+  const verifications = webQueries.flatMap(query => query.verifications)
+  const webDiscoveryFailed = webQueries.some(query =>
+    query.failures.some(failure => failure.operation === 'web_search'))
+  const attemptedVerifications = verifications.filter(verification => verification.status !== 'skipped')
+  const verifiedReferences = attemptedVerifications.filter(verification => verification.status === 'verified').length
+  const failedVerifications = attemptedVerifications.filter(verification => verification.status === 'failed').length
+  const academicDiscoveredRecords = academicQueries.reduce((count, query) => count + query.discoveredRecords, 0)
+  const webDiscoveredUrls = webQueries.reduce((count, query) => count + query.webCandidates.length, 0)
+  const observation: HybridSearchObservation = {
+    policy: retrieval,
+    stages: {
+      academicSearch: aggregateQueryStatus(academicQueries.map(query => query.status)),
+      webDiscovery: webQueries.length === 0 ? 'not_run' : webDiscoveryFailed ? 'failed' : 'success',
+      referenceIdentification: identificationStatus(identifications),
+      referenceVerification: verificationStatus(verifiedReferences, failedVerifications),
+    },
+    academicDiscoveredRecords,
+    webDiscoveredUrls,
+    identifications,
+    identifiedReferences: identifications.reduce((count, entry) => count + entry.result.references.length, 0),
+    duplicateReferences: webQueries.reduce((count, query) => count + query.duplicateReferences, 0),
+    attemptedVerifications: attemptedVerifications.length,
+    verificationOutcomes,
+    retainedVerificationIndexes: verificationOutcomes.flatMap((outcome, index) =>
+      outcome.status === 'verified' ? [index] : []),
+    admittedRecords: records,
+    skippedReferences: verifications.flatMap(verification =>
+      verification.status === 'skipped'
+        && (verification.reason === 'provider_not_approved' || verification.reason === 'verification_limit')
+        ? [{ reference: verification.reference, reason: verification.reason }] : []),
+    verifiedReferences,
+    failedVerifications,
+    discardedWebCandidates: identifications.filter(entry => entry.result.status === 'discarded').length,
+  }
+  const batch = createBatchResult(records, failures)
+  return {
+    providers: [...new Set(academicQueries.flatMap((query) => {
+      const planned = plan.queries.find(candidate => candidate.searchQueryId === query.searchQueryId)
+      return planned?.kind === 'academic' ? planned.providers : []
+    }))].sort(),
+    discoveredRecords: academicDiscoveredRecords + verifiedReferences,
+    batch,
+    works: batch.items,
+    truncated: result.queries.some(query => query.truncated),
+    limitations: [...new Set(result.queries.flatMap(query => query.limitations))],
+    hybridObservation: observation,
+  }
+}
+
+function aggregateQueryStatus(
+  statuses: readonly ('success' | 'partial_success' | 'failed')[],
+): HybridSearchStageStatus {
+  if (statuses.length === 0) return 'not_run'
+  if (statuses.every(status => status === 'success')) return 'success'
+  if (statuses.every(status => status === 'failed')) return 'failed'
+  return 'partial_success'
+}
+
+function identificationStatus(
+  identifications: HybridSearchObservation['identifications'],
+): HybridSearchStageStatus {
+  if (identifications.length === 0) return 'not_run'
+  const identified = identifications.filter(entry => entry.result.status === 'identified').length
+  if (identified === identifications.length) return 'success'
+  return identified === 0 ? 'failed' : 'partial_success'
+}
+
+function verificationStatus(verified: number, failed: number): HybridSearchStageStatus {
+  if (verified + failed === 0) return 'not_run'
+  if (failed === 0) return 'success'
+  return verified === 0 ? 'failed' : 'partial_success'
 }
 
 /** Narrow reviewed plan providers to the direct-search set; other providers fail loud. */

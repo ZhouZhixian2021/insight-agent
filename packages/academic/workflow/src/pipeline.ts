@@ -1,7 +1,7 @@
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
-import { createRetrievalRunId, isExecutableResearchBrief, type AcademicWorkId,
-  type AcademicCandidateRankingResult, type EvidenceRecord, type ProviderFailure, type ResearchBrief,
-  type ResearchQuestionCoverageResult,
+import { createRetrievalRunId, isExecutableResearchBrief, targetIncludedWorks, type AcademicWorkId,
+  type AcademicCandidateRankingResult, type EvidenceRecord, type HybridSearchRound, type ProviderFailure,
+  type ResearchBrief, type ResearchQuestionCoverageResult,
   type WorkVersion, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObservation, AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import { createIngestIndex, ingestWorks, summarizeIngestAudit, type IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
@@ -25,6 +25,8 @@ import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressF
   type AcademicWorkflowProgressStage,
   type AcademicWorkflowProgressStatus } from './progress.ts'
 import { planCandidateBatch } from './candidate-batches.ts'
+import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent,
+  AcademicQueryWorkflowObservation } from './query-workflow.ts'
 
 /**
  * Search, reconcile, acquire and extract papers before analyzing and evaluating a draft.
@@ -48,10 +50,11 @@ export async function runResearchDraft(
   if (!isExecutableResearchBrief(brief)) throw new Error('Current research brief requires approval.')
   synthesisSections(brief)
   const limits = brief.stopConditions
+  const includedWorkTarget = targetIncludedWorks(brief)
   if (limits.maximumSearchRounds < 1 || limits.maximumCandidateWorks < 1 || limits.maximumIncludedWorks < 1) {
     throw new Error('Research limits do not permit this pass.')
   }
-  const searches = normalizeSearches(input.searches, limits.maximumSearchRounds)
+  const searches = normalizeSearches(input.searches)
   if (limits.maximumElapsedMinutes !== null) {
     const deadline = AbortSignal.timeout(limits.maximumElapsedMinutes * 60_000)
     signal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
@@ -76,9 +79,27 @@ export async function runResearchDraft(
   let selectionTruncated = false
   let usableWorkIds: readonly AcademicWorkId[] = []
   const selectionLimitations: string[] = []
+  let queryWorkflow: AcademicQueryWorkflowObservation | undefined
+  const publishQueryWorkflow = (
+    value: Omit<AcademicQueryWorkflowObservation, 'sequence' | 'observedAt'>,
+  ): void => {
+    queryWorkflow = { ...value, sequence: (queryWorkflow?.sequence ?? -1) + 1, observedAt: adapters.now() }
+    try {
+      adapters.onQueryWorkflow?.(structuredClone(queryWorkflow))
+    } catch {
+      // Query-workflow observation is read-only; a broken subscriber cannot change research settlement.
+    }
+  }
+  const updateQueryWorkflow = (
+    value: Partial<Omit<AcademicQueryWorkflowObservation, 'schemaVersion' | 'retrievalRunId' | 'sequence' | 'observedAt'>>,
+  ): void => {
+    if (queryWorkflow === undefined) return
+    publishQueryWorkflow({ ...queryWorkflow, ...value })
+  }
   const settle = (cancelled: boolean): DraftPipelineResult => ({
     completedSearchQueries: searchResults.map(result => result.query),
     ...hybridSearch === undefined ? {} : { hybridSearch },
+    ...queryWorkflow === undefined ? {} : { queryWorkflow },
     status: cancelled ? 'cancelled' : 'completed',
     synthesis: { status: 'not_run', reasons: cancelled
       ? [signal?.reason instanceof DOMException && signal.reason.name === 'TimeoutError'
@@ -92,6 +113,7 @@ export async function runResearchDraft(
     report: null,
   })
   const cancel = (): DraftPipelineResult => {
+    updateQueryWorkflow({ status: 'cancelled' })
     progress.cancel(latestStage)
     return settle(true)
   }
@@ -190,6 +212,26 @@ export async function runResearchDraft(
   }
   const selected = selection.papers
   const candidateScheduling = selection.candidateScheduling
+  if (candidateScheduling !== undefined) {
+    const completedAt = adapters.now()
+    publishQueryWorkflow({
+      schemaVersion: 1,
+      retrievalRunId,
+      status: 'running',
+      plan: candidateScheduling.plan,
+      works: ingested.works,
+      versions: ingested.versions,
+      assessments: candidateScheduling.assessments,
+      ranking: candidateScheduling.ranking,
+      rounds: completedRounds(candidateScheduling.plan, startedAt, completedAt,
+        providerFailures.length === 0 ? 'success' : ingested.works.length === 0 ? 'failed' : 'partial_success'),
+      decisions: [],
+      settlements: [],
+      coverage: null,
+      stopDecision: null,
+      limitations: [],
+    })
+  }
   selectionTruncated = selection.truncated
   if (selection.truncated) selectionLimitations.push('候选选择器限制了可处理的论文范围。')
   if (signal?.aborted) return cancel()
@@ -386,7 +428,8 @@ export async function runResearchDraft(
         while (attempted < validated.length || pending.length > 0) {
           const admission = evidenceAdmission()
           if (!stopped && attempted < validated.length && !paperSignal.aborted) {
-            if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready') {
+            if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready'
+              && usableWorkIds.length >= includedWorkTarget) {
               stopped = true
               selectionTruncated = true
               selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
@@ -419,28 +462,42 @@ export async function runResearchDraft(
       const scheduled: WorkVersionId[] = []
       let completedBatchCount = 0
       let consecutiveBatchesWithoutEvidence = 0
-      let completedSearchRounds = executedQueries.length
+      // Multiple approved query directions make up the same initial search round. Count
+      // completed rounds from the plan, never from the number of executed expressions.
+      let completedSearchRounds = Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
       while (!paperSignal.aborted) {
         const coverage = rankedCoverage(brief, scheduling.ranking, papers,
           evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
           adapters.now())
+        updateQueryWorkflow({
+          plan: scheduling.plan,
+          works: ingested.works,
+          versions: ingested.versions,
+          assessments: scheduling.assessments,
+          ranking: scheduling.ranking,
+          coverage,
+        })
         const decision = planCandidateBatch({ brief, plan: scheduling.plan,
           ranking: scheduling.ranking, coverage, policy: scheduling.policy,
           scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
           includedWorks: usableWorkIds.length, completedSearchRounds,
           cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
-        adapters.onSettlement?.({ kind: 'batch-decision', event: {
+        const decisionEvent: AcademicBatchDecisionEvent = {
           retrievalRunId,
           batchIndex: decision.action === 'schedule_batch' ? decision.batch.batchIndex : null,
           action: decision.action,
           workVersionIds: decision.action === 'schedule_batch' ? decision.batch.workVersionIds : [],
           searchQuestions: decision.searchQuestions,
           reason: decision.action === 'schedule_batch' ? decision.batch.reason : decision.stop.reason,
-        } })
+        }
+        adapters.onSettlement?.({ kind: 'batch-decision', event: decisionEvent })
+        updateQueryWorkflow({ decisions: [...(queryWorkflow?.decisions ?? []), decisionEvent] })
         if (decision.action === 'stop') {
           stopped = true
           if (decision.stop.reason !== 'target_and_coverage_met') selectionTruncated = true
           selectionLimitations.push(...decision.stop.details)
+          updateQueryWorkflow({ status: 'settled', stopDecision: decision.stop,
+            limitations: [...(queryWorkflow?.limitations ?? []), ...decision.stop.details] })
           break
         }
         if (decision.action === 'search_evidence_gap') {
@@ -449,10 +506,13 @@ export async function runResearchDraft(
           if (replenish === undefined || nextRoundIndex > scheduling.plan.maximumSearchRounds) {
             stopped = true
             selectionTruncated = true
-            selectionLimitations.push(`现有排序候选无法补足 ${decision.searchQuestions.length} 个研究问题；需要执行下一轮证据缺口补检。`)
+            const limitation = `现有排序候选无法补足 ${decision.searchQuestions.length} 个研究问题；需要执行下一轮证据缺口补检。`
+            selectionLimitations.push(limitation)
+            updateQueryWorkflow({ status: 'settled', limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
             break
           }
           let replenished: ReplenishedCandidates
+          const roundStartedAt = adapters.now()
           try {
             replenished = await replenish(scheduling, ingested, coverage, nextRoundIndex, paperSignal)
           } catch (error: unknown) {
@@ -460,12 +520,26 @@ export async function runResearchDraft(
             if (error instanceof WorkflowLogError) throw error
             stopped = true
             selectionTruncated = true
-            selectionLimitations.push(`证据缺口补检第 ${nextRoundIndex} 轮失败，停止选文。`)
+            const limitation = `证据缺口补检第 ${nextRoundIndex} 轮失败，停止选文。`
+            selectionLimitations.push(limitation)
+            updateQueryWorkflow({ status: 'settled', rounds: [...(queryWorkflow?.rounds ?? []), {
+              roundIndex: nextRoundIndex, purpose: 'evidence_gap', searchQueryIds: [], status: 'failed',
+              startedAt: roundStartedAt, completedAt: adapters.now(),
+            }], limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
             break
           }
           scheduling = replenished.scheduling
           ingested = replenished.ingested
           completedSearchRounds = nextRoundIndex
+          updateQueryWorkflow({
+            plan: scheduling.plan,
+            works: ingested.works,
+            versions: ingested.versions,
+            assessments: scheduling.assessments,
+            ranking: scheduling.ranking,
+            rounds: [...(queryWorkflow?.rounds ?? []), roundFromPlan(scheduling.plan, nextRoundIndex,
+              roundStartedAt, adapters.now(), 'success')],
+          })
           for (const version of replenished.ingested.versions) {
             if (!versions.has(version.workVersionId)) versions.set(version.workVersionId, version)
           }
@@ -490,10 +564,12 @@ export async function runResearchDraft(
         completedBatchCount += 1
         consecutiveBatchesWithoutEvidence = admittedEvidence.length === evidenceBefore
           ? consecutiveBatchesWithoutEvidence + 1 : 0
-        adapters.onSettlement?.({ kind: 'batch-settlement', event: {
+        const settlementEvent: AcademicBatchSettlementEvent = {
           retrievalRunId, batchIndex: decision.batch.batchIndex, admittedEvidence: admittedEvidence.length,
           completedAt: adapters.now(),
-        } })
+        }
+        adapters.onSettlement?.({ kind: 'batch-settlement', event: settlementEvent })
+        updateQueryWorkflow({ settlements: [...(queryWorkflow?.settlements ?? []), settlementEvent] })
         if (fatal !== undefined) break
       }
     }
@@ -607,11 +683,36 @@ export async function runResearchDraft(
     status: admission.status === 'ready_with_warning' || draft.rejectedStatements.length > 0 ? 'partial_success' : 'completed', reasons: synthesisReasons } }
 }
 
-/** Normalize caller-owned queries once and enforce both the hard and approved round bounds. */
-function normalizeSearches(
-  searches: readonly DraftPipelineSearch[],
-  approvedMaximumRounds: number,
-): readonly DraftPipelineSearch[] {
+function completedRounds(
+  plan: CandidateScheduling['plan'],
+  startedAt: string,
+  completedAt: string,
+  status: HybridSearchRound['status'],
+): readonly HybridSearchRound[] {
+  return [...new Set(plan.queries.map(query => query.roundIndex))]
+    .map(roundIndex => roundFromPlan(plan, roundIndex, startedAt, completedAt, status))
+}
+
+function roundFromPlan(
+  plan: CandidateScheduling['plan'],
+  roundIndex: number,
+  startedAt: string,
+  completedAt: string,
+  status: HybridSearchRound['status'],
+): HybridSearchRound {
+  const queries = plan.queries.filter(query => query.roundIndex === roundIndex)
+  return {
+    roundIndex,
+    purpose: queries[0]?.purpose ?? 'evidence_gap',
+    searchQueryIds: queries.map(query => query.searchQueryId),
+    status,
+    startedAt,
+    completedAt,
+  }
+}
+
+/** Normalize caller-owned queries once and enforce the hard per-round query bound. */
+function normalizeSearches(searches: readonly DraftPipelineSearch[]): readonly DraftPipelineSearch[] {
   const normalized: DraftPipelineSearch[] = []
   const queries = new Set<string>()
   for (const request of searches) {
@@ -625,9 +726,8 @@ function normalizeSearches(
       ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })
   }
   if (normalized.length === 0) throw new Error('At least one search query is required.')
-  const maximum = Math.min(MAX_DRAFT_SEARCH_QUERIES, approvedMaximumRounds)
-  if (normalized.length > maximum) {
-    throw new Error(`Search query count exceeds the approved bound of ${maximum}.`)
+  if (normalized.length > MAX_DRAFT_SEARCH_QUERIES) {
+    throw new Error(`Search query count exceeds the approved bound of ${MAX_DRAFT_SEARCH_QUERIES}.`)
   }
   return normalized
 }

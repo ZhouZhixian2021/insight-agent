@@ -10,7 +10,7 @@ import {
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { PlannedSearchAdapters } from '@deepseek-ai/dsh-academic-retrieval'
 import { describe, expect, it, vi } from 'vitest'
-import { approvedHybridSearchHandoff, executeApprovedSearchRound } from '../src/planned-retrieval.ts'
+import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from '../src/planned-retrieval.ts'
 import type { AcademicPlannedSearch } from '../src/types.ts'
 
 const question = '检索增强生成如何影响事实可靠性？'
@@ -25,7 +25,7 @@ const brief: ExecutableResearchBrief = {
   includedWorkTypes: ['preprint', 'version_of_record'],
   inclusionRules: ['纳入直接评估事实可靠性的研究。'],
   exclusionRules: ['排除没有论文身份的产品页面。'],
-  evidenceRequirements: { minimumIncludedWorks: 2, minimumFulltextWorks: 1,
+  evidenceRequirements: { minimumIncludedWorks: 2, targetIncludedWorks: 4, minimumFulltextWorks: 1,
     minimumEvidenceLevel: 'fulltext', requireLocatableEvidence: true, allowPreprints: true,
     insufficientEvidencePolicy: 'continue_with_warning' },
   targetAudience: '研究人员',
@@ -73,15 +73,17 @@ describe('approved Session plan to Q2/Q3 retrieval bridge', () => {
       roundIndex: query.roundIndex, questions: query.questions }))).toEqual([
       { kind: 'academic', expression: searches[0]!.query, roundIndex: 1, questions: [question] },
       { kind: 'web_discovery', expression: searches[0]!.query, roundIndex: 1, questions: [question] },
-      { kind: 'academic', expression: searches[1]!.query, roundIndex: 2, questions: [question] },
+      { kind: 'academic', expression: searches[1]!.query, roundIndex: 1, questions: [question] },
     ])
     expect(handoff.plan.queries.some(query => query.expression === brief.topic)).toBe(false)
     expect(new Set(handoff.plan.queries.map(query => query.searchQueryId)).size).toBe(3)
-    expect(handoff.plan.inclusionTargets).toEqual({ minimum: 2, target: 6, maximum: 6 })
-    expect(handoff.rounds).toEqual([
-      { roundIndex: 1, verificationProviders: ['openalex', 'arxiv', 'acl'],
+    expect(handoff.plan.inclusionTargets).toEqual({ minimum: 2, target: 4, maximum: 6 })
+    expect(handoff.directions).toEqual([
+      { directionIndex: 0, searchQueryIds: handoff.plan.queries.slice(0, 2).map(query => query.searchQueryId),
+        verificationProviders: ['openalex', 'arxiv', 'acl'],
         maximumReferenceVerificationsPerQuery: 4 },
-      { roundIndex: 2, verificationProviders: [], maximumReferenceVerificationsPerQuery: 0 },
+      { directionIndex: 1, searchQueryIds: [handoff.plan.queries[2]!.searchQueryId],
+        verificationProviders: [], maximumReferenceVerificationsPerQuery: 0 },
     ])
     expect(handoff.plan.citationExpansionSeeds).toEqual([])
   })
@@ -101,28 +103,34 @@ describe('approved Session plan to Q2/Q3 retrieval bridge', () => {
         verificationProvider: 'openalex', work: verified, fullText: null, fullTextFailure: null } }),
     }
     const handoff = approvedHybridSearchHandoff(brief, searches)
-    const result = await executeApprovedSearchRound(handoff, 1, 5, adapters)
+    const result = await executeApprovedSearchDirection(handoff, 0, 5, adapters)
     expect(searchAcademic).toHaveBeenCalledExactlyOnceWith(searches[0]!.query,
       ['openalex', 'arxiv'], 5, undefined)
     expect(searchWeb).toHaveBeenCalledExactlyOnceWith(searches[0]!.query, 8, undefined)
     expect(result.ingested.works).toHaveLength(2)
     expect(result.queries.map(query => query.searchQueryId)).toEqual(
-      handoff.plan.queries.filter(query => query.roundIndex === 1).map(query => query.searchQueryId),
+      handoff.directions[0]!.searchQueryIds,
     )
     expect(result.discoveredBy.every(item => item.searchQueryIds.length === 1)).toBe(true)
-    const academicOnly = await executeApprovedSearchRound(handoff, 2, 3, adapters)
+    const academicOnly = await executeApprovedSearchDirection(handoff, 1, 3, adapters)
     expect(academicOnly.queries).toHaveLength(1)
     expect(searchAcademic).toHaveBeenLastCalledWith(searches[1]!.query, ['openalex'], 3, undefined)
     expect(searchWeb).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps legacy plans on the existing adapter and rejects inconsistent approved bounds', () => {
+  it('keeps legacy plans on the existing adapter and reserves later rounds for replenishment', () => {
     expect(() => approvedHybridSearchHandoff(brief, [{ query: 'legacy', purpose: '旧计划', questions: [question] }]))
       .toThrow(/Legacy searches/u)
-    expect(() => approvedHybridSearchHandoff({ ...brief, stopConditions: { ...brief.stopConditions,
-      maximumSearchRounds: 1 } }, searches)).toThrow(/search-round limit/u)
+    expect(approvedHybridSearchHandoff({ ...brief, stopConditions: { ...brief.stopConditions,
+      maximumSearchRounds: 1 } }, searches).plan.queries.every(query => query.roundIndex === 1)).toBe(true)
     expect(() => approvedHybridSearchHandoff({ ...brief,
       evidenceRequirements: { ...brief.evidenceRequirements, minimumIncludedWorks: 7 } }, searches))
-      .toThrow(/minimum included-work/u)
+      .toThrow(/minimum <= target <= maximum/u)
+    expect(() => approvedHybridSearchHandoff({ ...brief,
+      evidenceRequirements: { ...brief.evidenceRequirements, targetIncludedWorks: 7 } }, searches))
+      .toThrow(/minimum <= target <= maximum/u)
+    expect(() => approvedHybridSearchHandoff({ ...brief,
+      stopConditions: { ...brief.stopConditions, maximumCandidateWorks: 3 } }, searches))
+      .toThrow(/target <= candidate maximum/u)
   })
 })

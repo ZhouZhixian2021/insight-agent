@@ -22,7 +22,7 @@ Academic Workflow 公开纯 Q5 决策边界 `planCandidateBatch()`。输入绑�
 
 A 可以按 Q4 ID 调度，而不导入 B 的排序实现。B 可以从明确的未覆盖问题生成新查询，而不接管工作流状态。C 可以解释相同的批次原因与停止原因，不需要重新计算。使用同一份已保存输入重放会产生同一决定。
 
-第 3 版 Controller 运行现在保留已审核的查询来源，取得 Q4 排序，把调度的 `WorkVersionId` 映射为可解析全文候选，逐批结算，依据通过校验的证据重建问题覆盖，并再次调用调度器。没有检索策略的旧计划保留原有选择路径。注册了 `replenishCandidates` 适配器的证据缺口决定会执行一轮证据缺口补检（`extendPlanForEvidenceGaps`，然后与已批准轮共用同一个 `executeHybridSearch` 执行器，再做 `ingestWorks` 合并、`rankPlannedCandidates` 重排）并继续调度；未注册适配器时运行仍以可见限制结束。从已持久化事件恢复运行仍留待后续。
+第 3 版 Controller 运行现在保留已审核的查询来源，取得 Q4 排序，把调度的 `WorkVersionId` 映射为可解析全文候选，逐批结算，依据通过校验的证据重建问题覆盖，并再次调用调度器。没有检索策略的旧计划保留原有选择路径。已批准轮次和证据缺口轮次现在统一使用 Academic Retrieval 的 `executePlannedSearchRound()`，由它负责查询结算、来源关系与摄取；Controller 把结果投影到既有工作流契约后，再由 `rankPlannedCandidates()` 重排并继续调度。未注册 `replenishCandidates` 适配器时，运行仍以可见限制结束。从已持久化事件恢复运行仍留待后续。
 
 ## 验证
 

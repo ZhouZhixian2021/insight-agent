@@ -60,6 +60,8 @@ export type {
   PaperProcessingFailure, PaperSelectionResult, ReplenishedCandidates, SelectedPaper,
 } from './pipeline-types.ts'
 export type {
-  AcademicBatchDecisionEvent, AcademicBatchSettlementEvent, AcademicRunSettlementEvent,
-  AcademicSearchPlanEvent, AcademicSearchPlanQueryEvent, AcademicSettlementFact, AcademicSettlementObserver,
+  AcademicRunSettlementEvent, AcademicSearchPlanEvent, AcademicSearchPlanQueryEvent,
+  AcademicSettlementFact, AcademicSettlementObserver,
 } from './settlement-events.ts'
+export type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent,
+  AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'

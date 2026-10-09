@@ -21,6 +21,9 @@
     "./progress": {
       "types": "./lib/types/progress.d.ts"
     },
+    "./query-workflow": {
+      "types": "./lib/types/query-workflow.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -1,4 +1,5 @@
-import { createBatchResult, createSearchQueryId, type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
+import { createBatchResult, createFailureId, createSearchQueryId,
+  type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
@@ -41,7 +42,14 @@ function setup(options: {
       maximumCandidateWorks: 3, maximumIncludedWorks: 2, saturationRounds: 3 } }
   const searchProviders = vi.fn(async (request: { query: string }) => {
     if (request.query !== 'synthetic') {
-      if (options.failGapSearch === true) throw new Error('temporary provider failure')
+      if (options.failGapSearch === true) {
+        const failure = { schemaVersion: 1 as const, failureId: createFailureId(), provider: 'arxiv',
+          operation: 'search', category: 'upstream_error' as const, message: 'temporary provider failure',
+          retryable: true, retryAfter: null }
+        const batch = createBatchResult([], [failure])
+        return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: 0,
+          limitations: [], truncated: false }
+      }
       const selected = options.gapWorks ?? [works[1]!]
       const batch = createBatchResult(selected, [])
       return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
@@ -118,10 +126,22 @@ describe('Q5 evidence-gap replenishment', () => {
         academicProviders: ['arxiv'], verificationProviders: ['arxiv'], maximumWebDiscoveryResults: 2,
         maximumReferenceVerifications: 2 } }], academicSource, web, batchPolicy, gapPolicy)
 
-    const result = await adapters.search({ query: 'synthetic', maxResults: 3 })
+    const progress = vi.fn()
+    const result = await adapters.search({ query: 'synthetic', maxResults: 3 }, undefined, undefined, progress)
 
     expect(verifyReference).toHaveBeenCalledTimes(2)
     expect(result.works).toHaveLength(1)
+    expect(result.hybridObservation).toMatchObject({
+      stages: { academicSearch: 'success', webDiscovery: 'success',
+        referenceIdentification: 'success', referenceVerification: 'partial_success' },
+      webDiscoveredUrls: 2,
+      attemptedVerifications: 2,
+      verifiedReferences: 1,
+      failedVerifications: 1,
+    })
+    expect(progress).toHaveBeenCalledWith(expect.objectContaining({
+      operation: 'reference_verification', phase: 'settled', status: 'success',
+    }))
   })
 
   it('rejects missing query provenance after conservatively assessing an unknown source', () => {

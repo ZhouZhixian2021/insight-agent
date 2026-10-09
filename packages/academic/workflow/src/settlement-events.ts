@@ -1,5 +1,6 @@
 /** Durable Q5 scheduling settlement facts and the approved search-plan event. */
-import type { ResearchBriefId, RetrievalRunId, SearchQueryId, WorkVersionId } from '@deepseek-ai/dsh-academic-model'
+import type { ResearchBriefId, RetrievalRunId, SearchQueryId } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent } from './query-workflow.ts'
 
 /** One stable search-query identity persisted with the approved plan so a resumed run reuses it. */
 export interface AcademicSearchPlanQueryEvent {
@@ -24,25 +25,6 @@ export interface AcademicSearchPlanEvent {
   readonly researchBriefVersion: number
   readonly maximumSearchRounds: number
   readonly queries: readonly AcademicSearchPlanQueryEvent[]
-}
-
-/** One Q5 scheduling decision: schedule a ranked batch, request a gap round, or stop selection. */
-export interface AcademicBatchDecisionEvent {
-  readonly retrievalRunId: RetrievalRunId
-  /** Zero-based batch position; null when the decision is not a scheduled batch. */
-  readonly batchIndex: number | null
-  readonly action: 'schedule_batch' | 'search_evidence_gap' | 'stop'
-  readonly workVersionIds: readonly WorkVersionId[]
-  readonly searchQuestions: readonly string[]
-  readonly reason: string | null
-}
-
-/** One Q5 batch settlement: how much evidence the batch admitted after processing. */
-export interface AcademicBatchSettlementEvent {
-  readonly retrievalRunId: RetrievalRunId
-  readonly batchIndex: number
-  readonly admittedEvidence: number
-  readonly completedAt: string
 }
 
 /** Terminal settlement of one research run. */
