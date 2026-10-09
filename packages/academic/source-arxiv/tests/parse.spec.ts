@@ -7,6 +7,8 @@ const FEED = `<?xml version="1.0" encoding="UTF-8"?>
   <entry>
     <id>http://arxiv.org/abs/2406.12345v1</id>
     <title>Joint evaluation of retrieval and generation</title>
+    <summary>We evaluate retrieval and generation.</summary>
+    <category term="cs.CL"/><category term="cs.AI"/>
     <published>2024-06-15T12:34:56Z</published>
     <updated>2024-07-01T12:34:56Z</updated>
     <author><name>Alice Example</name></author>
@@ -17,6 +19,15 @@ const FEED = `<?xml version="1.0" encoding="UTF-8"?>
 </feed>`
 
 describe('parseArxivFeed', () => {
+  it('reads an attributed summary and single category, ignoring empty category terms', () => {
+    const parsed = parseArxivFeed('<feed><totalResults type="integer">2</totalResults><entry><id>2401.00001v1</id>'
+      + '<summary type="text">Scholarly summary.</summary><category term="cs.CL"/></entry>'
+      + '<entry><id>2401.00002v1</id><summary> </summary><category/><category term=" "/></entry></feed>')
+    expect(parsed.entries[0]).toMatchObject({ abstract: 'Scholarly summary.', keywords: ['cs.CL'] })
+    expect(parsed.entries[1]).toMatchObject({ abstract: null, keywords: [] })
+    expect(parsed.totalResults).toBe(2)
+  })
+
   it('distills one entry with authors and a DOI', () => {
     const { entries, totalResults } = parseArxivFeed(FEED)
     expect(entries).toEqual([{
@@ -26,6 +37,7 @@ describe('parseArxivFeed', () => {
       published: '2024-06-15T12:34:56Z',
       updated: '2024-07-01T12:34:56Z',
       doi: '10.48550/arXiv.2406.12345',
+      abstract: 'We evaluate retrieval and generation.', keywords: ['cs.CL', 'cs.AI'],
     }])
     expect(totalResults).toBeNull()
   })
@@ -75,6 +87,7 @@ describe('parseArxivFeed', () => {
       published: null,
       updated: null,
       doi: null,
+      abstract: null, keywords: [],
     }])
     expect(totalResults).toBeNull()
   })
@@ -112,6 +125,10 @@ describe('normalizeArxivWork', () => {
       { kind: 'arxiv', normalizedValue: '2406.12345v1', originalValue: 'http://arxiv.org/abs/2406.12345v1', sourceProvider: 'arxiv' },
     ])
     expect(workVersion.sourceRecords).toEqual([{ provider: 'arxiv', recordId: '2406.12345v1' }])
+    expect(normalizeArxivWork(entry).metadata).toEqual({
+      abstract: { status: 'available', value: 'We evaluate retrieval and generation.' },
+      keywords: { status: 'available', value: ['cs.CL', 'cs.AI'] },
+    })
   })
 
   it('marks the version label unknown when the entry id has no revision suffix', () => {

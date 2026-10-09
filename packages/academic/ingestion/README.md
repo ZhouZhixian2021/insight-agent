@@ -38,6 +38,8 @@ For a Web reference verified by an Academic Provider, the hybrid workflow adds `
 
 Each outcome also reports the deduplicated works, the re-pointed versions, and an audit of what was created, merged, or flagged as suspected. `summarizeIngestAudit()` turns that audit into progress counters, keeping merged work identities, merged version records, suspected duplicates, and the retained version total as four independent facts.
 
+`metadataForVersion(index, version)` reads retained scholarly abstracts and keywords for that version. Same-version duplicates preserve the first available abstract and union available keywords; unavailable fields do not erase known values. Metadata from another version, including a preprint, never fills a canonical published version's missing abstract.
+
 -----
 
 <a id="api"></a>
@@ -46,6 +48,7 @@ Each outcome also reports the deduplicated works, the re-pointed versions, and a
 | Export | Role |
 |---|---|
 | `IngestRecord` | One provider-produced `{ academicWork, workVersion }` pair, optionally carrying planned query IDs and verified Web discoveries. |
+| `metadataForVersion()` | Reads version-scoped scholarly abstract and keyword availability from retained records. |
 | `IngestIndex` | The in-memory deduplication and merge state. |
 | `createIngestIndex()` | Creates an empty index. |
 | `ingestWorks()` | Deduplicates a batch into the index and returns the outcome. |

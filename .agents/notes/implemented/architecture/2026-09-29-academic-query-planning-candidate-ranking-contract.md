@@ -22,7 +22,7 @@ The existing runtime workflow remains unchanged in Q1. B owns query generation a
 
 ## Consequences
 
-B and C consume one assessment and ranking-result vocabulary without repackaging Q3 records. A prepares reviewed assessments and later consumes queue IDs without importing B's implementation. Scoring and threshold changes must be expressed as an explicit policy rather than scattered constants. Adding stable question identities would require a separately reviewed ResearchBrief schema change. Runtime Session events, persistence, model-assisted semantic classification, and replenishment remain later work.
+B and C consume one assessment and ranking-result vocabulary without repackaging Q3 records. A supplies reviewed assessments or explicit criteria for [scholarly metadata screening](2026-10-09-academic-scholarly-metadata-screening.md), then consumes queue IDs. Scoring and threshold changes must be expressed as an explicit policy rather than scattered constants. Adding stable question identities would require a separately reviewed ResearchBrief schema change. Model-assisted semantic classification requires its own adapter and durable model-call records.
 
 ## Verification
 

@@ -13,6 +13,8 @@ This package adds ACL Anthology papers to `ctx.academicSource`. It searches conf
 
 `verifyReference()` fetches one official paper page by Anthology ID and checks its citation metadata before returning a work. This works without configured volume catalogs; it does not fetch the PDF.
 
+Verification retains scholarly abstract tags or the official `acl-abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

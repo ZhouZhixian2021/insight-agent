@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 Any academic package can search scholarly providers through `dsh-academic-source` (`ctx.academicSource`) without binding to a vendor's API. Callers can select one provider with `search()`, aggregate configured providers with `searchAll()`, or select providers per request with `searchProviders()`, then resolve ordered full-text candidates from the selected version. The service itself makes no network calls and registers no model-facing tool; providers own transport and source-specific parsing.
 
+Provider records can carry version-scoped `metadata.abstract` and `metadata.keywords` availability. Search aggregation and reference verification preserve these scholarly values alongside dates and source identities. Web snippets never fill them; missing fields remain explicitly unknown.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
