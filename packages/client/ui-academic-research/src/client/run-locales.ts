@@ -1,5 +1,7 @@
+import { q6Zh, q6En } from './q6-locales.ts'
 /** Academic sample viewer copy; producer text remains verbatim. */
 export const zh = {
+  ...q6Zh,
   failure_invalid_request: '请求无效',
   failure_authentication_failed: '授权失败',
   failure_rate_limited: '来源限流',
@@ -166,6 +168,7 @@ export type RunKey = keyof typeof zh
 
 /** English copy with the identical key set. */
 export const en: Record<RunKey, string> = {
+  ...q6En,
   failure_invalid_request: 'invalid request',
   failure_authentication_failed: 'authentication failed',
   failure_rate_limited: 'rate limited',

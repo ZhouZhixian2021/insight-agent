@@ -1,5 +1,47 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`hybrid plan browser preview > opens the Q6 fixed JSON demo, filters candidates and inspects coverage without starting research 1`] = `
+"Funnel snapshots
+
+Inspect recorded fixed snapshots. Counts are absolute, not accumulated, and do not describe a live run.
+
+Demo snapshot
+Query planning · 0
+Ranking · 1
+Settlement · 2
+
+Settlement · partial success · 2026-09-29T02:01:00.000Z
+
+Round: 1 · Sample batch index (recorded): 1
+
+Discovered records
+12
+Verified works
+5
+Deduplicated works
+3
+Eligible works
+2
+P0 works
+1
+P1 works
+1
+P2 works
+0
+Excluded works
+1
+Scheduled full-text works
+2
+Included works
+2
+Works with accepted evidence (not supplied)
+Not supplied
+
+Question coverage in this snapshot: Covered 1 / 2 · Partial coverage 1 · Uncovered 0
+
+Gap and stop explanation: Candidates exhausted"
+`;
+
 exports[`hybrid plan browser preview > streams real workflow progress and a blocked result through Remote with controlled external sources 1`] = `
 "Web search discovers candidates only. Scholarly verification is required before admission; Web snippets are not paper evidence.
 

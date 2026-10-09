@@ -39,7 +39,8 @@ describe('one-shot research progress', () => {
     render(<ProgressPanel progress={progress} recent={[progress]} t={t} />)
 
     expect(screen.getByText(`openalex · ${zh.progress_running}`)).toBeTruthy()
-    expect(screen.getByText(`${zh.discoveredRecords}: ${zh.progressUnknown}`)).toBeTruthy()
+    const provider = screen.getByText(`openalex · ${zh.progress_running}`).closest('li')!
+    expect(provider.textContent).toContain(`${zh.discoveredRecords}: ${zh.progressUnknown}`)
   })
 
   it('shows concurrent papers, retry facts, all six stages and unknown values from the official fixture', () => {
