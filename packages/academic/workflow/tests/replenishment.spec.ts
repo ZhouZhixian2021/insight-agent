@@ -118,7 +118,7 @@ describe('bounded candidate replenishment', () => {
     } finally { timeout.mockRestore() }
   })
 
-  it('runs Q5 ranked full-text batches and stops before a later batch after coverage is met', async () => {
+  it.each([true, false])('stops ranked full-text batches only when evidence covers both questions: %s', async (coverBoth) => {
     const { input, adapters, records } = fixture()
     const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
     adapters.onQueryWorkflow = observation => observations.push(observation)
@@ -129,7 +129,7 @@ describe('bounded candidate replenishment', () => {
     let extractionCall = 0
     adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => {
       const response = await generate(...args)
-      const questionIndex = extractionCall++
+      const questionIndex = coverBoth ? extractionCall++ : 0
       return { ...response, evidence: response.evidence.map(draft => ({ ...draft, questionIndexes: [questionIndex] })) }
     })
     const queryId = createSearchQueryId()
@@ -165,13 +165,20 @@ describe('bounded candidate replenishment', () => {
         replenishmentBatchSize: 1, minimumQuestionSupportingWorks: 1 } },
     })
     const result = await runResearchDraft(input, adapters)
-    expect(adapters.fetcher).toHaveBeenCalledTimes(2)
-    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
-    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
+    expect(adapters.fetcher).toHaveBeenCalledTimes(coverBoth ? 2 : 5)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(coverBoth ? 2 : 5)
+    if (coverBoth) expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
     expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
     expect(observations.at(-1)).toMatchObject({ status: 'settled',
-      stopDecision: { shouldStop: true, reason: 'target_and_coverage_met' } })
+      stopDecision: { shouldStop: true, reason: coverBoth ? 'target_and_coverage_met' : 'maximum_included_works' } })
     const coverage = observations.at(-1)?.coverage
+    if (!coverBoth) {
+      expect(coverage?.questions[0]?.status).toBe('covered')
+      expect(coverage?.questions[1]).toMatchObject({ question: 'Identify limitations',
+        status: 'uncovered', supportingWorkIds: [], evidenceIds: [], gaps: [expect.any(String)] })
+      expect(result.queryWorkflow).toEqual(observations.at(-1))
+      return
+    }
     expect(coverage?.questions).toEqual([
       expect.objectContaining({ question: 'Compare methods', status: 'covered' }),
       expect.objectContaining({ question: 'Identify limitations', status: 'covered' }),

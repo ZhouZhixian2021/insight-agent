@@ -349,10 +349,14 @@ export interface Config {
   readonly replenishmentCandidateBatchSize?: number
   /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
   readonly minimumQuestionSupportingWorks?: number
+  /** Maximum queries generated in one evidence-gap replenishment round. Defaults to 4. */
+  readonly gapRoundMaximumQueriesPerRound?: number
+  /** Maximum Academic results per gap-round query. Defaults to 20. */
+  readonly gapRoundMaximumAcademicResultsPerQuery?: number
 }
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts:35`](../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/api/academic-research-controller/src/index.ts:43`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

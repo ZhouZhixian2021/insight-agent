@@ -10,8 +10,9 @@ import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { EvidenceExtractionInput, EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
-import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearchDraft, runModelResearchDraft, WorkflowLogError,
-  type PaperEvidenceProgressObservation } from '../src/index.ts'
+import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearchDraft, runModelResearchDraft,
+  parsePaperModelResponse, WorkflowLogError,
+  type PaperEvidenceGenerator, type PaperEvidenceProgressObservation } from '../src/index.ts'
 import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages } from '../src/model-prompt.ts'
@@ -376,6 +377,47 @@ at most 3 entries primarily supporting any one focus question.`)
       batchIndex: observation.batchIndex, batchCount: observation.batchCount,
     }))).toEqual([{ batchIndex: 1, batchCount: 2 }, { batchIndex: 2, batchCount: 2 }])
     expect(progress.filter(observation => observation.attempt === 1)).toHaveLength(4)
+  })
+  it.each([
+    { first: [0], second: [1], accepted: 2, rejected: 0, questions: ['Which method?', 'Which architecture?'] },
+    { first: [2], second: [0], accepted: 1, rejected: 1, questions: ['Which method?'] },
+    { first: [0, 1], second: [1, 0], accepted: 1, rejected: 0, questions: ['Which method?', 'Which architecture?'] },
+  ])('preserves distinct question associations across overlapping batches: $first then $second', async ({ first, second, accepted, rejected, questions }) => {
+    const f = await fixture()
+    vi.spyOn(f.ctx.tokenMeter, 'estimateMessage').mockImplementation(message => JSON.stringify(message).length)
+    const segments = [{ ...f.source.segments[0]!, text: 'Uses Method X.' + ' '.repeat(100) + 'Uses Method X.' }]
+    const focusQuestions = ['Which method?', 'Which architecture?']
+    const source = { ...f.source, segments, focusQuestions }
+
+    const parsedOutput = parsePaperModelResponse(output)
+    const response = (questionIndexes: number[]): StreamChunk[] => [
+      { type: 'text-delta', index: 0, text: JSON.stringify({ ...parsedOutput, evidence: [
+        { ...parsedOutput.evidence[0]!, questionIndexes },
+      ] }) },
+      { type: 'finish', reason: { kind: 'stop' } },
+    ]
+    f.adapter.script = response(first)
+    f.adapter.afterChunk = () => { if (f.adapter.calls.length === 1) f.adapter.script = response(second) }
+    const generate: PaperEvidenceGenerator = (request, parsed, rules, onProgress) => {
+      const inputBatchTokenLimit = evidenceMessages({ ...request,
+        segments: [{ ...segments[0]!, text: segments[0]!.text.slice(0, 100) }] },
+      rules, parsed).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
+      return createModelEvidenceGenerator(f.ctx, f.session, config,
+        { maxAttempts: 1, inputBatchTokenLimit, inputBatchOverlapCharacters: 20 })(request, parsed, rules, onProgress)
+    }
+    const result = await extractPaperEvidence(f.version, source, false, generate, scope)
+    expect(f.adapter.calls).toHaveLength(2)
+    for (const call of f.adapter.calls) {
+      const prompt = call.messages[0]?.content[0]
+      expect(prompt?.type === 'text' ? prompt.text : '').toContain('Uses Method X.')
+    }
+    expect(result.status).toBe(rejected === 0 ? 'extracted' : 'partially_extracted')
+    if (result.status !== 'extracted' && result.status !== 'partially_extracted') throw new Error('expected accepted evidence')
+    expect(result.evidence.evidenceRecords).toHaveLength(accepted)
+    expect(result.evidence.rejectedDrafts).toHaveLength(rejected)
+    expect(result.evidence.questionLinks.map(link => link.question)).toEqual(questions)
+    const recorded = (await f.read()).filter(event => event.type === 'academic/evidence-result')
+    expect(recorded).toHaveLength(2)
   })
   it('keeps evidence from successful batches when another batch fails', async () => {
     const f = await fixture()

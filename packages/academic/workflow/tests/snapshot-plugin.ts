@@ -57,7 +57,7 @@ class SnapshotAdapter extends LlmAdapter {
           methodName: { status: 'available', value: 'Method X' },
           methodRole: { status: 'available', value: 'proposed' } }] },
       { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', cardItems: [] },
-      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Method X', cardItems: [] }] }) }
+      { segmentIndex: 0, questionIndexes: [1], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', cardItems: [] }] }) }
     yield { type: 'finish', reason: { kind: 'stop' } }
   }
 }
@@ -74,6 +74,7 @@ export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; l
       const result = await extractPaperEvidence(version, { academicWorkId, workVersionId, contentHash: 'synthetic-content',
         sourceProvider: 'fixture', sourceUrl: 'https://example.org/synthetic', retrievedAt: '2026-09-15T00:00:00Z',
         extractionMethod: { method: 'fixture', methodVersion: '1' },
+        focusQuestions: ['Which method?', 'Which architecture?'],
         segments: [{ text: 'Uses Method X.', locator: { kind: 'paragraph', paragraphNumber: 1 } }] },
       false, createModelEvidenceGenerator(ctx, agent.session,
         { provider: 'academic-fixture', model: 'fixture', maxTokens: 500 }, { maxAttempts: 1 }),
@@ -81,6 +82,7 @@ export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; l
       assert.equal(result.status, 'partially_extracted')
       if (result.status !== 'partially_extracted') throw new Error('unexpected paper settlement')
       assert.equal(result.evidence.evidenceRecords.length, 2)
+      assert.deepEqual(result.evidence.questionLinks.map(link => link.question), ['Which method?', 'Which architecture?'])
       assert.deepEqual(result.evidence.rejectedDrafts, [{ draftIndex: 1, segmentIndex: 0,
         code: 'EVIDENCE_EXCERPT_NOT_FOUND', reason: 'excerpt is not uniquely present outside segment 0' }])
       assert.equal(result.evidence.evidenceCard.workVersionId, workVersionId)

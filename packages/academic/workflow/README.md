@@ -94,7 +94,7 @@ At paper settlement, the workflow captures an independent copy of accepted, sour
 
 #### Token effect
 
-DSH's existing message estimator counts the complete framed input. With batching enabled, each batch must fit both the configured input limit and the model context after reserving output tokens. Successful batches are merged in source order, duplicate drafts are removed, and at most six drafts continue to exact-source verification. A failed batch leaves validated sibling evidence available and marks the paper partially extracted; all failed batches fail the paper. This heuristic is not exact tokenization, so a provider can still reject an admitted request.
+DSH's existing message estimator counts the complete framed input. With batching enabled, each batch must fit both the configured input limit and the model context after reserving output tokens. Successful batches are merged in source order, drafts with the same original segment, exact excerpt, statement and question-index set are deduplicated, and at most six drafts continue to exact-source verification. A failed batch leaves validated sibling evidence available and marks the paper partially extracted; all failed batches fail the paper. This heuristic is not exact tokenization, so a provider can still reject an admitted request.
 
 #### KV Cache effect
 
