@@ -6,5 +6,6 @@ export type { PlannedSearchAdapters, PlannedSearchLimits, PlannedSearchProgressO
   PlannedSearchProgressObserver, PlannedSearchRoundResult } from './execute.ts'
 export { rankPlannedCandidates } from './rank.ts'
 export { assessPlannedCandidates } from './assess.ts'
+export { parseCandidateScreening } from './parse-screening.ts'
 export type { CandidateScreeningCriteria, CandidateTermConcepts } from './assess.ts'
 export type { CandidateAssessment } from '@deepseek-ai/dsh-academic-model'

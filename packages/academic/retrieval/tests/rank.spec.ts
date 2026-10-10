@@ -4,7 +4,7 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createResea
   type HybridSearchPlan, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import { normalizeAcademicCatalogRecord } from '@deepseek-ai/dsh-academic-source'
-import { assessPlannedCandidates, rankPlannedCandidates, type CandidateAssessment,
+import { assessPlannedCandidates, parseCandidateScreening, rankPlannedCandidates, type CandidateAssessment,
   type CandidateScreeningCriteria, type PlannedSearchRoundResult } from '../src/index.ts'
 
 const question = 'Which retrieval methods improve faithfulness?'
@@ -253,5 +253,106 @@ describe('scholarly metadata screening', () => {
     expect(() => assessPlannedCandidates(plan, { ...specializedBrief, version: 2 }, input, criteria, facts))
       .toThrow(/approved Brief version/u)
     expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, new Map())).toThrow(/resolution fact/u)
+  })
+
+  it('records keyword-only hits without scoring questions, methods, evidence, or contributions', () => {
+    const { input, facts } = inputs('Commodity forecasting', 'We study market prices.',
+      ['retrieval', 'faithfulness', 'evaluation'])
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)[0]!
+    expect(result).toMatchObject({ topicRelevance: 0, matchedQuestions: [], methodMatch: 0,
+      evidencePotential: 0, contributionSignals: [], screening: { signals: [], scope: { status: 'unknown' } } })
+    expect(result.screening.surfaceKeywordHits).toContainEqual({ term: 'retrieval', source: 'keywords', text: 'retrieval' })
+  })
+
+  it('keeps matched aliases and exact Unicode quotations from one title or abstract', () => {
+    const { input, facts } = inputs('检索与忠实性', '我们评估检索的忠实性。')
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)[0]!
+    expect(result.screening.signals).toContainEqual({ kind: 'question', question,
+      quote: { source: 'title', text: '检索与忠实性' } })
+    expect(result.screening.signals).toContainEqual({ kind: 'evidence_type', label: 'evaluation',
+      quote: { source: 'abstract', text: '我们评估检索的忠实性。' } })
+  })
+
+  it('does not combine unrelated title and abstract fragments into a quoted question match', () => {
+    const { input, facts } = inputs('Retrieval study', 'Faithfulness is a separate topic.')
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)[0]!
+    expect(result.matchedQuestions).toEqual([])
+    expect(result.screening.signals.some(signal => signal.kind === 'question')).toBe(false)
+  })
+
+  it('uses a quoted semantic review for a Chinese question and separates it from discovery routing', () => {
+    const localizedQuestion = '检索如何影响忠实性？'
+    const localizedBrief = { ...brief, questions: [localizedQuestion] }
+    const localizedCriteria = { ...criteria, questions: [{ question: localizedQuestion, concepts: [[localizedQuestion]] }] }
+    const { input, facts } = inputs('Retrieval faithfulness', 'Retrieval evaluation improves faithfulness.')
+    const details = parseCandidateScreening(JSON.stringify({ schemaVersion: 1,
+      signals: [
+        { kind: 'question', question: localizedQuestion, quote: { source: 'abstract', text: 'Retrieval evaluation improves faithfulness.' } },
+        { kind: 'method', label: 'retrieval', quote: { source: 'title', text: 'Retrieval' } },
+        { kind: 'evidence_type', label: 'evaluation', quote: { source: 'abstract', text: 'evaluation' } },
+        { kind: 'contribution', classification: 'empirical_evaluation', quote: { source: 'abstract', text: 'evaluation' } },
+      ], surfaceKeywordHits: [], uncertainties: [],
+      scope: { status: 'potentially_relevant', reason: 'The abstract evaluates faithfulness under retrieval.' },
+    }), input.ingested.works[0]!.title, { status: 'available', value: 'Retrieval evaluation improves faithfulness.' },
+    { status: 'unknown', reason: 'not supplied' }, localizedBrief.questions)
+    const results = assessPlannedCandidates(plan, localizedBrief, input, localizedCriteria, facts,
+      new Map([[input.ingested.works[0]!.academicWorkId, details]]))
+    expect(results[0]).toMatchObject({ matchedQuestions: [localizedQuestion], methodMatch: 1, evidencePotential: 1 })
+    const ranking = rankPlannedCandidates(plan, localizedBrief, input, results)
+    expect(ranking.evaluations[0]).toMatchObject({ priority: 'p0', score: { questionMatch: 20 } })
+  })
+
+  it.each(['code generation', 'image generation', 'security attacks'])('excludes reviewed %s scope before full text', (direction) => {
+    const text = `Retrieval evaluation improves ${direction}; we do not study faithfulness.`
+    const { input, facts } = inputs(`Retrieval for ${direction}`, text)
+    const details = parseCandidateScreening(JSON.stringify({ schemaVersion: 1, signals: [], surfaceKeywordHits: [],
+      uncertainties: [], scope: { status: 'off_topic', reason: `The paper studies ${direction}, not the approved faithfulness question.`,
+        quote: { source: 'abstract', text } } }), input.ingested.works[0]!.title,
+    { status: 'available', value: text }, { status: 'unknown', reason: 'not supplied' }, specializedBrief.questions)
+    const results = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
+      new Map([[input.ingested.works[0]!.academicWorkId, details]]))
+    const ranking = rankPlannedCandidates(plan, specializedBrief, input, results)
+    expect(ranking.evaluations[0]).toMatchObject({ priority: 'excluded', classification: 'irrelevant',
+      matchedQuestions: [], score: { methodMatch: 0, evidencePotential: 0 },
+      hardFilter: { reasons: [{ code: 'off_topic', detail: details.scope.reason }] } })
+    expect(ranking.queues.excluded).toEqual([input.ingested.versions[0]!.workVersionId])
+    expect(rankPlannedCandidates(plan, specializedBrief, input, results)).toEqual(ranking)
+  })
+
+  it('does not blacklist a direction that actually answers the current Plan', () => {
+    const { input, facts } = inputs('Security attacks on retrieval faithfulness',
+      'An evaluation of retrieval faithfulness under security attacks.')
+    const results = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)
+    expect(rankPlannedCandidates(plan, specializedBrief, input, results).evaluations[0]?.priority).toBe('p0')
+  })
+
+  it('keeps unknown scope and missing abstracts without an off-topic hard rejection', () => {
+    const { input, facts } = inputs('Retrieval faithfulness')
+    const results = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)
+    expect(results[0]?.screening.scope.status).toBe('unknown')
+    expect(results[0]?.inclusionRuleMatches).toEqual([null])
+    expect(rankPlannedCandidates(plan, specializedBrief, input, results).evaluations[0]?.hardFilter.status).toBe('eligible')
+  })
+
+  it('refuses fabricated quotations and scored indications without quoted grounds at the ranker', () => {
+    const { input, facts } = inputs('Retrieval faithfulness', 'Retrieval evaluation improves faithfulness.')
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts)[0]!
+    expect(() => rankPlannedCandidates(plan, specializedBrief, input, [{ ...result, screening: {
+      ...result.screening, signals: [{ kind: 'question', question, quote: { source: 'abstract', text: 'invented result' } }],
+    } }])).toThrow(/verbatim/u)
+    expect(() => rankPlannedCandidates(plan, specializedBrief, input, [{ ...result,
+      abstract: { status: 'available', value: 'invented result' }, screening: {
+        ...result.screening, signals: [{ kind: 'question', question,
+          quote: { source: 'abstract', text: 'invented result' } }],
+      },
+    }])).toThrow(/verbatim/u)
+    expect(() => rankPlannedCandidates(plan, specializedBrief, input, [{ ...result, screening: {
+      ...result.screening, signals: [],
+    } }])).toThrow(/corresponding quoted/u)
+    expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
+      new Map([[createAcademicWorkId(), result.screening]]))).toThrow(/verified work/u)
+    expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
+      new Map([[result.academicWorkId, { ...result.screening, signals: [{ kind: 'method', label: 'invented method',
+        quote: { source: 'title', text: 'Retrieval' } }] }]]))).toThrow(/approved screening concepts/u)
   })
 })

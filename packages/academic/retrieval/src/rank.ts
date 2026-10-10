@@ -1,4 +1,5 @@
 /** Explainable candidate evaluation over verified, deduplicated scholarly works. */
+import { metadataForVersion } from '@deepseek-ai/dsh-academic-ingestion'
 import { candidatePriorityForScore, createCandidateRankingResult, createCandidateScoreBreakdown,
   type AcademicCandidateEvaluation, type AcademicCandidateRankingResult, type AcademicWork,
   type CandidateAssessment, type CandidateClassification, type CandidateHardFilterReason,
@@ -6,6 +7,7 @@ import { candidatePriorityForScore, createCandidateRankingResult, createCandidat
   type WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 import type { PlannedSearchRoundResult } from './execute.ts'
+import { validateScreeningQuotes } from './metadata-quotes.ts'
 
 /**
  * Evaluate each verified work against the exact approved Brief and plan.
@@ -45,6 +47,19 @@ export function rankPlannedCandidates(
       throw new RangeError('ranked work requires a canonical version and query provenance')
     }
     validateAssessment(assessment, plan, approvedQuestions)
+    if (assessment.screening !== undefined) {
+      validateScreeningQuotes(assessment.screening, work.title,
+        metadataForVersion(round.ingested.index, version).abstract, approvedQuestions)
+      const { signals } = assessment.screening
+      if (assessment.matchedQuestions.some(question => !signals.some(signal =>
+        signal.kind === 'question' && signal.question === question))
+        || (assessment.methodMatch > 0 && !signals.some(signal => signal.kind === 'method'))
+        || (assessment.evidencePotential > 0 && !signals.some(signal => signal.kind === 'evidence_type'))
+        || assessment.contributionSignals.some(classification => !signals.some(signal =>
+          signal.kind === 'contribution' && signal.classification === classification))) {
+        throw new RangeError('detailed candidate scores require corresponding quoted metadata signals')
+      }
+    }
     const exclusions = hardExclusions(work, version, plan, brief, assessment)
     const hardFilter = exclusions.length === 0
       ? { status: 'eligible' as const, reasons: [] }
@@ -129,6 +144,9 @@ function validateAssessment(assessment: CandidateAssessment, plan: HybridSearchP
 function hardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSearchPlan,
   brief: ExecutableResearchBrief, assessment: CandidateAssessment): CandidateHardFilterReason[] {
   const reasons: CandidateHardFilterReason[] = []
+  if (assessment.screening?.scope.status === 'off_topic') {
+    reasons.push({ code: 'off_topic', detail: assessment.screening.scope.reason })
+  }
   if (work.publicationStatus.status === 'available' && work.publicationStatus.value === 'retracted') {
     reasons.push({ code: 'work_retracted' })
   }
@@ -195,7 +213,8 @@ function describeHardFilterReason(reason: CandidateHardFilterReason): string {
 }
 
 function assessmentLimitations(assessment: CandidateAssessment): string[] {
-  const limitations: string[] = []
+  const limitations: string[] = assessment.screening?.uncertainties.map(reason =>
+    `Work ${assessment.academicWorkId}: ${reason}`) ?? []
   if (assessment.abstract.status !== 'available') {
     limitations.push(`Work ${assessment.academicWorkId} has no usable provider abstract (${assessment.abstract.status}).`)
   }
@@ -219,6 +238,7 @@ function workTypeFits(version: WorkVersion, plan: HybridSearchPlan, brief: Execu
 }
 
 function classify(assessment: CandidateAssessment): CandidateClassification {
+  if (assessment.screening?.scope.status === 'off_topic') return 'irrelevant'
   if (assessment.topicRelevance === 0 && assessment.matchedQuestions.length === 0) return 'irrelevant'
   for (const kind of ['review', 'benchmark_or_dataset', 'empirical_evaluation', 'core_method',
     'application', 'adjacent_technology'] as const) {
