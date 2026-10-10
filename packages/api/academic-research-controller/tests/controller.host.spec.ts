@@ -199,6 +199,22 @@ async function harness(options: {
   const signal = new AbortController().signal
   const sessionEvents: unknown[][] = []
   const planQuestions = [...options.questions ?? briefPayload().questions]
+  const approvedPlanEvents = options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(), questions: planQuestions,
+    ...options.saturationRounds === undefined ? {} : { stopConditions: {
+      ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
+    } },
+    ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
+    ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
+      purpose: '查找相关研究', questions: planQuestions,
+      ...options.hybridPlan === true ? { retrieval: options.retrieval ?? {
+        channels: ['academic', 'web_discovery'],
+        academicProviders: ['openalex', 'arxiv'],
+        verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
+        maximumWebDiscoveryResults: 8,
+        maximumReferenceVerifications: 5,
+      } } : {},
+    })) },
+  }))
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
   const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
@@ -210,22 +226,8 @@ async function harness(options: {
       id: sessionId,
       snapshotEvents: () => {
         if (options.eventsError === true) throw 'invalid event source'
-        return options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(), questions: planQuestions,
-          ...options.saturationRounds === undefined ? {} : { stopConditions: {
-            ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
-          } },
-          ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
-          ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
-            purpose: '查找相关研究', questions: planQuestions,
-            ...options.hybridPlan === true ? { retrieval: options.retrieval ?? {
-              channels: ['academic', 'web_discovery'],
-              academicProviders: ['openalex', 'arxiv'],
-              verificationProviders: ['openalex', 'arxiv', 'acl', 'pmlr', 'cvf'],
-              maximumWebDiscoveryResults: 8,
-              maximumReferenceVerifications: 5,
-            } } : {},
-          })) },
-        }))
+        return [...approvedPlanEvents, ...sessionEvents.map(([type, data], index) => ({ type, data,
+          seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as never
       },
       requestHeader: () => options.header === false ? undefined : { config: selected },
       append: (...args: unknown[]) => { sessionEvents.push(args) },
@@ -394,6 +396,48 @@ describe('AcademicResearchController', () => {
     ]))
     expect(fixture.sessionEvents.some(([name, event]) => name === 'academic/candidate-batch-decision'
       && (event as { action?: string }).action === 'search_evidence_gap')).toBe(true)
+  })
+
+  it('resumes an interrupted pending batch through the Controller without repeating retrieval or screening', async () => {
+    const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(2)
+    const works = pipeline.records.map((record, index) =>
+      retrievalWork(record, ['1706.03762', '1810.04805'][index]!))
+    fixture.searchProviders.mockResolvedValue({ works, batch: createBatchResult(works, []),
+      providers: ['arxiv'], discoveredRecords: works.length, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    let interruptAtNextCheckpoint = true
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator,
+        synthesize: pipeline.adapters.synthesize,
+        onRecoveryCheckpoint: (checkpoint) => {
+          request.adapters.onRecoveryCheckpoint?.(checkpoint)
+          if (interruptAtNextCheckpoint) {
+            interruptAtNextCheckpoint = false
+            throw new Error('simulated process exit')
+          }
+        },
+      }, request.signal),
+      sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const request = { sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId, synthetic: true }
+    await expect(fixture.controller.run(request, fixture.signal)).rejects.toThrow('simulated process exit')
+    const checkpoint = fixture.sessionEvents.find(([name]) => name === 'academic/recovery-checkpoint')?.[1] as
+      | { retrievalRunId: RetrievalRun['retrievalRunId'] }
+      | undefined
+    expect(checkpoint).toBeDefined()
+    const searchCallsBeforeResume = fixture.searchProviders.mock.calls.length
+    const result = await fixture.controller.run({ ...request,
+      resumeRetrievalRunId: checkpoint!.retrievalRunId }, fixture.signal)
+    expect(fixture.searchProviders).toHaveBeenCalledTimes(searchCallsBeforeResume)
+    expect(fixture.webSearch).toHaveBeenCalledOnce()
+    expect(result.retrievalRun.retrievalRunId).toBe(checkpoint!.retrievalRunId)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
+    expect(result.report).not.toBeNull()
+    expect(fixture.sessionEvents.map(([name]) => name)).toContain('academic/run-settlement')
   })
 
   it('requires legacy plans to be completed and approved instead of inventing search expressions', async () => {

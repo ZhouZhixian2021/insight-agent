@@ -25,7 +25,9 @@ export interface CandidateScreeningCriteria {
 }
 
 /**
- * Screen canonical scholarly metadata without using discovery snippets or query-to-question assignments.
+ * Screen canonical scholarly metadata without using discovery snippets. Exact approved
+ * query-to-question assignments may route a discovered candidate to a question, but do
+ * not establish evidence support or scientific quality.
  * Missing methods/evidence score zero with an explicit reason. Natural-language scope rules remain
  * undecided until a caller supplies evidence; sourceQuality measures bibliographic completeness.
  * @param plan Approved constraints bound to the Brief version.
@@ -41,6 +43,8 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
   fulltextFacts: ReadonlyMap<WorkVersionId, CandidateFulltextAvailability>): readonly CandidateAssessment[] {
   validateCriteria(plan, brief, criteria)
   const versions = new Map(round.ingested.versions.map(version => [version.workVersionId, version]))
+  const questionsByQuery = new Map(plan.queries.map(query => [query.searchQueryId, query.questions]))
+  const discoveredBy = new Map(round.discoveredBy.map(item => [item.academicWorkId, item.searchQueryIds]))
   return round.ingested.works.map((work): CandidateAssessment => {
     const version = versions.get(work.canonicalVersionId)
     const fulltextAvailability = fulltextFacts.get(work.canonicalVersionId)
@@ -54,7 +58,11 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     ].join('\n'))
     const topic = matchedConcepts(text, criteria.topic)
     const questions = criteria.questions.map(entry => ({ ...entry, matches: matchedConcepts(text, entry.concepts) }))
-    const matchedQuestions = questions.filter(entry => entry.matches.length === entry.concepts.length)
+    const provenanceQuestions = new Set((discoveredBy.get(work.academicWorkId) ?? [])
+      .flatMap(searchQueryId => questionsByQuery.get(searchQueryId) ?? []))
+    const matchedQuestions = questions
+      .filter(entry => entry.matches.length === entry.concepts.length
+        || (topic.length > 0 && provenanceQuestions.has(entry.question)))
       .map(entry => entry.question)
     const methods = matchedConcepts(text, criteria.methods)
     const evidence = matchedConcepts(text, criteria.evidence)
@@ -82,7 +90,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       reasons: [
         'Metadata screening identifies lexical relevance and contribution cues; it does not confirm evidence or scientific quality.',
         `Topic concepts matched ${topic.length}/${criteria.topic.length}: ${topic.join(', ') || 'none'}.`,
-        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} concepts matched.`),
+        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} concepts matched; approved discovery-query provenance ${provenanceQuestions.has(entry.question) ? 'matched' : 'did not match'}.`),
         `Method cues ${methods.length}/${criteria.methods.length}: ${methods.join(', ') || 'none'}; evidence cues ${evidence.length}/${criteria.evidence.length}: ${evidence.join(', ') || 'none'}. Unassessed cues score zero.`,
         `Contribution cues: ${contributionSignals.join(', ') || 'none'}.`,
         metadata.abstract.status === 'available' ? 'Scholarly abstract available.' : `Abstract unavailable: ${metadata.abstract.reason}`,

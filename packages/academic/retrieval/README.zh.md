@@ -31,7 +31,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 ### 元数据初筛
 
-`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配，问题的全部概念命中后才算匹配问题。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径，以及可选的 `asOfYear`/`recencyWindowYears` 配对。已审核发表时间缺少任一边界时应同时省略两者，时效分记零，不虚构参考时段。
+`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配。研究问题可由完整的词项概念命中建立路由；当候选的元数据已经命中主题时，也可由已批准查询与研究问题的精确关联建立路由。这个来源回退让中文研究问题继续关联由审核过的英文查询发现的论文，但不增加语义分数，也不证明证据支持。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径，以及可选的 `asOfYear`/`recencyWindowYears` 配对。已审核发表时间缺少任一边界时应同时省略两者，时效分记零，不虚构参考时段。
 
 ```text
 const assessments = assessPlannedCandidates(plan, brief, round, reviewedCriteria, fulltextFacts)
@@ -52,7 +52,7 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)读取保留的元数据，不依赖查询与问题的关联。[排序器](src/rank.ts)应用硬过滤、按计划策略加权判断比例，并生成兼顾多样性的优先级队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
+[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)只根据保留的元数据计算分数；已命中主题的候选可使用已批准查询与问题的精确关联作为问题路由回退。[排序器](src/rank.ts)应用硬过滤、按计划策略加权判断比例，并生成兼顾多样性的优先级队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
 
 </details>
 

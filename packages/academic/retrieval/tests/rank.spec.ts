@@ -168,6 +168,21 @@ describe('scholarly metadata screening', () => {
     expect(assessments[0]?.reasons[0]).toContain('does not confirm evidence or scientific quality')
   })
 
+  it('routes a topically relevant English candidate to its approved Chinese research question', () => {
+    const localizedQuestion = '检索增强生成如何减少幻觉？'
+    const localizedBrief = { ...brief, questions: [localizedQuestion] }
+    const localizedPlan = { ...plan, constraints: { ...plan.constraints, requiredTerms: [] },
+      queries: plan.queries.map(query => ({ ...query, questions: [localizedQuestion] })) }
+    const localizedCriteria: CandidateScreeningCriteria = {
+      topic: [['retrieval']], questions: [{ question: localizedQuestion, concepts: [[localizedQuestion]] }],
+      methods: [], evidence: [], contributions: [],
+    }
+    const { input, facts } = inputs('Retrieval augmented generation', 'A grounded generation study.', ['retrieval'])
+    const result = assessPlannedCandidates(localizedPlan, localizedBrief, input, localizedCriteria, facts)[0]
+    expect(result).toMatchObject({ topicRelevance: 1, matchedQuestions: [localizedQuestion] })
+    expect(result?.reasons.join(' ')).toContain('approved discovery-query provenance matched')
+  })
+
   it('excludes an unrelated evaluation despite sharing the discovering query', () => {
     const { input, facts } = inputs('Economic forecasting', 'An evaluation of commodity prices.', ['economics'])
     const semanticPlan = { ...plan, constraints: { ...plan.constraints, requiredTerms: [] } }
