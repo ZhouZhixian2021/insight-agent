@@ -159,6 +159,7 @@ export type CandidateHardFilterReasonCode =
   | 'excluded_term_matched'
   | 'inclusion_rule_not_met'
   | 'exclusion_rule_matched'
+  | 'off_topic'
 
 /** One stable rejection code with optional reviewed detail for audit and presentation. */
 export interface CandidateHardFilterReason {
@@ -172,6 +173,52 @@ export type CandidateFulltextAvailability =
   | { readonly status: 'unresolved'; readonly reason: string }
   | { readonly status: 'unknown'; readonly reason: string }
 
+/** Verbatim title or scholarly-provider abstract text; never a Web discovery snippet. */
+export interface CandidateMetadataQuote {
+  readonly source: 'title' | 'abstract'
+  readonly text: string
+}
+
+/** Metadata-grounded indication, not a verified full-text finding. */
+export type CandidateMetadataSignal =
+  | {
+    readonly kind: 'question'
+    readonly question: string
+    readonly quote: CandidateMetadataQuote
+  }
+  | {
+    readonly kind: 'method' | 'evidence_type'
+    readonly label: string
+    readonly quote: CandidateMetadataQuote
+  }
+  | {
+    readonly kind: 'contribution'
+    readonly classification: Exclude<CandidateClassification, 'background' | 'irrelevant'>
+    readonly quote: CandidateMetadataQuote
+  }
+
+/** A superficial term occurrence that does not by itself establish research-question relevance. */
+export interface CandidateSurfaceKeywordHit {
+  readonly term: string
+  readonly source: 'title' | 'abstract' | 'keywords'
+  readonly text: string
+}
+
+/** Plan-specific metadata judgment; unknown must not become a rejection. */
+export type CandidateScopeDecision =
+  | { readonly status: 'potentially_relevant'; readonly reason: string }
+  | { readonly status: 'off_topic'; readonly reason: string; readonly quote: CandidateMetadataQuote }
+  | { readonly status: 'unknown'; readonly reason: string }
+
+/** Optional versioned detail for new assessments; absence means legacy screening did not supply it. */
+export interface CandidateScreeningDetails {
+  readonly schemaVersion: 1
+  readonly signals: readonly CandidateMetadataSignal[]
+  readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[]
+  readonly uncertainties: readonly string[]
+  readonly scope: CandidateScopeDecision
+}
+
 /** Reviewed semantic facts supplied for one verified work after Q3 ingestion. */
 export interface CandidateAssessment {
   readonly academicWorkId: AcademicWorkId
@@ -180,7 +227,9 @@ export interface CandidateAssessment {
   /** Trusted scholarly-provider keywords only; unavailable values retain their explicit state. */
   readonly keywords: Availability<readonly string[]>
   readonly fulltextAvailability: CandidateFulltextAvailability
+  /** Content-matched Brief questions only; approved query provenance is routed separately from Q3. */
   readonly matchedQuestions: readonly string[]
+  readonly screening?: CandidateScreeningDetails
   readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
   /** Unit-interval assessments; the ranker applies the reviewed policy weights. */
   readonly topicRelevance: number
@@ -195,6 +244,9 @@ export interface CandidateAssessment {
   readonly diversityTags: readonly string[]
   readonly reasons: readonly [string, ...string[]]
 }
+
+/** New B-produced assessments require structured metadata grounds; older Session records remain readable. */
+export type DetailedCandidateAssessment = CandidateAssessment & { readonly screening: CandidateScreeningDetails }
 
 /** Result of date, work-type, retraction, and reviewed lexical checks. */
 export type CandidateHardFilterResult =

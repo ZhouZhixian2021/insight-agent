@@ -2,6 +2,7 @@
 import type {
   AcademicWork, AcademicWorkId, Availability, CandidateClassification, CandidateFulltextAvailability,
   CandidateHardFilterReason, CandidatePriority, CandidatePriorityQueues, CandidateScoreBreakdown,
+  CandidateScreeningDetails,
   ClaimAssessmentId, ClaimId, EvidenceId, EvidenceSnapshotId, ExtractionMethod, HybridSearchPlan,
   HybridSearchRound, ResearchBriefId, ResearchQuestionCoverageResult, RetrievalRun, RetrievalRunId,
   SearchQueryId, SearchStopDecision, SourceLocatorId, WorkVersion, WorkVersionId,
@@ -292,6 +293,7 @@ export interface AcademicQ6CandidateAssessmentView {
   readonly keywords: Availability<readonly string[]>
   readonly fulltextAvailability: CandidateFulltextAvailability
   readonly matchedQuestions: readonly string[]
+  readonly screening?: CandidateScreeningDetails
   readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
   readonly topicRelevance: number
   readonly evidencePotential: number
