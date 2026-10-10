@@ -189,6 +189,7 @@ function describeHardFilterReason(reason: CandidateHardFilterReason): string {
     case 'excluded_term_matched': return `An excluded term is present${detail}.`
     case 'inclusion_rule_not_met': return `An inclusion rule is not met${detail}.`
     case 'exclusion_rule_matched': return `An exclusion rule applies${detail}.`
+    case 'off_topic': return `Trusted scholarly metadata clearly identifies a topic outside the reviewed plan${detail}.`
     default: return assertNever(reason.code)
   }
 }

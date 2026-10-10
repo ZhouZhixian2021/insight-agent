@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type {
   AcademicWork,
   CandidateAssessment,
+  CandidateScreeningDetails,
+  DetailedCandidateAssessment,
   HybridSearchPlan,
   ResearchQuestionCoverageResult,
   WorkVersion,
@@ -101,6 +103,23 @@ describe('Academic Q6 projection', () => {
     expect(projected.coverage).toEqual({ state: 'available', value: sample.coverage })
     expect(projected.stopDecision).toEqual({ state: 'available', value: sample.stopDecision })
     expect(projected.limitations).toEqual([...sample.rankingResult.limitations, 'run limitation'])
+  })
+
+  it('passes through grounded screening details while old assessments remain valid', () => {
+    const screening: CandidateScreeningDetails = {
+      schemaVersion: 1,
+      signals: [{ kind: 'method', label: 'comparison', quote: { source: 'abstract', text: 'compares methods' } }],
+      surfaceKeywordHits: [{ term: 'RAG', source: 'keywords', text: 'RAG' }],
+      uncertainties: ['The abstract does not establish the evaluation outcome.'],
+      scope: { status: 'unknown', reason: 'The available metadata does not settle the Plan scope.' },
+    }
+    const detailed: DetailedCandidateAssessment = { ...sample.assessments[0]!, screening }
+    const projected = academicQ6Projection('session-q6' as never, observation({
+      assessments: [detailed, ...sample.assessments.slice(1)],
+    }))
+    if (projected.candidates.state !== 'available') throw new Error('expected candidate projection')
+    expect(projected.candidates.value.items[0]?.assessment.screening).toEqual(screening)
+    expect(projected.candidates.value.items[1]?.assessment).not.toHaveProperty('screening')
   })
 
   it('marks missing terminal coverage and stop facts as failed', () => {
