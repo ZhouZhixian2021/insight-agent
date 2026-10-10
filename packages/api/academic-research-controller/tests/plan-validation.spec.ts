@@ -49,6 +49,19 @@ describe('Academic plan compatibility before review', () => {
     expect(() => { validateAcademicPlan(template) }).not.toThrow()
   })
 
+  it('keeps per-paper eligibility separate from collection coverage goals in the shipped template', () => {
+    const payload = templatePayload()
+    expect(payload.inclusionRules).toEqual([
+      '<每篇候选论文都必须满足、可由该论文独立判断的中文纳入条件>',
+    ])
+    expect(payload.exclusionRules).toEqual([
+      '<可根据单篇候选论文独立判断的中文排除条件>',
+    ])
+    expect(template).toContain('`inclusionRules` 和 `exclusionRules` 只记录逐篇规则')
+    expect(template).toContain('不得写入这两个数组')
+    expect(template).toContain('“整体覆盖 RAGTruth、HaluEval 或 GaRAGe”属于文献组合覆盖目标')
+  })
+
   it('continues to read a version-2 approved search plan without inventing a retrieval policy', () => {
     const payload = structuredClone(templatePayload())
     payload.schemaVersion = 2

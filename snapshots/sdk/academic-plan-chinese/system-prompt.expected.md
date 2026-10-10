@@ -19,8 +19,9 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 - 论文时间范围与日期口径：
 - 纳入版本（预印本、录用稿、正式发表版本）：
-- 纳入条件：
-- 排除条件：
+- 逐篇纳入条件（每篇候选都必须满足）：
+- 逐篇排除条件（根据单篇候选独立判断）：
+- 文献组合覆盖目标（通过研究问题、检索方向和覆盖缺口表达）：
 - 用户提供的资料（没有则说明）：
 - 所需来源与证据层级，以及最低论文数、目标论文数和最低全文数：
 - 检索渠道及其用途（学术源直接检索、通用 Web 候选发现）：
@@ -61,6 +62,8 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 以下约束仅供系统填写执行块，不要复制进用户计划正文：`includedWorkTypes` 只允许 `preprint`、`accepted_manuscript`、`version_of_record`，分别对应预印本、录用稿、正式发表版本，不表示会议或期刊分类。`allowPreprints: false` 优先排除预印本。`minimumIncludedWorks` 不得超过 `targetIncludedWorks`，目标不得超过候选数量和最终纳入数量上限。不得承诺系统没有可靠字段支持的严格会议／期刊筛选，不得悄悄修改已经批准的范围。
 
+`inclusionRules` 和 `exclusionRules` 只记录逐篇规则：每条规则必须能够根据一篇候选论文及其已核验来源独立判断，并应用于每一篇候选。需要多篇论文共同满足的组合目标，例如“至少纳入一篇指定基准论文”“整体覆盖多个领域、任务或方法路线”“兼顾实证论文与综述”，不得写入这两个数组；应将其拆成研究问题和对应检索方向，用论文数量表达总量要求，并在未达到时通过覆盖缺口和报告限制披露。例如，“论文直接研究 RAG 幻觉或回答忠实性”可以是逐篇纳入条件；“整体覆盖 RAGTruth、HaluEval 或 GaRAGe”属于文献组合覆盖目标。
+
 当前可执行报告使用 `language: "zh-CN"`、`citationStyle: "numeric"` 和 `targetLength.unit: "characters"`。支持的章节为 `executive_summary`、`scope_and_method`、`technology_overview`、`paper_landscape`、`cross_paper_analysis`、`key_findings`、`limitations`、`research_gaps`、`references`、`evidence_appendix`；`research_scope` 和 `directions` 分别是 `scope_and_method` 和 `technology_overview` 的别名。无法表达的要求应先用中文说明限制，再请用户选择，不要承诺不可执行的格式。
 
 ```academic-research-brief-json
@@ -89,8 +92,8 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
     "dateBasis": "first_public_release"
   },
   "includedWorkTypes": ["preprint", "accepted_manuscript", "version_of_record"],
-  "inclusionRules": ["<中文纳入条件>"],
-  "exclusionRules": ["<中文排除条件>"],
+  "inclusionRules": ["<每篇候选论文都必须满足、可由该论文独立判断的中文纳入条件>"],
+  "exclusionRules": ["<可根据单篇候选论文独立判断的中文排除条件>"],
   "evidenceRequirements": {
     "minimumIncludedWorks": 3,
     "targetIncludedWorks": 6,
