@@ -61,8 +61,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     const provenanceQuestions = new Set((discoveredBy.get(work.academicWorkId) ?? [])
       .flatMap(searchQueryId => questionsByQuery.get(searchQueryId) ?? []))
     const matchedQuestions = questions
-      .filter(entry => entry.matches.length === entry.concepts.length
-        || (topic.length > 0 && provenanceQuestions.has(entry.question)))
+      .filter(entry => entry.matches.length === entry.concepts.length)
       .map(entry => entry.question)
     const methods = matchedConcepts(text, criteria.methods)
     const evidence = matchedConcepts(text, criteria.evidence)

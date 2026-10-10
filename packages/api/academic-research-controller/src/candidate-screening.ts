@@ -2,16 +2,22 @@
 import type { ExecutableResearchBrief, HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import type { CandidateScreeningCriteria } from '@deepseek-ai/dsh-academic-retrieval'
 
+/** Reviewed plan cues passed to the existing scholarly metadata assessor. */
+export type AcademicCandidateScreening = Pick<CandidateScreeningCriteria,
+  'questions' | 'methods' | 'evidence' | 'contributions'>
+
 /**
  * Reuse only terms already approved in the Brief or its exact query plan.
- * Method, evidence, and contribution cues stay empty until an approved plan carries them.
+ * Version-5 plans supply reviewed question, method, evidence, and contribution cues.
  * @param brief Approved Brief that owns the research topic and questions.
  * @param plan Exact reviewed plan whose query expressions are linked to those questions.
+ * @param reviewed Optional metadata cues from the same approved plan.
  * @returns Deterministic criteria suitable for B's scholarly metadata assessor.
  */
 export function approvedCandidateScreeningCriteria(
   brief: ExecutableResearchBrief,
   plan: HybridSearchPlan,
+  reviewed?: AcademicCandidateScreening,
 ): CandidateScreeningCriteria {
   if (brief.researchBriefId !== plan.researchBriefId || brief.version !== plan.researchBriefVersion
     || brief.approval.approvedBriefVersion !== brief.version) {
@@ -19,7 +25,7 @@ export function approvedCandidateScreeningCriteria(
   }
   const topicAliases = unique([brief.topic, ...brief.aliases])
   const topic = [topicAliases, ...plan.constraints.requiredTerms.map(term => [term])]
-  const questions = [...new Set(brief.questions)].map((question) => {
+  const questions = reviewed?.questions ?? [...new Set(brief.questions)].map((question) => {
     const expressions = plan.queries.filter(query => query.questions.includes(question)).map(query => query.expression)
     return { question, concepts: [unique([question, ...expressions])] }
   })
@@ -27,9 +33,9 @@ export function approvedCandidateScreeningCriteria(
   return {
     topic,
     questions,
-    methods: [],
-    evidence: [],
-    contributions: [],
+    methods: reviewed?.methods ?? [],
+    evidence: reviewed?.evidence ?? [],
+    contributions: reviewed?.contributions ?? [],
     ...(range === null ? {} : { asOfYear: range.end, recencyWindowYears: range.end - range.start + 1 }),
   }
 }

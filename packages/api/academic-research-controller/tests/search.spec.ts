@@ -5,6 +5,7 @@ import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
 import { approvedPaperAdapters } from '../src/search.ts'
+import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 
 const batchPolicy = {
   initialBatchSize: 2,
@@ -34,6 +35,7 @@ function setup(options: {
   readonly failGapSearch?: boolean
   readonly unresolved?: ReadonlySet<string>
   readonly metadata?: NonNullable<AcademicSourceWork['metadata']>
+  readonly candidateScreening?: AcademicCandidateScreening
 } = {}) {
   const fixture = draftFixture(3)
   const questions = [...options.questions ?? ['Which method works?']]
@@ -73,7 +75,7 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  batchPolicy, gapPolicy)
+  batchPolicy, gapPolicy, undefined, options.candidateScreening)
   const replenishCandidates = adapters.replenishCandidates
   if (replenishCandidates === undefined) throw new Error('expected evidence-gap replenishment adapter')
   return { adapters, brief, searchProviders, works, replenishCandidates }
@@ -115,6 +117,24 @@ describe('Q5 evidence-gap replenishment', () => {
     expect(state.scheduling.assessments[0]?.matchedQuestions).toEqual(prepared.brief.questions)
     expect(state.scheduling.assessments[0]?.reasons.join(' '))
       .toContain('Recency scoring is disabled because the reviewed publication window has no complete year range.')
+  })
+
+  it('uses reviewed method and evidence cues in the formal P0 score', async () => {
+    const question = 'Which method works?'
+    const prepared = setup({
+      metadata: { abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
+        keywords: { status: 'available', value: ['synthetic', 'comparison'] } },
+      candidateScreening: {
+        questions: [{ question, concepts: [['comparative results']] }],
+        methods: [['evaluation']], evidence: [['comparative results']],
+        contributions: [{ classification: 'empirical_evaluation', concepts: [['evaluation']] }],
+      },
+    })
+    const state = await initialState(prepared)
+    expect(state.scheduling.assessments[0]).toMatchObject({ methodMatch: 1, evidencePotential: 1,
+      matchedQuestions: [question], contributionSignals: ['empirical_evaluation'] })
+    expect(state.scheduling.ranking.evaluations[0]).toMatchObject({ priority: 'p0',
+      score: { methodMatch: 10, evidencePotential: 15, questionMatch: 20 } })
   })
 
   it('requires an approved executable Brief for ranked scheduling', () => {

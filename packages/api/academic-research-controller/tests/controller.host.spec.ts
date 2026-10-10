@@ -281,6 +281,24 @@ describe('AcademicResearchController', () => {
       searchPlan: [...searchPlan, { ...searchPlan[0], query: 'second' }] })))).toThrow('1 条查询上限')
   })
 
+  it('recovers reviewed candidate cues from the same approved Session plan', () => {
+    const question = 'Which method works?'
+    const candidateScreening = {
+      questions: [{ question, concepts: [['retrieval faithfulness']] }],
+      methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
+      contributions: [],
+    }
+    const base = briefPayload()
+    const payload = { ...base, schemaVersion: 5, candidateScreening,
+      evidenceRequirements: { ...base.evidenceRequirements, targetIncludedWorks: 2 },
+      searchPlan: [{ query: 'retrieval faithfulness', purpose: '比较方法', questions: [question], retrieval: {
+        channels: ['academic'], academicProviders: ['openalex'], verificationProviders: [],
+        maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0,
+      } }] }
+    expect(researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan(payload))).candidateScreening)
+      .toEqual(candidateScreening)
+  })
+
   it('rejects duplicate expressions with different approved retrieval policies', () => {
     const retrieval = {
       channels: ['academic', 'web_discovery'],
@@ -839,7 +857,7 @@ describe('approved Research Brief plan handoff', () => {
     ['object', null, 'must be an object'],
     ['missing field', omitTopic(), 'missing: topic'],
     ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
-    ['schema version', { ...briefPayload(), schemaVersion: 5 }, 'schemaVersion must be 1, 2, 3, or 4'],
+    ['schema version', { ...briefPayload(), schemaVersion: 6 }, 'schemaVersion must be 1, 2, 3, 4, or 5'],
     ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
     ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
     ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],

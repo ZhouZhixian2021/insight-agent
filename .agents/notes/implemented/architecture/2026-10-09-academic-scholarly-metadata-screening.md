@@ -16,14 +16,18 @@ Academic Retrieval exposes `assessPlannedCandidates()` using explicitly reviewed
 
 The [shared ranking policy](2026-09-29-academic-query-planning-candidate-ranking-contract.md) remains authoritative for weights and priorities. The Controller supplies reviewed criteria and explicit version-keyed full-text facts, then passes the resulting assessments to the existing ranker. Controller integration and Session recording remain consumer responsibilities; the pure screener performs no model or network calls.
 
+The Session-approved version-5 Academic plan carries exact question concept groups plus method, evidence, and optional contribution cues. The Controller validates those cues with the plan, preserves older plans without invented cues, and supplies the same reviewed criteria for initial and evidence-gap ranking. The readable Chinese plan explains the cues before the structured handoff; they prioritize full-text inspection and do not establish paper admission.
+
 ## Alternatives considered
 
-**Use query provenance as semantic assessment or scoring.** Query assignments describe discovery, not the paper's content, and question breadth is independent of topic relevance. Provenance is therefore limited to routing a candidate that already has a topical metadata match.
+**Treat query provenance as proof of paper content.** Query assignments describe discovery, not the paper's content, and question breadth is independent of topic relevance. The approved assignment supplies a batch route after a topical metadata match without awarding question-match points.
 
 **Merge every available abstract at work level.** A preprint and its published version can make different claims; pooled text would misattribute those claims to the canonical version.
 
 **Add a model classifier immediately.** It requires a separately reviewed adapter, durable model-call records, and calibration. Explicit terminology provides reproducible preliminary screening without adding those dependencies.
 
 ## Consequences
+
+`matchedQuestions` now contains only complete question-concept matches in scholarly metadata. The ranker scores those matches, while the Q5 scheduler independently reads approved query provenance for topical candidates when prioritizing an evidence-gap batch. The existing `discoveredBy` identifiers carry that route without another public field or Session format change.
 
 Consumers obtain explainable fractions and missing-data reasons without changing Academic Model or released Session formats. Chinese research questions can retain their reviewed English discovery route, while unrelated results from the same query still fail the required topical metadata match. Lexical cues do not interpret negation, verify methodology, or prove question coverage; subject terms must appear in reviewed topic or question concepts. Sparse catalog records remain sparse until official verification supplies metadata. The [executable handoff](../../../../packages/academic/retrieval/tests/rank.spec.ts) covers specialized, unrelated, multilingual, provenance-routed, and incomplete records; ingestion tests preserve version isolation.

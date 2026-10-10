@@ -107,6 +107,19 @@ describe('approved candidate screening criteria', () => {
     expect(criteria).not.toHaveProperty('recencyWindowYears')
   })
 
+  it('passes exact reviewed question, method, evidence, and contribution cues to metadata screening', () => {
+    const reviewed = {
+      questions: [{ question, concepts: [['faithfulness', '忠实性']] }],
+      methods: [['retrieval evaluation', '检索评估']],
+      evidence: [['benchmark', '基准测试']],
+      contributions: [{ classification: 'empirical_evaluation' as const,
+        concepts: [['experimental comparison', '实验比较']] }],
+    }
+    expect(approvedCandidateScreeningCriteria(brief, planFor(), reviewed)).toMatchObject(reviewed)
+    expect(approvedCandidateScreeningCriteria(brief, planFor(), reviewed).questions[0]?.concepts)
+      .toEqual([['faithfulness', '忠实性']])
+  })
+
   it('rejects a plan bound to another approved Brief version', () => {
     expect(() => approvedCandidateScreeningCriteria(brief, { ...planFor(), researchBriefVersion: 1 }))
       .toThrow(/approved Brief version bound to the plan/u)

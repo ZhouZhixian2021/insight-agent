@@ -92,9 +92,12 @@ export function planCandidateBatch(input: CandidateBatchPlanningInput): Candidat
   const remaining = eligibleOrder
     .filter(workVersionId => !scheduled.has(workVersionId))
   const gapSet = new Set(gaps)
+  const questionsByQuery = new Map(input.plan.queries.map(query => [query.searchQueryId, query.questions]))
   const gapCandidates = remaining.filter((workVersionId) => {
     const evaluation = evaluations.get(workVersionId)
-    return evaluation !== undefined && evaluation.matchedQuestions.some(question => gapSet.has(question))
+    return evaluation !== undefined && (evaluation.matchedQuestions.some(question => gapSet.has(question))
+      || (evaluation.score.topicRelevance > 0 && evaluation.discoveredBy.some(searchQueryId =>
+        questionsByQuery.get(searchQueryId)?.some(question => gapSet.has(question)))))
   })
 
   if (input.completedBatchCount === 0) {
