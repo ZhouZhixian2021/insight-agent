@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-10-10-academic-plan-rule-granularity.md
+2026-10-10-academic-plan-rule-granularity.md: ac0bb9b02a05324bb734f6815e36fc20c8493124
+2026-10-10-academic-plan-rule-granularity.zh.md: 68dc1f05693920ea5eb7148df7a0a357b6e73f78

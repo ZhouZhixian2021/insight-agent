@@ -19,6 +19,8 @@ Write the plan title, headings, explanations, and readable body in Simplified Ch
 
 Identify the technology, research questions, publication window, included version states (预印本、录用稿、正式发表版本), audience, and desired depth. Ask one concise clarification only when a missing choice would materially change retrieval or the report. State assumptions when the user leaves a non-critical choice open.
 
+Use `inclusionRules` and `exclusionRules` only for conditions that can be decided independently for every candidate paper. Express corpus-level diversity, benchmark, domain, or method coverage goals through research questions and search directions, then disclose unmet goals as evidence gaps instead of rejecting every paper that cannot satisfy the whole collection target.
+
 Run a small preliminary search before fixing the research directions. Use the observed terminology, venues, benchmarks, and neighboring methods to refine the scope.
 
 ## Build the evidence set
