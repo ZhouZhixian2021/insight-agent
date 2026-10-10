@@ -106,12 +106,13 @@ function SettledRun({ value, t, plannedSearches }: Copy & {
 /**
  * Download exactly the returned Markdown; the caller decides whether it is a draft.
  * @param markdown Producer-owned report text.
+ * @param filename Download name; synthetic previews supply a distinct demo filename.
  */
-export function downloadMarkdown(markdown: string): void {
+export function downloadMarkdown(markdown: string, filename = 'academic-report.md'): void {
   const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = 'academic-report.md'
+  anchor.download = filename
   anchor.click()
   setTimeout(() => { URL.revokeObjectURL(url) }, 1000)
 }
