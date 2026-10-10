@@ -35,10 +35,15 @@ describe('Academic plan compatibility before review', () => {
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('missing: searchPlan')
   })
 
-  it('projects the version-4 target and hybrid policy from the shipped Chinese plan template', () => {
+  it('projects the version-5 target, hybrid policy, and reviewed screening cues', () => {
     const payload = templatePayload()
-    expect(payload.schemaVersion).toBe(4)
+    expect(payload.schemaVersion).toBe(5)
     expect((payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks).toBe(6)
+    expect(payload.candidateScreening).toMatchObject({
+      questions: [{ question: '<中文研究问题>' }],
+      methods: [['<方法线索及其同义表达>']],
+      evidence: [['<实验或评估线索及其同义表达>']],
+    })
     expect(retrievalOf(payload)).toEqual({
       channels: ['academic', 'web_discovery'],
       academicProviders: ['openalex', 'arxiv'],
@@ -65,9 +70,31 @@ describe('Academic plan compatibility before review', () => {
   it('continues to read a version-2 approved search plan without inventing a retrieval policy', () => {
     const payload = structuredClone(templatePayload())
     payload.schemaVersion = 2
+    delete payload.candidateScreening
     delete (payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks
     for (const search of payload.searchPlan as Record<string, unknown>[]) delete search.retrieval
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
+
+  it.each([
+    ['missing screening', (payload: Record<string, unknown>) => { delete payload.candidateScreening },
+      'missing: candidateScreening'],
+    ['unreviewed question', (payload: Record<string, unknown>) => {
+      ((payload.candidateScreening as Record<string, unknown>).questions as Record<string, unknown>[])[0]!.question = '其他问题'
+    }, 'must cover every exact research question once'],
+    ['missing method concepts', (payload: Record<string, unknown>) => {
+      (payload.candidateScreening as Record<string, unknown>).methods = []
+    }, 'methods must contain at least one concept'],
+    ['empty evidence aliases', (payload: Record<string, unknown>) => {
+      (payload.candidateScreening as Record<string, unknown>).evidence = [[]]
+    }, 'evidence[0] must contain at least one item'],
+    ['unknown screening field', (payload: Record<string, unknown>) => {
+      (payload.candidateScreening as Record<string, unknown>).extra = true
+    }, 'unknown: extra'],
+  ])('rejects invalid reviewed candidate cues: %s', (_label, mutate, message) => {
+    const payload = structuredClone(templatePayload())
+    mutate(payload)
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow(message)
   })
 
   it.each([

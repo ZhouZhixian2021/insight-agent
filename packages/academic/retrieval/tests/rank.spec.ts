@@ -168,7 +168,7 @@ describe('scholarly metadata screening', () => {
     expect(assessments[0]?.reasons[0]).toContain('does not confirm evidence or scientific quality')
   })
 
-  it('routes a topically relevant English candidate to its approved Chinese research question', () => {
+  it('does not score query provenance as an approved Chinese question content match', () => {
     const localizedQuestion = '检索增强生成如何减少幻觉？'
     const localizedBrief = { ...brief, questions: [localizedQuestion] }
     const localizedPlan = { ...plan, constraints: { ...plan.constraints, requiredTerms: [] },
@@ -179,8 +179,10 @@ describe('scholarly metadata screening', () => {
     }
     const { input, facts } = inputs('Retrieval augmented generation', 'A grounded generation study.', ['retrieval'])
     const result = assessPlannedCandidates(localizedPlan, localizedBrief, input, localizedCriteria, facts)[0]
-    expect(result).toMatchObject({ topicRelevance: 1, matchedQuestions: [localizedQuestion] })
+    expect(result).toMatchObject({ topicRelevance: 1, matchedQuestions: [] })
     expect(result?.reasons.join(' ')).toContain('approved discovery-query provenance matched')
+    const ranking = rankPlannedCandidates(localizedPlan, localizedBrief, input, [result!])
+    expect(ranking.evaluations[0]).toMatchObject({ matchedQuestions: [], score: { questionMatch: 0 } })
   })
 
   it('excludes an unrelated evaluation despite sharing the discovering query', () => {

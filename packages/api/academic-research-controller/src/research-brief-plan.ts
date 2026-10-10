@@ -8,6 +8,7 @@ import type {
   AcademicReferenceVerificationProvider,
   AcademicRetrievalChannel,
 } from './types.ts'
+import type { AcademicCandidateScreening } from './candidate-screening.ts'
 
 const EXIT_PLAN_MODE = 'exit_plan_mode'
 const BRIEF_FENCE = 'academic-research-brief-json'
@@ -48,14 +49,18 @@ export function researchBriefFromApprovedPlan(
 export function researchPlanFromApprovedPlan(
   sessionId: string,
   events: readonly SessionEvent[],
-): { brief: ResearchBrief; searches: readonly AcademicPlannedSearch[] | undefined } {
+): {
+  brief: ResearchBrief
+  searches: readonly AcademicPlannedSearch[] | undefined
+  candidateScreening: AcademicCandidateScreening | undefined
+} {
   const approved = latestApprovedPlan(events)
   if (approved === undefined) {
     throw new Error('请先在当前会话完成研究计划审核。')
   }
-  const { searchPlan, ...payload } = parseBriefPayload(approved.markdown)
+  const { searchPlan, candidateScreening, ...payload } = parseBriefPayload(approved.markdown)
   validateResearchBriefRequirements(payload)
-  return { searches: searchPlan, brief: {
+  return { searches: searchPlan, candidateScreening, brief: {
     ...payload,
     researchBriefId: `${sessionId}:approved-plan:${approved.identity}` as ResearchBriefId,
     version: 1,
@@ -136,6 +141,7 @@ function planFromUnknownArguments(value: unknown): string | undefined {
 
 function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBriefId' | 'version' | 'approval'> & {
   searchPlan?: readonly AcademicPlannedSearch[]
+  candidateScreening?: AcademicCandidateScreening
 } {
   const pattern = new RegExp('(?:^|\\n)```' + BRIEF_FENCE + '\\s*\\n([\\s\\S]*?)\\n```(?=\\n|$)', 'gu')
   const matches = [...markdown.matchAll(pattern)]
@@ -149,13 +155,15 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     throw new Error(`the ${BRIEF_FENCE} block must contain valid JSON`)
   }
   const root = record(value, 'Research Brief')
-  if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3 && root.schemaVersion !== 4) {
-    throw new Error('schemaVersion must be 1, 2, 3, or 4')
+  if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3
+    && root.schemaVersion !== 4 && root.schemaVersion !== 5) {
+    throw new Error('schemaVersion must be 1, 2, 3, 4, or 5')
   }
   exactKeys(root, [
     'schemaVersion', 'topic', 'aliases', 'questions', 'publicationWindow', 'includedWorkTypes',
     'inclusionRules', 'exclusionRules', 'evidenceRequirements', 'targetAudience', 'reportRequirements',
     'stopConditions', 'assumptions', ...(root.schemaVersion >= 2 || 'searchPlan' in root) ? ['searchPlan'] : [],
+    ...root.schemaVersion >= 5 ? ['candidateScreening'] : [],
   ], 'Research Brief')
   const questions = nonEmptyStringArray(root.questions, 'questions')
   const limits = stopConditions(root.stopConditions)
@@ -184,6 +192,7 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     reportRequirements: reportRequirements(root.reportRequirements),
     stopConditions: limits,
     assumptions: stringArray(root.assumptions, 'assumptions'),
+    ...root.schemaVersion >= 5 ? { candidateScreening: parseCandidateScreening(root.candidateScreening, questions) } : {},
     ...'searchPlan' in root ? { searchPlan: parseSearchPlan(
       root.searchPlan,
       questions,
@@ -191,6 +200,48 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
       root.schemaVersion >= 3,
     ) } : {},
   }
+}
+
+function parseCandidateScreening(value: unknown, questions: readonly string[]): AcademicCandidateScreening {
+  const item = record(value, 'candidateScreening')
+  exactKeys(item, ['questions', 'methods', 'evidence', 'contributions'], 'candidateScreening')
+  if (!Array.isArray(item.questions)) throw new Error('candidateScreening.questions must be an array')
+  const questionTerms = item.questions.map((entry, index) => {
+    const label = `candidateScreening.questions[${index}]`
+    const question = record(entry, label)
+    exactKeys(question, ['question', 'concepts'], label)
+    return { question: nonEmptyString(question.question, `${label}.question`),
+      concepts: termConcepts(question.concepts, `${label}.concepts`, true) }
+  })
+  if (questionTerms.length !== questions.length
+    || new Set(questionTerms.map(entry => entry.question)).size !== questions.length
+    || questionTerms.some(entry => !questions.includes(entry.question))) {
+    throw new Error('candidateScreening.questions must cover every exact research question once')
+  }
+  if (!Array.isArray(item.contributions)) throw new Error('candidateScreening.contributions must be an array')
+  const classifications = ['core_method', 'empirical_evaluation', 'benchmark_or_dataset', 'review',
+    'application', 'adjacent_technology'] as const
+  const contributions = item.contributions.map((entry, index) => {
+    const label = `candidateScreening.contributions[${index}]`
+    const contribution = record(entry, label)
+    exactKeys(contribution, ['classification', 'concepts'], label)
+    return { classification: oneOf(contribution.classification, classifications, `${label}.classification`),
+      concepts: termConcepts(contribution.concepts, `${label}.concepts`, true) }
+  })
+  if (new Set(contributions.map(entry => entry.classification)).size !== contributions.length) {
+    throw new Error('candidateScreening.contributions must not repeat a classification')
+  }
+  return { questions: questionTerms,
+    methods: termConcepts(item.methods, 'candidateScreening.methods', true),
+    evidence: termConcepts(item.evidence, 'candidateScreening.evidence', true),
+    contributions }
+}
+
+function termConcepts(value: unknown, label: string, nonEmpty: boolean): readonly (readonly string[])[] {
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`)
+  if (nonEmpty && value.length === 0) throw new Error(`${label} must contain at least one concept`)
+  return value.map((aliases, index) => nonEmptyStringArray(aliases, `${label}[${index}]`)
+    .map(alias => alias.trim()))
 }
 
 function parseSearchPlan(

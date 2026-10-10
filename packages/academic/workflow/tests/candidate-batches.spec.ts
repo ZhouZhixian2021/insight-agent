@@ -50,8 +50,9 @@ function fixture(): CandidateBatchPlanningInput {
       inclusionRules: [], exclusionRules: [], requiredTerms: [], excludedTerms: [] },
     inclusionTargets: { minimum: 2, target: 3, maximum: 6 },
     rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
-    queries: [{ kind: 'academic', searchQueryId: createSearchQueryId(), expression: 'ranked batches',
-      purpose: 'core', questions, roundIndex: 1, providers: ['fixture'] }],
+    queries: questions.map((question, index) => ({ kind: 'academic' as const, searchQueryId: createSearchQueryId(),
+      expression: `ranked batches ${index}`, purpose: 'core' as const, questions: [question],
+      roundIndex: 1, providers: ['fixture'] })),
     citationExpansionSeeds: [],
     maximumSearchRounds: 3,
   }
@@ -59,7 +60,7 @@ function fixture(): CandidateBatchPlanningInput {
     schemaVersion: 1,
     academicWorkId: createAcademicWorkId(),
     workVersionId,
-    discoveredBy: [plan.queries[0]!.searchQueryId],
+    discoveredBy: [plan.queries[index === 0 ? 0 : 1]!.searchQueryId],
     classification: 'core_method',
     hardFilter: { status: 'eligible', reasons: [] },
     score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
@@ -115,6 +116,22 @@ describe('ranked candidate batch scheduling', () => {
     expect(decision.action).toBe('schedule_batch')
     expect(decision.batch).toMatchObject({ batchIndex: 2, reason: 'evidence_gap',
       workVersionIds: [versions[2]], questions: [questions[1]] })
+  })
+
+  it('routes a topical candidate through its approved query without treating that route as a scored match', () => {
+    const base = fixture()
+    const input = { ...base, ranking: { ...base.ranking,
+      evaluations: base.ranking.evaluations.map(evaluation => ({ ...evaluation,
+        matchedQuestions: [], score: { ...evaluation.score, questionMatch: 0,
+          total: evaluation.score.total - evaluation.score.questionMatch } })) },
+    scheduledWorkVersionIds: versions.slice(0, 2), completedBatchCount: 1, includedWorks: 2,
+    coverage: { ...base.coverage, questions: [
+      { ...base.coverage.questions[0]!, status: 'covered' as const, gaps: [] },
+      base.coverage.questions[1]!,
+    ] } }
+    const decision = planCandidateBatch(input)
+    expect(decision).toMatchObject({ action: 'schedule_batch', batch: { reason: 'evidence_gap',
+      workVersionIds: [versions[2]], questions: [questions[1]] } })
   })
 
   it('requests a gap search when ranked candidates cannot cover the remaining question', () => {

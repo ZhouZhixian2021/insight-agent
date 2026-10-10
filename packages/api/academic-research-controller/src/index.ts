@@ -227,10 +227,12 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     let brief
     let searches
+    let candidateScreening
     try {
       const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
       brief = approved.brief
       searches = approved.searches
+      candidateScreening = approved.candidateScreening
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       if (brief.researchBriefId !== request.researchBriefId) throw new Error('研究计划已更新，请重新打开学术研究，确认最新计划后再开始。')
     } catch (cause: unknown) {
@@ -273,7 +275,8 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
       ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
-        recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined),
+        recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
+        candidateScreening),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),

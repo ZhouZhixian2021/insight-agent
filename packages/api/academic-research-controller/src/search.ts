@@ -14,7 +14,7 @@ import { executeHybridSearch, type CandidateBatchPolicy, type CandidateSchedulin
   type ReplenishedCandidates, selectResearchPapers, type SelectedPaper } from '@deepseek-ai/dsh-academic-workflow'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from './planned-retrieval.ts'
-import { approvedCandidateScreeningCriteria } from './candidate-screening.ts'
+import { approvedCandidateScreeningCriteria, type AcademicCandidateScreening } from './candidate-screening.ts'
 import type { AcademicPlannedSearch } from './types.ts'
 
 /** Deployment-owned bounds for one evidence-gap replenishment round. */
@@ -34,6 +34,7 @@ export interface GapRoundPolicy {
  * @param candidateBatchPolicy Explicit Q5 batch sizes and per-question coverage threshold.
  * @param gapRoundPolicy Bounds for one Q5 evidence-gap replenishment round.
  * @param onPlan Optional observer for the exact reviewed plan used by formal execution.
+ * @param candidateScreening Optional metadata cues from that same approved plan.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -44,6 +45,7 @@ export function approvedPaperAdapters(
   candidateBatchPolicy: CandidateBatchPolicy,
   gapRoundPolicy: GapRoundPolicy,
   onPlan?: (plan: HybridSearchPlan) => void,
+  candidateScreening?: AcademicCandidateScreening,
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'replenishCandidates'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
@@ -77,10 +79,10 @@ export function approvedPaperAdapters(
       return projected
     },
     selectPapers: (ingested, effectiveBrief) => rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
-      ingested, resolutions, academicSource, key, candidateBatchPolicy),
+      ingested, resolutions, academicSource, key, candidateBatchPolicy, candidateScreening),
     replenishCandidates: (scheduling, ingested, coverage, nextRoundIndex, signal) =>
       replenishRankedCandidates(approvedBrief, candidateBatchPolicy, gapRoundPolicy, academicSource, web,
-        resolutions, key, scheduling, ingested, coverage, nextRoundIndex, signal),
+        resolutions, key, scheduling, ingested, coverage, nextRoundIndex, candidateScreening, signal),
   }
 }
 
@@ -108,8 +110,9 @@ function rankedPaperSelection(
   academicSource: AcademicSourceRuntime,
   key: (provider: string, recordId: string) => string,
   policy: CandidateBatchPolicy,
+  candidateScreening?: AcademicCandidateScreening,
 ): ReturnType<DraftPipelineAdapters['selectPapers']> {
-  const built = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key)
+  const built = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key, candidateScreening)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const resolvable = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter(workVersionId => evaluations.get(workVersionId)?.fulltextAvailability.status === 'resolvable')
@@ -134,6 +137,7 @@ function buildRanking(
   resolutions: ReadonlyMap<string, AcademicSourceFullText | null>,
   academicSource: AcademicSourceRuntime,
   key: (provider: string, recordId: string) => string,
+  candidateScreening?: AcademicCandidateScreening,
 ): {
   readonly assessments: readonly CandidateAssessment[]
   readonly ranking: AcademicCandidateRankingResult
@@ -171,7 +175,7 @@ function buildRanking(
   }
   const round: PlannedSearchRoundResult = { ingested, discoveredBy, queries: [] }
   const assessments = assessPlannedCandidates(plan, approvedBrief, round,
-    approvedCandidateScreeningCriteria(approvedBrief, plan), fulltextFacts)
+    approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening), fulltextFacts)
   const ranking = rankPlannedCandidates(plan, approvedBrief, round, assessments)
   return { assessments, ranking, papers }
 }
@@ -189,6 +193,7 @@ async function replenishRankedCandidates(
   ingested: IngestOutcome,
   coverage: ResearchQuestionCoverageResult,
   nextRoundIndex: number,
+  candidateScreening?: AcademicCandidateScreening,
   signal?: AbortSignal,
 ): Promise<ReplenishedCandidates> {
   const options: QueryPlanningOptions = {
@@ -223,7 +228,7 @@ async function replenishRankedCandidates(
   const mergedIngested = ingestWorks(ingested.index, gapRecords)
   const previousWorkIds = new Set(ingested.index.records.keys())
   const versionWorks = new Map(mergedIngested.versions.map(version => [version.workVersionId, version.academicWorkId]))
-  const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key)
+  const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key, candidateScreening)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const papers = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter((workVersionId) => {
