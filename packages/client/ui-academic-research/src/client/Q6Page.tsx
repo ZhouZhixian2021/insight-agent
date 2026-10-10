@@ -8,6 +8,9 @@ import { Q6Plan } from './Q6Plan.tsx'
 import { Q6Candidates } from './Q6Candidates.tsx'
 import { Q6Coverage } from './Q6Coverage.tsx'
 import css from './RunPanel.module.css'
+import { RunExperience } from './RunExperience.tsx'
+import { runExperienceSample } from './run-experience-sample.ts'
+import type { PreviewState } from './run-experience-types.ts'
 
 /**
  * Open a named demo without a Session, Remote call or automatic scenario fallback.
@@ -16,11 +19,19 @@ import css from './RunPanel.module.css'
  */
 export function Q6DemoEntry({ t }: PropsLocale<'academicRun'>) {
   const [open, setOpen] = useState(false)
+  const [lifecycle, setLifecycle] = useState(false)
+  const [preview, setPreview] = useState<PreviewState>(() => ({ selected: runExperienceSample.runs[0]?.id ?? '',
+    runs: structuredClone(runExperienceSample.runs).map(run => ({ ...run, connected: false })) }))
+  const connection = (connected: boolean) => { setPreview(previous => ({ ...previous,
+    runs: previous.runs.map(run => run.id === previous.selected ? { ...run, connected } : run) })) }
   return <>
-    <button className={css.entry} type="button" onClick={() => { setOpen(true) }}>{t('q6_entry')}</button>
-    <Modal open={open} onClose={() => { setOpen(false) }} title={t('q6_title')} closeLabel={t('close')}
+    <button className={css.entry} type="button" onClick={() => { setOpen(true); if (lifecycle) connection(true) }}>{t('q6_entry')}</button>
+    <Modal open={open} onClose={() => { connection(false); setOpen(false) }} title={t('q6_title')} closeLabel={t('close')}
       className={css.dialog} contentClassName={css.body}>
-      {open && <Q6Page data={q6Sample} t={t} />}
+      {open && <>
+        <button type="button" onClick={() => { connection(!lifecycle); setLifecycle(!lifecycle) }}>{t(lifecycle ? 'exp_back' : 'exp_open')}</button>
+        {lifecycle ? <RunExperience state={preview} onChange={setPreview} t={t} /> : <Q6Page data={q6Sample} t={t} />}
+      </>}
     </Modal>
   </>
 }
