@@ -94,6 +94,17 @@ Sources: [`packages/core/session/src/types.ts:379`](../packages/core/session/src
 
 ### `academic/*`
 
+<a id="academicbackground-run-state--log-only"></a>
+
+#### `academic/background-run-state` — log-only
+
+```ts persistence-catalog
+/** Latest complete detached-run view; replay uses the last event for each run ID. */
+'academic/background-run-state': AcademicBackgroundRunView
+```
+
+Source: [`packages/api/academic-research-controller/src/background-run.ts:9`](../packages/api/academic-research-controller/src/background-run.ts)
+
 <a id="academiccandidate-batch-decision--log-only"></a>
 
 #### `academic/candidate-batch-decision` — log-only

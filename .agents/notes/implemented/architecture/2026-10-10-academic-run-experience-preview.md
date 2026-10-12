@@ -16,7 +16,7 @@ The preview shows stage input/output units, reason text, separate run and connec
 
 ## Alternatives considered
 
-**Detach the existing real run from its AbortSignal.** Rejected because the server owns stream termination and no background subscription interface exists yet.
+**Detach the existing `runStream` from its AbortSignal.** Rejected because that operation promises caller-owned cancellation; the separate background operations own run and subscriber lifetimes independently.
 
 **Reset records whenever the modal closes.** Rejected because it prevents phase-one tests of reopening and retained results.
 
@@ -24,4 +24,4 @@ The preview shows stage input/output units, reason text, separate run and connec
 
 ## Consequences
 
-The [live stream lifecycle](2026-09-28-academic-progress-client.md) and [Q6 isolation decision](2026-10-09-academic-q6-readonly-preview.md) remain active. This local prototype neither supersedes them nor changes real requests. Fixed-data tests and one real Web Loader scenario verify reopening, separate connection state, explicit cancellation, retained drafts and no Remote calls. Phase two requires A's authoritative background run interface before connecting these interactions to real runs.
+The [live stream lifecycle](2026-09-28-academic-progress-client.md), [detached backend decision](2026-10-12-academic-background-run.md), and [Q6 isolation decision](2026-10-09-academic-q6-readonly-preview.md) remain active. This local prototype neither supersedes them nor changes real requests. Fixed-data tests and one real Web Loader scenario verify reopening, separate connection state, explicit cancellation, retained drafts and no Remote calls. The real Web entry still uses `runStream`; phase two connects it to the separate background operations.

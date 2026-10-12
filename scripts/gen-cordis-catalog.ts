@@ -241,6 +241,10 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
  * appear on more than one page.
  */
 export const LINK_MAP: Readonly<Record<string, string>> = {
+  AcademicBackgroundRunCancelRequest: 'academic-insight.md',
+  AcademicBackgroundRunKey: 'academic-insight.md',
+  AcademicBackgroundRunSummary: 'academic-insight.md',
+  AcademicBackgroundRunView: 'academic-insight.md',
   AcademicResearchRunFrame: 'academic-insight.md',
   AcademicResearchRunRequest: 'academic-insight.md',
   AcademicResearchPlanView: 'academic-insight.md',

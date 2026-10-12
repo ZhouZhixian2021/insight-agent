@@ -96,6 +96,17 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 ### `academic/*`
 
+<a id="academicbackground-run-state--log-only"></a>
+
+#### `academic/background-run-state` — log-only
+
+```ts persistence-catalog
+/** Latest complete detached-run view; replay uses the last event for each run ID. */
+'academic/background-run-state': AcademicBackgroundRunView
+```
+
+来源：[`packages/api/academic-research-controller/src/background-run.ts:9`](../packages/api/academic-research-controller/src/background-run.ts)
+
 <a id="academiccandidate-batch-decision--log-only"></a>
 
 #### `academic/candidate-batch-decision` — log-only

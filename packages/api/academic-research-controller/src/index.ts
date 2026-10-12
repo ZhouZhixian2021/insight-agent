@@ -24,9 +24,11 @@ import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
 import { academicQ6Projection } from './q6-projection.ts'
+import { AcademicBackgroundRuns, replayBackgroundRun, replayBackgroundRuns } from './background-run.ts'
 import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
-  AcademicResearchPlanView,
+  AcademicResearchPlanView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunView,
+  AcademicBackgroundRunSummary,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -110,6 +112,7 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly synthesisRetryInitialDelayMs: number
   private readonly candidateBatchPolicy: import('@deepseek-ai/dsh-academic-workflow').CandidateBatchPolicy
   private readonly gapRoundPolicy: GapRoundPolicy
+  private readonly backgroundRuns = new AcademicBackgroundRuns()
 
   /**
    * @param ctx - Host context containing Session, Academic source, and Web fetch services.
@@ -138,6 +141,7 @@ export class AcademicResearchController extends TypertRemoteService {
       maximumAcademicResultsPerQuery: config.gapRoundMaximumAcademicResultsPerQuery ?? 20,
     }
     ctx.plugin(academicPlanValidation)
+    ctx.effect(() => async () => { await this.backgroundRuns.dispose() }, 'academicResearchController.backgroundRuns')
   }
 
   /**
@@ -178,6 +182,104 @@ export class AcademicResearchController extends TypertRemoteService {
   @Remote({ mode: 'stream' })
   runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame> {
     return this.streamRun(request, signal)
+  }
+
+  /**
+   * Start a Session-owned research task whose lifetime does not depend on the browser connection.
+   * @param request Approved plan identity and bounded run options.
+   * @param signal Caller lifetime used only before admission; disconnect after admission leaves the task running.
+   * @returns Persisted initial state and its independent background run ID.
+   */
+  @Remote('startBackgroundRun')
+  async startBackgroundRun(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicBackgroundRunView> {
+    signal.throwIfAborted()
+    const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
+    if ('error' in found) throw found.error
+    const approved = researchPlanFromApprovedPlan(String(request.sessionId), found.agent.session.snapshotEvents())
+    if (approved.searches === undefined || approved.brief.researchBriefId !== request.researchBriefId) {
+      throw new RemoteError('gateway/bad-request', '研究计划已更新或缺少检索方案，请重新打开学术研究确认计划。', {})
+    }
+    if (this.backgroundRuns.hasActiveSession(request.sessionId)) {
+      throw new RemoteError('session/agent-busy', '当前会话已有正在运行的学术研究。',
+        { reason: 'academic research already has an active background run' })
+    }
+    signal.throwIfAborted()
+    const persist = (view: AcademicBackgroundRunView) => {
+      found.agent.session.append('academic/background-run-state', view)
+    }
+    return this.backgroundRuns.start({ sessionId: request.sessionId, researchBriefId: request.researchBriefId,
+      startedAt: new Date().toISOString() }, persist, (taskSignal, update) => this.execute(request, taskSignal,
+      (progress) => { update({ retrievalRunId: progress.retrievalRunId,
+        progress: { ...progress, sessionId: request.sessionId } }) },
+      (observation) => { update({ retrievalRunId: observation.retrievalRunId,
+        q6: academicQ6Projection(request.sessionId, observation) }) }).then(runValue))
+  }
+
+  /**
+   * Read the latest Session-owned task state, including after a host restart.
+   * @param key Session and background run identity.
+   * @returns Latest durable state; an unclosed task from a previous host is marked interrupted.
+   */
+  @Remote('getBackgroundRun')
+  async getBackgroundRun(key: AcademicBackgroundRunKey): Promise<AcademicBackgroundRunView> {
+    const active = this.backgroundRuns.get(key.sessionId, key.backgroundRunId)
+    if (active !== undefined) return active
+    const found = await this.ctx.sessionController.resolveAgent(key.sessionId)
+    if ('error' in found) throw found.error
+    const view = replayBackgroundRun(key.sessionId, key.backgroundRunId, found.agent.session.snapshotEvents())
+    if (view === undefined) throw new RemoteError('gateway/bad-request', '找不到当前会话的学术研究运行记录。', {})
+    return view
+  }
+
+  /**
+   * Find this Session's recent task IDs after a page refresh or reconnection.
+   * @param sessionId Owning Session identity.
+   * @returns At most 20 small discovery rows, oldest first, with live tasks overriding persisted snapshots.
+   */
+  @Remote('listBackgroundRuns')
+  async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]> {
+    const found = await this.ctx.sessionController.resolveAgent(sessionId)
+    if ('error' in found) throw found.error
+    return replayBackgroundRuns(sessionId, found.agent.session.snapshotEvents()).slice(-20).map((saved) => {
+      const { schemaVersion, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason } =
+        this.backgroundRuns.get(sessionId, saved.backgroundRunId) ?? saved
+      return { schemaVersion, sessionId, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason }
+    })
+  }
+
+  /**
+   * Subscribe to a task without taking ownership of its lifetime.
+   * @param key Session and background run identity.
+   * @param signal Subscriber lifetime; disconnect only ends this subscription.
+   * @returns Current view followed by live updates, or one terminal/recovered view.
+   */
+  @Remote({ mode: 'stream' })
+  async *watchBackgroundRun(key: AcademicBackgroundRunKey, signal: AbortSignal): AsyncIterable<AcademicBackgroundRunView> {
+    const active = this.backgroundRuns.get(key.sessionId, key.backgroundRunId)
+    if (active !== undefined) {
+      let observed = false
+      for await (const view of this.backgroundRuns.watch(key.sessionId, key.backgroundRunId, signal)) {
+        observed = true
+        yield view
+      }
+      if (observed || signal.aborted) return
+    }
+    signal.throwIfAborted()
+    yield await this.getBackgroundRun(key)
+  }
+
+  /**
+   * Explicitly cancel an active task; closing a viewer never calls this method.
+   * @param request Session-owned run identity and user cancellation reason.
+   * @returns Latest state, including the durable cancellation intent.
+   */
+  @Remote('cancelBackgroundRun')
+  async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView> {
+    const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
+    if ('error' in found) throw found.error
+    const active = this.backgroundRuns.cancel(request.sessionId, request.backgroundRunId,
+      view => found.agent.session.append('academic/background-run-state', view))
+    return active ?? this.getBackgroundRun(request)
   }
 
   private async *streamRun(

@@ -35,6 +35,40 @@ export interface AcademicResearchRunRequest {
   readonly synthetic: boolean
 }
 
+/** Host-owned task identity independent of a browser stream and the workflow retrieval ID. */
+export type AcademicBackgroundRunId = string
+
+/** Identify one Session-owned background run without exposing another Session's result. */
+export interface AcademicBackgroundRunKey {
+  readonly sessionId: SessionId
+  readonly backgroundRunId: AcademicBackgroundRunId
+}
+
+/** Explicit cancellation is separate from disconnecting a progress subscriber. */
+export interface AcademicBackgroundRunCancelRequest extends AcademicBackgroundRunKey {
+  readonly reason: 'user_requested'
+}
+
+/** Durable, browser-safe latest state of a detached Academic research operation. */
+export interface AcademicBackgroundRunView extends AcademicBackgroundRunKey {
+  readonly schemaVersion: 1
+  readonly researchBriefId: ResearchBriefId
+  readonly state: 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted'
+  readonly startedAt: string
+  readonly updatedAt: string
+  readonly retrievalRunId: RetrievalRunId | null
+  readonly progress: AcademicResearchProgressView | null
+  readonly q6: AcademicQ6Projection | null
+  readonly result: AcademicResearchRunValue | null
+  readonly error: string | null
+  readonly cancelReason: 'user_requested' | 'service_stopped' | null
+}
+
+/** Small discovery row; fetch the complete selected run with getBackgroundRun. */
+export type AcademicBackgroundRunSummary = Pick<AcademicBackgroundRunView,
+  'schemaVersion' | 'sessionId' | 'backgroundRunId' | 'researchBriefId' | 'state' | 'startedAt' | 'updatedAt'
+  | 'retrievalRunId' | 'cancelReason'>
+
 /** Search channels that one approved query may execute. */
 export type AcademicRetrievalChannel = 'academic' | 'web_discovery'
 
