@@ -24,4 +24,4 @@ Academic Research Controller 为每个后台任务建立归属单个 Session 的
 
 ## 结果
 
-查看者可以离开并重新连接同一个活动任务，完成的报告也可以从 Session 读取。Session 事件保存完整快照和终态数据，会增加日志体积；发现列表只返回简短摘要。服务重启不能保持进程内任务存活，因此报告 `interrupted`，不编造取消来源。正式 Web 页面仍调用 `runStream`；[固定数据生命周期预览](2026-10-10-academic-run-experience-preview.zh.md)可以直接迁移到这些操作，无需重新定义运行状态。
+查看者可以离开并重新连接同一个活动任务，完成的报告也可以从 Session 读取。Session 事件保存完整快照和终态数据，会增加日志体积；发现列表只返回简短摘要。服务重启不能保持进程内任务存活，因此报告 `interrupted`，不编造取消来源。正式 Web 页面通过[后台 Web 生命周期](2026-10-12-academic-background-web.zh.md)使用这些操作；[固定数据生命周期预览](2026-10-10-academic-run-experience-preview.zh.md)继续作为独立合成演示。

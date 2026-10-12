@@ -13,7 +13,7 @@ describe('hybrid plan browser preview', () => {
     const scaffold = await launchWebScaffold({})
     const controller = scaffold.ctx.get('academicResearchController')
     if (controller === undefined) { await scaffold.close(); throw new Error('Academic Controller is required') }
-    const plan = vi.spyOn(controller, 'plan'), run = vi.spyOn(controller, 'runStream')
+    const plan = vi.spyOn(controller, 'plan'), run = vi.spyOn(controller, 'startBackgroundRun')
     try {
       const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
       try {
@@ -128,6 +128,9 @@ describe('hybrid plan browser preview', () => {
           providers: ['openalex', 'arxiv'], discoveredRecords: 0, limitations: ['Synthetic empty-source browser test'], truncated: false }
       })
       const webSearch = vi.spyOn(web, 'search').mockResolvedValue({ sources: [], content: '', truncated: false })
+      const controller = scaffold.ctx.get('academicResearchController')!
+      const backgroundStart = vi.spyOn(controller, 'startBackgroundRun')
+      const backgroundCancel = vi.spyOn(controller, 'cancelBackgroundRun')
       const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
       try {
         const page = await newEnglishPage(browser)
@@ -161,6 +164,18 @@ describe('hybrid plan browser preview', () => {
         expect(await progress.innerText()).toContain('retrieval augmented generation hallucination')
         expect(await dialog.getByRole('button', { name: 'Start research from plan' }).isDisabled()).toBe(true)
         if (capture !== undefined) await page.screenshot({ path: join(capture, 'live-running.png') })
+        const records = await controller.listBackgroundRuns(id)
+        expect(records).toHaveLength(1)
+        const key = { sessionId: id, backgroundRunId: records[0]!.backgroundRunId }
+        await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+        expect((await controller.getBackgroundRun(key)).state).toBe('running')
+        expect(backgroundCancel).not.toHaveBeenCalled()
+        await page.reload({ waitUntil: 'load' })
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        await dialog.getByText('Observing background task', { exact: true }).waitFor()
+        expect(await dialog.innerText()).toContain(key.backgroundRunId)
+        expect(backgroundStart).toHaveBeenCalledTimes(1)
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'background-reopened.png') })
         finishSearch()
         await dialog.getByRole('heading', { name: 'Coverage', exact: true }).waitFor()
         const q6 = dialog.getByRole('region', { name: 'Q6 results for this research run' })
@@ -175,6 +190,11 @@ describe('hybrid plan browser preview', () => {
         expect(await progress.innerText()).toContain('not run')
         expect(await dialog.getByRole('button', { name: 'Download Markdown' }).count()).toBe(0)
         expect(await dialog.getByRole('progressbar').count()).toBe(0)
+        await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        await dialog.getByRole('heading', { name: 'Coverage', exact: true }).waitFor()
+        expect(backgroundStart).toHaveBeenCalledTimes(1)
+        expect(backgroundCancel).not.toHaveBeenCalled()
         if (capture !== undefined) {
           await progress.scrollIntoViewIfNeeded()
           await page.screenshot({ path: join(capture, 'live-settled.png') })

@@ -72,14 +72,17 @@ describe('phase-one lifecycle preview', () => {
     expect(screen.getByText(zh.exp_report_failed)).toBeTruthy()
   })
   it('does not call real plan or run methods, including after a real Session selector changes', () => {
-    const plan = vi.fn(), runStream = vi.fn()
+    const plan = vi.fn(), startBackgroundRun = vi.fn(), listBackgroundRuns = vi.fn()
+    const getBackgroundRun = vi.fn(), watchBackgroundRun = vi.fn(), cancelBackgroundRun = vi.fn()
     const props = (current: string): ResearchEntryProps => {
       const useSessions = (selectState: (s: unknown) => unknown) => selectState({ current, byId: { [current]: { blank: false } } })
-      return { wide: true, t, plan, runStream, useSessions } as ResearchEntryProps
+      return { wide: true, t, plan, startBackgroundRun, listBackgroundRuns,
+        getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, useSessions } as ResearchEntryProps
     }
     const view = render(<ResearchEntry {...props('one')} />); open()
     view.rerender(<ResearchEntry {...props('two')} />)
     expect(screen.getByText(zh.exp_runStatus).nextElementSibling?.textContent).toBe(zh.exp_running)
-    expect(plan).not.toHaveBeenCalled(); expect(runStream).not.toHaveBeenCalled()
+    expect(plan).not.toHaveBeenCalled()
+    expect(startBackgroundRun).not.toHaveBeenCalled(); expect(listBackgroundRuns).not.toHaveBeenCalled()
   })
 })

@@ -8,12 +8,13 @@ import { RunPanel } from '../src/client/RunPanel.tsx'
 import { zh, type RunKey } from '../src/client/run-locales.ts'
 import { liveProjection } from './q6-live.fixture.client.ts'
 import { sampleRun } from './run-sample.ts'
+import { streamRemote, type TestStream } from './background.fixture.client.ts'
 
 const t: ResearchEntryProps['t'] = key => zh[key as RunKey]
 afterEach(cleanup)
-function props(runStream: ResearchEntryProps['runStream']): ResearchEntryProps {
+function props(runStream: TestStream): ResearchEntryProps {
   const result = sampleRun()
-  return { wide: true, t, runStream, plan: async () => ({ researchBriefId: result.retrievalRun.researchBriefId,
+  return { wide: true, t, ...streamRemote(runStream), plan: async () => ({ researchBriefId: result.retrievalRun.researchBriefId,
     topic: 'Real Remote preview', questions: [], searches: [] }),
   useSessions: ((select: (s: unknown) => unknown) => select({ current: result.sessionId,
     byId: { [result.sessionId]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps

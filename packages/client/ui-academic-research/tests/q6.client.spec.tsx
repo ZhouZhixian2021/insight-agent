@@ -20,13 +20,16 @@ describe('Q6 fixed JSON read-only preview', () => {
     expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort())
   })
   it('opens without a Session or Remote request and remains clearly synthetic', () => {
-    const plan = vi.fn(), runStream = vi.fn()
-    render(<ResearchEntry {...({ wide: true, t, plan, runStream,
+    const plan = vi.fn(), startBackgroundRun = vi.fn(), listBackgroundRuns = vi.fn()
+    const getBackgroundRun = vi.fn(), watchBackgroundRun = vi.fn(), cancelBackgroundRun = vi.fn()
+    render(<ResearchEntry {...({ wide: true, t, plan, startBackgroundRun, listBackgroundRuns,
+      getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
       useSessions: (() => undefined) as ResearchEntryProps['useSessions'] } as ResearchEntryProps)} />)
     fireEvent.click(screen.getByRole('button', { name: zh.q6_entry }))
     expect(screen.getByRole('dialog', { name: zh.q6_title })).toBeTruthy()
     expect(screen.getByRole('note').textContent).toContain('固定合成 JSON')
-    expect(plan).not.toHaveBeenCalled(); expect(runStream).not.toHaveBeenCalled()
+    expect(plan).not.toHaveBeenCalled()
+    expect(startBackgroundRun).not.toHaveBeenCalled(); expect(listBackgroundRuns).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: zh.start })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: zh.close }))
     expect(screen.queryByRole('dialog')).toBeNull()

@@ -6,6 +6,7 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { apply, inject } from '../src/client/index.ts'
 import type { ResearchEntryInjected } from '../src/client/ResearchEntry.tsx'
 import { sampleRun } from './run-sample.ts'
+import { initialTask } from './background.fixture.client.ts'
 import { apply as hostApply } from '../src/index.ts'
 
 async function collect<T>(stream: AsyncIterable<T>): Promise<T[]> {
@@ -20,10 +21,12 @@ describe('academic sidebar registration', () => {
     const ctx = new Context()
     try {
       await ctx.plugin(SlotRegistry).await()
-      const remoteRun = vi.fn(async function* () { yield { type: 'result' as const, retrievalRunId: sampleRun().retrievalRun.retrievalRunId, value: sampleRun() } })
-      const remotePlan = vi.fn().mockResolvedValue({ ok: true, value: { topic: 'RAG' } })
-      ctx.provide('remote', { academicResearch: { runStream: remoteRun, plan: remotePlan } })
-      ctx.provide('remote.academicResearch', { runStream: remoteRun, plan: remotePlan })
+      const remoteRun = vi.fn(async function* () { yield initialTask() })
+      const unary = vi.fn().mockResolvedValue({ ok: true, value: initialTask() })
+      const remote = { startBackgroundRun: unary, listBackgroundRuns: unary, getBackgroundRun: unary, cancelBackgroundRun: unary, watchBackgroundRun: remoteRun, plan: vi.fn().mockResolvedValue({ ok: true, value: { topic: 'RAG' } }) }
+      const remotePlan = remote.plan
+      ctx.provide('remote', { academicResearch: remote })
+      ctx.provide('remote.academicResearch', remote)
       ctx.provide('locale', new LocaleRuntime(ctx))
       const slots = ctx.get('slots') as SlotRegistry
       const fiber = ctx.plugin({ inject, apply })
@@ -37,15 +40,25 @@ describe('academic sidebar registration', () => {
       const face = (slots.entries('sidebar.footer.action')[0]!.inject as unknown as () => ResearchEntryInjected)()
       const request = { sessionId: sampleRun().sessionId, researchBriefId: sampleRun().retrievalRun.researchBriefId, synthetic: false }
       const signal = new AbortController().signal
-      expect(await collect(face.runStream(request, signal))).toEqual([{ type: 'result', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, value: sampleRun() }])
-      expect(remoteRun).toHaveBeenCalledWith(request, signal)
+      const key = { sessionId: request.sessionId, backgroundRunId: initialTask().backgroundRunId }
+      expect(await collect(face.watchBackgroundRun(key, signal))).toEqual([initialTask()])
+      expect(remoteRun).toHaveBeenCalledWith(key, signal)
+      await expect(face.startBackgroundRun(request, signal)).resolves.toEqual(initialTask())
+      await expect(face.listBackgroundRuns(request.sessionId)).resolves.toEqual(initialTask())
+      await expect(face.getBackgroundRun(key)).resolves.toEqual(initialTask())
+      await expect(face.cancelBackgroundRun({ ...key, reason: 'user_requested' })).resolves.toEqual(initialTask())
+      for (const call of [() => face.startBackgroundRun(request, signal), () => face.listBackgroundRuns(request.sessionId),
+        () => face.getBackgroundRun(key), () => face.cancelBackgroundRun({ ...key, reason: 'user_requested' })]) {
+        const failure = new Error('denied'); unary.mockResolvedValueOnce({ ok: false, error: failure })
+        await expect(call()).rejects.toBe(failure)
+      }
       await expect(face.plan(request.sessionId)).resolves.toEqual({ topic: 'RAG' })
       expect(remotePlan).toHaveBeenCalledWith(request.sessionId)
       const failure = new Error('server denied')
       remotePlan.mockResolvedValueOnce({ ok: false, error: failure })
       await expect(face.plan(request.sessionId)).rejects.toBe(failure)
       remoteRun.mockImplementationOnce(async function* () { throw failure })
-      await expect(collect(face.runStream(request, signal))).rejects.toBe(failure)
+      await expect(collect(face.watchBackgroundRun(key, signal))).rejects.toBe(failure)
       disposeOwner()
       expect(slots.entries('sidebar.footer.action')).toHaveLength(0)
       slots.register({ name: 'root', children: {
