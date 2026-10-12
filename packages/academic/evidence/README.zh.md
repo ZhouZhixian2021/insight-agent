@@ -93,11 +93,11 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 <a id="incremental-extraction"></a>
 ## 增量抽取
 
-向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。每次调用发送一个原文范围，保留其定位与摘要字符偏移。草稿使用局部 `segmentIndex: 0`；生成器还收到原始片段序号、字符范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
+向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。相邻短段落会打包至 `maximumCharacters` 上限，长段落按重叠额度拆分；每次调用保留各段独立的来源定位和摘要字符偏移。草稿使用本次请求内的局部 `segmentIndex`；生成器还收到各原始来源范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
 
 必需的异步 `onVerified` 保存接口在下一范围发送前收到已核验来源的证据。它负责持久存储；保存失败会停止抽取。已接受记录和卡片条目的身份保留到最终组装结果。重叠的相同证据按来源定位、陈述、逐字引文和问题关联去重。被拒草稿序号保持为回调对应片段中的局部序号。`onFailure` 仅发布信息且隔离异常；返回的失败保留原始错误，包括适配器提供的 Provider 请求 ID。
 
-调用方将可恢复失败分类为 `timeout`、`transport`、`parse_failed` 或 `incomplete_output`。超时、解析和输出不完整恢复在大小允许时只把失败原文范围减半；传输恢复以指数退避重发该范围。`maximumAttempts` 限制每个初始范围的全部发送次数，包括两个子范围。生成器每次调用必须只执行一次模型尝试，不再嵌套分批或重试。耗尽预算或尚未发送的恢复范围进入 `incompleteFragments`；成功的同伴范围仍然可用。未分类失败和取消使调用拒绝，但已经提交的片段保留在保存接口中。
+调用方将可恢复失败分类为 `timeout`、`transport`、`parse_failed` 或 `incomplete_output`。超时、解析和输出不完整恢复只按来源边界拆分失败的打包请求；单个长范围在大小允许时减半。传输恢复以指数退避重发同一请求。`maximumAttempts` 限制每个初始打包请求的全部发送次数，包括两个子范围。生成器每次调用必须只执行一次模型尝试，不再嵌套分批或重试。耗尽预算或尚未发送的恢复范围进入 `incompleteFragments`；成功的同伴范围仍然可用。未分类失败和取消使调用拒绝，但已经提交的片段保留在保存接口中。
 
 库在一篇论文内按顺序发送片段。失败事实提供连续超时／传输尝试次数，并在一个响应通过核验后清零，供工作流临时降低论文并发。调用方负责策略校准、模型超时、范围判断、Session 事件和并发调度。该 API 不会自动在 Academic Controller 中启用；工作流适配器必须选择它，并将这些事实映射到现有运行记录。
 

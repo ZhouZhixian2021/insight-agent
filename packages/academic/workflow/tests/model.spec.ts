@@ -16,6 +16,7 @@ import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearch
 import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages, scopeMessages } from '../src/model-prompt.ts'
+import { createModelFragmentEvidenceGenerator } from '../src/fragment-model.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
   { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
@@ -135,6 +136,44 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it('saves a verified fragment before a later transport failure and retries only that range', async () => {
+    const f = await fixture()
+    const source = { ...f.source, segments: [{ text: `Uses Method X. ${'a'.repeat(3980)}Uses Method X.`,
+      locator: { kind: 'abstract' as const } }] }
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 1) f.adapter.script = [
+        { type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'temporary' } } },
+      ]
+      if (f.adapter.calls.length === 2) f.adapter.script = script
+    }
+    const generate = createModelFragmentEvidenceGenerator(f.ctx, f.session, config, policy)
+    const result = await generate(source, scope)
+    expect(result.scope.status).toBe('included')
+    expect(result.incompleteFragmentCount).toBe(0)
+    expect(f.adapter.calls).toHaveLength(3)
+    const saved = await f.read()
+    const ranges = saved.flatMap(event => event.type === 'academic/evidence-request' && event.data.fragment
+      ? [event.data.fragment] : [])
+    expect(ranges.map(range => range.characterStart)).toEqual([0, 3744, 3744])
+    const verified = saved.filter(event => event.type === 'academic/evidence-fragment-verified')
+    expect(verified).toHaveLength(2)
+    expect(verified[0]?.data.evidence.evidenceRecords).toHaveLength(1)
+    expect(result.evidence.evidenceRecords).toHaveLength(2)
+  })
+  it('stops formal extraction when a verified fragment cannot be durably saved', async () => {
+    const f = await fixture(), draft = draftFixture()
+    const flush = f.ctx.sessions.flush.bind(f.ctx.sessions)
+    vi.spyOn(f.ctx.sessions, 'flush').mockImplementation(async (session) => {
+      if (session.snapshotEvents().at(-1)?.type === 'academic/evidence-fragment-verified') {
+        throw new Error('disk failure')
+      }
+      return flush(session)
+    })
+    await expect(runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters))
+      .rejects.toBeInstanceOf(WorkflowLogError)
+    expect(draft.adapters.fetcher).toHaveBeenCalledOnce()
+    expect(f.adapter.calls).toHaveLength(1)
+  })
   it('excludes a paper before evidence extraction and records only the scope request', async () => {
     const f = await fixture()
     f.adapter.scopeScript = [{ type: 'text-delta', index: 0,
@@ -265,9 +304,10 @@ describe('durable academic model extraction', () => {
     expect(f.adapter.calls).toHaveLength(3)
     const saved = await f.read()
     expect(saved.map(event => event.type)).toEqual(['academic/evidence-request', 'academic/evidence-result',
+      'academic/evidence-request', 'academic/evidence-result', 'academic/evidence-fragment-verified',
       'academic/evidence-request', 'academic/evidence-result',
-      'academic/evidence-request', 'academic/evidence-result',
-      'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])
+      'academic/evidence-request', 'academic/evidence-result', 'academic/evidence-fragment-verified',
+      'academic/synthesis-request', 'academic/synthesis-result'])
     const requests = saved.filter(event => event.type === 'academic/evidence-request')
     expect(new Set(requests.map(event => event.data.source.academicWorkId)).size).toBe(2)
     for (const record of result.report!.evidence) {
@@ -315,22 +355,23 @@ describe('durable academic model extraction', () => {
     expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === 'high')).toBe(true)
   })
-  it('continues the next paper after real model admission pauses an oversized first paper', async () => {
+  it('bounds a long first paper into fragments and continues after its unsupported drafts', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
     const fetch = draft.adapters.fetcher
     draft.adapters.fetcher = async (url, signal) => url.endsWith('/a')
-      ? { url, statusCode: 200, truncated: false, body: { kind: 'html', content: `<article><h2>Methods</h2><p>${'oversized '.repeat(20000)}</p></article>` } }
+      ? { url, statusCode: 200, truncated: false, body: { kind: 'html', content: `<article><h2>Methods</h2><p>${'oversized '.repeat(2000)}</p></article>` } }
       : fetch(url, signal)
     const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
-    expect(result.papers.map(paper => paper.status)).toEqual(['paused', 'extracted'])
+    expect(result.papers.map(paper => paper.status)).toEqual(['extraction_failed', 'extracted'])
     expect(result.report?.evaluation.status).toBe('blocked')
     expect(result.report?.claims).toHaveLength(0)
     expect(result.report?.markdown).toContain('证据有限的研究草稿')
     expect(result.synthesis.status).toBe('partial_success')
-    expect(f.adapter.calls).toHaveLength(2)
-    expect((await f.read()).filter(event => event.type === 'academic/evidence-result').map(event => event.data.status))
-      .toEqual(['skipped', 'validated', 'validated'])
+    const ranges = (await f.read()).flatMap(event => event.type === 'academic/evidence-request'
+      && event.data.phase === 'evidence' && event.data.fragment ? [event.data.fragment] : [])
+    expect(ranges.length).toBeGreaterThan(1)
+    expect(ranges.every(range => range.characterEnd - range.characterStart <= 4000)).toBe(true)
   })
   it('stops the model-backed pass on a result checkpoint failure before fetching the next paper', async () => {
     const f = await fixture(), draft = draftFixture()

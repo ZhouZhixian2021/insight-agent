@@ -369,7 +369,8 @@ export async function runResearchDraft(
           rejectedEvidenceDrafts: observation.rejectedEvidenceDrafts, startedAt: extractionStartedAt })
       }
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
-        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal, observeEvidence)
+        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal, observeEvidence,
+        adapters.verifiedGenerator)
       observedExtractionSettlements += 1
       observedCompletedPapers += 1
       const evidenceRecords = result.status === 'extracted' || result.status === 'partially_extracted'

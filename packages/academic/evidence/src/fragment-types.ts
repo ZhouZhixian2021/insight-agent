@@ -14,12 +14,18 @@ export interface EvidenceFragmentPolicy {
   readonly initialRetryDelayMs: number
 }
 
-/** Original parsed-source UTF-16 offsets; fragments use zero-based local draft segmentIndex 0. */
-export interface EvidenceFragmentRange {
-  readonly fragmentIndex: number
+/** One original parsed-source UTF-16 range inside a model-visible fragment. */
+export interface EvidenceFragmentSourceRange {
   readonly segmentIndex: number
   readonly characterStart: number
   readonly characterEnd: number
+}
+
+/** Original source offsets; draft segmentIndex addresses the fragment's ordered sourceRanges. */
+export interface EvidenceFragmentRange extends EvidenceFragmentSourceRange {
+  readonly fragmentIndex: number
+  /** Present when one request packs adjacent source segments; the first entry matches the top-level range. */
+  readonly sourceRanges?: readonly EvidenceFragmentSourceRange[]
 }
 
 /** Paper identity and exact source range for one dispatched extraction attempt. */

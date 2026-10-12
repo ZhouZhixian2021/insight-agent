@@ -196,6 +196,26 @@ function createEvidenceBatches(
   return batches
 }
 
+/** Reuse the existing admission context bound when the formal evidence path uses fragments.
+ * @param request Complete parsed segments and approved focus questions.
+ * @param tokenLimit Optional estimated input bound used by the prior whole-paper path.
+ * @param overlapCharacters Repeated source characters at split boundaries.
+ * @param estimate Estimate the token cost of framed model messages.
+ * @returns The first admission batch and whether it contains the whole source.
+ */
+export function firstScopeBatch(
+  request: EvidenceGenerationRequest,
+  tokenLimit: number | undefined,
+  overlapCharacters: number,
+  estimate: (messages: ReturnType<typeof evidenceMessages>) => number,
+): { readonly segments: readonly EvidenceContentSegment[]; readonly complete: boolean } {
+  const batches = createEvidenceBatches(request, tokenLimit, overlapCharacters, estimate)
+  const first = batches[0]
+  if (first === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
+  return { segments: first.map(piece => piece.segment),
+    complete: batches.length === 1 && first.length === request.segments.length }
+}
+
 function splitPiece(
   piece: EvidenceSegmentPiece,
   tokenLimit: number,

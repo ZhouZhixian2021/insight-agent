@@ -34,6 +34,47 @@ function options(overrides: Partial<EvidenceFragmentOptions> = {}): EvidenceFrag
 }
 
 describe('extractEvidenceInFragments', () => {
+  it('packs adjacent short paragraphs and keeps each quoted paragraph locator', async () => {
+    const input = { ...source(), segments: ['alpha', 'bravo', 'charlie'].map((text, index) => ({
+      text, locator: { kind: 'paragraph' as const, paragraphNumber: index + 1 },
+    })) }
+    const calls: number[] = []
+    const onVerified = vi.fn<EvidenceFragmentOptions['onVerified']>(async () => {})
+    const opts = options({ generator: async (request) => {
+      calls.push(request.segments.length)
+      return request.segments.map((segment, segmentIndex) => ({ ...draft(segment.text), segmentIndex }))
+    }, onVerified })
+    const result = await extractEvidenceInFragments(input, { ...opts,
+      policy: { ...opts.policy, maximumCharacters: 11 } })
+    expect(calls).toEqual([2, 1])
+    expect(onVerified.mock.calls[0]?.[0].sourceRanges).toEqual([
+      { segmentIndex: 0, characterStart: 0, characterEnd: 5 },
+      { segmentIndex: 1, characterStart: 0, characterEnd: 5 },
+    ])
+    expect(result.evidence.sourceLocators.map(locator => locator.kind === 'paragraph' ? locator.paragraphNumber : null))
+      .toEqual([1, 2, 3])
+    expect(result.evidence.evidenceRecords).toHaveLength(3)
+  })
+
+  it('splits a failed packed request by source segment without losing successful siblings', async () => {
+    const input = { ...source(), segments: ['abc', 'def', 'ghi'].map((text, index) => ({
+      text, locator: { kind: 'paragraph' as const, paragraphNumber: index + 1 },
+    })) }
+    const calls: number[] = []
+    const opts = options({ generator: async (request) => {
+      calls.push(request.segments.length)
+      if (request.segments.length === 3) throw new EvidenceError('output incomplete', 'INCOMPLETE_OUTPUT')
+      return request.segments.map((segment, segmentIndex) => ({ ...draft(segment.text), segmentIndex }))
+    } })
+    const result = await extractEvidenceInFragments(input, { ...opts,
+      policy: { ...opts.policy, maximumCharacters: 12 } })
+    expect(calls).toEqual([3, 2, 1])
+    expect(result.failures).toHaveLength(1)
+    expect(result.incompleteFragments).toEqual([])
+    expect(result.evidence.sourceLocators.map(locator => locator.kind === 'paragraph' ? locator.paragraphNumber : null))
+      .toEqual([1, 2, 3])
+  })
+
   it('waits for verified-fragment persistence before dispatching the next source range', async () => {
     const input = source()
     let release: (() => void) | undefined

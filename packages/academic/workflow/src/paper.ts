@@ -1,7 +1,8 @@
 /** Paper-level handoff using existing academic parsing and extraction interfaces. */
 import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
-import { EvidenceError, extractEvidenceFromContent, type EvidenceExtractionInput } from '@deepseek-ai/dsh-academic-evidence'
-import type { PaperEvidenceGenerator, PaperScopeDecision, PaperScopeRules } from './model-types.ts'
+import { EvidenceError, extractEvidenceFromContent,
+  type EvidenceExtractionInput, type EvidenceExtractionResult } from '@deepseek-ai/dsh-academic-evidence'
+import type { PaperEvidenceGenerator, PaperScopeDecision, PaperScopeRules, PaperVerifiedEvidenceGenerator } from './model-types.ts'
 import type { PaperEvidenceProgressObserver } from './model-types.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
 import type { PaperEvidenceResult, PaperPause } from './types.ts'
@@ -17,6 +18,7 @@ export type { PaperEvidenceResult, PaperPause } from './types.ts'
  * @param scope Approved natural-language inclusion and exclusion rules.
  * @param signal Optional cancellation forwarded to extraction; cancellation rejects.
  * @param onProgress Optional A-owned model and source-validation progress observer.
+ * @param verifiedGenerator Optional formal route supplying already verified and saved fragment evidence.
  * @returns Extracted evidence and its consistent version, or a located paper pause for caller retention.
  * @throws Propagates cancellation, logging and extraction errors; input-budget excess returns a pause.
  */
@@ -28,6 +30,7 @@ export async function extractPaperEvidence(
   scope: PaperScopeRules,
   signal?: AbortSignal,
   onProgress?: PaperEvidenceProgressObserver,
+  verifiedGenerator?: PaperVerifiedEvidenceGenerator,
 ): Promise<PaperEvidenceResult> {
   signal?.throwIfAborted()
   const pause = (reason: PaperPause['reason']): PaperEvidenceResult => ({
@@ -51,12 +54,20 @@ export async function extractPaperEvidence(
   try {
     let decision: PaperScopeDecision | undefined
     let incompleteBatchCount = 0
-    const evidence = await extractEvidenceFromContent(parsed, async (request) => {
-      const response = await generator(request, parsed, scope, onProgress)
+    let evidence: EvidenceExtractionResult
+    if (verifiedGenerator === undefined) {
+      evidence = await extractEvidenceFromContent(parsed, async (request) => {
+        const response = await generator(request, parsed, scope, onProgress)
+        decision = response.scope
+        incompleteBatchCount = response.incompleteBatchCount ?? 0
+        return response.evidence
+      }, signal)
+    } else {
+      const response = await verifiedGenerator(parsed, scope, onProgress, signal)
       decision = response.scope
-      incompleteBatchCount = response.incompleteBatchCount ?? 0
-      return response.evidence
-    }, signal)
+      incompleteBatchCount = response.incompleteFragmentCount
+      evidence = response.evidence
+    }
     reportPaperEvidenceProgress(onProgress, { operation: 'evidence_validate', batchIndex: null, batchCount: null,
       attempt: null, maximumAttempts: null, lastFailure: null,
       validatedEvidenceRecords: evidence.evidenceRecords.length, rejectedEvidenceDrafts: evidence.rejectedDrafts.length })

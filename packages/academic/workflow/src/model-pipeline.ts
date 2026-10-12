@@ -3,6 +3,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import { createModelEvidenceGenerator } from './model.ts'
+import { createModelFragmentEvidenceGenerator } from './fragment-model.ts'
 import { createModelSynthesisGenerator } from './synthesis-model.ts'
 import { runResearchDraft } from './pipeline.ts'
 import type { AcademicModelPolicies } from './model-types.ts'
@@ -32,6 +33,7 @@ export function runModelResearchDraft(
 ): Promise<DraftPipelineResult> {
   return runResearchDraft(input, {
     ...adapters, generator: createModelEvidenceGenerator(ctx, session, config, policies.evidence),
+    verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence),
     synthesize: createModelSynthesisGenerator(ctx, session, config, policies.synthesis),
   }, signal)
 }

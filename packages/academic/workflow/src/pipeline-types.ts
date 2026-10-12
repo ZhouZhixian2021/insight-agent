@@ -6,7 +6,7 @@ import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicWebFetcher } from '@deepseek-ai/dsh-academic-evidence'
-import type { PaperEvidenceGenerator } from './model-types.ts'
+import type { PaperEvidenceGenerator, PaperVerifiedEvidenceGenerator } from './model-types.ts'
 import type { ResearchReport } from '@deepseek-ai/dsh-academic-report'
 import type { AnalysisResult } from '@deepseek-ai/dsh-academic-analysis'
 import type { PaperEvidenceResult } from './types.ts'
@@ -98,6 +98,8 @@ export interface DraftPipelineAdapters {
   ) => Promise<ReplenishedCandidates>
   readonly fetcher: AcademicWebFetcher
   readonly generator: PaperEvidenceGenerator
+  /** Formal model route may supply incrementally verified and saved fragment evidence. */
+  readonly verifiedGenerator?: PaperVerifiedEvidenceGenerator
   /** Current UTC ISO time for run settlement, acquisition, and report evaluation. */
   readonly now: () => string
   /** Observe complete run-local progress snapshots; subscriber failures do not interrupt research. */
