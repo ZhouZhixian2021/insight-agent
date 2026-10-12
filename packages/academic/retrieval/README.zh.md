@@ -31,7 +31,13 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 ### 元数据初筛
 
-`assessPlannedCandidates(plan, brief, round, criteria, fulltextFacts)` 从规范版本的学术摘要、关键词和标题生成判断。调用方提供 `CandidateScreeningCriteria`，并为每个规范 `WorkVersionId` 提供全文解析事实。每个概念是一组已审核别名；各概念独立匹配。`matchedQuestions` 只记录学术元数据完整命中的研究问题概念，并用于计算问题匹配分。Q5 调度器可另外用已批准查询与研究问题的精确关联，为具备主题相关元数据线索的候选安排批次。这样，中文研究问题仍可关联由审核过的英文查询发现的论文；来源路由不增加问题匹配分，也不证明证据支持。问题词项应包含研究主题词。主题相关性取主题或单个问题的最高概念命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各自使用对应线索；缺失线索记零分。贡献类型只是词项提示，自然语言规则保持 `null`，等待证据验证。`sourceQuality` 衡量作者、发表场所、日期、标识符、摘要及关键词的可用性，不代表科学质量。时效性使用计划指定的日期口径，以及可选的 `asOfYear`/`recencyWindowYears` 配对。已审核发表时间缺少任一边界时应同时省略两者，时效分记零，不虚构参考时段。
+新评估返回必带 `screening` 的 `DetailedCandidateAssessment`。参与计分的问题、方法、证据类型和贡献信号逐字引用规范标题或学术摘要。完整的词项问题及贡献匹配必须在同一个引用来源中成立。关键词只提供 `surfaceKeywordHits`，不增加这些分项。词项范围判断保持 `unknown`；缺少摘要不能证明偏题。排序器拒绝没有对应引文的详细评分；有原文支持且针对当前 Plan 的 `off_topic` 判断触发硬排除。没有 `screening` 的旧评估保持原有解释。
+
+可选的第六个参数 `reviewedScreenings` 是按成果 ID 索引的外部审核详情，用于替代词项线索。`parseCandidateScreening(text, title, abstract, keywords, questions)` 接受符合 `CandidateScreeningDetails` 的完整 JSON，核对逐字引文与批准问题引用，并拒绝额外字段。审核过的方法和证据标签必须对应批准概念的别名；比例统计不同概念，不累计重复信号。语义审核可把英文摘要关联到批准的中文问题，不改变查询路由。调用方负责审核质量；引文证明来源，不证明解释正确。
+
+外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion: 1`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
+
+调用方提供 `CandidateScreeningCriteria` 和每个规范版本的全文解析事实。问题概念应包含研究主题词。主题相关性取主题或单个问题的最高命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各用对应线索；缺失线索记零分。自然语言规则保持 `null`，等待全文验证。`sourceQuality` 衡量书目信息完整度，不代表科学质量。时效性使用 Plan 指定的日期口径及可选的 `asOfYear`/`recencyWindowYears` 配对；已审核发表时间缺少任一边界时同时省略两者。Q5 单独按批准查询推导发现路由，不增加问题匹配分。
 
 ```text
 const assessments = assessPlannedCandidates(plan, brief, round, reviewedCriteria, fulltextFacts)
@@ -52,7 +58,7 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)只根据保留的元数据计算分数；已命中主题的候选可使用已批准查询与问题的精确关联作为问题路由回退。[排序器](src/rank.ts)应用硬过滤、按计划策略加权判断比例，并生成兼顾多样性的优先级队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
+[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)从规范标题和摘要生成带引文的线索，或消费外部审核结果。[排序器](src/rank.ts)校验引文与评分的对应关系，应用硬过滤和批准权重，并生成兼顾多样性的队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
 
 </details>
 

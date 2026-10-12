@@ -1,0 +1,12 @@
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    persona: 'Run run_candidate_screening_fixture once and reply SCREENING_DONE.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: academic-candidate-screening-fixture
+      name: './fixture.ts'

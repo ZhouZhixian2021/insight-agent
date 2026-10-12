@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-candidate-screening
+profile: sdk
+composition: sdk-academic-candidate-screening
+recording: authored
+header:
+  class: academic-candidate-screening
+  pin: true

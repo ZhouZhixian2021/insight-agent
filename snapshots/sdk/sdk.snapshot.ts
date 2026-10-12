@@ -130,6 +130,7 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
     expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] },
   },
   'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
+  'academic-candidate-screening': { runtimeProfile: 'sdk-minimal', expectedTools: { run_candidate_screening_fixture: [], str_replace_editor: ['command', 'path'] } },
   'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] } },
   'academic-limited-draft': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
   'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
