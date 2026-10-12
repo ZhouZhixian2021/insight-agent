@@ -3649,7 +3649,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicQ6CandidateAssessmentView',
-    declaration: 'export interface AcademicQ6CandidateAssessmentView {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly string[];\n}',
+    declaration: 'export interface AcademicQ6CandidateAssessmentView {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly screening?: CandidateScreeningDetails;\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly string[];\n}',
   },
   {
     name: 'AcademicQ6CandidateEvaluationView',
@@ -4101,7 +4101,15 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CandidateHardFilterReasonCode',
-    declaration: 'export type CandidateHardFilterReasonCode = \'work_retracted\' | \'version_retracted\' | \'preprint_not_allowed\' | \'work_type_not_included\' | \'before_publication_window\' | \'after_publication_window\' | \'publication_date_unknown\' | \'required_term_missing\' | \'excluded_term_matched\' | \'inclusion_rule_not_met\' | \'exclusion_rule_matched\';',
+    declaration: 'export type CandidateHardFilterReasonCode = \'work_retracted\' | \'version_retracted\' | \'preprint_not_allowed\' | \'work_type_not_included\' | \'before_publication_window\' | \'after_publication_window\' | \'publication_date_unknown\' | \'required_term_missing\' | \'excluded_term_matched\' | \'inclusion_rule_not_met\' | \'exclusion_rule_matched\' | \'off_topic\';',
+  },
+  {
+    name: 'CandidateMetadataQuote',
+    declaration: 'export interface CandidateMetadataQuote {\n    readonly source: \'title\' | \'abstract\';\n    readonly text: string;\n}',
+  },
+  {
+    name: 'CandidateMetadataSignal',
+    declaration: 'export type CandidateMetadataSignal = {\n    readonly kind: \'question\';\n    readonly question: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'method\' | \'evidence_type\';\n    readonly label: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'contribution\';\n    readonly classification: Exclude<CandidateClassification, \'background\' | \'irrelevant\'>;\n    readonly quote: CandidateMetadataQuote;\n};',
   },
   {
     name: 'CandidatePriority',
@@ -4120,6 +4128,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface CandidateRankingPolicy {\n    readonly schemaVersion: 1;\n    readonly weights: CandidateScoreWeights;\n    readonly thresholds: CandidatePriorityThresholds;\n}',
   },
   {
+    name: 'CandidateScopeDecision',
+    declaration: 'export type CandidateScopeDecision = {\n    readonly status: \'potentially_relevant\';\n    readonly reason: string;\n} | {\n    readonly status: \'off_topic\';\n    readonly reason: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
+  },
+  {
     name: 'CandidateScoreBreakdown',
     declaration: 'export interface CandidateScoreBreakdown extends CandidateScoreValues {\n    readonly total: number;\n}',
   },
@@ -4130,6 +4142,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CandidateScoreWeights',
     declaration: 'export type CandidateScoreWeights = CandidateScoreValues;',
+  },
+  {
+    name: 'CandidateScreeningDetails',
+    declaration: 'export interface CandidateScreeningDetails {\n    readonly schemaVersion: 1;\n    readonly signals: readonly CandidateMetadataSignal[];\n    readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[];\n    readonly uncertainties: readonly string[];\n    readonly scope: CandidateScopeDecision;\n}',
+  },
+  {
+    name: 'CandidateSurfaceKeywordHit',
+    declaration: 'export interface CandidateSurfaceKeywordHit {\n    readonly term: string;\n    readonly source: \'title\' | \'abstract\' | \'keywords\';\n    readonly text: string;\n}',
   },
   {
     name: 'CitationExpansionSeed',

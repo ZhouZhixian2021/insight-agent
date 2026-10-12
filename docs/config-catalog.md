@@ -327,7 +327,7 @@ export interface Config {
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
-  /** Total model attempts per paper. Output-limit, connection, and timeout failures may retry. Defaults to 2. */
+  /** Attempts per model input; a locally timed-out evidence input may split into two recovery inputs. Defaults to 2. */
   readonly extractionMaxAttempts?: number
   /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
   readonly extractionRetryInitialDelayMs?: number
@@ -335,7 +335,7 @@ export interface Config {
   readonly extractionBatchMaxInputTokens?: number
   /** Repeated source characters at adjacent long-segment boundaries. Defaults to 512. */
   readonly extractionBatchOverlapCharacters?: number
-  /** Maximum elapsed time for one evidence model attempt. Defaults to 120,000 ms. */
+  /** Maximum elapsed time for one scope or evidence model attempt. Defaults to 150,000 ms. */
   readonly extractionAttemptTimeoutMs?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
@@ -356,7 +356,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts:43`](../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/api/academic-research-controller/src/index.ts:45`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

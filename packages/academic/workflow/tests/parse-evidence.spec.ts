@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAcademicWorkId, createWorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import { extractEvidenceFromContent, type EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
-import { parseEvidenceDrafts, parsePaperModelResponse } from '../src/index.ts'
+import { parseEvidenceDrafts, parseFocusedEvidence, parsePaperModelResponse, parseScopeDecision } from '../src/index.ts'
 
 const available = <T>(value: T) => ({ status: 'available' as const, value })
 const absent = { status: 'unknown' as const, reason: 'Not specified in the supplied segment.' }
@@ -35,6 +35,21 @@ function itemReply(item: Record<string, unknown>): string {
 }
 
 describe('model evidence JSON', () => {
+  it('preserves insufficient context as a distinct scope decision', () => {
+    expect(parseScopeDecision('{"status":"needs_more_context","reason":"The method is not in the supplied text."}'))
+      .toEqual({ status: 'needs_more_context', reason: 'The method is not in the supplied text.' })
+    expect(() => parseScopeDecision('{"status":"excluded","reason":""}'))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' }))
+  })
+  it('turns a compact verified-excerpt proposal into a six-section card draft', () => {
+    const text = JSON.stringify({ evidence: [{ segmentIndex: 0, questionIndexes: [0],
+      sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', section: 'methods' }] })
+    expect(parseFocusedEvidence(text)).toEqual([{ segmentIndex: 0, questionIndexes: [0],
+      sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', cardItems: [{ section: 'methods',
+        statement: 'Uses Method X.', methodName: { status: 'not_extracted' }, methodRole: { status: 'not_extracted' } }] }])
+    expect(() => parseFocusedEvidence(text.replace('Uses Method X.', 'Invented').replace('"methods"', '"other"')))
+      .toThrow(expect.objectContaining({ code: 'EVIDENCE_INVALID_MODEL_OUTPUT' }))
+  })
   it('returns a scope decision and all six card sections using the existing B request interface', () => {
     expect(parsePaperModelResponse(response(drafts))).toEqual({ scope: included, evidence: drafts })
     expect(parseEvidenceDrafts(response(drafts))).toEqual(drafts)

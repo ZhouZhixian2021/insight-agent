@@ -360,6 +360,11 @@ export function normalizeSessionLog(
     if ((record.type === 'assistant/message' || record.type === 'assistant/attempt'
       || record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result')
       && record.data !== null && typeof record.data === 'object') {
+      if (record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result') {
+        const data = record.data as Record<string, unknown>
+        if (typeof data.elapsedMs === 'number') data.elapsedMs = 0
+        if (typeof data.firstContentElapsedMs === 'number') data.firstContentElapsedMs = 0
+      }
       const stream = (record.data as { stream?: unknown }).stream
       if (Array.isArray(stream)) {
         for (const member of stream) {

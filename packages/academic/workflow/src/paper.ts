@@ -65,6 +65,7 @@ export async function extractPaperEvidence(
         workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
         reason: decision.reason } }
     }
+    if (decision?.status === 'needs_more_context') return pause('scope_needs_more_context')
     const status = evidence.evidenceRecords.length === 0 ? 'extraction_failed'
       : evidence.rejectedDrafts.length > 0 || incompleteBatchCount > 0 ? 'partially_extracted' : 'extracted'
     return { status, version: current, evidence }

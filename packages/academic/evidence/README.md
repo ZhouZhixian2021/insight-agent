@@ -37,7 +37,7 @@ const source = await fetchAcademicFullText({
 const result = await extractEvidenceFromContent(source, generator, signal)
 ```
 
-Call `extractEvidenceFromContent()` directly when the workflow already has verified, locatable paper segments. The generator receives the extraction instruction, focus questions, locatable segments, and cancellation signal; it returns typed drafts after validating any external model output.
+Call `extractEvidenceFromContent()` directly when the workflow already has verified, locatable paper segments. The generator receives an instruction to select explicitly supported facts, exact excerpts and one of six card sections, plus focus questions, locatable segments and a cancellation signal; it returns typed drafts after validating any external model output. The caller may mark unextracted card attributes `not_extracted`.
 
 ```text
 const result = await extractEvidenceFromContent({

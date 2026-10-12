@@ -64,7 +64,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 ## 模型回答校验
 
-`parsePaperModelResponse(text)` 接收一个包含范围决定、原因和最多六项证据的 JSON 对象；每项必须携带非空且互不重复、从零开始的 `questionIndexes`，抽取阶段把它们映射回获批关注问题原文，并逐条拒绝越界关联。`parseEvidenceDrafts(text)` 返回其中的 EvidenceDraft 值。校验要求被排除论文的证据数组为空，并在返回任何草稿前检查数量限制、六类卡片、必填字段、枚举和 Availability 值。接受空证据和空 cardItems；条目超限、未知字段、编造身份、failed 可用性及格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。错误指出字段位置，不复制模型回答内容。
+`parseScopeDecision(text)` 独立校验 `included`、`excluded` 或 `needs_more_context` 及其理由。`parseFocusedEvidence(text)` 校验最多六条精简证据、逐字摘录建议、问题索引和六分区之一，并把分区特有字段标为 `not_extracted` 后构造卡片条目。抽取阶段把问题索引映射回获批问题，并逐条拒绝越界关联。未知字段、编造身份和格式错误抛出代码为 EVIDENCE_INVALID_MODEL_OUTPUT 的 EvidenceError。仍导出的 `parsePaperModelResponse(text)` 与 `parseEvidenceDrafts(text)` 可供提交合并 JSON 的调用方使用；会话模型生成器使用独立解析器。错误指出字段位置，不复制模型回答内容。
 
 模型没有生产方生成的真实失败 ID，因此拒绝 failed 可用性；缺失信息仍可使用 unknown、not_applicable 和 not_extracted。段落索引范围和原文摘录检查继续由 B 负责。解析本身不验证语义支持、流式输出是否完整或输入预算；调用方必须在解析前拒绝未完整结束的模型输出，并自行持久记录原始回答。该函数不调用模型，也不记录 Session。
 
@@ -72,7 +72,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 论文处理结果区分 `extracted`、`partially_extracted` 与 `extraction_failed`。部分抽取成功论文的合格记录携带原有来源信息参与分析，被拒草稿不会进入卡片或报告引用。全部草稿被拒的论文仍保留处理结果，但不计入实际纳入论文。每篇受影响论文记一次 `extract_evidence` 失败操作，不按被拒条目数重复计数；逐条序号和原因保留在 `evidence.rejectedDrafts`。覆盖限制与报告限制披露保留和拒绝数量。这不会增加模型重试，也不放宽整份 JSON 的结构校验；JSON 的 `validated` 状态与逐字原文核验不同。
 
-将 `createModelEvidenceGenerator(ctx, session, config, policy)` 绑定到具有活动持久化写入器的 Session，并显式传入 `LlmCallConfig` 和正数 `maxAttempts`。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。`inputBatchTokenLimit` 按完整包装输入的估算值切分有序来源片段；单个过大片段按 `inputBatchOverlapCharacters` 重叠切分，局部片段序号在来源核验前映射回原始序号。`attemptTimeoutMs` 限制每次发送的准备与流式接收时间。输出上限和配置允许的瞬时故障可以重试；工具调用、非法 JSON、不支持的内容、准入失败和外部取消不会重试。调用方选择模型路由和全部部署限制。
+将 `createModelEvidenceGenerator(ctx, session, config, policy)` 绑定到具有活动持久化写入器的 Session，并显式传入 `LlmCallConfig` 和正数 `maxAttempts`。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。生成器先用首个有序证据批次判断范围；排除会停止抽取，材料不足会暂停论文，不计作排除。`inputBatchTokenLimit` 按完整证据输入估算值切分有序来源片段；单个过大片段按 `inputBatchOverlapCharacters` 重叠切分，局部片段序号在来源核验前映射回原始序号。`attemptTimeoutMs` 限制每次范围判断或证据尝试。输出上限和模型提供方报告的瞬时故障可在各操作内重试。若本地证据尝试超过时限且 `maxAttempts` 大于一，生成器把该批次替换为两个更小的来源输入，不原样重试超时输入，也不再次拆分；工具调用、非法 JSON、不支持的内容、准入失败和外部取消不会重试。调用方选择模型路由和全部部署限制。
 
 返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
@@ -90,7 +90,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 #### What the model sees
 
-`createModelEvidenceGenerator()` 将 B 的指令、批准的纳入和排除规则、范围决定与六栏 JSON 返回要求、研究问题及全部有序正文/定位片段作为无工具请求发送。程序持有的来源 Provider 和来源 URL 随正文片段一同发送，范围审核可据此确认已有的官方来源或稳定标识，不要求正文再次写出该标识；这些元数据不能支撑研究结论。模型先记录全文是否符合范围规则及原因；被纳入论文只选择直接回答研究问题的证据，总数最多六条，以一个研究问题为主要依据的证据最多三条，并避免穷举整篇论文。数据集、基准分数、硬件、训练时长及常规超参数只有在直接回答研究问题时才可纳入。请求数据来自不可变的 academic/evidence-request 事件；academic/evidence-result 保留无损压缩流、提供方给出的用量以及 validated/failed/cancelled/skipped 状态。validated 仅代表 JSON 校验通过。这些仅用于记录的事件不进入主对话历史。
+`createModelEvidenceGenerator()` 在任何证据请求前发送一次无工具范围判断。范围判断接收获批纳入和排除规则、程序持有的来源 Provider 与 URL，以及首个有序文本批次；`sourceComplete` 标明输入是否完整，只返回决定和理由。纳入论文随后把 B 的指令、研究问题及有序正文/定位批次送入不含范围规则的证据请求。证据输出最多六条直接回答，每条包含逐字摘录及一个卡片分区；程序在来源核验前把未抽取的分区字段标为 `not_extracted`。来源元数据可证明官方来源或稳定标识，但不能支撑研究结论。两阶段都使用由 `phase` 区分的不可变 `academic/evidence-request` 和 `academic/evidence-result` 记录；没有 `phase` 的历史记录仍表示合并指令。结果保留无损流、已提供的用量、尝试耗时、首段内容延迟及粗粒度失败阶段；这些事实不能定位故障的具体网络跳。`validated` 仅代表 JSON 校验通过；仅用于记录的事件不进入主对话历史。
 
 #### Token effect
 
@@ -115,6 +115,8 @@ DSH 现有消息估算器计算完整包装后的输入。启用分批后，每�
 不修改模型缓存策略。
 
 ## Known Limitations and Deferred Work
+
+- 论文超出配置的输入上限时，范围判断只读取首个证据批次。模型可以返回 `needs_more_context`，使论文暂停待审；程序不会自动补取后续片段。对部分文本返回 `included`，不证明未读章节也满足规则。精简证据草稿会填写卡片分区和陈述，但分区特有属性保留为 `not_extracted`。
 
 - 该库提供有界明确查询草稿流水线、单篇交接和显式启用的模型适配器。`@deepseek-ai/dsh-academic-workflow/recovery` 类型入口固定归一化恢复契约，根入口导出的 `reconstructAcademicResearchRecoveryState()` 则从一份完整且有序的 Session 日志执行纯 A-S2 重建。A-S3 会在每个排序批次开始前和结算后持久化可安全序列化为 JSON 的可执行检查点。Session 后端接受 `resumeRetrievalRunId`，取得 Session 写入句柄，校验检查点与已批准计划及已提交批次历史一致，跳过检索和筛选，保留原运行身份，不重复已结算批次，并把一个未结算批次作为整体重新执行。没有检查点的历史未完成运行返回 `candidate_state_missing`。恢复后的保留候选池不会开启新的证据缺口检索轮次，因为来源运行时解析缓存尚未持久化。自适应查询规划和最终语义审核仍留待后续；来源 Provider 可以在自身配置上限内重试临时传输失败。它不证明文件的学术身份，也不判断格式差异或内容改版。
 

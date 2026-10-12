@@ -23,9 +23,8 @@ import type {
 const EXTRACTION_INSTRUCTION = [
   'Extract only claims explicitly supported by the supplied paper segments.',
   'Every verbatimExcerpt must be an exact non-empty substring of its segment.',
-  'Create card items only when the cited excerpt directly supports the statement.',
-  'Classify items into researchQuestions, methods, datasets, metrics, findings, or limitations.',
-  'Do not infer missing values; represent them with the shared Availability states.',
+  'Classify each supported fact into researchQuestions, methods, datasets, metrics, findings, or limitations.',
+  'Do not infer missing values from absent text.',
 ].join(' ')
 
 type CardSections = {
