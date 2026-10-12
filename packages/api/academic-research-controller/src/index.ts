@@ -49,7 +49,7 @@ export interface Config {
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
-  /** Total model attempts per paper. Output-limit, connection, and timeout failures may retry. Defaults to 2. */
+  /** Attempts per model input; a locally timed-out evidence input may split into two recovery inputs. Defaults to 2. */
   readonly extractionMaxAttempts?: number
   /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
   readonly extractionRetryInitialDelayMs?: number
@@ -57,7 +57,7 @@ export interface Config {
   readonly extractionBatchMaxInputTokens?: number
   /** Repeated source characters at adjacent long-segment boundaries. Defaults to 512. */
   readonly extractionBatchOverlapCharacters?: number
-  /** Maximum elapsed time for one evidence model attempt. Defaults to 120,000 ms. */
+  /** Maximum elapsed time for one scope or evidence model attempt. Defaults to 150,000 ms. */
   readonly extractionAttemptTimeoutMs?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
@@ -89,7 +89,7 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(10_000),
     extractionBatchMaxInputTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(12_000),
     extractionBatchOverlapCharacters: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(512),
-    extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(120_000),
+    extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
     synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
     initialCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
@@ -127,7 +127,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionRetryInitialDelayMs = config.extractionRetryInitialDelayMs ?? 10_000
     this.extractionBatchMaxInputTokens = config.extractionBatchMaxInputTokens ?? 12_000
     this.extractionBatchOverlapCharacters = config.extractionBatchOverlapCharacters ?? 512
-    this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 120_000
+    this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 150_000
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
     this.candidateBatchPolicy = {

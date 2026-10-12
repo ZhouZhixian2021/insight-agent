@@ -63,8 +63,10 @@ it.skipIf(!process.env.DEEPSEEK_API_KEY)('associates real paper evidence with it
     }
     await using reader = await ctx.sessionPersistence.open(session.id, 'read')
     const events = await reader.read()
-    expect(events.filter(event => event.type === 'academic/evidence-request')).toHaveLength(1)
-    expect(events.filter(event => event.type === 'academic/evidence-result')).toHaveLength(1)
+    expect(events.filter(event => event.type === 'academic/evidence-request').map(event => event.data.phase))
+      .toEqual(['scope', 'evidence'])
+    expect(events.filter(event => event.type === 'academic/evidence-result').map(event => event.data.phase))
+      .toEqual(['scope', 'evidence'])
   } finally {
     try { await ctx.fiber.dispose() } finally {
       vi.unstubAllEnvs()

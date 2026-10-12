@@ -25,25 +25,76 @@ export function parseEvidenceDrafts(text: string): readonly EvidenceDraft[] {
  * @throws EvidenceError with EVIDENCE_INVALID_MODEL_OUTPUT for invalid JSON or fields.
  */
 export function parsePaperModelResponse(text: string): PaperModelResponse {
-  let value: unknown
-  try {
-    value = JSON.parse(text)
-  } catch {
-    // JSON.parse is the only operation here; syntax failures expose no response content.
-    return invalid('$', 'expected JSON')
-  }
+  const value = parseJson(text)
   const response = object(value, '$', ['scope', 'evidence'])
   const scope = scopeDecision(response.scope, '$.scope')
   const drafts = array(response.evidence, '$.evidence', draft)
   if (drafts.length > MAX_EVIDENCE_DRAFTS) invalid('$', `expected at most ${MAX_EVIDENCE_DRAFTS} entries`)
-  if (scope.status === 'excluded' && drafts.length > 0) invalid('$.evidence', 'expected no evidence for an excluded paper')
+  if (scope.status !== 'included' && drafts.length > 0) invalid('$.evidence', 'expected no evidence for a non-included paper')
   return { scope, evidence: drafts }
+}
+
+/**
+ * Validate one paper-level admission answer without interpreting source text as instructions.
+ * @param text - complete model response.
+ * @returns included, excluded, or insufficient-context decision.
+ */
+export function parseScopeDecision(text: string): PaperScopeDecision {
+  return scopeDecision(parseJson(text), '$')
+}
+
+/**
+ * Validate focused model facts and construct conservative six-section card items.
+ * Missing section details remain not_extracted; source matching is owned by the evidence package.
+ * @param text - complete model response.
+ * @returns evidence drafts for source verification.
+ */
+export function parseFocusedEvidence(text: string): readonly EvidenceDraft[] {
+  const response = object(parseJson(text), '$', ['evidence'])
+  const drafts = array(response.evidence, '$.evidence', (value, path): EvidenceDraft => {
+    const item = object(value, path, ['segmentIndex', 'questionIndexes', 'sourcedStatement', 'verbatimExcerpt', 'section'])
+    const index = item.segmentIndex
+    if (typeof index !== 'number' || !Number.isSafeInteger(index) || index < 0) {
+      invalid(`${path}.segmentIndex`, 'expected non-negative safe integer')
+    }
+    const section = choice('researchQuestions', 'methods', 'datasets', 'metrics', 'findings', 'limitations')(
+      item.section, `${path}.section`)
+    const statement = nonempty(item.sourcedStatement, `${path}.sourcedStatement`)
+    const missing = { status: 'not_extracted' as const }
+    let cardItem: EvidenceCardItemDraft
+    switch (section) {
+      case 'researchQuestions': cardItem = { section, statement, questionType: missing }; break
+      case 'methods': cardItem = { section, statement, methodName: missing, methodRole: missing }; break
+      case 'datasets': cardItem = { section, statement, datasetName: missing, version: missing, split: missing,
+        scale: missing }; break
+      case 'metrics': cardItem = { section, statement, metricName: missing, value: missing, unit: missing,
+        direction: missing, evaluationContext: missing }; break
+      case 'findings': cardItem = { section, statement, findingType: missing, conditions: missing }; break
+      case 'limitations': cardItem = { section, statement, limitationType: missing }; break
+    }
+    return { segmentIndex: index, questionIndexes: questionIndexes(item.questionIndexes, `${path}.questionIndexes`),
+      sourcedStatement: statement, verbatimExcerpt: nonempty(item.verbatimExcerpt, `${path}.verbatimExcerpt`),
+      cardItems: [cardItem] }
+  })
+  if (drafts.length > MAX_EVIDENCE_DRAFTS) invalid('$.evidence', `expected at most ${MAX_EVIDENCE_DRAFTS} entries`)
+  return drafts
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    // JSON.parse is the only operation here; syntax failures expose no response content.
+    return invalid('$', 'expected JSON')
+  }
 }
 
 function scopeDecision(value: unknown, path: string): PaperScopeDecision {
   const item = object(value, path, ['status', 'reason'])
   const reason = nonempty(item.reason, `${path}.reason`)
-  if (item.status === 'included' || item.status === 'excluded') return { status: item.status, reason }
+  if (item.status === 'included' || item.status === 'excluded' || item.status === 'needs_more_context') {
+    return { status: item.status, reason }
+  }
   return invalid(`${path}.status`, 'invalid enum value')
 }
 

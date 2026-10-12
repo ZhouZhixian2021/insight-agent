@@ -15,7 +15,7 @@ import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearch
   type PaperEvidenceGenerator, type PaperEvidenceProgressObservation } from '../src/index.ts'
 import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
-import { evidenceMessages } from '../src/model-prompt.ts'
+import { evidenceMessages, scopeMessages } from '../src/model-prompt.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
   { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
@@ -30,8 +30,10 @@ const scope = { inclusionRules: [], exclusionRules: [] }
 
 class Adapter extends LlmAdapter {
   calls: GenerateOptions[] = []
+  scopeCalls: GenerateOptions[] = []
   contextWindow: number | undefined = 10000
   script = script
+  scopeScript?: StreamChunk[]
   synthesisScript?: StreamChunk[]
   synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
@@ -47,8 +49,11 @@ class Adapter extends LlmAdapter {
   }
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     await this.beforeDispatch?.()
-    this.calls.push(options)
-    if (this.waitForAbort) {
+    const prompt = options.messages[0]?.content[0]
+    const admission = prompt?.type === 'text' && prompt.text.startsWith('Decide whether the paper satisfies')
+    if (admission) this.scopeCalls.push(options)
+    else this.calls.push(options)
+    if (this.waitForAbort && !admission) {
       await new Promise<void>((_resolve, reject) => {
         const signal = options.signal
         if (signal === undefined) {
@@ -65,16 +70,33 @@ class Adapter extends LlmAdapter {
         signal.addEventListener('abort', () => { rejectSignal() }, { once: true })
       })
     }
-    const prompt = options.messages[0]?.content[0]
     const synthesis = prompt?.type === 'text' && prompt.text.includes('INPUT_JSON\n')
       ? JSON.stringify(this.synthesisTransform === undefined
         ? synthesisFixture(JSON.parse(prompt.text.split('INPUT_JSON\n')[1]!) as AcademicSynthesisInput)
         : this.synthesisTransform(synthesisFixture(JSON.parse(prompt.text.split('INPUT_JSON\n')[1]!) as AcademicSynthesisInput)),
       (key, value: unknown) => key === 'rejectedStatements' ? undefined : value) : null
-    const chunks: StreamChunk[] = synthesis === null ? this.script : this.synthesisScript
+    const chunks: StreamChunk[] = admission
+      ? this.scopeScript ?? [{ type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) },
+        { type: 'finish', reason: { kind: 'stop' } }]
+      : synthesis === null ? compactEvidenceScript(this.script) : this.synthesisScript
       ?? [{ type: 'text-delta', index: 0, text: synthesis }, { type: 'finish', reason: { kind: 'stop' } }]
-    for (const chunk of chunks) { yield chunk; this.afterChunk?.() }
+    for (const chunk of chunks) { yield chunk; if (!admission) this.afterChunk?.() }
   }
+}
+
+function compactEvidenceScript(chunks: StreamChunk[]): StreamChunk[] {
+  return chunks.map((chunk) => {
+    if (chunk.type !== 'text-delta') return chunk
+    let value: { scope?: unknown; evidence?: Array<Record<string, unknown>> }
+    try { value = JSON.parse(chunk.text) as typeof value } catch { return chunk }
+    if (!Array.isArray(value.evidence) || value.scope === undefined) return chunk
+    return { ...chunk, text: JSON.stringify({ evidence: value.evidence.map(draft => ({
+      segmentIndex: draft.segmentIndex, questionIndexes: draft.questionIndexes,
+      sourcedStatement: draft.sourcedStatement, verbatimExcerpt: draft.verbatimExcerpt,
+      section: Array.isArray(draft.cardItems) && typeof (draft.cardItems as unknown[])[0] === 'object'
+        ? ((draft.cardItems as Array<{ section?: unknown }>)[0]?.section ?? 'findings') : 'findings',
+    })) }) }
+  })
 }
 const cleanups: Array<() => Promise<void>> = []
 afterEach(async () => {
@@ -113,6 +135,27 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it('excludes a paper before evidence extraction and records only the scope request', async () => {
+    const f = await fixture()
+    f.adapter.scopeScript = [{ type: 'text-delta', index: 0,
+      text: JSON.stringify({ status: 'excluded', reason: 'Outside the approved topic.' }) },
+    { type: 'finish', reason: { kind: 'stop' } }]
+    const result = await extractPaperEvidence(f.version, f.source, false, f.generate, scope)
+    expect(result).toMatchObject({ status: 'excluded', exclusion: { reason: 'Outside the approved topic.' } })
+    expect(f.adapter.scopeCalls).toHaveLength(1)
+    expect(f.adapter.calls).toHaveLength(0)
+    expect((await f.read()).flatMap(event => event.type === 'academic/evidence-request'
+      || event.type === 'academic/evidence-result' ? [event.data.phase] : [])).toEqual(['scope', 'scope'])
+  })
+  it('pauses a paper without evidence when the supplied text cannot establish scope', async () => {
+    const f = await fixture()
+    f.adapter.scopeScript = [{ type: 'text-delta', index: 0,
+      text: JSON.stringify({ status: 'needs_more_context', reason: 'The abstract does not establish the study design.' }) },
+    { type: 'finish', reason: { kind: 'stop' } }]
+    expect(await extractPaperEvidence(f.version, f.source, false, f.generate, scope))
+      .toMatchObject({ status: 'paused', pause: { reason: 'scope_needs_more_context' } })
+    expect(f.adapter.calls).toHaveLength(0)
+  })
   it('persists overlapping paper calls with distinct request-result and source identities', async () => {
     const f = await fixture()
     let release!: () => void
@@ -128,14 +171,16 @@ describe('durable academic model extraction', () => {
     const rows = await f.read()
     const requests = rows.filter(row => row.type === 'academic/evidence-request')
     const results = rows.filter(row => row.type === 'academic/evidence-result')
-    expect(requests).toHaveLength(3)
-    expect(results).toHaveLength(3)
+    expect(requests).toHaveLength(6)
+    expect(results).toHaveLength(6)
+    expect(requests.filter(row => row.data.phase === 'scope')).toHaveLength(3)
+    expect(requests.filter(row => row.data.phase === 'evidence')).toHaveLength(3)
     for (const result of results) {
       const request = requests.find(row => row.seq === result.data.requestSeq)
       expect(request?.data.source).toEqual(result.data.source)
       expect(result.data.status).toBe('validated')
     }
-    expect(new Set(results.map(row => row.data.requestSeq)).size).toBe(3)
+    expect(new Set(results.map(row => row.data.requestSeq)).size).toBe(6)
   })
   it.each(['partial', 'all_rejected'] as const)('persists %s synthesis and only reports accepted paragraphs', async (mode) => {
     const f = await fixture(), draft = draftFixture()
@@ -188,24 +233,20 @@ describe('durable academic model extraction', () => {
   })
   it('scopes the model request to a bounded answer for the supplied focus questions', async () => {
     const f = await fixture()
-    const block = evidenceMessages(f.request, scope, {
+    const source = {
       ...f.source, sourceProvider: 'arxiv', sourceUrl: 'https://arxiv.org/html/2309.15217v2',
-    })[0]?.content[0]
+    }
+    const block = evidenceMessages(f.request)[0]?.content[0]
     if (block?.type !== 'text') throw new Error('missing model-visible evidence instructions')
     const visible = block.text
-    expect(visible).toContain('select only evidence that directly answers the supplied')
-    expect(visible).toContain(`Return at most 6 entries total and
-at most 3 entries primarily supporting any one focus question.`)
-    expect(visible).toContain('Do not catalogue every extractable statement.')
-    expect(visible).toContain('Do not enumerate candidate excerpts, build a quota plan')
-    expect(visible).toContain('Prefer the\nsingle strongest entry for a focus question')
-    expect(visible).toContain('Use one card item in the most appropriate section')
-    expect(visible).toContain('Preserve whitespace, Unicode characters, punctuation')
-    expect(visible).toContain('Use programOwnedSource to evaluate requirements for a stable identifier')
-    expect(visible).toContain('"programOwnedSource":{"sourceProvider":"arxiv","sourceUrl":"https://arxiv.org/html/2309.15217v2"}')
+    expect(visible).toContain('Extract only facts directly answering the focus questions')
+    expect(visible).toContain('Return at most 6 entries')
+    expect(visible).not.toContain('inclusionRules')
     expect(visible).toContain('"segments":[{"segmentIndex":0,"text":"Uses Method X."')
-    expect(visible).toContain('"inclusionRules":[]')
     expect(visible).toContain('"focusQuestions":["Which method?"]')
+    const admission = scopeMessages(f.request, scope, source, true)[0]?.content[0]
+    expect(admission?.type === 'text' ? admission.text : '').toContain('"inclusionRules":[]')
+    expect(admission?.type === 'text' ? admission.text : '').toContain('"programOwnedSource":{"sourceProvider":"arxiv"')
   })
   it('runs two parsed papers through the model and B evidence into C evaluated draft', async () => {
     const f = await fixture(), draft = draftFixture()
@@ -224,6 +265,8 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(f.adapter.calls).toHaveLength(3)
     const saved = await f.read()
     expect(saved.map(event => event.type)).toEqual(['academic/evidence-request', 'academic/evidence-result',
+      'academic/evidence-request', 'academic/evidence-result',
+      'academic/evidence-request', 'academic/evidence-result',
       'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])
     const requests = saved.filter(event => event.type === 'academic/evidence-request')
     expect(new Set(requests.map(event => event.data.source.academicWorkId)).size).toBe(2)
@@ -287,7 +330,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(result.synthesis.status).toBe('partial_success')
     expect(f.adapter.calls).toHaveLength(2)
     expect((await f.read()).filter(event => event.type === 'academic/evidence-result').map(event => event.data.status))
-      .toEqual(['skipped', 'validated'])
+      .toEqual(['skipped', 'validated', 'validated'])
   })
   it('stops the model-backed pass on a result checkpoint failure before fetching the next paper', async () => {
     const f = await fixture(), draft = draftFixture()
@@ -299,7 +342,8 @@ at most 3 entries primarily supporting any one focus question.`)
     await expect(runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters))
       .rejects.toBeInstanceOf(WorkflowLogError)
     expect(draft.adapters.fetcher).toHaveBeenCalledOnce()
-    expect(f.adapter.calls).toHaveLength(1)
+    expect(f.adapter.scopeCalls).toHaveLength(1)
+    expect(f.adapter.calls).toHaveLength(0)
   })
   it('persists the exact request before dispatch and the lossless stream before returning evidence', async () => {
     const f = await fixture()
@@ -316,7 +360,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(extracted.evidence.sourceLocators[0]).toMatchObject({
       workVersionId: f.version.workVersionId, contentHash: f.source.contentHash,
     })
-    const [request, response] = await f.read()
+    const [, , request, response] = await f.read()
     if (request?.type !== 'academic/evidence-request' || response?.type !== 'academic/evidence-result') throw new Error('missing records')
     expect(f.adapter.calls[0]?.messages).toEqual(request.data.messages)
     expect(f.adapter.calls[0]?.model).toBe(request.data.config.model)
@@ -324,7 +368,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(request.data.source.contentHash).toBe(f.source.contentHash)
     expect(response.data.requestSeq).toBe(request.seq)
     expect(response.data.status).toBe('validated')
-    expect(expandAssistantStream(response.data.stream).map(entry => entry.chunk)).toEqual(script)
+    expect(expandAssistantStream(response.data.stream).map(entry => entry.chunk)).toEqual(compactEvidenceScript(script))
     expect(response.data.usage).toEqual({ inputTokens: 100, outputTokens: 30 })
     expect(f.session.deriveMessages()).toEqual([])
     const files = await readdir(f.root, { recursive: true })
@@ -337,11 +381,13 @@ at most 3 entries primarily supporting any one focus question.`)
   })
   it('counts framing and output reserve at the exact admission boundary', async () => {
     const f = await fixture()
-    const tokens = evidenceMessages(f.request, scope, {
+    const source = {
       academicWorkId: f.source.academicWorkId, workVersionId: f.source.workVersionId,
       contentHash: f.source.contentHash, sourceProvider: f.source.sourceProvider, sourceUrl: f.source.sourceUrl,
       retrievedAt: f.source.retrievedAt, extractionMethod: f.source.extractionMethod,
-    }).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
+    }
+    const tokens = Math.max(...[evidenceMessages(f.request), scopeMessages(f.request, scope, source, true)]
+      .map(messages => messages.reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
     f.adapter.contextWindow = tokens + config.maxTokens
     await expect(f.generate(f.request, f.source, scope)).resolves.toMatchObject({ scope: { status: 'included' }, evidence: { length: 1 } })
     f.adapter.contextWindow--
@@ -365,12 +411,13 @@ at most 3 entries primarily supporting any one focus question.`)
     const source = { ...f.source, segments }
     const request = { ...f.request, segments }
     const oneSegmentTokens = Math.max(...segments.map(segment => evidenceMessages(
-      { ...request, segments: [segment] }, scope, source,
+      { ...request, segments: [segment] },
     ).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
       { maxAttempts: 1, inputBatchTokenLimit: oneSegmentTokens })
     const progress: PaperEvidenceProgressObservation[] = []
     const response = await generate(request, source, scope, observation => progress.push(observation))
+    expect(f.adapter.scopeCalls).toHaveLength(1)
     expect(f.adapter.calls).toHaveLength(2)
     expect(response.evidence.map(draft => draft.segmentIndex)).toEqual([0, 1])
     expect(progress.filter(observation => observation.attempt === null).map(observation => ({
@@ -400,8 +447,8 @@ at most 3 entries primarily supporting any one focus question.`)
     f.adapter.afterChunk = () => { if (f.adapter.calls.length === 1) f.adapter.script = response(second) }
     const generate: PaperEvidenceGenerator = (request, parsed, rules, onProgress) => {
       const inputBatchTokenLimit = evidenceMessages({ ...request,
-        segments: [{ ...segments[0]!, text: segments[0]!.text.slice(0, 100) }] },
-      rules, parsed).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
+        segments: [{ ...segments[0]!, text: segments[0]!.text.slice(0, 100) }] })
+        .reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)
       return createModelEvidenceGenerator(f.ctx, f.session, config,
         { maxAttempts: 1, inputBatchTokenLimit, inputBatchOverlapCharacters: 20 })(request, parsed, rules, onProgress)
     }
@@ -417,7 +464,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(result.evidence.rejectedDrafts).toHaveLength(rejected)
     expect(result.evidence.questionLinks.map(link => link.question)).toEqual(questions)
     const recorded = (await f.read()).filter(event => event.type === 'academic/evidence-result')
-    expect(recorded).toHaveLength(2)
+    expect(recorded).toHaveLength(3)
   })
   it('keeps evidence from successful batches when another batch fails', async () => {
     const f = await fixture()
@@ -428,7 +475,7 @@ at most 3 entries primarily supporting any one focus question.`)
     const source = { ...f.source, segments }
     const request = { ...f.request, segments }
     const oneSegmentTokens = Math.max(...segments.map(segment => evidenceMessages(
-      { ...request, segments: [segment] }, scope, source,
+      { ...request, segments: [segment] },
     ).reduce((sum, message) => sum + f.ctx.tokenMeter.estimateMessage(message), 0)))
     f.adapter.script = [{ type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'batch failed' } } }]
     f.adapter.afterChunk = () => { if (f.adapter.calls.length === 1) f.adapter.script = script }
@@ -452,6 +499,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect((await f.read()).at(-1)?.data).toMatchObject({
       status: 'failed', errorCode: 'EVIDENCE_MODEL_TIMEOUT',
       finish: { kind: 'error', failure: { code: 'TIMEOUT' } },
+      failurePhase: 'before_content', elapsedMs: expect.any(Number) as number,
     })
     expect(progress.at(-1)).toMatchObject({ operation: 'evidence_extract', attempt: 1,
       maximumAttempts: 1, lastFailure: 'timeout' })
@@ -482,6 +530,7 @@ at most 3 entries primarily supporting any one focus question.`)
     expect(f.adapter.calls).toHaveLength(2)
     const attempts = (await f.read()).flatMap((event) => {
       if (event.type !== 'academic/evidence-request' && event.type !== 'academic/evidence-result') return []
+      if (event.data.phase !== 'evidence') return []
       return [{ type: event.type, attempt: event.data.attempt, maxAttempts: event.data.maxAttempts }]
     })
     expect(attempts).toEqual([
@@ -507,15 +556,108 @@ at most 3 entries primarily supporting any one focus question.`)
       scope: { status: 'included' }, evidence: [{ sourcedStatement: 'Uses Method X.' }],
     })
     expect(f.adapter.calls).toHaveLength(2)
-    const events = (await f.read()).filter(event => event.type === 'academic/evidence-request'
-      || event.type === 'academic/evidence-result')
-    expect(events.map(event => ({ type: event.type, attempt: event.data.attempt, status: 'status' in event.data ? event.data.status : undefined })))
-      .toEqual([
-        { type: 'academic/evidence-request', attempt: 1, status: undefined },
-        { type: 'academic/evidence-result', attempt: 1, status: 'failed' },
-        { type: 'academic/evidence-request', attempt: 2, status: undefined },
-        { type: 'academic/evidence-result', attempt: 2, status: 'validated' },
-      ])
+    const events = await f.read()
+    const attempts = events.flatMap((event) => {
+      if (event.type !== 'academic/evidence-request' && event.type !== 'academic/evidence-result') return []
+      if (event.data.phase !== 'evidence') return []
+      return [{ type: event.type, attempt: event.data.attempt,
+        status: 'status' in event.data ? event.data.status : undefined }]
+    })
+    expect(attempts).toEqual([
+      { type: 'academic/evidence-request', attempt: 1, status: undefined },
+      { type: 'academic/evidence-result', attempt: 1, status: 'failed' },
+      { type: 'academic/evidence-request', attempt: 2, status: undefined },
+      { type: 'academic/evidence-result', attempt: 2, status: 'validated' },
+    ])
+    const failed = events.find(event => event.type === 'academic/evidence-result'
+      && event.data.phase === 'evidence' && event.data.status === 'failed')
+    expect(failed?.data).toMatchObject({ failurePhase: 'before_content', elapsedMs: expect.any(Number) as number })
+  })
+  it('splits a timed-out evidence batch instead of repeating the same full input', async () => {
+    const f = await fixture()
+    const segments = [
+      { text: 'Uses Method X. First segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: 'Uses Method X. Second segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ]
+    const request = { ...f.request, segments }
+    const source = { ...f.source, segments }
+    f.adapter.waitForAbort = true
+    f.adapter.beforeDispatch = async () => { if (f.adapter.calls.length > 0) f.adapter.waitForAbort = false }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, attemptTimeoutMs: 100,
+      transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 0 } })
+    const progress: PaperEvidenceProgressObservation[] = []
+    const result = await generate(request, source, scope, observation => progress.push(observation))
+    expect(result).toMatchObject({ scope: { status: 'included' },
+      evidence: [{ segmentIndex: 0 }, { segmentIndex: 1 }] })
+    expect(f.adapter.calls).toHaveLength(3)
+    const texts = f.adapter.calls.map(call => call.messages[0]?.content[0])
+    expect(texts.every(part => part?.type === 'text')).toBe(true)
+    expect(texts[0]?.type === 'text' ? texts[0].text : '').toContain('First segment.')
+    expect(texts[0]?.type === 'text' ? texts[0].text : '').toContain('Second segment.')
+    expect(texts[1]?.type === 'text' ? texts[1].text : '').not.toContain('Second segment.')
+    expect(texts[2]?.type === 'text' ? texts[2].text : '').not.toContain('First segment.')
+    expect(progress).toContainEqual(expect.objectContaining({ operation: 'waiting_retry', batchCount: 2,
+      lastFailure: 'timeout' }))
+    expect((await f.read()).filter(event => event.type === 'academic/evidence-result').map(event => event.data.status))
+      .toEqual(['validated', 'failed', 'validated', 'validated'])
+  })
+  it('recovers a timed-out single segment with shorter exact source slices', async () => {
+    const f = await fixture()
+    const sourceText = 'Uses Method X. ' + 'a'.repeat(100) + ' Second half.'
+    const segments = [{ text: sourceText, locator: { kind: 'paragraph' as const, paragraphNumber: 1 } }]
+    const request = { ...f.request, segments }
+    f.adapter.waitForAbort = true
+    f.adapter.beforeDispatch = async () => { if (f.adapter.calls.length > 0) f.adapter.waitForAbort = false }
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 2) f.adapter.script = [
+        { type: 'text-delta', index: 0, text: JSON.stringify({ evidence: [] }) },
+        { type: 'finish', reason: { kind: 'stop' } },
+      ]
+    }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 2, attemptTimeoutMs: 100, inputBatchOverlapCharacters: 8 })
+    const result = await generate(request, { ...f.source, segments }, scope)
+    expect(result.evidence).toMatchObject([{ segmentIndex: 0, verbatimExcerpt: 'Uses Method X.' }])
+    expect(f.adapter.calls).toHaveLength(3)
+    const parts = f.adapter.calls.slice(1).map(call => call.messages[0]?.content[0])
+    const submitted = parts.map((part) => {
+      if (part?.type !== 'text') throw new Error('missing recovery input')
+      return (JSON.parse(part.text.slice(part.text.lastIndexOf('\n{') + 1)) as { segments: Array<{ text: string }> }).segments[0]!.text
+    })
+    expect(submitted.every(text => text.length < sourceText.length && sourceText.includes(text))).toBe(true)
+    expect(submitted[0]?.slice(-8)).toBe(submitted[1]?.slice(0, 8))
+  })
+  it('keeps successful recovery evidence when the other smaller batch fails', async () => {
+    const f = await fixture()
+    const segments = [
+      { text: 'Uses Method X. First segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: 'Uses Method X. Second segment.', locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ]
+    f.adapter.waitForAbort = true
+    f.adapter.beforeDispatch = async () => { if (f.adapter.calls.length > 0) f.adapter.waitForAbort = false }
+    f.adapter.afterChunk = () => {
+      if (f.adapter.calls.length === 2) f.adapter.script = [
+        { type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'unavailable' } } },
+      ]
+    }
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, attemptTimeoutMs: 100,
+      transientRetry: { failureCodes: ['TIMEOUT'], initialDelayMs: 0 } })
+    await expect(generate({ ...f.request, segments }, { ...f.source, segments }, scope)).resolves.toMatchObject({
+      incompleteBatchCount: 1, evidence: [{ segmentIndex: 0 }],
+    })
+    expect(f.adapter.calls).toHaveLength(3)
+  })
+  it('stops after one timeout split when both smaller inputs also time out', async () => {
+    const f = await fixture()
+    f.adapter.waitForAbort = true
+    const segments = [{ ...f.source.segments[0]!, text: 'Uses Method X. ' + 'a'.repeat(80) }]
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 2, attemptTimeoutMs: 100 })
+    await expect(generate({ ...f.request, segments }, { ...f.source, segments }, scope))
+      .rejects.toMatchObject({ code: 'EVIDENCE_MODEL_TIMEOUT' })
+    expect(f.adapter.calls).toHaveLength(3)
+    expect((await f.read()).filter(event => event.type === 'academic/evidence-result').map(event => event.data.status))
+      .toEqual(['validated', 'failed', 'failed', 'failed'])
   })
   it.each(['TRANSPORT', 'TIMEOUT'] as const)('retries final synthesis after %s without repeating paper work', async (code) => {
     const f = await fixture(), draft = draftFixture()
@@ -730,7 +872,8 @@ at most 3 entries primarily supporting any one focus question.`)
       return flush(session)
     })
     await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)
-    expect(f.adapter.calls).toHaveLength(phase === 'request' ? 0 : 1)
+    expect(f.adapter.calls).toHaveLength(0)
+    expect(f.adapter.scopeCalls).toHaveLength(phase === 'request' ? 0 : 1)
   })
   it('refuses a persistence listener with no active writer', async () => {
     const f = await fixture(false)

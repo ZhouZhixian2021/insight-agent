@@ -26,6 +26,11 @@ class SnapshotAdapter extends LlmAdapter {
   }
   override async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
     const message = _options.messages[0]?.content[0]
+    if (message?.type === 'text' && message.text.startsWith('Decide whether the paper satisfies')) {
+      yield { type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+      return
+    }
     if (message?.type === 'text' && message.text.includes('INPUT_JSON\n')) {
       if (this.#invalidSynthesisFirst) {
         const output = JSON.parse(readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8')) as {
@@ -50,14 +55,12 @@ class SnapshotAdapter extends LlmAdapter {
       return
     }
     yield { type: 'text-delta', index: 0, text: JSON.stringify({
-      scope: { status: 'included', reason: 'No approved rule excludes the paper.' }, evidence: [{ segmentIndex: 0,
+      evidence: [{ segmentIndex: 0,
         questionIndexes: [0],
         sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
-        cardItems: [{ section: 'methods', statement: 'Uses Method X.',
-          methodName: { status: 'available', value: 'Method X' },
-          methodRole: { status: 'available', value: 'proposed' } }] },
-      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', cardItems: [] },
-      { segmentIndex: 0, questionIndexes: [1], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', cardItems: [] }] }) }
+        section: 'methods' },
+      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', section: 'findings' },
+      { segmentIndex: 0, questionIndexes: [1], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', section: 'methods' }] }) }
     yield { type: 'finish', reason: { kind: 'stop' } }
   }
 }
@@ -116,8 +119,10 @@ export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; l
       assert.ok(report.markdown.includes('部分回答'))
       await using reader = await ctx.sessionPersistence.open(agent.session.id, 'read')
       const saved = await reader.read()
-      assert.equal(saved.filter(event => event.type === 'academic/evidence-request').length, 1)
-      assert.equal(saved.filter(event => event.type === 'academic/evidence-result').length, 1)
+      assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-request').map(event => event.data.phase),
+        ['scope', 'evidence'])
+      assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-result').map(event => event.data.phase),
+        ['scope', 'evidence'])
       assert.equal(saved.filter(event => event.type === 'academic/synthesis-request').length, 2)
       assert.equal(saved.filter(event => event.type === 'academic/synthesis-result').length, 2)
       if (config.invalidSynthesisFirst === true) {

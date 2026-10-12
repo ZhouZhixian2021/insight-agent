@@ -244,7 +244,7 @@ async function harness(options: {
     extractionRetryInitialDelayMs: 10_000,
     extractionBatchMaxInputTokens: 12_000,
     extractionBatchOverlapCharacters: 512,
-    extractionAttemptTimeoutMs: 120_000,
+    extractionAttemptTimeoutMs: 150_000,
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
   })
@@ -572,7 +572,7 @@ describe('AcademicResearchController', () => {
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
       modelPolicies: {
         evidence: { maxAttempts: 2, retryOutputLimit: true,
-          inputBatchTokenLimit: 12_000, inputBatchOverlapCharacters: 512, attemptTimeoutMs: 120_000,
+          inputBatchTokenLimit: 12_000, inputBatchOverlapCharacters: 512, attemptTimeoutMs: 150_000,
           transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 10_000 } },
         synthesis: { maxAttempts: 3, retryOutputLimit: true,
           transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 1_000 } },

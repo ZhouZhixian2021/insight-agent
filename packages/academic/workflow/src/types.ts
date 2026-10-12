@@ -12,7 +12,7 @@ export interface PaperPause {
   /** Acquisition time supplied by the parser's caller, not a new wall-clock reading. */
   readonly retrievedAt: string
   readonly reason: 'identity_mismatch' | 'empty_hash' | 'hash_conflict' | 'history_requires_review' | 'hash_unavailable'
-    | 'input_too_large'
+    | 'input_too_large' | 'scope_needs_more_context'
 }
 
 /** One fetched paper excluded by the approved natural-language scope rules. */

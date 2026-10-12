@@ -19,6 +19,8 @@ export class ModelOutputLimitError extends EvidenceError {
 /** Operation-owned callbacks keep evidence and synthesis provenance separate. */
 export interface LoggedModelRequest<T> {
   readonly messages: Message[]
+  /** A local attempt deadline may be recovered by the caller with smaller input instead of repeating this request. */
+  readonly retryLocalTimeout?: boolean
   /** Smaller request used once after output-limit exhaustion; omitted callers repeat their original request. */
   readonly outputLimitRetryMessages?: Message[]
   /** Build a complete replacement request after structural validation rejects a settled response. */
@@ -99,6 +101,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
     let useOutputLimitRecovery = false
     let validationRecoveryMessages: Message[] | undefined
     for (let attempt = 1; attempt <= policy.maxAttempts; attempt++) {
+      const started = performance.now()
       const timeoutController = policy.attemptTimeoutMs === undefined ? undefined : new AbortController()
       const timeout = timeoutController === undefined ? undefined : setTimeout(() => {
         timeoutController.abort(new DOMException('Academic model attempt timed out.', 'TimeoutError'))
@@ -114,8 +117,12 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       let errorCode: string | undefined
       let failure: unknown
       let result: T | undefined
+      let firstContentElapsedMs: number | undefined
+      let stage: 'prepare' | 'admission' | 'stream' | 'parse' = 'prepare'
+      let failurePhase: EvidenceModelResult['failurePhase']
       try {
         const prepared = await llm.prepareCall(selectedConfig, attemptSignal)
+        stage = 'admission'
         attemptSignal?.throwIfAborted()
         const contextWindow = prepared.context?.contextWindow
         const outputTokens = prepared.config.maxTokens
@@ -138,14 +145,19 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
           status = 'skipped'
           throw new EvidenceError('Paper exceeds the estimated model input budget.', 'EVIDENCE_INPUT_TOO_LARGE')
         }
+        stage = 'stream'
         // The Session's immutable event supplies exactly the config and messages dispatched.
         for await (const chunk of prepared.stream(Object.freeze({ ...logged.data.config, messages: logged.data.messages,
           sessionId: session.id, ...attemptSignal === undefined ? {} : { signal: attemptSignal } }))) {
+          if (firstContentElapsedMs === undefined && (chunk.type === 'text-delta' || chunk.type === 'reasoning-delta')) {
+            firstContentElapsedMs = Math.round(performance.now() - started)
+          }
           accumulator.push({ time: Date.now(), chunk })
           assembler.push(chunk)
           if (chunk.type === 'finish') finish = chunk.reason
           attemptSignal?.throwIfAborted()
         }
+        stage = 'parse'
         attemptSignal?.throwIfAborted()
         if (finish?.kind !== 'stop') {
           if (finish?.kind === 'max-tokens') throw new ModelOutputLimitError()
@@ -160,6 +172,8 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         status = 'validated'
       } catch (error: unknown) {
         if (error instanceof WorkflowLogError) throw error
+        failurePhase = stage === 'stream' || (stage === 'parse' && finish?.kind === 'error')
+          ? firstContentElapsedMs === undefined ? 'before_content' : 'after_content' : stage
         if (timeoutController?.signal.aborted === true && request.signal?.aborted !== true) {
           finish = { kind: 'error', failure: { code: 'TIMEOUT', message: 'Academic model attempt timed out.' } }
           failure = new EvidenceError('Academic model attempt timed out.', 'EVIDENCE_MODEL_TIMEOUT', { cause: error })
@@ -174,6 +188,9 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       }
       await record(() => request.appendResult({ requestSeq, attempt,
         maxAttempts: policy.maxAttempts, status, stream: accumulator.snapshot(),
+        elapsedMs: Math.round(performance.now() - started),
+        ...firstContentElapsedMs === undefined ? {} : { firstContentElapsedMs },
+        ...failurePhase === undefined ? {} : { failurePhase },
         ...finish === undefined ? {} : { finish }, ...assembler.usage === undefined ? {} : { usage: assembler.usage },
         ...errorCode === undefined ? {} : { errorCode } }))
       const settled: LoggedModelAttemptObservation = { phase: 'settled', attempt, maximumAttempts: policy.maxAttempts,
@@ -188,6 +205,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT') ? finish.failure.code : undefined
       const retryTransient = transientFailureCode !== undefined
         && transientRetry?.failureCodes.includes(transientFailureCode) === true
+        && (request.retryLocalTimeout !== false || timeoutController?.signal.aborted !== true)
       const nextValidationRecovery = policy.retryInvalidOutput === true
         && errorCode === 'SYNTHESIS_INVALID_MODEL_OUTPUT' && finish?.kind === 'stop'
         ? request.invalidOutputRetryMessages?.(failure, useOutputLimitRecovery) : undefined

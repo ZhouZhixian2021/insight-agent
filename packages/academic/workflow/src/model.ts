@@ -4,15 +4,15 @@ import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { EvidenceContentSegment, EvidenceDraft, EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
-import { parsePaperModelResponse } from './parse-evidence.ts'
-import { evidenceMessages } from './model-prompt.ts'
+import { parseFocusedEvidence, parseScopeDecision } from './parse-evidence.ts'
+import { evidenceMessages, scopeMessages } from './model-prompt.ts'
 import { createLoggedModelRunner } from './model-call.ts'
 import type { LoggedModelAttemptObservation } from './model-call.ts'
 import { WorkflowLogError } from './model-errors.ts'
 import { MAX_EVIDENCE_DRAFTS } from './model-limits.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
-import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperEvidenceGenerator, PaperModelResponse,
-  PaperScopeRules } from './model-types.ts'
+import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperEvidenceGenerator,
+  PaperScopeDecision } from './model-types.ts'
 import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
 
 interface EvidenceSegmentPiece {
@@ -25,13 +25,14 @@ interface EvidenceSegmentPiece {
  * @param ctx DSH model, token-meter and persistence services.
  * @param session Live Session with an active durable writer.
  * @param config Explicit model route and generation controls.
- * @param policy Bounded recovery; only output-limit exhaustion is retried.
+ * @param policy Bounded recovery; timed-out evidence batches split once before retrying smaller inputs.
  * @returns A source-aware generator for one paper.
  */
 export function createModelEvidenceGenerator(
   ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy,
 ): PaperEvidenceGenerator {
-  const run = createLoggedModelRunner<PaperModelResponse>(ctx, session, config, policy)
+  const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy)
+  const runEvidence = createLoggedModelRunner<readonly EvidenceDraft[]>(ctx, session, config, policy)
   const meter = ctx.get('tokenMeter')
   if (meter === undefined) throw new Error('Academic extraction requires tokenMeter.')
   if (policy.inputBatchTokenLimit !== undefined
@@ -48,48 +49,89 @@ export function createModelEvidenceGenerator(
       sourceProvider: parsed.sourceProvider, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
       extractionMethod: structuredClone(parsed.extractionMethod),
     }
-    const batches = createEvidenceBatches(request, scope, source, policy.inputBatchTokenLimit,
+    const batches = createEvidenceBatches(request, policy.inputBatchTokenLimit,
       policy.inputBatchOverlapCharacters ?? 0, messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0))
-    const responses: PaperModelResponse[] = []
+    const firstBatch = batches[0]
+    if (firstBatch === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
+    const decision = await runScope({
+      messages: scopeMessages(withSegments(request, firstBatch.map(piece => piece.segment)), scope, source,
+        batches.length === 1 && firstBatch.length === request.segments.length),
+      ...request.signal === undefined ? {} : { signal: request.signal },
+      parse: parseScopeDecision,
+      appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
+      appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
+    })
+    if (decision.status !== 'included') return { scope: decision, evidence: [] }
+    const work = batches.map(batch => ({ batch, splitDepth: 0 }))
+    const responses: EvidenceDraft[][] = []
     const failures: unknown[] = []
-    for (const [batchOffset, batch] of batches.entries()) {
+    for (let batchOffset = 0; batchOffset < work.length; batchOffset++) {
       request.signal?.throwIfAborted()
+      const current = work[batchOffset]
+      if (current === undefined) throw new Error('Evidence batch disappeared during extraction.')
+      const batch = current.batch
       const batchIndex = batchOffset + 1
-      reportPaperEvidenceProgress(onProgress, evidenceProgress(batchIndex, batches.length))
+      reportPaperEvidenceProgress(onProgress, evidenceProgress(batchIndex, work.length))
       const batchRequest = withSegments(request, batch.map(piece => piece.segment))
       try {
-        const response = await run({
-          messages: evidenceMessages(batchRequest, scope, source),
+        const response = await runEvidence({
+          messages: evidenceMessages(batchRequest),
+          retryLocalTimeout: false,
           ...request.signal === undefined ? {} : { signal: request.signal },
-          parse: parsePaperModelResponse,
-          appendRequest: data => session.append('academic/evidence-request', { source, ...data }),
-          appendResult: data => session.append('academic/evidence-result', { source, ...data }),
+          parse: parseFocusedEvidence,
+          appendRequest: data => session.append('academic/evidence-request', { source, phase: 'evidence', ...data }),
+          appendResult: data => session.append('academic/evidence-result', { source, phase: 'evidence', ...data }),
           onAttempt: (observation) => {
-            reportPaperEvidenceProgress(onProgress, attemptProgress(batchIndex, batches.length, observation))
+            reportPaperEvidenceProgress(onProgress, attemptProgress(batchIndex, work.length, observation))
           },
         })
-        responses.push({ ...response, evidence: response.evidence.map(draft => remapDraft(draft, batch)) })
+        responses.push(response.map(draft => remapDraft(draft, batch)))
       } catch (error: unknown) {
         if (error instanceof WorkflowLogError) throw error
         request.signal?.throwIfAborted()
+        const split = error instanceof EvidenceError && error.code === 'EVIDENCE_MODEL_TIMEOUT'
+          && policy.maxAttempts > 1 && current.splitDepth === 0
+          ? splitTimedOutBatch(batch, policy.inputBatchOverlapCharacters ?? 0) : undefined
+        if (split !== undefined) {
+          work.splice(batchOffset, 1, ...split.map(part => ({ batch: part, splitDepth: 1 })))
+          reportPaperEvidenceProgress(onProgress, { ...evidenceProgress(batchIndex, work.length),
+            operation: 'waiting_retry', lastFailure: 'timeout' })
+          batchOffset--
+          continue
+        }
         failures.push(error)
       }
     }
-    const included = responses.filter(response => response.scope.status === 'included')
-    const firstIncluded = included[0]
-    if (firstIncluded === undefined) {
+    if (responses.length === 0) {
       if (failures.length > 0) throw failures[0]
-      const excluded = responses[0]
-      if (excluded === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
-      return excluded
+      throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
     }
-    const evidence = deduplicateDrafts(included.flatMap(response => response.evidence)).slice(0, MAX_EVIDENCE_DRAFTS)
+    const evidence = deduplicateDrafts(responses.flat()).slice(0, MAX_EVIDENCE_DRAFTS)
     return {
-      scope: firstIncluded.scope,
+      scope: decision,
       evidence,
       ...failures.length === 0 ? {} : { incompleteBatchCount: failures.length },
     }
   }
+}
+
+function splitTimedOutBatch(
+  batch: readonly EvidenceSegmentPiece[], overlapCharacters: number,
+): [EvidenceSegmentPiece[], EvidenceSegmentPiece[]] | undefined {
+  if (batch.length > 1) {
+    const middle = Math.floor(batch.length / 2)
+    return [batch.slice(0, middle), batch.slice(middle)]
+  }
+  const piece = batch[0]
+  if (piece === undefined) return undefined
+  const characters = Array.from(piece.segment.text)
+  if (characters.length < 2) return undefined
+  const middle = Math.floor(characters.length / 2)
+  const overlap = Math.min(overlapCharacters, middle - 1, characters.length - middle - 1)
+  return [
+    [{ ...piece, segment: { ...piece.segment, text: characters.slice(0, middle + overlap).join('') } }],
+    [{ ...piece, segment: { ...piece.segment, text: characters.slice(middle - overlap).join('') } }],
+  ]
 }
 
 function evidenceProgress(
@@ -131,8 +173,6 @@ function modelProgressFailure(observation: LoggedModelAttemptObservation): Acade
 
 function createEvidenceBatches(
   request: EvidenceGenerationRequest,
-  scope: PaperScopeRules,
-  source: EvidenceModelSource,
   tokenLimit: number | undefined,
   overlapCharacters: number,
   estimate: (messages: ReturnType<typeof evidenceMessages>) => number,
@@ -140,7 +180,7 @@ function createEvidenceBatches(
   const original = request.segments.map((segment, originalSegmentIndex) => ({ originalSegmentIndex, segment }))
   if (tokenLimit === undefined) return [original]
   const tokensFor = (pieces: readonly EvidenceSegmentPiece[]) => estimate(evidenceMessages(
-    withSegments(request, pieces.map(piece => piece.segment)), scope, source,
+    withSegments(request, pieces.map(piece => piece.segment)),
   ))
   const pieces = original.flatMap(piece => splitPiece(piece, tokenLimit, overlapCharacters, tokensFor))
   const batches: EvidenceSegmentPiece[][] = []

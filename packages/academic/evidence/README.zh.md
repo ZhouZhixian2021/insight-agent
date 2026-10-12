@@ -37,7 +37,7 @@ const source = await fetchAcademicFullText({
 const result = await extractEvidenceFromContent(source, generator, signal)
 ```
 
-当工作流已有经过核验且可定位的论文片段时，可以直接调用 `extractEvidenceFromContent()`。生成器接收抽取指令、关注问题、可定位片段和取消信号；生成器必须先校验任何外部模型输出，再返回有类型的草稿。
+当工作流已有经过核验且可定位的论文片段时，可以直接调用 `extractEvidenceFromContent()`。生成器接收要求选择明确受支持的事实、逐字摘录及六分区之一的指令，以及关注问题、可定位片段和取消信号；生成器必须先校验任何外部模型输出，再返回有类型的草稿。调用方可以把未抽取的卡片属性标为 `not_extracted`。
 
 ```text
 const result = await extractEvidenceFromContent({

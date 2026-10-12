@@ -446,6 +446,8 @@ describe('normalizeSessionLog', () => {
       data: {
         turn: 1,
         step: 1,
+        elapsedMs: 42,
+        firstContentElapsedMs: 21,
         stream: [
           null,
           'opaque',
@@ -473,6 +475,10 @@ describe('normalizeSessionLog', () => {
         ],
       },
     })
+    if (type !== 'assistant/attempt') {
+      if (normalized === undefined) throw new Error('Missing normalized model result.')
+      expect(normalized.data).toMatchObject({ elapsedMs: 0, firstContentElapsedMs: 0 })
+    }
   })
 
   it('normalizes a headerless packed-like stream record without decoding it', () => {

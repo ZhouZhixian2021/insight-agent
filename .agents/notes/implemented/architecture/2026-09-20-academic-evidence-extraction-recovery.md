@@ -16,7 +16,7 @@ The Web deployment partitions a long paper into ordered evidence batches whose c
 
 Batch deduplication compares the original segment index, exact excerpt, sourced statement and question-index set. Different question associations remain separate drafts so source validation can reject an out-of-range association without discarding a valid sibling. Reordering the same indexes does not create another draft. Distinct associations share the existing six-draft paper limit.
 
-The extraction prompt spends the response budget on the final JSON. It forbids candidate-excerpt inventories and quota planning, prefers one strongest entry per focus question, and asks for one most appropriate card item per evidence entry unless the same excerpt directly supports a separate required fact. These bounds reduce reasoning latency without changing exact-quote validation or requiring every focus question to have evidence.
+The workflow separates paper admission from short, question-focused excerpt extraction. The [paper-screening decision](2026-10-11-academic-paper-screening-evidence-phases.md) owns the model-visible instructions and conservative card-field mapping; exact-quote validation remains unchanged.
 
 Evidence verification keeps the requested segment when the verbatim excerpt matches it. When a valid segment index points elsewhere, the extractor may relocate the excerpt only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous quotes and normalized or OCR-altered text still fail.
 

@@ -1,6 +1,6 @@
 /** Academic workflow public entry; implementations do not import this barrel. */
 export { extractPaperEvidence } from './paper.ts'
-export { parseEvidenceDrafts, parsePaperModelResponse } from './parse-evidence.ts'
+export { parseEvidenceDrafts, parsePaperModelResponse, parseScopeDecision, parseFocusedEvidence } from './parse-evidence.ts'
 export { createModelEvidenceGenerator } from './model.ts'
 export { createModelSynthesisGenerator } from './synthesis-model.ts'
 export type { SynthesisModelRequest, SynthesisModelResult } from './synthesis-model.ts'

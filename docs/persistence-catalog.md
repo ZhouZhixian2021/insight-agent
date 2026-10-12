@@ -136,7 +136,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:45`](../packages/a
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:125`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:136`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -147,7 +147,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:125`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:127`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:138`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 

@@ -14,6 +14,7 @@ export interface PaperScopeRules {
 export type PaperScopeDecision =
   | { readonly status: 'included'; readonly reason: string }
   | { readonly status: 'excluded'; readonly reason: string }
+  | { readonly status: 'needs_more_context'; readonly reason: string }
 
 /** One validated model response containing scope review and any extracted evidence. */
 export interface PaperModelResponse {
@@ -71,7 +72,7 @@ export interface EvidenceModelPolicy {
   readonly transientRetry?: AcademicTransientRetryPolicy
 }
 
-/** Evidence extraction policy with deterministic full-text batching. */
+/** Evidence extraction policy with deterministic batching and one bounded local-timeout split when maxAttempts exceeds one. */
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
   /** Maximum estimated input tokens sent in one evidence batch; omitted keeps one request per paper. */
   readonly inputBatchTokenLimit?: number
@@ -94,6 +95,8 @@ export type EvidenceModelSource = Pick<EvidenceExtractionInput,
 /** Exact model-visible request and the heuristic admission decision, recorded before dispatch. */
 export interface EvidenceModelRequest {
   readonly source: EvidenceModelSource
+  /** Omitted historical records are combined scope-and-evidence requests. */
+  readonly phase?: 'scope' | 'evidence'
   readonly config: LlmCallConfig
   readonly messages: Message[]
   readonly estimatedInputTokens: number
@@ -107,11 +110,19 @@ export interface EvidenceModelRequest {
 /** One settled model attempt; validated means JSON validation, not semantic approval. */
 export interface EvidenceModelResult {
   readonly source: EvidenceModelSource
+  /** Omitted historical records are combined scope-and-evidence results. */
+  readonly phase?: 'scope' | 'evidence'
   /** Null when preparation failed before an exact request could be recorded. */
   readonly requestSeq: SessionSeq | null
   readonly attempt: number
   readonly maxAttempts: number
   readonly status: 'validated' | 'failed' | 'cancelled' | 'skipped'
+  /** Monotonic duration from attempt preparation through stream or failure settlement. */
+  readonly elapsedMs?: number
+  /** Time to the first text or reasoning chunk; absent when none arrived. */
+  readonly firstContentElapsedMs?: number
+  /** Coarse failure location, not a claim about which network hop failed. */
+  readonly failurePhase?: 'prepare' | 'admission' | 'before_content' | 'after_content' | 'parse'
   /** Lossless compact chunks, including rejected tool calls and interrupted output. */
   readonly stream: readonly AssistantStreamRecord[]
   readonly finish?: FinishReason
