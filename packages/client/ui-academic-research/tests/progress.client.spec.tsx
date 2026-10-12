@@ -7,6 +7,7 @@ import { ResearchEntry, type ResearchEntryProps } from '../src/client/ResearchEn
 import { ProgressPanel } from '../src/client/ProgressPanel.tsx'
 import { zh, type RunKey } from '../src/client/run-locales.ts'
 import { sampleRun } from './run-sample.ts'
+import { streamRemote, type TestStream } from './background.fixture.client.ts'
 
 const fixture = JSON.parse(readFileSync('z-team_docs/interface-samples/academic-model-v1/academic-research-progress-v1.sample.json', 'utf8')) as {
   frames: { type: 'progress'; progress: AcademicResearchProgressView }[]
@@ -17,8 +18,8 @@ const snapshot = (index = 0): AcademicResearchProgressView => ({ ...fixture.fram
   sessionId: result.sessionId, retrievalRunId: result.retrievalRun.retrievalRunId })
 const final: AcademicResearchRunFrame = { type: 'result', retrievalRunId: result.retrievalRun.retrievalRunId, value: result }
 const plan: ResearchEntryProps['plan'] = async () => ({ researchBriefId: result.retrievalRun.researchBriefId, topic: 'RAG', questions: [], searches: [] })
-function props(runStream: ResearchEntryProps['runStream']): ResearchEntryProps {
-  return { wide: true, t, plan, runStream,
+function props(runStream: TestStream): ResearchEntryProps {
+  return { wide: true, t, plan, ...streamRemote(runStream),
     useSessions: ((select: (s: unknown) => unknown) => select({ current: result.sessionId,
       byId: { [result.sessionId]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
 }
@@ -89,7 +90,7 @@ describe('one-shot research progress', () => {
   it('distinguishes explicit server refusal from a transport interruption', async () => {
     const runStream = async function* () { throw Object.assign(new Error('Plan no longer approved'), { code: 'gateway/bad-request' }); yield final }
     render(<ResearchEntry {...props(runStream)} />); await start()
-    expect((await screen.findByRole('alert')).textContent).toContain(zh.serverError)
+    expect((await screen.findByRole('alert')).textContent).toContain('Plan no longer approved')
     expect(screen.queryByText(zh.connectionUnknown)).toBeNull()
   })
   it('rejects progress from another run rather than mixing counters', async () => {
@@ -100,14 +101,14 @@ describe('one-shot research progress', () => {
     render(<ResearchEntry {...props(runStream)} />); await start()
     expect((await screen.findByRole('alert')).textContent).toContain(zh.streamMismatch)
   })
-  it('keeps committed counts when cancellation ends the stream without a result', async () => {
-    const runStream: ResearchEntryProps['runStream'] = async function* (_request, signal) {
+  it('retains progress when explicit background cancellation settles without a report', async () => {
+    const runStream: TestStream = async function* (_request, signal) {
       yield { type: 'progress', progress: snapshot(1) }
       await new Promise<void>((resolve) => { signal.addEventListener('abort', () => { resolve() }, { once: true }) })
     }
     render(<ResearchEntry {...props(runStream)} />); await start()
     await screen.findByRole('region', { name: zh.liveProgress })
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: zh.cancel })) })
+    fireEvent.click(screen.getByRole('button', { name: zh.cancel }))
     expect((await screen.findByRole('alert')).textContent).toContain(zh.cancelledRequest)
     expect(screen.getByRole('region', { name: zh.liveProgress })).toBeTruthy()
   })

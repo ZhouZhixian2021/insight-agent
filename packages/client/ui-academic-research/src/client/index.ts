@@ -30,6 +30,28 @@ export function apply(ctx: Context): void {
       const result = await ctx.remote.academicResearch.plan(sessionId)
       if (!result.ok) throw result.error
       return result.value
-    }, runStream: (request, signal) => ctx.remote.academicResearch.runStream(request, signal) }),
+    },
+    startBackgroundRun: async (request, signal) => {
+      const result = await ctx.remote.academicResearch.startBackgroundRun(request, signal)
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    listBackgroundRuns: async (sessionId) => {
+      const result = await ctx.remote.academicResearch.listBackgroundRuns(sessionId)
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    getBackgroundRun: async (key) => {
+      const result = await ctx.remote.academicResearch.getBackgroundRun(key)
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    watchBackgroundRun: (key, signal) => ctx.remote.academicResearch.watchBackgroundRun(key, signal),
+    cancelBackgroundRun: async (request) => {
+      const result = await ctx.remote.academicResearch.cancelBackgroundRun(request)
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    }),
   }, ResearchEntry))
 }

@@ -1,160 +1,142 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+import { afterEach, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { AcademicBackgroundRunView, AcademicResearchRunRequest, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { ResearchEntry, type ResearchEntryProps } from '../src/client/ResearchEntry.tsx'
 import { zh, type RunKey } from '../src/client/run-locales.ts'
 import { sampleRun } from './run-sample.ts'
+import { initialTask } from './background.fixture.client.ts'
 
-type LegacyRun = (request: { sessionId: AcademicResearchRunValue['sessionId']; researchBriefId: AcademicResearchRunValue['retrievalRun']['researchBriefId']; synthetic: boolean }, signal: AbortSignal) => Promise<AcademicResearchRunValue>
-const sid = sampleRun().sessionId
-const planned = { researchBriefId: sampleRun().retrievalRun.researchBriefId, topic: 'RAG 与幻觉',
-  questions: ['何时能减少幻觉？'], searches: [{ query: 'retrieval hallucination', purpose: '查找减少幻觉的效果研究', questions: ['何时能减少幻觉？'] }] }
-const loadPlan: ResearchEntryProps['plan'] = async () => planned
-function props(run: LegacyRun, current: typeof sid | undefined = sid, blank = false): ResearchEntryProps {
-  return { wide: true, t: key => zh[key as RunKey], runStream: async function* (request, signal) {
-    const value = await run(request, signal)
-    yield { type: 'result', retrievalRunId: value.retrievalRun.retrievalRunId, value }
-  }, plan: loadPlan,
-  useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [sid]: { blank }, second: { blank: false } } })) as ResearchEntryProps['useSessions'],
-  } as ResearchEntryProps
+const sid = initialTask().sessionId
+const planned = { researchBriefId: initialTask().researchBriefId, topic: 'RAG', questions: [], searches: [] }
+function fixture() {
+  let saved: AcademicBackgroundRunView | null = null
+  const observers = new Set<(task: AcademicBackgroundRunView) => void>()
+  const signals: AbortSignal[] = []
+  const publish = (task: AcademicBackgroundRunView) => { saved = task; for (const update of observers) update(task) }
+  const startBackgroundRun = vi.fn(async (_request: AcademicResearchRunRequest, _signal: AbortSignal) => {
+    saved = initialTask(); return saved
+  })
+  const listBackgroundRuns = vi.fn(async (_sessionId: typeof sid) => saved === null ? [] : [saved])
+  const getBackgroundRun = vi.fn(async (_key: AcademicBackgroundRunKey) => saved!)
+  const cancelBackgroundRun = vi.fn(async (_request: AcademicBackgroundRunCancelRequest) => { const task = { ...saved!, state: 'cancelled' as const, cancelReason: 'user_requested' as const }; publish(task); return task })
+  const watchBackgroundRun = vi.fn(async function* (_key: AcademicBackgroundRunKey, signal: AbortSignal) {
+    signals.push(signal)
+    const queue: AcademicBackgroundRunView[] = []
+    let wake: (() => void) | undefined
+    const update = (task: AcademicBackgroundRunView) => { queue.push(task); wake?.() }
+    observers.add(update)
+    const abort = () => { wake?.() }
+    signal.addEventListener('abort', abort, { once: true })
+    try {
+      yield saved!
+      while (!signal.aborted) {
+        const next = queue.shift()
+        if (next !== undefined) { yield next; if (next.state !== 'running') return }
+        else await new Promise<void>((resolve) => { wake = resolve })
+      }
+    } finally { observers.delete(update); signal.removeEventListener('abort', abort) }
+  })
+  function props(current = sid): ResearchEntryProps {
+    return { wide: true, t: key => zh[key as RunKey], plan: async () => planned,
+      startBackgroundRun, listBackgroundRuns, getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
+      useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [current]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
+  }
+  return { props, publish, signals, startBackgroundRun, listBackgroundRuns,
+    getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, observers }
 }
-function deferred() {
-  let resolve!: (value: AcademicResearchRunValue) => void
-  let reject!: (error: unknown) => void
-  const promise = new Promise<AcademicResearchRunValue>((yes, no) => { resolve = yes; reject = no })
-  return { promise, resolve, reject }
+async function open() {
+  fireEvent.click(screen.getByRole('button', { name: zh.entry }))
+  await waitFor(() => expect(screen.queryByText(zh.backgroundLoading)).toBeNull())
 }
-function open() { fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '学术研究' })) }
 async function start() {
-  const button = await screen.findByRole<HTMLButtonElement>('button', { name: '按计划开始研究' })
+  const button = await screen.findByRole<HTMLButtonElement>('button', { name: zh.start })
+  await waitFor(() => expect(button.disabled).toBe(false))
   fireEvent.click(button)
+  await screen.findByText(zh.backgroundConnected)
 }
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
-
-describe('Session research request lifecycle', () => {
-  it.each([false, true])('ignores a late preview after closing (rejected: %s)', async (reject) => {
-    let resolve!: (value: typeof planned) => void
-    let fail!: (cause: unknown) => void
-    const pending = new Promise<typeof planned>((yes, no) => { resolve = yes; fail = no })
-    const plan = vi.fn<ResearchEntryProps['plan']>().mockReturnValueOnce(pending).mockResolvedValue(planned)
-    const run = vi.fn()
-    render(<ResearchEntry {...props(run)} plan={plan} />); open()
-    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    open()
-    expect(await screen.findByText(planned.topic)).toBeTruthy()
-    await act(async () => {
-      if (reject) fail(new Error('old preview'))
-      else resolve({ ...planned, topic: '旧会话主题' })
-      await pending.catch(() => {})
-    })
-    expect(screen.queryByText('旧会话主题')).toBeNull()
-    expect(screen.queryByText('old preview')).toBeNull()
-    expect(run).not.toHaveBeenCalled()
-  })
-
-  it('explains a preview transport failure without an Error object', async () => {
-    const plan = vi.fn<ResearchEntryProps['plan']>().mockRejectedValue('disconnected')
-    render(<ResearchEntry {...props(vi.fn())} plan={plan} />); open()
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', zh.planFailed)
-  })
-
-  it('requires a saved Session and has no sample selector', () => {
-    const run = vi.fn()
-    const view = render(<ResearchEntry {...props(run, sid, true)} />)
-    open()
-    expect(screen.getByText('请先创建并选择一个已保存的会话。')).toBeTruthy()
-    expect(screen.queryByRole('combobox')).toBeNull()
-    expect(run).not.toHaveBeenCalled()
-    view.rerender(<ResearchEntry {...props(run, undefined, true)} />)
-    expect(screen.queryByRole('textbox')).toBeNull()
-  })
-  it('submits the selected Session, approved plan identity and real-data disclosure then renders returned facts', async () => {
-    const d = deferred(), run = vi.fn(() => d.promise)
-    render(<ResearchEntry {...props(run)} />); open()
-    expect(screen.getByText(zh.loadingPlan)).toBeTruthy()
-    await start()
-    expect(run).toHaveBeenCalledWith({ sessionId: sid, researchBriefId: planned.researchBriefId,
-      synthetic: false }, expect.any(AbortSignal))
-    expect(screen.getByRole('status').textContent).toBe('研究运行中')
-    fireEvent.submit(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).closest('form')!)
-    expect(run).toHaveBeenCalledTimes(1)
-    await act(async () => { d.resolve(sampleRun()); await d.promise })
-    expect(screen.getAllByText('部分成功')).toHaveLength(2)
-    expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
-  })
-  it('shows approved intent and directions without requiring a search expression', async () => {
-    const run = vi.fn<LegacyRun>().mockResolvedValue(sampleRun())
-    render(<ResearchEntry {...props(run)} />); open()
-    expect(await screen.findByText(planned.topic)).toBeTruthy()
-    expect(screen.getByText(planned.searches[0]!.purpose)).toBeTruthy()
-    expect(screen.queryByRole('textbox')).toBeNull()
-    expect(screen.getByText(planned.searches[0]!.query).closest('details')!.hasAttribute('open')).toBe(false)
-    expect(run).not.toHaveBeenCalled()
-    await start()
-    await act(async () => { await Promise.resolve() })
-    expect(run).toHaveBeenCalledWith({ sessionId: sid, researchBriefId: planned.researchBriefId,
-      synthetic: false }, expect.any(AbortSignal))
-  })
-  it('requires plan repair when preview fails and does not start retrieval', async () => {
-    const run = vi.fn()
-    render(<ResearchEntry {...props(run)} plan={async () => { throw new Error('请先补齐检索方案并审核。') }} />); open()
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', '请先补齐检索方案并审核。')
-    expect(screen.queryByRole('button', { name: zh.start })).toBeNull()
-    expect(run).not.toHaveBeenCalled()
-  })
-  it('aborts the actual signal and distinguishes missing final result from a server cancellation result', async () => {
-    const d = deferred(), run = vi.fn((_request, signal: AbortSignal) => {
-      signal.addEventListener('abort', () => { d.reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
-      return d.promise
-    })
-    render(<ResearchEntry {...props(run)} />); open(); await start()
-    await act(async () => { fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '取消研究' })); await d.promise.catch(() => {}) })
-    expect(run.mock.calls[0]![1].aborted).toBe(true)
-    expect(screen.getByRole('alert').textContent).toContain('未收到服务器最终结果')
-    expect(screen.queryByText('已完成')).toBeNull()
-  })
-  it('retains a returned cancelled result including its partial papers', async () => {
-    const d = deferred(), run = vi.fn(() => d.promise)
-    render(<ResearchEntry {...props(run)} />); open(); await start()
-    fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '取消研究' }))
-    expect((screen.getByRole<HTMLButtonElement>('button', { name: '正在取消…' })).disabled).toBe(true)
-    await act(async () => { d.resolve({ ...sampleRun(), status: 'cancelled', report: null }); await d.promise })
-    expect(screen.getByText('已取消')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '下载 Markdown' })).toBeNull()
-  })
-  it('shows server errors and permits a new request without retaining the old report', async () => {
-    const run = vi.fn<LegacyRun>().mockRejectedValueOnce(new Error('Approve the brief first')).mockRejectedValueOnce('transport')
-    render(<ResearchEntry {...props(run)} />); open()
-    await start()
-    await act(async () => { await Promise.resolve() })
-    expect(screen.getByRole('alert').textContent).toContain('Approve the brief first')
-    await start()
-    await act(async () => { await Promise.resolve() })
-    expect(screen.getByRole('alert').textContent).toContain('研究请求失败')
-  })
-  it('aborts on close and ignores a late response after reopening', async () => {
-    const d = deferred(), run = vi.fn((_request, _signal: AbortSignal) => d.promise)
-    render(<ResearchEntry {...props(run)} />); open(); await start()
-    fireEvent.click(screen.getByRole<HTMLButtonElement>('button', { name: '关闭' }))
-    expect(run.mock.calls[0]![1].aborted).toBe(true)
-    open()
-    await act(async () => { d.resolve(sampleRun()); await d.promise })
-    expect(screen.queryByText('部分成功')).toBeNull()
-    expect(screen.queryByRole('textbox')).toBeNull()
-  })
-  it('aborts on Session change and ignores the previous Session rejection', async () => {
-    const d = deferred(), run = vi.fn((_request, _signal: AbortSignal) => d.promise)
-    const view = render(<ResearchEntry {...props(run)} />); open(); await start()
-    view.rerender(<ResearchEntry {...props(run, 'second' as typeof sid)} />)
-    expect(run.mock.calls[0]![1].aborted).toBe(true)
-    await act(async () => { d.reject(new Error('old session')); await d.promise.catch(() => {}) })
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.getByText(/second/)).toBeTruthy()
-    const next = deferred()
-    run.mockImplementationOnce(() => next.promise)
-    await start()
-    view.unmount()
-    expect(run.mock.calls[1]![1].aborted).toBe(true)
-  })
+afterEach(cleanup)
+it('starts once with the selected Session and approved Brief; closing only disconnects and reopening reads the same task', async () => {
+  const f = fixture(); render(<ResearchEntry {...f.props()} />)
+  await open(); await start()
+  expect(screen.getByText(zh.disclosure).textContent).toContain('只停止监听')
+  expect(f.startBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, researchBriefId: planned.researchBriefId,
+    synthetic: false }, expect.any(AbortSignal))
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: zh.close }))
+  expect(f.signals[0]!.aborted).toBe(true)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  await open(); await screen.findByText(zh.backgroundConnected)
+  expect(f.getBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background' })
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it('recovers the server result after remount without execution or report-quality promotion', async () => {
+  const f = fixture(); const first = render(<ResearchEntry {...f.props()} />)
+  await open(); await start(); first.unmount()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() })
+  render(<ResearchEntry {...f.props()} />); await open()
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+})
+it('switching Sessions detaches observation; switching back recovers the original task', async () => {
+  const f = fixture(); const other = 'other' as typeof sid
+  const originalList = f.listBackgroundRuns.getMockImplementation()!
+  f.listBackgroundRuns.mockImplementation(async sessionId => sessionId === other ? [] : originalList(sid))
+  const ui = render(<ResearchEntry {...f.props()} />); await open(); await start()
+  ui.rerender(<ResearchEntry {...f.props(other)} />)
+  await waitFor(() => expect(f.signals[0]!.aborted).toBe(true))
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  ui.rerender(<ResearchEntry {...f.props()} />)
+  await screen.findByText(zh.backgroundConnected)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it('cancels through the explicit command while retaining the subscription until server settlement', async () => {
+  const f = fixture(); render(<ResearchEntry {...f.props()} />); await open(); await start()
+  fireEvent.click(screen.getByRole('button', { name: zh.cancel }))
+  await waitFor(() => expect(f.cancelBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background', reason: 'user_requested' }))
+  expect(f.signals[0]!.aborted).toBe(false)
+  await screen.findByText(zh.backgroundReason_user_requested)
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+})
+it('shows service interruption and never resumes or starts automatically', async () => {
+  const f = fixture(); f.publish({ ...initialTask(), state: 'interrupted', cancelReason: 'service_stopped' })
+  render(<ResearchEntry {...f.props()} />); await open()
+  expect(screen.getAllByText(zh.backgroundInterrupted).length).toBeGreaterThan(0)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+  expect(f.watchBackgroundRun).not.toHaveBeenCalled()
+})
+it('preserves the running task on watch failure and explicitly reconnects without a new start', async () => {
+  const f = fixture(); f.watchBackgroundRun.mockImplementationOnce(async function* () { throw new Error('offline') })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  expect((await screen.findByRole('alert')).textContent).toContain('offline')
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: zh.backgroundReconnect }))
+  await screen.findByText(zh.backgroundConnected)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it('does not admit a duplicate run when its start reply was lost after server persistence', async () => {
+  const f = fixture()
+  f.startBackgroundRun.mockImplementationOnce(async () => { f.publish(initialTask()); throw new Error('reply lost') })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  await screen.findByText('reply lost')
+  await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true))
+  expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2)
+})
+it('ignores late get replies after closing and permits viewing saved results despite a missing current approval', async () => {
+  const f = fixture(); let release!: (task: AcademicBackgroundRunView) => void
+  const pending = new Promise<AcademicBackgroundRunView>((resolve) => { release = resolve })
+  f.publish(initialTask()); f.getBackgroundRun.mockReturnValueOnce(pending)
+  render(<ResearchEntry {...f.props()} plan={async () => { throw new Error('No current approval') }} />)
+  fireEvent.click(screen.getByRole('button', { name: zh.entry }))
+  await screen.findByText('No current approval')
+  fireEvent.click(screen.getByRole('button', { name: zh.close }))
+  await act(async () => { release({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }); await pending })
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() })
+  await open(); await screen.findByRole('button', { name: zh.download })
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
 })
