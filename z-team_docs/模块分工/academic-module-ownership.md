@@ -95,6 +95,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 
 ## 文档入口
 
+- [学术洞察报告模板适配模块计划](academic-report-template-plan.md)
 - [负责人 A：架构与编排](member-a-architecture.md)
 - [负责人 B：检索与证据](member-b-evidence.md)
 - [负责人 C：分析与产品](member-c-product.md)
