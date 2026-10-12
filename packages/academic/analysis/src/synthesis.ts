@@ -1,6 +1,7 @@
 /** Question-focused instructions and host-owned Claim construction. */
 import { createClaimId, createClaimEvidenceLinkId, createEvidenceSnapshotId,
   type ClaimRecord, type ClaimEvidenceLink } from '@deepseek-ai/dsh-academic-model'
+import { academicReportFormat } from './report-format.ts'
 import { prepareAnalysisInput } from './prepare.ts'
 import { comparisonContext, evidenceReadingGuide } from './evidence-reading.ts'
 import type { AnalysisResult } from './analyze.ts'
@@ -88,7 +89,15 @@ Do not invent missing results or length. Keep every question and required sectio
 "relation":"supports|contradicts|background","rationale":"此证据如何支撑或限制本段"}]}],
 "questionAnswers":[{"questionIndex":0,"status":"answered|partial|unanswered","statementIndexes":[0],"reason":null}],
 "sections":[{"sectionId":"executive_summary","title":"中文章节标题","statementIndexes":[0],"missingReason":null}],
-"limitations":["覆盖与证据限制"]}
+"limitations":["覆盖与证据限制"],
+"directions":[{"title":"变化、张力或研究问题","layer":"研究层次","questionIndexes":[0],
+"overview":{"statementIndexes":[0],"missingReason":null},
+"themes":[{"title":"关注主题","statementIndexes":[0],"missingReason":null}],
+"themeLimit":"不足两个主题时的证据限制，否则 null",
+"mechanism":{"statementIndexes":[0],"missingReason":null},
+"keyResults":{"statementIndexes":[],"missingReason":"缺少结果证据","quantitative":false},
+"judgment":{"statementIndexes":[],"missingReason":"缺少方向判断依据"},
+"implications":{"statementIndexes":[],"missingReason":"缺少应用含义依据"}}]}
 Synthesis category is consensus|trend|comparison|disagreement|research_gap|limitation.
 Question indexes are zero-based in Brief order, exactly once each. answered needs statements and null reason;
 partial needs statements and a non-empty reason; unanswered needs no statements and a non-empty reason.
@@ -101,6 +110,20 @@ Every statement must be used by a section or question; do not duplicate text to 
 Describe gaps in THIS RUN in limitations, questionAnswers.reason or sections.missingReason, not as unsupported synthesis statements.
 For limitations or research_gaps sections without supported conclusions, use empty statementIndexes and an explicit missingReason.
 Background references alone never support a statement; do not relabel background evidence as supports to satisfy the format.
+directions is required in new outputs. Group by the approved problems and mechanisms, not arbitrary keyword similarity.
+Cover every approved question with at least one direction; use at most ${MAX_SYNTHESIS_STATEMENTS} coherent directions.
+Use only existing statementIndexes for overview, themes, mechanism, keyResults, judgment and implications.
+Do not put uncited factual claims in direction, layer or theme labels; labels are organizational descriptions.
+Every component uses the same mutually exclusive statementIndexes/missingReason rule as a non-host section.
+Provide two to four non-empty evidence-backed themes when available. With zero or one theme, give themeLimit;
+with two to four themes, themeLimit must be null. Do not invent extra themes merely to fill the layout.
+For numerical comparisons set keyResults.quantitative:true and cite only supporting fulltext evidence, retaining
+metric, dataset and experimental conditions. Abstract-only qualitative results use quantitative:false.
+Separate source_statement observations from synthesis judgments; implications require evidence and serve the target audience.
+Cross-direction synthesis and conclusion reuse section paragraphs; they cannot introduce new uncited claims.
+No verified image/caption is supplied in this input, so omit mechanism figures and disclose the limit.
+REPORT_FORMAT_REFERENCE
+${academicReportFormat}
 All "answered" decisions are proposals, not semantic review. Synthetic materials cannot establish real research findings.
 EVIDENCE_READING_GUIDE_JSON\n${JSON.stringify(evidenceReadingGuide(admission.input))}\nINPUT_JSON\n${JSON.stringify(compact ? compactSynthesisInput(admission.input) : admission.input)}`
 }

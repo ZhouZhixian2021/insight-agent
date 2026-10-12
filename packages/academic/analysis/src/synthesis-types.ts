@@ -60,6 +60,32 @@ export interface RejectedSynthesisStatement {
   readonly reason: string
 }
 
+/** Existing analytical paragraphs assigned to a report component; no uncited prose is introduced. */
+export interface DirectionComponent {
+  readonly statementIndexes: readonly number[]
+  readonly missingReason: string | null
+}
+
+/** An evidence-backed current concern within a research direction. */
+export interface DirectionTheme extends DirectionComponent {
+  readonly title: string
+}
+
+/** Model-proposed grouping of approved questions, using already cited analytical paragraphs. */
+export interface SynthesisDirection {
+  readonly title: string
+  readonly layer: string
+  readonly questionIndexes: readonly number[]
+  readonly overview: DirectionComponent
+  readonly themes: readonly DirectionTheme[]
+  /** Required when fewer than two evidence-backed themes are available. */
+  readonly themeLimit: string | null
+  readonly mechanism: DirectionComponent
+  readonly keyResults: DirectionComponent & { readonly quantitative: boolean }
+  readonly judgment: DirectionComponent
+  readonly implications: DirectionComponent
+}
+
 /** Validated paragraphs with remapped references and host-owned rejection diagnostics. */
 export interface AcademicSynthesisDraft {
   readonly schemaVersion: 1
@@ -74,6 +100,8 @@ export interface AcademicSynthesisDraft {
     readonly missingReason: string | null
   }[]
   readonly limitations: readonly string[]
+  /** Absent on existing question-only drafts; absence cannot certify the direction report format. */
+  readonly directions?: readonly SynthesisDirection[]
   /** Never supplied by the model; empty when every candidate paragraph passes. */
   readonly rejectedStatements: readonly RejectedSynthesisStatement[]
 }

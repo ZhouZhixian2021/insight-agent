@@ -163,5 +163,95 @@
     "问题 1 的 answered 仅是模型提议，仍需要内容审核。",
     "问题 2 仅部分覆盖；本输出不能标记为满足全部 Plan 要求。",
     "未提供性能实验或领域覆盖，不能断言研究空白。"
+  ],
+  "directions": [
+    {
+      "title": "直接访问信息如何改变传递路径？",
+      "layer": "信息访问结构",
+      "questionIndexes": [
+        0
+      ],
+      "overview": {
+        "statementIndexes": [
+          0
+        ],
+        "missingReason": null
+      },
+      "themes": [
+        {
+          "title": "位置间直接访问",
+          "statementIndexes": [
+            0
+          ],
+          "missingReason": null
+        }
+      ],
+      "themeLimit": "合成材料仅支持一个关注主题，不能补造其他主题。",
+      "mechanism": {
+        "statementIndexes": [
+          0
+        ],
+        "missingReason": null
+      },
+      "keyResults": {
+        "statementIndexes": [],
+        "missingReason": "没有提供经检查的实验结果。",
+        "quantitative": false
+      },
+      "judgment": {
+        "statementIndexes": [
+          2
+        ],
+        "missingReason": null
+      },
+      "implications": {
+        "statementIndexes": [],
+        "missingReason": "没有支持工程应用收益的证据。"
+      }
+    },
+    {
+      "title": "双向上下文如何参与预训练？",
+      "layer": "训练任务",
+      "questionIndexes": [
+        1
+      ],
+      "overview": {
+        "statementIndexes": [
+          1
+        ],
+        "missingReason": null
+      },
+      "themes": [
+        {
+          "title": "隐藏词预测",
+          "statementIndexes": [
+            1
+          ],
+          "missingReason": null
+        }
+      ],
+      "themeLimit": "合成材料仅支持一个关注主题，不能补造其他主题。",
+      "mechanism": {
+        "statementIndexes": [
+          1
+        ],
+        "missingReason": null
+      },
+      "keyResults": {
+        "statementIndexes": [],
+        "missingReason": "没有提供经检查的实验结果。",
+        "quantitative": false
+      },
+      "judgment": {
+        "statementIndexes": [
+          2
+        ],
+        "missingReason": null
+      },
+      "implications": {
+        "statementIndexes": [],
+        "missingReason": "没有支持工程应用收益的证据。"
+      }
+    }
   ]
 }

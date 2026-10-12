@@ -2,14 +2,10 @@
 import { synthesisSections, type AcademicSynthesisDraft, type SynthesisStatement } from '@deepseek-ai/dsh-academic-analysis'
 import type { AcademicWorkId, CoverageSummary, EvidenceRecord, ResearchBrief } from '@deepseek-ai/dsh-academic-model'
 
-/**
- * Escape model and provider prose before embedding it in generated Markdown.
- * @param text Untrusted plain text.
- * @returns One escaped Markdown line without active markup.
- */
-export function escapeMarkdown(text: string): string {
-  return text.replaceAll('\\', '\\\\').replace(/([`*_{}\[\]<>#|])/gu, '\\$1').replace(/\r?\n/gu, ' ')
-}
+import { escapeMarkdown } from './markdown.ts'
+import { renderDirections } from './direction-render.ts'
+import type { ReportMetadata } from './bibliography.ts'
+export { escapeMarkdown } from './markdown.ts'
 
 /**
  * Render one structurally validated synthesis; references and appendix remain host-owned.
@@ -18,10 +14,11 @@ export function escapeMarkdown(text: string): string {
  * @param evidence Exact admitted records.
  * @param references Host-owned numeric bibliography map.
  * @param coverage Observed retrieval counts.
+ * @param metadata Original bibliography, versions and report date; required for direction-level display.
  * @returns Markdown body and every mechanically detectable unmet Plan requirement.
  */
 export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDraft, evidence: readonly EvidenceRecord[],
-  references: ReadonlyMap<AcademicWorkId, number>, coverage: CoverageSummary) {
+  references: ReadonlyMap<AcademicWorkId, number>, coverage: CoverageSummary, metadata?: ReportMetadata) {
   const lines: string[] = [], unmet: string[] = [], body: string[] = []
   const rendered = new Set<number>()
   const required = synthesisSections(brief)
@@ -41,11 +38,11 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     unmet.push(`模型候选段落 ${rejection.statementIndex + 1} 未纳入报告：${rejection.code} — ${rejection.reason}`)
   }
   function statement(index: number): void {
-    if (rendered.has(index)) { lines.push(`见分析段落 ${index + 1}。`, ''); return }
+    if (rendered.has(index)) { lines.push(`见[分析段落 ${index + 1}](#academic-paragraph-${index + 1})。`, ''); return }
     rendered.add(index)
     const item = draft.statements[index] as SynthesisStatement
     body.push(item.text, item.scope, ...(item.uncertainty === null ? [] : [item.uncertainty]))
-    lines.push(`**分析段落 ${index + 1} · ${item.kind === 'source_statement' ? '论文陈述' : '跨论文综合'}**`, '',
+    lines.push(`<a id="academic-paragraph-${index + 1}"></a>`, '', `**分析段落 ${index + 1} · ${item.kind === 'source_statement' ? '论文陈述' : '跨论文综合'}**`, '',
       escapeMarkdown(item.text), '', `适用范围：${escapeMarkdown(item.scope)}`)
     lines.push(`不确定性：${escapeMarkdown(item.uncertainty ?? '未说明；不代表不存在限制')}`)
     const roles = [
@@ -68,30 +65,37 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     }
     lines.push('')
   }
-  lines.push('## 逐题研究结论', '', '以下问题覆盖状态由模型提议，尚未经过独立内容审核。', '')
-  for (const answer of draft.questionAnswers) {
-    lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown(brief.questions[answer.questionIndex] as string)}`, '',
-      `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
-    if (answer.statementIndexes.length > 0) lines.push('**当前回答与适用条件**', '')
-    answer.statementIndexes.forEach(statement)
-    if (answer.reason !== null) {
-      const gap = `问题 ${answer.questionIndex + 1}：${answer.reason}`
-      unmet.push(gap)
-      lines.push(`尚未回答／证据缺口：${escapeMarkdown(answer.reason)}`, '')
+  if (draft.directions !== undefined && metadata !== undefined) {
+    const renderedDirections = renderDirections(brief, draft, evidence, references, metadata, statement, lines)
+    unmet.push(...renderedDirections.unmet)
+  } else {
+    unmet.push('缺少经校验的方向布局或书目信息，本报告未完整满足方向级报告格式。')
+    lines.push('> 方向布局尚未提供；以下为问题分析草稿，不表示完整方向级报告。', '')
+    lines.push('## 逐题研究结论', '', '以下问题覆盖状态由模型提议，尚未经过独立内容审核。', '')
+    for (const answer of draft.questionAnswers) {
+      lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown(brief.questions[answer.questionIndex] as string)}`, '',
+        `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
+      if (answer.statementIndexes.length > 0) lines.push('**当前回答与适用条件**', '')
+      answer.statementIndexes.forEach(statement)
+      if (answer.reason !== null) {
+        const gap = `问题 ${answer.questionIndex + 1}：${answer.reason}`
+        unmet.push(gap)
+        lines.push(`尚未回答／证据缺口：${escapeMarkdown(answer.reason)}`, '')
+      }
     }
-  }
-  for (const section of draft.sections) {
-    if (['references', 'evidence_appendix'].includes(section.sectionId)) continue
-    lines.push(`## ${escapeMarkdown(section.title)}`, '')
-    if (section.sectionId === 'scope_and_method') {
-      lines.push(`研究问题：${escapeMarkdown(brief.questions.join('；'))}`, '',
-        `检索发现 ${coverage.discoveredRecords} 条记录，去重后 ${coverage.deduplicatedWorks} 篇，纳入 ${coverage.includedWorks} 篇，获取全文 ${coverage.availableFulltextWorks} 篇。`,
-        '本报告只分析本轮核验通过的证据；全文获取数量不等于可用证据数量。', '')
-    }
-    section.statementIndexes.forEach(statement)
-    if (section.missingReason !== null) {
-      unmet.push(`${section.title}：${section.missingReason}`)
-      lines.push(`证据不足：${escapeMarkdown(section.missingReason)}`, '')
+    for (const section of draft.sections) {
+      if (['references', 'evidence_appendix'].includes(section.sectionId)) continue
+      lines.push(`## ${escapeMarkdown(section.title)}`, '')
+      if (section.sectionId === 'scope_and_method') {
+        lines.push(`研究问题：${escapeMarkdown(brief.questions.join('；'))}`, '',
+          `检索发现 ${coverage.discoveredRecords} 条记录，去重后 ${coverage.deduplicatedWorks} 篇，纳入 ${coverage.includedWorks} 篇，获取全文 ${coverage.availableFulltextWorks} 篇。`,
+          '本报告只分析本轮核验通过的证据；全文获取数量不等于可用证据数量。', '')
+      }
+      section.statementIndexes.forEach(statement)
+      if (section.missingReason !== null) {
+        unmet.push(`${section.title}：${section.missingReason}`)
+        lines.push(`证据不足：${escapeMarkdown(section.missingReason)}`, '')
+      }
     }
   }
   for (const section of required) {

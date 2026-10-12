@@ -2,7 +2,7 @@
 import type { EvidenceId, EvidenceRecord } from '@deepseek-ai/dsh-academic-model'
 import { MAX_SYNTHESIS_EVIDENCE_LINKS, MAX_SYNTHESIS_STATEMENTS, MAX_SYNTHESIS_STATEMENTS_PER_QUESTION,
   SYNTHESIS_SECTIONS, SynthesisError, type AcademicSynthesisDraft, type AcademicSynthesisInput,
-  type SynthesisStatement, type RejectedSynthesisStatement } from './synthesis-types.ts'
+  type SynthesisStatement, type RejectedSynthesisStatement, type SynthesisDirection, type DirectionComponent } from './synthesis-types.ts'
 import { synthesisSections } from './synthesis-input.ts'
 
 function invalid(message: string): never { throw new SynthesisError(message, 'SYNTHESIS_INVALID_MODEL_OUTPUT') }
@@ -35,7 +35,8 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
   let value: unknown
   try { value = JSON.parse(response) } catch { return invalid('Expected complete JSON.') }
   const root = object(value, ['schemaVersion', 'researchBriefId', 'researchBriefVersion',
-    'statements', 'questionAnswers', 'sections', 'limitations'])
+    'statements', 'questionAnswers', 'sections', 'limitations',
+    ...value !== null && typeof value === 'object' && Object.hasOwn(value, 'directions') ? ['directions'] : []])
   if (root.schemaVersion !== 1 || root.researchBriefId !== input.brief.researchBriefId
     || root.researchBriefVersion !== input.brief.version) {
     invalid('Synthesis must reference the exact approved Brief version.')
@@ -48,6 +49,8 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
   if (synthesisSections(input.brief).some(required => !sections.some(section => section.sectionId === required))) {
     invalid('A required section is missing; include it with an explicit missingReason when evidence is insufficient.')
   }
+  const directions = root.directions === undefined ? undefined
+    : parseDirections(root.directions, input.brief.questions.length, candidates.length)
   const limitations = array(root.limitations).map(text)
   if (limitations.length === 0) invalid('Limitations must be disclosed.')
   const referenced = new Set([...questionAnswers, ...sections].flatMap(item => item.statementIndexes))
@@ -72,6 +75,25 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
     `模型候选段落 ${original.filter(index => !retained.has(index)).map(index => index + 1).join('、')} 未通过校验，相关内容尚未完整覆盖。`
   return { schemaVersion: 1, researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
     statements, limitations, rejectedStatements,
+    ...directions === undefined ? {} : { directions: directions.map((direction) => {
+      const component = (original: DirectionComponent): DirectionComponent => {
+        const statementIndexes = remap(original.statementIndexes)
+        return { statementIndexes, missingReason: statementIndexes.length === 0 && original.statementIndexes.length > 0
+          ? rejectionReason(original.statementIndexes) : original.missingReason }
+      }
+      const keyResults = { ...component(direction.keyResults), quantitative: direction.keyResults.quantitative }
+      if (keyResults.quantitative && keyResults.statementIndexes.some(index => statements[index]?.evidenceLinks
+        .some(link => link.relation === 'supports' && evidence.get(link.evidenceId)?.level !== 'fulltext'))) {
+        invalid('Quantitative direction results require inspected full-text supporting evidence.')
+      }
+      const themes = direction.themes.map(theme => ({ ...theme, ...component(theme) }))
+        .filter(theme => theme.statementIndexes.length > 0)
+      const themeLimit = themes.length < 2 ? [direction.themeLimit, themes.length !== direction.themes.length
+        ? '部分主题引用的段落未通过校验，关注主题覆盖不足。' : null].filter(reason => reason !== null).join(' ') : null
+      return { ...direction, overview: component(direction.overview), themes, themeLimit,
+        mechanism: component(direction.mechanism), keyResults, judgment: component(direction.judgment),
+        implications: component(direction.implications) }
+    }) },
     questionAnswers: questionAnswers.map((answer) => {
       const statementIndexes = remap(answer.statementIndexes)
       if (statementIndexes.length === answer.statementIndexes.length) return { ...answer, statementIndexes }
@@ -143,4 +165,38 @@ function parseSections(value: unknown, statementCount: number): AcademicSynthesi
     }
     return { sectionId, title: text(item.title), statementIndexes, missingReason }
   })
+}
+
+function parseDirections(value: unknown, questionCount: number, statementCount: number): readonly SynthesisDirection[] {
+  const rows = array(value)
+  if (rows.length === 0 || rows.length > MAX_SYNTHESIS_STATEMENTS) invalid('Provide a bounded, non-empty direction layout.')
+  const component = (value: unknown): DirectionComponent => {
+    const item = object(value, ['statementIndexes', 'missingReason'])
+    const statementIndexes = indexes(item.statementIndexes, statementCount), missingReason = nullable(item.missingReason)
+    if ((statementIndexes.length === 0) !== (missingReason !== null)) invalid('Direction evidence and missing reason disagree.')
+    return { statementIndexes, missingReason }
+  }
+  const covered = new Set<number>(), names = new Set<string>()
+  const directions = rows.map((value): SynthesisDirection => {
+    const item = object(value, ['title', 'layer', 'questionIndexes', 'overview', 'themes', 'themeLimit',
+      'mechanism', 'keyResults', 'judgment', 'implications'])
+    const title = text(item.title), layer = text(item.layer), questionIndexes = indexes(item.questionIndexes, questionCount)
+    if (questionIndexes.length === 0 || names.has(title)) invalid('Directions need unique titles and approved questions.')
+    names.add(title); questionIndexes.forEach(index => covered.add(index))
+    const themes = array(item.themes).map((value) => {
+      const theme = object(value, ['title', 'statementIndexes', 'missingReason'])
+      return { title: text(theme.title), ...component({ statementIndexes: theme.statementIndexes, missingReason: theme.missingReason }) }
+    })
+    const themeLimit = nullable(item.themeLimit)
+    if (themes.length > 4 || themes.some(theme => theme.statementIndexes.length === 0)
+      || (themes.length < 2) !== (themeLimit !== null)) invalid('Direction themes require evidence and a disclosed shortage.')
+    const result = object(item.keyResults, ['statementIndexes', 'missingReason', 'quantitative'])
+    if (typeof result.quantitative !== 'boolean') invalid('Quantitative result flag must be boolean.')
+    return { title, layer, questionIndexes, overview: component(item.overview), themes, themeLimit,
+      mechanism: component(item.mechanism), keyResults: { ...component({ statementIndexes: result.statementIndexes,
+        missingReason: result.missingReason }), quantitative: result.quantitative },
+      judgment: component(item.judgment), implications: component(item.implications) }
+  })
+  if (covered.size !== questionCount) invalid('Direction layout must cover every approved question.')
+  return directions
 }
