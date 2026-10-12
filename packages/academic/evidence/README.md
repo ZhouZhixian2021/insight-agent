@@ -15,6 +15,7 @@ English | [中文](README.zh.md)
 
 - [Use this package](#use-this-package)
 - [API](#api)
+- [Incremental extraction](#incremental-extraction)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
@@ -76,6 +77,7 @@ Extraction rejects model source references individually. `EvidenceExtractionResu
 | `AcademicFullTextObserver` / `AcademicFullTextObservation` | Optional per-candidate facts from `fetchAcademicFullText()`: `started` when each attempt begins, then `settled` with `success`/`failed`/`cancelled`, its `FailureCategory`, and the accepted `bodyKind`. Facts carry no timestamp; the observer owner stamps them. |
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | Validates one raw fetch and prepares paragraph- or page-located content plus a hash. |
 | `extractEvidenceFromContent()` | Runs semantic extraction, verifies exact excerpts, and builds one paper's records and card. |
+| `extractEvidenceInFragments()` / `EvidenceFragmentOptions` | Verifies and commits smaller source ranges independently, with caller-classified local recovery and explicit input/output limits. |
 | `createSourceLocator()` | Builds one of the six locator variants with a fresh identity. |
 | `createEvidenceRecord()` | Builds a record, validating locator version, level, and non-empty fields. |
 | `createEvidenceCard()` | Builds a card with fresh item identities and per-item validation. |
@@ -85,6 +87,19 @@ Extraction rejects model source references individually. `EvidenceExtractionResu
 | `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | Structural fetch result and paper provenance accepted by HTML/PDF preparation. |
 | `EvidenceGenerator` / `EvidenceDraft` / `EvidenceQuestionLink` | Caller-owned semantic generation, its typed output, and the run-specific accepted evidence-to-question relation. |
 | `EvidenceError` | Typed construction failure carrying a stable `code`. |
+
+-----
+
+<a id="incremental-extraction"></a>
+## Incremental extraction
+
+Use `extractEvidenceInFragments()` with verified paper input and the explicit limits in [EvidenceFragmentPolicy](src/fragment-types.ts). Each call sends one source range, preserving its locator and abstract character offset. Drafts use local `segmentIndex: 0`; the generator also receives the original segment index, character range, paper/version identities, attempt number, extraction stage and output cap. The model adapter must apply `maximumOutputTokens` to the extraction call and record the exact request; synthesis keeps its own output budget.
+
+The required asynchronous `onVerified` sink receives source-checked evidence before another range is dispatched. It owns durable storage; sink failures stop extraction. Accepted records and card-item identities survive final assembly. Overlapping identical evidence is deduplicated by source location, statement, exact quote and question links. Rejected-draft indexes remain local to the callback's fragment. `onFailure` is informational and isolated; returned failures retain the original error, including any provider request ID supplied by the adapter.
+
+The caller classifies recoverable failures as `timeout`, `transport`, `parse_failed` or `incomplete_output`. Timeout, parsing and incomplete-output recovery halve only the failed source range when its size permits; transport recovery repeats that range with exponential backoff. `maximumAttempts` bounds all dispatches for each initial range, including both halves. The generator must make one model attempt per invocation, without nested batching or retries. Exhausted or undispatched recovery ranges appear in `incompleteFragments`; successful siblings remain available. Unclassified failures and cancellation reject the call, while previously committed fragments stay in the sink.
+
+The library dispatches fragments sequentially within one paper. Failure facts expose consecutive timeout/transport attempts, reset by a verified response, so the workflow can temporarily lower paper concurrency. The caller owns policy calibration, model timeouts, scope decisions, Session events and concurrency scheduling. This API does not activate itself in the Academic Controller; the workflow adapter must select it and map these facts into its existing run records.
 
 -----
 

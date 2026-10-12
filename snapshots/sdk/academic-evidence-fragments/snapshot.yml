@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-evidence-fragments
+profile: sdk
+composition: sdk-academic-evidence-fragments
+recording: authored
+header:
+  class: academic-evidence-fragments
+  pin: true
