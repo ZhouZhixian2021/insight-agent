@@ -1,0 +1,61 @@
+{
+  "synthetic": true,
+  "purpose": "Human-authored semantic review oracles; not a model judge or real paper evidence.",
+  "cases": [
+    {
+      "name": "scope_expansion",
+      "evidence": [
+        "合成研究 A 仅在数据集 X 的测试集上观察到错误率下降。",
+        "合成研究 B 仅在数据集 X 的同类任务上观察到改善。"
+      ],
+      "claim": "该方法在所有数据集和所有任务中都会减少错误。",
+      "scope": "所有数据集和所有任务",
+      "expectedReview": "unsupported",
+      "reason": "证据仅涉及数据集 X，不支持全场景推广。"
+    },
+    {
+      "name": "correlation_as_causation",
+      "evidence": [
+        "合成研究 A 观察到检索质量与回答正确率相关，未干预检索质量。",
+        "合成研究 B 报告相关性，没有控制其他变量。"
+      ],
+      "claim": "检索质量提高必然导致回答正确率提高。",
+      "scope": "因果关系",
+      "expectedReview": "unsupported",
+      "reason": "观察相关性不支持所声称的因果关系。"
+    },
+    {
+      "name": "ignored_opposition",
+      "evidence": [
+        "合成研究 A 在条件 X 下观察到改善。",
+        "合成研究 B 在条件 X 下没有观察到改善。"
+      ],
+      "claim": "这两项研究均证明条件 X 下该方法有效。",
+      "scope": "条件 X",
+      "expectedReview": "contradicted",
+      "reason": "回答声称一致支持，却遗漏第二项研究的不一致发现。"
+    },
+    {
+      "name": "absence_as_negative",
+      "evidence": [
+        "合成研究 A 没有测量该方法的安全风险。",
+        "合成研究 B 未讨论安全性，也没有进行安全试验。"
+      ],
+      "claim": "研究已经证明该方法不安全。",
+      "scope": "安全性",
+      "expectedReview": "unsupported",
+      "reason": "缺少安全性测量不能证明不安全。"
+    },
+    {
+      "name": "incomparable_conditions",
+      "evidence": [
+        "合成研究 A 在数据集 X 上测得准确率 85%。",
+        "合成研究 B 在不同的数据集 Y 上测得准确率 90%。"
+      ],
+      "claim": "研究 B 的方法一定优于研究 A。",
+      "scope": "跨数据集性能排名",
+      "expectedReview": "insufficient",
+      "reason": "数据集不同，当前证据不足以判断方法排名。"
+    }
+  ]
+}

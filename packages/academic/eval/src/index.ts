@@ -120,15 +120,26 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     }
     const freshness = checkClaimFreshness(claim, input.brief, evidence)
     if (freshness.status !== 'current') add(claim.claimId, freshness.status, freshness.reasons.join(' '))
+    if (new Set(claimLinks.map(link => link.evidenceId)).size !== claimLinks.length) {
+      add(claim.claimId, 'duplicate_claim_evidence', 'Each claim must assign one relation to each evidence record.')
+    }
     const supporting = claimLinks.filter(link => link.relation === 'supports')
     if (supporting.length === 0) add(claim.claimId, 'no_support', 'Background or opposing evidence alone does not support a claim.')
     checkEvidence(claimLinks, claim.claimId)
+    const independentSupport = new Set(supporting.flatMap((link) => {
+      const record = evidence.get(link.evidenceId)
+      return record === undefined ? [] : [record.academicWorkId]
+    }))
+    if (independentSupport.size < 2) {
+      add(claim.claimId, 'insufficient_independent_support', 'A cross-paper Claim requires supporting evidence from two independent works.')
+    }
     const integrityFailed = issues.length > before
     if (integrityFailed) blocked = true
     const reviews = input.reviews.filter(review => review.claimId === claim.claimId)
     const review = reviews.length === 1 ? reviews[0] : undefined
     const reviewMatches = review !== undefined && review.method.trim() !== '' && review.methodVersion.trim() !== ''
-      && review.reason.trim() !== '' && new Set(review.assessedEvidenceIds).size === snapshotIds.size
+      && review.reason.trim() !== '' && review.assessedEvidenceIds.length === snapshotIds.size
+      && new Set(review.assessedEvidenceIds).size === snapshotIds.size
       && review.assessedEvidenceIds.every(id => snapshotIds.has(id))
     let status: ClaimAssessment['status'] = integrityFailed ? 'insufficient' : 'partially_supported'
     if (!integrityFailed && reviewMatches) status = review.status

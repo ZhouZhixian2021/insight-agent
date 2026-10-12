@@ -47,22 +47,37 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     body.push(item.text, item.scope, ...(item.uncertainty === null ? [] : [item.uncertainty]))
     lines.push(`**分析段落 ${index + 1} · ${item.kind === 'source_statement' ? '论文陈述' : '跨论文综合'}**`, '',
       escapeMarkdown(item.text), '', `适用范围：${escapeMarkdown(item.scope)}`)
-    if (item.uncertainty !== null) lines.push(`不确定性：${escapeMarkdown(item.uncertainty)}`)
-    for (const link of item.evidenceLinks) {
-      const record = records.get(link.evidenceId) as EvidenceRecord
-      lines.push(`- [${references.get(record.academicWorkId)}] ${link.relation}；证据 ${escapeMarkdown(link.evidenceId)}：${escapeMarkdown(link.rationale)}`)
+    lines.push(`不确定性：${escapeMarkdown(item.uncertainty ?? '未说明；不代表不存在限制')}`)
+    const roles = [
+      ['supports', '主要依据'], ['contradicts', '不同发现／相反证据'], ['background', '背景材料（不直接支持结论）'],
+    ] as const
+    for (const [relation, label] of roles) {
+      const links = item.evidenceLinks.filter(link => link.relation === relation)
+      if (links.length === 0) continue
+      lines.push('', `**${label}**`, '')
+      for (const link of links) {
+        const record = records.get(link.evidenceId) as EvidenceRecord
+        lines.push(`- [${references.get(record.academicWorkId)}] 证据 ${escapeMarkdown(link.evidenceId)}：${escapeMarkdown(link.rationale)}`,
+          `  - 原文定位：版本 ${escapeMarkdown(record.workVersionId)}；定位 ${escapeMarkdown(record.sourceLocatorId)}。`,
+          record.verbatimExcerpt.status === 'available'
+            ? `  - 原文摘录：${escapeMarkdown(record.verbatimExcerpt.value)}` : '  - 原文摘录：未提供。')
+      }
+    }
+    if (!item.evidenceLinks.some(link => link.relation === 'contradicts')) {
+      lines.push('', '本段未关联相反证据；不代表文献中不存在不同发现。')
     }
     lines.push('')
   }
   lines.push('## 逐题研究结论', '', '以下问题覆盖状态由模型提议，尚未经过独立内容审核。', '')
   for (const answer of draft.questionAnswers) {
     lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown(brief.questions[answer.questionIndex] as string)}`, '',
-      `覆盖：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
+      `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
+    if (answer.statementIndexes.length > 0) lines.push('**当前回答与适用条件**', '')
     answer.statementIndexes.forEach(statement)
     if (answer.reason !== null) {
       const gap = `问题 ${answer.questionIndex + 1}：${answer.reason}`
       unmet.push(gap)
-      lines.push(`证据缺口：${escapeMarkdown(answer.reason)}`, '')
+      lines.push(`尚未回答／证据缺口：${escapeMarkdown(answer.reason)}`, '')
     }
   }
   for (const section of draft.sections) {

@@ -80,7 +80,7 @@ describe('fixed evidence to reviewed report', () => {
     const { input } = benchmark()
     const links = input.links.map((link, index) => index === 0 ? { ...link, relation: 'contradicts' as const } : link)
     const report = generateReport({ ...input, links })
-    expect(report.markdown).toContain('contradicts')
+    expect(report.markdown).toContain('不同发现／相反证据')
     expect(evaluateClaims({ ...input, links, reviews: reviewFixture(input),
       claims: input.claims.map(claim => ({ ...claim, uncertainty: null })) }).status).toBe('blocked')
   })
