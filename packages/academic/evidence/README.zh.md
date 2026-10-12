@@ -15,6 +15,7 @@ kind: "package-library"
 
 - [使用本包](#use-this-package)
 - [API](#api)
+- [增量抽取](#incremental-extraction)
 - [模型体验](#model-experience)
 - [已知限制与延后工作](#known-limitations-and-deferred-work)
 - [开发备注](#dev-note)
@@ -76,6 +77,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | `AcademicFullTextObserver` / `AcademicFullTextObservation` | `fetchAcademicFullText()` 的可选逐候选事实：每次尝试开始时发布 `started`，结束时发布 `settled`（`success`/`failed`/`cancelled`、失败 `FailureCategory` 与已接受 `bodyKind`）。事实不带时间戳，由观察者持有方打戳。 |
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | 校验一次原始抓取，并准备带段落或页码定位的内容与哈希。 |
 | `extractEvidenceFromContent()` | 执行语义抽取、核验逐字引文，并构造单篇论文的记录与卡片。 |
+| `extractEvidenceInFragments()` / `EvidenceFragmentOptions` | 独立核验并提交更小的原文范围，使用调用方分类的局部恢复与明确输入／输出限制。 |
 | `createSourceLocator()` | 构造六种定位变体之一，附带全新身份。 |
 | `createEvidenceRecord()` | 构造记录，校验定位版本、等级与非空字段。 |
 | `createEvidenceCard()` | 构造卡片，附带全新条目身份并逐条校验。 |
@@ -85,6 +87,19 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | HTML/PDF 准备接受的结构化抓取结果与论文来源信息。 |
 | `EvidenceGenerator` / `EvidenceDraft` / `EvidenceQuestionLink` | 调用方拥有的语义生成器、有类型输出，以及本次运行中已接受的证据—问题关联。 |
 | `EvidenceError` | 携带稳定 `code` 的类型化构造失败。 |
+
+-----
+
+<a id="incremental-extraction"></a>
+## 增量抽取
+
+向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。每次调用发送一个原文范围，保留其定位与摘要字符偏移。草稿使用局部 `segmentIndex: 0`；生成器还收到原始片段序号、字符范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
+
+必需的异步 `onVerified` 保存接口在下一范围发送前收到已核验来源的证据。它负责持久存储；保存失败会停止抽取。已接受记录和卡片条目的身份保留到最终组装结果。重叠的相同证据按来源定位、陈述、逐字引文和问题关联去重。被拒草稿序号保持为回调对应片段中的局部序号。`onFailure` 仅发布信息且隔离异常；返回的失败保留原始错误，包括适配器提供的 Provider 请求 ID。
+
+调用方将可恢复失败分类为 `timeout`、`transport`、`parse_failed` 或 `incomplete_output`。超时、解析和输出不完整恢复在大小允许时只把失败原文范围减半；传输恢复以指数退避重发该范围。`maximumAttempts` 限制每个初始范围的全部发送次数，包括两个子范围。生成器每次调用必须只执行一次模型尝试，不再嵌套分批或重试。耗尽预算或尚未发送的恢复范围进入 `incompleteFragments`；成功的同伴范围仍然可用。未分类失败和取消使调用拒绝，但已经提交的片段保留在保存接口中。
+
+库在一篇论文内按顺序发送片段。失败事实提供连续超时／传输尝试次数，并在一个响应通过核验后清零，供工作流临时降低论文并发。调用方负责策略校准、模型超时、范围判断、Session 事件和并发调度。该 API 不会自动在 Academic Controller 中启用；工作流适配器必须选择它，并将这些事实映射到现有运行记录。
 
 -----
 
