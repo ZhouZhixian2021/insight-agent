@@ -16,6 +16,8 @@ kind: "package-reference"
 
 同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
 
+需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。每次完整状态（包括最终结果和取消意图）写入 Session。Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
+
 ## 目录
 
 - [使用方式](#use-this-package)
@@ -72,7 +74,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
-- 一个一次性 Remote 流会保持到整轮结束。断线重连与续跑、调用方离开后的后台继续、RetrievalRun 持久记录和检索级重试留待后续。
+- 现有 `runStream` 仍是调用方拥有的一次性操作。独立后台接口已经提供，但正式 Web 页面尚未迁移。服务重启后未结算后台任务标为 `interrupted`；从 Q5 检查点恢复是一次显式新操作。跨服务重启自动续跑和检索级重试仍留待后续。
 - 混合计数累加已完成查询；中断查询不计入，并在 RetrievalRun 限制中披露。没有已完成混合查询时省略投影。`mergedDuplicates` 为整轮上限应用前的 ingestion 记录数减去不同论文数，不包含重复引用或被截断的记录。核验成功不代表保留为候选或纳入证据。持久化的发现到论文溯源仍属于 B-H3。
 - 当前每份获批计划都会建立版本 1，其身份由 Session 和获批计划调用共同确定；对已批准 Brief 进行后续版本修订留待后续。
 

@@ -615,6 +615,65 @@ describe('AcademicResearchController', () => {
     verifiedDiscoveries: [], audit: { entries: [] } }, brief())).toEqual({ papers: [], truncated: false })
   })
 
+  it('keeps a background run alive after a subscriber disconnects and reopens its terminal result', async () => {
+    const fixture = await harness()
+    const observed = retrievalRun()
+    let settle: ((value: Awaited<ReturnType<RunAcademicResearchDraft>>) => void) | undefined
+    runAcademicResearchDraft.mockImplementation(request => new Promise((resolve) => {
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      settle = resolve
+    }))
+    const caller = new AbortController()
+    const started = await fixture.controller.startBackgroundRun({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, caller.signal)
+    expect(started).toMatchObject({ state: 'running', sessionId: fixture.sessionId, result: null })
+    expect(await fixture.controller.listBackgroundRuns(fixture.sessionId)).toMatchObject([
+      { backgroundRunId: started.backgroundRunId, state: 'running' },
+    ])
+    const viewer = new AbortController()
+    const watch = fixture.controller.watchBackgroundRun(started, viewer.signal)[Symbol.asyncIterator]()
+    await expect(watch.next()).resolves.toMatchObject({ value: { state: 'running' } })
+    viewer.abort()
+    caller.abort()
+    await expect(watch.next()).resolves.toEqual({ done: true, value: undefined })
+    await vi.waitFor(() => { expect(settle).toBeDefined() })
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].signal?.aborted).toBe(false)
+    settle?.({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: observed, papers: [], failures: [], analysis: null, report: null } as never)
+    await vi.waitFor(async () => { expect((await fixture.controller.getBackgroundRun(started)).state).toBe('completed') })
+    expect(await fixture.controller.getBackgroundRun(started)).toMatchObject({
+      state: 'completed', result: { status: 'completed', retrievalRun: { retrievalRunId: observed.retrievalRunId } },
+    })
+    expect(await fixture.controller.listBackgroundRuns(fixture.sessionId)).toMatchObject([
+      { backgroundRunId: started.backgroundRunId, state: 'completed' },
+    ])
+    expect(fixture.sessionEvents.map(([type]) => type)).toContain('academic/background-run-state')
+  })
+
+  it('aborts background work only through an explicit cancellation request', async () => {
+    const fixture = await harness()
+    const observed = retrievalRun('cancelled')
+    runAcademicResearchDraft.mockImplementation(request => new Promise((resolve) => {
+      request.signal?.addEventListener('abort', () => { resolve({
+        synthesis: { status: 'not_run', reasons: [] }, status: 'cancelled', sessionId: fixture.sessionId,
+        retrievalRun: observed, papers: [], failures: [], analysis: null, report: null,
+      } as never) }, { once: true })
+    }))
+    const started = await fixture.controller.startBackgroundRun({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never,
+      synthetic: false }, fixture.signal)
+    await vi.waitFor(() => { expect(runAcademicResearchDraft).toHaveBeenCalledOnce() })
+    await expect(fixture.controller.cancelBackgroundRun({ sessionId: fixture.sessionId,
+      backgroundRunId: started.backgroundRunId, reason: 'user_requested' })).resolves.toMatchObject({
+      state: 'running', cancelReason: 'user_requested',
+    })
+    await vi.waitFor(async () => { expect((await fixture.controller.getBackgroundRun(started)).state).toBe('cancelled') })
+    expect(await fixture.controller.getBackgroundRun(started)).toMatchObject({
+      state: 'cancelled', cancelReason: 'user_requested',
+    })
+  })
+
   it('streams ordered progress snapshots and one final result from one workflow invocation', async () => {
     const fixture = await harness()
     const observed = retrievalRun()

@@ -104,6 +104,36 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts this one pass.' }],
         returns: 'ordered progress frames and at most one terminal result frame.',
       },
+      {
+        signature: '@Remote(\'startBackgroundRun\') async startBackgroundRun(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicBackgroundRunView>',
+        description: 'Start a Session-owned research task whose lifetime does not depend on the browser connection.',
+        parameters: [{ name: 'request', description: 'Approved plan identity and bounded run options.' }, { name: 'signal', description: 'Caller lifetime used only before admission; disconnect after admission leaves the task running.' }],
+        returns: 'Persisted initial state and its independent background run ID.',
+      },
+      {
+        signature: '@Remote(\'getBackgroundRun\') async getBackgroundRun(key: AcademicBackgroundRunKey): Promise<AcademicBackgroundRunView>',
+        description: 'Read the latest Session-owned task state, including after a host restart.',
+        parameters: [{ name: 'key', description: 'Session and background run identity.' }],
+        returns: 'Latest durable state; an unclosed task from a previous host is marked interrupted.',
+      },
+      {
+        signature: '@Remote(\'listBackgroundRuns\') async listBackgroundRuns(sessionId: AcademicResearchRunRequest[\'sessionId\']): Promise<readonly AcademicBackgroundRunSummary[]>',
+        description: 'Find this Session\'s recent task IDs after a page refresh or reconnection.',
+        parameters: [{ name: 'sessionId', description: 'Owning Session identity.' }],
+        returns: 'At most 20 small discovery rows, oldest first, with live tasks overriding persisted snapshots.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watchBackgroundRun(key: AcademicBackgroundRunKey, signal: AbortSignal): AsyncIterable<AcademicBackgroundRunView>',
+        description: 'Subscribe to a task without taking ownership of its lifetime.',
+        parameters: [{ name: 'key', description: 'Session and background run identity.' }, { name: 'signal', description: 'Subscriber lifetime; disconnect only ends this subscription.' }],
+        returns: 'Current view followed by live updates, or one terminal/recovered view.',
+      },
+      {
+        signature: '@Remote(\'cancelBackgroundRun\') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>',
+        description: 'Explicitly cancel an active task; closing a viewer never calls this method.',
+        parameters: [{ name: 'request', description: 'Session-owned run identity and user cancellation reason.' }],
+        returns: 'Latest state, including the durable cancellation intent.',
+      },
     ],
   },
   {
@@ -3537,6 +3567,26 @@ export const EVENT_API: readonly EventApiEntry[] = [
 
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
+  {
+    name: 'AcademicBackgroundRunCancelRequest',
+    declaration: 'export interface AcademicBackgroundRunCancelRequest extends AcademicBackgroundRunKey {\n    readonly reason: \'user_requested\';\n}',
+  },
+  {
+    name: 'AcademicBackgroundRunId',
+    declaration: 'export type AcademicBackgroundRunId = string;',
+  },
+  {
+    name: 'AcademicBackgroundRunKey',
+    declaration: 'export interface AcademicBackgroundRunKey {\n    readonly sessionId: SessionId;\n    readonly backgroundRunId: AcademicBackgroundRunId;\n}',
+  },
+  {
+    name: 'AcademicBackgroundRunSummary',
+    declaration: 'export type AcademicBackgroundRunSummary = Pick<AcademicBackgroundRunView, \'schemaVersion\' | \'sessionId\' | \'backgroundRunId\' | \'researchBriefId\' | \'state\' | \'startedAt\' | \'updatedAt\' | \'retrievalRunId\' | \'cancelReason\'>;',
+  },
+  {
+    name: 'AcademicBackgroundRunView',
+    declaration: 'export interface AcademicBackgroundRunView extends AcademicBackgroundRunKey {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly state: \'running\' | \'completed\' | \'cancelled\' | \'failed\' | \'interrupted\';\n    readonly startedAt: string;\n    readonly updatedAt: string;\n    readonly retrievalRunId: RetrievalRunId | null;\n    readonly progress: AcademicResearchProgressView | null;\n    readonly q6: AcademicQ6Projection | null;\n    readonly result: AcademicResearchRunValue | null;\n    readonly error: string | null;\n    readonly cancelReason: \'user_requested\' | \'service_stopped\' | null;\n}',
+  },
   {
     name: 'AcademicBatchDecisionEvent',
     declaration: 'export interface AcademicBatchDecisionEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number | null;\n    readonly action: \'schedule_batch\' | \'search_evidence_gap\' | \'stop\';\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly searchQuestions: readonly string[];\n    readonly reason: string | null;\n}',

@@ -76,10 +76,49 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns ordered progress frames and at most one terminal result frame.
  */
 @Remote({ mode: 'stream' }) runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame>
+
+/**
+ * Start a Session-owned research task whose lifetime does not depend on the browser connection.
+ * @param request Approved plan identity and bounded run options.
+ * @param signal Caller lifetime used only before admission; disconnect after admission leaves the task running.
+ * @returns Persisted initial state and its independent background run ID.
+ */
+@Remote('startBackgroundRun') async startBackgroundRun(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicBackgroundRunView>
+
+/**
+ * Read the latest Session-owned task state, including after a host restart.
+ * @param key Session and background run identity.
+ * @returns Latest durable state; an unclosed task from a previous host is marked interrupted.
+ */
+@Remote('getBackgroundRun') async getBackgroundRun(key: AcademicBackgroundRunKey): Promise<AcademicBackgroundRunView>
+
+/**
+ * Find this Session's recent task IDs after a page refresh or reconnection.
+ * @param sessionId Owning Session identity.
+ * @returns At most 20 small discovery rows, oldest first, with live tasks overriding persisted snapshots.
+ */
+@Remote('listBackgroundRuns') async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]>
+
+/**
+ * Subscribe to a task without taking ownership of its lifetime.
+ * @param key Session and background run identity.
+ * @param signal Subscriber lifetime; disconnect only ends this subscription.
+ * @returns Current view followed by live updates, or one terminal/recovered view.
+ */
+@Remote({ mode: 'stream' }) async *watchBackgroundRun(key: AcademicBackgroundRunKey, signal: AbortSignal): AsyncIterable<AcademicBackgroundRunView>
+
+/**
+ * Explicitly cancel an active task; closing a viewer never calls this method.
+ * @param request Session-owned run identity and user cancellation reason.
+ * @returns Latest state, including the durable cancellation intent.
+ */
+@Remote('cancelBackgroundRun') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>
 ```
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)
 <!-- END GENERATED cordis-surface -->
+
+`AcademicBackgroundRunKey` 把 Host 拥有的任务 ID 绑定到 Session；`AcademicBackgroundRunCancelRequest` 增加明确的 `user_requested` 原因。`AcademicBackgroundRunView` 将最新状态、进度、Q6 投影和终态结果作为一条完整 Session 事件保存。`AcademicBackgroundRunSummary` 是 `listBackgroundRuns` 返回的简短发现行；客户端另行读取选中运行的完整状态。订阅者的 AbortSignal 只结束查看。没有活动 Host 所有者的未结算记录显示为 `interrupted`，保留最后观察到的检索 ID 和进度；检查点恢复是一次显式新运行。
 
 逐题洞察由[分析库](../../packages/academic/analysis/README.zh.md)负责，通过[工作流](../../packages/academic/workflow/README.zh.md)调用模型。`AcademicSynthesisInput` 绑定批准的 Brief 版本、RetrievalRun 身份、准入分析记录与观察到的覆盖统计。`AcademicSynthesisDraft` 包含带引用的陈述、每个问题按序对应的回答、章节及局限。Remote 增加 `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`；检索统计仍只描述检索。问题回答不代表语义审核通过。
 
