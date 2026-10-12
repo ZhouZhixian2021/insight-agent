@@ -1,10 +1,14 @@
 /** Markdown delivery with mandatory current-evidence evaluation and visible limitations. */
 import { evaluateClaims, type EvaluationInput, type EvaluationResult } from '@deepseek-ai/dsh-academic-eval'
-import type { AcademicWork, ClaimRecord, EvidenceRecord } from '@deepseek-ai/dsh-academic-model'
+import type { AcademicWork, ClaimRecord, EvidenceRecord, ClaimEvidenceRelation } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import type { CoverageSummary } from '@deepseek-ai/dsh-academic-model'
 import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
 import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval-disclosure.ts'
+
+const relationLabels: Record<ClaimEvidenceRelation, string> = {
+  supports: '支持依据', contradicts: '不同发现／相反证据', background: '背景材料（不直接支持结论）',
+}
 export { appendRetrievalDisclosure } from './retrieval-disclosure.ts'
 export type { RetrievalDisclosure } from './retrieval-disclosure.ts'
 
@@ -104,7 +108,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
         `不确定性：${escapeMarkdown(claim.uncertainty ?? '未说明')}`, '')
       for (const link of links) {
         const record = evidence.find(item => item.evidenceId === link.evidenceId)
-        lines.push(`- ${link.relation}：${record ? `[${references.get(record.academicWorkId)}]` : '缺失来源'}；证据 ${escapeMarkdown(link.evidenceId)}；${escapeMarkdown(link.rationale)}`)
+        lines.push(`- ${relationLabels[link.relation]}：${record ? `[${references.get(record.academicWorkId)}]` : '缺失来源'}；证据 ${escapeMarkdown(link.evidenceId)}；${escapeMarkdown(link.rationale)}`)
       }
       lines.push('')
     }

@@ -21,6 +21,10 @@ Callers use `prepareAnalysisInput()` to group evidence-card entries by work and 
 <a id="use-this-package"></a>
 ## Use this package
 
+The synthesis request contains a reading guide built from admitted evidence IDs and producer card sections. Sections describe content roles, not question relevance or semantic support. Exact duplicate groups require the same work, version, locator, provider, URL, level, available hash and verbatim excerpt; no source record is merged or removed. The existing synthesis call selects complementary question-relevant evidence and explains each link using its original ID. No additional model pass, search or embedding service is introduced.
+
+The prompt compares task, population, dataset/split, metric/unit, method and experimental conditions before interpreting differences. It distinguishes scoped agreement, differences across conditions, potential disagreements and indeterminate comparisons; unavailable conditions remain unavailable. Correlation cannot establish causation, and a gap in this run cannot establish a field-wide research gap. Compact recovery retains the original card entries as comparison context rather than losing dataset and finding conditions. These instructions guide generation; parsing does not certify their semantic execution.
+
 Admission distinguishes `ready`, `ready_with_warning`, and `blocked`. Positive usable evidence below a work or full-text minimum is allowed only under `continue_with_warning`; zero usable evidence and insufficient evidence under `stop_for_review` remain blocked. Warnings disclose unmet minimums without changing the approved Brief. The model prompt records these limitations and requests partial or unanswered questions where support is missing.
 
 Evidence admission also returns `usableWorkIds` for bounded replenishment even when the Plan minimum is unmet. These identify independent works with admitted evidence, not downloaded or merely scope-accepted papers.

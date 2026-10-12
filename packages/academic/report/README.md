@@ -21,6 +21,8 @@ Generate a traceable Chinese Markdown draft and gate final reports on current ev
 <a id="use-this-package"></a>
 ## Use this package
 
+Question-driven arguments place cited excerpts, version/locator identities and model-proposed link explanations beside each retained paragraph. References are grouped as support, opposing findings and background; background is never labeled as direct support. A paragraph without opposing links explicitly leaves other findings unknown. Missing uncertainty is not represented as proof of no limitation. Partial or unanswered questions expose their remaining gaps. Shared paragraphs render once, and quotations and citation explanations do not increase analytical body length. Rendering does not reassess evidence or change approval status.
+
 `appendRetrievalDisclosure()` appends escaped, localized observations, limitations and failures while preserving the original Markdown body. `generateReport()` accepts the same optional `retrievalDisclosure`; it does not turn discovery URLs into references or change review eligibility. The workflow supplies completed query observations, approved budgets and failures for both Web and SDK reports. A report with this appendix returns `retrievalDisclosureIncluded: true`, allowing clients to preserve the Markdown without appending duplicate disclosure. Presentation observations are not an authoritative verification ledger or proof of complete coverage.
 
 Question-driven drafts disclose admitted, cited and supporting-work counts separately. Below-Plan supporting-work or full-text counts produce a prominent limited-evidence notice and `unmet_plan` issues. Such drafts remain viewable with blocked final delivery; neither the approved minimums nor citation integrity checks are relaxed.

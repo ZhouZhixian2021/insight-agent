@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, type AcademicSynthesisInput } from '@deepseek-ai/dsh-academic-analysis'
 import { generateReport } from '../src/index.ts'
+import { renderSynthesis } from '../src/synthesis-render.ts'
 
 function fixture() {
   const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
@@ -39,7 +40,7 @@ describe('question-driven report', () => {
     expect(report.evaluation.status).toBe('blocked')
     expect(report.evaluation.issues.some(issue => issue.code === 'version_hash_mismatch')).toBe(true)
   })
-  it('renders individual answers and cross-paper analysis with real input references and visible gaps', () => {
+  it('renders individual answers and cross-paper analysis with real input references and visible gaps', async () => {
     const input = fixture(), report = generateReport(input)
     expect(report.markdown).toContain('逐题研究结论')
     for (const question of input.brief.questions) expect(report.markdown).toContain(question)
@@ -50,6 +51,7 @@ describe('question-driven report', () => {
     expect(report.evaluation.status).toBe('needs_review')
     expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan')).toBe(true)
     expect(report.markdown).toContain('不能替代真实全文验收')
+    await expect(report.markdown).toMatchFileSnapshot('./expected/question-report.md')
   })
   it('does not use large quotations or repeated paragraphs to satisfy the approved body length', () => {
     const input = fixture()
@@ -72,4 +74,48 @@ it('discloses count gaps in a downloadable draft while denying final delivery', 
   expect(report.evaluation.status).toBe('blocked')
   expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan' && issue.message.includes('至少要求 6 篇'))).toBe(true)
   expect(() => generateReport({ ...value, brief, mode: 'final', synthetic: false })).toThrow()
+})
+
+describe('inspectable question argumentation', () => {
+  it('groups support, opposing and background references beside unchanged source excerpts', () => {
+    const input = fixture(), first = input.synthesis.statements[0]!, a = input.evidence[0]!, b = input.evidence[1]!
+    const background = { ...a, evidenceId: 'context-only' as typeof a.evidenceId }
+    const statement = { ...first, uncertainty: '研究条件不同，尚不能确认真正冲突。', evidenceLinks: [
+      { evidenceId: a.evidenceId, relation: 'supports' as const, rationale: '回答问题中关于方法的部分。' },
+      { evidenceId: b.evidenceId, relation: 'contradicts' as const, rationale: '保留不同发现及条件限制。' },
+      { evidenceId: background.evidenceId, relation: 'background' as const, rationale: '仅用于理解实验环境。' },
+    ] }
+    const draft = { ...input.synthesis, statements: [statement, ...input.synthesis.statements.slice(1)] }
+    const before = JSON.stringify({ input, draft, background })
+    const result = renderSynthesis(input.brief, draft, [...input.evidence, background],
+      new Map(input.works.map((work, index) => [work.academicWorkId, index + 1])), input.coverage)
+    const markdown = result.lines.join('\n')
+    for (const label of ['当前回答与适用条件', '主要依据', '不同发现／相反证据', '背景材料（不直接支持结论）',
+      '适用范围', '不确定性', '原文定位', '原文摘录', '尚未回答／证据缺口']) expect(markdown).toContain(label)
+    expect(markdown).toContain(statement.evidenceLinks[1]!.rationale)
+    expect(markdown).toContain(a.workVersionId)
+    expect(markdown).toContain(a.sourceLocatorId)
+    expect(markdown).toContain(a.verbatimExcerpt.status === 'available' ? a.verbatimExcerpt.value : 'unused')
+    expect(JSON.stringify({ input, draft, background })).toBe(before)
+  })
+  it('does not equate unlinked opposition or null uncertainty with a complete evidence picture', () => {
+    const input = fixture()
+    const report = generateReport({ ...input, synthesis: { ...input.synthesis,
+      statements: input.synthesis.statements.map(item => ({ ...item, uncertainty: null })) } })
+    expect(report.markdown).toContain('未说明；不代表不存在限制')
+    expect(report.markdown).toContain('本段未关联相反证据；不代表文献中不存在不同发现。')
+    expect(report.evaluation.status).toBe('needs_review')
+  })
+  it('escapes evidence excerpts in the inline argument without counting them as analytical body length', () => {
+    const input = fixture()
+    const report = generateReport({ ...input,
+      brief: { ...input.brief, reportRequirements: { ...input.brief.reportRequirements,
+        targetLength: { unit: 'characters', minimum: 2000, maximum: 8000 } } },
+      evidence: input.evidence.map(record => ({ ...record,
+        verbatimExcerpt: { status: 'available', value: '<script>untrusted</script>\n# fabricated heading' } })),
+    })
+    expect(report.markdown).toContain('\\<script\\>')
+    expect(report.markdown).not.toContain('<script>')
+    expect(report.limitations.join(' ')).toContain('未满足批准的篇幅范围 2000—8000')
+  })
 })
