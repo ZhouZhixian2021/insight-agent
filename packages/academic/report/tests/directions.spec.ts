@@ -1,0 +1,67 @@
+import { readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
+import { parseSynthesisDraft, synthesisAnalysis, type AcademicSynthesisInput } from '@deepseek-ai/dsh-academic-analysis'
+import { generateReport } from '../src/index.ts'
+import { scholarlyLink } from '../src/bibliography.ts'
+
+const root = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+function fixture() {
+  const input = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', root), 'utf8')) as AcademicSynthesisInput
+  const synthesis = parseSynthesisDraft(readFileSync(new URL('synthesis-partial-output.sample.json', root), 'utf8'), input)
+  const analysis = synthesisAnalysis(input, synthesis, '2026-10-12T00:00:00Z')
+  return { brief: input.brief, claims: analysis.claims, links: analysis.links, evidence: input.analysisInput.evidenceRecords,
+    versions: input.analysisInput.workVersions, works: input.analysisInput.academicWorks,
+    sourceLocators: input.analysisInput.sourceLocators,
+    reviews: [], assessedAt: '2026-10-12T00:00:00Z', limitations: synthesis.limitations, synthesis,
+    coverage: input.coverageSummary, synthetic: true, mode: 'draft' as const }
+}
+
+describe('direction report-format hierarchy', () => {
+  it('renders opening metadata, directions and references from unchanged inputs', async () => {
+    const input = fixture(), before = JSON.stringify(input), report = generateReport(input)
+    for (const label of ['报告信息与研究范围', '发表时间窗口', '报告日期：2026-10-12', '执行洞察', '方向地图',
+      '方向 1', '方向 2', '方向概览', '当前关注主题', '代表论文', '核心机制', '方向判断',
+      '跨方向综合', '逐题研究结论', '方法补充：方向覆盖限制', '参考文献', '证据附录']) {
+      expect(report.markdown).toContain(label)
+    }
+    expect(report.markdown).toContain('仅支持一个关注主题')
+    expect(report.markdown).toContain('没有提供经检查的实验结果')
+    expect(report.markdown).toContain('没有支持工程应用收益的证据')
+    expect(report.markdown).toContain('场所：未提供')
+    expect(report.markdown).toContain('https://example.invalid/academic/synthetic/1')
+    expect(report.evaluation.status).toBe('needs_review')
+    expect(JSON.stringify(input)).toBe(before)
+    await expect(report.markdown).toMatchFileSnapshot('./expected/direction-report.md')
+  })
+  it('preserves citation status, partial dates and safe DOI or arXiv links', () => {
+    const input = fixture(), a = input.works[0]!
+    const doi = { kind: 'doi' as const, normalizedValue: '10.1234/a>b', originalValue: '10.1234/a>b', sourceProvider: 'fixture' }
+    expect(scholarlyLink({ ...a, externalIdentifiers: [doi] }, [], input.evidence)).toBe('<https://doi.org/10.1234/a%3Eb>')
+    const arxiv = { ...doi, kind: 'arxiv' as const, normalizedValue: '2401.12345v2' }
+    expect(scholarlyLink({ ...a, externalIdentifiers: [arxiv] }, [], input.evidence)).toContain('arxiv.org/abs/2401.12345v2')
+    expect(scholarlyLink({ ...a, externalIdentifiers: [] }, [], input.evidence.map(record => ({ ...record,
+      sourceUrl: 'https://user:secret@example.invalid/' })))).toBe('稳定链接未提供')
+    expect(generateReport({ ...input, evidence: input.evidence.map(record => ({ ...record,
+      sourceUrl: 'https://user:secret@example.invalid/' })) }).markdown).not.toContain('user:secret')
+    expect(generateReport(input).markdown).toContain('首次公开：2017')
+    expect(generateReport(input).markdown).not.toContain('2017-01-01')
+  })
+  it('renders declared full-text results with conditions without ranking unlike datasets', () => {
+    const input = fixture()
+    const synthesis = { ...input.synthesis, directions: input.synthesis.directions!.map((direction, index) => index === 0
+      ? { ...direction, keyResults: { statementIndexes: [0], missingReason: null, quantitative: true } } : direction) }
+    const report = generateReport({ ...input, synthesis })
+    expect(report.markdown).toContain('| 结果描述 | 适用条件 | 全文依据 | 不确定性 |')
+    expect(report.markdown).toContain('不据此对不同数据集或指标建立统一排名')
+    expect(() => generateReport({ ...input, mode: 'final', synthetic: false })).toThrow()
+  })
+  it('labels a legacy output as incomplete instead of inventing directions', () => {
+    const input = fixture()
+    const { directions, ...synthesis } = input.synthesis
+    expect(directions).toBeDefined()
+    const report = generateReport({ ...input, synthesis })
+    expect(report.markdown).toContain('方向布局尚未提供')
+    expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan' && issue.message.includes('方向布局'))).toBe(true)
+    expect(report.markdown).not.toContain('## 方向地图')
+  })
+})

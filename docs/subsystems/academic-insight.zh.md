@@ -120,7 +120,7 @@ Source: [`packages/api/academic-research-controller/src/index.ts`](../../package
 
 `AcademicBackgroundRunKey` 把 Host 拥有的任务 ID 绑定到 Session；`AcademicBackgroundRunCancelRequest` 增加明确的 `user_requested` 原因。`AcademicBackgroundRunView` 将最新状态、进度、Q6 投影和终态结果作为一条完整 Session 事件保存。`AcademicBackgroundRunSummary` 是 `listBackgroundRuns` 返回的简短发现行；客户端另行读取选中运行的完整状态。订阅者的 AbortSignal 只结束查看。没有活动 Host 所有者的未结算记录显示为 `interrupted`，保留最后观察到的检索 ID 和进度；检查点恢复是一次显式新运行。
 
-逐题洞察由[分析库](../../packages/academic/analysis/README.zh.md)负责，通过[工作流](../../packages/academic/workflow/README.zh.md)调用模型。`AcademicSynthesisInput` 绑定批准的 Brief 版本、RetrievalRun 身份、准入分析记录与观察到的覆盖统计。`AcademicSynthesisDraft` 包含带引用的陈述、每个问题按序对应的回答、章节及局限。Remote 增加 `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`；检索统计仍只描述检索。问题回答不代表语义审核通过。
+逐题洞察由[分析库](../../packages/academic/analysis/README.zh.md)负责，通过[工作流](../../packages/academic/workflow/README.zh.md)调用模型。`AcademicSynthesisInput` 绑定批准的 Brief 版本、RetrievalRun 身份、准入分析记录与观察到的覆盖统计。`AcademicSynthesisDraft` 包含带引用的陈述、每个问题按序对应的回答、章节、局限，以及引用同一组陈述的可选方向组件。旧草稿缺少方向时保持问题式；新方向布局遵循[报告库](../../packages/academic/report/README.zh.md)。Remote 增加 `synthesis: { status: "not_run" | "blocked" | "failed" | "completed" | "partial_success", reasons: readonly string[] }`；检索统计仍只描述检索。问题回答不代表语义审核通过。
 
 工作流导出 `AcademicResearchRecoveryState` 契约和纯 A-S2 折叠函数 `reconstructAcademicResearchRecoveryState()`。输入完整、有序的 Session 日志以及准确运行／Brief 身份后，它会重建已批准计划、已完成批次、有序待处理候选、最近一次已提交的覆盖和运行终态。A-S3 在排序批次边界增加持久化的可执行检查点。`run` 和 `runStream` 接受可选的 `resumeRetrievalRunId`；Controller 取得 Session 写入句柄、校验最近检查点、跳过检索和筛选、保留原运行身份、避开已结算批次，并把一个未结算批次作为整体重新执行。没有检查点载荷的历史未完成运行会明确返回 `candidate_state_missing`。
 

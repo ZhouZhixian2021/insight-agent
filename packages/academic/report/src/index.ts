@@ -4,6 +4,7 @@ import type { AcademicWork, ClaimRecord, EvidenceRecord, ClaimEvidenceRelation }
 import type { AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import type { CoverageSummary } from '@deepseek-ai/dsh-academic-model'
 import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
+import { workBibliography, type ReportMetadata } from './bibliography.ts'
 import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval-disclosure.ts'
 
 const relationLabels: Record<ClaimEvidenceRelation, string> = {
@@ -82,12 +83,24 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   const workIds = [...new Set(evidence.map(record => record.academicWorkId))]
   const references = new Map(workIds.map((id, index) => [id, index + 1]))
   const limitations = [...input.limitations, ...evaluation.issues.map(issue => issue.message)]
+  const metadata: ReportMetadata = { works: input.works, versions: input.versions, reportDate: input.assessedAt }
   reportOperation(onOperation, 'rendering')
   const lines = [`# ${escapeMarkdown(input.brief.topic)}`, '',
     input.mode === 'draft' ? '> 草稿：未经完整审核，不作为最终研究结论。' : '> 已完成当前证据与语义审核。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
   if (synthesisInput !== null) {
-    const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage)
+    lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
+      `发表时间窗口：${escapeMarkdown(input.brief.publicationWindow.start?.iso ?? '未限定')}—${escapeMarkdown(input.brief.publicationWindow.end?.iso ?? '未限定')}；`
+        + `日期口径：${input.brief.publicationWindow.dateBasis === 'published' ? '正式发表日期' : '首次公开日期'}`, `报告日期：${escapeMarkdown(metadata.reportDate.slice(0, 10))}`,
+      `面向读者：${escapeMarkdown(input.brief.targetAudience)}`,
+      `引用证据来源：${escapeMarkdown([...new Set(evidence.map(record => record.sourceProvider))].join(', ') || '未提供')}`,
+      `纳入规则：${escapeMarkdown(input.brief.inclusionRules.join('；') || '未提供')}`,
+      `排除规则：${escapeMarkdown(input.brief.exclusionRules.join('；') || '未提供')}`,
+      `发表版本政策：${escapeMarkdown(input.brief.includedWorkTypes.join(', '))}；允许预印本：${input.brief.evidenceRequirements.allowPreprints ? '是' : '否'}`,
+      '证据范围限于本轮已核验材料；未满足的方向与实验条件在方法补充及局限中披露。',
+      input.retrievalDisclosure === undefined ? '未提供实际检索渠道明细，不能据此宣称来源覆盖完整。'
+        : '实际检索渠道、来源失败及数量上限见本次检索披露；引用证据来源不代表全部检索来源。', '')
+    const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage, metadata)
     lines.push(...rendered.lines)
     limitations.push(...rendered.unmet, '问题回答与单篇论文陈述尚未经过独立语义审核。')
     evaluation = { ...evaluation, status: evaluation.status === 'blocked' ? 'blocked' : 'needs_review',
@@ -117,14 +130,14 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   lines.push('## 局限与质量检查', '', ...limitations.map(text => `- ${escapeMarkdown(text)}`), '',
     '## 参考文献', '')
   for (const work of input.works.filter(item => references.has(item.academicWorkId))) {
-    lines.push(`${references.get(work.academicWorkId)}. ${escapeMarkdown(work.title)} — ${escapeMarkdown(work.authors.join(', '))}；正式引用版本：${escapeMarkdown(work.canonicalVersionId)}`)
+    lines.push(`${references.get(work.academicWorkId)}. ${workBibliography(work, metadata, evidence)}`)
   }
   lines.push('', '## 证据附录', '')
   for (const record of evidence) {
     let url = '来源 URL 不可用'
     try {
       const parsed = new URL(record.sourceUrl)
-      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') url = parsed.href.replace(/[<>\s]/gu, encodeURIComponent)
+      if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.username === '' && parsed.password === '') url = parsed.href.replace(/[<>\s]/gu, encodeURIComponent)
     } catch { /* An invalid provider URL is retained in the raw record but never emitted as an active link. */ }
     lines.push(`### ${escapeMarkdown(record.evidenceId)}`, '',
       `实际证据版本：${escapeMarkdown(record.workVersionId)}；证据等级：${record.level}；获取时间：${escapeMarkdown(record.retrievedAt)}`,
