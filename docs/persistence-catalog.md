@@ -127,6 +127,17 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:43`](../packages/a
 
 Source: [`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
 
+<a id="academicevidence-fragment-verified--log-only"></a>
+
+#### `academic/evidence-fragment-verified` — log-only
+
+```ts persistence-catalog
+/** Source-verified evidence committed before another fragment is dispatched. */
+'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
+```
+
+Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
+
 <a id="academicevidence-request--log-only"></a>
 
 #### `academic/evidence-request` — log-only
@@ -136,7 +147,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:45`](../packages/a
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:136`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:162`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -147,7 +158,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:136`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:138`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 

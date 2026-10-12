@@ -5,7 +5,7 @@ import { extractEvidenceFromContent } from './extract.ts'
 import { EvidenceError } from './types.ts'
 import type { EvidenceContentSegment, EvidenceExtractionInput, EvidenceExtractionResult } from './types.ts'
 import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragmentOptions,
-  EvidenceFragmentRange, EvidenceFragmentResult } from './fragment-types.ts'
+  EvidenceFragmentRange, EvidenceFragmentResult, EvidenceFragmentSourceRange } from './fragment-types.ts'
 
 /**
  * Verify each fragment before dispatching the next, and recover only failed source ranges.
@@ -27,60 +27,56 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
   const incomplete: EvidenceFragmentRange[] = []
   const seen = new Set<string>()
   let consecutiveTransientFailures = 0
-  let fragmentIndex = 0
-  for (const [segmentIndex, segment] of input.segments.entries()) {
-    for (let start = 0; start < segment.text.length;) {
+  for (const initial of packSourceRanges(input.segments, options.policy.maximumCharacters,
+    options.policy.overlapCharacters)) {
+    signal?.throwIfAborted()
+    const queue: EvidenceFragmentRange[] = [initial]
+    let attempt = 0
+    for (let range = queue.shift(); range !== undefined; range = queue.shift()) {
       signal?.throwIfAborted()
-      const end = Math.min(segment.text.length, start + options.policy.maximumCharacters)
-      const queue: EvidenceFragmentRange[] = [{ fragmentIndex: ++fragmentIndex, segmentIndex, characterStart: start, characterEnd: end }]
-      let attempt = 0
-      for (let range = queue.shift(); range !== undefined; range = queue.shift()) {
+      if (sourceRanges(range).every(part => sourceSegment(input.segments, part.segmentIndex)
+        .text.slice(part.characterStart, part.characterEnd).trim() === '')) continue
+      if (attempt === options.policy.maximumAttempts) {
+        incomplete.push(range, ...queue)
+        break
+      }
+      const context: EvidenceFragmentAttempt = { ...range, academicWorkId: input.academicWorkId,
+        workVersionId: input.workVersionId, stage: 'extraction', attempt: ++attempt,
+        maximumAttempts: options.policy.maximumAttempts, maximumOutputTokens: options.policy.maximumOutputTokens }
+      const source = fragmentSource(input, range)
+      let result: EvidenceExtractionResult
+      try {
+        result = await extractEvidenceFromContent(source, request => options.generator(request, context), signal)
+      } catch (error: unknown) {
         signal?.throwIfAborted()
-        if (segment.text.slice(range.characterStart, range.characterEnd).trim() === '') continue
+        const category = options.classifyFailure(error)
+        if (category === null) throw error
+        consecutiveTransientFailures = category === 'timeout' || category === 'transport'
+          ? consecutiveTransientFailures + 1 : 0
+        const failure: EvidenceFragmentFailure = { ...context, category, error, consecutiveTransientFailures }
+        failures.push(failure)
+        observeFailure(options, failure)
         if (attempt === options.policy.maximumAttempts) {
           incomplete.push(range, ...queue)
           break
         }
-        const context: EvidenceFragmentAttempt = { ...range, academicWorkId: input.academicWorkId,
-          workVersionId: input.workVersionId, stage: 'extraction', attempt: ++attempt,
-          maximumAttempts: options.policy.maximumAttempts, maximumOutputTokens: options.policy.maximumOutputTokens }
-        const source = fragmentSource(input, segment, range)
-        let result: EvidenceExtractionResult
-        try {
-          result = await extractEvidenceFromContent(source, request => options.generator(request, context), signal)
-        } catch (error: unknown) {
-          signal?.throwIfAborted()
-          const category = options.classifyFailure(error)
-          if (category === null) throw error
-          consecutiveTransientFailures = category === 'timeout' || category === 'transport'
-            ? consecutiveTransientFailures + 1 : 0
-          const failure: EvidenceFragmentFailure = { ...context, category, error, consecutiveTransientFailures }
-          failures.push(failure)
-          observeFailure(options, failure)
-          if (attempt === options.policy.maximumAttempts) {
-            incomplete.push(range, ...queue)
-            break
-          }
-          if (category === 'transport') {
-            queue.unshift(range)
-            await delay(options.policy.initialRetryDelayMs * 2 ** (attempt - 1), undefined,
-              signal === undefined ? undefined : { signal })
-          } else {
-            const smaller = splitRange(range, options.policy.minimumCharacters, options.policy.overlapCharacters)
-            if (smaller === undefined) queue.unshift(range)
-            else queue.unshift(...smaller)
-          }
-          continue
+        if (category === 'transport') {
+          queue.unshift(range)
+          await delay(options.policy.initialRetryDelayMs * 2 ** (attempt - 1), undefined,
+            signal === undefined ? undefined : { signal })
+        } else {
+          const smaller = splitRange(range, options.policy.minimumCharacters, options.policy.overlapCharacters)
+          if (smaller === undefined) queue.unshift(range)
+          else queue.unshift(...smaller)
         }
-        consecutiveTransientFailures = 0
-        const accepted = uniqueEvidence(result, seen)
-        // The sink owns persistence; a failed commit must stop dispatch rather than resemble a model failure.
-        await options.onVerified(context, accepted)
-        verified.push(accepted)
-        signal?.throwIfAborted()
+        continue
       }
-      if (end === segment.text.length) break
-      start = end - options.policy.overlapCharacters
+      consecutiveTransientFailures = 0
+      const accepted = uniqueEvidence(result, seen)
+      // The sink owns persistence; a failed commit must stop dispatch rather than resemble a model failure.
+      await options.onVerified(context, accepted)
+      verified.push(accepted)
+      signal?.throwIfAborted()
     }
   }
   return { evidence: mergeEvidence(input, verified), failures, incompleteFragments: incomplete }
@@ -101,18 +97,83 @@ function validatePolicy(options: EvidenceFragmentOptions): void {
   }
 }
 
-function fragmentSource(input: EvidenceExtractionInput, segment: EvidenceContentSegment,
-  range: EvidenceFragmentRange): EvidenceExtractionInput {
-  const locator = segment.locator.kind === 'abstract'
-    ? { ...segment.locator, characterOffset: (segment.locator.characterOffset ?? 0) + range.characterStart } : segment.locator
-  return { ...input, segments: [{ text: segment.text.slice(range.characterStart, range.characterEnd), locator }] }
+function fragmentSource(input: EvidenceExtractionInput, range: EvidenceFragmentRange): EvidenceExtractionInput {
+  return { ...input, segments: sourceRanges(range).map((part) => {
+    const segment = sourceSegment(input.segments, part.segmentIndex)
+    const locator = segment.locator.kind === 'abstract'
+      ? { ...segment.locator, characterOffset: (segment.locator.characterOffset ?? 0) + part.characterStart }
+      : segment.locator
+    return { text: segment.text.slice(part.characterStart, part.characterEnd), locator }
+  }) }
 }
 
 function splitRange(range: EvidenceFragmentRange, minimum: number, overlap: number): EvidenceFragmentRange[] | undefined {
+  const parts = sourceRanges(range)
+  if (parts.length > 1) {
+    const total = parts.reduce((sum, part) => sum + part.characterEnd - part.characterStart, 0)
+    let accumulated = 0, splitIndex = 1
+    for (let index = 0; index < parts.length - 1; index++) {
+      const part = sourceRange(parts, index)
+      accumulated += part.characterEnd - part.characterStart
+      splitIndex = index + 1
+      if (accumulated >= total / 2) break
+    }
+    return [fragmentRange(range.fragmentIndex, parts.slice(0, splitIndex)),
+      fragmentRange(range.fragmentIndex, parts.slice(splitIndex))]
+  }
   const size = range.characterEnd - range.characterStart
   if (size < minimum * 2) return undefined
   const middle = range.characterStart + Math.floor(size / 2)
   return [{ ...range, characterEnd: middle + overlap }, { ...range, characterStart: middle - overlap }]
+}
+
+function sourceRanges(range: EvidenceFragmentRange): readonly EvidenceFragmentSourceRange[] {
+  return range.sourceRanges ?? [range]
+}
+
+function fragmentRange(fragmentIndex: number, parts: readonly EvidenceFragmentSourceRange[]): EvidenceFragmentRange {
+  const first = sourceRange(parts, 0)
+  return parts.length === 1 ? { fragmentIndex, ...first }
+    : { fragmentIndex, ...first, sourceRanges: parts }
+}
+
+function packSourceRanges(segments: readonly EvidenceContentSegment[], maximum: number,
+  overlap: number): EvidenceFragmentRange[] {
+  const groups: EvidenceFragmentRange[] = []
+  let pending: EvidenceFragmentSourceRange[] = []
+  let length = 0
+  const commit = () => {
+    if (pending.length === 0) return
+    groups.push(fragmentRange(groups.length + 1, pending))
+    pending = []
+    length = 0
+  }
+  for (const [segmentIndex, segment] of segments.entries()) {
+    for (let start = 0; start < segment.text.length;) {
+      const end = Math.min(segment.text.length, start + maximum)
+      const size = end - start
+      if (pending.length > 0 && (length + size > maximum
+        || pending.at(-1)?.segmentIndex === segmentIndex)) commit()
+      pending.push({ segmentIndex, characterStart: start, characterEnd: end })
+      length += size
+      if (end === segment.text.length) break
+      start = end - overlap
+    }
+  }
+  commit()
+  return groups
+}
+
+function sourceSegment(segments: readonly EvidenceContentSegment[], index: number): EvidenceContentSegment {
+  const segment = segments[index]
+  if (segment === undefined) throw new RangeError('Fragment source segment is missing.')
+  return segment
+}
+
+function sourceRange(ranges: readonly EvidenceFragmentSourceRange[], index: number): EvidenceFragmentSourceRange {
+  const range = ranges[index]
+  if (range === undefined) throw new RangeError('Fragment source range is missing.')
+  return range
 }
 
 function observeFailure(options: EvidenceFragmentOptions, failure: EvidenceFragmentFailure): void {

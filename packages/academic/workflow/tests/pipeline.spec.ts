@@ -125,6 +125,18 @@ describe('single-pass research draft', () => {
     expect(result.synthesis.status).toBe('blocked')
     expect(adapters.synthesize).not.toHaveBeenCalled()
   })
+  it('produces a limited draft from verified evidence when the Plan paper minimum is unmet', async () => {
+    const { input, adapters } = fixture()
+    vi.mocked(adapters.generator).mockRejectedValueOnce(new EvidenceError('temporary failure', 'EVIDENCE_MODEL_TIMEOUT'))
+    const result = await runResearchDraft(input, adapters)
+    expect(result.papers).toHaveLength(1)
+    expect(result.report).not.toBeNull()
+    expect(result.report?.evidence).toHaveLength(1)
+    expect(result.report?.limitations.join(' ')).toContain('Plan 至少要求 2 篇')
+    expect(result.report?.evaluation.status).not.toBe('ready')
+    expect(result.synthesis).toMatchObject({ status: 'partial_success' })
+    expect(adapters.synthesize).toHaveBeenCalledOnce()
+  })
   it('continues other papers after a model input limit pause', async () => {
     const { input, adapters } = fixture()
     const generate = adapters.generator

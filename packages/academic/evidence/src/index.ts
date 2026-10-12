@@ -10,8 +10,10 @@ export { createEvidenceRecord } from './record.ts'
 export { createEvidenceCard } from './card.ts'
 export { extractEvidenceFromContent } from './extract.ts'
 export { extractEvidenceInFragments } from './fragments.ts'
-export type { EvidenceFragmentPolicy, EvidenceFragmentRange, EvidenceFragmentAttempt, EvidenceFragmentFailureCategory,
-  EvidenceFragmentFailure, EvidenceFragmentOptions, EvidenceFragmentResult } from './fragment-types.ts'
+export type {
+  EvidenceFragmentPolicy, EvidenceFragmentSourceRange, EvidenceFragmentRange, EvidenceFragmentAttempt,
+  EvidenceFragmentFailureCategory, EvidenceFragmentFailure, EvidenceFragmentOptions, EvidenceFragmentResult,
+} from './fragment-types.ts'
 export { prepareFetchedAcademicFullText } from './fetched-fulltext.ts'
 export { prepareFetchedAcademicPdf } from './fetched-pdf.ts'
 export { fetchAcademicFullText } from './fetch-fulltext.ts'

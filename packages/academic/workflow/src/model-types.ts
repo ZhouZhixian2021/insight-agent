@@ -1,5 +1,6 @@
 /** Model extraction configuration and durable request/result payloads. */
-import type { EvidenceExtractionInput, EvidenceGenerationRequest, EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
+import type { EvidenceExtractionInput, EvidenceExtractionResult, EvidenceFragmentAttempt, EvidenceFragmentPolicy,
+  EvidenceGenerationRequest, EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
 import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
@@ -31,6 +32,27 @@ export type PaperEvidenceGenerator = (
   scope: PaperScopeRules,
   onProgress?: PaperEvidenceProgressObserver,
 ) => Promise<PaperModelResponse>
+
+/** Formal model route: scope review followed by already verified, incrementally saved fragments. */
+export interface PaperVerifiedEvidenceResponse {
+  readonly scope: PaperScopeDecision
+  readonly evidence: EvidenceExtractionResult
+  readonly incompleteFragmentCount: number
+}
+
+export type PaperVerifiedEvidenceGenerator = (
+  source: EvidenceExtractionInput,
+  scope: PaperScopeRules,
+  onProgress?: PaperEvidenceProgressObserver,
+  signal?: AbortSignal,
+) => Promise<PaperVerifiedEvidenceResponse>
+
+/** Saved source-verified fragment; local draft indexes are interpreted against this original range. */
+export interface EvidenceFragmentVerifiedRecord {
+  readonly source: EvidenceModelSource
+  readonly fragment: EvidenceFragmentAttempt
+  readonly evidence: EvidenceExtractionResult
+}
 
 /** Complete paper-local extraction activity observed by A's workflow adapter. */
 export interface PaperEvidenceProgressObservation {
@@ -78,6 +100,8 @@ export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
   readonly inputBatchTokenLimit?: number
   /** Repeated source characters at adjacent split boundaries. */
   readonly inputBatchOverlapCharacters?: number
+  /** Formal fragment limits; omitted uses conservative first-run defaults, then tune against a fixed real-paper cohort. */
+  readonly fragmentPolicy?: EvidenceFragmentPolicy
 }
 
 /** Separate model recovery policies for paper extraction and final synthesis. */
@@ -97,6 +121,7 @@ export interface EvidenceModelRequest {
   readonly source: EvidenceModelSource
   /** Omitted historical records are combined scope-and-evidence requests. */
   readonly phase?: 'scope' | 'evidence'
+  readonly fragment?: EvidenceFragmentAttempt
   readonly config: LlmCallConfig
   readonly messages: Message[]
   readonly estimatedInputTokens: number
@@ -112,6 +137,7 @@ export interface EvidenceModelResult {
   readonly source: EvidenceModelSource
   /** Omitted historical records are combined scope-and-evidence results. */
   readonly phase?: 'scope' | 'evidence'
+  readonly fragment?: EvidenceFragmentAttempt
   /** Null when preparation failed before an exact request could be recorded. */
   readonly requestSeq: SessionSeq | null
   readonly attempt: number
@@ -136,5 +162,7 @@ declare module '@deepseek-ai/dsh-session/types' {
     'academic/evidence-request': EvidenceModelRequest
     /** Log-only academic extraction settlement, including raw model output when available. */
     'academic/evidence-result': EvidenceModelResult
+    /** Source-verified evidence committed before another fragment is dispatched. */
+    'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
   }
 }

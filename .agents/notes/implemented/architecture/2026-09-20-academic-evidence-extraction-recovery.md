@@ -18,6 +18,8 @@ Batch deduplication compares the original segment index, exact excerpt, sourced 
 
 The workflow separates paper admission from short, question-focused excerpt extraction. The [paper-screening decision](2026-10-11-academic-paper-screening-evidence-phases.md) owns the model-visible instructions and conservative card-field mapping; exact-quote validation remains unchanged.
 
+The formal extraction route uses the shared fragment extractor after scope admission. It packs adjacent source paragraphs into roughly 4,000-character fragments, preserves their original locators, and verifies each fragment before retaining it in Session storage. A fragment may make up to three bounded attempts; failed fragments do not erase verified siblings. The route passes retained evidence and the incomplete-fragment count to report construction so a limited draft can state what remains unsupported.
+
 Evidence verification keeps the requested segment when the verbatim excerpt matches it. When a valid segment index points elsewhere, the extractor may relocate the excerpt only if the unchanged excerpt has exactly one exact occurrence across all supplied segments. Ambiguous quotes and normalized or OCR-altered text still fail.
 
 Source verification failures are isolated per model draft. Accepted records retain their locators, hashes and card links; rejected drafts return their original indexes and reasons. The workflow distinguishes partial extraction from complete rejection, passes accepted evidence to analysis, and counts one failed extraction operation per affected paper. Report limitations and the Web disclose the rejections. Invalid program-owned inputs, generator errors and whole-response JSON errors remain call-level failures. Raw model requests and results remain the durable replay inputs; the rejection projection itself does not add cross-run persistence.
@@ -34,8 +36,12 @@ The Academic Remote returns producer-owned `search`, `fulltext`, and `extraction
 
 **Accept fuzzy or normalized excerpts.** Rejected because changing Unicode, whitespace, punctuation, or OCR artifacts would weaken source traceability.
 
+**Make one model call for every original paragraph.** Rejected because long papers would need many mostly undersized calls and keep the research run open without improving quote verification.
+
 **Infer stage status in the browser from counts.** Rejected because the producing workflow owns stage semantics and the client must render producer facts.
 
 ## Consequences
 
 One transient output-limit, connection, or timeout response can recover without repeating source search or full-text acquisition. Long papers no longer depend on one unbounded stream, and validated batches survive a sibling timeout. Durable records reveal every attempt. A model-supplied locator typo can recover without accepting a changed quote. The Web can show “source search: success”, “full-text acquisition: success”, and “evidence extraction: failed” for the same completed run. The bounded answer may retain fewer secondary excerpts from one paper. Fuzzy quotation recovery and cross-run resume remain deferred.
+
+The formal route can produce a source-linked limited report when some fragments fail, while recording those gaps. Packing paragraphs reduces model calls for long papers but does not guarantee a complete report or remove model latency.
