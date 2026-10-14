@@ -13,7 +13,8 @@ import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragment
  * @param options Explicit source/output limits, semantic generator, failure classifier and verified-result sink.
  * @param signal Cancellation forwarded to every call and retry delay.
  * Minimal depth retains at most five unique records across the paper, including the verified-result sink.
- * @returns Merged verified evidence, all failed attempts, and source ranges left incomplete by retries or the evidence cap.
+ * It prioritizes lexical question matches and starts later groups smaller after size-related model failures.
+ * @returns Merged verified evidence, all failed attempts, and ranges left incomplete by retries, the minimum size or evidence cap.
  * @throws Cancellation, unclassified generator failures, invalid inputs or failure of the verified-result sink.
  */
 export async function extractEvidenceInFragments(input: EvidenceExtractionInput, options: EvidenceFragmentOptions,
@@ -23,19 +24,28 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
     || input.segments.some(segment => segment.text.trim() === '')) {
     throw new EvidenceError('Fragment extraction requires a content hash and non-empty source segments.', 'EVIDENCE_INVALID_EXTRACTION')
   }
+  if (input.depth === 'minimal' && (input.focusQuestions?.length ?? 0) === 0) {
+    throw new EvidenceError('Minimal extraction requires at least one focus question.', 'EVIDENCE_INVALID_EXTRACTION')
+  }
+  if (options.questionTerms !== undefined && options.questionTerms.length !== (input.focusQuestions?.length ?? 0)) {
+    throw new RangeError('Fragment question terms must have one entry per focus question.')
+  }
   const verified: EvidenceExtractionResult[] = []
   const failures: EvidenceFragmentFailure[] = []
   const incomplete: EvidenceFragmentRange[] = []
   const seen = new Set<string>()
   let consecutiveTransientFailures = 0
-  const ranges = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
+  let shrinkInitialFragments = false
+  const packed = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
+  const ranges = input.depth === 'minimal' ? prioritizeRanges(input, packed, options.questionTerms) : packed
   for (const [index, initial] of ranges.entries()) {
     signal?.throwIfAborted()
     if (input.depth === 'minimal' && seen.size === 5) {
       incomplete.push(...ranges.slice(index))
       break
     }
-    const queue: EvidenceFragmentRange[] = [initial]
+    const queue: EvidenceFragmentRange[] = shrinkInitialFragments
+      ? splitRange(initial, options.policy.minimumCharacters, options.policy.overlapCharacters) ?? [initial] : [initial]
     let attempt = 0
     for (let range = queue.shift(); range !== undefined; range = queue.shift()) {
       signal?.throwIfAborted()
@@ -61,6 +71,7 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
         const failure: EvidenceFragmentFailure = { ...context, category, error, consecutiveTransientFailures }
         failures.push(failure)
         observeFailure(options, failure)
+        if (input.depth === 'minimal' && category !== 'transport') shrinkInitialFragments = true
         if (attempt === options.policy.maximumAttempts) {
           incomplete.push(range, ...queue)
           break
@@ -71,7 +82,10 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
             signal === undefined ? undefined : { signal })
         } else {
           const smaller = splitRange(range, options.policy.minimumCharacters, options.policy.overlapCharacters)
-          if (smaller === undefined) queue.unshift(range)
+          if (input.depth === 'minimal') {
+            if (smaller === undefined) incomplete.push(range)
+            else queue.unshift(...smaller)
+          } else if (smaller === undefined) queue.unshift(range)
           else queue.unshift(...smaller)
         }
         continue
@@ -89,6 +103,32 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
     }
   }
   return { evidence: mergeEvidence(input, verified), failures, incompleteFragments: incomplete }
+}
+
+function prioritizeRanges(input: EvidenceExtractionInput, ranges: readonly EvidenceFragmentRange[],
+  questionTerms: EvidenceFragmentOptions['questionTerms']): EvidenceFragmentRange[] {
+  const segmenter = new Intl.Segmenter('en', { granularity: 'word' })
+  const words = (text: string) => [...segmenter.segment(text.toLowerCase())]
+    .filter(part => part.isWordLike).map(part => part.segment)
+  const terms = questionTerms === undefined ? (input.focusQuestions as readonly string[]).map(words)
+    : questionTerms.map(question => question.map(term => words(term).join(' ')).filter(term => term !== ''))
+  const texts = ranges.map(range => ` ${words(sourceRanges(range).map(part =>
+    sourceSegment(input.segments, part.segmentIndex).text.slice(part.characterStart, part.characterEnd)).join(' ')).join(' ')} `)
+  const ranked = terms.map(question => ranges.map((range, index) => ({ range,
+    score: new Set(question.filter(term => (texts[index] as string).includes(` ${term} `))).size,
+  })).filter(entry => entry.score > 0).sort((a, b) => b.score - a.score || a.range.fragmentIndex - b.range.fragmentIndex))
+  const remaining = new Set(ranges)
+  const prioritized: EvidenceFragmentRange[] = []
+  while (ranked.some(question => question.length > 0)) {
+    for (const question of ranked) {
+      let next = question.shift()
+      while (next !== undefined && !remaining.has(next.range)) next = question.shift()
+      if (next === undefined) continue
+      prioritized.push(next.range)
+      remaining.delete(next.range)
+    }
+  }
+  return [...prioritized, ...remaining]
 }
 
 function validatePolicy(options: EvidenceFragmentOptions): void {
