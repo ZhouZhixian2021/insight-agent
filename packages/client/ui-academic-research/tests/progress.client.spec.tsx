@@ -39,6 +39,11 @@ describe('one-shot research progress', () => {
     const progress = snapshot()
     render(<ProgressPanel progress={progress} recent={[progress]} t={t} />)
 
+    const funnel = screen.getByRole('region', { name: zh.progressFunnel })
+    expect(within(funnel).getByText(zh.discoveredRecords).nextElementSibling?.textContent)
+      .toBe(String(progress.counts.discoveredRecords))
+    expect(within(funnel).getByText(zh.candidateWorks).nextElementSibling?.textContent)
+      .toBe(String(progress.counts.candidateWorks))
     expect(screen.getByText(`openalex · ${zh.progress_running}`)).toBeTruthy()
     const provider = screen.getByText(`openalex · ${zh.progress_running}`).closest('li')!
     expect(provider.textContent).toContain(`${zh.discoveredRecords}: ${zh.progressUnknown}`)
@@ -53,7 +58,7 @@ describe('one-shot research progress', () => {
     expect(screen.getByText(zh.operation_waiting_retry)).toBeTruthy()
     expect(screen.getAllByText(/请求超时/).length).toBeGreaterThan(0)
     expect(screen.queryByRole('progressbar')).toBeNull()
-    expect(screen.getByText(zh.progress_report)).toBeTruthy()
+    expect(screen.getAllByText(zh.progress_report).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/未提供/).length).toBeGreaterThan(0)
   })
   it('ignores stale snapshots, bounds history, calls the stream once and keeps progress beside the final report', async () => {

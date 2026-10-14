@@ -51,7 +51,8 @@ export interface LoggedModelAttemptObservation {
  * @param policy Total attempts plus optional output-limit, invalid-response and transient-failure recovery.
  * @returns A tool-free model runner using the exact persisted messages.
  */
-export function createLoggedModelRunner<T>(ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceModelPolicy) {
+export function createLoggedModelRunner<T>(ctx: Context, session: Session, config: LlmCallConfig,
+  policy: EvidenceModelPolicy): (request: LoggedModelRequest<T>) => Promise<T> {
   const llm = ctx.get('llm'), sessions = ctx.get('sessions'), meter = ctx.get('tokenMeter')
   const persistence = ctx.get('sessionPersistence')
   if (!llm || !sessions || !meter || !persistence) {
@@ -147,8 +148,15 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         }
         stage = 'stream'
         // The Session's immutable event supplies exactly the config and messages dispatched.
-        for await (const chunk of prepared.stream(Object.freeze({ ...logged.data.config, messages: logged.data.messages,
-          sessionId: session.id, ...attemptSignal === undefined ? {} : { signal: attemptSignal } }))) {
+        const stream = prepared.stream(Object.freeze({ ...logged.data.config, messages: logged.data.messages,
+          sessionId: session.id, ...attemptSignal === undefined ? {} : { signal: attemptSignal } }))
+        const iterator = stream[Symbol.asyncIterator]()
+        while (true) {
+          // Some gateways do not settle a pending stream read after abort. Enforce the
+          // attempt deadline locally so one candidate cannot hold the whole run open.
+          const next = await nextModelChunk(iterator, attemptSignal)
+          if (next.done) break
+          const chunk = next.value
           if (firstContentElapsedMs === undefined && (chunk.type === 'text-delta' || chunk.type === 'reasoning-delta')) {
             firstContentElapsedMs = Math.round(performance.now() - started)
           }
@@ -224,6 +232,24 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       }
     }
     throw new Error('Academic extraction exhausted an invalid attempt range.')
+  }
+}
+
+async function nextModelChunk<T>(iterator: AsyncIterator<T>, signal?: AbortSignal): Promise<IteratorResult<T>> {
+  if (signal === undefined) return iterator.next()
+  signal.throwIfAborted()
+  let onAbort: (() => void) | undefined
+  try {
+    const aborted = new Promise<never>((_resolve, reject) => {
+      onAbort = () => {
+        reject(signal.reason instanceof Error
+          ? signal.reason : new DOMException('Academic model attempt aborted.', 'AbortError'))
+      }
+      signal.addEventListener('abort', onAbort, { once: true })
+    })
+    return await Promise.race([iterator.next(), aborted])
+  } finally {
+    if (onAbort !== undefined) signal.removeEventListener('abort', onAbort)
   }
 }
 

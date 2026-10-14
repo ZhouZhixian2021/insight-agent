@@ -47,11 +47,11 @@ function fixture() {
 }
 async function open() {
   fireEvent.click(screen.getByRole('button', { name: zh.entry }))
-  await waitFor(() => expect(screen.queryByText(zh.backgroundLoading)).toBeNull())
+  await waitFor(() => { expect(screen.queryByText(zh.backgroundLoading)).toBeNull() })
 }
 async function start() {
   const button = await screen.findByRole<HTMLButtonElement>('button', { name: zh.start })
-  await waitFor(() => expect(button.disabled).toBe(false))
+  await waitFor(() => { expect(button.disabled).toBe(false) })
   fireEvent.click(button)
   await screen.findByText(zh.backgroundConnected)
 }
@@ -86,7 +86,7 @@ it('switching Sessions detaches observation; switching back recovers the origina
   f.listBackgroundRuns.mockImplementation(async sessionId => sessionId === other ? [] : originalList(sid))
   const ui = render(<ResearchEntry {...f.props()} />); await open(); await start()
   ui.rerender(<ResearchEntry {...f.props(other)} />)
-  await waitFor(() => expect(f.signals[0]!.aborted).toBe(true))
+  await waitFor(() => { expect(f.signals[0]!.aborted).toBe(true) })
   expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
   ui.rerender(<ResearchEntry {...f.props()} />)
   await screen.findByText(zh.backgroundConnected)
@@ -95,7 +95,7 @@ it('switching Sessions detaches observation; switching back recovers the origina
 it('cancels through the explicit command while retaining the subscription until server settlement', async () => {
   const f = fixture(); render(<ResearchEntry {...f.props()} />); await open(); await start()
   fireEvent.click(screen.getByRole('button', { name: zh.cancel }))
-  await waitFor(() => expect(f.cancelBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background', reason: 'user_requested' }))
+  await waitFor(() => { expect(f.cancelBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background', reason: 'user_requested' }) })
   expect(f.signals[0]!.aborted).toBe(false)
   await screen.findByText(zh.backgroundReason_user_requested)
   expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
@@ -123,7 +123,7 @@ it('does not admit a duplicate run when its start reply was lost after server pe
   render(<ResearchEntry {...f.props()} />); await open()
   fireEvent.click(await screen.findByRole('button', { name: zh.start }))
   await screen.findByText('reply lost')
-  await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true))
+  await waitFor(() => { expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true) })
   expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2)
 })
 it('ignores late get replies after closing and permits viewing saved results despite a missing current approval', async () => {

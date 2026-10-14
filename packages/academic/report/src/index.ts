@@ -91,7 +91,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   if (synthesisInput !== null) {
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
       `发表时间窗口：${escapeMarkdown(input.brief.publicationWindow.start?.iso ?? '未限定')}—${escapeMarkdown(input.brief.publicationWindow.end?.iso ?? '未限定')}；`
-        + `日期口径：${input.brief.publicationWindow.dateBasis === 'published' ? '正式发表日期' : '首次公开日期'}`, `报告日期：${escapeMarkdown(metadata.reportDate.slice(0, 10))}`,
+        + `日期口径：${input.brief.publicationWindow.dateBasis === 'published' ? '所选版本发布日期' : '首次公开日期'}`, `报告日期：${escapeMarkdown(metadata.reportDate.slice(0, 10))}`,
       `面向读者：${escapeMarkdown(input.brief.targetAudience)}`,
       `引用证据来源：${escapeMarkdown([...new Set(evidence.map(record => record.sourceProvider))].join(', ') || '未提供')}`,
       `纳入规则：${escapeMarkdown(input.brief.inclusionRules.join('；') || '未提供')}`,

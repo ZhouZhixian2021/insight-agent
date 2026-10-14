@@ -59,14 +59,16 @@ export function draftFixture(count = 2) {
   return { input, adapters, records, events }
 }
 
-/** Synthetic model answer referencing only the supplied evidence identities. */
+/** Synthetic model answer with one traceable citation from each represented work. */
 export function synthesisFixture(input: AcademicSynthesisInput) {
   const crossPaper = new Set(input.analysisInput.evidenceRecords.map(record => record.academicWorkId)).size > 1
+  const cited = [...new Map(input.analysisInput.evidenceRecords.map(record =>
+    [record.academicWorkId, record] as const)).values()].slice(0, 3)
   return parseSynthesisDraft(JSON.stringify({ schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
     researchBriefVersion: input.brief.version,
     statements: [{ text: '合成论文描述了重排序方法，当前材料不足以判断优劣。', kind: crossPaper ? 'synthesis' : 'source_statement',
       category: crossPaper ? 'comparison' : null, scope: '仅限合成材料', uncertainty: '尚未审核语义支持。',
-      evidenceLinks: input.analysisInput.evidenceRecords.map(record => ({ evidenceId: record.evidenceId, relation: 'supports', rationale: '材料中的方法描述。' })) }],
+      evidenceLinks: cited.map(record => ({ evidenceId: record.evidenceId, relation: 'supports', rationale: '材料中的方法描述。' })) }],
     questionAnswers: input.brief.questions.map((_, questionIndex) => ({ questionIndex, status: 'answered', statementIndexes: [0], reason: null })),
     sections: synthesisSections(input.brief).map(sectionId => ({ sectionId, title: sectionId,
       statementIndexes: ['scope_and_method', 'references', 'evidence_appendix'].includes(sectionId) ? [] : [0], missingReason: null })),

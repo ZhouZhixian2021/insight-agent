@@ -2,6 +2,8 @@
 export { extractPaperEvidence } from './paper.ts'
 export { parseEvidenceDrafts, parsePaperModelResponse, parseScopeDecision, parseFocusedEvidence } from './parse-evidence.ts'
 export { createModelEvidenceGenerator } from './model.ts'
+export { createLoggedModelRunner } from './model-call.ts'
+export type { LoggedModelRequest } from './model-call.ts'
 export { createModelSynthesisGenerator } from './synthesis-model.ts'
 export type { SynthesisModelRequest, SynthesisModelResult } from './synthesis-model.ts'
 export type { SynthesisSettlement } from './pipeline-types.ts'

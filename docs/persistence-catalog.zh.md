@@ -129,6 +129,28 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 来源：[`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
 
+<a id="academiccandidate-screening-request--log-only"></a>
+
+#### `academic/candidate-screening-request` — log-only
+
+```ts persistence-catalog
+/** Exact candidate review request and admission decision, kept for Session replay. */
+'academic/candidate-screening-request': CandidateReviewModelRequest
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:23`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
+<a id="academiccandidate-screening-result--log-only"></a>
+
+#### `academic/candidate-screening-result` — log-only
+
+```ts persistence-catalog
+/** Settled candidate review attempt, including model stream or failure code. */
+'academic/candidate-screening-result': CandidateReviewModelResult
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:25`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
 <a id="academicevidence-fragment-verified--log-only"></a>
 
 #### `academic/evidence-fragment-verified` — log-only

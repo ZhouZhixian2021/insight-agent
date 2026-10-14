@@ -83,7 +83,8 @@ export interface DraftPipelineAdapters {
    * Screen all returned deduplicated works, then cap eligible candidates at the effective maximumCandidateWorks.
    * Do not apply maximumIncludedWorks here.
    */
-  readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief) => PaperSelectionResult
+  readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief,
+    signal?: AbortSignal) => PaperSelectionResult | Promise<PaperSelectionResult>
   /**
    * Execute one evidence-gap replenishment round and re-rank the merged candidate pool.
    * Invoked only when Q5 scheduling requests more evidence and another search round remains.

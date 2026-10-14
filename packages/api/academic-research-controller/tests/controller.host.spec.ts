@@ -590,7 +590,7 @@ describe('AcademicResearchController', () => {
     )
 
     const academicWorkId = createAcademicWorkId(), workVersionId = createWorkVersionId()
-    const selected = call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
+    const selected = await call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
       externalIdentifiers: [], workVersionIds: [workVersionId], canonicalVersionId: workVersionId,
       firstPublicDate: { status: 'available', value: { iso: '2026', precision: 'year' } },
       publicationStatus: { status: 'available', value: 'preprint' }, venue: { status: 'unknown', reason: 'none' } }],
@@ -603,7 +603,7 @@ describe('AcademicResearchController', () => {
     expect(selected.papers[0]).toMatchObject({ sourceProvider: 'arxiv', urls: [
       'https://arxiv.org/html/2406.12345v1', 'https://arxiv.org/pdf/2406.12345v1',
     ] })
-    expect(call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
+    expect(await call.adapters.selectPapers({ works: [{ schemaVersion: 1, academicWorkId, title: 'Paper', authors: [],
       externalIdentifiers: [], workVersionIds: [workVersionId], canonicalVersionId: workVersionId,
       firstPublicDate: { status: 'available', value: { iso: '2026', precision: 'year' } },
       publicationStatus: { status: 'available', value: 'preprint' }, venue: { status: 'unknown', reason: 'none' } }],

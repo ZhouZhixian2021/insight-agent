@@ -1,11 +1,12 @@
 /** Adapt approved plan searches to Session-owned Academic and DSH Web services. */
 import { createBatchResult, isExecutableResearchBrief, type AcademicCandidateRankingResult,
-  type CandidateAssessment, type CandidateFulltextAvailability, type ExecutableResearchBrief, type HybridSearchPlan,
+  type AcademicWorkId, type Availability, type CandidateAssessment, type CandidateFulltextAvailability,
+  type CandidateScreeningDetails, type ExecutableResearchBrief, type HybridSearchPlan,
   type ResearchBrief, type ResearchQuestionCoverageResult, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps, rankPlannedCandidates,
   type PlannedSearchAdapters, type PlannedSearchRoundResult,
   type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
-import { dedupKeys, ingestWorks, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
+import { dedupKeys, ingestWorks, metadataForVersion, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
 import { identifyAcademicReferences, type AcademicSourceFullText, type AcademicSourceProviderObserver,
   type AcademicSourceRuntime } from '@deepseek-ai/dsh-academic-source'
 import { executeHybridSearch, type CandidateBatchPolicy, type CandidateScheduling, type DraftPipelineAdapters,
@@ -15,6 +16,7 @@ import { executeHybridSearch, type CandidateBatchPolicy, type CandidateSchedulin
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from './planned-retrieval.ts'
 import { approvedCandidateScreeningCriteria, type AcademicCandidateScreening } from './candidate-screening.ts'
+import type { CandidateScreeningCriteria } from '@deepseek-ai/dsh-academic-retrieval'
 import type { AcademicPlannedSearch } from './types.ts'
 
 /** Deployment-owned bounds for one evidence-gap replenishment round. */
@@ -24,6 +26,21 @@ export interface GapRoundPolicy {
   /** Maximum Academic results per gap-round query. */
   readonly maximumAcademicResultsPerQuery: number
 }
+
+/** Canonical scholarly metadata supplied to the model reviewer after Q3 deduplication. */
+export interface CandidateReviewInput {
+  readonly academicWorkId: AcademicWorkId
+  readonly title: string
+  readonly abstract: Availability<string>
+  readonly keywords: Availability<readonly string[]>
+  readonly brief: ExecutableResearchBrief
+  readonly plan: HybridSearchPlan
+  readonly criteria: CandidateScreeningCriteria
+}
+
+/** Return undefined only for a recoverable review failure; persistence and cancellation failures propagate. */
+export type CandidateReviewer = (input: CandidateReviewInput,
+  signal?: AbortSignal) => Promise<CandidateScreeningDetails | undefined>
 
 /**
  * Keep verified full-text candidates beside their owning source records for this run.
@@ -35,6 +52,7 @@ export interface GapRoundPolicy {
  * @param gapRoundPolicy Bounds for one Q5 evidence-gap replenishment round.
  * @param onPlan Optional observer for the exact reviewed plan used by formal execution.
  * @param candidateScreening Optional metadata cues from that same approved plan.
+ * @param reviewCandidate Optional Session-backed semantic review of canonical scholarly metadata.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -46,6 +64,7 @@ export function approvedPaperAdapters(
   gapRoundPolicy: GapRoundPolicy,
   onPlan?: (plan: HybridSearchPlan) => void,
   candidateScreening?: AcademicCandidateScreening,
+  reviewCandidate?: CandidateReviewer,
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'replenishCandidates'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
@@ -55,7 +74,27 @@ export function approvedPaperAdapters(
   const handoff = approvedHybridSearchHandoff(approvedBrief, searches)
   onPlan?.(handoff.plan)
   const resolutions = new Map<string, AcademicSourceFullText | null>()
+  const reviewedScreenings = new Map<AcademicWorkId, CandidateScreeningDetails>()
+  const attemptedReviews = new Set<AcademicWorkId>()
+  const failedReviews = new Set<AcademicWorkId>()
   const key = (provider: string, recordId: string) => JSON.stringify([provider, recordId])
+  const reviewIngested = async (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal) => {
+    if (reviewCandidate === undefined) return
+    const criteria = approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening)
+    const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
+    for (const work of ingested.works) {
+      signal?.throwIfAborted()
+      if (attemptedReviews.has(work.academicWorkId)) continue
+      const version = versions.get(work.canonicalVersionId)
+      if (version === undefined) throw new Error('Candidate review requires its canonical scholarly version.')
+      const metadata = metadataForVersion(ingested.index, version)
+      const reviewed = await reviewCandidate({ academicWorkId: work.academicWorkId, title: work.title,
+        abstract: metadata.abstract, keywords: metadata.keywords, brief: approvedBrief, plan, criteria }, signal)
+      attemptedReviews.add(work.academicWorkId)
+      if (reviewed !== undefined) reviewedScreenings.set(work.academicWorkId, reviewed)
+      else failedReviews.add(work.academicWorkId)
+    }
+  }
   return {
     search: async (request, signal, onProvider, onHybrid) => {
       const directionIndex = searches.findIndex(search => search.query === request.query)
@@ -78,11 +117,16 @@ export function approvedPaperAdapters(
       }
       return projected
     },
-    selectPapers: (ingested, effectiveBrief) => rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
-      ingested, resolutions, academicSource, key, candidateBatchPolicy, candidateScreening),
+    selectPapers: async (ingested, effectiveBrief, signal) => {
+      await reviewIngested(handoff.plan, ingested, signal)
+      return rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
+        ingested, resolutions, academicSource, key, candidateBatchPolicy, candidateScreening, reviewedScreenings,
+        failedReviews)
+    },
     replenishCandidates: (scheduling, ingested, coverage, nextRoundIndex, signal) =>
       replenishRankedCandidates(approvedBrief, candidateBatchPolicy, gapRoundPolicy, academicSource, web,
-        resolutions, key, scheduling, ingested, coverage, nextRoundIndex, candidateScreening, signal),
+        resolutions, key, scheduling, ingested, coverage, nextRoundIndex, candidateScreening,
+        reviewIngested, reviewedScreenings, failedReviews, signal),
   }
 }
 
@@ -111,8 +155,11 @@ function rankedPaperSelection(
   key: (provider: string, recordId: string) => string,
   policy: CandidateBatchPolicy,
   candidateScreening?: AcademicCandidateScreening,
+  reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
+  failedReviews?: ReadonlySet<AcademicWorkId>,
 ): ReturnType<DraftPipelineAdapters['selectPapers']> {
-  const built = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key, candidateScreening)
+  const built = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key,
+    candidateScreening, reviewedScreenings, failedReviews)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const resolvable = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter(workVersionId => evaluations.get(workVersionId)?.fulltextAvailability.status === 'resolvable')
@@ -138,6 +185,8 @@ function buildRanking(
   academicSource: AcademicSourceRuntime,
   key: (provider: string, recordId: string) => string,
   candidateScreening?: AcademicCandidateScreening,
+  reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
+  failedReviews?: ReadonlySet<AcademicWorkId>,
 ): {
   readonly assessments: readonly CandidateAssessment[]
   readonly ranking: AcademicCandidateRankingResult
@@ -175,7 +224,13 @@ function buildRanking(
   }
   const round: PlannedSearchRoundResult = { ingested, discoveredBy, queries: [] }
   const assessments = assessPlannedCandidates(plan, approvedBrief, round,
-    approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening), fulltextFacts)
+    approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening), fulltextFacts, reviewedScreenings)
+    .map((assessment) => {
+      if (!failedReviews?.has(assessment.academicWorkId)) return assessment
+      const reasons: [string, ...string[]] = [assessment.reasons[0], ...assessment.reasons.slice(1),
+        'Semantic model review failed; lexical metadata screening was retained. See the Session candidate-screening result.']
+      return { ...assessment, reasons }
+    })
   const ranking = rankPlannedCandidates(plan, approvedBrief, round, assessments)
   return { assessments, ranking, papers }
 }
@@ -194,6 +249,9 @@ async function replenishRankedCandidates(
   coverage: ResearchQuestionCoverageResult,
   nextRoundIndex: number,
   candidateScreening?: AcademicCandidateScreening,
+  reviewIngested?: (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal) => Promise<void>,
+  reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
+  failedReviews?: ReadonlySet<AcademicWorkId>,
   signal?: AbortSignal,
 ): Promise<ReplenishedCandidates> {
   const options: QueryPlanningOptions = {
@@ -226,9 +284,11 @@ async function replenishRankedCandidates(
     return true
   })
   const mergedIngested = ingestWorks(ingested.index, gapRecords)
+  await reviewIngested?.(plan, mergedIngested, signal)
   const previousWorkIds = new Set(ingested.index.records.keys())
   const versionWorks = new Map(mergedIngested.versions.map(version => [version.workVersionId, version.academicWorkId]))
-  const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key, candidateScreening)
+  const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key,
+    candidateScreening, reviewedScreenings, failedReviews)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const papers = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter((workVersionId) => {

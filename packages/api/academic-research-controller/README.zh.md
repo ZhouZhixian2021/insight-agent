@@ -12,6 +12,8 @@ kind: "package-reference"
 
 `@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run` 与 `runStream`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
 
+对于第 5 版计划，Controller 在排序前让 Session 所选模型逐篇审核去重候选的规范学术标题与摘要，判断其是否对应已批准的研究问题。提示词明确列出问题、方法、证据、贡献、表面命中和范围判断各自的准确 JSON 字段；B 的解析器仍只接受完整 JSON、标题或摘要原文引文、已批准的问题标识以及允许的方法／证据标签。有效审核结果为既有排序策略提供内容匹配的问题线索和相对 Plan 的范围判断；发现查询仍只用于路由。每次请求和结算结果均写入 Session 并读回核对。模型、超时或响应无效时，该论文保留词项初筛，失败写入记录并标注于评估理由；持久化或取消失败则停止运行。证据缺口轮次的新候选同样只审核一次。每篇候选增加一次模型调用，可能明显增加运行时间。`candidateReviewMaxTokens` 默认 8,192，`candidateReviewAttemptTimeoutMs` 默认 150,000 毫秒，均可按部署配置。
+
 本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、检索操作活动、论文／版本身份和已运行时间，不估算完成百分比。学术 Provider 直接搜索、Web 发现、引用识别和每一条引用核验使用不同操作名；核验事实还携带从一开始的条目位置。工作流生产共用的运行内字段；模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
 
 同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
@@ -59,11 +61,11 @@ kind: "package-reference"
 
 #### What the model sees
 
-控制器不增加提示词。它将批准的 `inclusionRules` 和 `exclusionRules` 交给 Academic 工作流的逐篇模型请求，并使用 Session 已选择的提供方和模型。
+控制器把规范学术元数据和已批准的 Plan 条件交给所选模型审核候选。它将批准的 `inclusionRules` 和 `exclusionRules` 交给 Academic 工作流的逐篇证据请求，并使用同一个 Session 已选择的提供方和模型。
 
 #### Token effect
 
-每篇被选论文产生一个或多个有序范围与证据批次。每批遵守配置的估算输入上限；单个来源片段必须切分时保留重叠，并拥有独立超时和有界重试。一个批次超时时，其他成功批次的证据仍然保留，不重复检索或全文获取。最终报告合成是独立调用，瞬时故障重试复用同一批已准入证据。
+每篇去重候选产生一次有界元数据审核调用。每篇被选论文随后产生一个或多个有序范围与证据批次。每批遵守配置的估算输入上限；单个来源片段必须切分时保留重叠，并拥有独立超时和有界重试。一个批次超时时，其他成功批次的证据仍然保留，不重复检索或全文获取。最终报告合成是独立调用，瞬时故障重试复用同一批已准入证据。
 
 #### KV Cache effect
 
