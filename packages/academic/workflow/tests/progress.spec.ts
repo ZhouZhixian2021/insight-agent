@@ -193,8 +193,8 @@ describe('Academic workflow progress', () => {
   it('maps full-text candidate fallback and accepted parsing into paper activities', async () => {
     const { input, adapters, snapshots } = snapshotsOf(1)
     const select = adapters.selectPapers
-    adapters.selectPapers = (ingested, brief) => {
-      const selected = select(ingested, brief)
+    adapters.selectPapers = async (ingested, brief) => {
+      const selected = await select(ingested, brief)
       return { ...selected, papers: selected.papers.map(paper => ({ ...paper,
         urls: ['https://example.org/missing', 'https://example.org/accepted'] })) }
     }

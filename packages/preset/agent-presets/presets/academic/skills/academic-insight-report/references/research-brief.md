@@ -4,6 +4,8 @@
 
 用户审核研究意图、范围、证据要求和交付结果。由系统整理检索别名及执行参数，不要求用户理解 JSON、版本枚举或输入英文检索词。示例中的年份和数量不是固定要求，应结合用户意图与执行能力确定，并在可读计划中说明。
 
+用户未特别要求按论文**首次公开日期**界定时间范围时，使用所选论文版本的发表／发布日期（执行块 `publicationWindow.dateBasis: "published"`），并在中文计划中明说这一口径。OpenAlex 的版本发布日期可用于这个口径，却不能证明首次公开日期。只有用户明确要求首次公开时间时才选择 `first_public_release`；若现有学术来源无法核实该日期，先在计划中告知可能导致候选被排除，不得暗中以发表日期代替。已批准计划的时间口径不能在运行时自动改写。
+
 提交到 `exit_plan_mode` 的完整计划同时包含可读正文和系统执行块。保留且仅保留一个 `academic-research-brief-json` 围栏块，字段名和类型保持不变，值与可读计划一致。不要添加标识、版本或批准字段；宿主从审核记录生成这些信息。
 
 ## 研究目标
@@ -98,7 +100,7 @@
   "publicationWindow": {
     "start": { "iso": "2020", "precision": "year" },
     "end": null,
-    "dateBasis": "first_public_release"
+    "dateBasis": "published"
   },
   "includedWorkTypes": ["preprint", "accepted_manuscript", "version_of_record"],
   "inclusionRules": ["<每篇候选论文都必须满足、可由该论文独立判断的中文纳入条件>"],

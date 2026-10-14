@@ -339,6 +339,10 @@ export interface Config {
   readonly extractionBatchOverlapCharacters?: number
   /** Maximum elapsed time for one scope or evidence model attempt. Defaults to 150,000 ms. */
   readonly extractionAttemptTimeoutMs?: number
+  /** Output-token reserve for one candidate metadata review. Defaults to 8,192. */
+  readonly candidateReviewMaxTokens?: number
+  /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
+  readonly candidateReviewAttemptTimeoutMs?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */

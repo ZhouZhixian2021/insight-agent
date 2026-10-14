@@ -94,14 +94,14 @@ describe('parseArxivFeed', () => {
 })
 
 describe('normalizeArxivWork', () => {
-  it('derives version-specific HTML and PDF full-text URLs', () => {
+  it('derives version-specific PDF and HTML full-text URLs', () => {
     expect(arxivFullTextUrls('http://arxiv.org/abs/2406.12345v1')).toEqual([
-      'https://arxiv.org/html/2406.12345v1',
       'https://arxiv.org/pdf/2406.12345v1',
+      'https://arxiv.org/html/2406.12345v1',
     ])
     expect(arxivFullTextUrls('math.GT/0309136')).toEqual([
-      'https://arxiv.org/html/math.GT/0309136',
       'https://arxiv.org/pdf/math.GT/0309136',
+      'https://arxiv.org/html/math.GT/0309136',
     ])
     expect(() => arxivFullTextUrls('../secret')).toThrow('invalid arXiv id')
   })

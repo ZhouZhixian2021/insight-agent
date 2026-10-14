@@ -20,6 +20,7 @@ import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typer
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
 import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
+import { createModelCandidateReviewer } from './candidate-review-model.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
@@ -59,6 +60,10 @@ export interface Config {
   readonly extractionBatchOverlapCharacters?: number
   /** Maximum elapsed time for one scope or evidence model attempt. Defaults to 150,000 ms. */
   readonly extractionAttemptTimeoutMs?: number
+  /** Output-token reserve for one candidate metadata review. Defaults to 8,192. */
+  readonly candidateReviewMaxTokens?: number
+  /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
+  readonly candidateReviewAttemptTimeoutMs?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
@@ -90,6 +95,8 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionBatchMaxInputTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(12_000),
     extractionBatchOverlapCharacters: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(512),
     extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
+    candidateReviewMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8_192),
+    candidateReviewAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
     synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
     initialCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
@@ -108,6 +115,8 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly extractionBatchMaxInputTokens: number
   private readonly extractionBatchOverlapCharacters: number
   private readonly extractionAttemptTimeoutMs: number
+  private readonly candidateReviewMaxTokens: number
+  private readonly candidateReviewAttemptTimeoutMs: number
   private readonly synthesisMaxAttempts: number
   private readonly synthesisRetryInitialDelayMs: number
   private readonly candidateBatchPolicy: import('@deepseek-ai/dsh-academic-workflow').CandidateBatchPolicy
@@ -128,6 +137,8 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionBatchMaxInputTokens = config.extractionBatchMaxInputTokens ?? 12_000
     this.extractionBatchOverlapCharacters = config.extractionBatchOverlapCharacters ?? 512
     this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 150_000
+    this.candidateReviewMaxTokens = config.candidateReviewMaxTokens ?? 8_192
+    this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
     this.candidateBatchPolicy = {
@@ -378,7 +389,9 @@ export class AcademicResearchController extends TypertRemoteService {
     const adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'> = {
       ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
         recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
-        candidateScreening),
+        candidateScreening,
+        candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
+          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs })),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),

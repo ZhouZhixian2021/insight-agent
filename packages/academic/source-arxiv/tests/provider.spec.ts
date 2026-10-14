@@ -57,8 +57,8 @@ describe('ArxivProvider.search', () => {
     expect(requested.searchParams.get('search_query')).toBe('all:retrieval')
     expect(requested.searchParams.get('max_results')).toBe('3')
     expect(arxiv.fullTextUrls('2406.12345v1')).toEqual([
-      'https://arxiv.org/html/2406.12345v1',
       'https://arxiv.org/pdf/2406.12345v1',
+      'https://arxiv.org/html/2406.12345v1',
     ])
   })
 

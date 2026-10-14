@@ -25,12 +25,21 @@ export function ProgressPanel({ progress, recent = [], t }: PropsLocale<'academi
       <p>{pair(progress.stages[stage].completedItems, progress.stages[stage].totalItems)}
         {' '}{progress.stages[stage].unit === null ? '' : t(`unit_${progress.stages[stage].unit}`)}</p>
     </li>)}</ol>
+    <section aria-label={t('progressFunnel')}>
+      <h4>{t('progressFunnel')}</h4><p>{t('progressFunnelNotice')}</p>
+      <dl className={css.stats}>
+        <div><dt>{t('discoveredRecords')}</dt><dd>{progress.counts.discoveredRecords}</dd></div>
+        <div><dt>{t('deduplicatedWorks')}</dt><dd>{progress.counts.deduplicatedWorks}</dd></div>
+        <div><dt>{t('candidateWorks')}</dt><dd>{progress.counts.candidateWorks}</dd></div>
+        <div><dt>{t('availableFulltextWorks')}</dt><dd>{progress.counts.availableFulltextPapers}</dd></div>
+        <div><dt>{t('validatedEvidence')}</dt><dd>{progress.counts.validatedEvidenceRecords}</dd></div>
+        <div><dt>{t('includedWorks')}</dt><dd>{progress.counts.includedPapers}</dd></div>
+        <div><dt>{t('progress_report')}</dt><dd>{t(`progress_${progress.stages.report.status}`)}</dd></div>
+      </dl>
+    </section>
     <dl className={css.stats}>
       <div><dt>{t('progressQueries')}</dt><dd>{pair(progress.counts.completedQueries, progress.counts.totalQueries)}</dd></div>
       <div><dt>{t('progressPapers')}</dt><dd>{pair(progress.counts.completedPapers, progress.counts.totalPapers)}</dd></div>
-      <div><dt>{t('includedWorks')}</dt><dd>{progress.counts.includedPapers}</dd></div>
-      <div><dt>{t('availableFulltextWorks')}</dt><dd>{progress.counts.availableFulltextPapers}</dd></div>
-      <div><dt>{t('validatedEvidence')}</dt><dd>{progress.counts.validatedEvidenceRecords}</dd></div>
       <div><dt>{t('rejectedEvidence')}</dt><dd>{progress.counts.rejectedEvidenceDrafts}</dd></div>
       <div><dt>{t('progressQuestions')}</dt><dd>{pair(progress.counts.completedQuestions, progress.counts.totalQuestions)}</dd></div>
     </dl>

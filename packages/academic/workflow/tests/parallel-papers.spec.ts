@@ -90,6 +90,30 @@ describe('bounded concurrent papers', () => {
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(4)
   })
 
+  it('reduces new paper starts after consecutive transient extraction failures', async () => {
+    const f = parallelFixture(), original = f.adapters.generator
+    const releaseC = deferred(), releaseD = deferred()
+    const started: string[] = []
+    f.adapters.generator = async (...args) => {
+      const paper = args[1].sourceUrl.split('/').at(-1)!
+      started.push(paper)
+      if (paper === 'a' || paper === 'b') args[3]?.({ operation: 'waiting_retry', batchIndex: 1,
+        batchCount: 1, attempt: 1, maximumAttempts: 2, lastFailure: 'timeout',
+        validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0 })
+      if (paper === 'c') await releaseC.promise
+      if (paper === 'd') await releaseD.promise
+      return original(...args)
+    }
+    const running = runResearchDraft(f.input, f.adapters)
+    try {
+      await vi.waitFor(() => { expect(started).toEqual(['a', 'b', 'c', 'd']) })
+      releaseC.resolve()
+      await vi.waitFor(() => { expect(started).toEqual(['a', 'b', 'c', 'd', 'e']) })
+    } finally { releaseC.resolve(); releaseD.resolve() }
+    const result = await running
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(5)
+  })
+
   it.each([false, true])('joins in-flight cancellation and preserves fatal logging errors: %s', async (fatal) => {
     const f = parallelFixture(), entered = deferred(), release = deferred(), abort = new AbortController()
     const signals: AbortSignal[] = []

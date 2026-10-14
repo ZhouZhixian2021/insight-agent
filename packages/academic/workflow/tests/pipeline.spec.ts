@@ -137,6 +137,50 @@ describe('single-pass research draft', () => {
     expect(result.synthesis).toMatchObject({ status: 'partial_success' })
     expect(adapters.synthesize).toHaveBeenCalledOnce()
   })
+  it('settles a fixed four-question cohort with twelve retained records and two partially usable papers', async () => {
+    const { input, adapters } = fixture(3)
+    input.brief = { ...input.brief,
+      questions: ['Question one', 'Question two', 'Question three', 'Question four'],
+      evidenceRequirements: { ...input.brief.evidenceRequirements, minimumIncludedWorks: 3 },
+    }
+    const excerpts = Array.from({ length: 6 }, (_, index) => `Evidence statement ${index + 1}.`)
+    adapters.fetcher = async url => ({ url, statusCode: 200, truncated: false,
+      body: { kind: 'html', content: `<article><h2>Results</h2><p>${excerpts.join(' ')}</p></article>` } })
+    let attempted = 0
+    adapters.generator = async (_request, source) => {
+      if (++attempted === 3) throw new EvidenceError('third paper timed out', 'EVIDENCE_MODEL_TIMEOUT')
+      const segmentIndex = source.segments.findIndex(segment => excerpts.every(excerpt => segment.text.includes(excerpt)))
+      if (segmentIndex < 0) throw new Error('fixed source paragraph was not parsed')
+      return { scope: { status: 'included', reason: 'The paper addresses the approved comparison.' }, evidence: [
+        ...excerpts.map((verbatimExcerpt, index) => ({ segmentIndex, questionIndexes: [index % 4],
+          sourcedStatement: verbatimExcerpt, verbatimExcerpt,
+          cardItems: [{ section: 'methods' as const, statement: verbatimExcerpt,
+            methodName: { status: 'available' as const, value: 'synthetic method' },
+            methodRole: { status: 'available' as const, value: 'proposed' as const } }] })),
+        { segmentIndex, questionIndexes: [0], sourcedStatement: 'Unsupported statement.',
+          verbatimExcerpt: 'Absent from the paper.', cardItems: [] },
+      ] }
+    }
+
+    const result = await runResearchDraft(input, adapters)
+
+    expect(result.papers.map(paper => paper.status)).toEqual(['partially_extracted', 'partially_extracted'])
+    expect(result.failures).toHaveLength(1)
+    const accepted = result.papers.flatMap(paper => paper.status === 'partially_extracted'
+      ? paper.evidence.evidenceRecords : [])
+    const covered = new Set(result.papers.flatMap(paper => paper.status === 'partially_extracted'
+      ? paper.evidence.questionLinks.map(link => link.question) : []))
+    expect(accepted).toHaveLength(12)
+    expect(covered).toEqual(new Set(input.brief.questions))
+    expect(result.report).not.toBeNull()
+    expect(result.report?.evidence).toHaveLength(2)
+    expect(result.retrievalRun.coverageSummary).toMatchObject({ includedWorks: 2,
+      availableFulltextWorks: 3, failedOperations: 3 })
+    expect(result.report?.limitations.join(' ')).toContain('Plan 至少要求 3 篇')
+    expect(result.report?.evaluation.status).not.toBe('ready')
+    expect(result.synthesis.status).toBe('partial_success')
+    expect(adapters.synthesize).toHaveBeenCalledOnce()
+  })
   it('continues other papers after a model input limit pause', async () => {
     const { input, adapters } = fixture()
     const generate = adapters.generator
@@ -455,8 +499,8 @@ describe('single-pass research draft', () => {
     const { input, adapters } = fixture()
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions, maximumIncludedWorks: 1 } }
     const select = adapters.selectPapers
-    adapters.selectPapers = (ingested, brief) => {
-      const result = select(ingested, brief)
+    adapters.selectPapers = async (ingested, brief) => {
+      const result = await select(ingested, brief)
       return { papers: result.papers.slice(0, 1), truncated: result.papers.length > 1 }
     }
 
@@ -489,14 +533,14 @@ describe('single-pass research draft', () => {
     if (kind === 'version_type') input.brief = { ...input.brief, includedWorkTypes: ['accepted_manuscript', 'version_of_record'] }
     if (kind === 'too_many') {
       const select = adapters.selectPapers
-      adapters.selectPapers = (a, b) => {
-        const selection = select(a, b)
+      adapters.selectPapers = async (a, b) => {
+        const selection = await select(a, b)
         return { ...selection, papers: [...selection.papers, ...selection.papers] }
       }
     }
     const select = adapters.selectPapers
-    if (kind === 'unknown' || kind === 'duplicate') adapters.selectPapers = (a, b) => {
-      const selection = select(a, b), papers = selection.papers
+    if (kind === 'unknown' || kind === 'duplicate') adapters.selectPapers = async (a, b) => {
+      const selection = await select(a, b), papers = selection.papers
       return { ...selection, papers: kind === 'unknown'
         ? [{ ...papers[0]!, workVersionId: createWorkVersionId() }]
         : [papers[0]!, papers[0]!] }

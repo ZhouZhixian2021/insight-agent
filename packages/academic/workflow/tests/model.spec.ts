@@ -40,6 +40,7 @@ class Adapter extends LlmAdapter {
   beforeDispatch?: () => Promise<void>
   afterChunk?: () => void
   waitForAbort = false
+  ignoreAbort = false
   supportsReasoning = true
   override resolveModel(provider: string, model: string) {
     return Promise.resolve({ provider, id: model, name: model,
@@ -54,6 +55,7 @@ class Adapter extends LlmAdapter {
     const admission = prompt?.type === 'text' && prompt.text.startsWith('Decide whether the paper satisfies')
     if (admission) this.scopeCalls.push(options)
     else this.calls.push(options)
+    if (this.ignoreAbort && !admission) await new Promise<void>(() => {})
     if (this.waitForAbort && !admission) {
       await new Promise<void>((_resolve, reject) => {
         const signal = options.signal
@@ -544,6 +546,17 @@ describe('durable academic model extraction', () => {
     })
     expect(progress.at(-1)).toMatchObject({ operation: 'evidence_extract', attempt: 1,
       maximumAttempts: 1, lastFailure: 'timeout' })
+  })
+  it('enforces the model deadline when a gateway ignores the abort signal', async () => {
+    const f = await fixture()
+    f.adapter.ignoreAbort = true
+    const generate = createModelEvidenceGenerator(f.ctx, f.session, config,
+      { maxAttempts: 1, attemptTimeoutMs: 100 })
+    await expect(generate(f.request, f.source, scope)).rejects.toMatchObject({ code: 'EVIDENCE_MODEL_TIMEOUT' })
+    expect((await f.read()).at(-1)?.data).toMatchObject({
+      status: 'failed', errorCode: 'EVIDENCE_MODEL_TIMEOUT',
+      finish: { kind: 'error', failure: { code: 'TIMEOUT' } },
+    })
   })
   it('records bad JSON without turning it into empty evidence', async () => {
     const f = await fixture()

@@ -224,8 +224,8 @@ export async function runResearchDraft(
   let selection: PaperSelectionResult
   if (recovery === undefined) {
     try {
-      selection = adapters.selectPapers(ingested, { ...brief,
-        stopConditions: { ...limits, maximumCandidateWorks: maxResults } })
+      selection = await adapters.selectPapers(ingested, { ...brief,
+        stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, signal)
     } catch (error: unknown) {
       progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
       throw error
@@ -313,6 +313,10 @@ export async function runResearchDraft(
   let observedRejectedDrafts = papers.reduce((sum, result) => sum + (
     result.status === 'extracted' || result.status === 'partially_extracted' || result.status === 'extraction_failed'
       ? result.evidence.rejectedDrafts.length : 0), 0)
+  const transientExtractionFailures = new Set<WorkVersionId>()
+  let activePaperLimit = paperConcurrency
+  let consecutiveTransientPapers = 0
+  let consecutiveCleanPapers = 0
   const processPaper = async ({ paper, version }: typeof validated[number]) => {
     let fulltext = false
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
@@ -359,6 +363,9 @@ export async function runResearchDraft(
       let observedBatchIndex: number | null = null
       let observedBatchCount: number | null = null
       const observeEvidence = (observation: PaperEvidenceProgressObservation): void => {
+        if (observation.lastFailure === 'network_error' || observation.lastFailure === 'timeout') {
+          transientExtractionFailures.add(paper.workVersionId)
+        }
         if (observation.batchIndex !== null) observedBatchIndex = observation.batchIndex
         if (observation.batchCount !== null) observedBatchCount = observation.batchCount
         progress.setActivity(activityKey, { kind: 'paper', stage: 'extraction', academicWorkId: version.academicWorkId,
@@ -412,6 +419,23 @@ export async function runResearchDraft(
     }
   }
   const collect = (paper: typeof validated[number]['paper'], outcome: Awaited<ReturnType<typeof processPaper>>) => {
+    if (!outcome.fulltext) {
+      transientExtractionFailures.delete(paper.workVersionId)
+    } else if (transientExtractionFailures.delete(paper.workVersionId)) {
+      consecutiveTransientPapers += 1
+      consecutiveCleanPapers = 0
+      if (consecutiveTransientPapers >= 2 && activePaperLimit > 1) {
+        activePaperLimit -= 1
+        consecutiveTransientPapers = 0
+      }
+    } else {
+      consecutiveTransientPapers = 0
+      consecutiveCleanPapers += 1
+      if (consecutiveCleanPapers >= 2 && activePaperLimit < paperConcurrency) {
+        activePaperLimit += 1
+        consecutiveCleanPapers = 0
+      }
+    }
     if (outcome.fulltext) availableFulltextWorks += 1
     if (outcome.failure) failures.push(outcome.failure)
     if (outcome.providerFailure) providerFailures.push(outcome.providerFailure)
@@ -443,7 +467,7 @@ export async function runResearchDraft(
     let offset = 0
     try {
       while (offset < group.length || pending.length > 0) {
-        while (!paperSignal.aborted && offset < group.length && pending.length < paperConcurrency
+        while (!paperSignal.aborted && offset < group.length && pending.length < activePaperLimit
           && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
           const candidate = group[offset++]
           if (candidate === undefined) break
@@ -480,7 +504,7 @@ export async function runResearchDraft(
           }
           // Every unsettled candidate reserves an inclusion slot; completion order cannot change selection.
           while (!stopped && !paperSignal.aborted && attempted < validated.length
-            && pending.length < paperConcurrency && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
+            && pending.length < activePaperLimit && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
             const candidate = validated[attempted++]
             if (candidate === undefined) break
             pending.push({ paper: candidate.paper, done: processPaper(candidate) })
@@ -543,10 +567,14 @@ export async function runResearchDraft(
           return candidate
         })
         const evidenceBefore = admittedEvidence.length
+        const fulltextBefore = availableFulltextWorks
         await processGroup(group)
         completedBatchCount += 1
-        consecutiveBatchesWithoutEvidence = admittedEvidence.length === evidenceBefore
-          ? consecutiveBatchesWithoutEvidence + 1 : 0
+        // A failed download has not tested the evidence yield of a paper. Keep trying the
+        // remaining ranked candidates instead of treating unavailable full text as saturation.
+        consecutiveBatchesWithoutEvidence = admittedEvidence.length > evidenceBefore ? 0
+          : availableFulltextWorks > fulltextBefore ? consecutiveBatchesWithoutEvidence + 1
+            : consecutiveBatchesWithoutEvidence
         const settlementCoverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready',
           scheduling.policy.minimumQuestionSupportingWorks, adapters.now())
         const settlementEvent: AcademicBatchSettlementEvent = {

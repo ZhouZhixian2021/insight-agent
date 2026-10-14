@@ -41,7 +41,7 @@ Load the seam and this provider together; with no other provider registered, `se
 | `maxAttempts` | `1` | Total attempts after connection failures; valid range `1`–`3`. |
 | `retryDelayMs` | `0` | Delay before another connection attempt; maximum `30000`. |
 
-The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. A failed connection can be repeated within the configured attempt bound; an HTTP response, parse failure, rate limit, or caller cancellation is never retried. `truncated` is true when the feed's `<opensearch:totalResults>` exceeds the returned entries; the seam flags its own `maxResults` cap separately. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/html/{id}` URL and `/pdf/{id}` fallback for `fetchAcademicFullText()`.
+The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`, parses the Atom feed, and maps each entry through `normalizeArxivWork()`. A failed connection can be repeated within the configured attempt bound; an HTTP response, parse failure, rate limit, or caller cancellation is never retried. `truncated` is true when the feed's `<opensearch:totalResults>` exceeds the returned entries; the seam flags its own `maxResults` cap separately. Pass an entry's id to `arxivFullTextUrls()` to obtain the preferred `/pdf/{id}` URL and `/html/{id}` fallback for `fetchAcademicFullText()`; this avoids making large HTML pages the first acquisition attempt.
 
 -----
 

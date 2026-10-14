@@ -118,13 +118,17 @@ describe('bounded candidate replenishment', () => {
     } finally { timeout.mockRestore() }
   })
 
-  it.each([true, false])('stops ranked full-text batches only when evidence covers both questions: %s', async (coverBoth) => {
+  it.each([[true, false], [false, false], [true, true]] as const)('ranked batches: covered=%s failedDownloads=%s', async (coverBoth, failedDownloads) => {
     const { input, adapters, records } = fixture()
     const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
     adapters.onQueryWorkflow = observation => observations.push(observation)
     input.brief = { ...input.brief, questions: ['Compare methods', 'Identify limitations'],
       stopConditions: { ...input.brief.stopConditions,
-        maximumCandidateWorks: 5, maximumIncludedWorks: 5, stopWhenEvidenceRequirementsMet: true } }
+        maximumCandidateWorks: 5, maximumIncludedWorks: 5, saturationRounds: 2,
+        stopWhenEvidenceRequirementsMet: true } }
+    if (failedDownloads) vi.mocked(adapters.fetcher)
+      .mockRejectedValueOnce(new Error('full text unavailable'))
+      .mockRejectedValueOnce(new Error('full text unavailable'))
     const generate = adapters.generator
     let extractionCall = 0
     adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => {
@@ -165,8 +169,9 @@ describe('bounded candidate replenishment', () => {
         replenishmentBatchSize: 1, minimumQuestionSupportingWorks: 1 } },
     })
     const result = await runResearchDraft(input, adapters)
-    expect(adapters.fetcher).toHaveBeenCalledTimes(coverBoth ? 2 : 5)
+    expect(adapters.fetcher).toHaveBeenCalledTimes(coverBoth ? failedDownloads ? 4 : 2 : 5)
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(coverBoth ? 2 : 5)
+    if (failedDownloads) expect(result.failures).toHaveLength(2)
     if (coverBoth) expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
     expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
     expect(observations.at(-1)).toMatchObject({ status: 'settled',

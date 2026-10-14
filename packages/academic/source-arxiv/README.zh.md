@@ -41,7 +41,7 @@ kind: "package-reference"
 | `maxAttempts` | `1` | 连接失败后的总尝试次数；有效范围为 `1`–`3`。 |
 | `retryDelayMs` | `0` | 再次连接前的等待毫秒数；最大为 `30000`。 |
 
-提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。连接失败可在配置的尝试次数内重新发起；收到 HTTP 响应、解析失败、限流或调用方取消时都不会重试。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/html/{id}` URL 与 `/pdf/{id}` 回退 URL。
+提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。连接失败可在配置的尝试次数内重新发起；收到 HTTP 响应、解析失败、限流或调用方取消时都不会重试。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/pdf/{id}` URL 与 `/html/{id}` 回退 URL，避免首先下载体积很大的 HTML 页面。
 
 -----
 

@@ -4,7 +4,7 @@ import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingest
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
-import { approvedPaperAdapters } from '../src/search.ts'
+import { approvedPaperAdapters, type CandidateReviewer } from '../src/search.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 
 const batchPolicy = {
@@ -36,6 +36,8 @@ function setup(options: {
   readonly unresolved?: ReadonlySet<string>
   readonly metadata?: NonNullable<AcademicSourceWork['metadata']>
   readonly candidateScreening?: AcademicCandidateScreening
+  readonly reviewCandidate?: CandidateReviewer
+  readonly initialWorkCount?: number
 } = {}) {
   const fixture = draftFixture(3)
   const questions = [...options.questions ?? ['Which method works?']]
@@ -61,8 +63,9 @@ function setup(options: {
       return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
         limitations: [], truncated: false }
     }
-    const batch = createBatchResult([works[0]!], [])
-    return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: 1,
+    const selected = works.slice(0, options.initialWorkCount ?? 1)
+    const batch = createBatchResult(selected, [])
+    return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
       limitations: [], truncated: false }
   })
   const resolveFullText = vi.fn((version: { sourceRecords: readonly { provider: string; recordId: string }[] }) => {
@@ -75,7 +78,7 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  batchPolicy, gapPolicy, undefined, options.candidateScreening)
+  batchPolicy, gapPolicy, undefined, options.candidateScreening, options.reviewCandidate)
   const replenishCandidates = adapters.replenishCandidates
   if (replenishCandidates === undefined) throw new Error('expected evidence-gap replenishment adapter')
   return { adapters, brief, searchProviders, works, replenishCandidates }
@@ -84,7 +87,7 @@ function setup(options: {
 async function initialState(setupResult: ReturnType<typeof setup>) {
   const searched = await setupResult.adapters.search({ query: 'synthetic', maxResults: 3 })
   const ingested = ingestWorks(createIngestIndex(), searched.works)
-  const selection = setupResult.adapters.selectPapers(ingested, setupResult.brief)
+  const selection = await setupResult.adapters.selectPapers(ingested, setupResult.brief)
   if (selection.candidateScheduling === undefined) throw new Error('expected ranked candidate scheduling')
   return { ingested, scheduling: selection.candidateScheduling }
 }
@@ -97,6 +100,59 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
+  it('reviews every deduplicated candidate and retains lexical screening when one review fails', async () => {
+    const question = 'Which method works?'
+    const reviewCandidate = vi.fn<CandidateReviewer>(async input => input.title === 'Synthetic b'
+      ? undefined : { schemaVersion: 1, signals: input.title === 'Synthetic a'
+        ? [{ kind: 'question', question, quote: { source: 'abstract', text: 'comparative results' } },
+          { kind: 'method', label: 'evaluation', quote: { source: 'abstract', text: 'evaluation' } },
+          { kind: 'evidence_type', label: 'comparative results', quote: { source: 'abstract', text: 'comparative results' } },
+          { kind: 'contribution', classification: 'empirical_evaluation',
+            quote: { source: 'abstract', text: 'evaluation' } }] : [],
+      surfaceKeywordHits: [], uncertainties: [], scope: input.title === 'Synthetic c'
+        ? { status: 'off_topic', reason: 'This work does not address the approved method question.',
+          quote: { source: 'title', text: input.title } }
+        : { status: 'potentially_relevant', reason: 'The title concerns the approved question.' } })
+    const prepared = setup({ questions: [question], initialWorkCount: 3, reviewCandidate,
+      metadata: { abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
+        keywords: { status: 'available', value: ['synthetic', 'comparison'] } },
+      candidateScreening: { questions: [{ question, concepts: [['comparative results']] }],
+        methods: [['evaluation']], evidence: [['comparative results']],
+        contributions: [{ classification: 'empirical_evaluation', concepts: [['evaluation']] }] } })
+
+    const state = await initialState(prepared)
+
+    expect(reviewCandidate).toHaveBeenCalledTimes(3)
+    expect(state.scheduling.assessments).toHaveLength(3)
+    expect(state.scheduling.assessments.find(item => item.screening?.scope.status === 'off_topic'))
+      .toMatchObject({ matchedQuestions: [] })
+    expect(state.scheduling.assessments.find(item => item.matchedQuestions.includes(question))?.screening?.signals)
+      .toHaveLength(4)
+    expect(state.scheduling.assessments.find(item => item.reasons.some(reason => reason.includes('review failed'))))
+      .toBeDefined()
+    expect(state.scheduling.ranking.queues.excluded).toHaveLength(2)
+    const [related, fallback, offTopic] = state.scheduling.ranking.evaluations
+    expect(related).toMatchObject({ priority: 'p0', score: { questionMatch: 20, methodMatch: 10,
+      evidencePotential: 15 } })
+    expect(fallback?.score.questionMatch).toBe(0)
+    expect(offTopic).toMatchObject({ priority: 'excluded', hardFilter: { status: 'excluded' } })
+  })
+
+  it('reviews only newly discovered works when an evidence-gap round replenishes candidates', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const prepared = setup({ reviewCandidate })
+    const state = await initialState(prepared)
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+
+    const replenished = await prepared.replenishCandidates(state.scheduling, state.ingested,
+      uncovered(prepared.brief), 2)
+
+    expect(reviewCandidate).toHaveBeenCalledTimes(2)
+    expect(replenished.scheduling.assessments).toHaveLength(2)
+    expect(replenished.scheduling.assessments.every(item =>
+      item.reasons.some(reason => reason.includes('review failed')))).toBe(true)
+  })
+
   it('uses retained scholarly metadata and conservative reviewed criteria in formal ranking', async () => {
     const prepared = setup({ metadata: {
       abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
@@ -190,22 +246,22 @@ describe('Q5 evidence-gap replenishment', () => {
     }))
   })
 
-  it('rejects missing query provenance after conservatively assessing an unknown source', () => {
+  it('rejects missing query provenance after conservatively assessing an unknown source', async () => {
     const prepared = setup()
     const withoutSource = { ...prepared.works[0]!, workVersion: { ...prepared.works[0]!.workVersion,
       sourceRecords: [] } }
     const ingested = ingestWorks(createIngestIndex(), [withoutSource])
 
-    expect(() => prepared.adapters.selectPapers(ingested, prepared.brief))
-      .toThrow('candidate provenance must contain distinct planned queries')
+    await expect(prepared.adapters.selectPapers(ingested, prepared.brief))
+      .rejects.toThrow('candidate provenance must contain distinct planned queries')
   })
 
-  it('rejects candidate provenance that does not belong to the reviewed plan', () => {
+  it('rejects candidate provenance that does not belong to the reviewed plan', async () => {
     const prepared = setup()
     const ingested = ingestWorks(createIngestIndex(), [{ ...prepared.works[0]!, discoveredBy: [createSearchQueryId()] }])
 
-    expect(() => prepared.adapters.selectPapers(ingested, prepared.brief))
-      .toThrow('candidate provenance must reference a planned query')
+    await expect(prepared.adapters.selectPapers(ingested, prepared.brief))
+      .rejects.toThrow('candidate provenance must reference a planned query')
   })
 
   it('drops works already ranked and duplicates repeated by sibling gap queries', async () => {

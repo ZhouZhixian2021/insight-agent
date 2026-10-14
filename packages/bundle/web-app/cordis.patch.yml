@@ -42,7 +42,7 @@
 - id: web-fetch-http
   config:
     maxResponseBytes: 10000000
-    maxBodyChars: 1000000
+    maxBodyChars: 5000000
     timeoutMs: 120000
     maxRedirects: 5
     userAgent: 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)'
