@@ -28,7 +28,7 @@ The [scope/extraction separation](2026-10-11-academic-paper-screening-evidence-p
 
 ## Consequences
 
-The opt-in library path bounds retained evidence and avoids further calls at the cap. It preserves partial evidence without certifying semantic support or formal delivery. Source selection still follows the existing ordered fragments; query-aware fragment selection, enhancement and real-model performance calibration remain separate work. The Academic workflow does not select minimal depth until its owner integrates it.
+The opt-in library path bounds retained evidence and avoids further calls at the cap. It preserves partial evidence without certifying semantic support or formal delivery. [Fragment priority and recovery](2026-10-14-academic-fragment-priority-recovery.md) owns minimal reading order and smaller-input recovery; enhancement and real-model performance calibration remain separate work. The Academic workflow does not select minimal depth until its owner integrates it.
 
 ## Verification
 
