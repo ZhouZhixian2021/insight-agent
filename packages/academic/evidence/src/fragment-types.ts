@@ -62,7 +62,7 @@ export interface EvidenceFragmentOptions {
   readonly onFailure?: (failure: EvidenceFragmentFailure) => void
 }
 
-/** Verified paper evidence and exact ranges that exhausted their initial fragment's call budget. */
+/** Verified paper evidence and exact ranges left incomplete by attempt exhaustion or the minimal evidence cap. */
 export interface EvidenceFragmentResult {
   readonly evidence: EvidenceExtractionResult
   readonly failures: readonly EvidenceFragmentFailure[]
