@@ -161,6 +161,12 @@ flowchart TB
 
 Current order: rerun the same broad topic and fixed paper set to verify plan consistency, candidate selection, and question-level evidence coverage. Then reduce M2 fragment timeouts, connection failures, and long latency, and use the same evidence input to accept M3 claims, citations, length, and human review. Batch-level recovery exists; fragment-level resumption needs a separate design. M4 shared storage and operational ownership remain a separate decision.
 
+#### Concise review and tiered-evidence handoff
+
+The first-stage [team plan](../z-team_docs/模块分工/academic-concise-plan-tiered-evidence-team-plan.md) limits user review to research objectives, questions, scope, evidence requirements, and delivery choices that affect the result. Machine queries, provider identities, and internal budgets remain available in folded execution information. A has fixed a [readable-plan and complete-execution sample](../z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md). The sample passes existing structural validation; a general semantic-consistency check between readable text and execution data still needs implementation and acceptance.
+
+Tiered evidence first reuses existing records, source locations, and question links. The [partial-success and zero-evidence sample](../z-team_docs/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json) lets B and C align their inputs and report limits. A-PE1 fixes only the handoff rules; B still needs to implement and measure minimal extraction, fragment selection, and real latency improvements before A integrates them into the formal workflow. Model timeouts cannot be solved by hiding failures or weakening citation requirements.
+
 #### Team workstreams
 
 | Workstream | Primary responsibility | Main handoff |

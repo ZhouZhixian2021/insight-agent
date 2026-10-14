@@ -25,6 +25,7 @@
 - [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json)：固定 A-H1 的已批准混合策略、全部五类引用、明确的未识别/格式错误/含糊识别问题、B 的核验成功/失败结果，以及 C 使用的浏览器安全混合阶段与计数投影。A-H4 为候选／引用行增加可选的查询归属；计数区分重复引用观察和实际 ingestion 论文合并。全部记录均为合成数据。
 - [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json)：固定 A-P1 的完整进度快照，覆盖检索开始、学术源直接搜索与 Web 发现活动、相互区分的摄取审计计数、全文与证据并行且三篇论文同时活动、超时重试和报告评测。论文活动同时携带论文与版本 ID。样例包含已观察数量与已运行时间，不包含估算百分比。
 - [`academic-query-workflow-v1.sample.json`](academic-query-workflow-v1.sample.json)：固定 Q1 不依赖提供方的检索计划、规范版本候选事实、可信摘要与关键词状态、全文解析事实、可解释评估、有权威顺序的 P0/P1/excluded 队列、问题覆盖、一次轮次结算、停止决定和进度事件草案。全部记录均为合成数据。
+- [`academic-pe1-plan.sample.md`](academic-pe1-plan.sample.md) 与 [`academic-pe1-evidence.sample.json`](academic-pe1-evidence.sample.json)：固定 A-PE1 的可读审批计划与完整执行块、逐条摘录拒绝、后续片段超时、有效证据保留和未覆盖问题。它们是合成交接样例，不表示分级抽取已进入正式运行；见[团队方案](../../模块分工/academic-concise-plan-tiered-evidence-team-plan.md)。
 
 ## 样例覆盖
 
