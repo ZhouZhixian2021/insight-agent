@@ -152,6 +152,8 @@ export type EvidenceGenerator = (request: EvidenceGenerationRequest) => Promise<
 
 /** Paper identity, provenance, and locatable content for one extraction call. */
 export interface EvidenceExtractionInput {
+  /** Minimal extraction requires focus questions and retains at most five records; omission selects complete extraction. */
+  readonly depth?: 'minimal' | 'complete'
   readonly academicWorkId: AcademicWorkId
   readonly workVersionId: WorkVersionId
   readonly sourceProvider: string

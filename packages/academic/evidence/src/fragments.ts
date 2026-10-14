@@ -12,7 +12,8 @@ import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragment
  * @param input Verified paper identity, provenance and locatable content.
  * @param options Explicit source/output limits, semantic generator, failure classifier and verified-result sink.
  * @param signal Cancellation forwarded to every call and retry delay.
- * @returns Merged verified evidence, all failed attempts, and source ranges left incomplete.
+ * Minimal depth retains at most five unique records across the paper, including the verified-result sink.
+ * @returns Merged verified evidence, all failed attempts, and source ranges left incomplete by retries or the evidence cap.
  * @throws Cancellation, unclassified generator failures, invalid inputs or failure of the verified-result sink.
  */
 export async function extractEvidenceInFragments(input: EvidenceExtractionInput, options: EvidenceFragmentOptions,
@@ -27,9 +28,13 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
   const incomplete: EvidenceFragmentRange[] = []
   const seen = new Set<string>()
   let consecutiveTransientFailures = 0
-  for (const initial of packSourceRanges(input.segments, options.policy.maximumCharacters,
-    options.policy.overlapCharacters)) {
+  const ranges = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
+  for (const [index, initial] of ranges.entries()) {
     signal?.throwIfAborted()
+    if (input.depth === 'minimal' && seen.size === 5) {
+      incomplete.push(...ranges.slice(index))
+      break
+    }
     const queue: EvidenceFragmentRange[] = [initial]
     let attempt = 0
     for (let range = queue.shift(); range !== undefined; range = queue.shift()) {
@@ -72,11 +77,15 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
         continue
       }
       consecutiveTransientFailures = 0
-      const accepted = uniqueEvidence(result, seen)
+      const accepted = uniqueEvidence(result, seen, input.depth === 'minimal' ? 5 - seen.size : Infinity)
       // The sink owns persistence; a failed commit must stop dispatch rather than resemble a model failure.
       await options.onVerified(context, accepted)
       verified.push(accepted)
       signal?.throwIfAborted()
+      if (input.depth === 'minimal' && seen.size === 5) {
+        incomplete.push(...queue)
+        break
+      }
     }
   }
   return { evidence: mergeEvidence(input, verified), failures, incompleteFragments: incomplete }
@@ -143,7 +152,6 @@ function packSourceRanges(segments: readonly EvidenceContentSegment[], maximum: 
   let pending: EvidenceFragmentSourceRange[] = []
   let length = 0
   const commit = () => {
-    if (pending.length === 0) return
     groups.push(fragmentRange(groups.length + 1, pending))
     pending = []
     length = 0
@@ -165,15 +173,11 @@ function packSourceRanges(segments: readonly EvidenceContentSegment[], maximum: 
 }
 
 function sourceSegment(segments: readonly EvidenceContentSegment[], index: number): EvidenceContentSegment {
-  const segment = segments[index]
-  if (segment === undefined) throw new RangeError('Fragment source segment is missing.')
-  return segment
+  return segments[index] as EvidenceContentSegment
 }
 
 function sourceRange(ranges: readonly EvidenceFragmentSourceRange[], index: number): EvidenceFragmentSourceRange {
-  const range = ranges[index]
-  if (range === undefined) throw new RangeError('Fragment source range is missing.')
-  return range
+  return ranges[index] as EvidenceFragmentSourceRange
 }
 
 function observeFailure(options: EvidenceFragmentOptions, failure: EvidenceFragmentFailure): void {
@@ -184,13 +188,14 @@ function observeFailure(options: EvidenceFragmentOptions, failure: EvidenceFragm
   }
 }
 
-function uniqueEvidence(result: EvidenceExtractionResult, seen: Set<string>): EvidenceExtractionResult {
+function uniqueEvidence(result: EvidenceExtractionResult, seen: Set<string>, remaining: number): EvidenceExtractionResult {
   const locations = result.sourceLocators.map(({ sourceLocatorId: _, ...location }) => location)
   const ids = new Set(result.evidenceRecords.filter((record, index) => {
     const questions = result.questionLinks.filter(link => link.evidenceId === record.evidenceId).map(link => link.question).toSorted()
     const key = JSON.stringify([locations[index], record.sourcedStatement, record.verbatimExcerpt, questions])
-    if (seen.has(key)) return false
+    if (seen.has(key) || remaining === 0) return false
     seen.add(key)
+    remaining--
     return true
   }).map(record => record.evidenceId))
   const records = result.evidenceRecords.filter(record => ids.has(record.evidenceId))

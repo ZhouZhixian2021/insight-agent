@@ -14,6 +14,7 @@ import type {
   EvidenceCardInput,
   EvidenceCardItemDraft,
   EvidenceContentSegment,
+  EvidenceDraft,
   EvidenceDraftRejection,
   EvidenceExtractionInput,
   EvidenceExtractionResult,
@@ -27,10 +28,21 @@ const EXTRACTION_INSTRUCTION = [
   'Do not infer missing values from absent text.',
 ].join(' ')
 
+const MINIMAL_EXTRACTION_INSTRUCTION = [
+  'Extract three to five concise facts directly relevant to the supplied focus questions, or fewer when unsupported.',
+  'Every fact must identify at least one supplied question using zero-based questionIndexes.',
+  'Every verbatimExcerpt must be an exact non-empty substring of its segment.',
+  'Card sections may be empty; leave unextracted attributes not_extracted and do not infer missing facts.',
+  'Do not claim that a question is answered when its supporting evidence is absent.',
+].join(' ')
+
 type CardSections = {
   [K in keyof Omit<EvidenceCardInput, 'academicWorkId' | 'workVersionId'>]:
   Array<EvidenceCardInput[K][number]>
 }
+
+type LocatedExcerpt = { readonly segment: EvidenceContentSegment; readonly excerptStart: number }
+type DraftRejection = Pick<EvidenceDraftRejection, 'code' | 'reason'>
 
 /**
  * Extracts traceable evidence from one paper version. The caller supplies the semantic
@@ -41,6 +53,7 @@ type CardSections = {
  * @param signal - optional cancellation signal forwarded to the generator.
  * Invalid model source references are rejected individually; accepted drafts continue.
  * Generator failures, cancellation and invalid program-owned provenance still reject the call.
+ * Minimal depth requires focus questions and retains at most five verified, question-linked drafts.
  * @returns verified locators, records, run-specific question links, one six-section card, and rejected draft diagnostics.
  */
 export async function extractEvidenceFromContent(
@@ -51,10 +64,13 @@ export async function extractEvidenceFromContent(
   assertNonEmpty('contentHash', input.contentHash)
   if (input.segments.length === 0) invalid('at least one content segment is required')
   for (const segment of input.segments) assertNonEmpty('segment text', segment.text)
+  if (input.depth === 'minimal' && (input.focusQuestions?.length ?? 0) === 0) {
+    invalid('minimal extraction requires at least one focus question')
+  }
 
   signal?.throwIfAborted()
   const drafts = await generator({
-    instruction: EXTRACTION_INSTRUCTION,
+    instruction: input.depth === 'minimal' ? MINIMAL_EXTRACTION_INSTRUCTION : EXTRACTION_INSTRUCTION,
     focusQuestions: [...(input.focusQuestions ?? [])],
     segments: input.segments,
     ...(signal === undefined ? {} : { signal }),
@@ -76,20 +92,14 @@ export async function extractEvidenceFromContent(
 
   for (const [draftIndex, draft] of drafts.entries()) {
     signal?.throwIfAborted()
+    if (input.depth === 'minimal' && evidenceRecords.length === 5) break
     const excerpt = draft.verbatimExcerpt.trim()
-    let located: ReturnType<typeof locateExcerpt>
-    let questions: readonly string[]
-    try {
-      questions = questionsForDraft(input.focusQuestions ?? [], draft.questionIndexes)
-      located = locateExcerpt(input.segments, draft.segmentIndex, excerpt)
-    } catch (error: unknown) {
-      if (!(error instanceof EvidenceError) || (error.code !== 'EVIDENCE_EMPTY_EXCERPT'
-        && error.code !== 'EVIDENCE_INVALID_SEGMENT_INDEX' && error.code !== 'EVIDENCE_EXCERPT_NOT_FOUND'
-        && error.code !== 'EVIDENCE_INVALID_QUESTION_INDEX')) throw error
-      rejectedDrafts.push({ draftIndex, segmentIndex: draft.segmentIndex, code: error.code, reason: error.message })
+    const verified = verifyDraft(input, draft, excerpt)
+    if ('code' in verified) {
+      rejectedDrafts.push({ draftIndex, segmentIndex: draft.segmentIndex, ...verified })
       continue
     }
-    const { segment, excerptStart } = located
+    const { segment, excerptStart, questions } = verified
 
     const sourceLocator = locatorFor(input, segment, excerptStart, excerpt.length)
     const evidenceRecord = createEvidenceRecord({
@@ -125,19 +135,32 @@ export async function extractEvidenceFromContent(
   }
 }
 
+function verifyDraft(input: EvidenceExtractionInput, draft: EvidenceDraft, excerpt: string):
+  (LocatedExcerpt & { readonly questions: readonly string[] }) | DraftRejection {
+  const questions = questionsForDraft(input.focusQuestions ?? [], draft.questionIndexes)
+  if ('code' in questions) return questions
+  if (input.depth === 'minimal' && questions.length === 0) {
+    return { code: 'EVIDENCE_INVALID_QUESTION_INDEX', reason: 'minimal evidence must identify at least one supplied focus question' }
+  }
+  const located = locateExcerpt(input.segments, draft.segmentIndex, excerpt)
+  return 'code' in located ? located : { ...located, questions }
+}
+
 function questionsForDraft(
   focusQuestions: readonly string[],
   questionIndexes: readonly number[] | undefined,
-): readonly string[] {
+): readonly string[] | DraftRejection {
   if (questionIndexes === undefined) return []
   const seen = new Set<number>()
-  return questionIndexes.map((index) => {
+  const questions: string[] = []
+  for (const index of questionIndexes) {
     if (!Number.isSafeInteger(index) || index < 0 || seen.has(index) || focusQuestions[index] === undefined) {
-      invalid(`questionIndex ${index} does not uniquely identify a supplied focus question`, 'EVIDENCE_INVALID_QUESTION_INDEX')
+      return { code: 'EVIDENCE_INVALID_QUESTION_INDEX', reason: `questionIndex ${index} does not uniquely identify a supplied focus question` }
     }
     seen.add(index)
-    return focusQuestions[index]
-  })
+    questions.push(focusQuestions[index])
+  }
+  return questions
 }
 
 /** Keep a valid model locator, or repair only an unambiguous exact match elsewhere. */
@@ -145,12 +168,15 @@ function locateExcerpt(
   segments: readonly EvidenceContentSegment[],
   requestedIndex: number,
   excerpt: string,
-): { readonly segment: EvidenceContentSegment; readonly excerptStart: number } {
-  if (excerpt.length === 0) invalid('verbatimExcerpt must not be empty', 'EVIDENCE_EMPTY_EXCERPT')
-  const requested = segmentAt(segments, requestedIndex)
+): LocatedExcerpt | DraftRejection {
+  if (excerpt.length === 0) return { code: 'EVIDENCE_EMPTY_EXCERPT', reason: 'verbatimExcerpt must not be empty' }
+  if (!Number.isInteger(requestedIndex) || requestedIndex < 0 || segments[requestedIndex] === undefined) {
+    return { code: 'EVIDENCE_INVALID_SEGMENT_INDEX', reason: `segmentIndex ${requestedIndex} does not identify a supplied segment` }
+  }
+  const requested = segments[requestedIndex]
   const requestedStart = requested.text.indexOf(excerpt)
   if (requestedStart >= 0) return { segment: requested, excerptStart: requestedStart }
-  const matches: Array<{ readonly segment: EvidenceContentSegment; readonly excerptStart: number }> = []
+  const matches: LocatedExcerpt[] = []
   for (const segment of segments) {
     for (let start = segment.text.indexOf(excerpt); start >= 0; start = segment.text.indexOf(excerpt, start + excerpt.length)) {
       matches.push({ segment, excerptStart: start })
@@ -158,18 +184,8 @@ function locateExcerpt(
     }
     if (matches.length > 1) break
   }
-  if (matches.length === 1) {
-    const match = matches[0]
-    if (match !== undefined) return match
-  }
-  invalid(`excerpt is not uniquely present outside segment ${requestedIndex}`, 'EVIDENCE_EXCERPT_NOT_FOUND')
-}
-
-function segmentAt(segments: readonly EvidenceContentSegment[], index: number): EvidenceContentSegment {
-  if (!Number.isInteger(index) || index < 0 || segments[index] === undefined) {
-    invalid(`segmentIndex ${index} does not identify a supplied segment`, 'EVIDENCE_INVALID_SEGMENT_INDEX')
-  }
-  return segments[index]
+  if (matches.length === 1) return matches[0] as LocatedExcerpt
+  return { code: 'EVIDENCE_EXCERPT_NOT_FOUND', reason: `excerpt is not uniquely present outside segment ${requestedIndex}` }
 }
 
 function locatorFor(
