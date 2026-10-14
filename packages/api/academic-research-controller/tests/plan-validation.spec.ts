@@ -8,6 +8,7 @@ import * as validation from '../src/plan-validation.ts'
 import { validateAcademicPlan } from '../src/research-brief-plan.ts'
 
 const template = readFileSync(new URL('../../../preset/agent-presets/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url), 'utf8')
+const pe1Plan = readFileSync(new URL('../../../../z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', import.meta.url), 'utf8')
 const unsupported = template.replace('"accepted_manuscript", "version_of_record"', '"conference_paper", "journal_article"')
 
 function templatePayload(): Record<string, unknown> {
@@ -23,6 +24,25 @@ function retrievalOf(payload: Record<string, unknown>): Record<string, unknown> 
 }
 
 describe('Academic plan compatibility before review', () => {
+  it('keeps the fixed A-PE1 review decisions aligned with an executable plan', () => {
+    const visible = pe1Plan.slice(0, pe1Plan.indexOf('## 系统执行信息'))
+    const match = pe1Plan.match(/```academic-research-brief-json\s*\n([\s\S]*?)\n```/u)
+    const payload = JSON.parse(match?.[1] ?? 'null') as Record<string, unknown>
+    const requirements = payload.evidenceRequirements as Record<string, unknown>
+    const publication = payload.publicationWindow as Record<string, unknown>
+    expect(() => { validateAcademicPlan(pe1Plan) }).not.toThrow()
+    expect((payload.questions as string[]).every(question => visible.includes(question))).toBe(true)
+    expect(visible).toContain('2020 年以来')
+    expect(publication).toMatchObject({ start: { iso: '2020', precision: 'year' }, dateBasis: 'published' })
+    expect(visible).toContain('允许预印本')
+    expect(requirements).toMatchObject({ targetIncludedWorks: 5, minimumEvidenceLevel: 'fulltext',
+      allowPreprints: true, requireLocatableEvidence: true, insufficientEvidencePolicy: 'continue_with_warning' })
+    expect(visible).toContain('约五篇')
+    expect(visible).toContain('完全没有有效证据时停止')
+    expect(visible).not.toMatch(/OpenAlex|arXiv|Provider|JSON|candidateScreening|maximumCandidateWorks/u)
+    expect(pe1Plan.match(/```academic-research-brief-json/gu)).toHaveLength(1)
+  })
+
   it('accepts the shipped template and diagnoses publication categories without changing the plan', () => {
     expect(() => { validateAcademicPlan(template) }).not.toThrow()
     expect(() => { validateAcademicPlan(unsupported) }).toThrow('includedWorkTypes=["conference_paper","journal_article"]')
