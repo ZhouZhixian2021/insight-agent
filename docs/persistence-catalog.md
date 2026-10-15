@@ -114,7 +114,7 @@ Source: [`packages/api/academic-research-controller/src/background-run.ts:9`](..
 'academic/candidate-batch-decision': AcademicBatchDecisionEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:43`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:59`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academiccandidate-batch-settlement--log-only"></a>
 
@@ -125,7 +125,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:43`](../packages/a
 'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:61`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academiccandidate-screening-request--log-only"></a>
 
@@ -149,6 +149,28 @@ Source: [`packages/api/academic-research-controller/src/candidate-review-model.t
 
 Source: [`packages/api/academic-research-controller/src/candidate-review-model.ts:25`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
+<a id="academicevidence-enhancement-selection--log-only"></a>
+
+#### `academic/evidence-enhancement-selection` — log-only
+
+```ts persistence-catalog
+/** User-selected paper for the one bounded post-draft second-tier pass. */
+'academic/evidence-enhancement-selection': AcademicEvidenceEnhancementSelectionEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:67`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academicevidence-enhancement-settlement--log-only"></a>
+
+#### `academic/evidence-enhancement-settlement` — log-only
+
+```ts persistence-catalog
+/** Terminal result of that pass; initial evidence and draft remain unchanged. */
+'academic/evidence-enhancement-settlement': AcademicEvidenceEnhancementSettlementEvent
+```
+
+Source: [`packages/academic/workflow/src/settlement-events.ts:69`](../packages/academic/workflow/src/settlement-events.ts)
+
 <a id="academicevidence-fragment-verified--log-only"></a>
 
 #### `academic/evidence-fragment-verified` — log-only
@@ -158,7 +180,7 @@ Source: [`packages/api/academic-research-controller/src/candidate-review-model.t
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:170`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -169,7 +191,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:168`](../packages/academ
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -180,7 +202,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:164`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -191,7 +213,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academ
 'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:49`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:65`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicrun-settlement--log-only"></a>
 
@@ -202,7 +224,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:49`](../packages/a
 'academic/run-settlement': AcademicRunSettlementEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:47`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:63`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsearch-plan--log-only"></a>
 
@@ -213,7 +235,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:47`](../packages/a
 'academic/search-plan': AcademicSearchPlanEvent
 ```
 
-Source: [`packages/academic/workflow/src/settlement-events.ts:41`](../packages/academic/workflow/src/settlement-events.ts)
+Source: [`packages/academic/workflow/src/settlement-events.ts:57`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 

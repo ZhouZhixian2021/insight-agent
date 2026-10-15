@@ -13,6 +13,8 @@ The analysis-local `AnalysisInput` and report-local `ReportInput` accept optiona
 
 Academic insight is an optional business subsystem built on harness extension points.
 
+The existing `AcademicEvidenceEnhancementRequest` identifies `sessionId`, `retrievalRunId` and `workVersionId` for one post-draft pass. `AcademicEvidenceEnhancementView` returns the same identities, `completed` or `partial_success`, and `initialEvidenceRecords`, `addedEvidenceRecords` and `incompleteFragments`. Selection and terminal facts are persisted separately; failure or cancellation can preserve earlier verified fragments and never approves or replaces the original draft. The client reads supplemental excerpts through the existing Session journal rather than synthesizing them from counts.
+
 ## Dependency direction
 
 `packages/academic/model` is the lowest academic layer. It may depend on shared utilities but not on retrieval, workflow, report, or client packages. Later academic packages depend inward on the model.
@@ -70,6 +72,14 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
  */
 @Remote('run') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>
+
+/**
+ * Enhance one user-selected paper after its first-tier draft has settled.
+ * @param request Completed run and selected paper identity.
+ * @param signal Caller lifetime; cancellation preserves the original report and committed fragments.
+ * @returns Separate evidence counts; this operation does not revise or approve the original report.
+ */
+@Remote('enhanceEvidence') async enhanceEvidence(request: AcademicEvidenceEnhancementRequest, signal: AbortSignal): Promise<AcademicEvidenceEnhancementView>
 
 /**
  * Stream complete workflow progress snapshots followed by one final result.

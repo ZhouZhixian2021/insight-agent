@@ -40,6 +40,7 @@ function fixture() {
   function props(current = sid): ResearchEntryProps {
     return { wide: true, t: key => zh[key as RunKey], plan: async () => planned,
       startBackgroundRun, listBackgroundRuns, getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
+      enhanceEvidence: vi.fn(), enhancementHistory: vi.fn().mockResolvedValue(null),
       useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [current]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
   }
   return { props, publish, signals, startBackgroundRun, listBackgroundRuns,

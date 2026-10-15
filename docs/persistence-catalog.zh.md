@@ -116,7 +116,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-batch-decision': AcademicBatchDecisionEvent
 ```
 
-来源：[`packages/academic/workflow/src/settlement-events.ts:43`](../packages/academic/workflow/src/settlement-events.ts)
+来源：[`packages/academic/workflow/src/settlement-events.ts:59`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academiccandidate-batch-settlement--log-only"></a>
 
@@ -127,7 +127,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-batch-settlement': AcademicBatchSettlementEvent
 ```
 
-来源：[`packages/academic/workflow/src/settlement-events.ts:45`](../packages/academic/workflow/src/settlement-events.ts)
+来源：[`packages/academic/workflow/src/settlement-events.ts:61`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academiccandidate-screening-request--log-only"></a>
 
@@ -151,6 +151,28 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:25`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
+<a id="academicevidence-enhancement-selection--log-only"></a>
+
+#### `academic/evidence-enhancement-selection` — log-only
+
+```ts persistence-catalog
+/** User-selected paper for the one bounded post-draft second-tier pass. */
+'academic/evidence-enhancement-selection': AcademicEvidenceEnhancementSelectionEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:67`](../packages/academic/workflow/src/settlement-events.ts)
+
+<a id="academicevidence-enhancement-settlement--log-only"></a>
+
+#### `academic/evidence-enhancement-settlement` — log-only
+
+```ts persistence-catalog
+/** Terminal result of that pass; initial evidence and draft remain unchanged. */
+'academic/evidence-enhancement-settlement': AcademicEvidenceEnhancementSettlementEvent
+```
+
+来源：[`packages/academic/workflow/src/settlement-events.ts:69`](../packages/academic/workflow/src/settlement-events.ts)
+
 <a id="academicevidence-fragment-verified--log-only"></a>
 
 #### `academic/evidence-fragment-verified` — log-only
@@ -160,7 +182,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:170`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -171,7 +193,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -182,7 +204,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -193,7 +215,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
 ```
 
-来源：[`packages/academic/workflow/src/settlement-events.ts:49`](../packages/academic/workflow/src/settlement-events.ts)
+来源：[`packages/academic/workflow/src/settlement-events.ts:65`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicrun-settlement--log-only"></a>
 
@@ -204,7 +226,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/run-settlement': AcademicRunSettlementEvent
 ```
 
-来源：[`packages/academic/workflow/src/settlement-events.ts:47`](../packages/academic/workflow/src/settlement-events.ts)
+来源：[`packages/academic/workflow/src/settlement-events.ts:63`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsearch-plan--log-only"></a>
 
@@ -215,7 +237,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/search-plan': AcademicSearchPlanEvent
 ```
 
-来源：[`packages/academic/workflow/src/settlement-events.ts:41`](../packages/academic/workflow/src/settlement-events.ts)
+来源：[`packages/academic/workflow/src/settlement-events.ts:57`](../packages/academic/workflow/src/settlement-events.ts)
 
 <a id="academicsynthesis-request--log-only"></a>
 
@@ -345,7 +367,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/interaction/user-approval/src/index.ts:32`](../packages/interaction/user-approval/src/index.ts)
+来源：[`packages/interaction/user-approval/src/index.ts:33`](../packages/interaction/user-approval/src/index.ts)
 
 ### `assistant/*`
 
@@ -667,7 +689,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'model/selection': ModelSelection
 ```
 
-来源：[`packages/api/session-controller/src/types.ts:41`](../packages/api/session-controller/src/types.ts)
+来源：[`packages/api/session-controller/src/types.ts:40`](../packages/api/session-controller/src/types.ts)
 
 ### `permission/*`
 
@@ -718,7 +740,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'request/context': RequestContext
 ```
 
-来源：[`packages/core/session/src/types.ts:341`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:352`](../packages/core/session/src/types.ts)
 
 <a id="requestheader--log-only"></a>
 
@@ -737,7 +759,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/core/session/src/types.ts:331`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:342`](../packages/core/session/src/types.ts)
 
 ### `sandbox/*`
 
@@ -874,7 +896,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'step/end': { turn: number; step: number }
 ```
 
-来源：[`packages/core/session/src/types.ts:281`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:280`](../packages/core/session/src/types.ts)
 
 <a id="stepstart--log-only"></a>
 
@@ -885,7 +907,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'step/start': { turn: number; step: number }
 ```
 
-来源：[`packages/core/session/src/types.ts:279`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:278`](../packages/core/session/src/types.ts)
 
 ### `subagent/*`
 
@@ -938,7 +960,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[TeamId](subsystems/agent-team.zh.md) · [TeamMemberSnapshot](subsystems/agent-team.zh.md)
 
-来源：[`packages/experimental/agent-team/src/types.ts:204`](../packages/experimental/agent-team/src/types.ts)
+来源：[`packages/experimental/agent-team/src/types.ts:221`](../packages/experimental/agent-team/src/types.ts)
 
 <a id="teammessagedelivered--log-only"></a>
 
@@ -956,7 +978,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[TeamId](subsystems/agent-team.zh.md) · [TeamMessageId](subsystems/agent-team.zh.md)
 
-来源：[`packages/experimental/agent-team/src/types.ts:210`](../packages/experimental/agent-team/src/types.ts)
+来源：[`packages/experimental/agent-team/src/types.ts:227`](../packages/experimental/agent-team/src/types.ts)
 
 <a id="teammessagequeued--log-only"></a>
 
@@ -969,7 +991,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[TeamId](subsystems/agent-team.zh.md) · [TeamMessageSnapshot](subsystems/agent-team.zh.md)
 
-来源：[`packages/experimental/agent-team/src/types.ts:208`](../packages/experimental/agent-team/src/types.ts)
+来源：[`packages/experimental/agent-team/src/types.ts:225`](../packages/experimental/agent-team/src/types.ts)
 
 <a id="teamtask--log-only"></a>
 
@@ -982,7 +1004,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[TeamId](subsystems/agent-team.zh.md) · [TeamTaskSnapshot](subsystems/agent-team.zh.md)
 
-来源：[`packages/experimental/agent-team/src/types.ts:206`](../packages/experimental/agent-team/src/types.ts)
+来源：[`packages/experimental/agent-team/src/types.ts:223`](../packages/experimental/agent-team/src/types.ts)
 
 ### `todo/*`
 
@@ -1016,7 +1038,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[ToolCallId](subsystems/core.zh.md)
 
-来源：[`packages/core/session/src/types.ts:308`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:319`](../packages/core/session/src/types.ts)
 
 <a id="toolcode-dispatch--log-only"></a>
 
@@ -1091,7 +1113,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/core/session/src/types.ts:320`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:331`](../packages/core/session/src/types.ts)
 
 ### `tool-workflow/*`
 
@@ -1171,7 +1193,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 类型：[TurnEndReason](subsystems/session.zh.md)
 
-来源：[`packages/core/session/src/types.ts:277`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:276`](../packages/core/session/src/types.ts)
 
 <a id="turnstart--log-only"></a>
 
@@ -1187,7 +1209,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'turn/start': { turn: number }
 ```
 
-来源：[`packages/core/session/src/types.ts:268`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:267`](../packages/core/session/src/types.ts)
 
 ### `user/*`
 
@@ -1206,7 +1228,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'user/message': UserMessage
 ```
 
-来源：[`packages/core/session/src/types.ts:289`](../packages/core/session/src/types.ts)
+来源：[`packages/core/session/src/types.ts:288`](../packages/core/session/src/types.ts)
 
 ### `web/*`
 

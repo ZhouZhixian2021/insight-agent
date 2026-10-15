@@ -247,6 +247,8 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   AcademicBackgroundRunView: 'academic-insight.md',
   AcademicResearchRunFrame: 'academic-insight.md',
   AcademicResearchRunRequest: 'academic-insight.md',
+  AcademicEvidenceEnhancementRequest: 'academic-insight.md',
+  AcademicEvidenceEnhancementView: 'academic-insight.md',
   AcademicResearchPlanView: 'academic-insight.md',
   AcademicPlannedSearch: 'academic-insight.md',
   AcademicResearchRunValue: 'academic-insight.md',

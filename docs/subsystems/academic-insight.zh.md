@@ -13,6 +13,8 @@ kind: "subsystem"
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 
+现有 `AcademicEvidenceEnhancementRequest` 使用 `sessionId`、`retrievalRunId` 和 `workVersionId` 标识一次草稿后增强。`AcademicEvidenceEnhancementView` 返回相同身份、`completed` 或 `partial_success`，以及 `initialEvidenceRecords`、`addedEvidenceRecords` 和 `incompleteFragments`。选择及终态事实独立持久化；失败或取消可保留先前已核验片段，不批准或替换原草稿。客户端通过既有 Session 日志读取新增摘录，不根据数量生成内容。
+
 ## 依赖方向
 
 `packages/academic/model` 是学术业务的最底层。它可以依赖共享工具，但不能依赖提供方、工作流、报告渲染器或客户端包。上层学术包向内依赖本模型。
@@ -70,6 +72,14 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns completed or cancelled draft data with its observed retrieval run and durable Session identity.
  */
 @Remote('run') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>
+
+/**
+ * Enhance one user-selected paper after its first-tier draft has settled.
+ * @param request Completed run and selected paper identity.
+ * @param signal Caller lifetime; cancellation preserves the original report and committed fragments.
+ * @returns Separate evidence counts; this operation does not revise or approve the original report.
+ */
+@Remote('enhanceEvidence') async enhanceEvidence(request: AcademicEvidenceEnhancementRequest, signal: AbortSignal): Promise<AcademicEvidenceEnhancementView>
 
 /**
  * Stream complete workflow progress snapshots followed by one final result.

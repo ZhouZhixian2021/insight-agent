@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { launchWebScaffold, seedSession } from './scaffold.ts'
+import { sampleRun } from '../../../packages/client/ui-academic-research/tests/run-sample.ts'
 import { newEnglishPage } from './support.ts'
 
 describe('hybrid plan browser preview', () => {
@@ -202,6 +203,84 @@ describe('hybrid plan browser preview', () => {
           await page.screenshot({ path: join(capture, 'q6-live-coverage.png') })
         }
       } finally { finishSearch(); search.mockRestore(); webSearch.mockRestore(); await browser.close() }
+    } finally { await scaffold.close() }
+  })
+})
+
+
+describe('selected-paper enhancement browser flow', () => {
+  it('submits one fixed paper once, reads persisted supplemental excerpts and retains its draft after reopen', async () => {
+    const scaffold = await launchWebScaffold({})
+    try {
+      const value = sampleRun()
+      const id = await seedSession(scaffold, await readFile('snapshots/web/seeded-history/session.v2.jsonl', 'utf8'), value.sessionId)
+      await scaffold.ctx.sessionController.rename({ sessionId: id, title: 'Fixed enhancement preview' })
+      const resolved = await scaffold.ctx.sessionController.resolveAgent(id)
+      if ('error' in resolved) throw resolved.error
+      const controller = scaffold.ctx.get('academicResearchController')!
+      const task = { schemaVersion: 1 as const, sessionId: id, backgroundRunId: 'enhancement-preview',
+        researchBriefId: value.retrievalRun.researchBriefId, state: 'completed' as const,
+        startedAt: '2026-10-15T00:00:00Z', updatedAt: '2026-10-15T00:01:00Z',
+        retrievalRunId: value.retrievalRun.retrievalRunId, progress: null, q6: value.q6, result: value, error: null, cancelReason: null }
+      const mocks = [vi.spyOn(controller, 'listBackgroundRuns').mockResolvedValue([task]),
+        vi.spyOn(controller, 'getBackgroundRun').mockResolvedValue(task),
+        vi.spyOn(controller, 'plan').mockResolvedValue({ researchBriefId: task.researchBriefId,
+          topic: 'Fixed enhancement preview', questions: [], searches: [] })]
+      // Fixed model outcome only; the real Remote and Session history reader are exercised.
+      const enhance = vi.spyOn(controller, 'enhanceEvidence').mockImplementation(async (request) => {
+        const session = resolved.agent.session
+        const selected = { schemaVersion: 1 as const, retrievalRunId: request.retrievalRunId,
+          workVersionId: request.workVersionId, selectedAt: '2026-10-15T00:02:00Z' }
+        session.append('academic/evidence-enhancement-selection', selected)
+        const base = value.report.evidence[0]!
+        const record = { ...base, evidenceId: 'fixed-supplemental-evidence' as typeof base.evidenceId,
+          workVersionId: request.workVersionId, sourcedStatement: 'Fixed supplemental finding',
+          verbatimExcerpt: { status: 'available' as const, value: 'Exact fixed supplemental excerpt' } }
+        session.append('academic/evidence-fragment-verified', { purpose: 'enhancement',
+          source: { ...record, contentHash: 'synthetic-hash' },
+          fragment: { academicWorkId: record.academicWorkId, workVersionId: record.workVersionId,
+            stage: 'extraction', attempt: 1, maximumAttempts: 1, maximumOutputTokens: 512,
+            segmentIndex: 0, characterStart: 0, characterEnd: 32, fragmentIndex: 1 },
+          evidence: { evidenceRecords: [record], sourceLocators: [], questionLinks: [], rejectedDrafts: [],
+            evidenceCard: { schemaVersion: 1, evidenceCardId: 'supplement-card', academicWorkId: record.academicWorkId,
+              workVersionId: record.workVersionId, researchQuestions: [], methods: [], datasets: [],
+              metrics: [], findings: [], limitations: [] } },
+        } as never)
+        session.append('academic/evidence-enhancement-settlement', { ...selected, status: 'partial_success',
+          completedAt: '2026-10-15T00:02:01Z', addedEvidenceRecords: 1, incompleteFragments: 1 })
+        await resolved.agent.ctx.sessions.flush(session)
+        return { ...request, status: 'partial_success', initialEvidenceRecords: 1, addedEvidenceRecords: 1, incompleteFragments: 1 }
+      })
+      mocks.push(enhance as never)
+      const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
+      try {
+        const page = await newEnglishPage(browser)
+        await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+        await page.getByText('Ungrouped', { exact: true }).click()
+        await page.getByText('Fixed enhancement preview', { exact: true }).click()
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        const panel = page.getByRole('region', { name: 'Selected-paper evidence enhancement' })
+        const select = panel.getByRole('combobox', { name: 'Enhancement paper' })
+        await expect.poll(() => select.isEnabled()).toBe(true)
+        const paper = value.papers.find(item => item.status === 'extracted' || item.status === 'partially_extracted')!
+        await select.selectOption(paper.workVersionId)
+        const capture = process.env.DSH_ACADEMIC_CAPTURE_DIR
+        if (capture !== undefined) { await mkdir(capture, { recursive: true }); await panel.screenshot({ path: join(capture, 'enhancement-ready.png') }) }
+        await panel.getByRole('button', { name: 'Enhance selected paper', exact: true }).click()
+        await panel.getByText('Enhancement partially succeeded; verified additions were saved', { exact: true }).waitFor()
+        await panel.getByText('fixed-supplemental-evidence', { exact: false }).click()
+        expect(await panel.getByText('Exact fixed supplemental excerpt', { exact: true }).count()).toBe(1)
+        expect(await panel.innerText()).toMatchSnapshot()
+        expect(enhance).toHaveBeenCalledTimes(1)
+        expect(await page.getByRole('button', { name: 'Download Markdown' }).count()).toBe(1)
+        if (capture !== undefined) await panel.screenshot({ path: join(capture, 'enhancement-partial.png') })
+        await page.getByRole('button', { name: 'Close', exact: true }).click()
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        await panel.getByText('Enhancement partially succeeded; verified additions were saved', { exact: true }).waitFor()
+        expect(await panel.getByRole('button', { name: 'Enhance selected paper', exact: true }).isDisabled()).toBe(true)
+        expect(enhance).toHaveBeenCalledTimes(1)
+        if (capture !== undefined) await panel.screenshot({ path: join(capture, 'enhancement-reopened.png') })
+      } finally { await browser.close(); for (const mock of mocks) mock.mockRestore() }
     } finally { await scaffold.close() }
   })
 })

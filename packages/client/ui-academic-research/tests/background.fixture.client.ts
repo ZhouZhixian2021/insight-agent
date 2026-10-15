@@ -14,6 +14,8 @@ export function streamRemote(stream: TestStream): Omit<ResearchEntryInjected, 'p
   let task = initialTask()
   let request: AcademicResearchRunRequest
   return {
+    enhanceEvidence: async () => { throw new Error('Enhancement is not used by this background fixture') },
+    enhancementHistory: async () => null,
     listBackgroundRuns: async () => [], getBackgroundRun: async () => task,
     startBackgroundRun: async (input) => { request = input; return task },
     cancelBackgroundRun: async () => { task = { ...task, state: 'cancelled', cancelReason: 'user_requested' }; return task },
