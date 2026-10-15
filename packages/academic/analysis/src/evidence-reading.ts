@@ -26,6 +26,10 @@ export function evidenceReadingGuide(input: AcademicSynthesisInput) {
       cardSections: sections.filter(section => input.analysisInput.evidenceCards.some(card =>
         card.academicWorkId === record.academicWorkId && card.workVersionId === record.workVersionId
         && card[section].some(item => item.evidenceIds.includes(record.evidenceId)))) })),
+    questionCoverage: input.analysisInput.questionLinks === undefined ? null : input.brief.questions.map((question, questionIndex) => ({
+      questionIndex, evidenceIds: [...new Set(input.analysisInput.questionLinks?.filter(link => link.question === question)
+        .map(link => link.evidenceId))],
+    })),
     identicalSourceGroups: [...groups.values()].filter(group => group.length > 1).map(group => group.map(record => record.evidenceId)),
   }
 }

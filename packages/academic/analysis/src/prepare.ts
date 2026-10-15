@@ -15,8 +15,8 @@ function indexBy<T, K>(values: readonly T[], key: (value: T) => K): Map<K, T> {
 }
 
 /**
- * Group valid evidence-card entries by work and actual content version.
- * Invalid relationships exclude an entire entry, preserving unrelated entries.
+ * Group valid card entries and standalone minimal records by work and actual version.
+ * Invalid relationships exclude the affected entry or standalone record; empty cards retain valid minimal evidence.
  * Missing values remain unchanged and produce limitations, never inferred values.
  * @param input Typed evidence batch; callers validate external JSON before calling.
  * @returns Accepted materials and located exclusions/limitations, in input order.
@@ -51,6 +51,28 @@ export function prepareAnalysisInput(input: AnalysisInput): PreparedAnalysisInpu
       continue
     }
 
+    function checkRecord(record: EvidenceRecord, add: (code: PreparationIssue['code'], disposition: PreparationIssue['disposition'], message: string, evidenceId?: EvidenceRecord['evidenceId'] | null, field?: string | null) => void): void {
+      const evidenceId = record.evidenceId
+      if (record.academicWorkId !== card.academicWorkId || record.workVersionId !== card.workVersionId) {
+        add('version_mismatch', 'excluded', 'Evidence and card refer to different works or versions.', evidenceId)
+      }
+      const locator = locators.get(record.sourceLocatorId)
+      if (!locator) {
+        add('missing_locator', 'excluded', 'Evidence source locator is absent from the batch.', evidenceId)
+      } else {
+        if (locator.workVersionId !== record.workVersionId) add('version_mismatch', 'excluded', 'Locator and evidence versions differ.', evidenceId)
+        const level = locator.kind === 'provider_record' ? 'metadata' : locator.kind === 'abstract' ? 'abstract' : 'fulltext'
+        if (record.level !== level) add('locator_level_mismatch', 'excluded', 'Evidence depth does not match its locator.', evidenceId)
+      }
+      const hashes = [record.contentHash.status === 'available' ? record.contentHash.value : null,
+        version?.contentHash.status === 'available' ? version.contentHash.value : null, locator?.contentHash]
+        .filter((hash): hash is string => hash != null)
+      if (new Set(hashes).size > 1) add('hash_mismatch', 'excluded', 'Known content hashes disagree.', evidenceId)
+      if (record.level === 'metadata') add('metadata_only', 'excluded', 'Metadata cannot support substantive card entries.', evidenceId)
+      if (record.verbatimExcerpt.status !== 'available') add('unavailable_excerpt', 'limitation', 'Original excerpt is unavailable; text cannot be verified here.', evidenceId)
+      if (record.contentHash.status !== 'available' || version?.contentHash.status !== 'available' || locator?.contentHash == null) add('unavailable_hash', 'limitation', 'Some content hashes are unavailable; content identity is not fully checked.', evidenceId)
+    }
+
     const used = new Map<EvidenceRecord['evidenceId'], EvidenceRecord>()
     function filter<T extends EvidenceCardItem>(section: AnalysisSection, entries: readonly T[]): readonly T[] {
       const result: T[] = []
@@ -70,24 +92,7 @@ export function prepareAnalysisInput(input: AnalysisInput): PreparedAnalysisInpu
             continue
           }
           supporting.push(record)
-          if (record.academicWorkId !== card.academicWorkId || record.workVersionId !== card.workVersionId) {
-            add('version_mismatch', 'excluded', 'Evidence and card refer to different works or versions.', evidenceId)
-          }
-          const locator = locators.get(record.sourceLocatorId)
-          if (!locator) {
-            add('missing_locator', 'excluded', 'Evidence source locator is absent from the batch.', evidenceId)
-          } else {
-            if (locator.workVersionId !== record.workVersionId) add('version_mismatch', 'excluded', 'Locator and evidence versions differ.', evidenceId)
-            const level = locator.kind === 'provider_record' ? 'metadata' : locator.kind === 'abstract' ? 'abstract' : 'fulltext'
-            if (record.level !== level) add('locator_level_mismatch', 'excluded', 'Evidence depth does not match its locator.', evidenceId)
-          }
-          const hashes = [record.contentHash.status === 'available' ? record.contentHash.value : null,
-            version?.contentHash.status === 'available' ? version.contentHash.value : null, locator?.contentHash]
-            .filter((hash): hash is string => hash != null)
-          if (new Set(hashes).size > 1) add('hash_mismatch', 'excluded', 'Known content hashes disagree.', evidenceId)
-          if (record.level === 'metadata') add('metadata_only', 'excluded', 'Metadata cannot support substantive card entries.', evidenceId)
-          if (record.verbatimExcerpt.status !== 'available') add('unavailable_excerpt', 'limitation', 'Original excerpt is unavailable; text cannot be verified here.', evidenceId)
-          if (record.contentHash.status !== 'available' || version?.contentHash.status !== 'available' || locator?.contentHash == null) add('unavailable_hash', 'limitation', 'Some content hashes are unavailable; content identity is not fully checked.', evidenceId)
+          checkRecord(record, add)
         }
         if (supporting.length > 0 && supporting.every(record => record.level === 'abstract')) {
           add('abstract_only', 'limitation', 'Entry has abstract evidence only; full experimental detail is not verified.')
@@ -114,7 +119,22 @@ export function prepareAnalysisInput(input: AnalysisInput): PreparedAnalysisInpu
       findings: filter('findings', card.findings),
       limitations: filter('limitations', card.limitations),
     }
-    if (!sections.some(section => prepared[section].length > 0)) continue
+    // Minimal extraction supplies an empty card alongside independently verified records.
+    const assigned = new Set([...cards.values()].filter(item => item.academicWorkId === card.academicWorkId
+      && item.workVersionId === card.workVersionId)
+      .flatMap(item => sections.flatMap(section => item[section].flatMap(entry => entry.evidenceIds))))
+    for (const record of records.values()) {
+      if (record.academicWorkId !== card.academicWorkId || record.workVersionId !== card.workVersionId
+        || assigned.has(record.evidenceId)) continue
+      const recordIssues: PreparationIssue[] = []
+      checkRecord(record, (code, disposition, message, evidenceId = null, field = null) => {
+        recordIssues.push({ code, disposition, message, evidenceId, field,
+          evidenceCardId: card.evidenceCardId, section: null, itemId: null })
+      })
+      issues.push(...recordIssues)
+      if (!recordIssues.some(issue => issue.disposition === 'excluded')) used.set(record.evidenceId, record)
+    }
+    if (!sections.some(section => prepared[section].length > 0) && used.size === 0) continue
     const workVersions = accepted.get(work.academicWorkId) ?? new Map<EvidenceCard['workVersionId'], PreparedVersion>()
     const previous = workVersions.get(version.workVersionId)
     const combinedRecords = [...(previous?.evidenceRecords ?? []), ...used.values()]

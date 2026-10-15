@@ -7,6 +7,8 @@ kind: "subsystem"
 
 [English](academic-insight.md) | 中文
 
+分析本地 `AnalysisInput` 和报告本地 `ReportInput` 通过可选的 `questionLinks` 接收生产方问题与证据关联，不改变 Academic Model 或 Remote 字段。卡片分区为空时仍保留逐条有效的最小证据；未提供问题关联时明确披露而非推断。工作流集成负责人负责转发这些可选关联。
+
 ## 概述
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。

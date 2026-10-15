@@ -114,3 +114,34 @@
     padding: 8px 12px 10px;
   }
 }
+
+.revision {
+  flex-shrink: 0;
+  padding: 4px 16px;
+}
+
+.hint {
+  margin: 4px 0 8px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.revisionLabel {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.revisionLabel textarea {
+  width: 100%;
+  max-height: 100px;
+  resize: vertical;
+  border: 1px solid var(--dsw-alias-state-warn-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--dsw-specific-input-major);
+  color: inherit;
+  font: inherit;
+}

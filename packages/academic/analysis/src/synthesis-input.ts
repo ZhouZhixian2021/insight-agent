@@ -87,12 +87,18 @@ export function prepareSynthesisInput(input: AcademicSynthesisInput): SynthesisA
   if (fulltext < minimum.minimumFulltextWorks) reasons.push(`提供可用全文证据的论文有 ${fulltext} 篇，Plan 至少要求 ${minimum.minimumFulltextWorks} 篇。`)
   if (selected.length === 0 || (reasons.length > 0 && minimum.insufficientEvidencePolicy === 'stop_for_review')) return { status: 'blocked', usableWorkIds: selected.map(item => item.work.academicWorkId),
     reasons: [...reasons, `不足时策略：${minimum.insufficientEvidencePolicy}；保留已完成工作，不生成洞察报告。`] }
-  const limitations = [...reasons, ...prepared.issues.map(issue => `${issue.code}: ${issue.message}`)]
+  const emptyCards = prepared.issues.some(issue => issue.code === 'empty_section')
+  const limitations = [...reasons, ...prepared.issues.filter(issue => issue.code !== 'empty_section')
+    .map(issue => `${issue.code}: ${issue.message}`),
+  ...(emptyCards ? ['证据卡部分分区未抽取或没有可用条目；不代表论文没有相应发现，也不代表完整卡片审核通过。'] : [])]
   if (selected.reduce((count, item) => count + item.records.length, 0) !== input.analysisInput.evidenceRecords.length) {
     limitations.push('部分材料未通过证据版本、原文或哈希检查，未提交给洞察模型。')
   }
   return { status: reasons.length > 0 ? 'ready_with_warning' : 'ready', usableWorkIds: selected.map(item => item.work.academicWorkId), limitations, input: { ...input, analysisInput: {
     academicWorks: selected.map(item => item.work), workVersions: selected.map(item => item.version),
+    ...input.analysisInput.questionLinks === undefined ? {} : { questionLinks: input.analysisInput.questionLinks.filter(link =>
+      input.brief.questions.includes(link.question)
+      && selected.some(item => item.records.some(record => record.evidenceId === link.evidenceId))) },
     evidenceRecords: selected.flatMap(item => item.records), evidenceCards: selected.flatMap(item => item.cards),
     sourceLocators: selected.flatMap(item => item.locators),
   } } }

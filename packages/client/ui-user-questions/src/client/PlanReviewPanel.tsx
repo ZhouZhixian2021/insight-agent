@@ -39,6 +39,13 @@ export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
   // clicks must not resubmit. A failed send re-enables it and shows the error.
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [revision, setRevision] = useState('')
+  const readable = (text: string): string => {
+    const labels = ['研究目标', '核心问题', '研究范围', '执行方式', '交付结果', '待确认事项']
+    return labels.every(label => text.includes(`${label}：`))
+      ? text.replace(/(核心问题|研究范围|执行方式|交付结果|待确认事项)：/gu, '\n\n$1：') : text
+  }
   const settle = (send: () => Promise<void>): void => {
     setBusy(true)
     setError(null)
@@ -61,7 +68,7 @@ export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
         </div>
         <div className={css.body} data-plan-review-scroll>
           {handoff === undefined ? <MarkdownText text={review.plan} labels={markdownLabels} /> : <>
-            <MarkdownText text={review.plan.slice(0, handoff.index)} labels={markdownLabels} />
+            <MarkdownText text={readable(review.plan.slice(0, handoff.index))} labels={markdownLabels} />
             <details>
               <summary>{t('plan.executionDetails')}</summary>
               <MarkdownText text={handoff[0]} labels={markdownLabels} />
@@ -69,6 +76,27 @@ export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
             <MarkdownText text={review.plan.slice(handoff.index + handoff[0].length)} labels={markdownLabels} />
           </>}
         </div>
+        {handoff !== undefined && <div className={css.revision}>
+          <p className={css.hint}>{t('plan.reviewHint')}</p>
+          {editing ? <>
+            <label className={css.revisionLabel}>
+              {t('plan.revisionLabel')}
+              <textarea rows={2} value={revision} disabled={busy}
+                placeholder={t('plan.revisionPlaceholder')}
+                onChange={(event) => { setRevision(event.target.value) }} />
+            </label>
+            <div className={css.actions}>
+              <Button variant="ghost" disabled={busy} onClick={() => { setEditing(false) }}>
+                {t('plan.revisionBack')}
+              </Button>
+              <Button variant="outline" disabled={busy || revision.trim() === ''} onClick={() => {
+                settle(() => pending.answer({ answers: [{ id: review.id, selected: [], custom: revision.trim() }] }))
+              }}>{t('plan.revisionSend')}</Button>
+            </div>
+          </> : <Button variant="outline" disabled={busy} onClick={() => { setEditing(true) }}>
+            {t('plan.revise')}
+          </Button>}
+        </div>}
         <div className={css.footer}>
           <div className={css.feedback} role="status">{error}</div>
           <div className={css.actions}>
@@ -88,7 +116,7 @@ export function PlanReviewPanel({ pending, review, t }: PlanReviewPanelProps) {
             )}
             <Button
               variant="primary" {...tooltip(review.approve.description)}
-              disabled={busy} onClick={() => { decide(review.approve.label) }}
+              disabled={busy || editing} onClick={() => { decide(review.approve.label) }}
             >
               {t('plan.approve')}
             </Button>

@@ -95,10 +95,16 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
         implications: component(direction.implications) }
     }) },
     questionAnswers: questionAnswers.map((answer) => {
-      const statementIndexes = remap(answer.statementIndexes)
+      const mapped = remap(answer.statementIndexes)
+      const links = input.analysisInput.questionLinks
+      const statementIndexes = links === undefined ? mapped : mapped.filter(index =>
+        statements[index]?.evidenceLinks.some(link => link.relation === 'supports' && links.some(item =>
+          item.evidenceId === link.evidenceId && item.question === input.brief.questions[answer.questionIndex])))
       if (statementIndexes.length === answer.statementIndexes.length) return { ...answer, statementIndexes }
       return { ...answer, statementIndexes, status: statementIndexes.length === 0 ? 'unanswered' : 'partial',
-        reason: [answer.reason, rejectionReason(answer.statementIndexes)].filter(reason => reason !== null).join(' ') }
+        reason: [answer.reason, mapped.length !== statementIndexes.length ? '部分段落没有关联到本题的生产方支持证据，仍需逐题内容审核。' : null,
+          mapped.length !== answer.statementIndexes.length ? rejectionReason(answer.statementIndexes) : null]
+          .filter(reason => reason !== null).join(' ') }
     }),
     sections: sections.map((section) => {
       const statementIndexes = remap(section.statementIndexes)

@@ -35,6 +35,8 @@ With validated `synthesis` and observed `coverage`, `generateReport()` renders a
 
 No invariant companion is published because this library is stateless; automated tests verify output relationships and failure behavior.
 
+Question-driven reports include an approved-question/evidence check table. Optional `ReportInput.questionLinks` comes from extraction; the table separates those associations, immutable abstract/full-text levels, model answer proposals and pending content review. Missing associations are disclosed instead of inferred from model question indexes. Empty card sections do not authorize enhanced evidence or final delivery. Zero cited evidence rejects synthesis report generation; partial evidence preserves a visibly limited draft under the approved policy. This renderer does not schedule second-level extraction or provide an independent semantic reviewer.
+
 <a id="model-experience"></a>
 ## Model Experience
 
