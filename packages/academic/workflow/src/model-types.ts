@@ -100,6 +100,8 @@ export interface EvidenceModelPolicy {
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
   /** Formal fragment extraction depth; omitted keeps complete extraction for existing callers. */
   readonly depth?: 'minimal' | 'complete'
+  /** Approved aliases for each focus question, in Brief order; only prioritizes minimal-depth source ranges. */
+  readonly questionTerms?: readonly (readonly string[])[]
   /** Maximum estimated input tokens sent in one evidence batch; omitted keeps one request per paper. */
   readonly inputBatchTokenLimit?: number
   /** Repeated source characters at adjacent split boundaries. */

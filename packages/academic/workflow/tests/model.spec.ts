@@ -199,6 +199,20 @@ describe('durable academic model extraction', () => {
     expect(prompt?.type === 'text' ? prompt.text : '').toContain('Return at most 5 entries')
     expect((await f.read()).filter(event => event.type === 'academic/evidence-fragment-verified')).toHaveLength(1)
   })
+  it('prioritizes reviewed question aliases when dispatching minimal source fragments', async () => {
+    const f = await fixture()
+    const source = { ...f.source, focusQuestions: ['哪种方法有效？'], segments: [
+      { text: `Unrelated background. ${'a'.repeat(2_500)}`,
+        locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: `Uses Method X. Faithfulness improved. ${'b'.repeat(2_500)}`,
+        locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ] }
+    await createModelFragmentEvidenceGenerator(f.ctx, f.session, config,
+      { ...policy, depth: 'minimal', questionTerms: [['faithfulness']] })(source, scope)
+    const ranges = (await f.read()).flatMap(event => event.type === 'academic/evidence-request'
+      && event.data.phase === 'evidence' && event.data.fragment ? [event.data.fragment] : [])
+    expect(ranges[0]?.segmentIndex).toBe(1)
+  })
   it('stops formal extraction when a verified fragment cannot be durably saved', async () => {
     const f = await fixture(), draft = draftFixture()
     const flush = f.ctx.sessions.flush.bind(f.ctx.sessions)

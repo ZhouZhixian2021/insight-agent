@@ -25,6 +25,7 @@ import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
 import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
 import { createModelCandidateReviewer } from './candidate-review-model.ts'
+import { approvedEvidenceQuestionTerms } from './candidate-screening.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
@@ -480,6 +481,7 @@ export class AcademicResearchController extends TypertRemoteService {
     const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
+    const questionTerms = approvedEvidenceQuestionTerms(brief.questions, candidateScreening)
     const onSettlement: AcademicSettlementObserver = (fact) => {
       if (fact.kind === 'batch-decision') {
         agent.session.append('academic/candidate-batch-decision', fact.event)
@@ -510,6 +512,7 @@ export class AcademicResearchController extends TypertRemoteService {
         model,
         modelPolicies: {
           evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
+            ...(questionTerms === undefined ? {} : { questionTerms }),
             inputBatchTokenLimit: this.extractionBatchMaxInputTokens,
             inputBatchOverlapCharacters: this.extractionBatchOverlapCharacters,
             attemptTimeoutMs: this.extractionAttemptTimeoutMs,

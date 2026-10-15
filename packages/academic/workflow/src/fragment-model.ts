@@ -118,6 +118,8 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   let validatedRecords = 0, rejectedDrafts = 0
   return {
     policy: { ...fragmentPolicy, maximumOutputTokens: outputCap },
+    ...parsed.depth === 'minimal' && policy.questionTerms !== undefined
+      ? { questionTerms: policy.questionTerms } : {},
     generator: async (request, fragment) => {
       let settled: LoggedModelAttemptObservation | undefined
       reportPaperEvidenceProgress(onProgress, { operation: 'evidence_extract', batchIndex: fragment.fragmentIndex,

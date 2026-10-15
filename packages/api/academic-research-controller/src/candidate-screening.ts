@@ -7,6 +7,23 @@ export type AcademicCandidateScreening = Pick<CandidateScreeningCriteria,
   'questions' | 'methods' | 'evidence' | 'contributions'>
 
 /**
+ * Flatten reviewed aliases in the exact order of approved questions for minimal evidence range priority.
+ * @param questions Approved Brief questions used by the extractor.
+ * @param reviewed Optional same-version plan cues; absent cues retain the extractor's question-text fallback.
+ * @returns One alias list per question, or undefined for an older plan without reviewed cues.
+ */
+export function approvedEvidenceQuestionTerms(questions: readonly string[],
+  reviewed?: AcademicCandidateScreening): readonly (readonly string[])[] | undefined {
+  if (reviewed === undefined) return undefined
+  const byQuestion = new Map(reviewed.questions.map(entry => [entry.question, entry.concepts]))
+  if (byQuestion.size !== questions.length || reviewed.questions.length !== questions.length
+    || questions.some(question => !byQuestion.has(question))) {
+    throw new RangeError('evidence question terms must cover every approved question once')
+  }
+  return questions.map(question => unique((byQuestion.get(question) ?? []).flat()))
+}
+
+/**
  * Reuse only terms already approved in the Brief or its exact query plan.
  * Version-5 plans supply reviewed question, method, evidence, and contribution cues.
  * @param brief Approved Brief that owns the research topic and questions.

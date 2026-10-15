@@ -19,6 +19,7 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 }))
 
 import AcademicResearchController from '../src/index.ts'
+import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
 import type { AcademicPlannedRetrieval } from '../src/types.ts'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
@@ -174,6 +175,7 @@ async function harness(options: {
   reasoning?: boolean
   hybridPlan?: boolean
   retrieval?: AcademicPlannedRetrieval
+  candidateScreening?: AcademicCandidateScreening
 } = {}) {
   const ctx = new Context()
   contexts.push(ctx)
@@ -206,7 +208,10 @@ async function harness(options: {
     ...options.saturationRounds === undefined ? {} : { stopConditions: {
       ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
     } },
-    ...options.hybridPlan === true ? { schemaVersion: 3 } : {},
+    ...options.candidateScreening === undefined ? options.hybridPlan === true ? { schemaVersion: 3 } : {} : {
+      schemaVersion: 5, candidateScreening: options.candidateScreening,
+      evidenceRequirements: { ...briefPayload().evidenceRequirements, targetIncludedWorks: 2 },
+    },
     ...options.legacyPlan ? {} : { searchPlan: (options.searches ?? ['retrieval']).map(query => ({ query,
       purpose: '查找相关研究', questions: planQuestions,
       ...options.hybridPlan === true ? { retrieval: options.retrieval ?? {
@@ -619,6 +624,22 @@ describe('AcademicResearchController', () => {
     expect(result.report?.markdown).toContain('检索渠道与覆盖说明')
     expect(JSON.stringify(result)).not.toContain('Internal source diagnostic')
   })
+  it('passes approved per-question aliases to first-tier extraction', async () => {
+    const question = 'Which method works?'
+    const fixture = await harness({ hybridPlan: true, candidateScreening: {
+      questions: [{ question, concepts: [['retrieval', 'retrieval method'], ['faithfulness']] }],
+      methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
+      contributions: [{ classification: 'empirical_evaluation', concepts: [['comparison']] }],
+    } })
+    runAcademicResearchDraft.mockResolvedValue({ synthesis: { status: 'not_run', reasons: [] }, status: 'completed',
+      sessionId: fixture.sessionId, retrievalRun: retrievalRun(), papers: [], failures: [],
+      analysis: null, report: null } as never)
+    await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: false }, fixture.signal)
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].modelPolicies.evidence)
+      .toMatchObject({ depth: 'minimal', questionTerms: [['retrieval', 'retrieval method', 'faithfulness']] })
+  })
+
   it('runs the formal workflow with the Session model and registered source adapters', async () => {
     const fixture = await harness()
     fixture.search.mockResolvedValue({ works: [], batch: createBatchResult([], []), providers: [],
