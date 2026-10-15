@@ -28,7 +28,7 @@ The [scope/extraction separation](2026-10-11-academic-paper-screening-evidence-p
 
 ## Consequences
 
-The Controller selects minimal depth for formal research runs; lower-level callers that omit the depth policy retain complete extraction. The workflow treats a clean five-record cap as an intentional stop, while fragment failures and rejected drafts remain visible. The path bounds retained evidence without certifying semantic support or formal delivery. Source selection still follows ordered fragments; query-aware selection, enhancement and real-model performance calibration remain separate work.
+The Controller selects minimal depth for formal research runs; lower-level callers that omit the depth policy retain complete extraction. The workflow treats a clean five-record cap as an intentional stop, while fragment failures and rejected drafts remain visible. The path bounds retained evidence without certifying semantic support or formal delivery. [Fragment priority and recovery](2026-10-14-academic-fragment-priority-recovery.md) owns minimal reading order and smaller-input recovery; enhancement and real-model performance calibration remain separate work.
 
 ## Verification
 

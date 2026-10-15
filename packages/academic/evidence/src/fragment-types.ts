@@ -23,6 +23,7 @@ export interface EvidenceFragmentSourceRange {
 
 /** Original source offsets; draft segmentIndex addresses the fragment's ordered sourceRanges. */
 export interface EvidenceFragmentRange extends EvidenceFragmentSourceRange {
+  /** One-based original packed group identity; minimal priority may dispatch groups out of order. */
   readonly fragmentIndex: number
   /** Present when one request packs adjacent source segments; the first entry matches the top-level range. */
   readonly sourceRanges?: readonly EvidenceFragmentSourceRange[]
@@ -52,6 +53,8 @@ export interface EvidenceFragmentFailure extends EvidenceFragmentAttempt {
 /** Model and persistence stay caller-owned; unclassified failures stop the operation. */
 export interface EvidenceFragmentOptions {
   readonly policy: EvidenceFragmentPolicy
+  /** Optional approved lexical hints per focus question, in the same order; minimal depth uses them only for dispatch priority. */
+  readonly questionTerms?: readonly (readonly string[])[]
   /** Make one model attempt, validate its JSON, apply the output cap and log the original source range; do not retry internally. */
   readonly generator: (request: EvidenceGenerationRequest, attempt: EvidenceFragmentAttempt) => Promise<readonly EvidenceDraft[]>
   /** Map only recoverable model errors; return null for cancellation, logging or programming failures. */
@@ -62,7 +65,7 @@ export interface EvidenceFragmentOptions {
   readonly onFailure?: (failure: EvidenceFragmentFailure) => void
 }
 
-/** Verified paper evidence and exact ranges left incomplete by attempt exhaustion or the minimal evidence cap. */
+/** Verified paper evidence and ranges left incomplete by attempt exhaustion, the minimum size or the minimal evidence cap. */
 export interface EvidenceFragmentResult {
   readonly evidence: EvidenceExtractionResult
   readonly failures: readonly EvidenceFragmentFailure[]
