@@ -1,10 +1,13 @@
 /** Host Remote owner for one Session-backed Academic research pass. */
+import { isDeepStrictEqual } from 'node:util'
 import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
+import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import {
   runAcademicResearchDraft,
+  runAcademicEvidenceEnhancement,
   reconstructAcademicResearchRecoveryState,
   type AcademicResearchDraftResult,
   type AcademicResearchRecoveryCheckpoint,
@@ -15,6 +18,7 @@ import {
   type DraftPipelineAdapters,
 } from '@deepseek-ai/dsh-academic-workflow'
 import type { HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
+import { fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
@@ -30,6 +34,7 @@ import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
   AcademicResearchPlanView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunView,
   AcademicBackgroundRunSummary,
+  AcademicEvidenceEnhancementRequest, AcademicEvidenceEnhancementView,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -80,6 +85,12 @@ export interface Config {
   readonly gapRoundMaximumQueriesPerRound?: number
   /** Maximum Academic results per gap-round query. Defaults to 20. */
   readonly gapRoundMaximumAcademicResultsPerQuery?: number
+  /** Total wall-clock bound for one selected paper's second-tier pass. Defaults to 180,000 ms. */
+  readonly enhancementMaximumElapsedMs?: number
+  /** Per-fragment model timeout during second-tier extraction. Defaults to 60,000 ms. */
+  readonly enhancementAttemptTimeoutMs?: number
+  /** Maximum output tokens per second-tier fragment. Defaults to 8,192. */
+  readonly enhancementMaxTokens?: number
 }
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
@@ -105,6 +116,9 @@ export class AcademicResearchController extends TypertRemoteService {
     minimumQuestionSupportingWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(1),
     gapRoundMaximumQueriesPerRound: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
     gapRoundMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(20),
+    enhancementMaximumElapsedMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(180_000),
+    enhancementAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(60_000),
+    enhancementMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8_192),
   })
 
   private readonly fulltextFetchProvider: string
@@ -119,6 +133,9 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly candidateReviewAttemptTimeoutMs: number
   private readonly synthesisMaxAttempts: number
   private readonly synthesisRetryInitialDelayMs: number
+  private readonly enhancementMaximumElapsedMs: number
+  private readonly enhancementAttemptTimeoutMs: number
+  private readonly enhancementMaxTokens: number
   private readonly candidateBatchPolicy: import('@deepseek-ai/dsh-academic-workflow').CandidateBatchPolicy
   private readonly gapRoundPolicy: GapRoundPolicy
   private readonly backgroundRuns = new AcademicBackgroundRuns()
@@ -141,6 +158,9 @@ export class AcademicResearchController extends TypertRemoteService {
     this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
+    this.enhancementMaximumElapsedMs = config.enhancementMaximumElapsedMs ?? 180_000
+    this.enhancementAttemptTimeoutMs = config.enhancementAttemptTimeoutMs ?? 60_000
+    this.enhancementMaxTokens = config.enhancementMaxTokens ?? 8_192
     this.candidateBatchPolicy = {
       initialBatchSize: config.initialCandidateBatchSize ?? 8,
       evidenceGapBatchSize: config.evidenceGapCandidateBatchSize ?? 4,
@@ -182,6 +202,87 @@ export class AcademicResearchController extends TypertRemoteService {
   @Remote('run')
   async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue> {
     return runValue(await this.execute(request, signal))
+  }
+
+  /**
+   * Enhance one user-selected paper after its first-tier draft has settled.
+   * @param request Completed run and selected paper identity.
+   * @param signal Caller lifetime; cancellation preserves the original report and committed fragments.
+   * @returns Separate evidence counts; this operation does not revise or approve the original report.
+   */
+  @Remote('enhanceEvidence')
+  async enhanceEvidence(request: AcademicEvidenceEnhancementRequest,
+    signal: AbortSignal): Promise<AcademicEvidenceEnhancementView> {
+    signal.throwIfAborted()
+    const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
+    if ('error' in found) throw found.error
+    const { agent } = found
+    const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+    const history = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+      retrievalRunId: request.retrievalRunId, researchBriefId: approved.brief.researchBriefId,
+      researchBriefVersion: approved.brief.version,
+    })
+    if (history.status !== 'completed' || history.input.checkpoint === null) {
+      throw new RemoteError('gateway/bad-request', '只能补充已完成、且保留论文检查点的当前研究。', {})
+    }
+    const checkpoint = history.input.checkpoint
+    const candidate = checkpoint.candidates.find(item => item.workVersionId === request.workVersionId)
+    const paper = checkpoint.papers.find(item => (item.status === 'extracted' || item.status === 'partially_extracted')
+      && item.version.workVersionId === request.workVersionId)
+    if (candidate === undefined || paper === undefined || paper.status === 'paused' || paper.status === 'excluded'
+      || paper.evidence.evidenceRecords.length === 0 || candidate.urls.length === 0) {
+      throw new RemoteError('gateway/bad-request', '所选论文没有可补充的一级原文证据。', {})
+    }
+    const web = agent.ctx.get('web')
+    if (!web) throw new RemoteError('gateway/internal', 'Academic Web fetch service is unavailable.', {})
+    const selectedModel = agent.session.requestHeader()?.config ?? agent.options
+    if (selectedModel.provider === undefined || selectedModel.model === undefined) {
+      throw new RemoteError('gateway/bad-request', 'the Session has no selected model', {})
+    }
+    const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
+      ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
+      maxTokens: Math.min(selectedModel.maxTokens ?? this.enhancementMaxTokens, this.enhancementMaxTokens) }
+    return agent.runMaintenance(async (agentSignal) => {
+      const operationSignal = AbortSignal.any([signal, agentSignal,
+        AbortSignal.timeout(this.enhancementMaximumElapsedMs)])
+      if (agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-enhancement-selection'
+          && event.data.retrievalRunId === request.retrievalRunId)) {
+        throw new RemoteError('gateway/bad-request', '本轮已经选择一篇论文进行二级补充。', {})
+      }
+      const source = await fetchAcademicFullText({ academicWorkId: paper.version.academicWorkId,
+        workVersionId: request.workVersionId, urls: candidate.urls, sourceProvider: candidate.sourceProvider,
+        extractionMethod: candidate.extractionMethod, focusQuestions: approved.brief.questions,
+        retrievedAt: new Date().toISOString() },
+      (url, fetchSignal) => web.fetch({ url }, fetchSignal, { providerId: this.fulltextFetchProvider }), operationSignal)
+      if (paper.version.contentHash.status !== 'available' || source.contentHash !== paper.version.contentHash.value) {
+        throw new RemoteError('gateway/bad-request', '论文正文与一级证据的内容哈希不一致，未启动二级抽取。', {})
+      }
+      const selectedAt = new Date().toISOString()
+      const selection = { schemaVersion: 1 as const, retrievalRunId: request.retrievalRunId,
+        workVersionId: request.workVersionId, selectedAt }
+      await persistAcademicEvent(agent.ctx, agent.session,
+        agent.session.append('academic/evidence-enhancement-selection', selection))
+      const settle = async (status: 'completed' | 'partial_success' | 'failed' | 'cancelled',
+        addedEvidenceRecords: number, incompleteFragments: number) => {
+        await persistAcademicEvent(agent.ctx, agent.session,
+          agent.session.append('academic/evidence-enhancement-settlement', { ...selection, status,
+            completedAt: new Date().toISOString(), addedEvidenceRecords, incompleteFragments }))
+      }
+      try {
+        const result = await runAcademicEvidenceEnhancement({ ctx: agent.ctx, session: agent.session,
+          model, source, initial: paper.evidence, signal: operationSignal,
+          policy: { depth: 'complete', maxAttempts: 1, attemptTimeoutMs: this.enhancementAttemptTimeoutMs } })
+        const addedEvidenceRecords = result.evidence.evidenceRecords.length - paper.evidence.evidenceRecords.length
+        const incompleteFragments = result.incompleteFragments.length
+        const status = incompleteFragments > 0 ? 'partial_success' : 'completed'
+        await settle(status, addedEvidenceRecords, incompleteFragments)
+        return { ...request, status, initialEvidenceRecords: paper.evidence.evidenceRecords.length,
+          addedEvidenceRecords, incompleteFragments }
+      } catch (cause: unknown) {
+        await settle(operationSignal.aborted ? 'cancelled' : 'failed', 0, 0)
+        throw cause
+      }
+    })
   }
 
   /**
@@ -435,6 +536,16 @@ export class AcademicResearchController extends TypertRemoteService {
     })
     return result
   }
+}
+
+async function persistAcademicEvent(ctx: Context, session: Session, event: SessionEvent): Promise<void> {
+  const sessions = ctx.get('sessions'), persistence = ctx.get('sessionPersistence')
+  if (!sessions || !persistence || !await sessions.flush(session)) {
+    throw new Error('Academic enhancement requires durable Session persistence.')
+  }
+  await using reader = await persistence.open(session.id, 'read')
+  const [stored] = await reader.read(event.seq, 1)
+  if (!isDeepStrictEqual(stored, event)) throw new Error('Academic enhancement event was not retained by Session storage.')
 }
 
 /** Project one approved plan into its durable search-plan event payload. */

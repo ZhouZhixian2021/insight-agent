@@ -3,7 +3,9 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionId } from '@deepseek-ai/dsh-session'
 import { synthesisSections } from '@deepseek-ai/dsh-academic-analysis'
+import type { EvidenceExtractionInput, EvidenceExtractionResult, EvidenceFragmentResult } from '@deepseek-ai/dsh-academic-evidence'
 import { runModelResearchDraft } from './model-pipeline.ts'
+import { createModelFragmentEvidenceEnhancer } from './fragment-model.ts'
 import type { AcademicModelPolicies } from './model-types.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
 
@@ -56,4 +58,28 @@ export async function runAcademicResearchDraft(
     request.signal,
   )
   return { ...result, sessionId: request.session.id }
+}
+
+/** Caller-selected second-tier extraction of one paper after the first-tier draft has settled. */
+export interface AcademicEvidenceEnhancementRequest {
+  readonly ctx: Context
+  readonly session: Session
+  readonly model: LlmCallConfig
+  readonly policy: AcademicModelPolicies['evidence']
+  readonly source: EvidenceExtractionInput
+  readonly initial: EvidenceExtractionResult
+  readonly signal?: AbortSignal
+}
+
+/**
+ * Supplement already committed evidence without changing the first-tier draft.
+ * @param request Selected paper, its exact source and committed evidence in the owning Session.
+ * @returns Committed additions and remaining ranges; a failed fragment retains the original evidence.
+ */
+export async function runAcademicEvidenceEnhancement(request: AcademicEvidenceEnhancementRequest): Promise<EvidenceFragmentResult> {
+  const llm = request.ctx.get('llm')
+  if (!llm) throw new Error('Academic evidence enhancement requires the DSH llm service.')
+  const model = await llm.resolveCallConfig(request.model, request.signal)
+  return createModelFragmentEvidenceEnhancer(request.ctx, request.session, model, request.policy)(
+    request.source, request.initial, request.signal)
 }

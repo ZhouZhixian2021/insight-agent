@@ -88,6 +88,8 @@ Formal `runModelResearchDraft()` now uses `createModelFragmentEvidenceGenerator(
 
 The Controller selects `depth: 'minimal'` for formal research runs. Scope review stays separate; included papers retain at most five source-verified, question-linked records across all fragments, and the persisted fragment contains only those retained records. A clean stop at that cap is not a failed extraction; actual fragment failures and rejected drafts still produce partial status. Callers that omit the depth policy retain complete extraction. Minimal evidence can support a limited draft but does not grant formal delivery or prove every approved question is covered.
 
+The draft pipeline forwards the extractor's approved-question links through evidence admission to analysis and report rendering. `runAcademicEvidenceEnhancement()` is a separate, caller-selected, complete-depth operation for one already committed paper. It preserves first-tier identities and commits additions before dispatching the next fragment; the caller owns source re-acquisition, selection, cancellation and the original report. It does not revise that report or grant semantic approval.
+
 ## Model Experience
 
 ### Session-backed model extraction

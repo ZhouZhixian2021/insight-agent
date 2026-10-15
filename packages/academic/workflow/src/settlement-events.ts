@@ -1,5 +1,5 @@
 /** Durable Q5 scheduling settlement facts and the approved search-plan event. */
-import type { ResearchBriefId, RetrievalRunId, SearchQueryId } from '@deepseek-ai/dsh-academic-model'
+import type { ResearchBriefId, RetrievalRunId, SearchQueryId, WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent } from './query-workflow.ts'
 import type { AcademicResearchRecoveryCheckpoint } from './recovery-checkpoint.ts'
 
@@ -35,6 +35,22 @@ export interface AcademicRunSettlementEvent {
   readonly completedAt: string
 }
 
+/** One user-selected post-draft second-tier pass; selection is durable before model dispatch. */
+export interface AcademicEvidenceEnhancementSelectionEvent {
+  readonly schemaVersion: 1
+  readonly retrievalRunId: RetrievalRunId
+  readonly workVersionId: WorkVersionId
+  readonly selectedAt: string
+}
+
+/** Second-tier outcome does not alter the first-tier report or its evaluation. */
+export interface AcademicEvidenceEnhancementSettlementEvent extends AcademicEvidenceEnhancementSelectionEvent {
+  readonly status: 'completed' | 'partial_success' | 'failed' | 'cancelled'
+  readonly completedAt: string
+  readonly addedEvidenceRecords: number
+  readonly incompleteFragments: number
+}
+
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
     /** Log-only approved search plan with stable query identities for cross-restart recovery. */
@@ -47,6 +63,10 @@ declare module '@deepseek-ai/dsh-session/types' {
     'academic/run-settlement': AcademicRunSettlementEvent
     /** Durable A-S3 state captured at a scheduled or settled batch boundary. */
     'academic/recovery-checkpoint': AcademicResearchRecoveryCheckpoint
+    /** User-selected paper for the one bounded post-draft second-tier pass. */
+    'academic/evidence-enhancement-selection': AcademicEvidenceEnhancementSelectionEvent
+    /** Terminal result of that pass; initial evidence and draft remain unchanged. */
+    'academic/evidence-enhancement-settlement': AcademicEvidenceEnhancementSettlementEvent
   }
 }
 
