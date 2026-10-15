@@ -1,7 +1,7 @@
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createResearchBriefId, createSearchQueryId,
   type ExecutableResearchBrief, type HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { describe, expect, it } from 'vitest'
-import { approvedCandidateScreeningCriteria } from '../src/candidate-screening.ts'
+import { approvedCandidateScreeningCriteria, approvedEvidenceQuestionTerms } from '../src/candidate-screening.ts'
 
 const question = '检索增强生成如何影响答案忠实性？'
 const brief: ExecutableResearchBrief = {
@@ -83,6 +83,19 @@ function planFor(value: ExecutableResearchBrief = brief): HybridSearchPlan {
 }
 
 describe('approved candidate screening criteria', () => {
+  it('keeps reviewed evidence aliases aligned with Brief question order', () => {
+    const questions = [question, '哪些条件下失效？']
+    const reviewed = { questions: [
+      { question: questions[1]!, concepts: [[' failure case ', 'failure case']] },
+      { question, concepts: [['faithfulness', ' grounded answer '], ['faithfulness']] },
+    ], methods: [], evidence: [], contributions: [] }
+    expect(approvedEvidenceQuestionTerms(questions, reviewed)).toEqual([
+      ['faithfulness', 'grounded answer'], ['failure case'],
+    ])
+    expect(approvedEvidenceQuestionTerms(questions)).toBeUndefined()
+    expect(() => approvedEvidenceQuestionTerms([question], reviewed)).toThrow(/cover every approved question/u)
+  })
+
   it('uses only reviewed topic, aliases, required terms, and question-linked query expressions', () => {
     expect(approvedCandidateScreeningCriteria(brief, planFor())).toEqual({
       topic: [
