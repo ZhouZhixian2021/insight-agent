@@ -19,6 +19,19 @@ import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragment
  */
 export async function extractEvidenceInFragments(input: EvidenceExtractionInput, options: EvidenceFragmentOptions,
   signal?: AbortSignal): Promise<EvidenceFragmentResult> {
+  return runEvidenceFragments(input, options, signal)
+}
+
+/**
+ * Shared fragment dispatch for extraction and supplementation of committed evidence.
+ * @param input Paper content and extraction depth.
+ * @param options Limits, generator and commit sink.
+ * @param signal Cancellation for model dispatch and retry delay.
+ * @param accept Optional complete-depth supplementation that reuses committed identities before the sink.
+ * @returns Evidence committed in this dispatch, failures and incomplete ranges.
+ */
+export async function runEvidenceFragments(input: EvidenceExtractionInput, options: EvidenceFragmentOptions,
+  signal?: AbortSignal, accept?: (result: EvidenceExtractionResult) => EvidenceExtractionResult): Promise<EvidenceFragmentResult> {
   validatePolicy(options)
   if (input.contentHash.trim() === '' || input.segments.length === 0
     || input.segments.some(segment => segment.text.trim() === '')) {
@@ -91,7 +104,8 @@ export async function extractEvidenceInFragments(input: EvidenceExtractionInput,
         continue
       }
       consecutiveTransientFailures = 0
-      const accepted = uniqueEvidence(result, seen, input.depth === 'minimal' ? 5 - seen.size : Infinity)
+      const accepted = accept === undefined
+        ? uniqueEvidence(result, seen, input.depth === 'minimal' ? 5 - seen.size : Infinity) : accept(result)
       // The sink owns persistence; a failed commit must stop dispatch rather than resemble a model failure.
       await options.onVerified(context, accepted)
       verified.push(accepted)
