@@ -13,7 +13,7 @@ The analysis-local `AnalysisInput` and report-local `ReportInput` accept optiona
 
 Academic insight is an optional business subsystem built on harness extension points.
 
-The existing `AcademicEvidenceEnhancementRequest` identifies `sessionId`, `retrievalRunId` and `workVersionId` for one post-draft pass. `AcademicEvidenceEnhancementView` returns the same identities, `completed` or `partial_success`, and `initialEvidenceRecords`, `addedEvidenceRecords` and `incompleteFragments`. Selection and terminal facts are persisted separately; failure or cancellation can preserve earlier verified fragments and never approves or replaces the original draft. The client reads supplemental excerpts through the existing Session journal rather than synthesizing them from counts.
+Formal research defaults to minimal-depth evidence extraction and passes verified records with their approved-question associations into a limited draft; uncovered questions remain gaps, and zero valid evidence produces no report. After the first-tier draft settles, a user may select one paper with existing valid evidence for complete-depth enhancement. The existing `AcademicEvidenceEnhancementRequest` identifies `sessionId`, `retrievalRunId` and `workVersionId` for that pass. `AcademicEvidenceEnhancementView` returns the same identities, `completed` or `partial_success`, and `initialEvidenceRecords`, `addedEvidenceRecords` and `incompleteFragments`. Selection and terminal facts are persisted separately; failure or cancellation can preserve earlier verified fragments and never approves or replaces the original draft. The client reads supplemental excerpts through the existing Session journal rather than synthesizing them from counts.
 
 ## Dependency direction
 
