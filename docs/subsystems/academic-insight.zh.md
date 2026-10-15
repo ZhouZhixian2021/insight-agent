@@ -13,7 +13,7 @@ kind: "subsystem"
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 
-现有 `AcademicEvidenceEnhancementRequest` 使用 `sessionId`、`retrievalRunId` 和 `workVersionId` 标识一次草稿后增强。`AcademicEvidenceEnhancementView` 返回相同身份、`completed` 或 `partial_success`，以及 `initialEvidenceRecords`、`addedEvidenceRecords` 和 `incompleteFragments`。选择及终态事实独立持久化；失败或取消可保留先前已核验片段，不批准或替换原草稿。客户端通过既有 Session 日志读取新增摘录，不根据数量生成内容。
+正式研究默认选择最小深度证据抽取，把已核验记录和对应的批准问题送入有限草稿；未覆盖的问题继续列为缺口，零有效证据不生成报告。用户可在一级草稿结束后选择一篇已有有效证据的论文进行完整深度增强。现有 `AcademicEvidenceEnhancementRequest` 使用 `sessionId`、`retrievalRunId` 和 `workVersionId` 标识这次增强。`AcademicEvidenceEnhancementView` 返回相同身份、`completed` 或 `partial_success`，以及 `initialEvidenceRecords`、`addedEvidenceRecords` 和 `incompleteFragments`。选择及终态事实独立持久化；失败或取消可保留先前已核验片段，不批准或替换原草稿。客户端通过既有 Session 日志读取新增摘录，不根据数量生成内容。
 
 ## 依赖方向
 

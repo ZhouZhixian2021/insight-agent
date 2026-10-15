@@ -165,7 +165,7 @@ flowchart TB
 
 第一阶段的[团队方案](../z-team_docs/模块分工/academic-concise-plan-tiered-evidence-team-plan.md)规定：用户只审核影响结果的研究目标、问题、范围、证据要求与交付方式，机器查询、来源标识和内部预算留在可按需查看的执行信息中。A 固定了[可读计划及完整执行块样例](../z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md)；样例可通过现有结构校验，但可读正文与执行规格的通用语义一致性检查仍需实现和验收。
 
-分级证据先复用现有证据记录、原文定位与问题关联，[局部成功及零证据样例](../z-team_docs/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json)供 B、C 对齐输入和报告限制。A-PE1 只固定交接规则；一级抽取、片段选择和真实耗时改善仍需 B 实现并测量，A 随后接入正式工作流。模型超时不能靠隐藏失败或降低引用要求解决。
+分级证据复用现有证据记录、原文定位与问题关联，[局部成功及零证据样例](../z-team_docs/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json)供跨模块对齐输入和报告限制。B 已合入一级最小抽取、片段选择与局部失败恢复、同版本二级补充入口；A 已把一级路径及所选论文二级增强接入 Controller 和工作流，C 已接入有限草稿与 Web 增强页面。三题的脚本化跨模块夹具覆盖部分失败时保留草稿和零证据时停止；它不证明真实模型质量。B-PE4 的同论文性能基线，以及三题真实审批、检索、报告和增强的端到端验收仍待完成。模型超时不能靠隐藏失败或降低引用要求解决。
 
 #### 团队工作流
 
