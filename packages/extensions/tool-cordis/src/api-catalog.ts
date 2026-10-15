@@ -99,6 +99,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'completed or cancelled draft data with its observed retrieval run and durable Session identity.',
       },
       {
+        signature: '@Remote(\'enhanceEvidence\') async enhanceEvidence(request: AcademicEvidenceEnhancementRequest, signal: AbortSignal): Promise<AcademicEvidenceEnhancementView>',
+        description: 'Enhance one user-selected paper after its first-tier draft has settled.',
+        parameters: [{ name: 'request', description: 'Completed run and selected paper identity.' }, { name: 'signal', description: 'Caller lifetime; cancellation preserves the original report and committed fragments.' }],
+        returns: 'Separate evidence counts; this operation does not revise or approve the original report.',
+      },
+      {
         signature: '@Remote({ mode: \'stream\' }) runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame>',
         description: 'Stream complete workflow progress snapshots followed by one final result.',
         parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts this one pass.' }],
@@ -3610,6 +3616,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicEvaluationView',
     declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
+  },
+  {
+    name: 'AcademicEvidenceEnhancementView',
+    declaration: 'export interface AcademicEvidenceEnhancementView extends AcademicEvidenceEnhancementRequest {\n    readonly status: \'completed\' | \'partial_success\';\n    readonly initialEvidenceRecords: number;\n    readonly addedEvidenceRecords: number;\n    readonly incompleteFragments: number;\n}',
   },
   {
     name: 'AcademicEvidenceSnapshotItemView',

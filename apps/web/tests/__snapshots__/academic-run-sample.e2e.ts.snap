@@ -61,3 +61,34 @@ Web URL limit per query
 Reference verification limit per query
 5"
 `;
+
+exports[`selected-paper enhancement browser flow > submits one fixed paper once, reads persisted supplemental excerpts and retains its draft after reopen 1`] = `
+"Selected-paper evidence enhancement
+
+Select at most one paper with first-tier evidence per run. Enhancement preserves the original draft and does not grant report approval.
+
+Closing the page cancels this enhancement request; saved evidence and the original draft remain.
+
+Enhancement partially succeeded; verified additions were saved
+
+Enhancement paper
+Select one paper
+20000000-0000-4000-8000-000000000001
+Enhance selected paper
+Read latest enhancement history
+
+Server-recorded added evidence: 1
+
+Incomplete fragments: 1
+
+Actual version: 20000000-0000-4000-8000-000000000001 · 2026-10-15T00:02:00Z
+
+Supplemental source evidence
+fixed-supplemental-evidence · Full text
+
+Fixed supplemental finding
+
+Exact fixed supplemental excerpt
+
+Actual version: 20000000-0000-4000-8000-000000000001 · Source locator ID: 90000000-0000-4000-8000-000000000001"
+`;

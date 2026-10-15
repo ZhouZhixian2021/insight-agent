@@ -23,9 +23,11 @@ describe('academic sidebar registration', () => {
       await ctx.plugin(SlotRegistry).await()
       const remoteRun = vi.fn(async function* () { yield initialTask() })
       const unary = vi.fn().mockResolvedValue({ ok: true, value: initialTask() })
-      const remote = { startBackgroundRun: unary, listBackgroundRuns: unary, getBackgroundRun: unary, cancelBackgroundRun: unary, watchBackgroundRun: remoteRun, plan: vi.fn().mockResolvedValue({ ok: true, value: { topic: 'RAG' } }) }
+      const remote = { enhanceEvidence: unary, startBackgroundRun: unary, listBackgroundRuns: unary, getBackgroundRun: unary, cancelBackgroundRun: unary, watchBackgroundRun: remoteRun, plan: vi.fn().mockResolvedValue({ ok: true, value: { topic: 'RAG' } }) }
       const remotePlan = remote.plan
-      ctx.provide('remote', { academicResearch: remote })
+      const sessionRemote = { follow: vi.fn().mockImplementation(async function* () { yield { type: 'snapshot', header: { id: sampleRun().sessionId }, cursor: 0, records: [], hasMore: false } }), page: unary }
+      ctx.provide('remote', { academicResearch: remote, session: sessionRemote })
+      ctx.provide('remote.session', sessionRemote)
       ctx.provide('remote.academicResearch', remote)
       ctx.provide('locale', new LocaleRuntime(ctx))
       const slots = ctx.get('slots') as SlotRegistry
@@ -41,6 +43,21 @@ describe('academic sidebar registration', () => {
       const request = { sessionId: sampleRun().sessionId, researchBriefId: sampleRun().retrievalRun.researchBriefId, synthetic: false }
       const signal = new AbortController().signal
       const key = { sessionId: request.sessionId, backgroundRunId: initialTask().backgroundRunId }
+      await expect(face.enhanceEvidence({ sessionId: request.sessionId, retrievalRunId: sampleRun().retrievalRun.retrievalRunId, workVersionId: 'v' as never },
+        signal)).resolves.toEqual(initialTask())
+      const enhancementKey = { sessionId: request.sessionId, retrievalRunId: sampleRun().retrievalRun.retrievalRunId }
+      await expect(face.enhancementHistory(enhancementKey, signal)).resolves.toBeNull()
+      sessionRemote.follow.mockImplementationOnce(async function* () {
+        yield { type: 'snapshot', header: { id: request.sessionId }, cursor: 10, hasMore: true,
+          records: [{ type: 'event', event: { type: 'unrelated', seq: 10, data: {} } }] }
+      })
+      unary.mockResolvedValueOnce({ ok: true, value: { hasMore: false, records: [{ type: 'event', event: {
+        type: 'academic/evidence-enhancement-selection', seq: 1, data: { ...enhancementKey,
+          workVersionId: 'v', selectedAt: 'now', schemaVersion: 1 },
+      } }] } })
+      await expect(face.enhancementHistory(enhancementKey, signal)).resolves.toMatchObject({ status: 'unsettled' })
+      expect(sessionRemote.page).toHaveBeenCalledWith({ address: { kind: 'session', sessionId: request.sessionId },
+        throughSeq: 10, beforeSeq: 10 }, expect.any(AbortSignal))
       expect(await collect(face.watchBackgroundRun(key, signal))).toEqual([initialTask()])
       expect(remoteRun).toHaveBeenCalledWith(key, signal)
       await expect(face.startBackgroundRun(request, signal)).resolves.toEqual(initialTask())

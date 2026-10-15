@@ -3,16 +3,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { AcademicResearchPlanView, AcademicResearchRunRequest, AcademicBackgroundRunView,
-  AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunSummary } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+  AcademicEvidenceEnhancementRequest, AcademicEvidenceEnhancementView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunSummary } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { RunPanel } from './RunPanel.tsx'
 import { SearchPolicies } from './HybridRetrieval.tsx'
 import type { RunView } from './run-types.ts'
 import css from './RunPanel.module.css'
 import { Q6DemoEntry } from './Q6Page.tsx'
+import { EnhancementPanel } from './EnhancementPanel.tsx'
+import type { EnhancementHistory, EnhancementKey } from './enhancement-history.ts'
 import { backgroundView } from './background-view.ts'
 
 /** Remote callbacks; watching and cancelling have independent lifetimes. */
 export interface ResearchEntryInjected {
+  enhanceEvidence: (request: AcademicEvidenceEnhancementRequest, signal: AbortSignal) => Promise<AcademicEvidenceEnhancementView>
+  enhancementHistory: (key: EnhancementKey, signal: AbortSignal) => Promise<EnhancementHistory | null>
   plan: (sessionId: AcademicResearchRunRequest['sessionId']) => Promise<AcademicResearchPlanView>
   startBackgroundRun: (request: AcademicResearchRunRequest, signal: AbortSignal) => Promise<AcademicBackgroundRunView>
   listBackgroundRuns: (sessionId: AcademicResearchRunRequest['sessionId']) => Promise<readonly AcademicBackgroundRunSummary[]>
@@ -43,7 +47,7 @@ export function ResearchEntry({ t, useSessions, ...remote }: ResearchEntryProps)
 }
 
 function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns, getBackgroundRun,
-  watchBackgroundRun, cancelBackgroundRun, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
+  watchBackgroundRun, cancelBackgroundRun, enhanceEvidence, enhancementHistory, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
   const [approved, setApproved] = useState<AcademicResearchPlanView | null>(null)
   const [planError, setPlanError] = useState<string | null>(null)
   const [runs, setRuns] = useState<readonly AcademicBackgroundRunSummary[]>([])
@@ -189,6 +193,9 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     {view !== null && <RunPanel view={view} t={t}
       plannedSearches={task?.researchBriefId === approved?.researchBriefId ? approved?.searches : undefined}
       onCancel={() => { void cancel() }} />}
+    {view?.phase === 'settled' && view.value.report !== null && view.value.status === 'completed' && <EnhancementPanel
+      key={`${sessionId}:${view.value.retrievalRun.retrievalRunId}`} value={view.value}
+      enhanceEvidence={enhanceEvidence} enhancementHistory={enhancementHistory} t={t} />}
     {approved !== null && <>
       <h3>{approved.topic}</h3><ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
       <h4>{t('searchDirections')}</h4><SearchPolicies searches={approved.searches} t={t} />
