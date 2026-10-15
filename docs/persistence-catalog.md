@@ -158,7 +158,7 @@ Source: [`packages/api/academic-research-controller/src/candidate-review-model.t
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -169,7 +169,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academ
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:162`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -180,7 +180,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:162`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 

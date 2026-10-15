@@ -408,7 +408,7 @@ export class AcademicResearchController extends TypertRemoteService {
         session: agent.session,
         model,
         modelPolicies: {
-          evidence: { maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
+          evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
             inputBatchTokenLimit: this.extractionBatchMaxInputTokens,
             inputBatchOverlapCharacters: this.extractionBatchOverlapCharacters,
             attemptTimeoutMs: this.extractionAttemptTimeoutMs,

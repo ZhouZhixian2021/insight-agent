@@ -49,6 +49,7 @@ export function createModelFragmentEvidenceGenerator(
 
   return async (parsed, scope, onProgress, signal) => {
     signal?.throwIfAborted()
+    const extractionInput = { ...parsed, depth: policy.depth ?? 'complete' }
     const source: EvidenceModelSource = {
       academicWorkId: parsed.academicWorkId, workVersionId: parsed.workVersionId,
       contentHash: parsed.contentHash, sourceProvider: parsed.sourceProvider,
@@ -69,12 +70,12 @@ export function createModelFragmentEvidenceGenerator(
       appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
     })
     if (decision.status !== 'included') {
-      return { scope: decision, evidence: await extractEvidenceFromContent(parsed, () => Promise.resolve([]), signal),
+      return { scope: decision, evidence: await extractEvidenceFromContent(extractionInput, () => Promise.resolve([]), signal),
         incompleteFragmentCount: 0 }
     }
 
     let validatedRecords = 0, rejectedDrafts = 0
-    const result = await extractEvidenceInFragments(parsed, {
+    const result = await extractEvidenceInFragments(extractionInput, {
       policy: { ...fragmentPolicy, maximumOutputTokens: outputCap },
       generator: async (request, fragment) => {
         let settled: LoggedModelAttemptObservation | undefined
@@ -82,7 +83,7 @@ export function createModelFragmentEvidenceGenerator(
           batchCount: null, attempt: fragment.attempt, maximumAttempts: fragment.maximumAttempts,
           lastFailure: null, validatedEvidenceRecords: validatedRecords, rejectedEvidenceDrafts: rejectedDrafts })
         try {
-          return await runFragment({ messages: evidenceMessages(request),
+          return await runFragment({ messages: evidenceMessages(request, extractionInput.depth),
             ...request.signal === undefined ? {} : { signal: request.signal }, parse: parseFocusedEvidence,
             appendRequest: data => session.append('academic/evidence-request',
               { source, phase: 'evidence', fragment, ...data }),
@@ -132,7 +133,8 @@ export function createModelFragmentEvidenceGenerator(
       throw new EvidenceError('Paper fragments exceed the estimated model input budget.', 'EVIDENCE_INPUT_TOO_LARGE')
     }
     return { scope: decision, evidence: result.evidence,
-      incompleteFragmentCount: result.incompleteFragments.length }
+      incompleteFragmentCount: extractionInput.depth === 'minimal' && result.evidence.evidenceRecords.length === 5
+        && result.failures.length === 0 ? 0 : result.incompleteFragments.length }
   }
 }
 

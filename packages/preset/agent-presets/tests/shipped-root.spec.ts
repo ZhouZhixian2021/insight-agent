@@ -148,8 +148,10 @@ describe('the shipped preset root', () => {
       initialActive: true,
       missingExitRetries: 1,
     }))
-    expect((planMode?.config as { section?: unknown } | undefined)?.section)
-      .toEqual(expect.stringContaining('Research Brief'))
+    const section = (planMode?.config as { section?: unknown } | undefined)?.section
+    expect(section).toEqual(expect.stringContaining('Research Brief'))
+    expect(section).toEqual(expect.stringContaining('concise review plan in Simplified Chinese'))
+    expect(section).toEqual(expect.stringContaining('complete system execution block'))
   })
 
   it('omits the general workflow tool only from PTC while retaining Ralph infrastructure', async () => {
