@@ -9,6 +9,8 @@ export interface AnalysisInput {
   readonly academicWorks: readonly AcademicWork[]
   readonly workVersions: readonly WorkVersion[]
   readonly evidenceRecords: readonly EvidenceRecord[]
+  /** Producer-owned question associations; absence does not establish question coverage. */
+  readonly questionLinks?: readonly { readonly evidenceId: EvidenceId; readonly question: string }[]
   readonly evidenceCards: readonly EvidenceCard[]
   readonly sourceLocators: readonly SourceLocator[]
 }
@@ -49,7 +51,7 @@ export interface PreparedWork {
   readonly versions: readonly PreparedVersion[]
 }
 
-/** Usable means at least one entry survived; it does not certify comparability or truth. */
+/** Usable means at least one card entry or standalone record survived; it does not certify comparability or truth. */
 export interface PreparedAnalysisInput {
   readonly status: 'usable' | 'no_usable_input'
   readonly works: readonly PreparedWork[]

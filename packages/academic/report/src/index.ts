@@ -1,9 +1,10 @@
 /** Markdown delivery with mandatory current-evidence evaluation and visible limitations. */
 import { evaluateClaims, type EvaluationInput, type EvaluationResult } from '@deepseek-ai/dsh-academic-eval'
 import type { AcademicWork, ClaimRecord, EvidenceRecord, ClaimEvidenceRelation } from '@deepseek-ai/dsh-academic-model'
-import type { AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
+import type { AcademicSynthesisDraft, AnalysisInput } from '@deepseek-ai/dsh-academic-analysis'
 import type { CoverageSummary } from '@deepseek-ai/dsh-academic-model'
 import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
+import { renderQuestionEvidence } from './question-evidence.ts'
 import { workBibliography, type ReportMetadata } from './bibliography.ts'
 import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval-disclosure.ts'
 
@@ -31,6 +32,8 @@ export interface ResearchReport {
 export interface ReportInput extends EvaluationInput {
   /** Producer-observed retrieval facts; omitted by legacy callers. */
   readonly retrievalDisclosure?: RetrievalDisclosure
+  /** Producer question associations; omission is disclosed and never inferred from model prose. */
+  readonly questionLinks?: AnalysisInput['questionLinks']
   /** Validated question-driven model analysis; legacy extractive callers may omit it. */
   readonly synthesis?: AcademicSynthesisDraft
   /** Observed retrieval counts, required with synthesis. */
@@ -78,6 +81,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     ...input.synthesis?.statements.flatMap(statement => statement.evidenceLinks.map(link => link.evidenceId)) ?? []])
   const evidence = input.evidence.filter(record => cited.has(record.evidenceId))
   if (evidence.some(record => !byWork.has(record.academicWorkId))) throw new Error('Cited work bibliography is missing.')
+  if (input.synthesis !== undefined && evidence.length === 0) throw new Error('No cited evidence is available for a research draft.')
   const synthesisInput = input.synthesis === undefined ? null
     : { draft: input.synthesis, coverage: requiredCoverage(input.coverage) }
   const workIds = [...new Set(evidence.map(record => record.academicWorkId))]
@@ -101,7 +105,9 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
       input.retrievalDisclosure === undefined ? '未提供实际检索渠道明细，不能据此宣称来源覆盖完整。'
         : '实际检索渠道、来源失败及数量上限见本次检索披露；引用证据来源不代表全部检索来源。', '')
     const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage, metadata)
-    lines.push(...rendered.lines)
+    const questions = renderQuestionEvidence(input.brief, synthesisInput.draft, evidence, input.questionLinks)
+    lines.push(...questions.lines, ...rendered.lines)
+    limitations.push(...questions.limitations)
     limitations.push(...rendered.unmet, '问题回答与单篇论文陈述尚未经过独立语义审核。')
     evaluation = { ...evaluation, status: evaluation.status === 'blocked' ? 'blocked' : 'needs_review',
       issues: [...evaluation.issues, { claimId: null, code: 'question_review_required', message: '逐题回答仍需内容审核。' },

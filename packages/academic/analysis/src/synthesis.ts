@@ -106,6 +106,11 @@ scope_and_method, references and evidence_appendix are host-rendered: empty stat
 For every other section, statementIndexes and missingReason are mutually exclusive. Non-empty statementIndexes require
 missingReason:null; empty statementIndexes require an explicit non-empty missingReason. Never provide both. This rule also
 applies to limitations and research_gaps. Indexes refer to statements, not evidence.
+Empty card sections and not_extracted attributes are not absent paper findings: use admitted source records directly,
+without inventing complete card fields. Minimal records do not authorize final delivery or independently reviewed comparisons.
+EVIDENCE_READING_GUIDE_JSON.questionCoverage contains producer question associations when supplied; null means unavailable,
+not complete coverage. For an answered question, use supporting evidence associated with that exact approved question.
+With no associated evidence, mark it unanswered; do not use background, keyword matches or another question's evidence as coverage.
 Every statement must be used by a section or question; do not duplicate text to inflate length. Always disclose limitations.
 Describe gaps in THIS RUN in limitations, questionAnswers.reason or sections.missingReason, not as unsupported synthesis statements.
 For limitations or research_gaps sections without supported conclusions, use empty statementIndexes and an explicit missingReason.

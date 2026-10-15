@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 `dsh-client-ui-user-questions` is the web question feature plugin: its browser half registers the `question` entry in the conversation-owned `conversation.composer` chain, so when the agent asks the user a question the composer is taken over by the question UI. The component renders one question at a time with progress navigation, single- and multi-select choices, recommendation badges, and custom answers, and submits one structured answer batch for the whole request. A request whose single question declares a presentation intent renders as that intent's own surface instead — notably the `plan-review` waiting-approval card with `Chat about it` / `Refuse` / `Approve`. Its host half is empty on purpose: mounting `dsh-tool-ask-user` there would put the tool in the registry's global layer and merge it into every agent regardless of the preset that composed it.
 
+Academic review bodies containing the six concise Chinese decision labels render those labels as separate paragraphs without truncating scope or changing the pending plan. The card offers a localized revision field; submitting non-empty natural-language feedback sends the existing custom-only question answer, never consent. Approval is disabled while the revision field is open, failed submission retains the text, and a new request renders a fresh review. The Agent regenerates the readable plan and execution data; the client neither rewrites JSON nor certifies their semantic agreement.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

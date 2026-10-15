@@ -7,7 +7,7 @@
 // Replay is deterministic: the plan content arrives from replayed chunks, the
 // review wait is real, and the approve click is the test's own gesture (the
 // turn cannot complete without it, in record and replay alike).
-import { readFile } from 'node:fs/promises'
+import { readFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import type { Browser, Page } from 'playwright'
@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import {
   assertFixtureInventory, captureExpandedTurnProcessAria, captureStableAria,
-  compareOrRefreshGolden, fixtureUserPrompts,
+  compareOrRefreshGolden, fixtureUserPrompts, seedSession,
   launchWebScaffold, recordFixture, watchConsole, webSnapshotMode, type WebScaffold,
 } from './scaffold.ts'
 import { connectFreshWorkspace, newEnglishPage, saveFailureShot } from './support.ts'
@@ -128,5 +128,59 @@ describe('web e2e: plan review takeover round trip', () => {
       'session.v2.jsonl', 'review.expected.md', 'sidebar.expected.md',
       'approved.expected.md', 'approved-expanded.expected.md',
     ])
+  })
+})
+
+
+describe('academic concise approval browser flow', () => {
+  it('revises the fixed academic plan through the real question service without editing execution JSON', async () => {
+    const scaffold = await launchWebScaffold({})
+    const abort = new AbortController()
+    try {
+      const id = await seedSession(scaffold, await readFile('snapshots/web/seeded-history/session.v2.jsonl', 'utf8'), 'concise-plan-review')
+      await scaffold.ctx.sessionController.rename({ sessionId: id, title: 'Concise academic review' })
+      const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
+      try {
+        const page = await newEnglishPage(browser, 900)
+        await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+        await page.getByText('Ungrouped', { exact: true }).click()
+        await page.getByText('Concise academic review', { exact: true }).click()
+        await page.locator('[data-composer-input]').first().waitFor()
+        const agent = scaffold.ctx.agents.roots().find(item => item.session.id === id)
+        if (agent === undefined) throw new Error('Selected session must have a live root agent')
+        const plan = await readFile('z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', 'utf8')
+        const request = (detail: string) => scaffold.ctx.userQuestions.ask({ agent, signal: abort.signal,
+          questions: [{ id: 'plan-review', question: 'Review this research plan', detail,
+            options: [{ label: 'Approve' }, { label: 'Keep planning' }], intent: { kind: 'plan-review', approve: 'Approve' } }] })
+        const response = request(plan)
+        void response.catch(() => {})
+        const card = page.locator('[data-plan-review-key]')
+        await card.waitFor()
+        expect(await card.locator('details').getAttribute('open')).toBeNull()
+        expect(await card.innerText()).toContain('研究范围：')
+        const capture = process.env.DSH_ACADEMIC_CAPTURE_DIR
+        if (capture !== undefined) {
+          await mkdir(capture, { recursive: true })
+          await page.screenshot({ path: join(capture, 'concise-review.png') })
+        }
+        await card.getByRole('button', { name: 'Revise plan', exact: true }).click()
+        await card.getByRole('textbox', { name: 'Revise the research plan' }).fill('不纳入预印本。\n保留未回答问题的说明。')
+        expect(await card.getByRole('button', { name: 'Approve', exact: true }).isDisabled()).toBe(true)
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'concise-revision.png') })
+        await card.getByRole('button', { name: 'Request a revised plan' }).click()
+        expect(await response).toEqual({ answers: [{ id: 'plan-review', selected: [], custom: '不纳入预印本。\n保留未回答问题的说明。' }] })
+        await card.waitFor({ state: 'detached' })
+        // The second request is a fixed revised plan, not a claim of real-model regeneration.
+        const revised = request(plan.replace('允许预印本', '不纳入预印本').replace('"allowPreprints": true', '"allowPreprints": false')
+          .replace('"preprint", ', ''))
+        void revised.catch(() => {})
+        await card.waitFor()
+        expect(await card.getByRole('textbox').count()).toBe(0)
+        expect(await card.innerText()).toContain('不纳入预印本')
+        if (capture !== undefined) await page.screenshot({ path: join(capture, 'concise-revised.png') })
+        await card.getByRole('button', { name: 'Approve', exact: true }).click()
+        expect(await revised).toEqual({ answers: [{ id: 'plan-review', selected: ['Approve'] }] })
+      } finally { abort.abort(); await browser.close() }
+    } finally { abort.abort(); await scaffold.close() }
   })
 })

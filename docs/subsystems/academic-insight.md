@@ -7,6 +7,8 @@ kind: "subsystem"
 
 English | [中文](academic-insight.zh.md)
 
+The analysis-local `AnalysisInput` and report-local `ReportInput` accept optional producer question/evidence associations as `questionLinks`; they do not change Academic Model or Remote fields. Empty card sections retain individually valid minimal evidence, and absent question associations remain disclosed rather than inferred. The workflow integrator owns forwarding these optional associations.
+
 ## Summary
 
 Academic insight is an optional business subsystem built on harness extension points.

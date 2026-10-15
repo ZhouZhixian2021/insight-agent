@@ -119,11 +119,12 @@ describe('analysis input preparation', () => {
     expect(prepareAnalysisInput(batch(a)).works[0]!.versions[0]!.cards[0]!.methods).toEqual([])
   })
 
-  it('returns no usable input for empty batches and cards with no entries', () => {
+  it('retains valid standalone records with empty card sections', () => {
     expect(prepareAnalysisInput(batch()).status).toBe('no_usable_input')
     const a = paper('a')
     a.card = { ...a.card, methods: [], datasets: [], metrics: [] }
-    expect(prepareAnalysisInput(batch(a)).status).toBe('no_usable_input')
+    expect(prepareAnalysisInput(batch(a)).status).toBe('usable')
+    expect(prepareAnalysisInput({ ...batch(a), evidenceRecords: [] }).status).toBe('no_usable_input')
   })
 
   it.each(['academicWorks', 'workVersions', 'evidenceRecords', 'sourceLocators', 'evidenceCards'] as const)('refuses ambiguous duplicate IDs in %s', (key) => {

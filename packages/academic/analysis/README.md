@@ -45,6 +45,8 @@ Unavailable entry fields retain their original `Availability` values and generat
 
 See the [fixed synthetic tests](tests/prepare.spec.ts) and [shared model](../model/README.md). No invariant companion is published because this library owns no divergent runtime observations; focused tests check its returned relationships.
 
+Minimal extraction may provide an empty or partial six-section card. Preparation retains standalone records not assigned to a card entry after the same work/version, locator, level and hash checks; synthesis still requires locatable excerpts and known matching hashes. It never manufactures card fields. Optional `AnalysisInput.questionLinks` reuses producer `EvidenceQuestionLink` records: admission filters them to retained evidence and approved questions, the model reading guide preserves them, and parsing downgrades answers without matching supporting associations. Missing associations retain legacy structural behavior and do not certify semantic coverage. Workflow forwarding of these optional associations belongs to the integrator.
+
 <a id="model-experience"></a>
 ## Model Experience
 
