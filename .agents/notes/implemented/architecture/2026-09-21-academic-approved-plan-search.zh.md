@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-Academic 预设在生成 Research Brief 的同一轮计划中生成查询。第 3 版结构化计划交接必须包含 `searchPlan`，每项包括实际 `query`、中文 `purpose`、对计划 `questions` 的引用，以及获批的 `retrieval` 策略。可读中文计划说明启用的渠道、直接 Academic Provider、引用核验 Provider 及 Web 发现和核验预算；用户无需填写 id、枚举或 JSON。
+Academic 预设在生成 Research Brief 的同一轮计划中生成查询。第 3 版结构化计划交接必须包含 `searchPlan`，每项包括实际 `query`、中文 `purpose`、对计划 `questions` 的引用，以及获批的 `retrieval` 策略。可读中文计划概括发现方式和用户指定的来源限制；准确检索词、来源列表和逐条查询预算留在结构化执行块。[简洁审核计划决策](2026-10-14-academic-concise-review-plan.zh.md)规定审批文字。用户无需填写 id、枚举或 JSON。
 
 第一版策略支持 `academic` 与 `web_discovery`。直接检索允许 OpenAlex 与 arXiv；引用核验允许 OpenAlex、arXiv、ACL、PMLR 与 CVF。Web 发现和核验上限为非负数且不得超过 8，并且只在启用 Web 发现时必须为正数。Provider 列表只在对应渠道需要时必须非空。校验拒绝未知或重复渠道/Provider、空白或不支持的 Provider、未知字段、负数或超限预算，以及检索表达相同但策略不同的重复项。
 

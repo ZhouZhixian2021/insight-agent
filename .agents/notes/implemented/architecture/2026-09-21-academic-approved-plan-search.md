@@ -10,7 +10,7 @@ Users approved research intent but then had to supply search expressions in a se
 
 ## Decision
 
-The Academic preset generates searches in the same planning turn as the Research Brief. Version-3 structured plan handoffs require `searchPlan`, whose entries contain an exact `query`, Chinese `purpose`, links to the plan's `questions`, and an approved `retrieval` policy. The readable Chinese plan explains enabled channels, direct Academic providers, reference-verification providers, and Web-discovery and verification budgets; users do not author ids, enums, or JSON.
+The Academic preset generates searches in the same planning turn as the Research Brief. Version-3 structured plan handoffs require `searchPlan`, whose entries contain an exact `query`, Chinese `purpose`, links to the plan's `questions`, and an approved `retrieval` policy. The readable Chinese plan summarizes discovery and user-specified source limits; exact queries, provider lists, and per-query budgets remain in the structured block. The [concise review plan decision](2026-10-14-academic-concise-review-plan.md) owns the approval text. Users do not author ids, enums, or JSON.
 
 The first policy version supports `academic` and `web_discovery`. Direct search permits OpenAlex and arXiv; reference verification permits OpenAlex, arXiv, ACL, PMLR, and CVF. Web-discovery and verification bounds are non-negative and capped at eight; each must be positive exactly when Web discovery is enabled. Provider lists must be non-empty exactly when their channel needs them. Validation rejects unknown or duplicate channels/providers, blank or unsupported providers, unknown fields, negative or excessive bounds, and duplicate query expressions with different policies.
 

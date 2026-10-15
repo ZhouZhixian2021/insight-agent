@@ -160,7 +160,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:168`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -171,7 +171,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:162`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -182,7 +182,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:164`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:166`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 

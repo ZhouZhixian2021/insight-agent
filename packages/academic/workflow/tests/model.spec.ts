@@ -162,6 +162,25 @@ describe('durable academic model extraction', () => {
     expect(verified[0]?.data.evidence.evidenceRecords).toHaveLength(1)
     expect(result.evidence.evidenceRecords).toHaveLength(2)
   })
+  it('uses minimal depth for one paper without treating the five-record cap as a failed fragment', async () => {
+    const f = await fixture()
+    const facts = Array.from({ length: 5 }, (_, index) => `Fact ${index + 1}.`)
+    const source = { ...f.source, segments: [
+      { text: `${facts.join(' ')}${' x'.repeat(1_600)}`, locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: `Later material.${' y'.repeat(1_600)}`, locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ] }
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: JSON.stringify({ evidence: facts.map(fact => ({
+      segmentIndex: 0, questionIndexes: [0], sourcedStatement: fact, verbatimExcerpt: fact, section: 'findings',
+    })) }) }, { type: 'finish', reason: { kind: 'stop' } }]
+    const generate = createModelFragmentEvidenceGenerator(f.ctx, f.session, config, { ...policy, depth: 'minimal' })
+    const result = await generate(source, scope)
+    expect(result.evidence.evidenceRecords).toHaveLength(5)
+    expect(result.incompleteFragmentCount).toBe(0)
+    expect(f.adapter.calls).toHaveLength(1)
+    const prompt = f.adapter.calls[0]?.messages[0]?.content[0]
+    expect(prompt?.type === 'text' ? prompt.text : '').toContain('Return at most 5 entries')
+    expect((await f.read()).filter(event => event.type === 'academic/evidence-fragment-verified')).toHaveLength(1)
+  })
   it('stops formal extraction when a verified fragment cannot be durably saved', async () => {
     const f = await fixture(), draft = draftFixture()
     const flush = f.ctx.sessions.flush.bind(f.ctx.sessions)

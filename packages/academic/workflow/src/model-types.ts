@@ -96,6 +96,8 @@ export interface EvidenceModelPolicy {
 
 /** Evidence extraction policy with deterministic batching and one bounded local-timeout split when maxAttempts exceeds one. */
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
+  /** Formal fragment extraction depth; omitted keeps complete extraction for existing callers. */
+  readonly depth?: 'minimal' | 'complete'
   /** Maximum estimated input tokens sent in one evidence batch; omitted keeps one request per paper. */
   readonly inputBatchTokenLimit?: number
   /** Repeated source characters at adjacent split boundaries. */

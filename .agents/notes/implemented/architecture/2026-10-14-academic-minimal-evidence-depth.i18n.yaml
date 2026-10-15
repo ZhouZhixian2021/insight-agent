@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-14-academic-minimal-evidence-depth.md
-2026-10-14-academic-minimal-evidence-depth.md: 553a64410f7bfd3e3621a23af59ae47740283277
-2026-10-14-academic-minimal-evidence-depth.zh.md: b2389349e1838003f6ba5810036554cad35772ac
+2026-10-14-academic-minimal-evidence-depth.md: 2c5fe6c0009cea9bb14fbd6e63848cf5a663b172
+2026-10-14-academic-minimal-evidence-depth.zh.md: 2b1ec7caa742121d782d3214f629ef977a7ac26e

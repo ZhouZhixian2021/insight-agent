@@ -28,8 +28,8 @@ The [scope/extraction separation](2026-10-11-academic-paper-screening-evidence-p
 
 ## Consequences
 
-The opt-in library path bounds retained evidence and avoids further calls at the cap. It preserves partial evidence without certifying semantic support or formal delivery. [Fragment priority and recovery](2026-10-14-academic-fragment-priority-recovery.md) owns minimal reading order and smaller-input recovery; enhancement and real-model performance calibration remain separate work. The Academic workflow does not select minimal depth until its owner integrates it.
+The Controller selects minimal depth for formal research runs; lower-level callers that omit the depth policy retain complete extraction. The workflow treats a clean five-record cap as an intentional stop, while fragment failures and rejected drafts remain visible. The path bounds retained evidence without certifying semantic support or formal delivery. [Fragment priority and recovery](2026-10-14-academic-fragment-priority-recovery.md) owns minimal reading order and smaller-input recovery; enhancement and real-model performance calibration remain separate work.
 
 ## Verification
 
-Owner-local tests cover question-link rejection, quote rejection, the direct and paper-wide caps, retained identities at the sink, incomplete retry siblings and the fixed A-PE1 timeout handoff. Existing extraction and fragment tests cover cancellation, sink failure and complete extraction. No real-model latency improvement is asserted.
+Owner-local tests cover question-link rejection, quote rejection, the direct and paper-wide caps, retained identities at the sink, incomplete retry siblings and the fixed A-PE1 timeout handoff. Workflow model tests cover the formal minimal request, durable verified fragment, paper cap and clean-stop status. Existing extraction and fragment tests cover cancellation, sink failure and complete extraction. No real-model latency improvement is asserted.
