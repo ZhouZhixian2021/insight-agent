@@ -10,6 +10,7 @@ export { createEvidenceRecord } from './record.ts'
 export { createEvidenceCard } from './card.ts'
 export { extractEvidenceFromContent } from './extract.ts'
 export { extractEvidenceInFragments } from './fragments.ts'
+export { enhanceEvidenceInFragments } from './enhance.ts'
 export type {
   EvidenceFragmentPolicy, EvidenceFragmentSourceRange, EvidenceFragmentRange, EvidenceFragmentAttempt,
   EvidenceFragmentFailureCategory, EvidenceFragmentFailure, EvidenceFragmentOptions, EvidenceFragmentResult,
