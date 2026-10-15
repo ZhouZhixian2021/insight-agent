@@ -36,6 +36,16 @@ function distinctRecord(base: AcademicSourceWork, key: string): AcademicSourceWo
 }
 
 describe('single-pass research draft', () => {
+  it('passes verified question associations to synthesis and the report', async () => {
+    const { input, adapters } = fixture()
+    const result = await runResearchDraft(input, adapters)
+    const accepted = result.papers.flatMap(paper => paper.status === 'extracted' || paper.status === 'partially_extracted'
+      ? paper.evidence.questionLinks : [])
+    expect(adapters.synthesize).toHaveBeenCalledOnce()
+    expect(vi.mocked(adapters.synthesize).mock.calls[0]?.[0].analysisInput.questionLinks).toEqual(accepted)
+    expect(result.report?.markdown).toContain('## 研究问题与证据核对')
+    expect(result.report?.markdown).not.toContain('未提供抽取关联')
+  })
   it('rejects evidence replaced during synthesis against the independently captured extraction batch', async () => {
     const { input, adapters } = fixture()
     const synthesize = adapters.synthesize

@@ -11,9 +11,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
 const runAcademicResearchDraft = vi.hoisted(() => vi.fn<RunAcademicResearchDraft>())
+type RunAcademicEvidenceEnhancement = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicEvidenceEnhancement']
+const runAcademicEvidenceEnhancement = vi.hoisted(() => vi.fn<RunAcademicEvidenceEnhancement>())
 vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
   ...await load<typeof import('@deepseek-ai/dsh-academic-workflow')>(),
-  runAcademicResearchDraft,
+  runAcademicResearchDraft, runAcademicEvidenceEnhancement,
 }))
 
 import AcademicResearchController from '../src/index.ts'
@@ -25,6 +27,7 @@ import { runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 const contexts: Context[] = []
 afterEach(async () => {
   runAcademicResearchDraft.mockReset()
+  runAcademicEvidenceEnhancement.mockReset()
   await Promise.all(contexts.splice(0).map(ctx => ctx.fiber.dispose()))
 })
 
@@ -230,13 +233,23 @@ async function harness(options: {
           seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as never
       },
       requestHeader: () => options.header === false ? undefined : { config: selected },
-      append: (...args: unknown[]) => { sessionEvents.push(args) },
+      append: (...args: unknown[]) => {
+        const index = sessionEvents.push(args)
+        return { type: args[0], data: args[1], seq: approvedPlanEvents.length + index,
+          time: Date.parse('2026-10-09T00:00:00Z') + index - 1 }
+      },
     },
     runMaintenance: options.busy ? () => { throw new Error('already has active work') }
       : (task: (maintenanceSignal: AbortSignal) => Promise<unknown>) => task(signal),
   }
   const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
+  ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
+  ctx.provide('sessionPersistence', { open: () => Promise.resolve({
+    read: (seq: number) => Promise.resolve((agent.session.snapshotEvents() as Array<{ seq: number }>).filter(
+      event => event.seq === seq)),
+    [Symbol.asyncDispose]: () => Promise.resolve(),
+  }) } as never)
   const controller = new AcademicResearchController(ctx, {
     fulltextFetchProvider: 'academic-raw',
     extractionMaxTokens: 16_384,
@@ -252,6 +265,66 @@ async function harness(options: {
 }
 
 describe('AcademicResearchController', () => {
+  it('enhances only one selected paper after a completed first-tier run and retains the draft', async () => {
+    const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(1)
+    const work = retrievalWork(pipeline.records[0]!, '1706.03762')
+    fixture.searchProviders.mockResolvedValue({ works: [work], batch: createBatchResult([work], []),
+      providers: ['arxiv'], discoveredRecords: 1, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+      sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const first = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    const selected = first.papers.find(paper => paper.status === 'extracted' || paper.status === 'partially_extracted')
+    expect(selected).toBeDefined()
+    const request = { sessionId: fixture.sessionId, retrievalRunId: first.retrievalRun.retrievalRunId,
+      workVersionId: selected!.workVersionId }
+    runAcademicEvidenceEnhancement.mockImplementation(async ({ initial }) => ({
+      evidence: { ...initial, evidenceRecords: [...initial.evidenceRecords, initial.evidenceRecords[0]!] },
+      failures: [], incompleteFragments: [],
+    }))
+    const result = await fixture.controller.enhanceEvidence(request, fixture.signal)
+    expect(result).toMatchObject({ status: 'completed', addedEvidenceRecords: 1, incompleteFragments: 0 })
+    expect(runAcademicEvidenceEnhancement).toHaveBeenCalledOnce()
+    expect(first.report).not.toBeNull()
+    expect(fixture.sessionEvents.map(([name]) => name)).toEqual(expect.arrayContaining([
+      'academic/evidence-enhancement-selection', 'academic/evidence-enhancement-settlement',
+    ]))
+    await expect(fixture.controller.enhanceEvidence(request, fixture.signal)).rejects.toThrow('已经选择一篇')
+    expect(runAcademicEvidenceEnhancement).toHaveBeenCalledOnce()
+  })
+  it('keeps the completed first-tier report when selected enhancement fails', async () => {
+    const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(1)
+    const work = retrievalWork(pipeline.records[0]!, '1706.03762')
+    fixture.searchProviders.mockResolvedValue({ works: [work], batch: createBatchResult([work], []),
+      providers: ['arxiv'], discoveredRecords: 1, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+      sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const first = await fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
+    const selected = first.papers.find(paper => paper.status === 'extracted' || paper.status === 'partially_extracted')
+    expect(selected).toBeDefined()
+    runAcademicEvidenceEnhancement.mockRejectedValueOnce(new Error('model unavailable'))
+    await expect(fixture.controller.enhanceEvidence({ sessionId: fixture.sessionId,
+      retrievalRunId: first.retrievalRun.retrievalRunId, workVersionId: selected!.workVersionId }, fixture.signal))
+      .rejects.toThrow('model unavailable')
+    expect(first.report).not.toBeNull()
+    expect(fixture.sessionEvents.find(([name]) => name === 'academic/evidence-enhancement-settlement')?.[1])
+      .toMatchObject({ status: 'failed', addedEvidenceRecords: 0 })
+  })
   it('reports unavailable sessions and unreadable history during preview without running research', async () => {
     const missing = await harness({ resolveError: true })
     await expect(missing.controller.plan(missing.sessionId)).rejects.toThrow('missing Session')

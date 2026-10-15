@@ -291,6 +291,7 @@ export async function runResearchDraft(
       analysisInput: { academicWorks: ingested.works.filter(work => successfulWorks.has(work.academicWorkId)),
         workVersions: extracted.map(result => result.version),
         evidenceRecords: extracted.flatMap(result => result.evidence.evidenceRecords),
+        questionLinks: extracted.flatMap(result => result.evidence.questionLinks),
         evidenceCards: extracted.map(result => result.evidence.evidenceCard),
         sourceLocators: extracted.flatMap(result => result.evidence.sourceLocators) },
       coverageSummary: settle(false).retrievalRun.coverageSummary, sourceFailures: providerFailures })
@@ -782,6 +783,7 @@ export async function runResearchDraft(
     report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
       admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
       evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
+      questionLinks: admission.input.analysisInput.questionLinks,
       sourceLocators: admission.input.analysisInput.sourceLocators,
       works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic }, (operation) => {
       progress.setActivity('report', { kind: 'report', stage: 'report', operation, attempt: null,

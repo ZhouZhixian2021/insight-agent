@@ -16,7 +16,7 @@ import { createModelEvidenceGenerator, extractPaperEvidence, runAcademicResearch
 import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-ai/dsh-academic-analysis'
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages, scopeMessages } from '../src/model-prompt.ts'
-import { createModelFragmentEvidenceGenerator } from '../src/fragment-model.ts'
+import { createModelFragmentEvidenceEnhancer, createModelFragmentEvidenceGenerator } from '../src/fragment-model.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
   { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
@@ -138,6 +138,24 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it('supplements committed minimal evidence without replacing its identity or scope decision', async () => {
+    const f = await fixture()
+    const source = { ...f.source, segments: [{ text: 'Uses Method X. Uses Method Y.',
+      locator: { kind: 'paragraph' as const, paragraphNumber: 1 } }] }
+    const minimal = await createModelFragmentEvidenceGenerator(f.ctx, f.session, config,
+      { ...policy, depth: 'minimal' })(source, scope)
+    expect(minimal.evidence.evidenceRecords).toHaveLength(1)
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: JSON.stringify({ evidence: [{ segmentIndex: 0,
+      questionIndexes: [0], sourcedStatement: 'Uses Method Y.', verbatimExcerpt: 'Uses Method Y.', section: 'methods' }] }) },
+    { type: 'finish', reason: { kind: 'stop' } }]
+    const enhanced = await createModelFragmentEvidenceEnhancer(f.ctx, f.session, config, policy)(source, minimal.evidence)
+    expect(enhanced.evidence.evidenceRecords).toHaveLength(2)
+    expect(enhanced.evidence.evidenceRecords[0]).toEqual(minimal.evidence.evidenceRecords[0])
+    expect(enhanced.evidence.evidenceCard.evidenceCardId).toBe(minimal.evidence.evidenceCard.evidenceCardId)
+    expect(f.adapter.scopeCalls).toHaveLength(1)
+    expect((await f.read()).filter(event => event.type === 'academic/evidence-fragment-verified'
+      && event.data.purpose === 'enhancement')).toHaveLength(1)
+  })
   it('saves a verified fragment before a later transport failure and retries only that range', async () => {
     const f = await fixture()
     const source = { ...f.source, segments: [{ text: `Uses Method X. ${'a'.repeat(3980)}Uses Method X.`,

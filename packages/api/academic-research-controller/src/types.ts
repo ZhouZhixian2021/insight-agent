@@ -35,6 +35,21 @@ export interface AcademicResearchRunRequest {
   readonly synthetic: boolean
 }
 
+/** User-selected paper from a completed first-tier research run. */
+export interface AcademicEvidenceEnhancementRequest {
+  readonly sessionId: SessionId
+  readonly retrievalRunId: RetrievalRunId
+  readonly workVersionId: WorkVersionId
+}
+
+/** Separate second-tier result; the original report remains a first-tier draft. */
+export interface AcademicEvidenceEnhancementView extends AcademicEvidenceEnhancementRequest {
+  readonly status: 'completed' | 'partial_success'
+  readonly initialEvidenceRecords: number
+  readonly addedEvidenceRecords: number
+  readonly incompleteFragments: number
+}
+
 /** Host-owned task identity independent of a browser stream and the workflow retrieval ID. */
 export type AcademicBackgroundRunId = string
 

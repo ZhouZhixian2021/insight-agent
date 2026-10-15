@@ -359,10 +359,16 @@ export interface Config {
   readonly gapRoundMaximumQueriesPerRound?: number
   /** Maximum Academic results per gap-round query. Defaults to 20. */
   readonly gapRoundMaximumAcademicResultsPerQuery?: number
+  /** Total wall-clock bound for one selected paper's second-tier pass. Defaults to 180,000 ms. */
+  readonly enhancementMaximumElapsedMs?: number
+  /** Per-fragment model timeout during second-tier extraction. Defaults to 60,000 ms. */
+  readonly enhancementAttemptTimeoutMs?: number
+  /** Maximum output tokens per second-tier fragment. Defaults to 8,192. */
+  readonly enhancementMaxTokens?: number
 }
 ```
 
-来源：[`packages/api/academic-research-controller/src/index.ts:45`](../packages/api/academic-research-controller/src/index.ts)
+来源：[`packages/api/academic-research-controller/src/index.ts:51`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

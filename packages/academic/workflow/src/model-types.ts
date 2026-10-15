@@ -52,6 +52,8 @@ export interface EvidenceFragmentVerifiedRecord {
   readonly source: EvidenceModelSource
   readonly fragment: EvidenceFragmentAttempt
   readonly evidence: EvidenceExtractionResult
+  /** Present only for a user-selected, post-draft second-tier addition. */
+  readonly purpose?: 'enhancement'
 }
 
 /** Complete paper-local extraction activity observed by A's workflow adapter. */

@@ -28,7 +28,7 @@ export type {
 } from './progress.ts'
 export { runResearchDraft } from './pipeline.ts'
 export { runModelResearchDraft } from './model-pipeline.ts'
-export { runAcademicResearchDraft } from './entry.ts'
+export { runAcademicResearchDraft, runAcademicEvidenceEnhancement } from './entry.ts'
 export { executeHybridSearch } from './hybrid-search.ts'
 export type { HybridRunObservation } from './hybrid-run.ts'
 export type {
@@ -55,7 +55,7 @@ export type {
 } from './candidate-batches.ts'
 export { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 export type { PaperCandidateResolver } from './selection.ts'
-export type { AcademicResearchDraftRequest, AcademicResearchDraftResult } from './entry.ts'
+export type { AcademicResearchDraftRequest, AcademicResearchDraftResult, AcademicEvidenceEnhancementRequest } from './entry.ts'
 export type {
   CandidateScheduling,
   DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftPipelineSearch, DraftSearchResult,
@@ -64,6 +64,7 @@ export type {
 export type {
   AcademicRunSettlementEvent, AcademicSearchPlanEvent, AcademicSearchPlanQueryEvent,
   AcademicSettlementFact, AcademicSettlementObserver,
+  AcademicEvidenceEnhancementSelectionEvent, AcademicEvidenceEnhancementSettlementEvent,
 } from './settlement-events.ts'
 export type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent,
   AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'
