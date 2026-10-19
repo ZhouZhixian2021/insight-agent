@@ -139,16 +139,26 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     lines.push(`${references.get(work.academicWorkId)}. ${workBibliography(work, metadata, evidence)}`)
   }
   lines.push('', '## 证据附录', '')
-  for (const record of evidence) {
-    let url = '来源 URL 不可用'
-    try {
-      const parsed = new URL(record.sourceUrl)
-      if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.username === '' && parsed.password === '') url = parsed.href.replace(/[<>\s]/gu, encodeURIComponent)
-    } catch { /* An invalid provider URL is retained in the raw record but never emitted as an active link. */ }
-    lines.push(`### ${escapeMarkdown(record.evidenceId)}`, '',
-      `实际证据版本：${escapeMarkdown(record.workVersionId)}；证据等级：${record.level}；获取时间：${escapeMarkdown(record.retrievedAt)}`,
-      `来源：${url.startsWith('http') ? `<${url}>` : url}；定位：${escapeMarkdown(record.sourceLocatorId)}`, '',
-      `> ${escapeMarkdown(record.verbatimExcerpt.status === 'available' ? record.verbatimExcerpt.value : '原文不可用，无法直接核验。')}`, '')
+  const appendixWorks = input.works.filter(work => references.has(work.academicWorkId)).toSorted((a, b) =>
+    a.title.localeCompare(b.title, 'zh-CN') || a.academicWorkId.localeCompare(b.academicWorkId, 'en'))
+  for (const work of appendixWorks) {
+    lines.push(`### [${references.get(work.academicWorkId)}] ${escapeMarkdown(work.title || work.academicWorkId)}`, '')
+    const versions = [...new Set(evidence.filter(record => record.academicWorkId === work.academicWorkId)
+      .map(record => record.workVersionId))].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+    for (const version of versions) {
+      lines.push(`#### 版本 ${escapeMarkdown(version)}`, '')
+      for (const record of evidence.filter(record => record.academicWorkId === work.academicWorkId && record.workVersionId === version)) {
+        let url = '来源 URL 不可用'
+        try {
+          const parsed = new URL(record.sourceUrl)
+          if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.username === '' && parsed.password === '') url = parsed.href.replace(/[<>\s]/gu, encodeURIComponent)
+        } catch { /* An invalid provider URL is retained in the raw record but never emitted as an active link. */ }
+        lines.push(`##### ${escapeMarkdown(record.evidenceId)}`, '',
+          `实际证据版本：${escapeMarkdown(record.workVersionId)}；证据等级：${record.level}；获取时间：${escapeMarkdown(record.retrievedAt)}`,
+          `来源：${url.startsWith('http') ? `<${url}>` : url}；定位：${escapeMarkdown(record.sourceLocatorId)}`, '',
+          `> ${escapeMarkdown(record.verbatimExcerpt.status === 'available' ? record.verbatimExcerpt.value : '原文不可用，无法直接核验。')}`, '')
+      }
+    }
   }
   const body = `${lines.join('\n').trimEnd()}\n`
   const markdown = input.retrievalDisclosure === undefined ? body : appendRetrievalDisclosure(body, input.retrievalDisclosure)
