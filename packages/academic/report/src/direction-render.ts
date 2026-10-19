@@ -11,12 +11,13 @@ import { workBibliography, type ReportMetadata } from './bibliography.ts'
  * @param evidence Admitted source records.
  * @param references Host-owned numbered bibliography.
  * @param metadata Existing producer metadata; absent values remain explicit.
- * @param statement Render a paragraph once, with later placements linking to the first occurrence.
+ * @param statement Render a paragraph once; later sections repeat its text with a link to evidence detail.
  * @param lines Shared report output buffer.
  * @returns Explicit coverage limits for omitted or rejected direction components.
  */
 export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisDraft, evidence: readonly EvidenceRecord[],
-  references: ReadonlyMap<AcademicWorkId, number>, metadata: ReportMetadata, statement: (index: number) => void, lines: string[]) {
+  references: ReadonlyMap<AcademicWorkId, number>, metadata: ReportMetadata,
+  statement: (index: number) => void, lines: string[]) {
   const unmet: string[] = []
   const directions = draft.directions ?? []
   const component = (direction: SynthesisDirection, label: string, item: DirectionComponent) => {
@@ -25,7 +26,7 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
       return
     }
     lines.push(`### ${label}`, '')
-    item.statementIndexes.forEach(statement)
+    item.statementIndexes.forEach(index => statement(index))
   }
   const executive = draft.sections.find(section => section.sectionId === 'executive_summary')
   lines.push('## 执行洞察', '')
@@ -55,7 +56,7 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
     for (const theme of direction.themes) {
       if (theme.statementIndexes.length === 0) { unmet.push(`${direction.title}／${theme.title}：${theme.missingReason}`); continue }
       lines.push(`#### ${escapeMarkdown(theme.title)}`, '')
-      theme.statementIndexes.forEach(statement)
+      theme.statementIndexes.forEach(index => statement(index))
     }
     if (direction.themeLimit !== null) unmet.push(`${direction.title}／关注主题：${direction.themeLimit}`)
     const parts = [direction.overview, ...direction.themes, direction.mechanism, direction.keyResults,
@@ -88,11 +89,11 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
   }
   lines.push('## 跨方向综合', '')
   const cross = draft.sections.find(section => section.sectionId === 'cross_paper_analysis')
-  if (cross !== undefined) cross.statementIndexes.forEach(statement)
+  if (cross !== undefined) cross.statementIndexes.forEach(index => statement(index))
   if (cross === undefined || cross.statementIndexes.length === 0) lines.push(`证据不足：${escapeMarkdown(cross?.missingReason ?? '缺少跨方向综合依据。')}`, '')
   for (const section of draft.sections.filter(section => ['limitations', 'research_gaps'].includes(section.sectionId))) {
     lines.push(`## ${escapeMarkdown(section.title)}`, '')
-    section.statementIndexes.forEach(statement)
+    section.statementIndexes.forEach(index => statement(index))
     if (section.missingReason !== null) { unmet.push(`${section.title}：${section.missingReason}`); lines.push(`证据不足：${escapeMarkdown(section.missingReason)}`, '') }
   }
   for (const section of draft.sections.filter(section => ['technology_overview', 'paper_landscape', 'key_findings'].includes(section.sectionId))) {
@@ -101,13 +102,13 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
       continue
     }
     lines.push(`## ${escapeMarkdown(section.title)}（补充分析索引）`, '')
-    section.statementIndexes.forEach(statement)
+    section.statementIndexes.forEach(index => statement(index))
   }
   lines.push('## 逐题研究结论', '', '回答状态是模型提议，仍需独立内容审核。', '')
   for (const answer of draft.questionAnswers) {
     lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown((brief.questions[answer.questionIndex] as string))}`, '',
       `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
-    answer.statementIndexes.forEach(statement)
+    answer.statementIndexes.forEach(index => statement(index))
     if (answer.reason !== null) { unmet.push(`问题 ${answer.questionIndex + 1}：${answer.reason}`); lines.push(`证据缺口：${escapeMarkdown(answer.reason)}`, '') }
   }
   if (unmet.length > 0) lines.push('## 方法补充：方向覆盖限制', '', ...unmet.map(reason => `- ${escapeMarkdown(reason)}`), '')

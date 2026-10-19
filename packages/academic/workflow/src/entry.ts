@@ -17,6 +17,8 @@ export interface AcademicResearchDraftRequest {
   readonly session: Session
   /** Exact model route and generation controls; omitted reasoning uses the model route default. */
   readonly model: LlmCallConfig
+  /** Optional output controls for final synthesis on the same selected model route. */
+  readonly synthesisModel?: LlmCallConfig
   /** Separate bounded recovery policies for evidence extraction and final synthesis. */
   readonly modelPolicies: AcademicModelPolicies
   /** Approved Brief, search request and synthetic-data disclosure. */
@@ -48,6 +50,8 @@ export async function runAcademicResearchDraft(
   const llm = request.ctx.get('llm')
   if (!llm) throw new Error('Academic research requires the DSH llm service.')
   const model = await llm.resolveCallConfig(request.model, request.signal)
+  const synthesisModel = request.synthesisModel === undefined ? model
+    : await llm.resolveCallConfig(request.synthesisModel, request.signal)
   const result = await runModelResearchDraft(
     request.ctx,
     request.session,
@@ -56,6 +60,7 @@ export async function runAcademicResearchDraft(
     request.input,
     request.adapters,
     request.signal,
+    synthesisModel,
   )
   return { ...result, sessionId: request.session.id }
 }

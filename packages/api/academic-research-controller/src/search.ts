@@ -3,7 +3,8 @@ import { createBatchResult, isExecutableResearchBrief, type AcademicCandidateRan
   type AcademicWorkId, type Availability, type CandidateAssessment, type CandidateFulltextAvailability,
   type CandidateScreeningDetails, type ExecutableResearchBrief, type HybridSearchPlan,
   type ResearchBrief, type ResearchQuestionCoverageResult, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
-import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps, rankPlannedCandidates,
+import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps, preReviewHardExclusions,
+  rankPlannedCandidates,
   type PlannedSearchAdapters, type PlannedSearchRoundResult,
   type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
 import { dedupKeys, ingestWorks, metadataForVersion, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
@@ -53,6 +54,7 @@ export type CandidateReviewer = (input: CandidateReviewInput,
  * @param onPlan Optional observer for the exact reviewed plan used by formal execution.
  * @param candidateScreening Optional metadata cues from that same approved plan.
  * @param reviewCandidate Optional Session-backed semantic review of canonical scholarly metadata.
+ * @param initialAcademicResultsPerQuery Independent bound for raw Academic records before candidate screening.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -65,6 +67,7 @@ export function approvedPaperAdapters(
   onPlan?: (plan: HybridSearchPlan) => void,
   candidateScreening?: AcademicCandidateScreening,
   reviewCandidate?: CandidateReviewer,
+  initialAcademicResultsPerQuery?: number,
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'replenishCandidates'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
@@ -88,6 +91,8 @@ export function approvedPaperAdapters(
       const version = versions.get(work.canonicalVersionId)
       if (version === undefined) throw new Error('Candidate review requires its canonical scholarly version.')
       const metadata = metadataForVersion(ingested.index, version)
+      if (preReviewHardExclusions(work, version, plan, approvedBrief, metadata).length > 0
+        || resolveFullText(version, resolutions, academicSource, key) === null) continue
       const reviewed = await reviewCandidate({ academicWorkId: work.academicWorkId, title: work.title,
         abstract: metadata.abstract, keywords: metadata.keywords, brief: approvedBrief, plan, criteria }, signal)
       attemptedReviews.add(work.academicWorkId)
@@ -103,7 +108,8 @@ export function approvedPaperAdapters(
         throw new Error('Search expression is not in the approved plan.')
       }
       const result = await executeApprovedSearchDirection(handoff, directionIndex,
-        request.maxResults ?? approvedBrief.stopConditions.maximumCandidateWorks,
+        Math.max(initialAcademicResultsPerQuery ?? 0,
+          request.maxResults ?? approvedBrief.stopConditions.maximumCandidateWorks),
         plannedSearchAdapters(academicSource, web, onProvider), signal, onHybrid)
       const projected = plannedRoundDraftResult(handoff.plan, approvedSearch, result)
       const verificationOutcomes = projected.hybridObservation?.verificationOutcomes ?? []

@@ -38,9 +38,16 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     unmet.push(`模型候选段落 ${rejection.statementIndex + 1} 未纳入报告：${rejection.code} — ${rejection.reason}`)
   }
   function statement(index: number): void {
-    if (rendered.has(index)) { lines.push(`见[分析段落 ${index + 1}](#academic-paragraph-${index + 1})。`, ''); return }
-    rendered.add(index)
     const item = draft.statements[index] as SynthesisStatement
+    if (rendered.has(index)) {
+      const citations = [...new Set(item.evidenceLinks.map(link =>
+        references.get((records.get(link.evidenceId) as EvidenceRecord).academicWorkId)))]
+      lines.push(`${escapeMarkdown(item.text)} ${citations.map(number => `[${number}]`).join(' ')}`,
+        `适用范围：${escapeMarkdown(item.scope)}；不确定性：${escapeMarkdown(item.uncertainty ?? '未说明；不代表不存在限制')}`, '',
+        `[查看证据详情](#academic-paragraph-${index + 1})`, '')
+      return
+    }
+    rendered.add(index)
     body.push(item.text, item.scope, ...(item.uncertainty === null ? [] : [item.uncertainty]))
     lines.push(`<a id="academic-paragraph-${index + 1}"></a>`, '', `**分析段落 ${index + 1} · ${item.kind === 'source_statement' ? '论文陈述' : '跨论文综合'}**`, '',
       escapeMarkdown(item.text), '', `适用范围：${escapeMarkdown(item.scope)}`)
@@ -76,7 +83,7 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
       lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown(brief.questions[answer.questionIndex] as string)}`, '',
         `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
       if (answer.statementIndexes.length > 0) lines.push('**当前回答与适用条件**', '')
-      answer.statementIndexes.forEach(statement)
+      answer.statementIndexes.forEach(index => statement(index))
       if (answer.reason !== null) {
         const gap = `问题 ${answer.questionIndex + 1}：${answer.reason}`
         unmet.push(gap)
@@ -91,7 +98,7 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
           `检索发现 ${coverage.discoveredRecords} 条记录，去重后 ${coverage.deduplicatedWorks} 篇，纳入 ${coverage.includedWorks} 篇，获取全文 ${coverage.availableFulltextWorks} 篇。`,
           '本报告只分析本轮核验通过的证据；全文获取数量不等于可用证据数量。', '')
       }
-      section.statementIndexes.forEach(statement)
+      section.statementIndexes.forEach(index => statement(index))
       if (section.missingReason !== null) {
         unmet.push(`${section.title}：${section.missingReason}`)
         lines.push(`证据不足：${escapeMarkdown(section.missingReason)}`, '')

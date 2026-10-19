@@ -1,5 +1,5 @@
 import { createBatchResult, createFailureId, createSearchQueryId,
-  type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
+  type PublicationWindow, type ResearchQuestionCoverageResult } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
@@ -38,17 +38,22 @@ function setup(options: {
   readonly candidateScreening?: AcademicCandidateScreening
   readonly reviewCandidate?: CandidateReviewer
   readonly initialWorkCount?: number
+  readonly initialAcademicResultsPerQuery?: number
+  readonly publicationWindow?: PublicationWindow
+  readonly transformWork?: (work: AcademicSourceWork, index: number) => AcademicSourceWork
 } = {}) {
   const fixture = draftFixture(3)
   const questions = [...options.questions ?? ['Which method works?']]
   const works = fixture.records.map((record, index) => {
     const work = identified(record, `fixture-${index + 1}`)
-    return index === 0 && options.metadata !== undefined ? { ...work, metadata: options.metadata } : work
+    const withMetadata = index === 0 && options.metadata !== undefined ? { ...work, metadata: options.metadata } : work
+    return options.transformWork?.(withMetadata, index) ?? withMetadata
   })
   const brief = { ...fixture.input.brief, questions,
+    publicationWindow: options.publicationWindow ?? fixture.input.brief.publicationWindow,
     stopConditions: { ...fixture.input.brief.stopConditions, maximumSearchRounds: 2,
       maximumCandidateWorks: 3, maximumIncludedWorks: 2, saturationRounds: 3 } }
-  const searchProviders = vi.fn(async (request: { query: string }) => {
+  const searchProviders = vi.fn(async (request: { query: string; maxResults?: number }) => {
     if (request.query !== 'synthetic') {
       if (options.failGapSearch === true) {
         const failure = { schemaVersion: 1 as const, failureId: createFailureId(), provider: 'arxiv',
@@ -63,7 +68,7 @@ function setup(options: {
       return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
         limitations: [], truncated: false }
     }
-    const selected = works.slice(0, options.initialWorkCount ?? 1)
+    const selected = works.slice(0, Math.min(options.initialWorkCount ?? 1, request.maxResults ?? Infinity))
     const batch = createBatchResult(selected, [])
     return { works: batch.items, batch, providers: ['arxiv'], discoveredRecords: selected.length,
       limitations: [], truncated: false }
@@ -78,7 +83,8 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  batchPolicy, gapPolicy, undefined, options.candidateScreening, options.reviewCandidate)
+  batchPolicy, gapPolicy, undefined, options.candidateScreening, options.reviewCandidate,
+  options.initialAcademicResultsPerQuery)
   const replenishCandidates = adapters.replenishCandidates
   if (replenishCandidates === undefined) throw new Error('expected evidence-gap replenishment adapter')
   return { adapters, brief, searchProviders, works, replenishCandidates }
@@ -100,7 +106,57 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
-  it('reviews every deduplicated candidate and retains lexical screening when one review fails', async () => {
+  it('retains raw Academic results beyond the candidate bound so hard exclusions cannot hide a later eligible work', async () => {
+    const prepared = setup({ initialWorkCount: 3, initialAcademicResultsPerQuery: 3,
+      transformWork: (work, index) => index < 2 ? { ...work, academicWork: {
+        ...work.academicWork, publicationStatus: { status: 'available', value: 'retracted' },
+      } } : work,
+    })
+    const searched = await prepared.adapters.search({ query: 'synthetic', maxResults: 1 })
+    const ingested = ingestWorks(createIngestIndex(), searched.works)
+    const selection = await prepared.adapters.selectPapers(ingested, { ...prepared.brief,
+      stopConditions: { ...prepared.brief.stopConditions, maximumCandidateWorks: 1 } })
+
+    expect(prepared.searchProviders.mock.calls[0]?.[0]).toMatchObject({ maxResults: 3 })
+    expect(ingested.works).toHaveLength(3)
+    expect(selection.papers.map(paper => paper.workVersionId)).toEqual([ingested.works[2]?.canonicalVersionId])
+    expect(selection.candidateScheduling?.ranking.queues.excluded).toHaveLength(2)
+  })
+
+  it('checks deterministic date and retraction exclusions before model review while retaining all evaluations', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate,
+      publicationWindow: { start: { iso: '2020', precision: 'year' }, end: null,
+        dateBasis: 'first_public_release' },
+      transformWork: (work, index) => ({ ...work, academicWork: {
+        ...work.academicWork,
+        firstPublicDate: { status: 'available', value: { iso: index === 1 ? '2019' : '2021', precision: 'year' } },
+        publicationStatus: index === 2 ? { status: 'available', value: 'retracted' }
+          : work.academicWork.publicationStatus,
+      } }),
+    })
+
+    const state = await initialState(prepared)
+
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+    expect(reviewCandidate).toHaveBeenCalledWith(expect.objectContaining({ title: 'Synthetic a' }), undefined)
+    expect(state.scheduling.assessments).toHaveLength(3)
+    expect(state.scheduling.ranking.evaluations.map(item => item.hardFilter.reasons.map(reason => reason.code)))
+      .toEqual([[], ['before_publication_window'], ['work_retracted']])
+  })
+
+  it('skips model review when full text is unresolved without dropping the candidate assessment', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const prepared = setup({ initialWorkCount: 2, reviewCandidate, unresolved: new Set(['fixture-2']) })
+
+    const state = await initialState(prepared)
+
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+    expect(state.scheduling.assessments).toHaveLength(2)
+    expect(state.scheduling.assessments[1]?.fulltextAvailability.status).toBe('unresolved')
+  })
+
+  it('reviews every eligible deduplicated candidate and retains lexical screening when one review fails', async () => {
     const question = 'Which method works?'
     const reviewCandidate = vi.fn<CandidateReviewer>(async input => input.title === 'Synthetic b'
       ? undefined : { schemaVersion: 1, signals: input.title === 'Synthetic a'

@@ -29,6 +29,13 @@ describe('direction report-format hierarchy', () => {
     expect(report.markdown).toContain('没有支持工程应用收益的证据')
     expect(report.markdown).toContain('场所：未提供')
     expect(report.markdown).toContain('https://example.invalid/academic/synthetic/1')
+    const answers = report.markdown.split('## 逐题研究结论\n')[1]!.split('## 方法补充')[0]!
+    expect(answers).toContain('在合成材料 A 中，位置间直接访问相对于逐步传递省去了中间位置。')
+    expect(answers).toContain('[查看证据详情](#academic-paragraph-1)')
+    const themes = report.markdown.split('### 当前关注主题\n')[1]!.split('### 代表论文')[0]!
+    expect(themes).toContain('在合成材料 A 中，位置间直接访问相对于逐步传递省去了中间位置。')
+    expect(themes).toContain('[查看证据详情](#academic-paragraph-1)')
+    expect(report.markdown).not.toContain('见[分析段落')
     expect(report.evaluation.status).toBe('needs_review')
     expect(JSON.stringify(input)).toBe(before)
     await expect(report.markdown).toMatchFileSnapshot('./expected/direction-report.md')

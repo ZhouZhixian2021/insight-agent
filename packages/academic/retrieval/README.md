@@ -27,7 +27,7 @@ Academic workflow callers can create channel-specific searches from an approved 
 
 ### When to use it
 
-The Academic controller or workflow supplies the approved Brief, reviewed expansion terms, provider IDs, result bounds, and adapters. `planHybridSearch()` returns a `HybridSearchPlanningOutput` for review; `executePlannedSearchRound()` runs only the selected round after approval and can publish live Web-discovery, reference-identification, and reference-verification facts. `rankPlannedCandidates()` applies the approved hard filters and ranking policy to the verified works and caller-reviewed semantic assessments. `extendPlanForEvidenceGaps()` adds bounded queries from coverage of the same Brief version. See the [public exports](src/index.ts) for exact signatures.
+The Academic controller or workflow supplies the approved Brief, reviewed expansion terms, provider IDs, result bounds, and adapters. `planHybridSearch()` returns a `HybridSearchPlanningOutput` for review; `executePlannedSearchRound()` runs only the selected round after approval and can publish live Web-discovery, reference-identification, and reference-verification facts. `preReviewHardExclusions()` lets the caller skip semantic review for works excluded by approved metadata rules; `rankPlannedCandidates()` reapplies those same rules and the ranking policy to every verified work and caller-reviewed semantic assessment. `extendPlanForEvidenceGaps()` adds bounded queries from coverage of the same Brief version. See the [public exports](src/index.ts) for exact signatures.
 
 ### Metadata screening
 

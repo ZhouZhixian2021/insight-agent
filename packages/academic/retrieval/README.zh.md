@@ -27,7 +27,7 @@ kind: "package-library"
 
 ### 适用场景
 
-Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词、提供方 ID、结果上限与适配器。`planHybridSearch()` 返回供审核的 `HybridSearchPlanningOutput`；`executePlannedSearchRound()` 在批准后只执行指定轮次，并可发布 Web 发现、引用识别和引用核验的实时事实。`rankPlannedCandidates()` 对已核验成果与调用方审核的语义判断应用批准的硬过滤和排序策略。`extendPlanForEvidenceGaps()` 根据同一 Brief 版本的覆盖结果添加有数量上限的查询。准确签名见[公开导出](src/index.ts)。
+Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词、提供方 ID、结果上限与适配器。`planHybridSearch()` 返回供审核的 `HybridSearchPlanningOutput`；`executePlannedSearchRound()` 在批准后只执行指定轮次，并可发布 Web 发现、引用识别和引用核验的实时事实。调用方可用 `preReviewHardExclusions()` 跳过被已批准元数据规则排除的成果的语义审核；`rankPlannedCandidates()` 对每项已核验成果与调用方审核的语义判断复用相同规则及排序策略。`extendPlanForEvidenceGaps()` 根据同一 Brief 版本的覆盖结果添加有数量上限的查询。准确签名见[公开导出](src/index.ts)。
 
 ### 元数据初筛
 
