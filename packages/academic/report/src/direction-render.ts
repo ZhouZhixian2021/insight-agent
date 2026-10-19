@@ -11,7 +11,7 @@ import { workBibliography, type ReportMetadata } from './bibliography.ts'
  * @param evidence Admitted source records.
  * @param references Host-owned numbered bibliography.
  * @param metadata Existing producer metadata; absent values remain explicit.
- * @param statement Render a paragraph once; later sections repeat its text with a link to evidence detail.
+ * @param statement Render a paragraph once; later placements link to its conditions and evidence.
  * @param lines Shared report output buffer.
  * @returns Explicit coverage limits for omitted or rejected direction components.
  */
@@ -26,19 +26,11 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
       return
     }
     lines.push(`### ${label}`, '')
-    item.statementIndexes.forEach(index => statement(index))
+    item.statementIndexes.forEach((index) => { statement(index) })
   }
   const executive = draft.sections.find(section => section.sectionId === 'executive_summary')
   lines.push('## 执行洞察', '')
-  if (executive !== undefined) for (const index of executive.statementIndexes) {
-    const item = (draft.statements[index] as SynthesisStatement)
-    const citations = [...new Set(item.evidenceLinks.map((link) => {
-      const record = evidence.find(record => record.evidenceId === link.evidenceId) as EvidenceRecord
-      return references.get(record.academicWorkId)
-    }))]
-    lines.push(`${escapeMarkdown(item.text)} ${citations.map(number => `[${number}]`).join(' ')}`,
-      `适用范围：${escapeMarkdown(item.scope)}；主要不确定性：${escapeMarkdown(item.uncertainty ?? '未说明')}`, '')
-  }
+  if (executive !== undefined) executive.statementIndexes.forEach((index) => { statement(index) })
   if (executive === undefined || executive.statementIndexes.length === 0) {
     lines.push(`证据不足：${escapeMarkdown(executive?.missingReason ?? '缺少执行洞察依据。')}`, '')
   }
@@ -56,7 +48,7 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
     for (const theme of direction.themes) {
       if (theme.statementIndexes.length === 0) { unmet.push(`${direction.title}／${theme.title}：${theme.missingReason}`); continue }
       lines.push(`#### ${escapeMarkdown(theme.title)}`, '')
-      theme.statementIndexes.forEach(index => statement(index))
+      theme.statementIndexes.forEach((index) => { statement(index) })
     }
     if (direction.themeLimit !== null) unmet.push(`${direction.title}／关注主题：${direction.themeLimit}`)
     const parts = [direction.overview, ...direction.themes, direction.mechanism, direction.keyResults,
@@ -76,7 +68,7 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
         const item = (draft.statements[index] as SynthesisStatement)
         const links = item.evidenceLinks.filter(link => link.relation === 'supports')
           .map(link => (evidence.find(record => record.evidenceId === link.evidenceId) as EvidenceRecord))
-        lines.push(`| ${escapeMarkdown(item.text)} | ${escapeMarkdown(item.scope)} | `
+        lines.push(`| [分析段落 ${index + 1}](#academic-paragraph-${index + 1}) | ${escapeMarkdown(item.scope)} | `
           + `${links.map(record => `[${references.get(record.academicWorkId)}] ${escapeMarkdown(record.sourceLocatorId)}`).join('；')} | `
           + `${escapeMarkdown(item.uncertainty ?? '未说明')} |`)
       }
@@ -89,11 +81,11 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
   }
   lines.push('## 跨方向综合', '')
   const cross = draft.sections.find(section => section.sectionId === 'cross_paper_analysis')
-  if (cross !== undefined) cross.statementIndexes.forEach(index => statement(index))
+  if (cross !== undefined) cross.statementIndexes.forEach((index) => { statement(index) })
   if (cross === undefined || cross.statementIndexes.length === 0) lines.push(`证据不足：${escapeMarkdown(cross?.missingReason ?? '缺少跨方向综合依据。')}`, '')
   for (const section of draft.sections.filter(section => ['limitations', 'research_gaps'].includes(section.sectionId))) {
     lines.push(`## ${escapeMarkdown(section.title)}`, '')
-    section.statementIndexes.forEach(index => statement(index))
+    section.statementIndexes.forEach((index) => { statement(index) })
     if (section.missingReason !== null) { unmet.push(`${section.title}：${section.missingReason}`); lines.push(`证据不足：${escapeMarkdown(section.missingReason)}`, '') }
   }
   for (const section of draft.sections.filter(section => ['technology_overview', 'paper_landscape', 'key_findings'].includes(section.sectionId))) {
@@ -102,13 +94,13 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
       continue
     }
     lines.push(`## ${escapeMarkdown(section.title)}（补充分析索引）`, '')
-    section.statementIndexes.forEach(index => statement(index))
+    section.statementIndexes.forEach((index) => { statement(index) })
   }
   lines.push('## 逐题研究结论', '', '回答状态是模型提议，仍需独立内容审核。', '')
   for (const answer of draft.questionAnswers) {
     lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown((brief.questions[answer.questionIndex] as string))}`, '',
       `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
-    answer.statementIndexes.forEach(index => statement(index))
+    answer.statementIndexes.forEach((index) => { statement(index) })
     if (answer.reason !== null) { unmet.push(`问题 ${answer.questionIndex + 1}：${answer.reason}`); lines.push(`证据缺口：${escapeMarkdown(answer.reason)}`, '') }
   }
   if (unmet.length > 0) lines.push('## 方法补充：方向覆盖限制', '', ...unmet.map(reason => `- ${escapeMarkdown(reason)}`), '')

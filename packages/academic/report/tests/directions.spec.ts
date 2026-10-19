@@ -30,15 +30,36 @@ describe('direction report-format hierarchy', () => {
     expect(report.markdown).toContain('场所：未提供')
     expect(report.markdown).toContain('https://example.invalid/academic/synthetic/1')
     const answers = report.markdown.split('## 逐题研究结论\n')[1]!.split('## 方法补充')[0]!
-    expect(answers).toContain('在合成材料 A 中，位置间直接访问相对于逐步传递省去了中间位置。')
-    expect(answers).toContain('[查看证据详情](#academic-paragraph-1)')
+    expect(answers).toContain('见[分析段落 1](#academic-paragraph-1)')
     const themes = report.markdown.split('### 当前关注主题\n')[1]!.split('### 代表论文')[0]!
-    expect(themes).toContain('在合成材料 A 中，位置间直接访问相对于逐步传递省去了中间位置。')
-    expect(themes).toContain('[查看证据详情](#academic-paragraph-1)')
-    expect(report.markdown).not.toContain('见[分析段落')
+    expect(themes).toContain('见[分析段落 1](#academic-paragraph-1)')
+    for (const item of input.synthesis.statements) {
+      expect(report.markdown.split(item.text).length - 1).toBe(1)
+    }
+    for (const match of report.markdown.matchAll(/\]\(#academic-paragraph-(\d+)\)/gu)) {
+      expect(report.markdown).toContain(`<a id="academic-paragraph-${match[1]}"></a>`)
+    }
     expect(report.evaluation.status).toBe('needs_review')
     expect(JSON.stringify(input)).toBe(before)
     await expect(report.markdown).toMatchFileSnapshot('./expected/direction-report.md')
+  })
+  it('groups appendix by paper title independently of evidence and bibliography input order', () => {
+    const input = fixture()
+    const works = input.works.map((work, index) => ({ ...work, title: index === 0 ? 'Z paper' : 'A paper' }))
+    const changed = { ...input, works, evidence: [...input.evidence].reverse() }
+    const before = JSON.stringify(changed)
+    const report = generateReport(changed)
+    const appendix = report.markdown.split('## 证据附录\n')[1]!
+    expect(appendix.indexOf('A paper')).toBeLessThan(appendix.indexOf('Z paper'))
+    for (const work of works) {
+      const group = appendix.split(work.title)[1]!.split('\n### [')[0]!
+      for (const record of input.evidence.filter(record => record.academicWorkId === work.academicWorkId)) {
+        expect(group).toContain(`#### 版本 ${record.workVersionId}`)
+        expect(group).toContain(`##### ${record.evidenceId}`)
+        expect(group).toContain(record.sourceLocatorId)
+      }
+    }
+    expect(JSON.stringify(changed)).toBe(before)
   })
   it('preserves citation status, partial dates and safe DOI or arXiv links', () => {
     const input = fixture(), a = input.works[0]!
