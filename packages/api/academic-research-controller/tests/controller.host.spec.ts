@@ -258,6 +258,7 @@ async function harness(options: {
   const controller = new AcademicResearchController(ctx, {
     fulltextFetchProvider: 'academic-raw',
     extractionMaxTokens: 16_384,
+    synthesisMaxTokens: 32_768,
     extractionMaxAttempts: 2,
     extractionRetryInitialDelayMs: 10_000,
     extractionBatchMaxInputTokens: 12_000,
@@ -434,7 +435,7 @@ describe('AcademicResearchController', () => {
       researchBriefId: preview.researchBriefId, synthetic: true }, fixture.signal)
     expect(fixture.resolveFullText).not.toHaveBeenCalled()
     expect(fixture.search).not.toHaveBeenCalled()
-    expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 3 },
+    expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 100 },
       ['openalex', 'arxiv'], expect.any(AbortSignal), expect.any(Function))
     expect(fixture.webSearch).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 8 }, expect.any(AbortSignal))
     expect(fixture.verifyReference).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: 'arxiv',
@@ -845,6 +846,7 @@ describe('AcademicResearchController', () => {
     await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: true },
       new AbortController().signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].synthesisModel).toEqual({ provider: 'fixture', model: 'fallback', maxTokens: 4000 })
   })
 
   it('settles successful search and full text separately from failed evidence extraction', async () => {
@@ -934,6 +936,9 @@ describe('AcademicResearchController', () => {
       synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].model).toEqual({
       provider: 'fixture', model: 'selected', reasoningEffort: 'low', maxTokens: 16_384,
+    })
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].synthesisModel).toEqual({
+      provider: 'fixture', model: 'selected', reasoningEffort: 'low', maxTokens: 32_768,
     })
   })
 

@@ -327,6 +327,8 @@ export interface Config {
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
+  /** Final synthesis output-token reserve when the Session omits one. Defaults to 32,768. */
+  readonly synthesisMaxTokens?: number
   /** Attempts per model input; a locally timed-out evidence input may split into two recovery inputs. Defaults to 2. */
   readonly extractionMaxAttempts?: number
   /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
@@ -341,6 +343,8 @@ export interface Config {
   readonly candidateReviewMaxTokens?: number
   /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
   readonly candidateReviewAttemptTimeoutMs?: number
+  /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
+  readonly initialSearchMaximumAcademicResultsPerQuery?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
@@ -366,7 +370,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts:51`](../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/api/academic-research-controller/src/index.ts:52`](../packages/api/academic-research-controller/src/index.ts)
 
 <a id="deepseek-aidsh-api-gateway"></a>
 

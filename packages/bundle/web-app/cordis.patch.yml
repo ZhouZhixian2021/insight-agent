@@ -152,6 +152,7 @@
       config:
         fulltextFetchProvider: http
         extractionMaxTokens: 16384
+        synthesisMaxTokens: 32768
         extractionMaxAttempts: 2
         extractionRetryInitialDelayMs: 10000
         extractionBatchMaxInputTokens: 12000

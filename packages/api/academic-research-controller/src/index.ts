@@ -56,6 +56,8 @@ export interface Config {
   readonly fulltextFetchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
+  /** Final synthesis output-token reserve when the Session omits one. Defaults to 32,768. */
+  readonly synthesisMaxTokens?: number
   /** Attempts per model input; a locally timed-out evidence input may split into two recovery inputs. Defaults to 2. */
   readonly extractionMaxAttempts?: number
   /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
@@ -70,6 +72,8 @@ export interface Config {
   readonly candidateReviewMaxTokens?: number
   /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
   readonly candidateReviewAttemptTimeoutMs?: number
+  /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
+  readonly initialSearchMaximumAcademicResultsPerQuery?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
   readonly synthesisMaxAttempts?: number
   /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
@@ -102,6 +106,7 @@ export class AcademicResearchController extends TypertRemoteService {
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     fulltextFetchProvider: z.string().default('http'),
     extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
+    synthesisMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(32_768),
     extractionMaxAttempts: z.number().step(1).min(1).max(2).default(2),
     extractionRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(10_000),
     extractionBatchMaxInputTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(12_000),
@@ -109,6 +114,7 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     candidateReviewMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8_192),
     candidateReviewAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
+    initialSearchMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(100),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
     synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
     initialCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
@@ -125,6 +131,7 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly fulltextFetchProvider: string
   private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
+  private readonly synthesisMaxTokens: number
   private readonly extractionMaxAttempts: number
   private readonly extractionRetryInitialDelayMs: number
   private readonly extractionBatchMaxInputTokens: number
@@ -132,6 +139,7 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly extractionAttemptTimeoutMs: number
   private readonly candidateReviewMaxTokens: number
   private readonly candidateReviewAttemptTimeoutMs: number
+  private readonly initialSearchMaximumAcademicResultsPerQuery: number
   private readonly synthesisMaxAttempts: number
   private readonly synthesisRetryInitialDelayMs: number
   private readonly enhancementMaximumElapsedMs: number
@@ -150,6 +158,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.paperConcurrency = config.paperConcurrency ?? 3
     this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
     this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
+    this.synthesisMaxTokens = config.synthesisMaxTokens ?? 32_768
     this.extractionMaxAttempts = config.extractionMaxAttempts ?? 2
     this.extractionRetryInitialDelayMs = config.extractionRetryInitialDelayMs ?? 10_000
     this.extractionBatchMaxInputTokens = config.extractionBatchMaxInputTokens ?? 12_000
@@ -157,6 +166,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 150_000
     this.candidateReviewMaxTokens = config.candidateReviewMaxTokens ?? 8_192
     this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
+    this.initialSearchMaximumAcademicResultsPerQuery = config.initialSearchMaximumAcademicResultsPerQuery ?? 100
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
     this.enhancementMaximumElapsedMs = config.enhancementMaximumElapsedMs ?? 180_000
@@ -481,6 +491,8 @@ export class AcademicResearchController extends TypertRemoteService {
     const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
+    const synthesisModel: LlmCallConfig = { ...model,
+      maxTokens: selectedModel.maxTokens ?? this.synthesisMaxTokens }
     const questionTerms = approvedEvidenceQuestionTerms(brief.questions, candidateScreening)
     const onSettlement: AcademicSettlementObserver = (fact) => {
       if (fact.kind === 'batch-decision') {
@@ -494,7 +506,8 @@ export class AcademicResearchController extends TypertRemoteService {
         recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
         candidateScreening,
         candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
-          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs })),
+          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }),
+        this.initialSearchMaximumAcademicResultsPerQuery),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
@@ -510,6 +523,7 @@ export class AcademicResearchController extends TypertRemoteService {
         ctx: agent.ctx,
         session: agent.session,
         model,
+        synthesisModel,
         modelPolicies: {
           evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
             ...(questionTerms === undefined ? {} : { questionTerms }),

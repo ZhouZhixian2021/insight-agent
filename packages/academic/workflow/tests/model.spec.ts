@@ -378,6 +378,16 @@ describe('durable academic model extraction', () => {
     expect(f.adapter.calls).toHaveLength(3)
     expect(f.adapter.calls.every(call => call.reasoningEffort === undefined)).toBe(true)
   })
+  it('uses a separate output cap only for final synthesis', async () => {
+    const f = await fixture(), draft = draftFixture()
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    await runAcademicResearchDraft({ ctx: f.ctx, session: f.session, model: config,
+      synthesisModel: { ...config, maxTokens: 1_000 }, modelPolicies: policies,
+      input: draft.input, adapters: draft.adapters })
+    expect(f.adapter.calls.map(call => call.maxTokens)).toEqual([500, 500, 1_000])
+    const requests = (await f.read()).filter(event => event.type === 'academic/synthesis-request')
+    expect(requests[0]?.data.outputTokens).toBe(1_000)
+  })
   it('allows a model without configurable reasoning when the caller omits an effort', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.supportsReasoning = false

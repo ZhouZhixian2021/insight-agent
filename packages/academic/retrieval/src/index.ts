@@ -4,7 +4,7 @@ export type { QueryExpansion, QueryPlanningOptions } from './planner.ts'
 export { executePlannedSearchRound } from './execute.ts'
 export type { PlannedSearchAdapters, PlannedSearchLimits, PlannedSearchProgressObservation,
   PlannedSearchProgressObserver, PlannedSearchRoundResult } from './execute.ts'
-export { rankPlannedCandidates } from './rank.ts'
+export { preReviewHardExclusions, rankPlannedCandidates } from './rank.ts'
 export { assessPlannedCandidates } from './assess.ts'
 export { parseCandidateScreening } from './parse-screening.ts'
 export type { CandidateScreeningCriteria, CandidateTermConcepts } from './assess.ts'

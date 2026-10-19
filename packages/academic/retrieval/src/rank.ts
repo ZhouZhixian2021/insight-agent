@@ -147,6 +147,31 @@ function hardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSe
   if (assessment.screening?.scope.status === 'off_topic') {
     reasons.push({ code: 'off_topic', detail: assessment.screening.scope.reason })
   }
+  reasons.push(...preReviewHardExclusions(work, version, plan, brief, assessment))
+  assessment.inclusionRuleMatches.forEach((matched, index) => {
+    const detail = plan.constraints.inclusionRules[index]
+    if (matched === false && detail !== undefined) reasons.push({ code: 'inclusion_rule_not_met', detail })
+  })
+  assessment.exclusionRuleMatches.forEach((matched, index) => {
+    const detail = plan.constraints.exclusionRules[index]
+    if (matched === true && detail !== undefined) reasons.push({ code: 'exclusion_rule_matched', detail })
+  })
+  return reasons
+}
+
+/**
+ * Apply only approved, deterministic metadata exclusions before model review.
+ * The final ranker reuses this decision so skipped reviews retain the same exclusion reasons.
+ * @param work - Deduplicated scholarly work.
+ * @param version - Its canonical retained version.
+ * @param plan - Approved query plan and lexical constraints.
+ * @param brief - Approved Brief controlling preprint eligibility.
+ * @param metadata - Trusted scholarly abstract and keywords, never Web snippets.
+ * @returns Hard exclusions that do not depend on semantic model review.
+ */
+export function preReviewHardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSearchPlan,
+  brief: ExecutableResearchBrief, metadata: Pick<CandidateAssessment, 'abstract' | 'keywords'>): CandidateHardFilterReason[] {
+  const reasons: CandidateHardFilterReason[] = []
   if (work.publicationStatus.status === 'available' && work.publicationStatus.value === 'retracted') {
     reasons.push({ code: 'work_retracted' })
   }
@@ -173,8 +198,8 @@ function hardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSe
       }
     }
   }
-  const abstract = assessment.abstract.status === 'available' ? assessment.abstract.value : ''
-  const keywords = assessment.keywords.status === 'available' ? assessment.keywords.value : []
+  const abstract = metadata.abstract.status === 'available' ? metadata.abstract.value : ''
+  const keywords = metadata.keywords.status === 'available' ? metadata.keywords.value : []
   const text = [work.title, abstract, ...keywords].join(' ').toLowerCase()
   for (const term of plan.constraints.requiredTerms) {
     if (!text.includes(term.trim().toLowerCase())) reasons.push({ code: 'required_term_missing', detail: term })
@@ -182,14 +207,6 @@ function hardExclusions(work: AcademicWork, version: WorkVersion, plan: HybridSe
   for (const term of plan.constraints.excludedTerms) {
     if (text.includes(term.trim().toLowerCase())) reasons.push({ code: 'excluded_term_matched', detail: term })
   }
-  assessment.inclusionRuleMatches.forEach((matched, index) => {
-    const detail = plan.constraints.inclusionRules[index]
-    if (matched === false && detail !== undefined) reasons.push({ code: 'inclusion_rule_not_met', detail })
-  })
-  assessment.exclusionRuleMatches.forEach((matched, index) => {
-    const detail = plan.constraints.exclusionRules[index]
-    if (matched === true && detail !== undefined) reasons.push({ code: 'exclusion_rule_matched', detail })
-  })
   return reasons
 }
 
