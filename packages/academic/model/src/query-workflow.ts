@@ -219,6 +219,39 @@ export interface CandidateScreeningDetails {
   readonly scope: CandidateScopeDecision
 }
 
+/** Minimal model-visible input; approved identities and lexical scores stay with the caller. */
+export interface CandidateSemanticReviewRequestV1 {
+  readonly schemaVersion: 1
+  readonly research: {
+    readonly topic: string
+    readonly questions: readonly string[]
+    readonly inclusionRules: readonly string[]
+    readonly exclusionRules: readonly string[]
+  }
+  readonly paper: {
+    readonly title: string
+    readonly abstract: Availability<string>
+  }
+}
+
+/** One approved Brief question supported by a verbatim scholarly-metadata passage. */
+export interface CandidateSemanticQuestionMatch {
+  readonly question: string
+  readonly quote: CandidateMetadataQuote
+}
+
+/** Model-only judgment; lexical hits and scoring are added by deterministic code. */
+export type CandidateSemanticReviewV1 = { readonly schemaVersion: 1 } & (
+  | {
+    readonly scope: Extract<CandidateScopeDecision, { readonly status: 'potentially_relevant' }>
+    readonly matchedQuestions: readonly [CandidateSemanticQuestionMatch, ...CandidateSemanticQuestionMatch[]]
+  }
+  | {
+    readonly scope: Extract<CandidateScopeDecision, { readonly status: 'off_topic' | 'unknown' }>
+    readonly matchedQuestions: readonly []
+  }
+)
+
 /** Reviewed semantic facts supplied for one verified work after Q3 ingestion. */
 export interface CandidateAssessment {
   readonly academicWorkId: AcademicWorkId
