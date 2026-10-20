@@ -24,7 +24,7 @@ import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typer
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
 import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
-import { createModelCandidateReviewer } from './candidate-review-model.ts'
+import { createModelCandidateReviewer, recordCandidateReviewSelection } from './candidate-review-model.ts'
 import { approvedEvidenceQuestionTerms } from './candidate-screening.ts'
 import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
@@ -72,6 +72,10 @@ export interface Config {
   readonly candidateReviewMaxTokens?: number
   /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
   readonly candidateReviewAttemptTimeoutMs?: number
+  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 8. */
+  readonly candidateReviewMaximumWorks?: number
+  /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
+  readonly candidateReviewConcurrency?: number
   /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
   readonly initialSearchMaximumAcademicResultsPerQuery?: number
   /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
@@ -114,6 +118,8 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     candidateReviewMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8_192),
     candidateReviewAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
+    candidateReviewMaximumWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(8),
+    candidateReviewConcurrency: z.number().step(1).min(1).max(2).default(1),
     initialSearchMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(100),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
     synthesisRetryInitialDelayMs: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1_000),
@@ -139,6 +145,8 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly extractionAttemptTimeoutMs: number
   private readonly candidateReviewMaxTokens: number
   private readonly candidateReviewAttemptTimeoutMs: number
+  private readonly candidateReviewMaximumWorks: number
+  private readonly candidateReviewConcurrency: number
   private readonly initialSearchMaximumAcademicResultsPerQuery: number
   private readonly synthesisMaxAttempts: number
   private readonly synthesisRetryInitialDelayMs: number
@@ -166,6 +174,8 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 150_000
     this.candidateReviewMaxTokens = config.candidateReviewMaxTokens ?? 8_192
     this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
+    this.candidateReviewMaximumWorks = config.candidateReviewMaximumWorks ?? 8
+    this.candidateReviewConcurrency = config.candidateReviewConcurrency ?? 1
     this.initialSearchMaximumAcademicResultsPerQuery = config.initialSearchMaximumAcademicResultsPerQuery ?? 100
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
     this.synthesisRetryInitialDelayMs = config.synthesisRetryInitialDelayMs ?? 1_000
@@ -507,7 +517,11 @@ export class AcademicResearchController extends TypertRemoteService {
         candidateScreening,
         candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
           { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }),
-        this.initialSearchMaximumAcademicResultsPerQuery),
+        this.initialSearchMaximumAcademicResultsPerQuery, this.candidateReviewMaximumWorks,
+        { concurrency: this.candidateReviewConcurrency,
+          recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
+            researchBriefId: brief.researchBriefId, researchBriefVersion: brief.version, roundIndex, selection,
+          }) }),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),

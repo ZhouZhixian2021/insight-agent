@@ -8,7 +8,7 @@ English | [中文](2026-07-22-pi-ai-transport-truncation-classification.zh.md)
 
 A TUI run whose model connection dropped mid-stream surfaced the single notice `terminated`, and a truncated Anthropic response surfaced `Anthropic stream ended before message_stop`. Both are transport truncations — the connection died before the provider's terminal SSE event — yet `classifyPiAiError` in `dsh-llm-pi-ai` mapped neither, falling through to the catch-all `PI_AI_ERROR`. Because `PI_AI_ERROR` is not in `llm-retry`'s `DEFAULT_RETRYABLE_CODES` (`RATE_LIMIT`, `SERVER`, `TIMEOUT`, `TRANSPORT`), a recoverable drop was treated as a permanent failure and never retried.
 
-The detail loss is upstream and unrecoverable in the adapter: pi-ai reduces a caught error to `error.message` (`api/anthropic-messages.js`: `errorMessage = error instanceof Error ? error.message : JSON.stringify(error)`) before pushing the terminal `error` event, discarding the original `Error` and its `cause` chain. undici carries the actionable `SocketError` on `cause` but hands the fetch wrapper a bare `terminated`; pi-ai keeps only that word. pi-ai `SimpleStreamOptions` exposes no fetch/dispatcher/client hook we could use to capture the `cause` ourselves before it is flattened.
+pi-ai reduces a caught error to `error.message` (`api/anthropic-messages.js`: `errorMessage = error instanceof Error ? error.message : JSON.stringify(error)`) before pushing the terminal `error` event, discarding the original `Error` and its `cause` chain. undici carries the actionable `SocketError` on `cause` but hands the fetch wrapper a bare `terminated`; pi-ai keeps only that word. The pi-ai version used when this classification was introduced exposed no shared fetch hook. A later version added one; [HTTP transport cause diagnostics](2026-10-19-pi-ai-transport-cause-diagnostics.md) now captures causes for injected HTTP requests, while this text classification remains necessary for other provider paths.
 
 ## Decision
 
@@ -31,5 +31,5 @@ Classification stays on message text because that is the only signal pi-ai deliv
 ## Consequences
 
 - A mid-stream transport drop and a pre-terminal stream truncation now carry `TRANSPORT`, so a composed `llm-retry` policy retries them by default instead of failing the turn.
-- The notice text is unchanged (`terminated` / `Anthropic stream ended before message_stop`): the cause detail is gone before the adapter sees it, so `errorChain` has nothing more to render. Only the routed `code` improved.
+- The notice text is unchanged (`terminated` / `Anthropic stream ended before message_stop`): pi-ai's terminal event has no cause for `errorChain` to render. The later HTTP diagnostic records selected cause codes outside the user-visible failure; this classifier still supplies the routed `code`.
 - Classification remains string-matching and provider-wording-dependent: a future pi-ai release that rewords these errors would silently fall back to `PI_AI_ERROR` until the patterns are updated. The `XXX` note points at the durable fix (route on a forwarded `code`/`cause`).

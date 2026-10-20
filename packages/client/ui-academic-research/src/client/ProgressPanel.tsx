@@ -51,7 +51,13 @@ export function ProgressPanel({ progress, recent = [], t }: PropsLocale<'academi
       {activity.kind === 'provider' && <><p>{activity.providerId} · {t(`progress_${activity.status}`)}</p>
         <p>{t('discoveredRecords')}: {number(activity.discoveredRecords)}</p>
         {activity.failureCode !== null && <p>{t('lastFailure')}: {t(`failure_${activity.failureCode}`)}</p>}</>}
-      {activity.kind === 'screening' && <p>{t(`operation_${activity.operation}`)}</p>}
+      {activity.kind === 'screening' && <><p>{t(`operation_${activity.operation}`)}</p>
+        {activity.operation === 'candidate_review' && <>
+          <p>{t('candidateReviewProgress')}: {pair(activity.completedReviews, activity.totalReviews)}</p>
+          <p>{t('candidateReviewFailed')}: {activity.failedReviews} · {t('candidateReviewSkipped')}: {activity.skippedReviews}</p>
+          {activity.title !== null && <p>{activity.title}</p>}
+        </>}
+      </>}
       {activity.kind === 'question' && <><p>{activity.question}</p><p>{pair(activity.questionIndex, activity.questionCount)}</p></>}
       {activity.kind === 'paper' && <>
         <p>{activity.title ?? t('untitledCandidate')} · {activity.workVersionId}</p><p>{t(`operation_${activity.operation}`)}</p>

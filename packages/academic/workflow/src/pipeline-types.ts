@@ -46,6 +46,17 @@ export interface PaperSelectionResult {
   readonly candidateScheduling?: CandidateScheduling
 }
 
+/** Bounded model-review progress within candidate selection. Counts refer to eligible works, not the whole deduplicated set. */
+export interface CandidateReviewProgressObservation {
+  readonly phase: 'planned' | 'started' | 'settled'
+  readonly completed: number
+  readonly total: number
+  readonly succeeded: number
+  readonly failed: number
+  readonly skipped: number
+  readonly title: string | null
+}
+
 /** Q5 ranked-scheduling inputs carried through one bounded pass. */
 export interface CandidateScheduling {
   readonly plan: HybridSearchPlan
@@ -80,11 +91,12 @@ export interface DraftPipelineAdapters {
     onHybrid?: HybridSearchProgressObserver,
   ) => Promise<DraftSearchResult>
   /**
-   * Screen all returned deduplicated works, then cap eligible candidates at the effective maximumCandidateWorks.
-   * Do not apply maximumIncludedWorks here.
+   * Screen every deduplicated work and report bounded semantic-review attempts when supported.
+   * Cap eligible candidates at maximumCandidateWorks after ranking; maximumIncludedWorks applies later.
    */
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief,
-    signal?: AbortSignal) => PaperSelectionResult | Promise<PaperSelectionResult>
+    signal?: AbortSignal, onCandidateReview?: (observation: CandidateReviewProgressObservation) => void,
+  ) => PaperSelectionResult | Promise<PaperSelectionResult>
   /**
    * Execute one evidence-gap replenishment round and re-rank the merged candidate pool.
    * Invoked only when Q5 scheduling requests more evidence and another search round remains.

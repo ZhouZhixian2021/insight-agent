@@ -220,12 +220,19 @@ export async function runResearchDraft(
   }
   latestStage = 'screening'
   progress.startStage('screening', ingested.works.length, 'works')
-  progress.setActivity('screening', { kind: 'screening', stage: 'screening', operation: 'eligibility', startedAt: adapters.now() })
+  const screeningStartedAt = adapters.now()
+  progress.setActivity('screening', { kind: 'screening', stage: 'screening', operation: 'eligibility',
+    startedAt: screeningStartedAt })
   let selection: PaperSelectionResult
   if (recovery === undefined) {
     try {
       selection = await adapters.selectPapers(ingested, { ...brief,
-        stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, signal)
+        stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, signal, (observation) => {
+        progress.setActivity('screening', { kind: 'screening', stage: 'screening', operation: 'candidate_review',
+          completedReviews: observation.completed, totalReviews: observation.total,
+          failedReviews: observation.failed, skippedReviews: observation.skipped,
+          title: observation.title, startedAt: screeningStartedAt })
+      })
     } catch (error: unknown) {
       progress.settleStage('screening', 'failed', 0, ingested.works.length, {}, progressFailure(error))
       throw error

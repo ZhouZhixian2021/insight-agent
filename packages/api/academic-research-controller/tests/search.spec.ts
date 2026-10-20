@@ -4,7 +4,7 @@ import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingest
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
-import { approvedPaperAdapters, type CandidateReviewer } from '../src/search.ts'
+import { approvedPaperAdapters, type CandidateReviewer, type CandidateReviewExecution } from '../src/search.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 
 const batchPolicy = {
@@ -37,6 +37,8 @@ function setup(options: {
   readonly metadata?: NonNullable<AcademicSourceWork['metadata']>
   readonly candidateScreening?: AcademicCandidateScreening
   readonly reviewCandidate?: CandidateReviewer
+  readonly maximumModelReviews?: number
+  readonly reviewExecution?: CandidateReviewExecution
   readonly initialWorkCount?: number
   readonly initialAcademicResultsPerQuery?: number
   readonly publicationWindow?: PublicationWindow
@@ -83,8 +85,11 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  batchPolicy, gapPolicy, undefined, options.candidateScreening, options.reviewCandidate,
-  options.initialAcademicResultsPerQuery)
+  batchPolicy, gapPolicy, undefined, options.candidateScreening,
+  options.reviewCandidate === undefined ? undefined : (input, signal) => {
+    input.onDispatch?.()
+    return options.reviewCandidate!(input, signal)
+  }, options.initialAcademicResultsPerQuery, options.maximumModelReviews, options.reviewExecution)
   const replenishCandidates = adapters.replenishCandidates
   if (replenishCandidates === undefined) throw new Error('expected evidence-gap replenishment adapter')
   return { adapters, brief, searchProviders, works, replenishCandidates }
@@ -106,6 +111,80 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
+  it('uses a review budget independent of the later Plan candidate cap', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed', code: 'TRANSPORT' }))
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate, maximumModelReviews: 3 })
+    const searched = await prepared.adapters.search({ query: 'synthetic', maxResults: 3 })
+    const ingested = ingestWorks(createIngestIndex(), searched.works)
+    const selection = await prepared.adapters.selectPapers(ingested, { ...prepared.brief,
+      stopConditions: { ...prepared.brief.stopConditions, maximumCandidateWorks: 1 } })
+    expect(reviewCandidate).toHaveBeenCalledTimes(3)
+    expect(selection.papers.length).toBeLessThanOrEqual(1)
+    expect(selection.candidateScheduling?.assessments.map(item => item.semanticReview))
+      .toEqual(Array.from({ length: 3 }, () => ({ status: 'failed', code: 'TRANSPORT' })))
+  })
+
+  it('runs two reviews at a time and merges out-of-order success and failure by work identity', async () => {
+    const release = new Map<string, () => void>()
+    let active = 0, maximumActive = 0
+    const reviewCandidate = vi.fn<CandidateReviewer>(async (input) => {
+      active++
+      maximumActive = Math.max(active, maximumActive)
+      await new Promise<void>(resolve => release.set(input.title, resolve))
+      active--
+      return input.title === 'Synthetic b' ? { status: 'failed', code: 'TIMEOUT' } : { status: 'validated',
+        screening: { schemaVersion: 1, signals: [], surfaceKeywordHits: [], uncertainties: [],
+          scope: { status: 'unknown', reason: 'Metadata alone does not establish relevance.' } } }
+    })
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate, reviewExecution: { concurrency: 2 } })
+    const pending = initialState(prepared)
+    await vi.waitFor(() => { expect(reviewCandidate).toHaveBeenCalledTimes(2) })
+    const firstTwo = [...release.keys()]
+    release.get(firstTwo[1]!)!()
+    await vi.waitFor(() => { expect(reviewCandidate).toHaveBeenCalledTimes(3) })
+    for (const resolve of release.values()) resolve()
+    const state = await pending
+    expect(maximumActive).toBe(2)
+    expect(active).toBe(0)
+    for (const [index, work] of state.ingested.works.entries()) {
+      expect(state.scheduling.assessments.find(item => item.academicWorkId === work.academicWorkId)?.semanticReview)
+        .toEqual(index === 1 ? { status: 'failed', code: 'TIMEOUT' } : { status: 'unknown' })
+    }
+    const repeated = await prepared.adapters.selectPapers(state.ingested, prepared.brief)
+    expect(reviewCandidate).toHaveBeenCalledTimes(3)
+    expect(repeated.candidateScheduling?.ranking.queues).toEqual(state.scheduling.ranking.queues)
+  })
+
+  it('cancels in-flight reviews and drains them before rejecting without dispatching queued works', async () => {
+    let active = 0
+    const reviewCandidate = vi.fn<CandidateReviewer>(async (_input, signal) => {
+      active++
+      try {
+        await new Promise<void>((resolve) => { signal!.addEventListener('abort', () => { resolve() }, { once: true }) })
+        return { status: 'failed', code: 'CANCELLED' }
+      } finally { active-- }
+    })
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate, reviewExecution: { concurrency: 2 } })
+    const searched = await prepared.adapters.search({ query: 'synthetic', maxResults: 3 })
+    const ingested = ingestWorks(createIngestIndex(), searched.works)
+    const cancellation = new AbortController()
+    const pending = prepared.adapters.selectPapers(ingested, prepared.brief, cancellation.signal)
+    const rejected = expect(pending).rejects.toThrow('cancel research')
+    await vi.waitFor(() => { expect(reviewCandidate).toHaveBeenCalledTimes(2) })
+    cancellation.abort(new Error('cancel research'))
+    await rejected
+    expect(active).toBe(0)
+    expect(reviewCandidate).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not initiate a review when selection persistence fails', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed', code: 'TRANSPORT' }))
+    const prepared = setup({ reviewCandidate, reviewExecution: { concurrency: 2,
+      recordSelection: async () => { throw new Error('selection could not be saved') } } })
+    await expect(initialState(prepared)).rejects.toThrow('selection could not be saved')
+    expect(reviewCandidate).not.toHaveBeenCalled()
+  })
+
   it('retains raw Academic results beyond the candidate bound so hard exclusions cannot hide a later eligible work', async () => {
     const prepared = setup({ initialWorkCount: 3, initialAcademicResultsPerQuery: 3,
       transformWork: (work, index) => index < 2 ? { ...work, academicWork: {
@@ -124,7 +203,7 @@ describe('Q5 evidence-gap replenishment', () => {
   })
 
   it('checks deterministic date and retraction exclusions before model review while retaining all evaluations', async () => {
-    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed' as const, code: 'TRANSPORT' }))
     const prepared = setup({ initialWorkCount: 3, reviewCandidate,
       publicationWindow: { start: { iso: '2020', precision: 'year' }, end: null,
         dateBasis: 'first_public_release' },
@@ -146,7 +225,7 @@ describe('Q5 evidence-gap replenishment', () => {
   })
 
   it('skips model review when full text is unresolved without dropping the candidate assessment', async () => {
-    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed' as const, code: 'TRANSPORT' }))
     const prepared = setup({ initialWorkCount: 2, reviewCandidate, unresolved: new Set(['fixture-2']) })
 
     const state = await initialState(prepared)
@@ -159,7 +238,7 @@ describe('Q5 evidence-gap replenishment', () => {
   it('reviews every eligible deduplicated candidate and retains lexical screening when one review fails', async () => {
     const question = 'Which method works?'
     const reviewCandidate = vi.fn<CandidateReviewer>(async input => input.title === 'Synthetic b'
-      ? undefined : { schemaVersion: 1, signals: input.title === 'Synthetic a'
+      ? { status: 'failed', code: 'TRANSPORT' } : { status: 'validated', screening: { schemaVersion: 1, signals: input.title === 'Synthetic a'
         ? [{ kind: 'question', question, quote: { source: 'abstract', text: 'comparative results' } },
           { kind: 'method', label: 'evaluation', quote: { source: 'abstract', text: 'evaluation' } },
           { kind: 'evidence_type', label: 'comparative results', quote: { source: 'abstract', text: 'comparative results' } },
@@ -168,7 +247,7 @@ describe('Q5 evidence-gap replenishment', () => {
       surfaceKeywordHits: [], uncertainties: [], scope: input.title === 'Synthetic c'
         ? { status: 'off_topic', reason: 'This work does not address the approved method question.',
           quote: { source: 'title', text: input.title } }
-        : { status: 'potentially_relevant', reason: 'The title concerns the approved question.' } })
+        : { status: 'potentially_relevant', reason: 'The title concerns the approved question.' } } })
     const prepared = setup({ questions: [question], initialWorkCount: 3, reviewCandidate,
       metadata: { abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
         keywords: { status: 'available', value: ['synthetic', 'comparison'] } },
@@ -194,8 +273,45 @@ describe('Q5 evidence-gap replenishment', () => {
     expect(offTopic).toMatchObject({ priority: 'excluded', hardFilter: { status: 'excluded' } })
   })
 
+  it('bounds semantic calls before selection and records lexical fallback for the remaining candidates', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed' as const, code: 'TRANSPORT' }))
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate, maximumModelReviews: 1,
+      transformWork: (work, index) => index === 2 ? { ...work, metadata: {
+        abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
+        keywords: { status: 'available', value: ['synthetic', 'comparison'] },
+      } } : work })
+    const searched = await prepared.adapters.search({ query: 'synthetic', maxResults: 3 })
+    const ingested = ingestWorks(createIngestIndex(), searched.works)
+    const observations: import('@deepseek-ai/dsh-academic-workflow').CandidateReviewProgressObservation[] = []
+    const selection = await prepared.adapters.selectPapers(ingested, prepared.brief, undefined,
+      observation => observations.push(observation))
+
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+    expect(reviewCandidate).toHaveBeenCalledWith(expect.objectContaining({ title: 'Synthetic c' }), undefined)
+    expect(selection.candidateScheduling?.assessments).toHaveLength(3)
+    expect(selection.candidateScheduling?.assessments.filter(assessment => assessment.reasons.some(reason =>
+      reason.includes('Bounded semantic model review did not cover this work')))).toHaveLength(2)
+    expect(observations.map(item => item.phase)).toEqual(['planned', 'started', 'settled'])
+    expect(observations.at(-1)).toMatchObject({ completed: 1, total: 1, failed: 1, skipped: 2 })
+
+  })
+
+  it('shares the semantic review budget with an evidence-gap round', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed' as const, code: 'TRANSPORT' }))
+    const prepared = setup({ initialWorkCount: 1, reviewCandidate, maximumModelReviews: 1 })
+    const state = await initialState(prepared)
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+
+    const replenished = await prepared.replenishCandidates(state.scheduling, state.ingested,
+      uncovered(prepared.brief), 2)
+    expect(reviewCandidate).toHaveBeenCalledTimes(1)
+    expect(replenished.scheduling.assessments).toHaveLength(2)
+    expect(replenished.scheduling.assessments.some(assessment => assessment.reasons.some(reason =>
+      reason.includes('Bounded semantic model review did not cover this work')))).toBe(true)
+  })
+
   it('reviews only newly discovered works when an evidence-gap round replenishes candidates', async () => {
-    const reviewCandidate = vi.fn<CandidateReviewer>(async () => undefined)
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed' as const, code: 'TRANSPORT' }))
     const prepared = setup({ reviewCandidate })
     const state = await initialState(prepared)
     expect(reviewCandidate).toHaveBeenCalledTimes(1)

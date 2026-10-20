@@ -1,0 +1,1112 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "candidate_semantic_review_only",
+  "baselineSessionId": "session-candidate-review-serial-eight-1792484490056",
+  "sessionId": "session-candidate-review-flash-eight-1792486365263",
+  "controls": {
+    "sameEightWorks": true,
+    "sameMessages": true,
+    "sameSettingsExceptModel": true,
+    "concurrency": 1,
+    "maxTokens": 8192,
+    "attemptTimeoutMs": 150000,
+    "maxAttempts": 1,
+    "provider": "wowei",
+    "baselineModel": "deepseek-v4-pro",
+    "currentModel": "deepseek-v4.1-flash",
+    "note": "Different run times; upstream load and actual model generation lengths may differ."
+  },
+  "startedAt": "2026-10-20T08:52:46.102Z",
+  "finishedAt": "2026-10-20T08:54:58.418Z",
+  "baselineElapsedMs": 273636,
+  "elapsedMs": 132316,
+  "wallTimeReductionPercent": 51.64525135581576,
+  "maxInFlight": 1,
+  "pendingAfterCompletion": 0,
+  "baseline": {
+    "dispatches": 8,
+    "settledResults": 8,
+    "validated": 8,
+    "validRate": 1,
+    "truncated": 0,
+    "timeouts": 0,
+    "requestWindowMs": 273504,
+    "medianElapsedMs": 25979.5,
+    "providerUsageKnown": 8,
+    "providerUsageUnknown": 0,
+    "inputTokensKnownTotal": 6537,
+    "outputTokensKnownTotal": 17232,
+    "cacheReadTokensKnownTotal": 0,
+    "medianInputTokensKnown": 810,
+    "medianOutputTokensKnown": 1557,
+    "estimatedInputTokensTotal": 6517,
+    "reasoningTokensKnown": 0,
+    "reasoningTokensUnknown": 8,
+    "medianReasoningTokensKnown": null,
+    "finalTextCharacters": 5662,
+    "reasoningCharacters": 77727,
+    "failures": []
+  },
+  "current": {
+    "dispatches": 8,
+    "settledResults": 8,
+    "validated": 8,
+    "validRate": 1,
+    "truncated": 0,
+    "timeouts": 0,
+    "requestWindowMs": 132182,
+    "medianElapsedMs": 17595,
+    "providerUsageKnown": 8,
+    "providerUsageUnknown": 0,
+    "inputTokensKnownTotal": 6113,
+    "outputTokensKnownTotal": 16548,
+    "cacheReadTokensKnownTotal": 0,
+    "medianInputTokensKnown": 757,
+    "medianOutputTokensKnown": 2235,
+    "estimatedInputTokensTotal": 6517,
+    "reasoningTokensKnown": 0,
+    "reasoningTokensUnknown": 8,
+    "medianReasoningTokensKnown": null,
+    "finalTextCharacters": 5380,
+    "reasoningCharacters": 74567,
+    "failures": [],
+    "scopeCounts": {
+      "potentially_relevant": 8,
+      "off_topic": 0,
+      "unknown": 0
+    }
+  },
+  "cases": [
+    {
+      "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+      "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 7,
+        "resultSeq": 8,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "1b005a385b8a5530a6d4e111543d49337b88c274dfe7879e06520ac89831314d",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 82145,
+        "firstContentElapsedMs": 609,
+        "usage": {
+          "inputTokens": 858,
+          "outputTokens": 4803,
+          "totalTokens": 5661
+        },
+        "estimatedInputTokens": 879,
+        "maxBetweenContentGapMs": 2181,
+        "reasoningCharacters": 22665,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper provides a conceptual taxonomy and comparative analysis of AI agents and agentic AI, covering architectures, core capabilities, collaboration, applications, and challenges.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"dynamic task decomposition, persistent memory, and coordinated autonomy\"}},{\"question\":\"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\"quote\":{\"source\":\"abstract\",\"text\":\"multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"hallucination, brittleness, emergent behavior, and coordination failure\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"research automation, robotic coordination, and medical decision support\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper provides a conceptual taxonomy and comparative analysis of AI agents and agentic AI, covering architectures, core capabilities, collaboration, applications, and challenges."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "dynamic task decomposition, persistent memory, and coordinated autonomy"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "hallucination, brittleness, emergent behavior, and coordination failure"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "research automation, robotic coordination, and medical decision support"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 7,
+        "resultSeq": 8,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "1b005a385b8a5530a6d4e111543d49337b88c274dfe7879e06520ac89831314d",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 15130,
+        "firstContentElapsedMs": 734,
+        "usage": {
+          "inputTokens": 805,
+          "outputTokens": 1946,
+          "totalTokens": 2751
+        },
+        "estimatedInputTokens": 879,
+        "maxBetweenContentGapMs": 303,
+        "reasoningCharacters": 8182,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper directly taxonomizes LLM-driven AI agents and Agentic AI, including architectures, multi-agent collaboration, challenges, and applications.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"tool integration, prompt engineering, and reasoning enhancements\"}},{\"question\":\"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\"quote\":{\"source\":\"abstract\",\"text\":\"multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"hallucination, brittleness, emergent behavior, and coordination failure\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"research automation, robotic coordination, and medical decision support\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper directly taxonomizes LLM-driven AI agents and Agentic AI, including architectures, multi-agent collaboration, challenges, and applications."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "tool integration, prompt engineering, and reasoning enhancements"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "hallucination, brittleness, emergent behavior, and coordination failure"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "research automation, robotic coordination, and medical decision support"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": true,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+      "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 4,
+        "resultSeq": 5,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "cbd6130aaca388027ea32e76a11f7b88ea1bc0936c8589fd8375cf6028e3bf8a",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 7693,
+        "firstContentElapsedMs": 1096,
+        "usage": {
+          "inputTokens": 786,
+          "outputTokens": 509,
+          "totalTokens": 1295
+        },
+        "estimatedInputTokens": 744,
+        "maxBetweenContentGapMs": 208,
+        "reasoningCharacters": 1679,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"The paper surveys LLM-based agent paradigms including tool use, planning, and feedback learning.\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper surveys LLM-based agent paradigms including tool use, planning, and feedback learning."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 4,
+        "resultSeq": 5,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "cbd6130aaca388027ea32e76a11f7b88ea1bc0936c8589fd8375cf6028e3bf8a",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 5684,
+        "firstContentElapsedMs": 1196,
+        "usage": {
+          "inputTokens": 733,
+          "outputTokens": 687,
+          "totalTokens": 1420
+        },
+        "estimatedInputTokens": 744,
+        "maxBetweenContentGapMs": 405,
+        "reasoningCharacters": 2491,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"综述LLM智能体的工具使用、规划与反馈学习等核心架构范式。\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents across various tasks.\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "综述LLM智能体的工具使用、规划与反馈学习等核心架构范式。"
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents across various tasks."
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": true,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+      "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 13,
+        "resultSeq": 14,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "df42d92bca2ea8433b734c6b5455b166d5cc6b6b49baaf3ecf8eeff9dbe8ae76",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 29427,
+        "firstContentElapsedMs": 629,
+        "usage": {
+          "inputTokens": 838,
+          "outputTokens": 1617,
+          "totalTokens": 2455
+        },
+        "estimatedInputTokens": 782,
+        "maxBetweenContentGapMs": 1931,
+        "reasoningCharacters": 7199,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper presents a benchmark for evaluating LLM agent security under interactive dual-control settings.\"},\"matchedQuestions\":[{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"DUMA-Bench provides a missing evaluation layer for studying security in realistic agent deployments.\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"agent security is not solely a property of the model but emerges from the interaction between the model, the user, and the environment\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper presents a benchmark for evaluating LLM agent security under interactive dual-control settings."
+          },
+          "matchedQuestions": [
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "DUMA-Bench provides a missing evaluation layer for studying security in realistic agent deployments."
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "agent security is not solely a property of the model but emerges from the interaction between the model, the user, and the environment"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 13,
+        "resultSeq": 14,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "df42d92bca2ea8433b734c6b5455b166d5cc6b6b49baaf3ecf8eeff9dbe8ae76",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 9464,
+        "firstContentElapsedMs": 758,
+        "usage": {
+          "inputTokens": 785,
+          "outputTokens": 1203,
+          "totalTokens": 1988
+        },
+        "estimatedInputTokens": 782,
+        "maxBetweenContentGapMs": 278,
+        "reasoningCharacters": 5384,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper presents a benchmark and evaluation protocol for LLM agent security, matching the benchmark and security governance questions.\"},\"matchedQuestions\":[{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"benchmark and evaluation protocol for measuring agent security\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"adversarial environments covering eight vulnerability classes\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper presents a benchmark and evaluation protocol for LLM agent security, matching the benchmark and security governance questions."
+          },
+          "matchedQuestions": [
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "benchmark and evaluation protocol for measuring agent security"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "adversarial environments covering eight vulnerability classes"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": true,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+      "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 16,
+        "resultSeq": 17,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "6504b93b5ba52a36ccfcd303cebb8852795cca094e385293fe6ed9e589d10c32",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 32301,
+        "firstContentElapsedMs": 1240,
+        "usage": {
+          "inputTokens": 864,
+          "outputTokens": 2315,
+          "totalTokens": 3179
+        },
+        "estimatedInputTokens": 870,
+        "maxBetweenContentGapMs": 241,
+        "reasoningCharacters": 9563,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"The paper reviews agentic AI architectures, core capabilities, evaluation, applications, and challenges, including LLM-based systems.\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"planning, memory, reflection, and goal pursuit\"\n      }\n    },\n    {\n      \"question\": \"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Evaluation metrics were classified as qualitative and quantitative measures\"\n      }\n    },\n    {\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"technical, architectural, coordination, ethical, and security issues\"\n      }\n    },\n    {\n      \"question\": \"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"applications based on their task domains where agentic AI is applied\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper reviews agentic AI architectures, core capabilities, evaluation, applications, and challenges, including LLM-based systems."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "planning, memory, reflection, and goal pursuit"
+              }
+            },
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "Evaluation metrics were classified as qualitative and quantitative measures"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "technical, architectural, coordination, ethical, and security issues"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "applications based on their task domains where agentic AI is applied"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 16,
+        "resultSeq": 17,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "6504b93b5ba52a36ccfcd303cebb8852795cca094e385293fe6ed9e589d10c32",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 24903,
+        "firstContentElapsedMs": 725,
+        "usage": {
+          "inputTokens": 811,
+          "outputTokens": 3122,
+          "totalTokens": 3933
+        },
+        "estimatedInputTokens": 870,
+        "maxBetweenContentGapMs": 375,
+        "reasoningCharacters": 14033,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"This review substantively covers agentic AI architectures, core capabilities, evaluation metrics, applications, and safety/security challenges.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"examined how they support planning, memory, reflection, and goal pursuit\"}},{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"Evaluation metrics were classified as qualitative and quantitative measures\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"ethical, and security issues\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"applications based on their task domains where agentic AI is applied\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "This review substantively covers agentic AI architectures, core capabilities, evaluation metrics, applications, and safety/security challenges."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "examined how they support planning, memory, reflection, and goal pursuit"
+              }
+            },
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "Evaluation metrics were classified as qualitative and quantitative measures"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "ethical, and security issues"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "applications based on their task domains where agentic AI is applied"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": true,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+      "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 10,
+        "resultSeq": 11,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "010c8a8e21b1d8b0bee68a3475c0c11e0fb0283ffc4a0480b10a5c42bb60b0f4",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 84944,
+        "firstContentElapsedMs": 1477,
+        "usage": {
+          "inputTokens": 811,
+          "outputTokens": 5700,
+          "totalTokens": 6511
+        },
+        "estimatedInputTokens": 868,
+        "maxBetweenContentGapMs": 689,
+        "reasoningCharacters": 27383,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"论文提出了一个多智能体LLM框架，直接涵盖规划、记忆、通信与治理。\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"The framework integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures.\"\n      }\n    },\n    {\n      \"question\": \"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents\"\n      }\n    },\n    {\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"governance mechanisms for ensuring fairness and accountability in multi-agent systems\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "论文提出了一个多智能体LLM框架，直接涵盖规划、记忆、通信与治理。"
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "The framework integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures."
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "governance mechanisms for ensuring fairness and accountability in multi-agent systems"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 10,
+        "resultSeq": 11,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "010c8a8e21b1d8b0bee68a3475c0c11e0fb0283ffc4a0480b10a5c42bb60b0f4",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 24963,
+        "firstContentElapsedMs": 737,
+        "usage": {
+          "inputTokens": 758,
+          "outputTokens": 3185,
+          "totalTokens": 3943
+        },
+        "estimatedInputTokens": 868,
+        "maxBetweenContentGapMs": 299,
+        "reasoningCharacters": 15213,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"Paper presents a multi-agent LLM planning/execution framework covering coordination, governance, and an application case.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"hierarchical planning with decentralized execution\"}},{\"question\":\"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\"quote\":{\"source\":\"abstract\",\"text\":\"enabling agents to dynamically coordinate through structured communication protocols\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"governance mechanisms for ensuring fairness and accountability in multi-agent systems\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"A case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture.\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Paper presents a multi-agent LLM planning/execution framework covering coordination, governance, and an application case."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "hierarchical planning with decentralized execution"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "enabling agents to dynamically coordinate through structured communication protocols"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "governance mechanisms for ensuring fairness and accountability in multi-agent systems"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "A case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture."
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": false,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+      "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 19,
+        "resultSeq": 20,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "10693e37db50d3099d682e2fd30d4371d6fe52616aa85d5a26285d6282d984bb",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 8489,
+        "firstContentElapsedMs": 1659,
+        "usage": {
+          "inputTokens": 793,
+          "outputTokens": 490,
+          "totalTokens": 1283
+        },
+        "estimatedInputTokens": 791,
+        "maxBetweenContentGapMs": 211,
+        "reasoningCharacters": 1948,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"Survey addresses LLM agent memory evolution, a core agent architecture capability.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction)\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Survey addresses LLM agent memory evolution, a core agent architecture capability."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction)"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 19,
+        "resultSeq": 20,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "10693e37db50d3099d682e2fd30d4371d6fe52616aa85d5a26285d6282d984bb",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 5784,
+        "firstContentElapsedMs": 667,
+        "usage": {
+          "inputTokens": 740,
+          "outputTokens": 665,
+          "totalTokens": 1405
+        },
+        "estimatedInputTokens": 791,
+        "maxBetweenContentGapMs": 233,
+        "reasoningCharacters": 2726,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"该综述直接研究 LLM 智能体的记忆机制及其从存储到反思再到经验的演进。\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"evolutionary framework for LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction)\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "该综述直接研究 LLM 智能体的记忆机制及其从存储到反思再到经验的演进。"
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "evolutionary framework for LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction)"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": true,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+      "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 22,
+        "resultSeq": 23,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "85e1a0f15994e736d7d5388582f75aa9ca5aaff2ff9d66b973b80e957d9bd658",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 5584,
+        "firstContentElapsedMs": 1189,
+        "usage": {
+          "inputTokens": 778,
+          "outputTokens": 301,
+          "totalTokens": 1079
+        },
+        "estimatedInputTokens": 747,
+        "maxBetweenContentGapMs": 222,
+        "reasoningCharacters": 1084,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"Survey directly addresses LLM agent evaluation and benchmarking.\"},\"matchedQuestions\":[{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"evaluating these agents remains a complex and underdeveloped area\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Survey directly addresses LLM agent evaluation and benchmarking."
+          },
+          "matchedQuestions": [
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "evaluating these agents remains a complex and underdeveloped area"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 22,
+        "resultSeq": 23,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "85e1a0f15994e736d7d5388582f75aa9ca5aaff2ff9d66b973b80e957d9bd658",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 25790,
+        "firstContentElapsedMs": 835,
+        "usage": {
+          "inputTokens": 725,
+          "outputTokens": 3216,
+          "totalTokens": 3941
+        },
+        "estimatedInputTokens": 747,
+        "maxBetweenContentGapMs": 313,
+        "reasoningCharacters": 15012,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper surveys LLM agent evaluation and benchmarking, matching the evaluation/benchmark question.\"},\"matchedQuestions\":[{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"evaluating these agents remains a complex and underdeveloped area\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"reliability guarantees, dynamic and longhorizon interactions, and compliance\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper surveys LLM agent evaluation and benchmarking, matching the evaluation/benchmark question."
+          },
+          "matchedQuestions": [
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "evaluating these agents remains a complex and underdeveloped area"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "reliability guarantees, dynamic and longhorizon interactions, and compliance"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": false,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    },
+    {
+      "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+      "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+      "integrity": {
+        "sameMessages": true,
+        "sameSettingsExceptModel": true,
+        "expectedModelChange": true
+      },
+      "baselinePro": {
+        "requestSeq": 25,
+        "resultSeq": 26,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4-pro",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "0193ca03c116c15fda275c3cb2f89a69e0f7fcae89b8b9e1ffddd7d8733086e6",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 22532,
+        "firstContentElapsedMs": 1429,
+        "usage": {
+          "inputTokens": 809,
+          "outputTokens": 1497,
+          "totalTokens": 2306
+        },
+        "estimatedInputTokens": 836,
+        "maxBetweenContentGapMs": 214,
+        "reasoningCharacters": 6206,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"Surveys multi-agent orchestration, safety/verification challenges, and domain application patterns for agentic AI.\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"collaboration paradigms and orchestration topologies\"\n      }\n    },\n    {\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"profound safety, security, and verification challenges\"\n      }\n    },\n    {\n      \"question\": \"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"applications across software engineering, healthcare, cybersecurity, and finance\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Surveys multi-agent orchestration, safety/verification challenges, and domain application patterns for agentic AI."
+          },
+          "matchedQuestions": [
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "collaboration paradigms and orchestration topologies"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "profound safety, security, and verification challenges"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "applications across software engineering, healthcare, cybersecurity, and finance"
+              }
+            }
+          ]
+        }
+      },
+      "currentFlash": {
+        "requestSeq": 25,
+        "resultSeq": 26,
+        "config": {
+          "provider": "wowei",
+          "model": "deepseek-v4.1-flash",
+          "maxTokens": 8192
+        },
+        "contextWindow": 262144,
+        "outputTokens": 8192,
+        "requestHash": "0193ca03c116c15fda275c3cb2f89a69e0f7fcae89b8b9e1ffddd7d8733086e6",
+        "configExceptModelHash": "9a4342e83f492e6a83a3584e4ae993e250b449d4722146ed97447ff67578b901",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 20060,
+        "firstContentElapsedMs": 1193,
+        "usage": {
+          "inputTokens": 756,
+          "outputTokens": 2524,
+          "totalTokens": 3280
+        },
+        "estimatedInputTokens": 836,
+        "maxBetweenContentGapMs": 291,
+        "reasoningCharacters": 11526,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"Survey directly addresses agentic AI orchestration, multi-agent collaboration, safety, benchmarks, and applications.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"orchestration architectures\"}},{\"question\":\"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\"quote\":{\"source\":\"abstract\",\"text\":\"collaboration paradigms and orchestration topologies\"}},{\"question\":\"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\"quote\":{\"source\":\"abstract\",\"text\":\"standardized adversarial benchmarks\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"safety, security, and verification challenges\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"applications across software engineering\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Survey directly addresses agentic AI orchestration, multi-agent collaboration, safety, benchmarks, and applications."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "orchestration architectures"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "collaboration paradigms and orchestration topologies"
+              }
+            },
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "standardized adversarial benchmarks"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "safety, security, and verification challenges"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "applications across software engineering"
+              }
+            }
+          ]
+        }
+      },
+      "reviewComparison": {
+        "sameScope": true,
+        "sameQuestionSet": false,
+        "note": "Agreement with previous model output is not independent human quality evaluation."
+      }
+    }
+  ]
+}

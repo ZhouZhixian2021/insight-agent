@@ -57,7 +57,7 @@ export { MAX_DRAFT_SEARCH_QUERIES } from './pipeline-types.ts'
 export type { PaperCandidateResolver } from './selection.ts'
 export type { AcademicResearchDraftRequest, AcademicResearchDraftResult, AcademicEvidenceEnhancementRequest } from './entry.ts'
 export type {
-  CandidateScheduling,
+  CandidateReviewProgressObservation, CandidateScheduling,
   DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, DraftPipelineSearch, DraftSearchResult,
   PaperProcessingFailure, PaperSelectionResult, ReplenishedCandidates, SelectedPaper,
 } from './pipeline-types.ts'

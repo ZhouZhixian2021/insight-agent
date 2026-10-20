@@ -78,6 +78,17 @@ function observation(
 }
 
 describe('Academic Q6 projection', () => {
+  it('preserves explicit semantic-review states without inferring them from scores or scope', () => {
+    const assessments = sample.assessments.map((item, index) => ({ ...item,
+      semanticReview: index === 0 ? { status: 'failed' as const, code: 'TRANSPORT' }
+        : index === 1 ? { status: 'unknown' as const }
+          : { status: 'not_selected' as const, reason: 'not_selected_budget' as const } }))
+    const view = academicQ6Projection('session-q6' as never, observation({ assessments }))
+    if (view.candidates.state !== 'available') throw new Error('expected candidates')
+    expect(view.candidates.value.items.map(item => item.assessment.semanticReview))
+      .toEqual(assessments.map(item => item.semanticReview))
+  })
+
   it('joins ranked candidates and keeps unfinished sections pending', () => {
     const projected = academicQ6Projection('session-q6' as never, observation())
     expect(projected).toMatchObject({

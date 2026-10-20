@@ -211,6 +211,9 @@ export function apply(ctx: Context, config: Config): void {
         + ` sending that message as provider-neutral content (${reason})`,
       )
     },
+    onTransportDiagnostic: (detail) => {
+      ctx.logger.warn(`llm-pi-ai: model transport diagnostic ${JSON.stringify(detail)}`)
+    },
   })
   // Independent of the route set: signing in is what makes a route worth
   // adding, so the flows are offered before any profile names their provider.

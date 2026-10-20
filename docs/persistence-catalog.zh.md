@@ -129,27 +129,71 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 来源：[`packages/academic/workflow/src/settlement-events.ts:61`](../packages/academic/workflow/src/settlement-events.ts)
 
+<a id="academiccandidate-review-selection-v1--log-only"></a>
+
+#### `academic/candidate-review-selection-v1` — log-only
+
+```ts persistence-catalog
+/** Deterministic review allocation committed before any selected model request. */
+'academic/candidate-review-selection-v1': ReviewSelectionEvent
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:46`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
 <a id="academiccandidate-screening-request--log-only"></a>
 
 #### `academic/candidate-screening-request` — log-only
 
 ```ts persistence-catalog
-/** Exact candidate review request and admission decision, kept for Session replay. */
+/** Historical full candidate-review request; new minimal reviews use the versioned event. */
 'academic/candidate-screening-request': CandidateReviewModelRequest
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:23`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:42`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-screening-result--log-only"></a>
 
 #### `academic/candidate-screening-result` — log-only
 
 ```ts persistence-catalog
-/** Settled candidate review attempt, including model stream or failure code. */
+/** Historical full candidate-review settlement. */
 'academic/candidate-screening-result': CandidateReviewModelResult
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:25`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:44`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
+<a id="academiccandidate-semantic-review-request-v1--log-only"></a>
+
+#### `academic/candidate-semantic-review-request-v1` — log-only
+
+```ts persistence-catalog
+/** Exact minimal semantic-review messages, route and admission decision. */
+'academic/candidate-semantic-review-request-v1': SemanticReviewRequest
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:48`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
+<a id="academiccandidate-semantic-review-result-v1--log-only"></a>
+
+#### `academic/candidate-semantic-review-result-v1` — log-only
+
+```ts persistence-catalog
+/** Settled semantic-review stream, usage, finish and failure diagnostics. */
+'academic/candidate-semantic-review-result-v1': SemanticReviewResult
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:50`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
+<a id="academiccandidate-semantic-review-verified-v1--log-only"></a>
+
+#### `academic/candidate-semantic-review-verified-v1` — log-only
+
+```ts persistence-catalog
+/** Parsed question matches and scope, committed before they affect candidate scores. */
+'academic/candidate-semantic-review-verified-v1': VerifiedSemanticReview
+```
+
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:52`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academicevidence-enhancement-selection--log-only"></a>
 

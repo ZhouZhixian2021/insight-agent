@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, aggregate processing, source-search, full-text, evidence-extraction and report-quality states, coverage, evidence navigation and Markdown download.
 
+During candidate selection, the live view shows completed model reviews against the bounded review plan, failures that kept lexical screening, and eligible works left without model review. These counts are distinct from the screening stage's deduplicated-work total.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
