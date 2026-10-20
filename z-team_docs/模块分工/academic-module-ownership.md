@@ -95,6 +95,7 @@ packages/preset/agent-presets/presets/academic/  # A：现有组装入口
 
 ## 文档入口
 
+- [候选语义审核减负与并发优化分工](academic-candidate-semantic-review-optimization-team-plan.md)
 - [学术洞察报告模板适配模块计划](academic-report-template-plan.md)
 - [负责人 A：架构与编排](member-a-architecture.md)
 - [负责人 B：检索与证据](member-b-evidence.md)

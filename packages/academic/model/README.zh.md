@@ -83,6 +83,8 @@ Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief
 
 `matchedQuestions` 只表示论文内容实际命中的 Brief 问题；Q5 从既有 Plan 和 `discoveredBy` 标识推导查询批次路由，不因此增加问题匹配分。新版评估可携带版本化的 `screening` 细节：问题、方法、证据类型及贡献信号必须引用标题或学术摘要原文；表面关键词命中与不确定项单独保存。`scope` 为 `potentially_relevant`、`off_topic` 或 `unknown`。偏题判断必须给出相对当前 Plan 的理由和标题或学术摘要原文，`unknown` 不等于排除。B 的新版生产函数以 `DetailedCandidateAssessment` 为返回契约，并须核对每项参与计分的问题、方法、证据类型或贡献信号都能找到对应的原文片段；只有关键词字段的表面命中不足以建立这些分数。缺少 `screening` 表示旧评估没有提供结构化细节。共享的 `off_topic` 硬过滤原因留待检索排序器校验 B 的判断后使用；本次增加类型本身不改变现有排序行为。
 
+`CandidateSemanticReviewRequestV1` 和 `CandidateSemanticReviewV1` 固定下一阶段较小的候选审核模型输入与输出。输入只包含已批准主题、去重后的研究问题、主题范围规则、学术标题和学术摘要可用状态；输出只包含三态范围判断和带原文引文的问题匹配。判为可能相关时至少匹配一个问题；偏题或未知时不匹配问题。Controller 和检索评估器须核对问题属于批准 Brief、引文逐字出现在标题或摘要中，才能把响应映射为 `CandidateScreeningDetails`。接通新输入输出前，旧 Session 记录和 Q6 评估保留现有类型。
+
 候选评估以稳定代码和可选审核细节公开硬过滤原因，同时公开分类、全部加权分项、优先级、匹配问题、当前全文解析状态、多样性标签和决定理由。`AcademicCandidateRankingResult` 把评估绑定到一个 Brief 版本，有序队列通过 `WorkVersionId` 引用评估而不复制对象。`createCandidateRankingResult()` 校验 Brief 绑定、公开总分、优先级、已审核原始问题、查询来源和队列成员关系。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
 
 问题覆盖、轮次结算、终止原因和 `QueryWorkflowProgressEvent` 只保存实际观测事实。模型不生成查询、不分类论文、不执行排序算法、不调度批次、不估算百分比，也不持久化进度；这些职责分别属于检索、工作流和 Web 消费者。
