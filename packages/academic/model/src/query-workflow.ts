@@ -252,6 +252,35 @@ export type CandidateSemanticReviewV1 = { readonly schemaVersion: 1 } & (
   }
 )
 
+/** One candidate's decision under the shared, round-spanning model-review budget. */
+export interface CandidateReviewSelectionDecisionV1 {
+  readonly academicWorkId: AcademicWorkId
+  readonly workVersionId: WorkVersionId
+  /** Approved questions reached through the candidate's discovery queries; routing never adds semantic match points. */
+  readonly routedQuestions: readonly string[]
+  /** Why the candidate did or did not consume the shared model-review budget. */
+  readonly status: 'selected' | 'not_selected_budget' | 'hard_excluded' | 'fulltext_unresolvable'
+    | 'already_attempted'
+  /** Zero-based order among selected candidates; null when the candidate is not selected. */
+  readonly selectionOrder: number | null
+  /** Why a selected candidate consumed budget; null when the candidate is not selected. */
+  readonly selectionReason: 'question_coverage' | 'lexical_fill' | null
+}
+
+/**
+ * Deterministic pre-model review selection over the shared model-review budget.
+ * The budget bounds only candidates sent to the model; it is independent of the Plan candidate ceiling.
+ */
+export interface CandidateReviewSelectionV1 {
+  readonly schemaVersion: 1
+  readonly maximumModelReviews: number
+  /** Candidates already sent to the model before this selection; failures still consume the shared budget. */
+  readonly attemptedBefore: number
+  /** Model reviews this selection may still initiate after prior attempts. */
+  readonly remainingBudget: number
+  readonly decisions: readonly CandidateReviewSelectionDecisionV1[]
+}
+
 /** Reviewed semantic facts supplied for one verified work after Q3 ingestion. */
 export interface CandidateAssessment {
   readonly academicWorkId: AcademicWorkId

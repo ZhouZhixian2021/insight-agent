@@ -4,8 +4,9 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createResea
   type HybridSearchPlan, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
 import { normalizeAcademicCatalogRecord } from '@deepseek-ai/dsh-academic-source'
-import { assessPlannedCandidates, parseCandidateScreening, rankPlannedCandidates, type CandidateAssessment,
-  type CandidateScreeningCriteria, type PlannedSearchRoundResult } from '../src/index.ts'
+import { assessPlannedCandidates, parseCandidateScreening, parseCandidateSemanticReview, rankPlannedCandidates,
+  screeningFromSemanticReview, type CandidateAssessment, type CandidateScreeningCriteria,
+  type PlannedSearchRoundResult } from '../src/index.ts'
 
 const question = 'Which retrieval methods improve faithfulness?'
 const queryId = createSearchQueryId()
@@ -354,5 +355,53 @@ describe('scholarly metadata screening', () => {
     expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
       new Map([[result.academicWorkId, { ...result.screening, signals: [{ kind: 'method', label: 'invented method',
         quote: { source: 'title', text: 'Retrieval' } }] }]]))).toThrow(/approved screening concepts/u)
+  })
+
+  function minimalReview(json: unknown, input: PlannedSearchRoundResult, title: string, abstract: string) {
+    const review = parseCandidateSemanticReview(JSON.stringify(json), title, { status: 'available', value: abstract },
+      specializedBrief.questions)
+    return new Map([[input.ingested.works[0]!.academicWorkId, screeningFromSemanticReview(review)]])
+  }
+
+  it('keeps code-computed cues when a minimal review supplies only a scope and question match', () => {
+    const title = 'Retrieval faithfulness', abstract = 'Retrieval evaluation improves faithfulness.'
+    const { input, facts } = inputs(title, abstract, ['retrieval'])
+    const reviewed = minimalReview({ schemaVersion: 1,
+      scope: { status: 'potentially_relevant', reason: 'The abstract evaluates retrieval faithfulness.' },
+      matchedQuestions: [{ question, quote: { source: 'abstract', text: abstract } }] },
+    input, title, abstract)
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts, reviewed)[0]!
+    expect(result).toMatchObject({ matchedQuestions: [question], methodMatch: 1, evidencePotential: 1,
+      contributionSignals: ['empirical_evaluation'], screening: { scope: { status: 'potentially_relevant' } } })
+    expect(result.screening.surfaceKeywordHits).toContainEqual({ term: 'retrieval', source: 'keywords', text: 'retrieval' })
+    expect(result.screening.signals).toContainEqual({ kind: 'question', question, quote: { source: 'abstract', text: abstract } })
+    expect(rankPlannedCandidates(plan, specializedBrief, input, [result]).evaluations[0])
+      .toMatchObject({ priority: 'p0', score: { questionMatch: 6.67 } })
+  })
+
+  it('keeps code-computed cues and unknown scope when a minimal review cannot decide', () => {
+    const title = 'Retrieval faithfulness', abstract = 'Retrieval evaluation improves faithfulness.'
+    const { input, facts } = inputs(title, abstract)
+    const reviewed = minimalReview({ schemaVersion: 1,
+      scope: { status: 'unknown', reason: 'The title is insufficient.' }, matchedQuestions: [] }, input, title, abstract)
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts, reviewed)[0]!
+    expect(result).toMatchObject({ matchedQuestions: [], methodMatch: 1, evidencePotential: 1,
+      screening: { scope: { status: 'unknown' } } })
+    expect(rankPlannedCandidates(plan, specializedBrief, input, [result]).evaluations[0]?.hardFilter.status).toBe('eligible')
+  })
+
+  it('does not credit unreviewed lexical cues for a definitive off-topic minimal review', () => {
+    const title = 'Retrieval for image generation'
+    const abstract = 'We evaluate retrieval for image generation and do not study faithfulness.'
+    const { input, facts } = inputs(title, abstract, ['retrieval'])
+    const reviewed = minimalReview({ schemaVersion: 1,
+      scope: { status: 'off_topic', reason: 'The paper studies image generation.',
+        quote: { source: 'abstract', text: 'We evaluate retrieval for image generation' } },
+      matchedQuestions: [] }, input, title, abstract)
+    const result = assessPlannedCandidates(plan, specializedBrief, input, criteria, facts, reviewed)[0]!
+    expect(result).toMatchObject({ matchedQuestions: [], methodMatch: 0, evidencePotential: 0, contributionSignals: [] })
+    const ranking = rankPlannedCandidates(plan, specializedBrief, input, [result])
+    expect(ranking.evaluations[0]).toMatchObject({ priority: 'excluded', classification: 'irrelevant',
+      hardFilter: { status: 'excluded', reasons: [{ code: 'off_topic' }] } })
   })
 })

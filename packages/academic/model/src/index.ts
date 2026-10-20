@@ -105,6 +105,8 @@ export type {
   CandidateFulltextAvailability,
   CandidateMetadataQuote,
   CandidateMetadataSignal,
+  CandidateReviewSelectionDecisionV1,
+  CandidateReviewSelectionV1,
   CandidateScopeDecision,
   CandidateScreeningDetails,
   CandidateSemanticReviewRequestV1,

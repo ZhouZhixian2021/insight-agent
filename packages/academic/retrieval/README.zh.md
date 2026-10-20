@@ -37,6 +37,14 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion: 1`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
 
+### 最小语义审核与送审选择
+
+`parseCandidateSemanticReview(text, title, abstract, approvedQuestions)` 接受 `CandidateSemanticReviewRequestV1`／`CandidateSemanticReviewV1` 定义的最小判断：三态 `scope` 以及引文逐字出现在规范标题或学术摘要中的已批准问题匹配。它拒绝额外字段、未批准或重复问题、捏造或来源不可用的引文，以及自相矛盾的范围结论与问题列表。传输失败、超时、截断和无效 JSON 仍属调用方失败，不会变成模型的 `unknown`。
+
+`selectCandidateReviews(brief, plan, ranking, assessments, attemptedWorkIds, maximumModelReviews)` 是确定性的送审前选择器。它先按每篇候选的 `discoveredBy` 路由为已批准问题分配覆盖名额，再按词项初排补足剩余名额，最终以规范论文身份破同分。它为每篇候选给出 `selected`、`not_selected_budget`、`hard_excluded`、`fulltext_unresolvable` 或 `already_attempted`，且查询路由不增加语义匹配分。共享预算跨初轮与缺口轮，独立于 Plan 候选上限和 P0/P1/P2 队列规模。
+
+`screeningFromSemanticReview(review)` 把通过校验的判断投影为初筛记录，`assessPlannedCandidates()` 再与本地计算线索合并：问题匹配始终是模型的语义结论，方法、证据类型和贡献分项在审核未提供时保留代码计算的线索，明确的偏题结论则不计任何线索。本地 `surfaceKeywordHits` 与不确定项保留，因此语义审核不会清零确定性词项线索，也不会把词项线索标作已核实证据。
+
 调用方提供 `CandidateScreeningCriteria` 和每个规范版本的全文解析事实。问题概念应包含研究主题词。主题相关性取主题或单个问题的最高命中比例，因此专门研究某个问题的论文无需匹配所有问题。方法和证据比例各用对应线索；缺失线索记零分。自然语言规则保持 `null`，等待全文验证。`sourceQuality` 衡量书目信息完整度，不代表科学质量。时效性使用 Plan 指定的日期口径及可选的 `asOfYear`/`recencyWindowYears` 配对；已审核发表时间缺少任一边界时同时省略两者。Q5 单独按批准查询推导发现路由，不增加问题匹配分。
 
 ```text
@@ -58,7 +66,7 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)从规范标题和摘要生成带引文的线索，或消费外部审核结果。[排序器](src/rank.ts)校验引文与评分的对应关系，应用硬过滤和批准权重，并生成兼顾多样性的队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
+[规划器](src/planner.ts)使用 Brief 别名与已审核扩展词。[执行器](src/execute.ts)核验 Web 引用，只把学术提供方记录交给[摄取库](../ingestion/README.zh.md)。[初筛器](src/assess.ts)从规范标题和摘要生成带引文的线索，或消费外部审核结果；[语义审核解析](src/parse-semantic-review.ts)核对最小模型判断，[初筛合成](src/semantic-screening.ts)将其投影用于合并，[送审选择](src/select-reviews.ts)分配共享的模型审核预算。[排序器](src/rank.ts)校验引文与评分的对应关系，应用硬过滤和批准权重，并生成兼顾多样性的队列。自然语言判断为 `null` 时只保留限制，不作硬排除。调用方负责审核、Session 事件、批次与模型可见内容的渲染。
 
 </details>
 

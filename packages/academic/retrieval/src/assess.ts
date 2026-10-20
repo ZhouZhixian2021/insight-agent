@@ -1,7 +1,7 @@
 /** Deterministic metadata screening against explicitly reviewed terminology. */
 import { metadataForVersion } from '@deepseek-ai/dsh-academic-ingestion'
 import type { AcademicWorkId, CandidateClassification, CandidateFulltextAvailability, CandidateMetadataQuote,
-  CandidateMetadataSignal, CandidateScreeningDetails, DetailedCandidateAssessment,
+  CandidateMetadataSignal, CandidateScreeningDetails, CandidateSurfaceKeywordHit, DetailedCandidateAssessment,
   ExecutableResearchBrief, HybridSearchPlan, WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import type { PlannedSearchRoundResult } from './execute.ts'
 import { validateScreeningQuotes } from './metadata-quotes.ts'
@@ -37,7 +37,7 @@ export interface CandidateScreeningCriteria {
  * @param round Verified, deduplicated scholarly records from Q3.
  * @param criteria Reviewed phrases, including explicit multilingual aliases, and recency inputs.
  * @param fulltextFacts Controller resolution facts for every canonical version.
- * @param reviewedScreenings Optional externally reviewed semantic details; supplied details replace lexical indications for that work.
+ * @param reviewedScreenings Optional validated semantic conclusions merged with code-computed lexical cues.
  * @returns One detailed metadata assessment per work; keywords alone never support scored indications.
  * @throws {RangeError} Approved inputs disagree, a quotation is not verbatim, or reviewed labels are not approved.
  */
@@ -108,15 +108,27 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     const uncertainty = metadata.abstract.status === 'available'
       ? ['Lexical indications do not resolve negation or establish that a paper answers a research question.']
       : ['No scholarly abstract is available; title indications do not establish the paper scope.']
-    const screening: CandidateScreeningDetails = reviewedScreenings?.get(work.academicWorkId) ?? {
-      schemaVersion: 1, signals,
-      surfaceKeywordHits: surfaceSources.flatMap(source => terms.filter(term =>
-        matchedConcepts(normalize(source.text), [[term]]).length > 0).map(term => ({ term, ...source }))),
-      uncertainties: uncertainty,
+    const surfaceKeywordHits: CandidateSurfaceKeywordHit[] = surfaceSources.flatMap(source => terms.filter(term =>
+      matchedConcepts(normalize(source.text), [[term]]).length > 0).map(term => ({ term, ...source })))
+    const reviewed = reviewedScreenings?.get(work.academicWorkId)
+    const screening: CandidateScreeningDetails = reviewed === undefined ? {
+      schemaVersion: 1, signals, surfaceKeywordHits, uncertainties: uncertainty,
       scope: { status: 'unknown', reason: 'Lexical indications require a Plan-specific scope review.' },
+    } : {
+      schemaVersion: 1,
+      /* Question matches are always the model's semantic conclusion. Reviewed method, evidence-type, and
+         contribution indications win when supplied (legacy full review); otherwise the code-computed
+         lexical cues fill those dimensions, and a definitive off-topic conclusion credits none. */
+      signals: [
+        ...reviewed.signals.filter(signal => signal.kind === 'question'),
+        ...(nonQuestion(reviewed, signals)),
+      ],
+      surfaceKeywordHits,
+      uncertainties: [...new Set([...reviewed.uncertainties, ...uncertainty])],
+      scope: reviewed.scope,
     }
     validateScreeningQuotes(screening, work.title, metadata.abstract, brief.questions)
-    if (reviewedScreenings?.has(work.academicWorkId)) {
+    if (reviewed !== undefined) {
       matchedQuestions = [...new Set(screening.signals.flatMap(signal => signal.kind === 'question' ? [signal.question] : []))]
       methods = reviewedLabels(screening, 'method', criteria.methods)
       evidence = reviewedLabels(screening, 'evidence_type', criteria.evidence)
@@ -132,7 +144,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     return {
       academicWorkId: work.academicWorkId, ...metadata, fulltextAvailability, matchedQuestions, contributionSignals, screening,
       topicRelevance: Math.max(fraction(topic.length, criteria.topic.length),
-        ...questions.map(entry => reviewedScreenings?.has(work.academicWorkId)
+        ...questions.map(entry => reviewed !== undefined
           ? matchedQuestions.includes(entry.question) ? 1 : 0 : fraction(entry.matches.length, entry.concepts.length))),
       methodMatch: fraction(methods.length, criteria.methods.length),
       evidencePotential: fraction(evidence.length, criteria.evidence.length),
@@ -144,11 +156,11 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       exclusionRuleMatches: plan.constraints.exclusionRules.map(() => null),
       diversityTags: methods,
       reasons: [
-        reviewedScreenings?.has(work.academicWorkId)
+        reviewed !== undefined
           ? 'Reviewed metadata indications identify possible relevance; quotations do not confirm evidence or scientific quality.'
           : 'Metadata screening identifies lexical relevance and contribution cues; it does not confirm evidence or scientific quality.',
         `Topic concepts matched ${topic.length}/${criteria.topic.length}: ${topic.join(', ') || 'none'}.`,
-        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} lexical concepts matched; ${reviewedScreenings?.has(work.academicWorkId) ? `reviewed metadata ${matchedQuestions.includes(entry.question) ? 'supports' : 'does not support'} the question; ` : ''}approved discovery-query provenance ${provenanceQuestions.has(entry.question) ? 'matched' : 'did not match'}.`),
+        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} lexical concepts matched; ${reviewed !== undefined ? `reviewed metadata ${matchedQuestions.includes(entry.question) ? 'supports' : 'does not support'} the question; ` : ''}approved discovery-query provenance ${provenanceQuestions.has(entry.question) ? 'matched' : 'did not match'}.`),
         `Method cues ${methods.length}/${criteria.methods.length}: ${methods.join(', ') || 'none'}; evidence cues ${evidence.length}/${criteria.evidence.length}: ${evidence.join(', ') || 'none'}. Unassessed cues score zero.`,
         `Contribution cues: ${contributionSignals.join(', ') || 'none'}.`,
         `Scope ${screening.scope.status}: ${screening.scope.reason}`,
@@ -173,6 +185,14 @@ function reviewedLabels(screening: CandidateScreeningDetails, kind: 'method' | '
   }
   return concepts.filter(aliases => labels.some(label => aliases.some(alias => normalize(alias) === normalize(label))))
     .flatMap(aliases => aliases.slice(0, 1))
+}
+
+/** Reviewed model indications win when supplied; otherwise code-computed lexical cues fill the dimensions. */
+function nonQuestion(reviewed: CandidateScreeningDetails,
+  lexical: readonly CandidateMetadataSignal[]): CandidateMetadataSignal[] {
+  if (reviewed.scope.status === 'off_topic') return []
+  const reviewedSignals = reviewed.signals.filter(signal => signal.kind !== 'question')
+  return reviewedSignals.length > 0 ? reviewedSignals : lexical.filter(signal => signal.kind !== 'question')
 }
 
 function validateCriteria(plan: HybridSearchPlan, brief: ExecutableResearchBrief, criteria: CandidateScreeningCriteria): void {
