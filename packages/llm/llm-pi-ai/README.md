@@ -147,7 +147,7 @@ The plugin declares every installed catalog provider it can authenticate in the 
 
 ### Replay and vocabulary
 
-Successful assistant responses store a versioned, lossless-JSON replay state beside the provider and model that produced them — response-level facts plus one per-block entry per streamed block. At request time, `LlmRuntime` passes replay state only when the same adapter instance owns both routes; the adapter validates it and restores native response ids and provider signatures, degrading an unusable state to provider-neutral content instead of failing the request. pi-ai tool-call arguments are parsed objects, so the adapter parses input and re-stringifies output to the harness raw-JSON convention; pi-ai in-stream error events map to terminal `finish` chunks.
+Successful assistant responses store a versioned, lossless-JSON replay state beside the provider and model that produced them — response-level facts plus one per-block entry per streamed block. At request time, `LlmRuntime` passes replay state only when the same adapter instance owns both routes; the adapter validates it and restores native response ids and provider signatures, degrading an unusable state to provider-neutral content instead of failing the request. pi-ai tool-call arguments are parsed objects, so the adapter parses input and re-stringifies output to the harness raw-JSON convention; pi-ai in-stream error events map to terminal `finish` chunks. For transport and timeout failures, the plugin logs one call-local diagnostic with the failure phase, bounded error and cause codes, HTTP status and request ID when available, and elapsed time. It does not log request content, URLs, credentials, or raw exception messages.
 
 </details>
 
@@ -218,7 +218,7 @@ These limits define where the adapter stops and future work begins. They are cur
 - **An unauthenticated route depends on its protocol** — a route naming no credential resolves as configured-but-keyless, but pi-ai's OpenAI-compatible implementation still requires an API key or an `Authorization` header, so a keyless local server needs a placeholder credential referenced by `apiKeyEnv` or an `Authorization` entry in `headers`.
 - **`GenerateOptions.stop` is unsupported** — pi-ai's common stream options cannot guarantee stop-sequence behavior across providers.
 - **In-history `system` messages use pi-ai's common context conversion** — provider-specific placement follows pi-ai rather than a harness-owned wire override.
-- **Provider HTTP status is unavailable** — pi-ai error events do not expose a stable HTTP status across providers.
+- **Provider HTTP status is unavailable in the LLM failure result** — pi-ai error events do not expose a stable HTTP status across providers. The server-side transport diagnostic records status when the injected HTTP fetch receives a response; non-HTTP transports and errors before a response have no status.
 - **Retry policy is provider-owned, not an SDK retry** — pi-ai SDK retries stay disabled so durable agent steps and `llm/retry` events own every visible attempt, and direct `ctx.llm.stream()` calls remain single-attempt.
 
 <a id="dev-note"></a>

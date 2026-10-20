@@ -21,6 +21,7 @@ import { closeMockServers, mockServer, textEvents } from './mock-server.ts'
 
 afterEach(async () => {
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
   await closeMockServers()
 })
 
@@ -385,6 +386,29 @@ describe('PiAiAdapter provider routing', () => {
     const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
     expect(result.finish).toMatchObject({ kind: 'error', failure: { code } })
     expect(server.paths).toEqual(['/chat/completions'])
+  })
+
+  it('reports the fetch cause separately from the user-visible transport failure', async () => {
+    const callback = vi.fn()
+    const cause = Object.assign(new Error('private proxy address'), { code: 'ECONNRESET' })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed', { cause })))
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    ctx.llm.registerAdapter(['deepseek'], new PiAiAdapter({
+      profiles: () => resolveProfiles({ deepseek: { apiKeyEnv: 'PI_TEST_KEY', baseURL: 'https://example.test' } }),
+      resolveApiKey: () => Promise.resolve('test-key'),
+      auth: memoryAuth(),
+      onTransportDiagnostic: callback,
+    }))
+
+    const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
+    expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'TRANSPORT' } })
+    expect(callback).toHaveBeenCalledOnce()
+    expect(callback.mock.calls[0]?.[0]).toMatchObject({
+      provider: 'deepseek', model: 'deepseek-v4-flash', failureCode: 'TRANSPORT',
+      phase: 'request', errorName: 'TypeError', causeCodes: ['ECONNRESET'],
+    })
+    expect(JSON.stringify(callback.mock.calls[0]?.[0])).not.toContain('private proxy address')
   })
 
   it('uses the resolved catalog context window for usage-based overflow detection', async () => {

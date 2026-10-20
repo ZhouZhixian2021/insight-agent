@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "purpose": "Same-input candidate review regression; no independent human relevance labels.",
+  "originalSessionId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe",
+  "recheckSessionId": "session-candidate-review-recheck-1792482205794",
+  "research": {
+    "topic": "大语言模型智能体（LLM Agent / Agentic AI）发展趋势",
+    "questions": [
+      "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+      "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+      "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+      "安全、可靠性与治理面临哪些关键挑战？",
+      "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+    ],
+    "inclusionRules": [
+      "论文研究大语言模型/大模型智能体（LLM Agent / Agentic AI）的架构、核心能力、多智能体协作、评测基准、安全治理或现实应用中的至少一个方面",
+      "论文通过元数据、摘要或全文至少提供一处可定位的证据点"
+    ],
+    "exclusionRules": [
+      "仅提及 agent 一词但实质内容与大语言模型智能体无关的论文",
+      "无法核验标题、作者或发表信息的来源内容",
+      "纯产品宣传、新闻报道或未附可核验学术来源的博客"
+    ]
+  },
+  "cases": [
+    {
+      "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+      "workVersionId": "749bd998-864f-4fd2-978a-1880e5e8f253",
+      "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+      "abstract": {
+        "status": "available",
+        "value": "This review critically distinguishes between AI Agents and Agentic AI, offering a structured, conceptual taxonomy, application mapping, and analysis of opportunities and challenges to clarify their divergent design philosophies and capabilities. We begin by outlining the search strategy and foundational definitions, characterizing AI Agents as modular systems driven and enabled by LLMs and LIMs for taskspecific automation. Generative AI is positioned as a precursor providing the foundation, with AI agents advancing through tool integration, prompt engineering, and reasoning enhancements. We then characterize Agentic AI systems, which, in contrast to AI Agents, represent a paradigm shift marked by multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy. Through a chronological evaluation of architectural evolution, operational mechanisms, interaction styles, and autonomy levels, we present a comparative analysis across both AI agents and agentic AI paradigms. Application domains enabled by AI Agents such as customer support, scheduling, and data summarization are then contrasted with Agentic AI deployments in research automation, robotic coordination, and medical decision support. We further examine unique challenges in each paradigm including hallucination, brittleness, emergent behavior, and coordination failure, and propose targeted solutions such as ReAct loops, retrieval-augmented generation (RAG), automation coordination layers, and causal modeling. This work aims to provide a roadmap for developing robust, scalable, and explainable AI-driven systems."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "fe19f1a936b811725c949cb88053a35be00511c0047f61d436f9ff3762958fb7",
+        "newInputHash": "fe19f1a936b811725c949cb88053a35be00511c0047f61d436f9ff3762958fb7"
+      },
+      "baseline": {
+        "status": "failed",
+        "finish": "max-tokens",
+        "failurePhase": "parse",
+        "errorCode": "EVIDENCE_MODEL_INCOMPLETE",
+        "elapsedMs": 112937,
+        "firstContentElapsedMs": 995,
+        "usage": {
+          "inputTokens": 1651,
+          "outputTokens": 8192,
+          "totalTokens": 9843
+        },
+        "rawText": ""
+      },
+      "current": {
+        "status": "validated",
+        "finish": "stop",
+        "failurePhase": null,
+        "errorCode": null,
+        "elapsedMs": 70586,
+        "firstContentElapsedMs": 3906,
+        "usage": {
+          "inputTokens": 858,
+          "outputTokens": 3322,
+          "totalTokens": 4180
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"The paper reviews LLM-based AI agents and agentic AI, covering architecture, multi-agent collaboration, reliability challenges, and applications.\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"dynamic task decomposition, persistent memory, and coordinated autonomy\"\n      }\n    },\n    {\n      \"question\": \"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"multi-agent collaboration\"\n      }\n    },\n    {\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"hallucination, brittleness, emergent behavior, and coordination failure\"\n      }\n    },\n    {\n      \"question\": \"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"research automation, robotic coordination, and medical decision support\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper reviews LLM-based AI agents and agentic AI, covering architecture, multi-agent collaboration, reliability challenges, and applications."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "dynamic task decomposition, persistent memory, and coordinated autonomy"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "multi-agent collaboration"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "hallucination, brittleness, emergent behavior, and coordination failure"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "research automation, robotic coordination, and medical decision support"
+              }
+            }
+          ]
+        },
+        "assessmentState": {
+          "status": "validated",
+          "scope": "potentially_relevant"
+        }
+      }
+    },
+    {
+      "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+      "workVersionId": "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+      "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+      "abstract": {
+        "status": "available",
+        "value": "Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents across various tasks. Although numerous frameworks have been devised for each paradigm, their intricate workflows and inconsistent taxonomy create challenges in understanding and reviewing the frameworks across different paradigms. This survey introduces a unified taxonomy to systematically review and discuss these frameworks. Specifically, 1) the taxonomy defines environments/tasks, common LLM-profiled roles or LMPRs (policy models, evaluators, and dynamic models), and universally applicable workflows found in prior work, and 2) it enables a comparison of key perspectives on the implementations of LMPRs and workflow designs across different agent paradigms and frameworks. 3) Finally, we identify three limitations in existing workflow designs and systematically discuss the future work. Resources have been made publicly available at in our GitHub repository https://github.com/xinzhel/LLM-Agent-Survey."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "3dd6740602ff268c0d4439f66ad78bcb799aa801e4ee76ba8f26e7db3c41f047",
+        "newInputHash": "3dd6740602ff268c0d4439f66ad78bcb799aa801e4ee76ba8f26e7db3c41f047"
+      },
+      "baseline": {
+        "status": "validated",
+        "finish": "stop",
+        "failurePhase": null,
+        "errorCode": null,
+        "elapsedMs": 101955,
+        "firstContentElapsedMs": 1588,
+        "usage": {
+          "inputTokens": 1530,
+          "outputTokens": 7100,
+          "totalTokens": 8630
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"signals\": [\n    {\n      \"kind\": \"question\",\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"title\",\n        \"text\": \"Tool Use (Including RAG), Planning, and Feedback Learning\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"tool use 工具调用\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Tool use\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"planning 规划\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"planning\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"feedback 反馈\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"feedback learning\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"RAG\",\n      \"quote\": {\n        \"source\": \"title\",\n        \"text\": \"RAG\"\n      }\n    },\n    {\n      \"kind\": \"contribution\",\n      \"classification\": \"review\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"This survey introduces a unified taxonomy to systematically review and discuss these frameworks.\"\n      }\n    }\n  ],\n  \"surfaceKeywordHits\": [\n    {\n      \"term\": \"LLM-Based Agents\",\n      \"source\": \"title\",\n      \"text\": \"LLM-Based Agents\"\n    },\n    {\n      \"term\": \"Tool Use\",\n      \"source\": \"title\",\n      \"text\": \"Tool Use\"\n    },\n    {\n      \"term\": \"RAG\",\n      \"source\": \"title\",\n      \"text\": \"RAG\"\n    },\n    {\n      \"term\": \"Planning\",\n      \"source\": \"title\",\n      \"text\": \"Planning\"\n    },\n    {\n      \"term\": \"Feedback Learning\",\n      \"source\": \"title\",\n      \"text\": \"Feedback Learning\"\n    }\n  ],\n  \"uncertainties\": [\n    \"Abstract does not mention memory explicitly, so coverage of that sub-capability is unverified from the supplied metadata.\"\n  ],\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"The paper is a survey of LLM-based agent paradigms covering tool use (including RAG), planning, and feedback learning, directly relevant to the approved question on mainstream agent architectures and core capabilities.\"\n  }\n}"
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "after_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150010,
+        "firstContentElapsedMs": 56012,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    },
+    {
+      "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+      "workVersionId": "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674",
+      "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+      "abstract": {
+        "status": "available",
+        "value": "LLM-based agents increasingly operate in environments where they interact with users, tools, and external systems. Yet most security evaluations assume passive users and static control, ignoring the interactive dynamics that shape real agent behavior. We introduce \\textbf{DUMA-Bench}, a benchmark and evaluation protocol for measuring agent security under \\emph{dual-control} interaction, where both the agent and the user can influence the shared environment state. DUMA-Bench extends $τ^2$-bench ~\\cite{barres2025tau} with adversarial environments covering eight vulnerability classes, including RAG poisoning, cross-agent manipulation, and unsafe output handling. We evaluate \\textbf{14 models from five model families} (OpenAI, Anthropic, DeepSeek, Qwen, and Z.ai) across eight domains and multiple user-behavior regimes. Across our experiments, introducing dual-control interaction increases the attack success rate from \\textbf{26.9\\%} to \\textbf{41.1\\%}. These results show that agent security is not solely a property of the model but emerges from the interaction between the model, the user, and the environment. DUMA-Bench provides a missing evaluation layer for studying security in realistic agent deployments."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "59d74e2b18b4cc7f0512021714ac3757f07f777863a441b4b5c956d6045e1baa",
+        "newInputHash": "59d74e2b18b4cc7f0512021714ac3757f07f777863a441b4b5c956d6045e1baa"
+      },
+      "baseline": {
+        "status": "failed",
+        "finish": "stop",
+        "failurePhase": "parse",
+        "errorCode": "EVIDENCE_MODEL_CALL_FAILED",
+        "elapsedMs": 91828,
+        "firstContentElapsedMs": 1561,
+        "usage": {
+          "inputTokens": 1591,
+          "outputTokens": 6597,
+          "totalTokens": 8188
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"signals\": [\n    {\n      \"kind\": \"question\",\n      \"question\": \"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Most security evaluations assume passive users and static control, ignoring the interactive dynamics that shape real agent behavior.\"\n      }\n    },\n    {\n      \"kind\": \"question\",\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"These results show that agent security is not solely a property of the model but emerges from the interaction between the model, the user, and the environment.\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"RAG\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"RAG poisoning\"\n      }\n    },\n    {\n      \"kind\": \"evidence_type\",\n      \"label\": \"benchmark\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"a benchmark and evaluation protocol\"\n      }\n    },\n    {\n      \"kind\": \"evidence_type\",\n      \"label\": \"success rate\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"the attack success rate from \\\\textbf{26.9\\\\%} to \\\\textbf{41.1\\\\%}\"\n      }\n    },\n    {\n      \"kind\": \"contribution\",\n      \"classification\": \"benchmark_or_dataset\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"DUMA-Bench provides a missing evaluation layer for studying security in realistic agent deployments.\"\n      }\n    }\n  ],\n  \"surfaceKeywordHits\": [\n    {\n      \"term\": \"LLM Agent\",\n      \"source\": \"title\",\n      \"text\": \"LLM Agent\"\n    },\n    {\n      \"term\": \"Multi-Agent\",\n      \"source\": \"title\",\n      \"text\": \"Multi-Agent\"\n    },\n    {\n      \"term\": \"LLM agent security\",\n      \"source\": \"keywords\",\n      \"text\": \"LLM agent security\"\n    },\n    {\n      \"term\": \"multi-agent systems\",\n      \"source\": \"keywords\",\n      \"text\": \"multi-agent systems\"\n    },\n    {\n      \"term\": \"security benchmarks\",\n      \"source\": \"keywords\",\n      \"text\": \"security benchmarks\"\n    }\n  ],\n  \"uncertainties\": [\n    \"标题中的“Multi-Agent”可能触发多智能体协作问题，但摘要未提供通信、分工或社会仿真演进证据，因此未将 Q2 作为问题信号。\",\n    \"RAG 以“RAG poisoning”漏洞语境出现，仅能支持方法词面命中，不足以作为论文提出 RAG 方法改进的证据。\"\n  ],\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"论文提出并评测 LLM Agent 安全基准 DUMA-Bench，指出当前安全评测忽视交互动态的短板，覆盖智能体评测与安全治理两个研究问题。\"\n  }\n}"
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "after_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150006,
+        "firstContentElapsedMs": 112788,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    },
+    {
+      "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+      "workVersionId": "01fe2de1-cd19-43bf-823b-84d10293341f",
+      "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+      "abstract": {
+        "status": "available",
+        "value": "Agentic AI systems are a recently emerged and important approach that goes beyond traditional AI, generative AI, and autonomous systems by focusing on autonomy, adaptability, and goal-driven reasoning. This study provides a clear review of agentic AI systems by bringing together their definitions, frameworks, and architectures, and by comparing them with related areas like generative AI, autonomic computing, and multi-agent systems. To do this, we reviewed 143 primary studies on current LLM-based and non-LLM-driven agentic systems and examined how they support planning, memory, reflection, and goal pursuit. Furthermore, we classified architectural models, input–output mechanisms, and applications based on their task domains where agentic AI is applied, supported using tabular summaries that highlight real-world case studies. Evaluation metrics were classified as qualitative and quantitative measures, along with available testing methods of agentic AI systems to check the system’s performance and reliability. This study also highlights the main challenges and limitations of agentic AI, covering technical, architectural, coordination, ethical, and security issues. We organized the conceptual foundations, available tools, architectures, and evaluation metrics in this research, which defines a structured foundation for understanding and advancing agentic AI. These findings aim to help researchers and developers build better, clearer, and more adaptable systems that support responsible deployment in different domains."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "7102bca5adc5eb20e8f322863d238e9ec0bfcc276d01b167400afb342b79f0b0",
+        "newInputHash": "7102bca5adc5eb20e8f322863d238e9ec0bfcc276d01b167400afb342b79f0b0"
+      },
+      "baseline": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "after_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150035,
+        "firstContentElapsedMs": 942,
+        "usage": null,
+        "rawText": ""
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "after_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150003,
+        "firstContentElapsedMs": 54422,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    },
+    {
+      "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+      "workVersionId": "acfa223c-756f-477f-87e6-8c85c871637d",
+      "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+      "abstract": {
+        "status": "available",
+        "value": "The rapid scaling of large language models has introduced significant challenges in reasoning coherence, computational efficiency, and operational robustness when deployed in real-world, distributed environments. This paper proposes a comprehensive multi-agent cooperative planning and execution framework designed to address these challenges by decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents. The framework integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures. Emphasis is placed on structural trade-offs between centralized orchestration and autonomous agent decision-making, including considerations of latency, fault tolerance, and alignment. The paper further examines governance mechanisms for ensuring fairness and accountability in multi-agent systems, as well as infrastructure requirements for sustainable deployment at scale. A case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture. The discussion extends to policy implications, including regulatory frameworks for agent oversight and data sovereignty. By synthesizing insights from distributed systems, artificial intelligence, and socio-technical infrastructure research, this work contributes a systems-level perspective on the design of cooperative LLM reasoning platforms that are both performant and ethically grounded."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "266531cd699bcba028519227263abc1bec9d5673639c931bd73b47efd1880e39",
+        "newInputHash": "266531cd699bcba028519227263abc1bec9d5673639c931bd73b47efd1880e39"
+      },
+      "baseline": {
+        "status": "failed",
+        "finish": "max-tokens",
+        "failurePhase": "parse",
+        "errorCode": "EVIDENCE_MODEL_INCOMPLETE",
+        "elapsedMs": 110006,
+        "firstContentElapsedMs": 1210,
+        "usage": {
+          "inputTokens": 1598,
+          "outputTokens": 8192,
+          "totalTokens": 9790
+        },
+        "rawText": ""
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "before_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150001,
+        "firstContentElapsedMs": null,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    },
+    {
+      "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+      "workVersionId": "7251fdcb-79f0-43df-aa0a-ed664aa2efa2",
+      "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+      "abstract": {
+        "status": "available",
+        "value": "Large Language Model (LLM)-based agents have fundamentally reshaped artificial intelligence by integrating external tools and planning capabilities.While memory mechanisms have emerged as the architectural cornerstone of these systems, current research remains fragmented, oscillating between operating system engineering and cognitive science.This theoretical divide prevents a unified view of technological synthesis and a coherent evolutionary perspective.To bridge this gap, this survey proposes a novel evolutionary framework for LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction).We first formally define these three stages before analyzing the three core drivers of this evolution: the necessity for long-range consistency, the challenges in dynamic environments, and the ultimate goal of continual learning.Furthermore, we specifically explore two transformative mechanisms in the frontier Experience stage: active exploration and cross-trajectory abstraction.By synthesizing these disparate views, this work offers robust design principles and a clear roadmap for the development of next-generation LLM agents."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "79b2a3f909ba1e5611eec90d864ab27193bceabcf4d33adc2178b9971c41e0a2",
+        "newInputHash": "79b2a3f909ba1e5611eec90d864ab27193bceabcf4d33adc2178b9971c41e0a2"
+      },
+      "baseline": {
+        "status": "failed",
+        "finish": "max-tokens",
+        "failurePhase": "parse",
+        "errorCode": "EVIDENCE_MODEL_INCOMPLETE",
+        "elapsedMs": 114802,
+        "firstContentElapsedMs": 841,
+        "usage": {
+          "inputTokens": 1559,
+          "outputTokens": 8192,
+          "totalTokens": 9751
+        },
+        "rawText": ""
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "before_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150012,
+        "firstContentElapsedMs": null,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    },
+    {
+      "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+      "workVersionId": "267e979b-6c93-432c-a35d-7a3b502b213d",
+      "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+      "abstract": {
+        "status": "available",
+        "value": "The rise of LLM-based agents has opened new frontiers in AI applications, yet evaluating these agents remains a complex and underdeveloped area.This survey provides an in-depth overview of the emerging field of LLM agent evaluation, introducing a twodimensional taxonomy that organizes existing work along (1) evaluation objectives-what to evaluate, such as agent behavior, capabilities, reliability, and safety-and (2) evaluation process-how to evaluate, including interaction modes, datasets and benchmarks, metric computation methods, and tooling.In addition to taxonomy, we highlight enterprise-specific challenges, such as role-based access to data, the need for reliability guarantees, dynamic and longhorizon interactions, and compliance, which are often overlooked in current research.We also identify the future research directions, including holistic, more realistic, and scalable evaluation.This work aims to bring clarity to the fragmented landscape of agent evaluation and provide a framework for systematic assessment, enabling researchers and practitioners to evaluate LLM agents for real-world deployment."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "2504270731f5ca6bbed77dca847b30b768952dc04f8b26c68d56a31ce5236afc",
+        "newInputHash": "2504270731f5ca6bbed77dca847b30b768952dc04f8b26c68d56a31ce5236afc"
+      },
+      "baseline": {
+        "status": "validated",
+        "finish": "stop",
+        "failurePhase": null,
+        "errorCode": null,
+        "elapsedMs": 130955,
+        "firstContentElapsedMs": 1091,
+        "usage": {
+          "inputTokens": 532,
+          "outputTokens": 6599,
+          "totalTokens": 8155,
+          "cacheReadTokens": 1024
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"signals\": [\n    {\n      \"kind\": \"question\",\n      \"question\": \"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\n      \"quote\": {\n        \"source\": \"title\",\n        \"text\": \"Evaluation and Benchmarking of LLM Agents: A Survey\"\n      }\n    },\n    {\n      \"kind\": \"question\",\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"enterprise-specific challenges, such as role-based access to data, the need for reliability guarantees, dynamic and longhorizon interactions, and compliance, which are often overlooked in current research.\"\n      }\n    },\n    {\n      \"kind\": \"evidence_type\",\n      \"label\": \"benchmark 基准\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"datasets and benchmarks\"\n      }\n    },\n    {\n      \"kind\": \"evidence_type\",\n      \"label\": \"evaluation 评测\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"LLM agent evaluation\"\n      }\n    },\n    {\n      \"kind\": \"contribution\",\n      \"classification\": \"review\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"This survey provides an in-depth overview of the emerging field of LLM agent evaluation\"\n      }\n    }\n  ],\n  \"surfaceKeywordHits\": [\n    {\n      \"term\": \"LLM Agents\",\n      \"source\": \"title\",\n      \"text\": \"Evaluation and Benchmarking of LLM Agents: A Survey\"\n    },\n    {\n      \"term\": \"Benchmarking\",\n      \"source\": \"title\",\n      \"text\": \"Evaluation and Benchmarking of LLM Agents: A Survey\"\n    },\n    {\n      \"term\": \"LLM-based agents\",\n      \"source\": \"abstract\",\n      \"text\": \"LLM-based agents\"\n    },\n    {\n      \"term\": \"agent evaluation\",\n      \"source\": \"abstract\",\n      \"text\": \"agent evaluation\"\n    }\n  ],\n  \"uncertainties\": [],\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"The paper is a survey of LLM agent evaluation and benchmarking, directly addressing the approved evaluation/benchmark question and also discussing reliability, safety, compliance, and enterprise deployment challenges relevant to the safety/governance question.\"\n  }\n}"
+      },
+      "current": {
+        "status": "validated",
+        "finish": "stop",
+        "failurePhase": null,
+        "errorCode": null,
+        "elapsedMs": 149811,
+        "firstContentElapsedMs": 57439,
+        "usage": {
+          "inputTokens": 778,
+          "outputTokens": 554,
+          "totalTokens": 1332
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"Survey directly addresses LLM agent evaluation and benchmarks.\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"智能体评测与基准（benchmark）如何演变，存在哪些短板？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"This survey provides an in-depth overview of the emerging field of LLM agent evaluation\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "Survey directly addresses LLM agent evaluation and benchmarks."
+          },
+          "matchedQuestions": [
+            {
+              "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+              "quote": {
+                "source": "abstract",
+                "text": "This survey provides an in-depth overview of the emerging field of LLM agent evaluation"
+              }
+            }
+          ]
+        },
+        "assessmentState": {
+          "status": "validated",
+          "scope": "potentially_relevant"
+        }
+      }
+    },
+    {
+      "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+      "workVersionId": "8059a8ab-5708-48e4-9d22-aa837666fc0c",
+      "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+      "abstract": {
+        "status": "available",
+        "value": "The transition from isolated Large Language Models (LLMs) to orchestrated Multi-Agent Systems (MAS) enables complex problem-solving but introduces profound safety, security, and verification challenges. This paper presents a comprehensive survey of orchestration architectures and safety mechanisms in agentic AI systems. This study systematically analyzes collaboration paradigms and orchestration topologies, demonstrating how distributed interactions expand the attack surface. A unified threat taxonomy is proposed, distinguishing between intrinsic agent vulnerabilities, such as prompt injection and cognitive drift, and extrinsic, MAS-specific threats, including cross-agent poisoning and emergent shadow behaviors. Furthermore, we evaluate current defense strategies, from capability sandboxing and runtime monitoring to zero-trust architectures, while highlighting the fundamental limitations of traditional formal verification in non-deterministic environments. By examining applications across software engineering, healthcare, cybersecurity, and finance, we identify domain-specific safety patterns and the necessity of human-in-the-loop oversight. Finally, we discuss regulatory challenges and outline future research directions, emphasizing the need for compositional verification, standardized adversarial benchmarks, and interdisciplinary governance to ensure the trustworthy deployment of autonomous systems."
+      },
+      "inputIntegrity": {
+        "sameResearch": true,
+        "samePaper": true,
+        "sameModelConfig": true,
+        "oldInputHash": "76ad6428c12b8cf5229ac1be9be9f745e9d98d79ce14dce4b8df534fcdc58d6f",
+        "newInputHash": "76ad6428c12b8cf5229ac1be9be9f745e9d98d79ce14dce4b8df534fcdc58d6f"
+      },
+      "baseline": {
+        "status": "validated",
+        "finish": "stop",
+        "failurePhase": null,
+        "errorCode": null,
+        "elapsedMs": 112650,
+        "firstContentElapsedMs": 1083,
+        "usage": {
+          "inputTokens": 1602,
+          "outputTokens": 6436,
+          "totalTokens": 8038
+        },
+        "rawText": "{\n  \"schemaVersion\": 1,\n  \"signals\": [\n    {\n      \"kind\": \"question\",\n      \"question\": \"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\n      \"quote\": {\n        \"source\": \"title\",\n        \"text\": \"Multi-Agent Collaboration\"\n      }\n    },\n    {\n      \"kind\": \"question\",\n      \"question\": \"安全、可靠性与治理面临哪些关键挑战？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"profound safety, security, and verification challenges\"\n      }\n    },\n    {\n      \"kind\": \"question\",\n      \"question\": \"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"applications across software engineering, healthcare, cybersecurity, and finance\"\n      }\n    },\n    {\n      \"kind\": \"method\",\n      \"label\": \"multi-agent collaboration 多智能体协作\",\n      \"quote\": {\n        \"source\": \"title\",\n        \"text\": \"Multi-Agent Collaboration\"\n      }\n    },\n    {\n      \"kind\": \"contribution\",\n      \"classification\": \"review\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"This paper presents a comprehensive survey of orchestration architectures and safety mechanisms in agentic AI systems.\"\n      }\n    }\n  ],\n  \"surfaceKeywordHits\": [\n    {\n      \"term\": \"Agentic AI\",\n      \"source\": \"title\",\n      \"text\": \"Agentic AI\"\n    },\n    {\n      \"term\": \"Multi-Agent Collaboration\",\n      \"source\": \"title\",\n      \"text\": \"Multi-Agent Collaboration\"\n    },\n    {\n      \"term\": \"Multi-Agent Systems\",\n      \"source\": \"abstract\",\n      \"text\": \"Multi-Agent Systems\"\n    },\n    {\n      \"term\": \"agentic AI systems\",\n      \"source\": \"abstract\",\n      \"text\": \"agentic AI systems\"\n    },\n    {\n      \"term\": \"AI safety\",\n      \"source\": \"keywords\",\n      \"text\": \"AI safety\"\n    },\n    {\n      \"term\": \"large language models\",\n      \"source\": \"keywords\",\n      \"text\": \"large language models\"\n    }\n  ],\n  \"uncertainties\": [\n    \"Abstract does not explicitly mention planning, tool use, memory, or reflection, so coverage of core individual agent capabilities is unclear.\",\n    \"Abstract mentions standardized adversarial benchmarks only as a future direction rather than reporting empirical benchmark results.\",\n    \"Coverage of Web, robotics, and scientific discovery applications is not evidenced in the abstract; only software engineering and other domains are named.\"\n  ],\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"Survey of agentic AI multi-agent orchestration and safety matches the approved topic and multiple research questions.\"\n  }\n}"
+      },
+      "current": {
+        "status": "failed",
+        "finish": "error",
+        "failurePhase": "after_content",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "elapsedMs": 150003,
+        "firstContentElapsedMs": 11835,
+        "usage": null,
+        "rawText": "",
+        "review": null,
+        "assessmentState": {
+          "status": "failed",
+          "code": "TIMEOUT"
+        }
+      }
+    }
+  ]
+}

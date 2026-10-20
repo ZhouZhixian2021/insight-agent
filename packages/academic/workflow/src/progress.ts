@@ -108,6 +108,17 @@ export type AcademicWorkflowProgressActivity =
     readonly startedAt: string
   }
   | {
+    readonly kind: 'screening'
+    readonly stage: 'screening'
+    readonly operation: 'candidate_review'
+    readonly completedReviews: number
+    readonly totalReviews: number
+    readonly failedReviews: number
+    readonly skippedReviews: number
+    readonly title: string | null
+    readonly startedAt: string
+  }
+  | {
     readonly kind: 'paper'
     readonly stage: 'fulltext' | 'extraction'
     readonly academicWorkId: AcademicWorkId

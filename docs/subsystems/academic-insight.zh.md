@@ -43,6 +43,8 @@ kind: "subsystem"
 
 [workflow 库](../../packages/academic/workflow/README.zh.md)补齐首次取得的版本哈希，并执行一次有界的明确查询到草稿流程。它在已批准 Brief 轮数限制内按顺序执行最多三条由调用方规划的查询，按轮转顺序合并查询批次，按精确身份去重，再应用一个全局候选上限。它返回包含实际 Provider、实际开始的查询、覆盖、截断及来源或论文操作失败的终态 RetrievalRun；Remote 控制器把该 JSON 安全运行记录提供给 Web 客户端。排序调度还发布完整的查询工作流观察；Controller 把其中的计划、候选、轮次、批次、逐题覆盖和停止决定投影为序号单调递增的 `AcademicQ6Projection` 帧，并在终态结果中重复最后一帧。运行内进度快照分别记录合并的论文身份、合并的版本记录、保留版本和疑似重复；论文活动同时携带论文与版本 ID，共享格式接受 Provider 活动。显式启用的模型适配器接收程序维护的来源信息，保留证据生成器请求接口。PaperEvidenceGenerator、PaperScopeDecision、EvidenceModelSource、EvidenceModelRequest 和 EvidenceModelResult 定义在[工作流类型](../../packages/academic/workflow/src/model-types.ts)中。模型先用首个证据批次和获批规则判断论文准入；排除论文跳过抽取，材料不足则暂停。纳入论文使用简化的证据回答处理有序且受 token 限制的批次，在逐字来源核验前恢复原始定位序号。每次尝试可设置独立超时和有界瞬时故障重试；一个批次失败时保留其他已校验批次。请求事件包含来源身份、阶段、准确的模型配置/消息、输入估算、上下文/输出上限及准入决定；结果引用请求序号，保留压缩流、状态及可选的结束原因、用量、错误代码和本机耗时诊断。没有阶段字段的历史事件仍可读取。存储失败停止整轮。当前不提供自动查询规划。这些 Session 记录支持模型调用复查，不代表完整工作流恢复或语义审核。
 
+候选选择在有界模型审核前调用 Retrieval 覆盖选择器，部署审核预算独立于 Plan 候选上限。Controller 的[审核策略](../../packages/api/academic-research-controller/README.zh.md#model-experience)限制最多两个并发，以版本化 Session 事件记录最小请求和已验证判断，并通过 Q6 投影明确的 `CandidateAssessment.semanticReview` 结算。筛选进度分别报告审核数量与去重论文总数，跳过的论文保留词项评估。
+
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
 <a id="cordis-surface"></a>

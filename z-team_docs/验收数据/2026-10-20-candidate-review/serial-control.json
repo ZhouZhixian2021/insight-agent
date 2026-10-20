@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "candidate_semantic_review_only",
+  "previousSessionId": "session-candidate-review-recheck-1792482205794",
+  "sessionId": "session-candidate-review-serial-control-1792483893233",
+  "controls": {
+    "concurrency": 1,
+    "previousConcurrency": 2,
+    "maxTokens": 8192,
+    "attemptTimeoutMs": 150000,
+    "maxAttempts": 1,
+    "selectedPreviousTimeouts": 2,
+    "previousFullBatch": 8,
+    "currentBatch": 2,
+    "note": "Different observation times and a smaller batch; direction-finding control, not a full eight-paper performance benchmark."
+  },
+  "startedAt": "2026-10-20T08:11:34.128Z",
+  "finishedAt": "2026-10-20T08:12:10.895Z",
+  "elapsedMs": 36767,
+  "maxInFlight": 1,
+  "pendingAfterCompletion": 0,
+  "summary": {
+    "dispatches": 2,
+    "settledResults": 2,
+    "validated": 2,
+    "validRate": 1,
+    "truncated": 0,
+    "timeouts": 0,
+    "requestWindowMs": 36650,
+    "medianElapsedMs": 18299,
+    "providerUsageKnown": 2,
+    "providerUsageUnknown": 0,
+    "inputTokensKnownTotal": 1597,
+    "outputTokensKnownTotal": 2461,
+    "cacheReadTokensKnownTotal": 0,
+    "medianInputTokensKnown": 798.5,
+    "medianOutputTokensKnown": 1230.5,
+    "estimatedInputTokensTotal": 1612,
+    "reasoningTokensKnown": 0,
+    "reasoningTokensUnknown": 2,
+    "medianReasoningTokensKnown": null,
+    "finalTextCharacters": 1606,
+    "reasoningCharacters": 10352,
+    "failures": []
+  },
+  "cases": [
+    {
+      "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+      "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+      "integrity": {
+        "sameMessages": true,
+        "sameModelConfig": true
+      },
+      "concurrent2": {
+        "requestSeq": 4,
+        "resultSeq": 9,
+        "requestHash": "cbd6130aaca388027ea32e76a11f7b88ea1bc0936c8589fd8375cf6028e3bf8a",
+        "modelConfigHash": "17f53686e0fba09d84a9b6834c673c386c5c6da8338e7aa7ba9b8ceecd01c516",
+        "status": "failed",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content",
+        "elapsedMs": 150010,
+        "firstContentElapsedMs": 56012,
+        "usage": null,
+        "estimatedInputTokens": 744,
+        "reasoningCharacters": 89,
+        "finalText": "",
+        "review": null
+      },
+      "serial1": {
+        "requestSeq": 4,
+        "resultSeq": 5,
+        "requestHash": "cbd6130aaca388027ea32e76a11f7b88ea1bc0936c8589fd8375cf6028e3bf8a",
+        "modelConfigHash": "17f53686e0fba09d84a9b6834c673c386c5c6da8338e7aa7ba9b8ceecd01c516",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 9309,
+        "firstContentElapsedMs": 1058,
+        "usage": {
+          "inputTokens": 786,
+          "outputTokens": 446,
+          "totalTokens": 1232
+        },
+        "estimatedInputTokens": 744,
+        "reasoningCharacters": 1445,
+        "finalText": "{\n  \"schemaVersion\": 1,\n  \"scope\": {\n    \"status\": \"potentially_relevant\",\n    \"reason\": \"该综述系统讨论LLM智能体的工具使用、规划与反馈学习，直接对应主流智能体架构与核心能力。\"\n  },\n  \"matchedQuestions\": [\n    {\n      \"question\": \"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\n      \"quote\": {\n        \"source\": \"abstract\",\n        \"text\": \"Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents\"\n      }\n    }\n  ]\n}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "该综述系统讨论LLM智能体的工具使用、规划与反馈学习，直接对应主流智能体架构与核心能力。"
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+      "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+      "integrity": {
+        "sameMessages": true,
+        "sameModelConfig": true
+      },
+      "concurrent2": {
+        "requestSeq": 8,
+        "resultSeq": 11,
+        "requestHash": "010c8a8e21b1d8b0bee68a3475c0c11e0fb0283ffc4a0480b10a5c42bb60b0f4",
+        "modelConfigHash": "17f53686e0fba09d84a9b6834c673c386c5c6da8338e7aa7ba9b8ceecd01c516",
+        "status": "failed",
+        "errorCode": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "before_content",
+        "elapsedMs": 150001,
+        "firstContentElapsedMs": null,
+        "usage": null,
+        "estimatedInputTokens": 868,
+        "reasoningCharacters": 0,
+        "finalText": "",
+        "review": null
+      },
+      "serial1": {
+        "requestSeq": 7,
+        "resultSeq": 8,
+        "requestHash": "010c8a8e21b1d8b0bee68a3475c0c11e0fb0283ffc4a0480b10a5c42bb60b0f4",
+        "modelConfigHash": "17f53686e0fba09d84a9b6834c673c386c5c6da8338e7aa7ba9b8ceecd01c516",
+        "status": "validated",
+        "errorCode": null,
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": null,
+        "elapsedMs": 27289,
+        "firstContentElapsedMs": 821,
+        "usage": {
+          "inputTokens": 811,
+          "outputTokens": 2015,
+          "totalTokens": 2826
+        },
+        "estimatedInputTokens": 868,
+        "reasoningCharacters": 8907,
+        "finalText": "{\"schemaVersion\":1,\"scope\":{\"status\":\"potentially_relevant\",\"reason\":\"The paper proposes a multi-agent LLM cooperative planning and execution framework with governance and application aspects.\"},\"matchedQuestions\":[{\"question\":\"主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？\",\"quote\":{\"source\":\"abstract\",\"text\":\"integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures\"}},{\"question\":\"多智能体协作（通信、分工、社会仿真）正在如何演进？\",\"quote\":{\"source\":\"abstract\",\"text\":\"decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents\"}},{\"question\":\"安全、可靠性与治理面临哪些关键挑战？\",\"quote\":{\"source\":\"abstract\",\"text\":\"examines governance mechanisms for ensuring fairness and accountability in multi-agent systems, as well as infrastructure requirements for sustainable deployment at scale\"}},{\"question\":\"智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？\",\"quote\":{\"source\":\"abstract\",\"text\":\"case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture\"}}]}",
+        "review": {
+          "schemaVersion": 1,
+          "scope": {
+            "status": "potentially_relevant",
+            "reason": "The paper proposes a multi-agent LLM cooperative planning and execution framework with governance and application aspects."
+          },
+          "matchedQuestions": [
+            {
+              "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+              "quote": {
+                "source": "abstract",
+                "text": "integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures"
+              }
+            },
+            {
+              "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+              "quote": {
+                "source": "abstract",
+                "text": "decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents"
+              }
+            },
+            {
+              "question": "安全、可靠性与治理面临哪些关键挑战？",
+              "quote": {
+                "source": "abstract",
+                "text": "examines governance mechanisms for ensuring fairness and accountability in multi-agent systems, as well as infrastructure requirements for sustainable deployment at scale"
+              }
+            },
+            {
+              "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+              "quote": {
+                "source": "abstract",
+                "text": "case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

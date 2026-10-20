@@ -281,6 +281,16 @@ export interface CandidateReviewSelectionV1 {
   readonly decisions: readonly CandidateReviewSelectionDecisionV1[]
 }
 
+/** Explicit review settlement; absent on historical assessments that did not record review state. */
+export type CandidateSemanticReviewStateV1 =
+  | { readonly status: 'validated'; readonly scope: 'potentially_relevant' | 'off_topic' }
+  | { readonly status: 'unknown' }
+  | { readonly status: 'failed'; readonly code: string }
+  | {
+    readonly status: 'not_selected'
+    readonly reason: 'not_selected_budget' | 'hard_excluded' | 'fulltext_unresolvable' | 'cancelled_before_dispatch'
+  }
+
 /** Reviewed semantic facts supplied for one verified work after Q3 ingestion. */
 export interface CandidateAssessment {
   readonly academicWorkId: AcademicWorkId
@@ -292,6 +302,7 @@ export interface CandidateAssessment {
   /** Content-matched Brief questions only; approved query provenance is routed separately from Q3. */
   readonly matchedQuestions: readonly string[]
   readonly screening?: CandidateScreeningDetails
+  readonly semanticReview?: CandidateSemanticReviewStateV1
   readonly contributionSignals: readonly Exclude<CandidateClassification, 'background' | 'irrelevant'>[]
   /** Unit-interval assessments; the ranker applies the reviewed policy weights. */
   readonly topicRelevance: number

@@ -22,6 +22,8 @@ extractPaperEvidence fills a first observed version hash before invoking the exi
 
 Progress types are exposed through the type-only `@deepseek-ai/dsh-academic-workflow/progress` entry. Browser consumers use this entry to avoid importing host Session declarations through the execution barrel.
 
+Candidate selection accepts an optional review observer. It reports the bounded model-review plan and each settled paper separately from the screening stage's deduplicated-work total, so clients can show review progress without counting an unreviewed work as model-approved.
+
 The workflow maps each full-text candidate observation into the owning paper activity. Candidate starts publish `fulltext_fetch` with one-based attempt counts, a failed candidate with another candidate available publishes `waiting_retry` and its classified failure, and an accepted HTML or PDF publishes `fulltext_parse` before evidence extraction begins. Cancellation publishes a cancelled paper fact before the run settles.
 
 `PaperEvidenceGenerator` accepts an optional A-owned progress observer without changing the evidence package's `EvidenceGenerator`. `createModelEvidenceGenerator()` publishes one-based batch positions, publishes attempt starts and settlements only after their `academic/evidence-request` or `academic/evidence-result` record is durable, and publishes `waiting_retry` after a bounded retry decision. Timeouts, output limits, incomplete output and invalid output use the shared sanitized failure codes. `extractPaperEvidence()` publishes accepted and rejected source-validation counts before the paper settles. Observer failures never change model execution, validation or the final research result.

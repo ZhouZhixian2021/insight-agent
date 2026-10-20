@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "scope": "read_only_stream_timing_analysis",
+  "noAdditionalModelCalls": true,
+  "measurement": "Content means text-delta or reasoning-delta as delivered to the workflow. It does not measure HTTP header arrival, upstream compute time, or physical network packet gaps.",
+  "comparisons": [
+    {
+      "name": "concurrent2",
+      "sessionId": "session-candidate-review-recheck-1792482205794",
+      "elapsedMs": 600283,
+      "sumAttemptElapsedMs": 1120432,
+      "knownFirstContentCalls": 6,
+      "noContentCalls": 2,
+      "medianFirstContentKnownMs": 55217,
+      "maximumContentGapMs": 48465,
+      "callsWithContentGapOver10Seconds": 4,
+      "rows": [
+        {
+          "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+          "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+          "status": "validated",
+          "elapsedMs": 70586,
+          "firstContentElapsedMs": 3906,
+          "contentDeltaCount": 1053,
+          "reasoningCharacters": 14569,
+          "finalTextCharacters": 1060,
+          "contentSpanMs": 66668,
+          "maxBetweenContentGapMs": 1065,
+          "silenceBeforeResultMs": 13,
+          "requestTime": 1792482206724,
+          "firstContentTime": 1792482210629,
+          "lastContentTime": 1792482277297,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+          "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+          "status": "failed",
+          "elapsedMs": 150010,
+          "firstContentElapsedMs": 56012,
+          "contentDeltaCount": 20,
+          "reasoningCharacters": 89,
+          "finalTextCharacters": 0,
+          "contentSpanMs": 66405,
+          "maxBetweenContentGapMs": 33607,
+          "silenceBeforeResultMs": 27595,
+          "requestTime": 1792482206724,
+          "firstContentTime": 1792482262723,
+          "lastContentTime": 1792482329128,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "after_content"
+        },
+        {
+          "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+          "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+          "status": "failed",
+          "elapsedMs": 150001,
+          "firstContentElapsedMs": null,
+          "contentDeltaCount": 0,
+          "reasoningCharacters": 0,
+          "finalTextCharacters": 0,
+          "contentSpanMs": null,
+          "maxBetweenContentGapMs": null,
+          "silenceBeforeResultMs": null,
+          "requestTime": 1792482277371,
+          "firstContentTime": null,
+          "lastContentTime": null,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "before_content"
+        },
+        {
+          "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+          "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+          "status": "failed",
+          "elapsedMs": 150006,
+          "firstContentElapsedMs": 112788,
+          "contentDeltaCount": 4,
+          "reasoningCharacters": 19,
+          "finalTextCharacters": 0,
+          "contentSpanMs": 64,
+          "maxBetweenContentGapMs": 61,
+          "silenceBeforeResultMs": 37155,
+          "requestTime": 1792482356767,
+          "firstContentTime": 1792482469554,
+          "lastContentTime": 1792482469618,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "after_content"
+        },
+        {
+          "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+          "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+          "status": "failed",
+          "elapsedMs": 150003,
+          "firstContentElapsedMs": 54422,
+          "contentDeltaCount": 40,
+          "reasoningCharacters": 198,
+          "finalTextCharacters": 0,
+          "contentSpanMs": 60072,
+          "maxBetweenContentGapMs": 27599,
+          "silenceBeforeResultMs": 35510,
+          "requestTime": 1792482427419,
+          "firstContentTime": 1792482481841,
+          "lastContentTime": 1792482541913,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "after_content"
+        },
+        {
+          "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+          "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+          "status": "failed",
+          "elapsedMs": 150012,
+          "firstContentElapsedMs": null,
+          "contentDeltaCount": 0,
+          "reasoningCharacters": 0,
+          "finalTextCharacters": 0,
+          "contentSpanMs": null,
+          "maxBetweenContentGapMs": null,
+          "silenceBeforeResultMs": null,
+          "requestTime": 1792482506824,
+          "firstContentTime": null,
+          "lastContentTime": null,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "before_content"
+        },
+        {
+          "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+          "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+          "status": "validated",
+          "elapsedMs": 149811,
+          "firstContentElapsedMs": 57439,
+          "contentDeltaCount": 553,
+          "reasoningCharacters": 2057,
+          "finalTextCharacters": 414,
+          "contentSpanMs": 92374,
+          "maxBetweenContentGapMs": 48465,
+          "silenceBeforeResultMs": 1,
+          "requestTime": 1792482577481,
+          "firstContentTime": 1792482634918,
+          "lastContentTime": 1792482727292,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+          "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+          "status": "failed",
+          "elapsedMs": 150003,
+          "firstContentElapsedMs": 11835,
+          "contentDeltaCount": 144,
+          "reasoningCharacters": 407,
+          "finalTextCharacters": 0,
+          "contentSpanMs": 131592,
+          "maxBetweenContentGapMs": 47034,
+          "silenceBeforeResultMs": 6577,
+          "requestTime": 1792482656868,
+          "firstContentTime": 1792482668703,
+          "lastContentTime": 1792482800295,
+          "streamFinishRecorded": false,
+          "finish": {
+            "kind": "error",
+            "failure": {
+              "code": "TIMEOUT",
+              "message": "Academic model attempt timed out."
+            }
+          },
+          "failurePhase": "after_content"
+        }
+      ]
+    },
+    {
+      "name": "serial1",
+      "sessionId": "session-candidate-review-serial-eight-1792484490056",
+      "elapsedMs": 273636,
+      "sumAttemptElapsedMs": 273115,
+      "knownFirstContentCalls": 8,
+      "noContentCalls": 0,
+      "medianFirstContentKnownMs": 1214.5,
+      "maximumContentGapMs": 2181,
+      "callsWithContentGapOver10Seconds": 0,
+      "rows": [
+        {
+          "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+          "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+          "status": "validated",
+          "elapsedMs": 7693,
+          "firstContentElapsedMs": 1096,
+          "contentDeltaCount": 508,
+          "reasoningCharacters": 1679,
+          "finalTextCharacters": 506,
+          "contentSpanMs": 6594,
+          "maxBetweenContentGapMs": 208,
+          "silenceBeforeResultMs": 4,
+          "requestTime": 1792484490988,
+          "firstContentTime": 1792484492083,
+          "lastContentTime": 1792484498677,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+          "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+          "status": "validated",
+          "elapsedMs": 82145,
+          "firstContentElapsedMs": 609,
+          "contentDeltaCount": 1515,
+          "reasoningCharacters": 22665,
+          "finalTextCharacters": 927,
+          "contentSpanMs": 81506,
+          "maxBetweenContentGapMs": 2181,
+          "silenceBeforeResultMs": 23,
+          "requestTime": 1792484498734,
+          "firstContentTime": 1792484499342,
+          "lastContentTime": 1792484580848,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+          "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+          "status": "validated",
+          "elapsedMs": 84944,
+          "firstContentElapsedMs": 1477,
+          "contentDeltaCount": 5699,
+          "reasoningCharacters": 27383,
+          "finalTextCharacters": 958,
+          "contentSpanMs": 83467,
+          "maxBetweenContentGapMs": 689,
+          "silenceBeforeResultMs": 4,
+          "requestTime": 1792484580946,
+          "firstContentTime": 1792484582423,
+          "lastContentTime": 1792484665890,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+          "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+          "status": "validated",
+          "elapsedMs": 29427,
+          "firstContentElapsedMs": 629,
+          "contentDeltaCount": 531,
+          "reasoningCharacters": 7199,
+          "finalTextCharacters": 594,
+          "contentSpanMs": 28795,
+          "maxBetweenContentGapMs": 1931,
+          "silenceBeforeResultMs": 6,
+          "requestTime": 1792484665949,
+          "firstContentTime": 1792484666578,
+          "lastContentTime": 1792484695373,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+          "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+          "status": "validated",
+          "elapsedMs": 32301,
+          "firstContentElapsedMs": 1240,
+          "contentDeltaCount": 2314,
+          "reasoningCharacters": 9563,
+          "finalTextCharacters": 1073,
+          "contentSpanMs": 31058,
+          "maxBetweenContentGapMs": 241,
+          "silenceBeforeResultMs": 5,
+          "requestTime": 1792484695427,
+          "firstContentTime": 1792484696667,
+          "lastContentTime": 1792484727725,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+          "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+          "status": "validated",
+          "elapsedMs": 8489,
+          "firstContentElapsedMs": 1659,
+          "contentDeltaCount": 489,
+          "reasoningCharacters": 1948,
+          "finalTextCharacters": 466,
+          "contentSpanMs": 6828,
+          "maxBetweenContentGapMs": 211,
+          "silenceBeforeResultMs": 2,
+          "requestTime": 1792484727775,
+          "firstContentTime": 1792484729439,
+          "lastContentTime": 1792484736267,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+          "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+          "status": "validated",
+          "elapsedMs": 5584,
+          "firstContentElapsedMs": 1189,
+          "contentDeltaCount": 300,
+          "reasoningCharacters": 1084,
+          "finalTextCharacters": 310,
+          "contentSpanMs": 4394,
+          "maxBetweenContentGapMs": 222,
+          "silenceBeforeResultMs": 1,
+          "requestTime": 1792484736318,
+          "firstContentTime": 1792484737507,
+          "lastContentTime": 1792484741901,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        },
+        {
+          "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+          "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+          "status": "validated",
+          "elapsedMs": 22532,
+          "firstContentElapsedMs": 1429,
+          "contentDeltaCount": 1496,
+          "reasoningCharacters": 6206,
+          "finalTextCharacters": 828,
+          "contentSpanMs": 21102,
+          "maxBetweenContentGapMs": 214,
+          "silenceBeforeResultMs": 2,
+          "requestTime": 1792484741960,
+          "firstContentTime": 1792484743388,
+          "lastContentTime": 1792484764490,
+          "streamFinishRecorded": true,
+          "finish": {
+            "kind": "stop"
+          },
+          "failurePhase": null
+        }
+      ],
+      "outsideAttemptElapsedMs": 521
+    }
+  ],
+  "limitations": [
+    "Different run times; upstream load may differ.",
+    "No HTTP 429 or per-request upstream queue/instance telemetry is available.",
+    "Local timeout at 150 seconds is not an explicit provider rejection.",
+    "Provider reasoning tokens are not separately reported."
+  ]
+}

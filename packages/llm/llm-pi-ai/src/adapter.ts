@@ -27,6 +27,7 @@
  */
 
 import { createModels, getSupportedThinkingLevels } from '@earendil-works/pi-ai'
+import { randomUUID } from 'node:crypto'
 import type {
   Api,
   AuthContext,
@@ -61,6 +62,7 @@ import { idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import type { ResolvedPiAiProviderProfile } from './config.ts'
 import { toPiContext } from './context.ts'
 import { toStreamChunks } from './stream.ts'
+import { TransportCapture, type TransportDiagnostic } from './transport-diagnostics.ts'
 
 /** One resolution's frozen view: the profiles and the collection built from them. */
 interface PiAiSnapshot {
@@ -101,6 +103,13 @@ export interface PiAiAdapterOptions {
    * conversion because its stored replay state is unusable by this build.
    */
   onReplayDegrade?: (detail: { provider: string; model: string; reason: string }) => void
+  /** Receive bounded HTTP diagnostics for a failed model call, outside the user-visible stream. */
+  onTransportDiagnostic?: (detail: TransportDiagnostic & {
+    readonly callId: string
+    readonly provider: string
+    readonly model: string
+    readonly failureCode: string
+  }) => void
 }
 
 /** The two auth injectables a pi-ai collection is built with. */
@@ -372,6 +381,20 @@ export class PiAiAdapter extends LlmAdapter {
             maxBytes: profile.requestImageMaxBytes,
           },
         }, onReplayDegrade)
+      const transport = new TransportCapture()
+      const callId = randomUUID()
+      let diagnosticReported = false
+      const reportTransport = (failureCode: string): void => {
+        if (diagnosticReported || this.config.onTransportDiagnostic === undefined) return
+        diagnosticReported = true
+        try {
+          this.config.onTransportDiagnostic({
+            ...transport.snapshot(), callId, provider: options.provider, model: options.model, failureCode,
+          })
+        } catch (_diagnosticFailure) {
+          // An observer must not turn a model failure into a different failure.
+        }
+      }
       const events = snapshot.models.streamSimple(model, context, {
         ...profileOptions(profile, reasoning, apiKey),
         ...options.temperature === undefined ? {} : { temperature: options.temperature },
@@ -381,6 +404,7 @@ export class PiAiAdapter extends LlmAdapter {
         // Profile headers are deployment-owned; attribution names are
         // Harness-owned and therefore win collisions.
         headers: requestHeaders(profile.headers),
+        fetch: transport.fetch,
       })
       const iterator = toStreamChunks(events, model.contextWindow, options.signal)[Symbol.asyncIterator]()
       let exhausted = false
@@ -392,6 +416,11 @@ export class PiAiAdapter extends LlmAdapter {
           if (result.done) {
             exhausted = true
             return
+          }
+          if (result.value.type === 'finish' && result.value.reason.kind === 'error'
+            && (result.value.reason.failure.code === 'TRANSPORT'
+              || result.value.reason.failure.code === 'TIMEOUT')) {
+            reportTransport(result.value.reason.failure.code)
           }
           yield result.value
         }

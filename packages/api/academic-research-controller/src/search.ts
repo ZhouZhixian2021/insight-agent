@@ -1,10 +1,11 @@
 /** Adapt approved plan searches to Session-owned Academic and DSH Web services. */
 import { createBatchResult, isExecutableResearchBrief, type AcademicCandidateRankingResult,
   type AcademicWorkId, type Availability, type CandidateAssessment, type CandidateFulltextAvailability,
-  type CandidateScreeningDetails, type ExecutableResearchBrief, type HybridSearchPlan,
+  type CandidateScreeningDetails, type CandidateSemanticReviewStateV1, type CandidateReviewSelectionV1,
+  type ExecutableResearchBrief, type HybridSearchPlan,
   type ResearchBrief, type ResearchQuestionCoverageResult, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
-import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps, preReviewHardExclusions,
-  rankPlannedCandidates,
+import { assessPlannedCandidates, executePlannedSearchRound, extendPlanForEvidenceGaps,
+  rankPlannedCandidates, selectCandidateReviews,
   type PlannedSearchAdapters, type PlannedSearchRoundResult,
   type QueryPlanningOptions } from '@deepseek-ai/dsh-academic-retrieval'
 import { dedupKeys, ingestWorks, metadataForVersion, type IngestOutcome, type IngestRecord } from '@deepseek-ai/dsh-academic-ingestion'
@@ -13,11 +14,12 @@ import { identifyAcademicReferences, type AcademicSourceFullText, type AcademicS
 import { executeHybridSearch, type CandidateBatchPolicy, type CandidateScheduling, type DraftPipelineAdapters,
   type DraftSearchResult, type HybridDirectSearchProvider,
   type HybridSearchAdapters, type HybridSearchObservation, type HybridSearchStageStatus,
-  type ReplenishedCandidates, selectResearchPapers, type SelectedPaper } from '@deepseek-ai/dsh-academic-workflow'
+  type CandidateReviewProgressObservation, type ReplenishedCandidates, selectResearchPapers,
+  type SelectedPaper } from '@deepseek-ai/dsh-academic-workflow'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
+import type { SessionSeq } from '@deepseek-ai/dsh-session'
 import { approvedHybridSearchHandoff, executeApprovedSearchDirection } from './planned-retrieval.ts'
 import { approvedCandidateScreeningCriteria, type AcademicCandidateScreening } from './candidate-screening.ts'
-import type { CandidateScreeningCriteria } from '@deepseek-ai/dsh-academic-retrieval'
 import type { AcademicPlannedSearch } from './types.ts'
 
 /** Deployment-owned bounds for one evidence-gap replenishment round. */
@@ -31,17 +33,31 @@ export interface GapRoundPolicy {
 /** Canonical scholarly metadata supplied to the model reviewer after Q3 deduplication. */
 export interface CandidateReviewInput {
   readonly academicWorkId: AcademicWorkId
+  readonly workVersionId: WorkVersionId
+  readonly roundIndex: number
+  readonly selectionSeq?: SessionSeq
   readonly title: string
   readonly abstract: Availability<string>
-  readonly keywords: Availability<readonly string[]>
   readonly brief: ExecutableResearchBrief
   readonly plan: HybridSearchPlan
-  readonly criteria: CandidateScreeningCriteria
+  /** Called after the exact dispatch request is durable, before model streaming. */
+  readonly onDispatch?: () => void
 }
 
-/** Return undefined only for a recoverable review failure; persistence and cancellation failures propagate. */
+/** Validated output or a recoverable failure; persistence and cancellation failures propagate. */
+export type CandidateReviewOutcome =
+  | { readonly status: 'validated'; readonly screening: CandidateScreeningDetails }
+  | { readonly status: 'failed'; readonly code: string }
+
+/** Review one work; the reviewer notifies onDispatch only when a model call is admitted. */
 export type CandidateReviewer = (input: CandidateReviewInput,
-  signal?: AbortSignal) => Promise<CandidateScreeningDetails | undefined>
+  signal?: AbortSignal) => Promise<CandidateReviewOutcome>
+
+/** Deployment concurrency and durable pre-dispatch selection recording. */
+export interface CandidateReviewExecution {
+  readonly concurrency: number
+  readonly recordSelection?: (selection: CandidateReviewSelectionV1, roundIndex: number) => Promise<SessionSeq>
+}
 
 /**
  * Keep verified full-text candidates beside their owning source records for this run.
@@ -55,6 +71,8 @@ export type CandidateReviewer = (input: CandidateReviewInput,
  * @param candidateScreening Optional metadata cues from that same approved plan.
  * @param reviewCandidate Optional Session-backed semantic review of canonical scholarly metadata.
  * @param initialAcademicResultsPerQuery Independent bound for raw Academic records before candidate screening.
+ * @param maximumModelReviews Upper bound for semantic model calls across initial and gap rounds.
+ * @param reviewExecution Candidate concurrency and durable selection recorder.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -68,6 +86,8 @@ export function approvedPaperAdapters(
   candidateScreening?: AcademicCandidateScreening,
   reviewCandidate?: CandidateReviewer,
   initialAcademicResultsPerQuery?: number,
+  maximumModelReviews = 8,
+  reviewExecution: CandidateReviewExecution = { concurrency: 1 },
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'replenishCandidates'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
@@ -79,26 +99,95 @@ export function approvedPaperAdapters(
   const resolutions = new Map<string, AcademicSourceFullText | null>()
   const reviewedScreenings = new Map<AcademicWorkId, CandidateScreeningDetails>()
   const attemptedReviews = new Set<AcademicWorkId>()
-  const failedReviews = new Set<AcademicWorkId>()
+  const reviewStates = new Map<AcademicWorkId, CandidateSemanticReviewStateV1>()
+  if (!Number.isSafeInteger(reviewExecution.concurrency) || reviewExecution.concurrency < 1 || reviewExecution.concurrency > 2) {
+    throw new RangeError('Candidate review concurrency must be 1 or 2.')
+  }
   const key = (provider: string, recordId: string) => JSON.stringify([provider, recordId])
-  const reviewIngested = async (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal) => {
+  const reviewIngested = async (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal,
+    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex = 0) => {
     if (reviewCandidate === undefined) return
-    const criteria = approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening)
+    // Rank the full pool with the existing lexical assessment first. The final ranking is
+    // rebuilt after the bounded model review, so review evidence can still change priorities.
+    const lexical = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key,
+      candidateScreening, reviewedScreenings, reviewStates)
+    const worksByVersion = new Map(ingested.works.map(work => [work.canonicalVersionId, work]))
     const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
-    for (const work of ingested.works) {
-      signal?.throwIfAborted()
-      if (attemptedReviews.has(work.academicWorkId)) continue
-      const version = versions.get(work.canonicalVersionId)
-      if (version === undefined) throw new Error('Candidate review requires its canonical scholarly version.')
-      const metadata = metadataForVersion(ingested.index, version)
-      if (preReviewHardExclusions(work, version, plan, approvedBrief, metadata).length > 0
-        || resolveFullText(version, resolutions, academicSource, key) === null) continue
-      const reviewed = await reviewCandidate({ academicWorkId: work.academicWorkId, title: work.title,
-        abstract: metadata.abstract, keywords: metadata.keywords, brief: approvedBrief, plan, criteria }, signal)
-      attemptedReviews.add(work.academicWorkId)
-      if (reviewed !== undefined) reviewedScreenings.set(work.academicWorkId, reviewed)
-      else failedReviews.add(work.academicWorkId)
+    const selection = selectCandidateReviews(approvedBrief, plan, lexical.ranking, lexical.assessments,
+      attemptedReviews, maximumModelReviews)
+    signal?.throwIfAborted()
+    const selectionSeq = await reviewExecution.recordSelection?.(selection, roundIndex)
+    signal?.throwIfAborted()
+    for (const decision of selection.decisions) {
+      if (decision.status === 'already_attempted') continue
+      reviewStates.set(decision.academicWorkId, { status: 'not_selected',
+        reason: decision.status === 'selected' ? 'cancelled_before_dispatch' : decision.status })
     }
+    // B guarantees a numeric order for every selected decision.
+    const selected = selection.decisions.filter(item => item.status === 'selected')
+      .sort((a, b) => (a.selectionOrder as number) - (b.selectionOrder as number))
+    const skipped = selection.decisions.filter(item => item.status === 'not_selected_budget').length
+    let completed = 0, succeeded = 0, failed = 0
+    const report = (phase: CandidateReviewProgressObservation['phase'], title: string | null) => {
+      try {
+        onCandidateReview?.({ phase, completed, total: selected.length, succeeded, failed, skipped, title })
+      } catch {
+        // Progress callbacks are observational; they cannot interrupt review settlement.
+      }
+    }
+    report('planned', null)
+    const outcomes = new Map<AcademicWorkId, CandidateReviewOutcome>()
+    const queue = selected.values()
+    let stopped = false
+    const worker = async () => {
+      try {
+        while (!stopped) {
+          signal?.throwIfAborted()
+          const next = queue.next()
+          if (next.done) return
+          const decision = next.value
+          const work = worksByVersion.get(decision.workVersionId)
+          const version = versions.get(decision.workVersionId)
+          if (work === undefined || version === undefined) throw new Error('Candidate review requires canonical metadata.')
+          const metadata = metadataForVersion(ingested.index, version)
+          report('started', work.title)
+          let outcome: CandidateReviewOutcome
+          try {
+            outcome = await reviewCandidate({ academicWorkId: work.academicWorkId,
+              workVersionId: version.workVersionId, roundIndex, title: work.title, abstract: metadata.abstract,
+              brief: approvedBrief, plan, ...selectionSeq === undefined ? {} : { selectionSeq },
+              onDispatch: () => attemptedReviews.add(work.academicWorkId) }, signal)
+          } catch (error: unknown) {
+            if (signal?.aborted && attemptedReviews.has(work.academicWorkId)) {
+              outcomes.set(work.academicWorkId, { status: 'failed', code: 'CANDIDATE_REVIEW_CANCELLED' })
+            }
+            throw error
+          }
+          outcomes.set(work.academicWorkId, outcome)
+          completed++
+          if (outcome.status === 'validated') succeeded++
+          else failed++
+          report('settled', null)
+        }
+      } catch (error: unknown) {
+        stopped = true
+        throw error
+      }
+    }
+    // Drain every in-flight worker before returning, including after cancellation or log failure.
+    const workers = await Promise.allSettled(Array.from({ length: Math.min(reviewExecution.concurrency, selected.length) }, worker))
+    for (const decision of selected) {
+      const id = decision.academicWorkId
+      const outcome = outcomes.get(id)
+      if (outcome === undefined) continue
+      if (outcome.status === 'validated') {
+        reviewedScreenings.set(id, outcome.screening)
+        const scope = outcome.screening.scope.status
+        reviewStates.set(id, scope === 'unknown' ? { status: 'unknown' } : { status: 'validated', scope })
+      } else reviewStates.set(id, { status: 'failed', code: outcome.code })
+    }
+    const rejected = workers.find(worker => worker.status === 'rejected')
+    if (rejected?.status === 'rejected') throw rejected.reason
   }
   return {
     search: async (request, signal, onProvider, onHybrid) => {
@@ -123,16 +212,16 @@ export function approvedPaperAdapters(
       }
       return projected
     },
-    selectPapers: async (ingested, effectiveBrief, signal) => {
-      await reviewIngested(handoff.plan, ingested, signal)
+    selectPapers: async (ingested, effectiveBrief, signal, onCandidateReview) => {
+      await reviewIngested(handoff.plan, ingested, signal, onCandidateReview)
       return rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
         ingested, resolutions, academicSource, key, candidateBatchPolicy, candidateScreening, reviewedScreenings,
-        failedReviews)
+        reviewStates)
     },
     replenishCandidates: (scheduling, ingested, coverage, nextRoundIndex, signal) =>
       replenishRankedCandidates(approvedBrief, candidateBatchPolicy, gapRoundPolicy, academicSource, web,
         resolutions, key, scheduling, ingested, coverage, nextRoundIndex, candidateScreening,
-        reviewIngested, reviewedScreenings, failedReviews, signal),
+        reviewIngested, reviewedScreenings, reviewStates, signal),
   }
 }
 
@@ -162,10 +251,10 @@ function rankedPaperSelection(
   policy: CandidateBatchPolicy,
   candidateScreening?: AcademicCandidateScreening,
   reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
-  failedReviews?: ReadonlySet<AcademicWorkId>,
+  reviewStates?: ReadonlyMap<AcademicWorkId, CandidateSemanticReviewStateV1>,
 ): ReturnType<DraftPipelineAdapters['selectPapers']> {
   const built = buildRanking(approvedBrief, plan, ingested, resolutions, academicSource, key,
-    candidateScreening, reviewedScreenings, failedReviews)
+    candidateScreening, reviewedScreenings, reviewStates)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const resolvable = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter(workVersionId => evaluations.get(workVersionId)?.fulltextAvailability.status === 'resolvable')
@@ -192,7 +281,7 @@ function buildRanking(
   key: (provider: string, recordId: string) => string,
   candidateScreening?: AcademicCandidateScreening,
   reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
-  failedReviews?: ReadonlySet<AcademicWorkId>,
+  reviewStates?: ReadonlyMap<AcademicWorkId, CandidateSemanticReviewStateV1>,
 ): {
   readonly assessments: readonly CandidateAssessment[]
   readonly ranking: AcademicCandidateRankingResult
@@ -232,10 +321,15 @@ function buildRanking(
   const assessments = assessPlannedCandidates(plan, approvedBrief, round,
     approvedCandidateScreeningCriteria(approvedBrief, plan, candidateScreening), fulltextFacts, reviewedScreenings)
     .map((assessment) => {
-      if (!failedReviews?.has(assessment.academicWorkId)) return assessment
+      const semanticReview = reviewStates?.get(assessment.academicWorkId)
+      if (semanticReview === undefined) return assessment
+      const reason = semanticReview.status === 'failed'
+        ? 'Semantic model review failed; lexical metadata screening was retained. See the Session semantic-review result.'
+        : semanticReview.status === 'not_selected' && semanticReview.reason === 'not_selected_budget'
+          ? 'Bounded semantic model review did not cover this work; lexical scholarly metadata screening was retained.' : null
       const reasons: [string, ...string[]] = [assessment.reasons[0], ...assessment.reasons.slice(1),
-        'Semantic model review failed; lexical metadata screening was retained. See the Session candidate-screening result.']
-      return { ...assessment, reasons }
+        ...reason === null ? [] : [reason]]
+      return { ...assessment, semanticReview, reasons }
     })
   const ranking = rankPlannedCandidates(plan, approvedBrief, round, assessments)
   return { assessments, ranking, papers }
@@ -255,9 +349,10 @@ async function replenishRankedCandidates(
   coverage: ResearchQuestionCoverageResult,
   nextRoundIndex: number,
   candidateScreening?: AcademicCandidateScreening,
-  reviewIngested?: (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal) => Promise<void>,
+  reviewIngested?: (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal,
+    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex?: number) => Promise<void>,
   reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
-  failedReviews?: ReadonlySet<AcademicWorkId>,
+  reviewStates?: ReadonlyMap<AcademicWorkId, CandidateSemanticReviewStateV1>,
   signal?: AbortSignal,
 ): Promise<ReplenishedCandidates> {
   const options: QueryPlanningOptions = {
@@ -290,11 +385,11 @@ async function replenishRankedCandidates(
     return true
   })
   const mergedIngested = ingestWorks(ingested.index, gapRecords)
-  await reviewIngested?.(plan, mergedIngested, signal)
+  await reviewIngested?.(plan, mergedIngested, signal, undefined, nextRoundIndex)
   const previousWorkIds = new Set(ingested.index.records.keys())
   const versionWorks = new Map(mergedIngested.versions.map(version => [version.workVersionId, version.academicWorkId]))
   const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key,
-    candidateScreening, reviewedScreenings, failedReviews)
+    candidateScreening, reviewedScreenings, reviewStates)
   const evaluations = new Map(built.ranking.evaluations.map(evaluation => [evaluation.workVersionId, evaluation]))
   const papers = [...built.ranking.queues.p0, ...built.ranking.queues.p1, ...built.ranking.queues.p2]
     .filter((workVersionId) => {

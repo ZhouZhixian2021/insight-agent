@@ -111,6 +111,7 @@ export type {
   CandidateScreeningDetails,
   CandidateSemanticReviewRequestV1,
   CandidateSemanticReviewV1,
+  CandidateSemanticReviewStateV1,
   CandidateSemanticQuestionMatch,
   CandidateSurfaceKeywordHit,
   CandidateFunnelCounts,

@@ -35,6 +35,18 @@ function pause() {
 afterEach(cleanup)
 
 describe('one-shot research progress', () => {
+  it('shows bounded candidate review settlements separately from deduplicated works', () => {
+    const progress = snapshot()
+    render(<ProgressPanel progress={{ ...progress, activities: [{ kind: 'screening', stage: 'screening',
+      operation: 'candidate_review', completedReviews: 2, totalReviews: 5, failedReviews: 1,
+      skippedReviews: 12, title: 'Current paper', startedAt: progress.updatedAt }] }} t={t} />)
+
+    expect(screen.getByText(zh.operation_candidate_review)).toBeTruthy()
+    expect(screen.getByText(`${zh.candidateReviewProgress}: 2 / 5`)).toBeTruthy()
+    expect(screen.getByText(`${zh.candidateReviewFailed}: 1 · ${zh.candidateReviewSkipped}: 12`)).toBeTruthy()
+    expect(screen.getByText('Current paper')).toBeTruthy()
+  })
+
   it('shows a direct academic Provider independently from its query', () => {
     const progress = snapshot()
     render(<ProgressPanel progress={progress} recent={[progress]} t={t} />)
