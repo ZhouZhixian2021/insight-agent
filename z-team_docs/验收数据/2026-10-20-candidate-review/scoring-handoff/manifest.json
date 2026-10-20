@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "fixed_eight_candidate_reviews",
+  "sourceCodeRevision": "b869328e155a1be569eb134862555f13966315b9",
+  "originalSessionId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe",
+  "modelSessions": [
+    {
+      "name": "pro",
+      "sessionId": "session-candidate-review-serial-eight-1792484490056",
+      "model": {
+        "provider": "wowei",
+        "model": "deepseek-v4-pro",
+        "maxTokens": 8192
+      }
+    },
+    {
+      "name": "flash",
+      "sessionId": "session-candidate-review-flash-eight-1792486365263",
+      "model": {
+        "provider": "wowei",
+        "model": "deepseek-v4.1-flash",
+        "maxTokens": 8192
+      }
+    }
+  ],
+  "workCount": 8,
+  "approvedQuestionCount": 5,
+  "replayed": [
+    "approved screening criteria",
+    "lexical assessment",
+    "review selection",
+    "quoted semantic judgments",
+    "final assessment",
+    "complete ranking and queue order"
+  ],
+  "externalCallsRequired": false,
+  "originalDiscoveryPoolIncluded": false,
+  "fulltextEvidenceCoverageIncluded": false,
+  "fulltextResolutionMeaning": "Saved address resolution only; no PDF availability or parsing claim.",
+  "files": [
+    {
+      "path": "input.json",
+      "sha256": "be8e79b0129d63c22351ee4c7f7635b2d79ef05c7849bd94896108dc55f78b85"
+    },
+    {
+      "path": "pro.json",
+      "sha256": "561100069b9a369628e0c9c75106c417107d8759d45594223c207789430ef5b0"
+    },
+    {
+      "path": "flash.json",
+      "sha256": "a6a6a0c91828d6020da49268a5130f85e4977194fc7ee8e28b60cac29c63713a"
+    },
+    {
+      "path": "comparison.json",
+      "sha256": "7cc02fd7dd9e975552a2011a2b1e7ce46db5e2fecbf343b5f402df9e135bb961"
+    }
+  ]
+}

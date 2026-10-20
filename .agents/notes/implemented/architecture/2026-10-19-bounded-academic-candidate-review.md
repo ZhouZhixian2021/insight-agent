@@ -25,3 +25,5 @@ The model receives only approved topic, distinct questions, scope rules and cano
 ## Consequences
 
 The number of semantic model calls is bounded across a run, even when the Academic source returns more raw records. The tradeoff is that a relevant work below the review budget may keep a lower lexical score and miss the final candidate cap. Operators can change the deployment bound, while the approved candidate limit remains authoritative. A single review may still take up to `candidateReviewAttemptTimeoutMs`; this decision does not alter the selected model's reasoning behavior or guarantee a fixed total runtime.
+
+The [fixed scoring handoff](../../../../z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/manifest.json) retains approved inputs and verified judgments beside recorded assessments and queues. Its keyless replay uses the production pure functions and preserves canonical identities and each run's query provenance. Candidate question matching remains separate from evidence-supported coverage; replay agreement is not independent relevance evaluation.
