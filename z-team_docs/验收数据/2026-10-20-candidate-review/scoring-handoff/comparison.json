@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "fixed_eight_candidate_reviews",
+  "thresholds": {
+    "p0": 80,
+    "p1": 65,
+    "p2": 50
+  },
+  "weights": {
+    "topicRelevance": 30,
+    "questionMatch": 20,
+    "evidencePotential": 15,
+    "methodMatch": 10,
+    "workTypeFit": 8,
+    "sourceQuality": 7,
+    "recency": 5,
+    "fulltextAvailability": 5
+  },
+  "questionCount": 5,
+  "questionPointsPerMatch": 4,
+  "queueCounts": {
+    "pro": {
+      "p0": 0,
+      "p1": 2,
+      "p2": 6,
+      "excluded": 0
+    },
+    "flash": {
+      "p0": 0,
+      "p1": 4,
+      "p2": 4,
+      "excluded": 0
+    }
+  },
+  "works": [
+    {
+      "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+      "workVersionId": "749bd998-864f-4fd2-978a-1880e5e8f253",
+      "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+      "pro": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 1,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 16,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 68.5
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 2,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 16,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 68.5
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 0,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 0
+      },
+      "addedQuestions": [],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": false
+    },
+    {
+      "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+      "workVersionId": "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+      "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 4,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 4,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 5.83,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 55.33
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 2,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 4,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 5.83,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 55.33
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 0,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 0
+      },
+      "addedQuestions": [],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": false
+    },
+    {
+      "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+      "workVersionId": "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674",
+      "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 2,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 8,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 5.83,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 59.33
+        },
+        "matchedQuestions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 1,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 8,
+          "evidencePotential": 0,
+          "methodMatch": 2.5,
+          "workTypeFit": 8,
+          "sourceQuality": 5.83,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 59.33
+        },
+        "matchedQuestions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 0,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 0
+      },
+      "addedQuestions": [],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": false
+    },
+    {
+      "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+      "workVersionId": "01fe2de1-cd19-43bf-823b-84d10293341f",
+      "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+      "pro": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 2,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 16,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 66
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 3,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 16,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 66
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 0,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 0
+      },
+      "addedQuestions": [],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": false
+    },
+    {
+      "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+      "workVersionId": "acfa223c-756f-477f-87e6-8c85c871637d",
+      "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 1,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 12,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 62
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 4,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 16,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 66
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 4,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 4
+      },
+      "addedQuestions": [
+        "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+      ],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": true
+    },
+    {
+      "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+      "workVersionId": "7251fdcb-79f0-43df-aa0a-ed664aa2efa2",
+      "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 5,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 4,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 54
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 4,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 4,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 54
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 0,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 0
+      },
+      "addedQuestions": [],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": false
+    },
+    {
+      "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+      "workVersionId": "267e979b-6c93-432c-a35d-7a3b502b213d",
+      "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 6,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 4,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 54
+        },
+        "matchedQuestions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 3,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 8,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 58
+        },
+        "matchedQuestions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 4,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 4
+      },
+      "addedQuestions": [
+        "安全、可靠性与治理面临哪些关键挑战？"
+      ],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": true
+    },
+    {
+      "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+      "workVersionId": "8059a8ab-5708-48e4-9d22-aa837666fc0c",
+      "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+      "pro": {
+        "classification": "background",
+        "priority": "p2",
+        "queuePosition": 3,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 12,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 62
+        },
+        "matchedQuestions": [
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "flash": {
+        "classification": "background",
+        "priority": "p1",
+        "queuePosition": 1,
+        "score": {
+          "topicRelevance": 30,
+          "questionMatch": 20,
+          "evidencePotential": 0,
+          "methodMatch": 0,
+          "workTypeFit": 8,
+          "sourceQuality": 7,
+          "recency": 0,
+          "fulltextAvailability": 5,
+          "total": 70
+        },
+        "matchedQuestions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "安全、可靠性与治理面临哪些关键挑战？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ]
+      },
+      "scoreDelta": {
+        "topicRelevance": 0,
+        "questionMatch": 8,
+        "evidencePotential": 0,
+        "methodMatch": 0,
+        "workTypeFit": 0,
+        "sourceQuality": 0,
+        "recency": 0,
+        "fulltextAvailability": 0,
+        "total": 8
+      },
+      "addedQuestions": [
+        "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+        "智能体评测与基准（benchmark）如何演变，存在哪些短板？"
+      ],
+      "removedQuestions": [],
+      "questionJudgmentNeedsIndependentReview": true
+    }
+  ]
+}

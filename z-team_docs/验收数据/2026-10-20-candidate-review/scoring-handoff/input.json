@@ -1,0 +1,1518 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "fixed_eight_candidate_reviews",
+  "scopeLimit": "Eight previously reviewed deduplicated works only; not the complete original discovery pool or full-text evidence coverage.",
+  "sourceCodeRevision": "b869328e155a1be569eb134862555f13966315b9",
+  "originalSessionId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe",
+  "brief": {
+    "schemaVersion": 1,
+    "topic": "大语言模型智能体（LLM Agent / Agentic AI）发展趋势",
+    "aliases": [
+      "LLM agent",
+      "LLM-based agent",
+      "large language model agent",
+      "large model-based agent",
+      "agentic AI",
+      "agentic LLM",
+      "autonomous agent",
+      "AI agent",
+      "大语言模型智能体",
+      "智能体",
+      "多智能体"
+    ],
+    "questions": [
+      "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+      "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+      "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+      "安全、可靠性与治理面临哪些关键挑战？",
+      "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+    ],
+    "publicationWindow": {
+      "start": {
+        "iso": "2023",
+        "precision": "year"
+      },
+      "end": null,
+      "dateBasis": "published"
+    },
+    "includedWorkTypes": [
+      "preprint",
+      "accepted_manuscript",
+      "version_of_record"
+    ],
+    "inclusionRules": [
+      "论文研究大语言模型/大模型智能体（LLM Agent / Agentic AI）的架构、核心能力、多智能体协作、评测基准、安全治理或现实应用中的至少一个方面",
+      "论文通过元数据、摘要或全文至少提供一处可定位的证据点"
+    ],
+    "exclusionRules": [
+      "仅提及 agent 一词但实质内容与大语言模型智能体无关的论文",
+      "无法核验标题、作者或发表信息的来源内容",
+      "纯产品宣传、新闻报道或未附可核验学术来源的博客"
+    ],
+    "evidenceRequirements": {
+      "minimumIncludedWorks": 3,
+      "targetIncludedWorks": 8,
+      "minimumFulltextWorks": 2,
+      "minimumEvidenceLevel": "fulltext",
+      "requireLocatableEvidence": true,
+      "allowPreprints": true,
+      "insufficientEvidencePolicy": "continue_with_warning"
+    },
+    "targetAudience": "关注 AI 智能体前沿的技术研究人员与工程、产品决策者，报告以中文解释专业术语",
+    "reportRequirements": {
+      "language": "zh-CN",
+      "targetLength": {
+        "unit": "characters",
+        "minimum": null,
+        "maximum": null
+      },
+      "requiredSections": [
+        "research_scope",
+        "directions",
+        "limitations",
+        "references"
+      ],
+      "citationStyle": "numeric",
+      "includeEvidenceAppendix": true,
+      "includeMethodology": true,
+      "includeLimitations": true,
+      "includeResearchGaps": true
+    },
+    "stopConditions": {
+      "maximumSearchRounds": 3,
+      "maximumCandidateWorks": 30,
+      "maximumIncludedWorks": 10,
+      "maximumElapsedMinutes": null,
+      "saturationRounds": 2,
+      "stopWhenEvidenceRequirementsMet": true
+    },
+    "assumptions": [
+      "将 agent 理解为基于大语言模型的 AI 智能体（LLM Agent / Agentic AI），传统符号与纯强化学习智能体仅作技术脉络背景，不展开综述。",
+      "时间窗口以论文发表/发布日期为准（2023 年至今），聚焦 LLM 智能体兴起后的前沿；更早的奠基性工作（如 ReAct）仅在技术脉络中作为背景引用。",
+      "允许收录预印本以保证前沿覆盖；同一研究存在多个版本时按最新且可核验的版本去重，正式发表版本优先作为证据。"
+    ],
+    "researchBriefId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe:approved-plan:call_4b010cf4db714cf786f59f3a",
+    "version": 1,
+    "approval": {
+      "status": "approved",
+      "reviewedBy": "session-user",
+      "reviewedAt": "2026-10-19T06:17:40.181Z",
+      "approvedBriefVersion": 1,
+      "comment": null
+    }
+  },
+  "approvedSearches": [
+    {
+      "query": "LLM agent survey methodology planning tool use memory reflection feedback learning",
+      "purpose": "检索综合综述与代表性前沿论文，厘清智能体主流架构与核心能力（规划、工具调用、记忆、反思/反馈学习）的技术路线，并兼及多智能体协作基础。",
+      "questions": [
+        "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+        "多智能体协作（通信、分工、社会仿真）正在如何演进？"
+      ],
+      "retrieval": {
+        "channels": [
+          "academic",
+          "web_discovery"
+        ],
+        "academicProviders": [
+          "openalex",
+          "arxiv"
+        ],
+        "verificationProviders": [
+          "openalex",
+          "arxiv",
+          "acl",
+          "pmlr",
+          "cvf"
+        ],
+        "maximumWebDiscoveryResults": 8,
+        "maximumReferenceVerifications": 5
+      }
+    },
+    {
+      "query": "multi-agent system LLM collaboration communication security privacy safety",
+      "purpose": "聚焦多智能体协作的通信与分工范式，及其面临的安全、隐私与治理挑战。",
+      "questions": [
+        "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+        "安全、可靠性与治理面临哪些关键挑战？"
+      ],
+      "retrieval": {
+        "channels": [
+          "academic",
+          "web_discovery"
+        ],
+        "academicProviders": [
+          "openalex",
+          "arxiv"
+        ],
+        "verificationProviders": [
+          "openalex",
+          "arxiv",
+          "acl",
+          "pmlr",
+          "cvf"
+        ],
+        "maximumWebDiscoveryResults": 8,
+        "maximumReferenceVerifications": 5
+      }
+    },
+    {
+      "query": "LLM agent evaluation benchmark reliability web agent agentic application",
+      "purpose": "聚焦智能体评测与基准的演变及短板，并覆盖 Web、软件工程等现实应用落地趋势。",
+      "questions": [
+        "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+        "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+      ],
+      "retrieval": {
+        "channels": [
+          "academic",
+          "web_discovery"
+        ],
+        "academicProviders": [
+          "openalex",
+          "arxiv"
+        ],
+        "verificationProviders": [
+          "openalex",
+          "arxiv",
+          "acl",
+          "pmlr",
+          "cvf"
+        ],
+        "maximumWebDiscoveryResults": 8,
+        "maximumReferenceVerifications": 5
+      }
+    }
+  ],
+  "candidateScreening": {
+    "questions": [
+      {
+        "question": "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+        "concepts": [
+          [
+            "LLM agent",
+            "大语言模型智能体",
+            "agentic AI",
+            "智能体架构"
+          ],
+          [
+            "planning 规划",
+            "tool use 工具调用",
+            "memory 记忆",
+            "reflection 反思",
+            "feedback learning 反馈学习"
+          ]
+        ]
+      },
+      {
+        "question": "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+        "concepts": [
+          [
+            "multi-agent 多智能体",
+            "collaboration 协作",
+            "cooperation 协同",
+            "communication 通信",
+            "social simulation 社会仿真"
+          ]
+        ]
+      },
+      {
+        "question": "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+        "concepts": [
+          [
+            "evaluation 评测",
+            "benchmark 基准",
+            "reliability 可靠性",
+            "metrics 指标",
+            "实机/交互评测"
+          ]
+        ]
+      },
+      {
+        "question": "安全、可靠性与治理面临哪些关键挑战？",
+        "concepts": [
+          [
+            "safety 安全",
+            "security 安全",
+            "privacy 隐私",
+            "governance 治理",
+            "alignment 对齐"
+          ]
+        ]
+      },
+      {
+        "question": "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？",
+        "concepts": [
+          [
+            "web agent 网页智能体",
+            "software engineering 软件工程",
+            "robotics 机器人",
+            "scientific discovery 科学发现",
+            "application 应用"
+          ]
+        ]
+      }
+    ],
+    "methods": [
+      [
+        "planning 规划",
+        "reasoning 推理",
+        "tool use 工具调用",
+        "function calling 函数调用"
+      ],
+      [
+        "memory 记忆",
+        "retrieval 检索增强",
+        "RAG",
+        "reflection 反思"
+      ],
+      [
+        "multi-agent collaboration 多智能体协作",
+        "role specialization 角色分工",
+        "communication protocol 通信协议"
+      ],
+      [
+        "reinforcement learning 强化学习",
+        "feedback 反馈",
+        "self-correction 自我纠错"
+      ]
+    ],
+    "evidence": [
+      [
+        "benchmark 基准",
+        "success rate 成功率",
+        "dataset 数据集",
+        "evaluation 评测"
+      ],
+      [
+        "ablation 消融",
+        "human evaluation 人工评测",
+        "comparison 对比实验"
+      ]
+    ],
+    "contributions": []
+  },
+  "sourcePlan": {
+    "schemaVersion": 1,
+    "researchBriefId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe:approved-plan:call_4b010cf4db714cf786f59f3a",
+    "researchBriefVersion": 1,
+    "constraints": {
+      "publicationWindow": {
+        "start": {
+          "iso": "2023",
+          "precision": "year"
+        },
+        "end": null,
+        "dateBasis": "published"
+      },
+      "includedWorkTypes": [
+        "preprint",
+        "accepted_manuscript",
+        "version_of_record"
+      ],
+      "inclusionRules": [
+        "论文研究大语言模型/大模型智能体（LLM Agent / Agentic AI）的架构、核心能力、多智能体协作、评测基准、安全治理或现实应用中的至少一个方面",
+        "论文通过元数据、摘要或全文至少提供一处可定位的证据点"
+      ],
+      "exclusionRules": [
+        "仅提及 agent 一词但实质内容与大语言模型智能体无关的论文",
+        "无法核验标题、作者或发表信息的来源内容",
+        "纯产品宣传、新闻报道或未附可核验学术来源的博客"
+      ],
+      "requiredTerms": [],
+      "excludedTerms": []
+    },
+    "inclusionTargets": {
+      "minimum": 3,
+      "target": 8,
+      "maximum": 10
+    },
+    "rankingPolicy": {
+      "schemaVersion": 1,
+      "weights": {
+        "topicRelevance": 30,
+        "questionMatch": 20,
+        "evidencePotential": 15,
+        "methodMatch": 10,
+        "workTypeFit": 8,
+        "sourceQuality": 7,
+        "recency": 5,
+        "fulltextAvailability": 5
+      },
+      "thresholds": {
+        "p0": 80,
+        "p1": 65,
+        "p2": 50
+      }
+    },
+    "queries": [
+      {
+        "kind": "academic",
+        "searchQueryId": "e3b59ab0-1f58-4507-9d0c-7b05de816cab",
+        "expression": "LLM agent survey methodology planning tool use memory reflection feedback learning",
+        "purpose": "core",
+        "questions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？"
+        ],
+        "roundIndex": 1,
+        "providers": [
+          "openalex",
+          "arxiv"
+        ]
+      },
+      {
+        "kind": "web_discovery",
+        "searchQueryId": "42c42c76-a160-41b2-9bb4-e6ffe589edd5",
+        "expression": "LLM agent survey methodology planning tool use memory reflection feedback learning",
+        "purpose": "core",
+        "questions": [
+          "主流智能体架构与核心能力（规划、工具调用、记忆、反思/反馈学习）有哪些技术路线？",
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？"
+        ],
+        "roundIndex": 1,
+        "maximumResults": 8
+      },
+      {
+        "kind": "academic",
+        "searchQueryId": "8fca5683-8f66-46bc-b820-ec3aaf006282",
+        "expression": "multi-agent system LLM collaboration communication security privacy safety",
+        "purpose": "core",
+        "questions": [
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ],
+        "roundIndex": 1,
+        "providers": [
+          "openalex",
+          "arxiv"
+        ]
+      },
+      {
+        "kind": "web_discovery",
+        "searchQueryId": "c70852b2-1330-446c-b299-6ceb5723a04b",
+        "expression": "multi-agent system LLM collaboration communication security privacy safety",
+        "purpose": "core",
+        "questions": [
+          "多智能体协作（通信、分工、社会仿真）正在如何演进？",
+          "安全、可靠性与治理面临哪些关键挑战？"
+        ],
+        "roundIndex": 1,
+        "maximumResults": 8
+      },
+      {
+        "kind": "academic",
+        "searchQueryId": "89a5368d-d8ba-4ceb-b365-745ff8f5ab79",
+        "expression": "LLM agent evaluation benchmark reliability web agent agentic application",
+        "purpose": "core",
+        "questions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ],
+        "roundIndex": 1,
+        "providers": [
+          "openalex",
+          "arxiv"
+        ]
+      },
+      {
+        "kind": "web_discovery",
+        "searchQueryId": "f736bbcb-7b72-42b3-8053-3e5f18562186",
+        "expression": "LLM agent evaluation benchmark reliability web agent agentic application",
+        "purpose": "core",
+        "questions": [
+          "智能体评测与基准（benchmark）如何演变，存在哪些短板？",
+          "智能体在 Web、软件工程、机器人、科学发现等领域的落地趋势如何？"
+        ],
+        "roundIndex": 1,
+        "maximumResults": 8
+      }
+    ],
+    "citationExpansionSeeds": [],
+    "maximumSearchRounds": 3
+  },
+  "records": [
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+        "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+        "authors": [
+          "Ranjan Sapkota",
+          "Konstantinos I. Roumeliotis",
+          "Manoj Karkee"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4412505619",
+            "originalValue": "https://openalex.org/W4412505619",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.70777/si.v2i3.15161",
+            "originalValue": "10.70777/si.v2i3.15161",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4412505619",
+            "originalValue": "https://openalex.org/W4412505619",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "749bd998-864f-4fd2-978a-1880e5e8f253"
+        ],
+        "canonicalVersionId": "749bd998-864f-4fd2-978a-1880e5e8f253",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "SuperIntelligence - Robotics - Safety & Alignment"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "749bd998-864f-4fd2-978a-1880e5e8f253",
+        "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2025-07-20",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4412505619",
+            "originalValue": "https://openalex.org/W4412505619",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.70777/si.v2i3.15161",
+            "originalValue": "10.70777/si.v2i3.15161",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4412505619",
+            "originalValue": "https://openalex.org/W4412505619",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W4412505619"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "This review critically distinguishes between AI Agents and Agentic AI, offering a structured, conceptual taxonomy, application mapping, and analysis of opportunities and challenges to clarify their divergent design philosophies and capabilities. We begin by outlining the search strategy and foundational definitions, characterizing AI Agents as modular systems driven and enabled by LLMs and LIMs for taskspecific automation. Generative AI is positioned as a precursor providing the foundation, with AI agents advancing through tool integration, prompt engineering, and reasoning enhancements. We then characterize Agentic AI systems, which, in contrast to AI Agents, represent a paradigm shift marked by multi-agent collaboration, dynamic task decomposition, persistent memory, and coordinated autonomy. Through a chronological evaluation of architectural evolution, operational mechanisms, interaction styles, and autonomy levels, we present a comparative analysis across both AI agents and agentic AI paradigms. Application domains enabled by AI Agents such as customer support, scheduling, and data summarization are then contrasted with Agentic AI deployments in research automation, robotic coordination, and medical decision support. We further examine unique challenges in each paradigm including hallucination, brittleness, emergent behavior, and coordination failure, and propose targeted solutions such as ReAct loops, retrieval-augmented generation (RAG), automation coordination layers, and causal modeling. This work aims to provide a roadmap for developing robust, scalable, and explainable AI-driven systems."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "AI agents",
+            "agentic AI",
+            "large language models",
+            "agent cooperation",
+            "task decomposition",
+            "persistent memory",
+            "autonomous AI systems",
+            "hallucinations",
+            "emergent behavior",
+            "retrieval-augmented generation",
+            "causal models",
+            "research automation",
+            "clinical decision support",
+            "customer service automation",
+            "prompt engineering"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "89a5368d-d8ba-4ceb-b365-745ff8f5ab79"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+        "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+        "authors": [
+          "Xinzhe Li"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2406.05804",
+            "originalValue": "http://arxiv.org/abs/2406.05804v6",
+            "sourceProvider": "arxiv"
+          },
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4399555153",
+            "originalValue": "https://openalex.org/W4399555153",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.48550/arxiv.2406.05804",
+            "originalValue": "10.48550/arxiv.2406.05804",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4399555153",
+            "originalValue": "https://openalex.org/W4399555153",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+          "a0290fe2-7b80-45ec-82f6-a49ea1462378"
+        ],
+        "canonicalVersionId": "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+        "firstPublicDate": {
+          "status": "available",
+          "value": {
+            "iso": "2024-06-09",
+            "precision": "day"
+          }
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "preprint"
+        },
+        "venue": {
+          "status": "unknown",
+          "reason": "arXiv entry names no journal venue."
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+        "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+        "versionType": "preprint",
+        "versionLabel": {
+          "status": "available",
+          "value": "v6"
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2024-11-30",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2406.05804v6",
+            "originalValue": "http://arxiv.org/abs/2406.05804v6",
+            "sourceProvider": "arxiv"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "arxiv",
+            "recordId": "2406.05804v6"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Fulltext content hashing arrives with the evidence increment."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "Tool use, planning, and feedback learning are currently three prominent paradigms for developing Large Language Model (LLM)-based agents across various tasks. Although numerous frameworks have been devised for each paradigm, their intricate workflows and inconsistent taxonomy create challenges in understanding and reviewing the frameworks across different paradigms. This survey introduces a unified taxonomy to systematically review and discuss these frameworks. Specifically, 1) the taxonomy defines environments/tasks, common LLM-profiled roles or LMPRs (policy models, evaluators, and dynamic models), and universally applicable workflows found in prior work, and 2) it enables a comparison of key perspectives on the implementations of LMPRs and workflow designs across different agent paradigms and frameworks. 3) Finally, we identify three limitations in existing workflow designs and systematically discuss the future work. Resources have been made publicly available at in our GitHub repository https://github.com/xinzhel/LLM-Agent-Survey."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "cs.AI",
+            "cs.CL",
+            "cs.SE"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "e3b59ab0-1f58-4507-9d0c-7b05de816cab",
+        "42c42c76-a160-41b2-9bb4-e6ffe589edd5"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+        "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+        "authors": [
+          "Иван Александров",
+          "German Kochnev",
+          "Sabrina Sadiekh",
+          "Yaroslav Rogoza"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7214056212",
+            "originalValue": "https://openalex.org/W7214056212",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.48550/arxiv.2609.24662",
+            "originalValue": "10.48550/arxiv.2609.24662",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7214056212",
+            "originalValue": "https://openalex.org/W7214056212",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2609.24662",
+            "originalValue": "2609.24662",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674"
+        ],
+        "canonicalVersionId": "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "preprint"
+        },
+        "venue": {
+          "status": "unknown",
+          "reason": "openalex catalog record carries no venue."
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674",
+        "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+        "versionType": "preprint",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2026-09-21",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7214056212",
+            "originalValue": "https://openalex.org/W7214056212",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.48550/arxiv.2609.24662",
+            "originalValue": "10.48550/arxiv.2609.24662",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7214056212",
+            "originalValue": "https://openalex.org/W7214056212",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2609.24662",
+            "originalValue": "2609.24662",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W7214056212"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "LLM-based agents increasingly operate in environments where they interact with users, tools, and external systems. Yet most security evaluations assume passive users and static control, ignoring the interactive dynamics that shape real agent behavior. We introduce \\textbf{DUMA-Bench}, a benchmark and evaluation protocol for measuring agent security under \\emph{dual-control} interaction, where both the agent and the user can influence the shared environment state. DUMA-Bench extends $τ^2$-bench ~\\cite{barres2025tau} with adversarial environments covering eight vulnerability classes, including RAG poisoning, cross-agent manipulation, and unsafe output handling. We evaluate \\textbf{14 models from five model families} (OpenAI, Anthropic, DeepSeek, Qwen, and Z.ai) across eight domains and multiple user-behavior regimes. Across our experiments, introducing dual-control interaction increases the attack success rate from \\textbf{26.9\\%} to \\textbf{41.1\\%}. These results show that agent security is not solely a property of the model but emerges from the interaction between the model, the user, and the environment. DUMA-Bench provides a missing evaluation layer for studying security in realistic agent deployments."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "LLM agent security",
+            "multi-agent systems",
+            "security benchmarks",
+            "adversarial environments",
+            "user-agent interaction"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "89a5368d-d8ba-4ceb-b365-745ff8f5ab79"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+        "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+        "authors": [
+          "Ajay Bandi",
+          "Bhavani Kongari",
+          "Roshini Naguru",
+          "Sahitya Pasnoor",
+          "Sri Vidya Vilipala"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4414023998",
+            "originalValue": "https://openalex.org/W4414023998",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.3390/fi17090404",
+            "originalValue": "10.3390/fi17090404",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4414023998",
+            "originalValue": "https://openalex.org/W4414023998",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "01fe2de1-cd19-43bf-823b-84d10293341f"
+        ],
+        "canonicalVersionId": "01fe2de1-cd19-43bf-823b-84d10293341f",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "Future Internet"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "01fe2de1-cd19-43bf-823b-84d10293341f",
+        "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2025-09-04",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4414023998",
+            "originalValue": "https://openalex.org/W4414023998",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.3390/fi17090404",
+            "originalValue": "10.3390/fi17090404",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4414023998",
+            "originalValue": "https://openalex.org/W4414023998",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W4414023998"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "Agentic AI systems are a recently emerged and important approach that goes beyond traditional AI, generative AI, and autonomous systems by focusing on autonomy, adaptability, and goal-driven reasoning. This study provides a clear review of agentic AI systems by bringing together their definitions, frameworks, and architectures, and by comparing them with related areas like generative AI, autonomic computing, and multi-agent systems. To do this, we reviewed 143 primary studies on current LLM-based and non-LLM-driven agentic systems and examined how they support planning, memory, reflection, and goal pursuit. Furthermore, we classified architectural models, input–output mechanisms, and applications based on their task domains where agentic AI is applied, supported using tabular summaries that highlight real-world case studies. Evaluation metrics were classified as qualitative and quantitative measures, along with available testing methods of agentic AI systems to check the system’s performance and reliability. This study also highlights the main challenges and limitations of agentic AI, covering technical, architectural, coordination, ethical, and security issues. We organized the conceptual foundations, available tools, architectures, and evaluation metrics in this research, which defines a structured foundation for understanding and advancing agentic AI. These findings aim to help researchers and developers build better, clearer, and more adaptable systems that support responsible deployment in different domains."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "agentic AI",
+            "autonomous agents",
+            "large language models",
+            "agent architecture",
+            "planning",
+            "memory",
+            "reflection",
+            "multi-agent systems",
+            "autonomic computing",
+            "generative AI",
+            "evaluation metrics",
+            "agent coordination"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "42c42c76-a160-41b2-9bb4-e6ffe589edd5"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+        "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+        "authors": [
+          "Bastian J. Page",
+          "Harish Mahajan",
+          "Xuan Cai",
+          "Hugo Sanders"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7220188444",
+            "originalValue": "https://openalex.org/W7220188444",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7220188444",
+            "originalValue": "https://openalex.org/W7220188444",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "acfa223c-756f-477f-87e6-8c85c871637d"
+        ],
+        "canonicalVersionId": "acfa223c-756f-477f-87e6-8c85c871637d",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "Computer Science and Engineering Transactions"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "acfa223c-756f-477f-87e6-8c85c871637d",
+        "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2026-05-22",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7220188444",
+            "originalValue": "https://openalex.org/W7220188444",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7220188444",
+            "originalValue": "https://openalex.org/W7220188444",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W7220188444"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "The rapid scaling of large language models has introduced significant challenges in reasoning coherence, computational efficiency, and operational robustness when deployed in real-world, distributed environments. This paper proposes a comprehensive multi-agent cooperative planning and execution framework designed to address these challenges by decomposing complex reasoning tasks into subtasks that are allocated across a network of specialized LLM agents. The framework integrates hierarchical planning with decentralized execution, enabling agents to dynamically coordinate through structured communication protocols and shared memory architectures. Emphasis is placed on structural trade-offs between centralized orchestration and autonomous agent decision-making, including considerations of latency, fault tolerance, and alignment. The paper further examines governance mechanisms for ensuring fairness and accountability in multi-agent systems, as well as infrastructure requirements for sustainable deployment at scale. A case illustration involving a distributed medical diagnosis system demonstrates the practical applicability of the proposed architecture. The discussion extends to policy implications, including regulatory frameworks for agent oversight and data sovereignty. By synthesizing insights from distributed systems, artificial intelligence, and socio-technical infrastructure research, this work contributes a systems-level perspective on the design of cooperative LLM reasoning platforms that are both performant and ethically grounded."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "multi-agent systems",
+            "large language models",
+            "collaborative planning",
+            "distributed reasoning",
+            "hierarchical planning",
+            "decentralized execution",
+            "agent coordination",
+            "shared memory architecture",
+            "fault tolerance",
+            "agent governance",
+            "fairness and accountability",
+            "diagnosis",
+            "data sovereignty",
+            "AI regulation"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "8fca5683-8f66-46bc-b820-ec3aaf006282"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+        "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+        "authors": [
+          "Jinghao Luo",
+          "Yuchen Tian",
+          "Chuxue Cao",
+          "Ziyang Luo",
+          "Hongzhan Lin",
+          "Kaixin Li",
+          "Chuyi Kong",
+          "Ruichao Yang",
+          "Jing Ma"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7166823182",
+            "originalValue": "https://openalex.org/W7166823182",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.18653/v1/2026.findings-acl.2069",
+            "originalValue": "10.18653/v1/2026.findings-acl.2069",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7166823182",
+            "originalValue": "https://openalex.org/W7166823182",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "7251fdcb-79f0-43df-aa0a-ed664aa2efa2"
+        ],
+        "canonicalVersionId": "7251fdcb-79f0-43df-aa0a-ed664aa2efa2",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "Findings of the Association for Computational Linguistics: ACL 2026"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "7251fdcb-79f0-43df-aa0a-ed664aa2efa2",
+        "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2026-01-01",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7166823182",
+            "originalValue": "https://openalex.org/W7166823182",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.18653/v1/2026.findings-acl.2069",
+            "originalValue": "10.18653/v1/2026.findings-acl.2069",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7166823182",
+            "originalValue": "https://openalex.org/W7166823182",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W7166823182"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "Large Language Model (LLM)-based agents have fundamentally reshaped artificial intelligence by integrating external tools and planning capabilities.While memory mechanisms have emerged as the architectural cornerstone of these systems, current research remains fragmented, oscillating between operating system engineering and cognitive science.This theoretical divide prevents a unified view of technological synthesis and a coherent evolutionary perspective.To bridge this gap, this survey proposes a novel evolutionary framework for LLM agent memory mechanisms, formalizing the development process into three stages: Storage (trajectory preservation), Reflection (trajectory refinement), and Experience (trajectory abstraction).We first formally define these three stages before analyzing the three core drivers of this evolution: the necessity for long-range consistency, the challenges in dynamic environments, and the ultimate goal of continual learning.Furthermore, we specifically explore two transformative mechanisms in the frontier Experience stage: active exploration and cross-trajectory abstraction.By synthesizing these disparate views, this work offers robust design principles and a clear roadmap for the development of next-generation LLM agents."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "LLM agents",
+            "trajectory refinement",
+            "long-term consistency",
+            "dynamic environments",
+            "continual learning",
+            "active exploration",
+            "evolutionary framework",
+            "external tool integration",
+            "planning"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "e3b59ab0-1f58-4507-9d0c-7b05de816cab"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+        "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+        "authors": [
+          "Mahmoud Mohammadi",
+          "Yipeng Li",
+          "Jane Lo",
+          "Wendy Yip"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4412877164",
+            "originalValue": "https://openalex.org/W4412877164",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.1145/3711896.3736570",
+            "originalValue": "10.1145/3711896.3736570",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4412877164",
+            "originalValue": "https://openalex.org/W4412877164",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "arxiv",
+            "normalizedValue": "2507.21504",
+            "originalValue": "2507.21504",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "267e979b-6c93-432c-a35d-7a3b502b213d"
+        ],
+        "canonicalVersionId": "267e979b-6c93-432c-a35d-7a3b502b213d",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD)"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "267e979b-6c93-432c-a35d-7a3b502b213d",
+        "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2025-08-03",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W4412877164",
+            "originalValue": "https://openalex.org/W4412877164",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.1145/3711896.3736570",
+            "originalValue": "10.1145/3711896.3736570",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W4412877164",
+            "originalValue": "https://openalex.org/W4412877164",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W4412877164"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "The rise of LLM-based agents has opened new frontiers in AI applications, yet evaluating these agents remains a complex and underdeveloped area.This survey provides an in-depth overview of the emerging field of LLM agent evaluation, introducing a twodimensional taxonomy that organizes existing work along (1) evaluation objectives-what to evaluate, such as agent behavior, capabilities, reliability, and safety-and (2) evaluation process-how to evaluate, including interaction modes, datasets and benchmarks, metric computation methods, and tooling.In addition to taxonomy, we highlight enterprise-specific challenges, such as role-based access to data, the need for reliability guarantees, dynamic and longhorizon interactions, and compliance, which are often overlooked in current research.We also identify the future research directions, including holistic, more realistic, and scalable evaluation.This work aims to bring clarity to the fragmented landscape of agent evaluation and provide a framework for systematic assessment, enabling researchers and practitioners to evaluate LLM agents for real-world deployment."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "LLM agents",
+            "agent evaluation",
+            "benchmarking",
+            "evaluation taxonomy",
+            "agent behavior",
+            "agent reliability",
+            "agent safety",
+            "evaluation dataset",
+            "evaluation metrics",
+            "enterprise AI deployment",
+            "compliance",
+            "long-horizon interaction"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "89a5368d-d8ba-4ceb-b365-745ff8f5ab79",
+        "e3b59ab0-1f58-4507-9d0c-7b05de816cab",
+        "42c42c76-a160-41b2-9bb4-e6ffe589edd5",
+        "f736bbcb-7b72-42b3-8053-3e5f18562186"
+      ]
+    },
+    {
+      "academicWork": {
+        "schemaVersion": 1,
+        "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+        "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+        "authors": [
+          "Isteak Ahmed Rafe",
+          "Md Rasel Dewan",
+          "Md Khairul Islam"
+        ],
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7154623225",
+            "originalValue": "https://openalex.org/W7154623225",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.59324/ejaset.2026.4(2).16",
+            "originalValue": "10.59324/ejaset.2026.4(2).16",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7154623225",
+            "originalValue": "https://openalex.org/W7154623225",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "workVersionIds": [
+          "8059a8ab-5708-48e4-9d22-aa837666fc0c"
+        ],
+        "canonicalVersionId": "8059a8ab-5708-48e4-9d22-aa837666fc0c",
+        "firstPublicDate": {
+          "status": "unknown",
+          "reason": "OpenAlex aggregate publication date does not establish the first public release."
+        },
+        "publicationStatus": {
+          "status": "available",
+          "value": "published"
+        },
+        "venue": {
+          "status": "available",
+          "value": "European Journal of Applied Science Engineering and Technology"
+        }
+      },
+      "workVersion": {
+        "schemaVersion": 1,
+        "workVersionId": "8059a8ab-5708-48e4-9d22-aa837666fc0c",
+        "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+        "versionType": "version_of_record",
+        "versionLabel": {
+          "status": "unknown",
+          "reason": "OpenAlex version category does not establish an exact revision; verify against the original source."
+        },
+        "releaseDate": {
+          "status": "available",
+          "value": {
+            "iso": "2026-04-13",
+            "precision": "day"
+          }
+        },
+        "externalIdentifiers": [
+          {
+            "kind": "provider_record",
+            "normalizedValue": "openalex:https://openalex.org/W7154623225",
+            "originalValue": "https://openalex.org/W7154623225",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "doi",
+            "normalizedValue": "10.59324/ejaset.2026.4(2).16",
+            "originalValue": "10.59324/ejaset.2026.4(2).16",
+            "sourceProvider": "openalex"
+          },
+          {
+            "kind": "openalex",
+            "normalizedValue": "https://openalex.org/W7154623225",
+            "originalValue": "https://openalex.org/W7154623225",
+            "sourceProvider": "openalex"
+          }
+        ],
+        "sourceRecords": [
+          {
+            "provider": "openalex",
+            "recordId": "https://openalex.org/W7154623225"
+          }
+        ],
+        "contentHash": {
+          "status": "not_extracted",
+          "reason": "Full text has not been fetched."
+        },
+        "supersedesWorkVersionId": null,
+        "status": "active"
+      },
+      "metadata": {
+        "abstract": {
+          "status": "available",
+          "value": "The transition from isolated Large Language Models (LLMs) to orchestrated Multi-Agent Systems (MAS) enables complex problem-solving but introduces profound safety, security, and verification challenges. This paper presents a comprehensive survey of orchestration architectures and safety mechanisms in agentic AI systems. This study systematically analyzes collaboration paradigms and orchestration topologies, demonstrating how distributed interactions expand the attack surface. A unified threat taxonomy is proposed, distinguishing between intrinsic agent vulnerabilities, such as prompt injection and cognitive drift, and extrinsic, MAS-specific threats, including cross-agent poisoning and emergent shadow behaviors. Furthermore, we evaluate current defense strategies, from capability sandboxing and runtime monitoring to zero-trust architectures, while highlighting the fundamental limitations of traditional formal verification in non-deterministic environments. By examining applications across software engineering, healthcare, cybersecurity, and finance, we identify domain-specific safety patterns and the necessity of human-in-the-loop oversight. Finally, we discuss regulatory challenges and outline future research directions, emphasizing the need for compositional verification, standardized adversarial benchmarks, and interdisciplinary governance to ensure the trustworthy deployment of autonomous systems."
+        },
+        "keywords": {
+          "status": "available",
+          "value": [
+            "multi-agent systems",
+            "agentic AI",
+            "AI safety",
+            "threat taxonomy",
+            "prompt injection",
+            "cognitive drift",
+            "runtime monitoring",
+            "zero-trust architecture",
+            "formal verification",
+            "non-deterministic environments",
+            "human-in-the-loop oversight",
+            "AI regulation",
+            "adversarial benchmark",
+            "compositional verification",
+            "large language models"
+          ]
+        }
+      },
+      "discoveredBy": [
+        "8fca5683-8f66-46bc-b820-ec3aaf006282"
+      ]
+    }
+  ],
+  "fulltextResolutions": [
+    {
+      "workVersionId": "267e979b-6c93-432c-a35d-7a3b502b213d",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://dl.acm.org/doi/pdf/10.1145/3711896.3736570"
+      ]
+    },
+    {
+      "workVersionId": "8059a8ab-5708-48e4-9d22-aa837666fc0c",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://ejaset.com/index.php/journal/article/download/463/326"
+      ]
+    },
+    {
+      "workVersionId": "09317a27-f2e7-4e6c-bd3b-d344d8e4cd48",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "arxiv",
+      "urls": [
+        "https://arxiv.org/pdf/2406.05804v6",
+        "https://arxiv.org/html/2406.05804v6"
+      ]
+    },
+    {
+      "workVersionId": "749bd998-864f-4fd2-978a-1880e5e8f253",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://s-rsa.com/index.php/agi/article/download/15161/11079"
+      ]
+    },
+    {
+      "workVersionId": "6dc0f3b7-85bc-47e3-a45d-fb57c71ae674",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://arxiv.org/pdf/2609.24662",
+        "https://arxiv.org/html/2609.24662"
+      ]
+    },
+    {
+      "workVersionId": "01fe2de1-cd19-43bf-823b-84d10293341f",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://www.mdpi.com/1999-5903/17/9/404/pdf?version=1757000054"
+      ]
+    },
+    {
+      "workVersionId": "acfa223c-756f-477f-87e6-8c85c871637d",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://www.csetx.org/index.php/cset/article/download/119/142"
+      ]
+    },
+    {
+      "workVersionId": "7251fdcb-79f0-43df-aa0a-ed664aa2efa2",
+      "availability": {
+        "status": "resolvable"
+      },
+      "sourceProvider": "openalex",
+      "urls": [
+        "https://aclanthology.org/2026.findings-acl.2069.pdf"
+      ]
+    }
+  ],
+  "deployment": {
+    "candidateReviewMaximumWorks": 8,
+    "candidateReviewConcurrency": 1,
+    "candidateReviewMaxTokens": 8192,
+    "candidateReviewAttemptTimeoutMs": 150000,
+    "maxAttempts": 1
+  }
+}
