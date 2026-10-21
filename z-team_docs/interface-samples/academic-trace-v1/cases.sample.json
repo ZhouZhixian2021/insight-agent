@@ -1,0 +1,3529 @@
+{
+  "fixtureVersion": 1,
+  "synthetic": true,
+  "cases": [
+    {
+      "name": "retry",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-retry",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-retry",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": {
+                "code": "timeout",
+                "phase": "before_content",
+                "message": "Model attempt exceeded its observed deadline."
+              },
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "retry_wait",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-2",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 2,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-8",
+            "sequence": 8,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-8",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-2",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 2,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 500,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-9",
+            "sequence": 9,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-9",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 2000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-10",
+            "sequence": 10,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-10",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-11",
+            "sequence": 11,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-11",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-12",
+            "sequence": 12,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-12",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 2200,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 2,
+        "attemptStates": {
+          "failed": 1,
+          "succeeded": 1
+        },
+        "runTotalMs": 2200,
+        "runStatus": "partial_success"
+      }
+    },
+    {
+      "name": "normal",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-normal",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-normal",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 500,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 500,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-8",
+            "sequence": 8,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-8",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-9",
+            "sequence": 9,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-9",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 700,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 1,
+        "attemptStates": {
+          "succeeded": 1
+        },
+        "runTotalMs": 700,
+        "runStatus": "succeeded"
+      }
+    },
+    {
+      "name": "timeout",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-timeout",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-timeout",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": {
+                "code": "timeout",
+                "phase": "before_content",
+                "message": "Model attempt exceeded its observed deadline."
+              },
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1100,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 1,
+        "attemptStates": {
+          "failed": 1
+        },
+        "runTotalMs": 1100,
+        "runStatus": "failed"
+      }
+    },
+    {
+      "name": "cancelled",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-cancelled",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-cancelled",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "cancelled",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 200,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "cancelled",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "cancelled",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 300,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 1,
+        "attemptStates": {
+          "cancelled": 1
+        },
+        "runTotalMs": 300,
+        "runStatus": "cancelled"
+      }
+    },
+    {
+      "name": "concurrent",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-concurrent",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-concurrent",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call-2",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-other",
+              "parentSpanId": "call-2",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-8",
+            "sequence": 8,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-8",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-other",
+              "parentSpanId": "call-2",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 800,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-9",
+            "sequence": 9,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-9",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-10",
+            "sequence": 10,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-10",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call-2",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 800,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-11",
+            "sequence": 11,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-11",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-12",
+            "sequence": 12,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-12",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-13",
+            "sequence": 13,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-13",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1200,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 2,
+        "attempts": 2,
+        "attemptStates": {
+          "succeeded": 2
+        },
+        "runTotalMs": 1200,
+        "runStatus": "succeeded"
+      }
+    },
+    {
+      "name": "duplicate",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-duplicate",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-duplicate",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": {
+                "code": "timeout",
+                "phase": "before_content",
+                "message": "Model attempt exceeded its observed deadline."
+              },
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "retry_wait",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-7",
+            "sequence": 7,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-7",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-2",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 2,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-8",
+            "sequence": 8,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-8",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-2",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 2,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 500,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-9",
+            "sequence": 9,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-9",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "succeeded",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 2000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-10",
+            "sequence": 10,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-10",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-11",
+            "sequence": 11,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-11",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-12",
+            "sequence": 12,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-12",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "partial_success",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 2200,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "failed",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": 1000,
+                  "basis": "monotonic"
+                }
+              },
+              "failure": {
+                "code": "timeout",
+                "phase": "before_content",
+                "message": "Model attempt exceeded its observed deadline."
+              },
+              "gaps": []
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 2,
+        "attemptStates": {
+          "failed": 1,
+          "succeeded": 1
+        },
+        "runTotalMs": 2200,
+        "runStatus": "partial_success"
+      }
+    },
+    {
+      "name": "restart",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-restart",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-restart",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "stage",
+              "parentSpanId": "run",
+              "kind": "stage",
+              "stage": "extraction",
+              "operation": "stage",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-2",
+            "sequence": 2,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-2",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "paper",
+              "parentSpanId": "stage",
+              "kind": "paper",
+              "stage": "extraction",
+              "operation": "paper_processing",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-3",
+            "sequence": 3,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-3",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": "paper",
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-4",
+            "sequence": 4,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-4",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-5",
+            "sequence": 5,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-5",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "attempt-1",
+              "parentSpanId": "call",
+              "kind": "attempt",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": 1,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": [
+                {
+                  "code": "interrupted_observation",
+                  "field": "status",
+                  "message": "No settlement observed after restart; last state retained."
+                }
+              ]
+            }
+          },
+          {
+            "eventId": "fixture-event-6",
+            "sequence": 6,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-6",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "running",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": [
+                {
+                  "code": "interrupted_observation",
+                  "field": "status",
+                  "message": "No settlement observed after restart; last state retained."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 1,
+        "attemptStates": {
+          "running": 1
+        },
+        "runTotalMs": null,
+        "runStatus": "running"
+      }
+    },
+    {
+      "name": "historical_missing",
+      "trace": {
+        "schemaVersion": 1,
+        "traceId": "fixture-trace-historical_missing",
+        "sessionId": "fixture-session-1",
+        "researchRunId": "fixture-run-historical_missing",
+        "backgroundRunId": null,
+        "producer": {
+          "adapterId": "fixture",
+          "adapterVersion": "1",
+          "baseCommit": "synthetic"
+        },
+        "gaps": [],
+        "events": [
+          {
+            "eventId": "fixture-event-0",
+            "sequence": 0,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-0",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "run",
+              "parentSpanId": null,
+              "kind": "run",
+              "stage": null,
+              "operation": "research",
+              "academicWorkId": null,
+              "workVersionId": null,
+              "providerId": null,
+              "model": null,
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "unknown",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": []
+            }
+          },
+          {
+            "eventId": "fixture-event-1",
+            "sequence": 1,
+            "kind": "span_snapshot",
+            "observedAt": null,
+            "sourceRef": {
+              "recordId": "fixture-record-1",
+              "recordType": "synthetic_observation"
+            },
+            "span": {
+              "spanId": "call",
+              "parentSpanId": null,
+              "kind": "call",
+              "stage": "extraction",
+              "operation": "evidence_extract",
+              "academicWorkId": "fixture-work-1",
+              "workVersionId": "fixture-version-1",
+              "providerId": null,
+              "model": "fixture-model",
+              "toolName": null,
+              "attemptIndex": null,
+              "status": "unknown",
+              "businessStatus": null,
+              "startedAt": null,
+              "endedAt": null,
+              "timing": {
+                "queueMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "executionMs": {
+                  "value": null,
+                  "basis": "unknown"
+                },
+                "totalMs": {
+                  "value": null,
+                  "basis": "unknown"
+                }
+              },
+              "failure": null,
+              "gaps": [
+                {
+                  "code": "parent_unknown",
+                  "field": "parentSpanId",
+                  "message": "Parent call relationship was not recorded."
+                },
+                {
+                  "code": "timing_unavailable",
+                  "field": "timing",
+                  "message": "Duration was not recorded."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "expected": {
+        "logicalCalls": 1,
+        "attempts": 0,
+        "attemptStates": {},
+        "runTotalMs": null,
+        "runStatus": "unknown"
+      }
+    }
+  ]
+}
