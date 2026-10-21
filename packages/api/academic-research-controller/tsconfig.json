@@ -10,6 +10,7 @@
     { "path": "../../core/session" },
     { "path": "../../academic/model" },
     { "path": "../../academic/evidence" },
+    { "path": "../../academic/ingestion" },
     { "path": "../../academic/retrieval" },
     { "path": "../../academic/source" },
     { "path": "../../academic/source-arxiv" },

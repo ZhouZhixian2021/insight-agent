@@ -36,6 +36,8 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用方式
 
+检索适配器通过 `@deepseek-ai/dsh-academic-ingestion` 保留获批检索中的规范论文与版本身份。Controller 将该包声明为运行时 peer 和开发依赖，并维护对应的 TypeScript 项目引用；构建后的消费方通过工作区包入口解析它。
+
 存在工具运行时时，控制器挂载随自身释放的 `tools/execute` 校验。携带 Academic Brief 围栏的 `exit_plan_mode` 调用在审核工具执行前完成解析与可执行要求检查，也覆盖 PTC 子调用；普通计划继续执行。校验不会从无关文本推断学术计划。Remote 接收运行请求时再次检查已批准 Brief，因此已有不兼容计划会在检索前返回具体字段提示，需要修正计划并重新批准，不会被静默改写。
 
 返回值还包含 `synthesis: { status, reasons }`，状态为 `not_run`、`blocked`、`failed`、`completed` 或 `partial_success`，与检索及审核独立。洞察部分成功保留草稿，并列出被拒候选段落序号与原因。没有合格段落或整份响应无效时不返回报告，但保留论文。洞察调用沿用解析后的会话模型、输出预算与尝试上限。

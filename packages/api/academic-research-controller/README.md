@@ -36,6 +36,8 @@ For a run that survives closing the viewer, call `startBackgroundRun(request)` a
 <a id="use-this-package"></a>
 ## Use this package
 
+The search adapter uses `@deepseek-ai/dsh-academic-ingestion` to preserve canonical work and version identities across approved searches. The controller declares this package as a runtime peer and a development dependency, with a matching TypeScript project reference; built consumers resolve it through the workspace package entry.
+
 When a tools runtime is present, the controller mounts a disposable `tools/execute` guard. An `exit_plan_mode` call carrying the Academic Brief fence is parsed and checked against executable requirements before the review tool runs, including PTC sub-dispatch. Ordinary plans delegate unchanged. The guard does not infer an Academic plan from unrelated prose. Approved Briefs are checked again at Remote admission, so older incompatible plans return actionable field diagnostics before search; they require a corrected plan and renewed approval, never silent rewriting.
 
 The response also exposes `synthesis: { status, reasons }`, with `not_run`, `blocked`, `failed`, `completed` or `partial_success`. This settlement is independent of retrieval and review. Partial synthesis retains a draft and lists rejected candidate paragraph numbers and reasons. No valid paragraphs or invalid whole responses yield no report while preserving papers. The synthesis call uses the resolved Session model, output reserve and attempt bound.

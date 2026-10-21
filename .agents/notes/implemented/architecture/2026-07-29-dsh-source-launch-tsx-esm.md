@@ -20,6 +20,8 @@ The `dsh` TUI, Web, and headless source launches run `node --import tsx/esm`: ts
 
 The node-compat CI matrix (Node 22.19 and 26) gains `dsh-source-launch-smoke` (`apps/cli/tests/source-launch.compat.spec.ts`): a keyless piped-stdio launch of the exact production runtime vector asserting the non-zero-exit TTY refusal. Any future Node change to module hooks or TypeScript handling turns this gate red instead of breaking developers' `pnpm dsh`.
 
+Built-process replay fixtures keep their own TypeScript erasable and import workflow implementations through package entries. The [Academic replenishment fixture](../../../../packages/academic/workflow/tests/replenishment-plugin.ts) imports `@deepseek-ai/dsh-academic-workflow` rather than its source barrel, so Node strip mode does not reach workflow parameter properties. The [Academic Controller](../../../../packages/api/academic-research-controller/package.json) declares its ingestion import as a runtime peer and development dependency; source paths cannot substitute for a complete installed dependency graph.
+
 ## Alternatives considered
 
 **Keep the native chain on Node ≤25 and branch by version.** Rejected: two transformation semantics (amaro versus esbuild) diverge on edge syntax, the launcher grows version probing, and the node-compat matrix must cover both paths — heavy maintenance for an experimental flag that already changed under us. amaro also rejects the `@Inject` decorators `vendor/hmr` uses, so the native path could not boot the shipped default TUI config anyway.

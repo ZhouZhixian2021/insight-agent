@@ -20,6 +20,8 @@ Status: implemented
 
 node-compat CI 矩阵（Node 22.19 与 26）新增 `dsh-source-launch-smoke`（`apps/cli/tests/source-launch.compat.spec.ts`）：以精确的生产运行时启动向量做 keyless 管道 stdio 启动，断言进程会因 TTY 拒绝而以非零状态退出。未来 Node 对模块钩子或 TypeScript 处理的任何改动都会让该门禁变红，而不是破坏开发者的 `pnpm dsh`。
 
+构建进程的回放夹具保持自身 TypeScript 可擦除，并通过包入口导入工作流实现。[Academic 补检夹具](../../../../packages/academic/workflow/tests/replenishment-plugin.ts) 导入 `@deepseek-ai/dsh-academic-workflow` 而非源码聚合入口，使 Node strip 模式不会进入工作流的参数属性语法。[Academic Controller](../../../../packages/api/academic-research-controller/package.json) 将摄取包导入声明为运行时 peer 和开发依赖；源码路径映射不能替代完整的已安装依赖图。
+
 ## 备选方案
 
 **在 Node ≤25 保留原生链并按版本分叉。** 拒绝：两套转换语义（amaro 与 esbuild）在边缘语法上会分歧，启动器要加版本探测，node-compat 矩阵要覆盖两条路径——为一个已经变动过的 experimental flag 付出沉重维护。而且 amaro 也不支持 `vendor/hmr` 使用的 `@Inject` 装饰器，原生路径本来就无法启动随附的默认 TUI 配置。
