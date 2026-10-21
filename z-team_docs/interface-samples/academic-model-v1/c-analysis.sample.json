@@ -1,0 +1,130 @@
+{
+  "sampleSchemaVersion": 1,
+  "sampleId": "academic-model-v1-c-output-001",
+  "synthetic": true,
+  "inputRetrievalRunId": "run-rag-evaluation-001",
+  "researchStage": "running",
+  "progress": "analysis_complete",
+  "claims": [
+    {
+      "schemaVersion": 1,
+      "claimId": "41111111-1111-4111-8111-111111111111",
+      "text": "在本次样例材料中，分开记录检索与生成指标有助于定位两类失败。",
+      "category": "comparison",
+      "scope": "仅适用于本次样例中的两项可读取研究工作。",
+      "uncertainty": "第二项工作只有摘要，不能核验其实验设置与数值。",
+      "confidence": "medium",
+      "evidenceSnapshot": {
+        "evidenceSnapshotId": "snapshot-41111111-1111-4111-8111-111111111111",
+        "schemaVersion": 1,
+        "researchBriefId": "brief-rag-evaluation-001",
+        "researchBriefVersion": 1,
+        "evidenceItems": [
+          {
+            "evidenceId": "31111111-1111-4111-8111-111111111111",
+            "academicWorkId": "11111111-1111-4111-8111-111111111111",
+            "workVersionId": "21111111-1111-4111-8111-111111111111",
+            "contentHash": "sha256:sample-work-1-preprint-v1"
+          },
+          {
+            "evidenceId": "32222222-2222-4222-8222-222222222222",
+            "academicWorkId": "12222222-2222-4222-8222-222222222222",
+            "workVersionId": "22222222-2222-4222-8222-222222222222",
+            "contentHash": "sha256:sample-work-2-abstract-v1"
+          }
+        ],
+        "createdAt": "2026-09-09T01:04:00Z"
+      },
+      "validity": "current",
+      "confidenceReasons": [
+        "一条全文证据说明分别记录两类指标。",
+        "一条摘要证据说明单一总体得分不能区分两类失败。",
+        "两条证据来自不同研究工作，但其中一条只有摘要。"
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "claimId": "42222222-2222-4222-8222-222222222222",
+      "text": "本次样例不足以判断领域评测基准是否已经形成统一标准。",
+      "category": "limitation",
+      "scope": "本次检索范围。",
+      "uncertainty": "第三项工作只有元数据，且正文获取失败。",
+      "confidence": "insufficient",
+      "evidenceSnapshot": {
+        "evidenceSnapshotId": "snapshot-42222222-2222-4222-8222-222222222222",
+        "schemaVersion": 1,
+        "researchBriefId": "brief-rag-evaluation-001",
+        "researchBriefVersion": 1,
+        "evidenceItems": [
+          {
+            "evidenceId": "33333333-3333-4333-8333-333333333333",
+            "academicWorkId": "13333333-3333-4333-8333-333333333333",
+            "workVersionId": "23333333-3333-4333-8333-333333333333",
+            "contentHash": "sha256:sample-work-3-metadata"
+          }
+        ],
+        "createdAt": "2026-09-09T01:04:00Z"
+      },
+      "validity": "current",
+      "confidenceReasons": [
+        "元数据只能证明来源中存在该记录。",
+        "现有证据不能支持关于方法内容或领域共识的判断。"
+      ]
+    }
+  ],
+  "claimEvidenceLinks": [
+    {
+      "schemaVersion": 1,
+      "claimEvidenceLinkId": "51111111-1111-4111-8111-111111111111",
+      "claimId": "41111111-1111-4111-8111-111111111111",
+      "evidenceId": "31111111-1111-4111-8111-111111111111",
+      "relation": "supports",
+      "rationale": "该全文片段直接说明分别记录检索覆盖和生成一致性。"
+    },
+    {
+      "schemaVersion": 1,
+      "claimEvidenceLinkId": "52222222-2222-4222-8222-222222222222",
+      "claimId": "41111111-1111-4111-8111-111111111111",
+      "evidenceId": "32222222-2222-4222-8222-222222222222",
+      "relation": "supports",
+      "rationale": "该摘要从反面说明单一总体得分不能区分检索和生成失败。"
+    },
+    {
+      "schemaVersion": 1,
+      "claimEvidenceLinkId": "53333333-3333-4333-8333-333333333333",
+      "claimId": "42222222-2222-4222-8222-222222222222",
+      "evidenceId": "33333333-3333-4333-8333-333333333333",
+      "relation": "background",
+      "rationale": "该记录只能说明来源中存在一个相关标题，不能证明领域已经形成统一标准。"
+    }
+  ],
+  "claimAssessments": [
+    {
+      "schemaVersion": 1,
+      "claimAssessmentId": "assessment-claim-001",
+      "claimId": "41111111-1111-4111-8111-111111111111",
+      "status": "partially_supported",
+      "reason": "结论得到全文和摘要证据共同支持，但摘要证据限制了核验深度。",
+      "method": "fixed-sample-rule-check",
+      "methodVersion": "1",
+      "assessedEvidenceIds": [
+        "31111111-1111-4111-8111-111111111111",
+        "32222222-2222-4222-8222-222222222222"
+      ],
+      "assessedAt": "2026-09-09T01:05:00Z"
+    },
+    {
+      "schemaVersion": 1,
+      "claimAssessmentId": "assessment-claim-002",
+      "claimId": "42222222-2222-4222-8222-222222222222",
+      "status": "insufficient",
+      "reason": "只有元数据，不能形成关于方法内容或领域共识的结论。",
+      "method": "fixed-sample-rule-check",
+      "methodVersion": "1",
+      "assessedEvidenceIds": [
+        "33333333-3333-4333-8333-333333333333"
+      ],
+      "assessedAt": "2026-09-09T01:05:00Z"
+    }
+  ]
+}

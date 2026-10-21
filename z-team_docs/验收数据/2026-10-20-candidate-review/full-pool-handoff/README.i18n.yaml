@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.md
+/complete-retained-candidate-pool-handoff:
+  en: 96e36ba2d307302d
+  zh: 3c793d3c8c633aad
+/complete-retained-candidate-pool-handoff/purpose-and-scope:
+  en: 800be6bc591e85aa
+  zh: 53513d644b71462a
+/complete-retained-candidate-pool-handoff/counts-and-interpretation:
+  en: fa947df41d3020ca
+  zh: b1e67123fd0963b0
+/complete-retained-candidate-pool-handoff/files-and-provenance:
+  en: ab6251f17f30492a
+  zh: b32c2302432fd7c4
+/complete-retained-candidate-pool-handoff/replay:
+  en: 7127c2594dc5e771
+  zh: 9b3a115800846c47
+/complete-retained-candidate-pool-handoff/limits-and-ownership:
+  en: 243e35f5c14711c8
+  zh: 02c35fe92a924c62

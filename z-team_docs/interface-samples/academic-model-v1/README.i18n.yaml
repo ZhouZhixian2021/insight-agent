@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write z-team_docs/interface-samples/academic-model-v1/README.md
+/academic-model-v1-fixed-interface-samples:
+  en: c236df1909c2cda5
+  zh: 09e49ceebeafcc08
+/academic-model-v1-fixed-interface-samples/status-and-purpose:
+  en: f944ee94ec50143d
+  zh: ab7b615d215e0a89
+/academic-model-v1-fixed-interface-samples/files:
+  en: b8fb12bfcd025c15
+  zh: d21e8495b8814cb1
+/academic-model-v1-fixed-interface-samples/sample-coverage:
+  en: 1fd4ff534235f4fe
+  zh: 025d7d2122ed2637
+/academic-model-v1-fixed-interface-samples/confirmed-field-rules:
+  en: a27a7d5eddadbbad
+  zh: bd34bf12c48e8a79
+/academic-model-v1-fixed-interface-samples/verification-criteria:
+  en: 757ea2bb460ba9fd
+  zh: 3e3aef08bd5b7b3d

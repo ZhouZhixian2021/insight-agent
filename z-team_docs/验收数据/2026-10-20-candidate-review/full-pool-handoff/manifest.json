@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "complete_retained_deduplicated_pool",
+  "exportCodeRevision": "929aed141dbf605201e0ee6efccb6aae88016686",
+  "source": {
+    "sessionId": "session-aad43ed3-e716-4a7e-a300-61a8351b6cfe",
+    "format": "session.v2.jsonl.zstd",
+    "sha256": "0adc3a6e5cd748ee50568e25613f5b093ac468f35a3ba6bf555e70b33cd23dca",
+    "eventCount": 457,
+    "checkpoint": {
+      "type": "academic/recovery-checkpoint",
+      "seq": 150,
+      "time": 1792391637312
+    }
+  },
+  "externalCalls": 0,
+  "completeRetainedDeduplicatedPool": true,
+  "rawProviderResponsesIncluded": false,
+  "nonCanonicalVersionMetadataIncluded": false,
+  "allResolvableUrlsIncluded": false,
+  "historicalSelectionEventAvailable": false,
+  "offlineSelectionIsObserved": false,
+  "independentRelevanceReviewComplete": false,
+  "files": [
+    {
+      "path": "input.json",
+      "sha256": "900e45afec9a69c54a49824f14d9acc1a21abb02db0cc7ab0f78a2b955425bba"
+    },
+    {
+      "path": "historical.json",
+      "sha256": "db1ab4562ed6e972f5d4bf5853a7295268341afbe0475d0bdfb7212c80832e55"
+    },
+    {
+      "path": "replay.json",
+      "sha256": "26b7045a68215c1a8d6a35035fafc9c392e435e3e13ca35bbb93e6ccb5258e95"
+    },
+    {
+      "path": "audit.json",
+      "sha256": "616be33045cac246b7299f4b4509bdaad220d91d75d225ebd1b6eb3746f49910"
+    },
+    {
+      "path": "candidates.md",
+      "sha256": "dcc4bb1b380d84407274eedc2618ad494af75d190dc1decbfeab9a1a09774e30"
+    }
+  ]
+}

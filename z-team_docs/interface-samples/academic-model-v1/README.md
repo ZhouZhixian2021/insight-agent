@@ -1,0 +1,70 @@
+# Academic Model v1 fixed interface samples
+
+English | [中文](README.zh.md)
+
+## Status and purpose
+
+| Item | Value |
+|---|---|
+| Owner | A, `ZhouZhixian2021` |
+| Status | Fixed interface samples; synthesis and progress samples also serve as executable test fixtures |
+| Data | Entirely fictional; does not represent real papers, sources, or retrieval results |
+| Source impact | Data and browser types; Controller tests consume the progress fixture |
+
+This directory uses fixed JSON to verify that member B's retrieval and evidence output can directly support member C's cross-paper analysis. Field names follow the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md) and [field reference](../../模块分工/academic-model-v1-field-reference.md). The progress sample implements the browser types exported by the Academic Research Controller; older domain samples remain handoff data unless an owning package exports their type.
+
+## Files
+
+- [`synthesis-input.sample.json`](synthesis-input.sample.json), [`synthesis-output.sample.json`](synthesis-output.sample.json), [`synthesis-partial-output.sample.json`](synthesis-partial-output.sample.json), and [`synthesis-cases.sample.json`](synthesis-cases.sample.json): synthesis input, valid and mixed-validity model responses, and executable cases. The partial response preserves three supported paragraphs and rejects a background-only gap paragraph; parser and Session tests check the host-owned diagnostics. All passages are synthetic, not Transformer or BERT quotations; they do not establish real-report quality. See the [team handoff](../../模块分工/academic-synthesis-handoff.md).
+
+- [`b-retrieval-evidence.sample.json`](b-retrieval-evidence.sample.json): simulates B's Research Brief, retrieval run, papers, versions, evidence, Evidence Card, coverage statistics, and item-level failures.
+- [`c-analysis.sample.json`](c-analysis.sample.json): simulates C using stable IDs from B to create Claims, Claim–Evidence relations, and evaluation results.
+- [`claim-freshness.sample.json`](claim-freshness.sample.json): simulates an old Claim becoming `stale` when its evidence version changes.
+- [`b-multi-source-search-batch.sample.json`](b-multi-source-search-batch.sample.json): fixes B's target partial-success result for one multi-source search.
+- [`c-academic-research-run.sample.json`](c-academic-research-run.sample.json): fixes the target browser-safe Remote result, including producer-settled search, full-text, and evidence-extraction stages, that C can use before live integration.
+- [`hybrid-retrieval-v1.sample.json`](hybrid-retrieval-v1.sample.json): fixes A-H1's approved hybrid policy, all five reference kinds, explicit unrecognized/invalid/ambiguous identification issues, B's verified/failed reference outcomes, and C's browser-safe hybrid-stage and count projection. A-H4 adds optional query attribution to candidate/reference rows; counts keep repeated reference observations separate from actual ingested work merges. All records are synthetic.
+- [`academic-research-progress-v1.sample.json`](academic-research-progress-v1.sample.json): fixes A-P1's complete progress snapshots for retrieval start, direct Academic and Web-discovery activities, distinct ingestion audit counts, overlapping full-text and evidence work with three active papers, a timeout retry, and report evaluation. Paper activities carry work and version IDs. The sample contains observed counts and elapsed time but no estimated percentage.
+- [`academic-query-workflow-v1.sample.json`](academic-query-workflow-v1.sample.json): fixes Q1's provider-neutral search plan, canonical-version candidate facts, trusted abstract and keyword states, full-text resolution facts, explainable evaluations, ordered P0/P1/excluded queues, question coverage, one settled round, stop decision, and progress-event draft. All records are synthetic.
+- [`academic-pe1-plan.sample.md`](academic-pe1-plan.sample.md) and [`academic-pe1-evidence.sample.json`](academic-pe1-evidence.sample.json): fix A-PE1's readable review plan with complete execution data, individual excerpt rejection, a later fragment timeout, retained valid evidence, and unanswered questions. They are synthetic handoff samples, not proof that tiered extraction is connected to formal runs; see the [team plan](../../模块分工/academic-concise-plan-tiered-evidence-team-plan.md).
+
+## Sample coverage
+
+1. One `AcademicWorkId` links a preprint and a published version so the system does not count the work twice.
+2. `canonicalVersionId` points to the published version, while the Evidence Record identifies the preprint version actually used when the full text is unavailable.
+3. Evidence Records cover `fulltext`, `abstract`, and `metadata`, and express source text, sourced statements, or missing-data reasons.
+4. A retrieval run returns `partial_success` and retains successful items together with a full-text-access failure.
+5. B creates an Evidence Card for each paper; C consumes only the Card and Evidence Records for cross-paper analysis.
+6. C's Claim links supporting, opposing, or background evidence through stable IDs and records the evidence versions used during analysis.
+7. The system compares evidence versions before using a Claim; a mismatch prevents the Claim from entering the final report.
+8. `EvidenceCard` always contains the six `researchQuestions`, `methods`, `datasets`, `metrics`, `findings`, and `limitations` sections; a section without evidence-supported items uses an empty array.
+9. `Availability<T>` always uses five states; the wrapper stores only `status`, `value`, `reason`, or `failureId`, while all field-specific data remains inside `value`.
+10. A failed Provider does not discard other providers' successful results; the workflow reports the same failure and observed coverage to the Web client.
+11. Search, full-text, and evidence-extraction results are settled independently, so a downstream failure does not relabel a successful search as failed.
+12. Web-discovered URLs, identified references, verification attempts, and deduplicated works remain separate units; DOI, arXiv, ACL, PMLR, and CVF references retain discovery and verification provenance.
+13. Reference identification retains successful references beside sibling issues; a discarded Web candidate carries an explicit unrecognized, invalid, or ambiguous issue instead of an unexplained empty array.
+14. Progress snapshots retain all six stage settlements, represent simultaneous full-text and evidence work, and use monotone sequences so a later snapshot replaces an earlier one.
+15. Planned queries have distinct stable IDs; candidate discovery and settled rounds refer only to those IDs.
+16. Candidate priority follows the centralized thresholds after hard filtering, while each weighted component and decision reason remains visible.
+17. Question coverage preserves the exact questions in the bound Brief version; inclusion counts satisfy minimum <= target <= maximum.
+
+## Confirmed field rules
+
+The samples do not use `null` in place of a core field's missing-data state; an empty array means the system confirmed that the section has no evidence-supported items. The field reference confirms these rules:
+
+- `SourceLocator` uses `kind` to distinguish six locator types and binds a `WorkVersionId` and an available content hash.
+- `ProviderFailure.category`, `retryable`, and `retryAfter` jointly determine failure classification and retry handling.
+- Partial paper dates use `PartialDate`; run, review, and evaluation times use complete UTC ISO 8601 timestamps.
+- Sessions store Briefs, runs, and model-visible snapshots; evidence objects enter the Evidence Store; large source texts enter separate file storage.
+
+## Verification criteria
+
+- A standard JSON parser must parse every sample JSON file.
+- Every `academicWorkId`, `workVersionId`, and `evidenceId` referenced by C's sample must exist in B's sample.
+- Multiple versions of one `AcademicWorkId` count as one research work.
+- `metadata` evidence must not support experimental results or method details.
+- `partial_success` must contain successful IDs and item-level failures.
+- A version mismatch in the freshness sample must produce `stale`, and `mayEnterFinalReport` must be `false`.
+- Progress fixture sequences must increase, concurrent activities must remain separate, and no progress frame may contain an estimated percentage.
+- The query-workflow fixture must keep query references valid, candidate priority consistent with the shared policy, inclusion targets ordered, progress sequences increasing, and the terminal progress reason equal to the stop decision.
+
+Return to the [Academic Model v1 design baseline](../../模块分工/academic-model-v1-design.md).

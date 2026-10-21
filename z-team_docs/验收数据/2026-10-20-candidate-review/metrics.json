@@ -1,0 +1,808 @@
+{
+  "schemaVersion": 1,
+  "synthetic": false,
+  "scope": "candidate_semantic_review_only",
+  "source": ".dsh-runtime/sessions/--D-code-insight--/session-aad43ed3-e716-4a7e-a300-61a8351b6cfe/session.v2.jsonl.zstd",
+  "sessionId": "session-candidate-review-recheck-1792482205794",
+  "topic": "大语言模型智能体（LLM Agent / Agentic AI）发展趋势",
+  "model": {
+    "provider": "wowei",
+    "model": "deepseek-v4-pro",
+    "maxTokens": 8192
+  },
+  "controls": {
+    "samePlan": true,
+    "sameEightWorks": true,
+    "sameTitlesAndAbstracts": true,
+    "maxTokens": 8192,
+    "attemptTimeoutMs": 150000,
+    "maxAttempts": 1,
+    "concurrency": 2,
+    "liveSearch": false,
+    "fulltextFetch": false
+  },
+  "startedAt": "2026-10-20T07:43:26.634Z",
+  "finishedAt": "2026-10-20T07:53:26.918Z",
+  "elapsedMs": 600283,
+  "baseline": {
+    "dispatches": 8,
+    "settledResults": 8,
+    "validated": 3,
+    "validRate": 0.375,
+    "truncated": 3,
+    "timeouts": 1,
+    "requestWindowMs": 925454,
+    "medianElapsedMs": 112793.5,
+    "providerUsageKnown": 7,
+    "providerUsageUnknown": 1,
+    "inputTokensKnownTotal": 10063,
+    "outputTokensKnownTotal": 51308,
+    "cacheReadTokensKnownTotal": 1024,
+    "medianInputTokensKnown": 1591,
+    "medianOutputTokensKnown": 7100,
+    "estimatedInputTokensTotal": 12171,
+    "reasoningTokensKnown": 0,
+    "reasoningTokensUnknown": 8,
+    "medianReasoningTokensKnown": null,
+    "finalTextCharacters": 8930,
+    "reasoningCharacters": 268374,
+    "failures": [
+      {
+        "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_INCOMPLETE",
+        "finish": {
+          "kind": "max-tokens"
+        },
+        "failurePhase": "parse"
+      },
+      {
+        "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_CALL_FAILED",
+        "finish": {
+          "kind": "stop"
+        },
+        "failurePhase": "parse"
+      },
+      {
+        "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content"
+      },
+      {
+        "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_INCOMPLETE",
+        "finish": {
+          "kind": "max-tokens"
+        },
+        "failurePhase": "parse"
+      },
+      {
+        "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_INCOMPLETE",
+        "finish": {
+          "kind": "max-tokens"
+        },
+        "failurePhase": "parse"
+      }
+    ],
+    "aggregateInputTokensKnownTotal": 11087,
+    "medianAggregateInputTokensKnown": 1591
+  },
+  "current": {
+    "dispatches": 8,
+    "settledResults": 8,
+    "validated": 2,
+    "validRate": 0.25,
+    "truncated": 0,
+    "timeouts": 6,
+    "requestWindowMs": 600148,
+    "medianElapsedMs": 150003,
+    "providerUsageKnown": 2,
+    "providerUsageUnknown": 6,
+    "inputTokensKnownTotal": 1636,
+    "outputTokensKnownTotal": 3876,
+    "cacheReadTokensKnownTotal": 0,
+    "medianInputTokensKnown": 818,
+    "medianOutputTokensKnown": 1938,
+    "estimatedInputTokensTotal": 6517,
+    "reasoningTokensKnown": 0,
+    "reasoningTokensUnknown": 8,
+    "medianReasoningTokensKnown": null,
+    "finalTextCharacters": 1474,
+    "reasoningCharacters": 17339,
+    "failures": [
+      {
+        "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content"
+      },
+      {
+        "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "before_content"
+      },
+      {
+        "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content"
+      },
+      {
+        "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content"
+      },
+      {
+        "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "before_content"
+      },
+      {
+        "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+        "status": "failed",
+        "code": "EVIDENCE_MODEL_TIMEOUT",
+        "finish": {
+          "kind": "error",
+          "failure": {
+            "code": "TIMEOUT",
+            "message": "Academic model attempt timed out."
+          }
+        },
+        "failurePhase": "after_content"
+      }
+    ],
+    "aggregateInputTokensKnownTotal": 1636,
+    "medianAggregateInputTokensKnown": 818
+  },
+  "perWork": [
+    {
+      "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+      "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 1,
+        "timeouts": 0,
+        "requestWindowMs": 112941,
+        "medianElapsedMs": 112937,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1651,
+        "outputTokensKnownTotal": 8192,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1651,
+        "medianOutputTokensKnown": 8192,
+        "estimatedInputTokensTotal": 1612,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 38751,
+        "failures": [
+          {
+            "academicWorkId": "70c0d1b7-4c54-417f-8467-fedee0a342f8",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_INCOMPLETE",
+            "finish": {
+              "kind": "max-tokens"
+            },
+            "failurePhase": "parse"
+          }
+        ]
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 1,
+        "validRate": 1,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 70586,
+        "medianElapsedMs": 70586,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 858,
+        "outputTokensKnownTotal": 3322,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 858,
+        "medianOutputTokensKnown": 3322,
+        "estimatedInputTokensTotal": 879,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 1060,
+        "reasoningCharacters": 14569,
+        "failures": []
+      },
+      "semanticReview": {
+        "status": "validated",
+        "scope": "potentially_relevant"
+      }
+    },
+    {
+      "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+      "title": "A Review of Prominent Paradigms for LLM-Based Agents: Tool Use (Including RAG), Planning, and Feedback Learning",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 1,
+        "validRate": 1,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 101958,
+        "medianElapsedMs": 101955,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1530,
+        "outputTokensKnownTotal": 7100,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1530,
+        "medianOutputTokensKnown": 7100,
+        "estimatedInputTokensTotal": 1403,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 2054,
+        "reasoningCharacters": 30688,
+        "failures": []
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 149999,
+        "medianElapsedMs": 150010,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 744,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 89,
+        "failures": [
+          {
+            "academicWorkId": "85cb149a-1e7e-4755-8369-4e6a04c9a082",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "after_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+      "title": "DUMA-Bench: A Dual-Control Multi-Agent Benchmark for Evaluating LLM Agent Security",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 91820,
+        "medianElapsedMs": 91828,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1591,
+        "outputTokensKnownTotal": 6597,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1591,
+        "medianOutputTokensKnown": 6597,
+        "estimatedInputTokensTotal": 1464,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 2328,
+        "reasoningCharacters": 25734,
+        "failures": [
+          {
+            "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_CALL_FAILED",
+            "finish": {
+              "kind": "stop"
+            },
+            "failurePhase": "parse"
+          }
+        ]
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150006,
+        "medianElapsedMs": 150006,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 782,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 19,
+        "failures": [
+          {
+            "academicWorkId": "642a3170-71ee-4497-8f9c-096de82b79e0",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "after_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+      "title": "The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150044,
+        "medianElapsedMs": 150035,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 1576,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 36815,
+        "failures": [
+          {
+            "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "after_content"
+          }
+        ]
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150004,
+        "medianElapsedMs": 150003,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 870,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 198,
+        "failures": [
+          {
+            "academicWorkId": "0601ad9a-91ca-430b-a651-5d7f35d72765",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "after_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+      "title": "Multi-Agent Cooperative Planning and Execution Framework for Distributed LLM Reasoning Systems",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 1,
+        "timeouts": 0,
+        "requestWindowMs": 110012,
+        "medianElapsedMs": 110006,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1598,
+        "outputTokensKnownTotal": 8192,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1598,
+        "medianOutputTokensKnown": 8192,
+        "estimatedInputTokensTotal": 1598,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 40725,
+        "failures": [
+          {
+            "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_INCOMPLETE",
+            "finish": {
+              "kind": "max-tokens"
+            },
+            "failurePhase": "parse"
+          }
+        ]
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150003,
+        "medianElapsedMs": 150001,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 868,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 0,
+        "failures": [
+          {
+            "academicWorkId": "1f9886f2-ade5-491b-a332-5033a18beece",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "before_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+      "title": "From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 1,
+        "timeouts": 0,
+        "requestWindowMs": 114794,
+        "medianElapsedMs": 114802,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1559,
+        "outputTokensKnownTotal": 8192,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1559,
+        "medianOutputTokensKnown": 8192,
+        "estimatedInputTokensTotal": 1491,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 39217,
+        "failures": [
+          {
+            "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_INCOMPLETE",
+            "finish": {
+              "kind": "max-tokens"
+            },
+            "failurePhase": "parse"
+          }
+        ]
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150010,
+        "medianElapsedMs": 150012,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 791,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 0,
+        "failures": [
+          {
+            "academicWorkId": "22919314-667b-4b60-b0a7-018f1be9f94d",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "before_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "academicWorkId": "3ede2563-f2c3-4c03-8fac-092b1aa9e2d9",
+      "title": "Evaluation and Benchmarking of LLM Agents: A Survey",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 1,
+        "validRate": 1,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 130965,
+        "medianElapsedMs": 130955,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 532,
+        "outputTokensKnownTotal": 6599,
+        "cacheReadTokensKnownTotal": 1024,
+        "medianInputTokensKnown": 532,
+        "medianOutputTokensKnown": 6599,
+        "estimatedInputTokensTotal": 1457,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 2067,
+        "reasoningCharacters": 28539,
+        "failures": []
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 1,
+        "validRate": 1,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 149812,
+        "medianElapsedMs": 149811,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 778,
+        "outputTokensKnownTotal": 554,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 778,
+        "medianOutputTokensKnown": 554,
+        "estimatedInputTokensTotal": 747,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 414,
+        "reasoningCharacters": 2057,
+        "failures": []
+      },
+      "semanticReview": {
+        "status": "validated",
+        "scope": "potentially_relevant"
+      }
+    },
+    {
+      "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+      "title": "Orchestration and Verification of Agentic AI Systems: A Survey of Multi-Agent Collaboration and Safety",
+      "baseline": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 1,
+        "validRate": 1,
+        "truncated": 0,
+        "timeouts": 0,
+        "requestWindowMs": 112653,
+        "medianElapsedMs": 112650,
+        "providerUsageKnown": 1,
+        "providerUsageUnknown": 0,
+        "inputTokensKnownTotal": 1602,
+        "outputTokensKnownTotal": 6436,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": 1602,
+        "medianOutputTokensKnown": 6436,
+        "estimatedInputTokensTotal": 1570,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 2481,
+        "reasoningCharacters": 27905,
+        "failures": []
+      },
+      "current": {
+        "dispatches": 1,
+        "settledResults": 1,
+        "validated": 0,
+        "validRate": 0,
+        "truncated": 0,
+        "timeouts": 1,
+        "requestWindowMs": 150004,
+        "medianElapsedMs": 150003,
+        "providerUsageKnown": 0,
+        "providerUsageUnknown": 1,
+        "inputTokensKnownTotal": 0,
+        "outputTokensKnownTotal": 0,
+        "cacheReadTokensKnownTotal": 0,
+        "medianInputTokensKnown": null,
+        "medianOutputTokensKnown": null,
+        "estimatedInputTokensTotal": 836,
+        "reasoningTokensKnown": 0,
+        "reasoningTokensUnknown": 1,
+        "medianReasoningTokensKnown": null,
+        "finalTextCharacters": 0,
+        "reasoningCharacters": 407,
+        "failures": [
+          {
+            "academicWorkId": "40502a4b-2c07-42c3-9505-ed8b0255ad61",
+            "status": "failed",
+            "code": "EVIDENCE_MODEL_TIMEOUT",
+            "finish": {
+              "kind": "error",
+              "failure": {
+                "code": "TIMEOUT",
+                "message": "Academic model attempt timed out."
+              }
+            },
+            "failurePhase": "after_content"
+          }
+        ]
+      },
+      "semanticReview": {
+        "status": "failed",
+        "code": "TIMEOUT"
+      }
+    }
+  ],
+  "maxInFlight": 2,
+  "matchedInputCases": 8,
+  "integrityPassed": true,
+  "unknownUsageIsNotZero": true,
+  "timeoutCountsAsFailedReview": true,
+  "currentFailurePhases": {
+    "before_content": 2,
+    "after_content": 4,
+    "parse": 0,
+    "prepare": 0,
+    "admission": 0
+  }
+}

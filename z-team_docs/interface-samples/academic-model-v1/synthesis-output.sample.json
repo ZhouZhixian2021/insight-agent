@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "researchBriefId": "brief-synthesis-fixture-001",
+  "researchBriefVersion": 1,
+  "statements": [
+    {
+      "text": "在合成材料 A 中，位置间直接访问相对于逐步传递省去了中间位置。这仅说明样例中的路径机制，不能证明实际任务效果。",
+      "kind": "source_statement",
+      "category": null,
+      "scope": "合成材料 A 的机制描述",
+      "uncertainty": "没有实验数据，无法比较实际效果。",
+      "evidenceLinks": [
+        {
+          "evidenceId": "sample-evidence-1",
+          "relation": "supports",
+          "rationale": "原文分别描述直接访问与经过中间位置的路径。"
+        }
+      ]
+    },
+    {
+      "text": "在合成材料 B 中，隐藏词预测同时使用左侧和右侧上下文。",
+      "kind": "source_statement",
+      "category": null,
+      "scope": "合成材料 B 的训练任务描述",
+      "uncertainty": "没有迁移任务实验，无法证明实际迁移收益。",
+      "evidenceLinks": [
+        {
+          "evidenceId": "sample-evidence-2",
+          "relation": "supports",
+          "rationale": "原文明确包含左右两侧上下文及预测任务。"
+        }
+      ]
+    },
+    {
+      "text": "这两份合成材料分别描述信息访问方式与训练任务；两种描述关注不同层面，不能据此作性能排名。",
+      "kind": "synthesis",
+      "category": "comparison",
+      "scope": "仅限提供的两份合成材料",
+      "uncertainty": "真实架构继承关系和性能差异需要另外提供证据并审核。",
+      "evidenceLinks": [
+        {
+          "evidenceId": "sample-evidence-1",
+          "relation": "supports",
+          "rationale": "材料 A 描述位置间的信息访问。"
+        },
+        {
+          "evidenceId": "sample-evidence-2",
+          "relation": "supports",
+          "rationale": "材料 B 描述利用上下文的训练任务。"
+        }
+      ]
+    }
+  ],
+  "questionAnswers": [
+    {
+      "questionIndex": 0,
+      "status": "answered",
+      "statementIndexes": [
+        0
+      ],
+      "reason": null
+    },
+    {
+      "questionIndex": 1,
+      "status": "partial",
+      "statementIndexes": [
+        1
+      ],
+      "reason": "只有使用双向上下文的描述，没有表示形成及迁移效果的完整论证。"
+    }
+  ],
+  "sections": [
+    {
+      "sectionId": "executive_summary",
+      "title": "样例摘要",
+      "statementIndexes": [
+        0,
+        1,
+        2
+      ],
+      "missingReason": null
+    },
+    {
+      "sectionId": "scope_and_method",
+      "title": "研究范围与方法",
+      "statementIndexes": [],
+      "missingReason": null
+    },
+    {
+      "sectionId": "technology_overview",
+      "title": "机制概览",
+      "statementIndexes": [
+        0,
+        1
+      ],
+      "missingReason": null
+    },
+    {
+      "sectionId": "cross_paper_analysis",
+      "title": "跨材料综合",
+      "statementIndexes": [
+        2
+      ],
+      "missingReason": null
+    },
+    {
+      "sectionId": "key_findings",
+      "title": "逐题结论",
+      "statementIndexes": [
+        0,
+        1
+      ],
+      "missingReason": null
+    },
+    {
+      "sectionId": "limitations",
+      "title": "局限与证据限制",
+      "statementIndexes": [],
+      "missingReason": "仅提供两个合成方法片段，缺少真实全文实验与迁移证据。"
+    },
+    {
+      "sectionId": "research_gaps",
+      "title": "研究空白与证据缺口",
+      "statementIndexes": [],
+      "missingReason": "本次材料不足以判断领域研究空白。"
+    },
+    {
+      "sectionId": "references",
+      "title": "参考文献",
+      "statementIndexes": [],
+      "missingReason": null
+    },
+    {
+      "sectionId": "evidence_appendix",
+      "title": "证据附录",
+      "statementIndexes": [],
+      "missingReason": null
+    }
+  ],
+  "limitations": [
+    "全部材料为合成夹具，不能替代真实全文验收。",
+    "问题 1 的 answered 仅是模型提议，仍需要内容审核。",
+    "问题 2 仅部分覆盖；本输出不能标记为满足全部 Plan 要求。",
+    "未提供性能实验或领域覆盖，不能断言研究空白。"
+  ]
+}

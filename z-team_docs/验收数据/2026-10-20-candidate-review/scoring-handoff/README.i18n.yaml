@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/README.md
+/complete-scoring-handoff-for-eight-candidate-reviews:
+  en: b1c27f2bcbd56410
+  zh: e6eb8c3a8b1d99cc
+/complete-scoring-handoff-for-eight-candidate-reviews/purpose-and-scope:
+  en: e233368f397f87aa
+  zh: c22cb98eff45d8a8
+/complete-scoring-handoff-for-eight-candidate-reviews/files-and-fields:
+  en: 3900145ad9b01341
+  zh: da6f1cfd19861dd1
+/complete-scoring-handoff-for-eight-candidate-reviews/replay:
+  en: b6923b862ab75ca1
+  zh: 47d1666ec97928a4
+/complete-scoring-handoff-for-eight-candidate-reviews/recorded-results-and-differences:
+  en: 9eb8e3c3805fb27b
+  zh: 0f68aa5a03449fc6
+/complete-scoring-handoff-for-eight-candidate-reviews/responsibilities:
+  en: 7836ff9414532469
+  zh: 2c854e36fb46bc0d

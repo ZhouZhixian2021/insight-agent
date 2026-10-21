@@ -16,7 +16,7 @@
 
 ## 目的
 
-按团队 master 的[学术洞察上游升级双路线与持续开发分工](https://github.com/ZhouZhixian2021/insight-agent/blob/master/z-team_docs/模块分工/academic-upstream-upgrade-dual-route-team-plan.md)第零轮要求，为 B 的迁入路线准备独立工作目录，并把 dsh 运行数据隔离在仓库内，避免与本机 `~/.dsh` 及团队主仓库的运行数据互相污染。
+按[学术洞察上游升级双路线与持续开发分工](../../模块分工/academic-upstream-upgrade-dual-route-team-plan.md)第零轮要求，为 B 的迁入路线准备独立工作目录，并把 dsh 运行数据隔离在仓库内，避免与本机 `~/.dsh` 及团队主仓库的运行数据互相污染。
 
 ## 环境与隔离
 
