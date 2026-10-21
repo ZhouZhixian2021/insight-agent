@@ -5,7 +5,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import LlmRuntime, { LlmAdapter, ReasoningEffortId, ToolCallId, expandAssistantStream, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import SessionStore from '@deepseek-ai/dsh-session'
-import JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
@@ -129,7 +129,7 @@ async function fixture(writer = true) {
   const generate = createModelEvidenceGenerator(ctx, session, config, policy)
   const read = async () => {
     await using handle = await ctx.sessionPersistence.open(session.id, 'read')
-    return await handle.read()
+    return (await handle.read()).events
   }
   const version: WorkVersion = { schemaVersion: 1, academicWorkId: source.academicWorkId, workVersionId: source.workVersionId,
     versionType: 'preprint', versionLabel: { status: 'available', value: 'v1' }, releaseDate: { status: 'unknown', reason: 'fixture' },
@@ -1016,7 +1016,7 @@ describe('durable academic model extraction', () => {
     const open = f.ctx.sessionPersistence.open.bind(f.ctx.sessionPersistence)
     vi.spyOn(f.ctx.sessionPersistence, 'open').mockImplementation(async (id, access, options) => {
       const handle = await open(id, access, options)
-      vi.spyOn(handle, 'read').mockResolvedValue([])
+      vi.spyOn(handle, 'read').mockResolvedValue({ eventState: 'detached', events: [] })
       return handle
     })
     await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)

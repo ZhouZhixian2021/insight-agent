@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-12-academic-background-run.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-12-academic-background-run.md
-2026-10-12-academic-background-run.md: 786dfc4b72bf55de7a63a05b1bb336ae07263d3d
-2026-10-12-academic-background-run.zh.md: 124a47be190a0485fa708cbd010d9cdb6b51dd9a
+/agent-note-academic-research-runs-outlive-their-viewers:
+  en: 56f78e9751c8b97f
+  zh: b1911fa66fc722ed
+/agent-note-academic-research-runs-outlive-their-viewers/problem:
+  en: 49c517aa78bfd8b4
+  zh: 147218fed8d323dd
+/agent-note-academic-research-runs-outlive-their-viewers/decision:
+  en: 479c7917b62860d1
+  zh: d992485020372c2c
+/agent-note-academic-research-runs-outlive-their-viewers/alternatives-considered:
+  en: 9100460cdcb483d3
+  zh: c0b2e5aef4c3a31d
+/agent-note-academic-research-runs-outlive-their-viewers/consequences:
+  en: c98d26f57f72bc79
+  zh: 803bc1d383ddb1aa

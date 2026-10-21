@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-09-academic-scholarly-metadata-screening.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-09-academic-scholarly-metadata-screening.md
-2026-10-09-academic-scholarly-metadata-screening.md: 37739319bce6684b2e55a7408fc7f85904c3f604
-2026-10-09-academic-scholarly-metadata-screening.zh.md: 2fcd70d97bfbd870a145fca2570ba288df4d42fd
+/agent-note-version-scoped-scholarly-metadata-screening:
+  en: d58ae59bb86e75e4
+  zh: 2424732f81cd19c6
+/agent-note-version-scoped-scholarly-metadata-screening/problem:
+  en: a6b780cf11602684
+  zh: c87c9743294270f0
+/agent-note-version-scoped-scholarly-metadata-screening/decision:
+  en: 7c3f54a5f49ce11e
+  zh: 61b96f8ad952ffcc
+/agent-note-version-scoped-scholarly-metadata-screening/alternatives-considered:
+  en: 2ec1b2fa0fd63f8e
+  zh: a03c031c522a510d
+/agent-note-version-scoped-scholarly-metadata-screening/consequences:
+  en: a21d0d14e58b860b
+  zh: 54feb3bdd4dd87b9

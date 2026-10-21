@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-23-academic-single-reference-verification.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-23-academic-single-reference-verification.md
-2026-09-23-academic-single-reference-verification.md: 36585d32333c04f589683fbd89c3ca7b5e397056
-2026-09-23-academic-single-reference-verification.zh.md: 2b3321a86dbea355fc0edefbd7a34e394885d02e
+/agent-note-academic-single-reference-verification:
+  en: e2bbb1f75bc8b6b0
+  zh: a6d954cbc8ea8163
+/agent-note-academic-single-reference-verification/problem:
+  en: a2bd2678149d7d58
+  zh: 3707692a36079937
+/agent-note-academic-single-reference-verification/decision:
+  en: 92d2271cc97c186a
+  zh: 101dc2370e938891
+/agent-note-academic-single-reference-verification/alternatives-considered:
+  en: e683bdd136a8a6c2
+  zh: 2cbafa3dfa7c236d
+/agent-note-academic-single-reference-verification/consequences:
+  en: e0900a4cc61ddcbe
+  zh: de9965ae1fd7bcce

@@ -206,6 +206,7 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
     try {
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
       const { brief, searches } = researchPlanFromApprovedPlan(String(sessionId), found.agent.session.snapshotEvents())
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       return { researchBriefId: brief.researchBriefId, topic: brief.topic, questions: brief.questions, searches }
@@ -238,7 +239,9 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     const history = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
       retrievalRunId: request.retrievalRunId, researchBriefId: approved.brief.researchBriefId,
       researchBriefVersion: approved.brief.version,
@@ -266,6 +269,7 @@ export class AcademicResearchController extends TypertRemoteService {
     return agent.runMaintenance(async (agentSignal) => {
       const operationSignal = AbortSignal.any([signal, agentSignal,
         AbortSignal.timeout(this.enhancementMaximumElapsedMs)])
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
       if (agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-enhancement-selection'
           && event.data.retrievalRunId === request.retrievalRunId)) {
         throw new RemoteError('gateway/bad-request', '本轮已经选择一篇论文进行二级补充。', {})
@@ -328,6 +332,7 @@ export class AcademicResearchController extends TypertRemoteService {
     signal.throwIfAborted()
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     const approved = researchPlanFromApprovedPlan(String(request.sessionId), found.agent.session.snapshotEvents())
     if (approved.searches === undefined || approved.brief.researchBriefId !== request.researchBriefId) {
       throw new RemoteError('gateway/bad-request', '研究计划已更新或缺少检索方案，请重新打开学术研究确认计划。', {})
@@ -359,6 +364,7 @@ export class AcademicResearchController extends TypertRemoteService {
     if (active !== undefined) return active
     const found = await this.ctx.sessionController.resolveAgent(key.sessionId)
     if ('error' in found) throw found.error
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     const view = replayBackgroundRun(key.sessionId, key.backgroundRunId, found.agent.session.snapshotEvents())
     if (view === undefined) throw new RemoteError('gateway/bad-request', '找不到当前会话的学术研究运行记录。', {})
     return view
@@ -373,6 +379,7 @@ export class AcademicResearchController extends TypertRemoteService {
   async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]> {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     return replayBackgroundRuns(sessionId, found.agent.session.snapshotEvents()).slice(-20).map((saved) => {
       const { schemaVersion, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason } =
         this.backgroundRuns.get(sessionId, saved.backgroundRunId) ?? saved
@@ -464,6 +471,7 @@ export class AcademicResearchController extends TypertRemoteService {
     let searches
     let candidateScreening
     try {
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
       const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
       brief = approved.brief
       searches = approved.searches
@@ -476,6 +484,7 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     let recovery: AcademicResearchRecoveryCheckpoint | undefined
     if (request.resumeRetrievalRunId !== undefined) {
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
       const reconstructed = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
         retrievalRunId: request.resumeRetrievalRunId,
         researchBriefId: brief.researchBriefId,
@@ -575,7 +584,7 @@ async function persistAcademicEvent(ctx: Context, session: Session, event: Sessi
     throw new Error('Academic enhancement requires durable Session persistence.')
   }
   await using reader = await persistence.open(session.id, 'read')
-  const [stored] = await reader.read(event.seq, 1)
+  const [stored] = (await reader.read(event.seq, 1)).events
   if (!isDeepStrictEqual(stored, event)) throw new Error('Academic enhancement event was not retained by Session storage.')
 }
 

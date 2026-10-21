@@ -1,6 +1,37 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-11-academic-ingestion-deduplication.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-academic-ingestion-deduplication.md
-2026-09-11-academic-ingestion-deduplication.md: 962b0c9edb0d3a46a416004b682349fb98aa0af4
-2026-09-11-academic-ingestion-deduplication.zh.md: c75298fbc3b038cc0fa6698f15743911399395a3
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library:
+  en: a628b899395dc013
+  zh: c7aba66df84a393b
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/problem:
+  en: 45f9ca5c7996691f
+  zh: 0ae971a8b358e93b
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/decision:
+  en: 16a07a95d02df97c
+  zh: 5263b41058d9b475
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/package-topology:
+  en: 07dc4de6a1e82e4f
+  zh: 9d2470884773fe3b
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/the-index-and-audit:
+  en: d297828e25b7676f
+  zh: 8e2de6f6b2603055
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/alternatives-considered:
+  en: 6119e2aff3b6be5a
+  zh: 76136ef5249c23eb
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/alternatives-considered/make-ingestion-a-cordis-service-holding-the-index:
+  en: 0edfa9a4be991a3b
+  zh: e10a19f392a7fda8
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/alternatives-considered/reuse-the-first-record-s-provider-minted-id-as-the-stable-identity:
+  en: 524ed1491f846d59
+  zh: 853ad67594b70c2d
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/alternatives-considered/auto-merge-fuzzy-title-author-year-matches:
+  en: 8f541be2d5a3a8f3
+  zh: 49928b085c57cd71
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/consequences:
+  en: 4f9189c3fb2db3c3
+  zh: 7c01c578817c2013
+/agent-note-academic-ingestion-deduplication-and-version-merging-as-a-pure-library/deferred-work:
+  en: 0d369dd67267ee06
+  zh: cdf8a2ad9a1c7c63

@@ -35,7 +35,7 @@ export function scopeMessages(
   sourceComplete: boolean,
 ): Message[] {
   return [createUserMessage({
-    source: { kind: 'plugin', plugin: 'dsh-academic-workflow' },
+    source: { kind: 'academic-workflow' },
     content: [{ type: 'text', text: `${SCOPE_INSTRUCTION}\n${JSON.stringify({
       inclusionRules: scope.inclusionRules, exclusionRules: scope.exclusionRules,
       programOwnedSource: { sourceProvider: source.sourceProvider, sourceUrl: source.sourceUrl },
@@ -52,7 +52,7 @@ export function scopeMessages(
  * @returns complete model-visible messages.
  */
 export function evidenceMessages(request: EvidenceGenerationRequest, depth: 'minimal' | 'complete' = 'complete'): Message[] {
-  return [createUserMessage({ source: { kind: 'plugin', plugin: 'dsh-academic-workflow' },
+  return [createUserMessage({ source: { kind: 'academic-workflow' },
     content: [{ type: 'text', text: `${request.instruction}\n${evidenceInstruction(depth === 'minimal' ? 5 : MAX_EVIDENCE_DRAFTS)}\n${JSON.stringify({
       focusQuestions: request.focusQuestions,
       segments: request.segments.map((segment, segmentIndex) => ({ segmentIndex, ...segment })),

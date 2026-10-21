@@ -1,6 +1,40 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for academic-insight.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/academic-insight.md
-academic-insight.md: de4c0fa142eb901806dd9425f2922bf10c1ee6da
-academic-insight.zh.md: eb5ec435ff4bf545359991c4b57fd54d06128e86
+/academic-insight-preset:
+  en: 0ee760c0438c5113
+  zh: 37dc9624cfc634cf
+/academic-insight-preset/summary:
+  en: 58cffa8cd34d7c07
+  zh: 9be0d4d8bc1749ce
+/academic-insight-preset/table-of-contents:
+  en: c390f9a39c2804f0
+  zh: 13dc5656f7a057a7
+/academic-insight-preset/use-the-preset:
+  en: b4cbb4d8499e678a
+  zh: 87b50a1c99150726
+/academic-insight-preset/keep-runtime-data-separate:
+  en: 5fdf819b09193185
+  zh: f74a489565430eb1
+/academic-insight-preset/mvp-behavior:
+  en: 8590460b84ce0f3d
+  zh: 72b25de4cc5d7642
+/academic-insight-preset/implemented-files:
+  en: f5c921622a0d0ab9
+  zh: f4130920afddbc62
+/academic-insight-preset/report-method:
+  en: 5cc3388962441cf1
+  zh: 10640c23e1a79f19
+/academic-insight-preset/verification:
+  en: 3741b9a665f07072
+  zh: 7bb4b01c60036473
+/academic-insight-preset/known-limitations:
+  en: 44003363c6b61c33
+  zh: af8df88c8ac0d252
+/academic-insight-preset/further-exploration:
+  en: 25fe174a692ee858
+  zh: 3fe4a3224f49fd4a
+/academic-insight-preset/further-exploration/dev-note:
+  en: 0a1253c6f7b5e8b9
+  zh: 9f56528562c7c914

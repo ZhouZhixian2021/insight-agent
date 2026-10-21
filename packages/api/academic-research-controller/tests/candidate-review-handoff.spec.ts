@@ -46,12 +46,12 @@ interface HandoffRun {
   readonly candidateQuestionCoverage: { readonly questions: ReturnType<typeof candidateCoverage> }
 }
 
-function readFixture<T>(name: string): T {
+function readFixture(name: string): unknown {
   const bytes = readFileSync(new URL(name, directory))
   const entry = manifest.files.find(item => item.path === name)
   expect(entry, `manifest entry for ${name}`).toBeDefined()
   expect(createHash('sha256').update(bytes).digest('hex'), `sha256 for ${name}`).toBe(entry?.sha256)
-  return JSON.parse(bytes.toString()) as T
+  return JSON.parse(bytes.toString()) as unknown
 }
 
 function restoreRound(input: HandoffInput, plan: HybridSearchPlan): PlannedSearchRoundResult {
@@ -92,8 +92,8 @@ function candidateCoverage(brief: ExecutableResearchBrief, selection: CandidateR
 
 describe('fixed candidate-review scoring handoff', () => {
   it.each(['pro', 'flash'] as const)('replays %s selection, assessments, queues and candidate coverage', (name) => {
-    const input = readFixture<HandoffInput>('input.json')
-    const run = readFixture<HandoffRun>(`${name}.json`)
+    const input = (readFixture('input.json') as HandoffInput)
+    const run = (readFixture(`${name}.json`) as HandoffRun)
     const { plan } = run.scheduling
     const round = restoreRound(input, plan)
     expect(round.ingested.works).toHaveLength(8)
@@ -134,9 +134,9 @@ describe('fixed candidate-review scoring handoff', () => {
   })
 
   it('accounts for every cross-model score change using the recorded question judgments', () => {
-    const input = readFixture<HandoffInput>('input.json')
-    const pro = readFixture<HandoffRun>('pro.json').scheduling.ranking
-    const flash = readFixture<HandoffRun>('flash.json').scheduling.ranking
+    const input = (readFixture('input.json') as HandoffInput)
+    const pro = (readFixture('pro.json') as HandoffRun).scheduling.ranking
+    const flash = (readFixture('flash.json') as HandoffRun).scheduling.ranking
     const pointsPerQuestion = input.sourcePlan.rankingPolicy.weights.questionMatch / input.brief.questions.length
     expect(pointsPerQuestion).toBe(4)
     const changed = []
@@ -160,10 +160,10 @@ describe('fixed candidate-review scoring handoff', () => {
       { pro: 54, flash: 58, delta: 4, proPriority: 'p2', flashPriority: 'p2' },
       { pro: 62, flash: 70, delta: 8, proPriority: 'p2', flashPriority: 'p1' },
     ])
-    const comparison = readFixture<{ readonly works: readonly {
+    const comparison = (readFixture('comparison.json') as { readonly works: readonly {
       readonly academicWorkId: AcademicWorkId
       readonly scoreDelta: { readonly total: number }
-    }[] }>('comparison.json')
+    }[] })
     expect(comparison.works.filter(item => item.scoreDelta.total !== 0)
       .map(item => ({ academicWorkId: item.academicWorkId, delta: item.scoreDelta.total })))
       .toEqual(changed.map(({ academicWorkId, delta }) => ({ academicWorkId, delta })))

@@ -10,6 +10,20 @@ English | [中文](README.zh.md)
 
 `paperConcurrency` defaults to 3 papers per run and can be set to 1 for serial acquisition/extraction. Searches remain ordered; synthesis starts after paper tasks settle. The approved inclusion cap can reduce effective concurrency. Existing source and Web result interfaces are unchanged. Concurrency may increase upstream rate limiting and does not guarantee proportional speedup.
 
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+-----
+
+<a id="use-this-package"></a>
+## Use this package
+
+Approved native plan results require explicit `approved: true` tool-result metadata. Dismissal does not authorize research. Historical native results without that metadata require a fresh review; their stored records remain unchanged. Candidate model requests declare the `academic-candidate-review` message source.
+
 `@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run` and `runStream`. One call resolves an existing Session Agent, reconstructs the ResearchBrief approved through plan review, reuses the Session's selected model, executes the approved search directions, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
 
 Formal runs select minimal evidence extraction after scope review: each included paper retains at most five source-verified records linked to approved questions. For version-5 plans, reviewed question aliases are forwarded in Brief question order to prioritize source fragments; older plans use question text. These terms do not decide scope or establish evidence. A clean cap does not count as an extraction failure. Existing evidence sufficiency and report-evaluation rules still decide whether the result is a limited draft; the Controller does not promote it to a formally reviewed report.
@@ -23,18 +37,6 @@ The package exports the version-1 `AcademicResearchProgressView` and `AcademicRe
 The same stream emits `q6` frames containing complete `AcademicQ6Projection` snapshots. A snapshot binds the Session, retrieval run and exact Brief version, joins every authoritative candidate evaluation to its work, version and reviewed assessment, and exposes rounds, batch decisions and settlements, question coverage, stop decisions and limitations without recalculating them. `sequence` is monotonic within one retrieval run. Section states distinguish pending data, a completed empty value, truncation and failure. The terminal `AcademicResearchRunValue.q6` repeats the latest snapshot; it is `null` only for a legacy selector that produced no ranked workflow. The client never reconstructs these facts from Session events or starts another run to read them. Optional `assessment.screening` carries B-produced metadata quotes, superficial keyword hits, uncertainties, and a Plan-specific scope judgment when available; older assessments omit it.
 
 For a run that survives closing the viewer, call `startBackgroundRun(request)` after `plan(sessionId)`. It returns a Session-owned `backgroundRunId` immediately. `getBackgroundRun({ sessionId, backgroundRunId })` reads the latest state, `listBackgroundRuns(sessionId)` rediscovers recent IDs after a page refresh, and `watchBackgroundRun(key, signal)` sends the current state and later updates. Disconnecting a watcher does not cancel research. Only `cancelBackgroundRun({ ...key, reason: 'user_requested' })` requests cancellation. Every complete state is saved to the Session, including the terminal result and cancellation intent. Graceful Host disposal records `service_stopped` and waits for the task to stop; an unfinished log reopened after an abrupt stop reports `interrupted` without inventing a cancellation source. Both retain the last progress and retrieval ID. The existing checkpoint-based `resumeRetrievalRunId` path remains a separate, explicit operation and may retry an unsettled batch. The legacy `run` and `runStream` calls retain their original caller-owned cancellation semantics until the Web client migrates.
-
-## Table of Contents
-
-- [Use this package](#use-this-package)
-- [Model Experience](#model-experience)
-- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
-- [Dev Note](#dev-note)
-
------
-
-<a id="use-this-package"></a>
-## Use this package
 
 The search adapter uses `@deepseek-ai/dsh-academic-ingestion` to preserve canonical work and version identities across approved searches. The controller declares this package as a runtime peer and a development dependency, with a matching TypeScript project reference; built consumers resolve it through the workspace package entry.
 

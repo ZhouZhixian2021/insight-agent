@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-academic-model-package.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-10-academic-model-package.md
-2026-09-10-academic-model-package.md: 4e72d36d946ebc4057fa4a523f56aa3611e7536e
-2026-09-10-academic-model-package.zh.md: 5ed486ad8f067b7395929640470ced0da929bfbb
+/agent-note-academic-insight-shares-one-provider-neutral-model-package:
+  en: ef6e7afe800626a3
+  zh: 09056b2056acd670
+/agent-note-academic-insight-shares-one-provider-neutral-model-package/problem:
+  en: e39372531b35cc95
+  zh: d8197df91cc031f7
+/agent-note-academic-insight-shares-one-provider-neutral-model-package/decision:
+  en: d003eeffc4fa1a70
+  zh: 190bf39563cb33c3
+/agent-note-academic-insight-shares-one-provider-neutral-model-package/consequences:
+  en: 0f3c0e48e0ca8a1f
+  zh: 73faea186b5c2f63
+/agent-note-academic-insight-shares-one-provider-neutral-model-package/verification:
+  en: f6b4936e0b7e37a1
+  zh: 09d5b6225c1c1f68
+/agent-note-academic-insight-shares-one-provider-neutral-model-package/alternatives-considered:
+  en: f03e29fede206f63
+  zh: 02af1e2e093bf9b0

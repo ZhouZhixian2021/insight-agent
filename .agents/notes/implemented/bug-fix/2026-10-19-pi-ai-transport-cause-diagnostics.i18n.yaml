@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-19-pi-ai-transport-cause-diagnostics.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-10-19-pi-ai-transport-cause-diagnostics.md
-2026-10-19-pi-ai-transport-cause-diagnostics.md: b229186a592e7bac8472020b24c374f2987ed430
-2026-10-19-pi-ai-transport-cause-diagnostics.zh.md: ba3e641170b90cbdbed45337f550bb5ee24cdca0
+/agent-note-preserve-pi-ai-http-transport-causes-for-operator-diagnostics:
+  en: d206bd4356531cdf
+  zh: a045f7d967e46f7b
+/agent-note-preserve-pi-ai-http-transport-causes-for-operator-diagnostics/problem:
+  en: dca02b41ad4e1461
+  zh: 970333763fca88d5
+/agent-note-preserve-pi-ai-http-transport-causes-for-operator-diagnostics/decision:
+  en: c45a48a9d2bc2b38
+  zh: 787974e55c411db0
+/agent-note-preserve-pi-ai-http-transport-causes-for-operator-diagnostics/alternatives-considered:
+  en: 413cb474d654354c
+  zh: 62e1a7775077c59c
+/agent-note-preserve-pi-ai-http-transport-causes-for-operator-diagnostics/consequences:
+  en: 2e7d5bfa2f352d26
+  zh: ece4b271eff779bb

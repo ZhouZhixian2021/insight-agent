@@ -20,6 +20,8 @@ extractPaperEvidence fills a first observed version hash before invoking the exi
 
 ## Use this package
 
+Model requests declare the producer-owned `academic-workflow` message source. Durability checks compare the event values returned by the persistence handle’s `events` slice, preserving its ownership metadata.
+
 Progress types are exposed through the type-only `@deepseek-ai/dsh-academic-workflow/progress` entry. Browser consumers use this entry to avoid importing host Session declarations through the execution barrel.
 
 Candidate selection accepts an optional review observer. It reports the bounded model-review plan and each settled paper separately from the screening stage's deduplicated-work total, so clients can show review progress without counting an unreviewed work as model-approved.

@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for academic-insight.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/academic-insight.md
-academic-insight.md: 94c31425ce8e4a26c3973fe3bb09e4671b9c536a
-academic-insight.zh.md: 64b33a9284ad2c79cc4842e37100f4f694f7ebfb
+/:
+  en: d2423f13eff25ec4
+  zh: 1ea949978fe432f9
+/academic-insight-subsystem:
+  en: 7643f6998b3154d0
+  zh: b0c045943551c739
+/academic-insight-subsystem/summary:
+  en: 416ea7dfe7da0cec
+  zh: c3f467ce8d1275b9
+/academic-insight-subsystem/dependency-direction:
+  en: 9e86f5948635a138
+  zh: f1b9b99f3630b1d9
+/academic-insight-subsystem/member-ownership:
+  en: 00238e42bf6f9a0c
+  zh: 18698c602e15bf7b
+/academic-insight-subsystem/evidence-to-report-consumers:
+  en: c70dd1ee0a304f8d
+  zh: b77a1d4062971fe4
+/academic-insight-subsystem/initial-model-increment:
+  en: 1d410d813c83484c
+  zh: 1b3323fb1970a832
+/academic-insight-subsystem/cordis-api/ctx-academicresearchcontroller-academicresearchcontroller:
+  en: 6ae46aa370563453
+  zh: 6dbc508ff3494e99

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-14-academic-fragment-priority-recovery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-14-academic-fragment-priority-recovery.md
-2026-10-14-academic-fragment-priority-recovery.md: b4ceff805501ebb863ec54edfd2460af0d2f2dd5
-2026-10-14-academic-fragment-priority-recovery.zh.md: 84789c89e2e0752a008f61d4a61d8c2fddc9ea95
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery:
+  en: b42fa23df37470c1
+  zh: a9ecb78d0112be94
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery/problem:
+  en: fc86ee7bb35e7913
+  zh: aaf393028e1a083b
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery/decision:
+  en: 96348dd65b00f650
+  zh: 03ed29e31020f344
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery/alternatives-considered:
+  en: 220563a20cc62a5f
+  zh: f694718e31692c72
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery/consequences:
+  en: 82cf289eb0dd2adc
+  zh: dbf63dd81b4f7cb2
+/agent-note-minimal-reading-prioritizes-question-matches-and-bounds-size-recovery/verification:
+  en: e194eebafc4c2782
+  zh: 86c9106489e69d6e

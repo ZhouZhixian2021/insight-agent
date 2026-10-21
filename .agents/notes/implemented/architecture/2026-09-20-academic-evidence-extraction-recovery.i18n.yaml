@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-20-academic-evidence-extraction-recovery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-20-academic-evidence-extraction-recovery.md
-2026-09-20-academic-evidence-extraction-recovery.md: 6efcced2d148adc4350c21ace2d4af8e988d9ce9
-2026-09-20-academic-evidence-extraction-recovery.zh.md: 3c72e85275ccfd8d42555d8fd8c4efac29ca36a5
+/agent-note-academic-evidence-extraction-has-bounded-recovery-and-explicit-stage-settlements:
+  en: bd16c70581c3d380
+  zh: b94ea104285a9850
+/agent-note-academic-evidence-extraction-has-bounded-recovery-and-explicit-stage-settlements/problem:
+  en: e5f415a590c1780f
+  zh: c464e5422a90e6dc
+/agent-note-academic-evidence-extraction-has-bounded-recovery-and-explicit-stage-settlements/decision:
+  en: 2a975a1fea2d847e
+  zh: a63cb5f73d9e2727
+/agent-note-academic-evidence-extraction-has-bounded-recovery-and-explicit-stage-settlements/alternatives-considered:
+  en: 14591156066f2e89
+  zh: 5028c1ccdf19363f
+/agent-note-academic-evidence-extraction-has-bounded-recovery-and-explicit-stage-settlements/consequences:
+  en: d221ad88b265408c
+  zh: 4a45e1e48ccf11e0

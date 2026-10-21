@@ -11,6 +11,16 @@ import { createLoggedModelRunner, WorkflowLogError,
   type EvidenceModelRequest, type EvidenceModelResult } from '@deepseek-ai/dsh-academic-workflow'
 import type { CandidateReviewer, CandidateReviewInput } from './search.ts'
 
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    /** Complete candidate-review text remains readable without this producer.
+     * The kind attributes the request and carries no execution control.
+     * @persistenceAttribution
+     */
+    'academic-candidate-review': { kind: 'academic-candidate-review' }
+  }
+}
+
 interface CandidateReviewIdentity {
   readonly academicWorkId: AcademicWorkId
   readonly researchBriefId: ResearchBriefId
@@ -110,7 +120,7 @@ export function createModelCandidateReviewer(ctx: Context, session: Session,
         inclusionRules: input.plan.constraints.inclusionRules, exclusionRules: input.plan.constraints.exclusionRules },
       paper: { title: input.title, abstract: input.abstract },
     }
-    const messages = [createUserMessage({ source: { kind: 'plugin', plugin: 'dsh-api-academic-research-controller' },
+    const messages = [createUserMessage({ source: { kind: 'academic-candidate-review' },
       content: [{ type: 'text', text: `${REVIEW_INSTRUCTION}\n${JSON.stringify(request)}` }],
     })]
     const requestIdentity: { seq: SessionSeq | null } = { seq: null }
@@ -159,7 +169,7 @@ async function record<T extends SessionEvent>(ctx: Context, session: Session, ap
     const event = append()
     if (!await sessions.flush(session)) throw new Error('No Session durability listener is active.')
     await using reader = await persistence.open(session.id, 'read')
-    const [stored] = await reader.read(event.seq, 1)
+    const [stored] = (await reader.read(event.seq, 1)).events
     if (!isDeepStrictEqual(event, stored)) throw new Error('Session storage did not retain the review record.')
     return event
   } catch (cause: unknown) {

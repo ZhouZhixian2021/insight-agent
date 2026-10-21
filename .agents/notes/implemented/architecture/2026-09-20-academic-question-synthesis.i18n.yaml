@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-20-academic-question-synthesis.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.md
-2026-09-20-academic-question-synthesis.md: d1a0b4a2a2445dc3e2abc12cf5037a2106aba77a
-2026-09-20-academic-question-synthesis.zh.md: fcdbecf6ccee0b900195e98d86db65c2bb1968e8
+/agent-note-question-driven-synthesis-between-evidence-and-report:
+  en: 620cfc344723b64d
+  zh: c9ce0d5a6266ea97
+/agent-note-question-driven-synthesis-between-evidence-and-report/problem:
+  en: 81c077d4e05ce99b
+  zh: e9dda8a47eb4789a
+/agent-note-question-driven-synthesis-between-evidence-and-report/decision:
+  en: d7d7146f738fdff7
+  zh: f9d0764fa94541fb
+/agent-note-question-driven-synthesis-between-evidence-and-report/alternatives-considered:
+  en: 472541b294d15407
+  zh: 9d9bb33719456e5a
+/agent-note-question-driven-synthesis-between-evidence-and-report/consequences:
+  en: eb82add8fc32bf0a
+  zh: ae80c0a29003087a

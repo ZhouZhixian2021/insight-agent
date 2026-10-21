@@ -10,20 +10,6 @@ kind: "package-reference"
 
 `paperConcurrency` 默认每轮并发 3 篇论文，设为 1 可串行获取和抽取。检索仍按顺序执行，论文任务收尾后才开始洞察分析。批准的纳入上限可能降低实际并发数。来源和 Web 结果接口保持不变。并发可能增加上游限流，不保证按比例提速。
 
-`@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run` 与 `runStream`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
-
-正式运行在范围审核之后选择一级证据抽取：每篇纳入论文最多保留五条经过来源核验、关联获批问题的记录。第 5 版计划中审核过的问题别名按 Brief 问题顺序传给片段优先排序；旧计划继续使用问题原文。词项只影响处理顺序，不决定范围或构成证据。无故障达到上限不算抽取失败。现有证据充分性与报告评测规则仍决定结果是否为有限草稿；Controller 不会把它提升为正式审核报告。
-
-研究运行完成后，调用方可通过 `academicResearch.enhanceEvidence({ sessionId, retrievalRunId, workVersionId })` 选择一篇有证据的论文，单独执行二级补充。Controller 重新获取该论文已选的全文候选，并在调用模型前拒绝内容哈希变化，随后持久记录选择。默认整次最多 180 秒、单次模型尝试最多 60 秒、输出上限 8,192 token；这些数值可配置。返回值只说明新增证据数与未完成范围数，原草稿和评测保持不变。同一轮第二次选择会被拒绝，包括此前失败或取消的情况；已提交的片段仍保留在 Session 中。
-
-对于第 5 版计划，Controller 先应用已批准的确定性元数据排除规则并检查全文地址，再请求 Session 已选模型审核去重候选的规范学术标题和摘要。已排除或全文地址不可解析的候选保留词项评估、排序记录与原因，不调用模型。纯选择器在跨轮共用的 `candidateReviewMaximumWorks` 额度（默认 8 篇）内先分配问题覆盖名额，再按词项初排补齐；该额度独立于 Plan 候选上限，候选截断在最终排序后执行。审核预算外的合格论文保留词项初筛与明确未审核状态。每个初轮学术查询保留至多 `initialSearchMaximumAcademicResultsPerQuery` 条原始记录（默认 100），有效候选上限更大时使用后者；来源截断仍可能遗漏后续记录。精简提示词只要求范围判断和带引文的问题匹配，B 的解析器核对准确的学术标题或摘要原文及批准问题。发现查询只用于路由。选择、准确请求、结算结果和已验证判断均在参与评分前持久保存。模型、超时与非法输出失败保留该论文的词项初筛；存储失败或取消停止派发并等待在途调用结束。初轮和证据缺口轮共用审核预算，实际派发即占用额度，调用失败也计入。`candidateReviewMaxTokens` 默认 8,192，`candidateReviewAttemptTimeoutMs` 默认 150,000 毫秒，两者均为部署配置。
-
-本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、检索操作活动、论文／版本身份和已运行时间，不估算完成百分比。学术 Provider 直接搜索、Web 发现、引用识别和每一条引用核验使用不同操作名；核验事实还携带从一开始的条目位置。工作流生产共用的运行内字段；候选选择期间还报告有上限的审核完成／计划数量、失败和跳过数量；模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
-
-同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
-
-需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。每次完整状态（包括最终结果和取消意图）写入 Session。Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
-
 ## 目录
 
 - [使用方式](#use-this-package)
@@ -61,6 +47,23 @@ kind: "package-reference"
 每轮按核验 Provider 和来源记录身份保留权威核验返回的全文候选。选文复用这些结果，包括明确无全文；仅核验的来源无需开启目录搜索，已失败的地址解析不会再次执行。其他来源记录使用来源运行时解析器。全文地址解析失败保留引用核验成功，在引用说明和 `retrievalRun.failures` 中以 `resolve_fulltext` 披露，并影响 `stages.fulltext`，不计入核验失败数。报告标记 `retrievalDisclosureIncluded: true` 表示已含后端检索附录。
 
 <a id="model-experience"></a>
+
+`@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run` 与 `runStream`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回经过评测的草稿。
+
+正式运行在范围审核之后选择一级证据抽取：每篇纳入论文最多保留五条经过来源核验、关联获批问题的记录。第 5 版计划中审核过的问题别名按 Brief 问题顺序传给片段优先排序；旧计划继续使用问题原文。词项只影响处理顺序，不决定范围或构成证据。无故障达到上限不算抽取失败。现有证据充分性与报告评测规则仍决定结果是否为有限草稿；Controller 不会把它提升为正式审核报告。
+
+研究运行完成后，调用方可通过 `academicResearch.enhanceEvidence({ sessionId, retrievalRunId, workVersionId })` 选择一篇有证据的论文，单独执行二级补充。Controller 重新获取该论文已选的全文候选，并在调用模型前拒绝内容哈希变化，随后持久记录选择。默认整次最多 180 秒、单次模型尝试最多 60 秒、输出上限 8,192 token；这些数值可配置。返回值只说明新增证据数与未完成范围数，原草稿和评测保持不变。同一轮第二次选择会被拒绝，包括此前失败或取消的情况；已提交的片段仍保留在 Session 中。
+
+对于第 5 版计划，Controller 先应用已批准的确定性元数据排除规则并检查全文地址，再请求 Session 已选模型审核去重候选的规范学术标题和摘要。已排除或全文地址不可解析的候选保留词项评估、排序记录与原因，不调用模型。纯选择器在跨轮共用的 `candidateReviewMaximumWorks` 额度（默认 8 篇）内先分配问题覆盖名额，再按词项初排补齐；该额度独立于 Plan 候选上限，候选截断在最终排序后执行。审核预算外的合格论文保留词项初筛与明确未审核状态。每个初轮学术查询保留至多 `initialSearchMaximumAcademicResultsPerQuery` 条原始记录（默认 100），有效候选上限更大时使用后者；来源截断仍可能遗漏后续记录。精简提示词只要求范围判断和带引文的问题匹配，B 的解析器核对准确的学术标题或摘要原文及批准问题。发现查询只用于路由。选择、准确请求、结算结果和已验证判断均在参与评分前持久保存。模型、超时与非法输出失败保留该论文的词项初筛；存储失败或取消停止派发并等待在途调用结束。初轮和证据缺口轮共用审核预算，实际派发即占用额度，调用失败也计入。`candidateReviewMaxTokens` 默认 8,192，`candidateReviewAttemptTimeoutMs` 默认 150,000 毫秒，两者均为部署配置。
+
+本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、检索操作活动、论文／版本身份和已运行时间，不估算完成百分比。学术 Provider 直接搜索、Web 发现、引用识别和每一条引用核验使用不同操作名；核验事实还携带从一开始的条目位置。工作流生产共用的运行内字段；候选选择期间还报告有上限的审核完成／计划数量、失败和跳过数量；模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
+
+同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
+
+需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。每次完整状态（包括最终结果和取消意图）写入 Session。Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
+
+原生计划结果必须具有明确的 `approved: true` 工具结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史原生结果需要重新评审，原存储记录保持不变。候选模型请求声明 `academic-candidate-review` 消息来源。
+
 ## Model Experience
 
 ### Academic 研究运行

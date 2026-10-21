@@ -93,10 +93,10 @@ function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | und
       continue
     }
     if (event.type === 'tool/result') {
-      const result = event.data.message.content[0]
+      const result = event.data.message
       const identity = String(result.toolCallId)
       const plan = nativeCalls.get(identity)
-      if (plan !== undefined && !result.isError) {
+      if (plan !== undefined && !result.isError && isRecord(event.data.meta) && event.data.meta.approved === true) {
         latest = { identity, markdown: plan, reviewedAt: eventTime(event.time) }
       }
       continue

@@ -151,7 +151,7 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
           ...purpose === undefined ? {} : { purpose } })
         if (!await sessions.flush(session)) throw new Error('No Session durability listener is active.')
         await using reader = await persistence.open(session.id, 'read')
-        const [stored] = await reader.read(event.seq, 1)
+        const [stored] = (await reader.read(event.seq, 1)).events
         if (!isDeepStrictEqual(stored, event)) throw new Error('Session storage did not retain verified evidence.')
       } catch (cause: unknown) {
         throw new WorkflowLogError(cause)

@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-12-academic-direction-report.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-12-academic-direction-report.md
-2026-10-12-academic-direction-report.md: 0c5dd13e1d4a4b7d1db00eed62a56038c59eb648
-2026-10-12-academic-direction-report.zh.md: 27127445efd4dcbd2614b44c674acbfb8bb3214d
+/agent-note-the-formal-report-follows-the-preset-direction-hierarchy:
+  en: 56ce0e767386d28a
+  zh: 3192f732da3b3c8e
+/agent-note-the-formal-report-follows-the-preset-direction-hierarchy/problem:
+  en: 7229a357b27f5a32
+  zh: 578b58c67e0075dc
+/agent-note-the-formal-report-follows-the-preset-direction-hierarchy/decision:
+  en: 3a756b851610e903
+  zh: ab108dfb3626dcf5
+/agent-note-the-formal-report-follows-the-preset-direction-hierarchy/alternatives-considered:
+  en: 55e92c0932fb55dd
+  zh: 89340c68ca809ee9
+/agent-note-the-formal-report-follows-the-preset-direction-hierarchy/consequences:
+  en: 0dbfc22853f4929a
+  zh: 9a5f59af958df510

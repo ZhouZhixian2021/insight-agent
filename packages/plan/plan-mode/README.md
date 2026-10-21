@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-plan-mode` adds plan mode to the agent: while it is active, the agent explores and designs before executing, guided by instructions the deployment writes, and presents the finished plan for your approval before carrying it out. You enter plan mode with `/plan`, optionally carrying a message and ordered image or file attachments, and leave it with `/plan off`; the finished plan arrives as a review where you can approve it or send the agent back to keep planning. Plan mode is guidance, not enforcement: every tool stays available, so sandbox mode and approval prompts remain the way to impose limits. Choose it when the agent should think before acting, and plan mode carries over when a session resumes or forks.
+Plan mode asks an agent to explore and design before execution, then presents the finished plan for your approval. Enter it with `/plan`, optionally with a message or ordered image and file attachments; leave with `/plan off`, approve the review to continue, or return feedback for more planning. Deployment-defined guidance controls planning behavior, but every tool remains available, so use sandbox mode and approval prompts for enforced limits. The active state survives session resume and forks. Choose it when you want a reviewed plan before the agent acts.
 
 ## Table of Contents
 
@@ -24,6 +24,8 @@ English | [中文](README.zh.md)
 
 <a id="use-this-package"></a>
 ## Use this package
+
+Tool results persist the explicit `approved` decision in metadata. Academic consumers require `approved: true`; a dismissed review or a historical result without that metadata does not grant approval.
 
 When plan mode is active, the agent works under your instructions and presents its plan for review instead of executing right away. The common path: configure the guidance text, enter plan mode with `/plan`, and review the finished plan when the agent calls `exit_plan_mode`.
 
@@ -66,7 +68,7 @@ You can attach images and generic files to a `/plan` message, and they are inclu
 
 When the agent has a finished plan, it calls `exit_plan_mode` with the plan written as markdown and starting with a heading. You review that exact plan and choose `Approve` to leave plan mode, or `Keep planning` to send the agent back with feedback. If `missingExitRetries` is positive and the model stops while plan mode remains active, the package sends at most that many same-turn reminders to submit the plan through the tool.
 
-Choosing `Keep planning` (optionally with free-text feedback) sends the agent back to revise the plan; closing the review to type a message instead tells the agent to wait for your next message. If no interactive review is available, `exit_plan_mode` cannot run and you can still leave plan mode with `/plan off`.
+Choosing `Keep planning` (optionally with free-text feedback) sends the agent back to revise the plan; closing the review to type a message instead ends the agent's turn, and your next message starts the next request. If no interactive review is available, `exit_plan_mode` cannot run and you can still leave plan mode with `/plan off`.
 
 ### Observing plan state
 
@@ -96,7 +98,7 @@ The command child activates only when a commands service is composed. It maps ba
 
 ### The exit tool
 
-`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape. A configured missing-exit reminder is logged as plugin-sourced model input and uses `agent/turn-stopping` to continue the same turn; its per-session count resets when the next turn starts.
+`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape. A configured missing-exit reminder is logged with message source kind `plan-mode` and uses `agent/turn-stopping` to continue the same turn; its per-session count resets when the next turn starts.
 
 ### Session projection unit
 
@@ -109,7 +111,8 @@ When `ctx.sessionProjections` is composed, the package registers the `plan` unit
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, the `ctx.planMode` service, `plan:policy` section, `/plan` command, `exit_plan_mode` tool |
 | [`src/types.ts`](src/types.ts) | The `plan` projection-key declaration and `PlanProjection` wire value |
 | [`src/client.ts`](src/client.ts) | Client-namespace re-export of the types outlet |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: validates the `plan/mode` payload shape |
+
+The review intent carries the originating tool-call id, so the Web client can reopen the same submitted plan after the review closes. The complete Markdown remains in the existing native call or PTC dispatch log.
 
 </details>
 
@@ -124,7 +127,7 @@ Read these pages when the package-level contract is not enough. They move from t
 - [plan/ package map](../README.md) — the group and its single package.
 - [exit_plan_mode tool catalog entry](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) — the exact schema the model receives.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-plan-mode) — every accepted config field and its meaning.
-- [Plan-specific collaboration state](../../../.agents/notes/implemented/simplification/2026-07-22-plan-specific-collaboration-state.md) — the design decision behind plan mode.
+- [archived Plan-specific collaboration state](../../../.agents/notes/archived/simplification/2026-07-22-plan-specific-collaboration-state.md) — the design decision behind plan mode.
 
 -----
 
@@ -169,7 +172,7 @@ The user block is append-only conversation growth. Entering or leaving plan mode
 
 #### What the model sees
 
-The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback, and a dismissed review a failed call naming the user's takeover. With `missingExitRetries` above zero, stopping without a review call adds a logged reminder that tells the model to place the complete plan in the tool argument instead of ordinary assistant text.
+The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback. A dismissed review returns `{ approved: false }`, renders a note that the user will reply, and concludes the turn without another model request.
 
 #### Token effect
 
@@ -182,7 +185,6 @@ Mode transitions do not change the tool catalog; plan arguments and review resul
 ## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
-
 
 These limits describe when plan mode does not behave as you might expect or needs extra care. They are current package constraints, not a roadmap.
 

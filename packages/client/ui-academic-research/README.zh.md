@@ -23,6 +23,8 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
+侧栏操作在渲染研究入口前进入框架拥有的可选 Session 作用域。Session 身份跟随当前绑定，全局 Session 列表仅提供目录归属和已保存状态。
+
 Q6 演示中的“运行生命周期预览”使用独立固定 JSON，区分查看连接与运行中、暂停、完成、受限完成、失败及取消状态。关闭、重开或切换预览记录保留本页记录及草稿；只有演示取消改变取消状态。漏斗上限不是通过数量，部分可用不等于正式纳入；未知数量与阶段耗时保持未知。草稿下载为 academic-demo-draft.md。预览不调用 Remote，仅在当前 Web 页面挂载期间保留。真实表单独立使用会话后台任务。
 
 真实研究页面从 `watchBackgroundRun` 的完整快照读取 Q6 和最终结果，绑定会话、后台任务、检索运行及 Brief 身份，只接受递增的进度与 Q6 序号。逐题证据覆盖直接使用 supportingWorkIds、evidenceIds 和 gaps；候选匹配不能推导为证据支持，缺少 Q6 时不回退到样例。
@@ -63,6 +65,7 @@ Q6 演示中的“运行生命周期预览”使用独立固定 JSON，区分查
 本包不操作模型缓存。
 
 <a id="known-limitations-and-deferred-work"></a>
+
 ## 已知限制与后续工作
 
 - 页面直接使用 AcademicBackgroundRunView 和 AcademicResearchRunValue，支持显式重连及服务端记录恢复，不提供自动重试、检查点续跑或 Brief 审批操作。监听断开不能证明服务器已取消；取消以服务器结算为准。用户内容以文本渲染；页面没有独立可分歧状态，因此不发布 invariant 入口。

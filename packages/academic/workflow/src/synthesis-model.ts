@@ -43,7 +43,7 @@ export function createModelSynthesisGenerator(ctx: Context, session: Session, co
   const run = createLoggedModelRunner<AcademicSynthesisDraft>(ctx, session, config, policy)
   return async (input: AcademicSynthesisInput, signal?: AbortSignal): Promise<AcademicSynthesisDraft> => {
     let draft: AcademicSynthesisDraft | undefined
-    const message = (text: string) => createUserMessage({ source: { kind: 'plugin', plugin: 'dsh-academic-workflow' },
+    const message = (text: string) => createUserMessage({ source: { kind: 'academic-workflow' },
       content: [{ type: 'text', text }] })
     try {
       return await run({

@@ -23,6 +23,8 @@ During candidate selection, the live view shows completed model reviews against 
 <a id="use-this-package"></a>
 ## Use this package
 
+The sidebar action enters a framework-owned optional Session scope before rendering the research entry. Its Session identity follows the current binding; the global Session list supplies only catalog membership and saved-state information.
+
 The Q6 demo’s “Run lifecycle preview” uses a separate fixed JSON dataset for the phase-one Q7.4 follow-up. It separates viewing connection from running, paused, completed, limited-completion, failed and cancelled states. Closing, reopening or switching preview records retains the same local record and any draft; explicit demo cancellation alone changes cancellation state. Funnel limits are not pass counts, partial usability is not final inclusion, and unknown counts or stage durations stay unknown. Draft downloads use `academic-demo-draft.md`. These controls do not invoke Remote; retained state lasts only within the mounted Web page. The live form uses Session-owned background tasks independently of this preview.
 
 The real run viewer consumes complete Q6 and result projections from `watchBackgroundRun`. It binds Session, run and Brief identity, ignores older Q6 sequences, and retains observed facts on interruption. Formal plan, paper metadata, authoritative queues, rounds and one-based displayed batch numbers reuse the read-only views. Coverage pending, available, truncated and failed states remain distinct. Per-question supporting work IDs, evidence IDs and gaps come directly from the settled coverage; candidate `matchedQuestions` never create evidence support. A final result without Q6 is explicitly unavailable and never falls back to the demo.

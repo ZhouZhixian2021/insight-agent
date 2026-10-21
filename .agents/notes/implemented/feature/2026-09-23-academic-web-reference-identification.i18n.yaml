@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-23-academic-web-reference-identification.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-23-academic-web-reference-identification.md
-2026-09-23-academic-web-reference-identification.md: b3ab09a55f25dfc63d8a7e3e3db9aa662a734eec
-2026-09-23-academic-web-reference-identification.zh.md: 256840b482bef80a5295990e0d1c52dba5f2abde
+/agent-note-academic-web-reference-identification:
+  en: 402a0d0c998ba57d
+  zh: 2cff85f7db135d62
+/agent-note-academic-web-reference-identification/problem:
+  en: b6b7d175367069e2
+  zh: 428e74d4264fd24f
+/agent-note-academic-web-reference-identification/decision:
+  en: 757b905f677f8cc8
+  zh: fa7bedd8ec8ba498
+/agent-note-academic-web-reference-identification/alternatives-considered:
+  en: 5fa6ce05676fcefb
+  zh: 54fee4bc5622587f
+/agent-note-academic-web-reference-identification/consequences:
+  en: 92c9022d4ad37fb3
+  zh: 0cf0ab2757730022

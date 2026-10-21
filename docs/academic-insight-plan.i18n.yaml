@@ -1,6 +1,34 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for academic-insight-plan.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/academic-insight-plan.md
-academic-insight-plan.md: 4d83837796468a44d31069e8cb7cd8bec1c061b3
-academic-insight-plan.zh.md: 64030e5135e00accd63747e890f453911bdd5531
+/academic-insight-architecture-and-delivery-plan:
+  en: bac61bbb72f7cda2
+  zh: da6a732397925d0e
+/academic-insight-architecture-and-delivery-plan/summary:
+  en: 3bccf891a2b2d475
+  zh: 3f1b3ec209c1c354
+/academic-insight-architecture-and-delivery-plan/table-of-contents:
+  en: 592df53af8af96cb
+  zh: 88c73ea5fbeb8a34
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan:
+  en: f6a6400ee3ae2e79
+  zh: 6b8027e645605ff5
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/architecture-map:
+  en: a7e3f1122fd066e3
+  zh: 7b6fb180296f14f5
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/current-reading:
+  en: 3567d73753be00e9
+  zh: ffda59cb81161757
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/delivery-milestones:
+  en: 918c7bd53928d41b
+  zh: 748b1f6174f75a95
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/concise-review-and-tiered-evidence-handoff:
+  en: 764575e3b9652ade
+  zh: 3bf11aabb9254f0c
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/team-workstreams:
+  en: 767ace6eab4c7a34
+  zh: bda1cdd414d41ed5
+/academic-insight-architecture-and-delivery-plan/table-of-contents/dev-note-working-plan/progress-reporting:
+  en: 96c3a07513d27e5e
+  zh: c34abc686d157bfa

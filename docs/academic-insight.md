@@ -99,7 +99,7 @@ Run the focused preset and UI suites, then the documentation and diff checks des
 ## Further Exploration
 
 - [Architecture and delivery plan](academic-insight-plan.md)
-- [Agent preset package](../packages/preset/agent-presets/README.md)
+- [Agent preset package](../packages/preset/agent-preset-registry/README.md)
 - [Architecture](architecture.md)
 - [Testing](testing.md)
 

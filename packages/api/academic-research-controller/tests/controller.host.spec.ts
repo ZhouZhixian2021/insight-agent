@@ -149,14 +149,14 @@ function briefPlan(payload: unknown = briefPayload()): string {
   return `# Retrieval research\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
 }
 
-function nativePlanEvents(plan: string, options: { isError?: boolean; time?: number; argumentsJson?: string } = {}) {
+function nativePlanEvents(plan: string, options: { isError?: boolean; time?: number; argumentsJson?: string; approved?: boolean } = {}) {
   const callId = ToolCallId('approved-brief-call')
   return [
     { type: 'tool/call', seq: 1, time: 1,
       data: { turn: 1, step: 1, callId, name: 'exit_plan_mode',
         arguments: options.argumentsJson ?? JSON.stringify({ plan }) } },
     { type: 'tool/result', seq: 2, time: options.time ?? Date.parse('2026-09-16T00:00:01Z'), surfaceOp: 'append',
-      data: { turn: 1, step: 1, message: createToolResultMessage({ callId, content: [], isError: options.isError ?? false }) } },
+      data: { turn: 1, step: 1, meta: { approved: options.approved ?? true }, message: createToolResultMessage({ callId, content: [{ type: 'text', text: JSON.stringify({ approved: options.approved ?? true }) }], isError: options.isError ?? false }) } },
   ] as never
 }
 
@@ -390,6 +390,11 @@ describe('AcademicResearchController', () => {
     expect(() => researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan({ ...briefPayload(), schemaVersion: 3,
       searchPlan: [search, { ...search, retrieval: { ...retrieval, maximumReferenceVerifications: 4 } }] }))))
       .toThrow('完全相同的检索表达必须使用完全相同的检索策略')
+  })
+
+  it('does not recover an approval from a dismissed plan review', () => {
+    expect(() => researchPlanFromApprovedPlan('dismissed', nativePlanEvents(briefPlan(), { approved: false })))
+      .toThrow('请先在当前会话完成研究计划审核。')
   })
 
   it('previews the approved plan without retrieval and refuses a different approval identity', async () => {

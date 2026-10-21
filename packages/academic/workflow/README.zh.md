@@ -20,6 +20,8 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 ## Use this package
 
+模型请求声明生产者拥有的 `academic-workflow` 消息来源。持久化检查比较存储句柄返回的 `events` 切片中的事件值，并保留其所有权元数据。
+
 进度类型通过仅供类型导入的 `@deepseek-ai/dsh-academic-workflow/progress` 入口公开。浏览器消费者使用此入口，避免经由执行入口引入宿主 Session 声明。
 
 候选选择可接收审核观察回调，分别报告有上限的模型审核计划和每篇论文的结算。审核进度与筛选阶段的去重论文总数分开，客户端不会把未作模型审核的论文计为审核通过。

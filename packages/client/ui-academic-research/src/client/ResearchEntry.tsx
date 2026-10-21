@@ -25,16 +25,18 @@ export interface ResearchEntryInjected {
   cancelBackgroundRun: (request: AcademicBackgroundRunCancelRequest) => Promise<AcademicBackgroundRunView>
 }
 /** Framework Session selection, locale and background Remote callbacks. */
-export type ResearchEntryProps = PropsRuntime<'sidebar.footer.action'> & PropsLocale<'academicRun'> & ResearchEntryInjected
+export type ResearchEntryProps = Pick<PropsRuntime<'academic.research.entry'>, 'sessionId' | 'useSessions'>
+  & PropsLocale<'academicRun'> & ResearchEntryInjected
 
 /**
  * Recover research for the selected persisted Session when the dialog opens.
  * @param props Framework selectors, localized copy and Remote callbacks.
  * @returns Sidebar trigger and Session-keyed dialog.
  */
-export function ResearchEntry({ t, useSessions, ...remote }: ResearchEntryProps) {
+export function ResearchEntry({ t, sessionId: selectedSessionId, useSessions, ...remote }: ResearchEntryProps) {
   const [open, setOpen] = useState(false)
-  const sessionId = useSessions(s => s.current !== undefined && s.byId[s.current]?.blank === false ? s.current : undefined)
+  const sessionId = useSessions(s => selectedSessionId !== undefined && s.byId[selectedSessionId]?.blank === false
+    ? selectedSessionId : undefined)
   return <>
     <Q6DemoEntry t={t} />
     <button className={css.entry} type="button" title={t('entry')} onClick={() => { setOpen(true) }}>{t('entry')}</button>

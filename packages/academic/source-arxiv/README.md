@@ -11,10 +11,6 @@ English | [中文](README.zh.md)
 
 `dsh-academic-source-arxiv` registers the `arxiv` provider with `ctx.academicSource` and searches the public arXiv Atom `/api/query` endpoint. Each entry becomes a preprint `AcademicWork`/`WorkVersion` pair: the work carries the base arXiv id and optional DOI for merging, while the version retains its `vN` record id, label, and update date.
 
-`verifyReference()` queries one arXiv ID through `id_list` and compares the returned ID; an explicit `vN` must match that version. It returns the normalized record and HTML/PDF candidates without downloading full text.
-
-Search and ID verification retain Atom `summary` as the scholarly abstract and `category` terms as subject keywords in the record's `metadata`. Missing fields remain unknown; subject categories are not author-provided contribution classifications.
-
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -27,6 +23,10 @@ Search and ID verification retain Atom `summary` as the scholarly abstract and `
 
 <a id="use-this-package"></a>
 ## Use this package
+
+`verifyReference()` queries one arXiv ID through `id_list` and compares the returned ID; an explicit `vN` must match that version. It returns the normalized record and HTML/PDF candidates without downloading full text.
+
+Search and ID verification retain Atom `summary` as the scholarly abstract and `category` terms as subject keywords in the record's `metadata`. Missing fields remain unknown; subject categories are not author-provided contribution classifications.
 
 Load the seam and this provider together; with no other provider registered, `search()` auto-selects `arxiv`.
 

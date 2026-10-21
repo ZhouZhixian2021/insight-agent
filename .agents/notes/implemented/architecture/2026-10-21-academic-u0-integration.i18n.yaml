@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-21-academic-u0-integration.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-21-academic-u0-integration.md
+/agent-note-academic-integration-with-the-u0-composition:
+  en: 81950518f630f6f1
+  zh: 31050e05a3d3c1d1
+/agent-note-academic-integration-with-the-u0-composition/problem:
+  en: 06622b50f34c16f6
+  zh: 99425c8cbbdd5ba7
+/agent-note-academic-integration-with-the-u0-composition/decision:
+  en: 4617157718f3eeb4
+  zh: b520883cc03583a1
+/agent-note-academic-integration-with-the-u0-composition/alternatives-considered:
+  en: 5e2f345b4b3cea88
+  zh: 16c412fc610ac825
+/agent-note-academic-integration-with-the-u0-composition/consequences:
+  en: d96767403cbe9147
+  zh: e53c091e29947729

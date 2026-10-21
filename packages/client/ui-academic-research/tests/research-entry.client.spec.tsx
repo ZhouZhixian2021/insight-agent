@@ -38,7 +38,7 @@ function fixture() {
     } finally { observers.delete(update); signal.removeEventListener('abort', abort) }
   })
   function props(current = sid): ResearchEntryProps {
-    return { wide: true, t: key => zh[key as RunKey], plan: async () => planned,
+    return { wide: true, sessionId: current, t: key => zh[key as RunKey], plan: async () => planned,
       startBackgroundRun, listBackgroundRuns, getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
       enhanceEvidence: vi.fn(), enhancementHistory: vi.fn().mockResolvedValue(null),
       useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [current]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
