@@ -108,7 +108,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 
 ### 数据模型
 
-请求与结果类型定义了调用方赖以构建的规范化词汇——`Search` 请求／结果对与 `Fetch` 请求／结果对各一组——穷尽式字段与 JSDoc 见 [`src/types.ts`](src/types.ts) 与 [web 子系统](../../../docs/subsystems/web.zh.md) 参考。两个刻意的选择塑造了它们：`WebFetchBody` 是这里拥有的封闭联合（`html` | `text`），因此新增类型会破坏编译，直到每个消费方都处理它；`WebError` 继承 `HarnessError`，携带开放的字符串 `code`，因此消费方必须容忍提供方专有的取值。来源字段保持可选，因为并非每个提供方都返回全部字段。
+请求与结果类型定义了调用方赖以构建的规范化词汇——`Search` 请求／结果对与 `Fetch` 请求／结果对各一组——穷尽式字段与 JSDoc 见 [`src/types.ts`](src/types.ts) 与 [web 子系统](../../../docs/subsystems/web.zh.md) 参考。两个刻意的选择塑造了它们：`WebFetchBody` 是这里拥有的封闭联合（`html` | `text` | `pdf`），因此新增类型会破坏编译，直到每个消费方都处理它；`WebError` 继承 `HarnessError`，携带开放的字符串 `code`，因此消费方必须容忍提供方专有的取值。来源字段保持可选，因为并非每个提供方都返回全部字段。
 
 ### 选择流程
 
@@ -150,7 +150,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 
 - **没有观测接口**：没有提供方变更事件或能力状态查询；可用性只能通过执行搜索或抓取并按抛出的 code 路由来观测，无提供方失败是通用的 `WEB_PROVIDER_UNAVAILABLE`，不枚举逐提供方原因（见 [Agent Note](../../../.agents/notes/archived/simplification/2026-07-04-drop-unconsumed-web-observation-surface.md)）。
 - **搜索请求只携带 `query` 与 `maxResults`**：提供方无关的控制项（新近程度、域名过滤条件、区域提示、搜索深度）暂缓至后端都能诚实支持时（见 [seam Agent Note](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.zh.md)）。
-- **`WebFetchBody` 没有 `pdf` 分支**：可提取文本的 PDF 支持属于明确的延期工作；封闭联合会使新增该分支成为跨 web 包、由编译强制执行的变更。
+- **`pdf` 正文保留字节**：`pdf` 分支为程序化调用方携带有上限的原始字节；从这些字节中提取文本属于明确的延期工作。
 - **提供方支持的页面提取不属于 `fetch()` 范围**：Firecrawl/Tavily 风格的 `web_extract` 能力延期，而不会扩展抓取操作。
 
 <a id="dev-note"></a>

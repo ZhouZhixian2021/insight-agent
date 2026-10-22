@@ -96,7 +96,7 @@ interface WebFetchResult {
   readonly url: string
   /** HTTP status code of the fetched response. */
   readonly statusCode: number
-  /** Decoded body, classified by content kind. */
+  /** Bounded body, decoded for text kinds and left as bytes for PDF. */
   readonly body: WebFetchBody
   /** True when the provider capped the decoded body. */
   readonly truncated: boolean
@@ -105,8 +105,8 @@ interface WebFetchResult {
 
 ```ts type-equiv
 /**
- * The decoded body of a fetched resource. A CLOSED discriminated union owned by
- * `dsh-web`: the provider decodes the kind and `dsh-tool-web` renders it, so a
+ * The bounded body of a fetched resource. A CLOSED discriminated union owned by
+ * `dsh-web`: the provider decodes text kinds and preserves PDF bytes, so a
  * new kind is a coordinated change across known packages, not a plugin
  * extension. Consumers `switch` on `kind` ending in `default: assertNever(...)`
  * so adding a kind breaks compilation at every consumer until handled. Each arm
@@ -116,6 +116,7 @@ interface WebFetchResult {
 type WebFetchBody =
   | { readonly kind: 'html'; readonly content: string }
   | { readonly kind: 'text'; readonly content: string }
+  | { readonly kind: 'pdf'; readonly content: Uint8Array }
 ```
 
 ## 提供方可用性
