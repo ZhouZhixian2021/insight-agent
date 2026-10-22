@@ -30,11 +30,14 @@
 
 ## 实际检查
 
+- `pnpm run build:artifacts`：7 passed / 0 failed（native addon、host/client 编译与打包、桌面、Web）；`pnpm run build:check`：2 passed；`pnpm run typecheck`：5 passed。
+- `pnpm exec vitest run packages/plan/plan-mode`：3 files / 85 tests passed；`--coverage` 限定该包后 `src` 语句/分支/函数/行均 100%。
 - `pnpm exec vitest run <3 个固定样本>`：3 files / 24 tests passed（源码平面）。
 - `pnpm exec vitest run packages/preset/agent-preset-registry packages/client/ui-agent-preset`：12 files / 241 tests passed。
 - `pnpm exec vitest run --config vitest.e2e.config.ts apps/cli/tests/web-agent-presets.e2e.ts -t "supplies the shipped presets"`：1 passed（已断言 `['academic','cordis','minimal','ptc','standard']`）。
 - `academic.patch.yml` 以自定义 `!!js` tag 解析成功：`id=academic order=5 plugins=10`。
-- 全量 `web-agent-presets.e2e.ts`：22 passed / 14 failed；失败为环境性（学术包未构建 `lib/`、Windows `pwsh` 与 `bash` 差异、遗留会话状态），与本次 roster 断言无关，未据此判定通过。
+- 全量 `web-agent-presets.e2e.ts`（构建产物）：22 passed / 14 failed；失败均为环境性——Windows 下 `pwsh` 与 `bash` 的固定工具描述差异、跨运行遗留的会话 id；失败输出中没有任何 `academic` 引用，未据此判定通过。
+- `pnpm run verify-type-equiv`、`pnpm run verify-md-links`、`pnpm run verify-config-catalog`、双语配对（命名对）均通过。
 
 ## 风险与限制
 
@@ -42,12 +45,13 @@
 - **plan-mode 已恢复，但退出工具描述未移植**：T0 另给 `exit_tool` 描述加了一句「Send the COMPLETE plan…」；该句被约 20 个 SDK/Session 快照与工具目录钉住，属于影响所有预设的通用提示改动，本次未移植，只保留自动进入与缺 exit 提醒两项。
 - **persona `{{cwd}}` 子句移除**：U0 的 system-prompt 不注册 `cwd` 变量，已按仓库说明删除该子句。
 - **文档规范待办（本次未完成）**：把 T0 包/文档导入 U0 的文档体系后，`pnpm run test:docs` 仍有本路线引入的失败——学术包 README 的 `kind: package-library` 与 U0 期望的 `package-reference` 不符（8 个子包），`source-arxiv/openalex/pmlr` 与 controller README 摘要超过 100 词，9 个 README 的 Model Experience 为未登记的短格式。另外 `z-team_docs` 的既有提交哈希与验收 JSON 还会让 `verify-repository-references`／`verify-concrete-terms` 变红（先于本次改动存在）。
-- **未构建**：本工作区未运行 `pnpm run build:artifacts`，学术包的 `lib/` 尚不存在，依赖构建产物的 e2e 需先构建。
 - **仍缺的基座耦合文件**：`packages/client/ui-user-questions`（计划审批学术字段）、`packages/extensions/tool-cordis/src/api-catalog.ts`、`packages/test-support/session-snapshot/src/normalize.ts`、`packages/README*` 尚未迁入或核对。
+- **本次只跑到构建与单元/离线 e2e 层**：未做真实模型的研究运行，也未验证学术模式端到端可用；`web-agent-presets.e2e.ts` 的 14 个环境性失败在有对应平台/干净会话的环境需复跑确认。
 
-## 下一步
+## 下一步（下次继续）
 
-- 用构建产物刷新浏览器 golden（`pnpm run test:web:refresh`，需浏览器环境）并复跑 `web-agent-presets.e2e.ts`。
-- 处理文档规范待办：学术 README 的 kind、摘要长度与 Model Experience 形式，或把 8 个子包登记为 `package-library`；再清理 `z-team_docs` 的提交哈希。
-- 继续迁入剩余基座耦合文件，并按清单第三节核对遗漏。
-- 在 U0 树复跑 T0 固定样本两条命令，登记与 T0 基线的差异。
+1. 刷新浏览器 golden 并复跑 Web e2e：在有 Playwright 浏览器的环境执行 `pnpm run test:web:refresh`，核对 `agent-preset-authoring/section`、`agent-preset-selection/hero|menu` 与 `apps/web/tests` 中的预设列表/计数断言。
+2. 文档规范收口：学术子包 README 的 `kind`（登记进 `PACKAGE_LIBRARIES` 或改 `package-reference`）、摘要压到 100 词内、9 篇 Model Experience 按 U0 格式补全；清理 `z-team_docs` 中的提交哈希让 `verify-repository-references` 通过。
+3. 迁入剩余基座耦合文件并按清单第三节核对遗漏。
+4. 在 U0 树复跑 T0 固定样本两条命令，登记与 T0 基线的差异（含 `replenishment.spec.ts` 既有缺陷是否复现）。
+5. 决定是否移植 T0 的 `exit_plan_mode` 描述那句提示（涉及约 20 个快照与工具目录刷新）。
