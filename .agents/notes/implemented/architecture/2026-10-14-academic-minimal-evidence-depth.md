@@ -20,7 +20,7 @@ The [scope/extraction separation](2026-10-11-academic-paper-screening-evidence-p
 
 ## Alternatives considered
 
-**Create a separate minimal evidence record or extractor.** Rejected because existing source locators, records and question links express the required facts; a second verifier would duplicate provenance and quote validation.
+**Create a separate minimal evidence record or extractor.** Rejected because existing source locators, records and question links express the required facts; a second verifier would duplicate source-field and quote validation.
 
 **Trim the final assembled result only.** Rejected because the verified-result sink could persist more than five records and retain card references missing from the returned result.
 

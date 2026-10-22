@@ -47,7 +47,7 @@ kind: "package-library"
 | `ExternalIdentifier` | 同时保存原始值和规范化值的提供方观测记录。 |
 | `externalIdentifierDedupKey()` | 根据标识符类型和调用方规范化值生成键。 |
 | `AcademicWork` | 跨版本身份、书目信息和规范引用版本。 |
-| `WorkVersion` | 带来源、日期、哈希和有效状态的不可变内容版本。 |
+| `WorkVersion` | 带提供方记录、日期、哈希和有效状态的不可变内容版本。 |
 | `createAcademicWorkId()` | 创建随机内部成果 ID。 |
 | `createWorkVersionId()` | 为不可变内容版本创建随机内部 ID。 |
 | `ResearchBrief` | 带版本的研究范围、证据要求、报告要求、停止条件和审核状态。 |
@@ -79,13 +79,13 @@ kind: "package-library"
 
 Q1 查询工作流契约把 `HybridSearchPlan` 绑定到准确的已批准 Brief 版本。学术源、Web 发现和指定站点查询携带稳定的 `SearchQueryId` 与 Brief 原始问题；经过核验的引文扩展使用单独的成果版本种子。`EvidenceRequirements.targetIncludedWorks` 保存介于证据充足最低值和强制停止上限之间的正常目标数量。`InclusionTargets` 分开保存最低、目标和绝对最大数量，`createInclusionTargets()` 校验三者顺序。
 
-`CandidateAssessment` 补充 Q3 轮次结果，不再复制其中的成果、规范版本或查询来源。摘要和关键词保留 `Availability` 状态，全文事实区分可解析、未解析和未知。全文未解析不证明全文不存在。Web 发现摘要绝不进入学术摘要或关键词字段。可信元数据无法判断自然语言规则时使用 `null`，这些延期规则仍由全文范围校验负责。
+`CandidateAssessment` 补充 Q3 轮次结果，不再复制其中的成果、规范版本或发现查询关联。摘要和关键词保留 `Availability` 状态，全文事实区分可解析、未解析和未知。全文未解析不证明全文不存在。Web 发现摘要绝不进入学术摘要或关键词字段。可信元数据无法判断自然语言规则时使用 `null`，这些延期规则仍由全文范围校验负责。
 
 `matchedQuestions` 只表示论文内容实际命中的 Brief 问题；Q5 从既有 Plan 和 `discoveredBy` 标识推导查询批次路由，不因此增加问题匹配分。新版评估可携带版本化的 `screening` 细节：问题、方法、证据类型及贡献信号必须引用标题或学术摘要原文；表面关键词命中与不确定项单独保存。`scope` 为 `potentially_relevant`、`off_topic` 或 `unknown`。偏题判断必须给出相对当前 Plan 的理由和标题或学术摘要原文，`unknown` 不等于排除。B 的新版生产函数以 `DetailedCandidateAssessment` 为返回契约，并须核对每项参与计分的问题、方法、证据类型或贡献信号都能找到对应的原文片段；只有关键词字段的表面命中不足以建立这些分数。缺少 `screening` 表示旧评估没有提供结构化细节。共享的 `off_topic` 硬过滤原因留待检索排序器校验 B 的判断后使用；本次增加类型本身不改变现有排序行为。
 
 `CandidateSemanticReviewRequestV1` 和 `CandidateSemanticReviewV1` 固定最小候选审核模型输入与输出。输入只包含已批准主题、去重后的研究问题、主题范围规则、学术标题和学术摘要可用状态；输出只包含三态范围判断和带原文引文的问题匹配。判为可能相关时至少匹配一个问题；偏题或未知时不匹配问题。Controller 和检索评估器须核对问题属于批准 Brief、引文逐字出现在标题或摘要中，才能把响应映射为 `CandidateScreeningDetails`。历史 Session 事件继续可读；新审核使用独立版本事件，并保留既有 Q6 评估字段。`CandidateReviewSelectionV1` 及其逐候选决定记录确定性的送审前选择：每篇候选的 `routedQuestions`、`selected`／`not_selected_budget`／`hard_excluded`／`fulltext_unresolvable`／`already_attempted` 状态、从 0 开始的 `selectionOrder`，以及 `question_coverage` 或 `lexical_fill` 原因，并携带共享的 `maximumModelReviews`、`attemptedBefore` 和 `remainingBudget`。
 
-候选评估以稳定代码和可选审核细节公开硬过滤原因，同时公开分类、全部加权分项、优先级、匹配问题、当前全文解析状态、多样性标签和决定理由。可选的 `CandidateAssessment.semanticReview` 记录有效范围判断、模型未知、尝试失败代码或未送审原因；缺少字段表示未记录审核状态，不代表判断成功。`AcademicCandidateRankingResult` 把评估绑定到一个 Brief 版本，有序队列通过 `WorkVersionId` 引用评估而不复制对象。`createCandidateRankingResult()` 校验 Brief 绑定、公开总分、优先级、已审核原始问题、查询来源和队列成员关系。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
+候选评估以稳定代码和可选审核细节公开硬过滤原因，同时公开分类、全部加权分项、优先级、匹配问题、当前全文解析状态、多样性标签和决定理由。可选的 `CandidateAssessment.semanticReview` 记录有效范围判断、模型未知、尝试失败代码或未送审原因；缺少字段表示未记录审核状态，不代表判断成功。`AcademicCandidateRankingResult` 把评估绑定到一个 Brief 版本，有序队列通过 `WorkVersionId` 引用评估而不复制对象。`createCandidateRankingResult()` 校验 Brief 绑定、公开总分、优先级、已审核原始问题、发现查询关联和队列成员关系。`ACADEMIC_CANDIDATE_RANKING_POLICY_V1` 集中保存第一版百分制策略，`createCandidateScoreBreakdown()` 与 `candidatePriorityForScore()` 拒绝隐藏分值范围或矛盾阈值。
 
 问题覆盖、轮次结算、终止原因和 `QueryWorkflowProgressEvent` 只保存实际观测事实。模型不生成查询、不分类论文、不执行排序算法、不调度批次、不估算百分比，也不持久化进度；这些职责分别属于检索、工作流和 Web 消费者。
 

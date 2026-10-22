@@ -20,7 +20,7 @@ The Session-approved version-5 Academic plan carries exact question concept grou
 
 ## Alternatives considered
 
-**Treat query provenance as proof of paper content.** Query assignments describe discovery, not the paper's content, and question breadth is independent of topic relevance. The approved assignment supplies a batch route after a topical metadata match without awarding question-match points.
+**Treat discovery-query associations as proof of paper content.** Query assignments describe discovery, not the paper's content, and question breadth is independent of topic relevance. The approved assignment supplies a batch route after a topical metadata match without awarding question-match points.
 
 **Merge every available abstract at work level.** A preprint and its published version can make different claims; pooled text would misattribute those claims to the canonical version.
 
@@ -28,6 +28,6 @@ The Session-approved version-5 Academic plan carries exact question concept grou
 
 ## Consequences
 
-`matchedQuestions` contains only complete quoted lexical matches or quoted externally reviewed question indications. The ranker scores those matches and validates quoted indications against canonical metadata; Q5 scheduling independently reads approved query provenance for evidence-gap batches. The existing `discoveredBy` identifiers carry that route without another public field or Session format change.
+`matchedQuestions` contains only complete quoted lexical matches or quoted externally reviewed question indications. The ranker scores those matches and validates quoted indications against canonical metadata; Q5 scheduling independently reads approved discovery-query associations for evidence-gap batches. The existing `discoveredBy` identifiers carry that route without another public field or Session format change.
 
-Consumers obtain explainable fractions and missing-data reasons without changing released Session formats. Chinese research questions can retain their reviewed English discovery route, while a separately reviewed indication may connect their exact question to an English abstract. Lexical cues do not interpret negation, verify methodology, or prove question coverage; subject terms must appear in reviewed topic or question concepts. A quotation establishes provenance, not semantic truth. Sparse catalog records remain sparse until official verification supplies metadata. The [executable handoff](../../../../packages/academic/retrieval/tests/rank.spec.ts) covers specialized, unrelated, multilingual, reviewed, and incomplete records; ingestion tests preserve version isolation.
+Consumers obtain explainable fractions and missing-data reasons without changing released Session formats. Chinese research questions can retain their reviewed English discovery route, while a separately reviewed indication may connect their exact question to an English abstract. Lexical cues do not interpret negation, verify methodology, or prove question coverage; subject terms must appear in reviewed topic or question concepts. A quotation identifies the text's source, not semantic truth. Sparse catalog records remain sparse until official verification supplies metadata. The [executable handoff](../../../../packages/academic/retrieval/tests/rank.spec.ts) covers specialized, unrelated, multilingual, reviewed, and incomplete records; ingestion tests preserve version isolation.

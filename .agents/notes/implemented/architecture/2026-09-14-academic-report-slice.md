@@ -26,7 +26,7 @@ The [report library](../../../../packages/academic/report/README.md) evaluates a
 
 The [question-driven synthesis decision](2026-09-20-academic-question-synthesis.md) owns the formal evidence-to-insight stage and preserves this baseline's traceability and independent-review requirements.
 
-The local slice works without network or model credentials. It cannot replace full scholarly analysis, a trusted review service, Session recovery, or workflow integration. The caller remains responsible for truthful synthetic-data disclosure and authentic review provenance. The fixed benchmark is fictional and never qualifies for final publication.
+The local slice works without network or model credentials. It cannot replace full scholarly analysis, a trusted review service, Session recovery, or workflow integration. The caller remains responsible for truthful synthetic-data disclosure and review records from authentic sources. The fixed benchmark is fictional and never qualifies for final publication.
 
 ## Testing
 

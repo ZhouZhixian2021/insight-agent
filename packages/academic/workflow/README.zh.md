@@ -74,11 +74,11 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 ## 带会话记录的模型抽取
 
-论文处理结果区分 `extracted`、`partially_extracted` 与 `extraction_failed`。部分抽取成功论文的合格记录携带原有来源信息参与分析，被拒草稿不会进入卡片或报告引用。全部草稿被拒的论文仍保留处理结果，但不计入实际纳入论文。每篇受影响论文记一次 `extract_evidence` 失败操作，不按被拒条目数重复计数；逐条序号和原因保留在 `evidence.rejectedDrafts`。覆盖限制与报告限制披露保留和拒绝数量。这不会增加模型重试，也不放宽整份 JSON 的结构校验；JSON 的 `validated` 状态与逐字原文核验不同。
+论文处理结果区分 `extracted`、`partially_extracted` 与 `extraction_failed`。部分抽取成功论文的合格记录携带原有来源字段与抽取方法参与分析，被拒草稿不会进入卡片或报告引用。全部草稿被拒的论文仍保留处理结果，但不计入实际纳入论文。每篇受影响论文记一次 `extract_evidence` 失败操作，不按被拒条目数重复计数；逐条序号和原因保留在 `evidence.rejectedDrafts`。覆盖限制与报告限制披露保留和拒绝数量。这不会增加模型重试，也不放宽整份 JSON 的结构校验；JSON 的 `validated` 状态与逐字原文核验不同。
 
 将 `createModelEvidenceGenerator(ctx, session, config, policy)` 绑定到具有活动持久化写入器的 Session，并显式传入 `LlmCallConfig` 和正数 `maxAttempts`。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。生成器先用首个有序证据批次判断范围；排除会停止抽取，材料不足会暂停论文，不计作排除。`inputBatchTokenLimit` 按完整证据输入估算值切分有序来源片段；单个过大片段按 `inputBatchOverlapCharacters` 重叠切分，局部片段序号在来源核验前映射回原始序号。`attemptTimeoutMs` 限制每次范围判断或证据尝试。输出上限和模型提供方报告的瞬时故障可在各操作内重试。若本地证据尝试超过时限且 `maxAttempts` 大于一，生成器把该批次替换为两个更小的来源输入，不原样重试超时输入，也不再次拆分；工具调用、非法 JSON、不支持的内容、准入失败和外部取消不会重试。调用方选择模型路由和全部部署限制。
 
-返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源信息和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
+返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源元数据和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
 应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, modelPolicies, input, adapters, signal })`。`modelPolicies.evidence` 与 `modelPolicies.synthesis` 分别选择尝试次数、可重试的瞬时故障代码和首次等待时间；合成还可通过 `retryInvalidOutput` 在同一次数上限内启用整份响应的结构恢复。这个稳定入口会在检索或全文获取前检查准确模型路由。没有指定推理强度时使用模型路由默认值；调用方明确指定的值会被保留并校验。明确指定但不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
 

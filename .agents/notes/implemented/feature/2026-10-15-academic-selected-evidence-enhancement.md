@@ -18,7 +18,7 @@ The first-tier admission path also forwards verified evidence-to-question links 
 
 **Automatically enhance all included papers before drafting.** Rejected because it makes first results depend on every complete-depth extraction.
 
-**Replace first-tier evidence with enhanced output.** Rejected because partial failure must not erase verified excerpts, provenance or the existing draft.
+**Replace first-tier evidence with enhanced output.** Rejected because partial failure must not erase verified excerpts, source fields or the existing draft.
 
 ## Consequences
 

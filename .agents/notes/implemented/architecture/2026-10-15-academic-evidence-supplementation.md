@@ -6,7 +6,7 @@ English | [中文](2026-10-15-academic-evidence-supplementation.zh.md)
 
 ## Problem
 
-Repeating complete extraction mints evidence identities even when a verified excerpt already supports a draft. Replacing the first-level result loses its committed references and provenance. Dropping every repeated record also loses new card classifications backed by that excerpt.
+Repeating complete extraction mints evidence identities even when a verified excerpt already supports a draft. Replacing the first-level result loses its committed references and source fields. Dropping every repeated record also loses new card classifications backed by that excerpt.
 
 ## Decision
 
@@ -20,7 +20,7 @@ The [minimal-depth decision](2026-10-14-academic-minimal-evidence-depth.md) owns
 
 ## Alternatives considered
 
-**Replace first-level evidence with a complete extraction result.** Rejected because new IDs invalidate committed references and cannot preserve the original extraction provenance.
+**Replace first-level evidence with a complete extraction result.** Rejected because new IDs invalidate committed references and cannot preserve the original extraction source fields and method.
 
 **Discard all duplicate excerpts before card assembly.** Rejected because one verified excerpt can support additional sections or approved questions.
 
@@ -32,4 +32,4 @@ Enhancement rereads caller-supplied content without the five-record cap. It adds
 
 ## Verification
 
-Owner-local tests cover six-section supplementation, unchanged provenance and identities, repeated excerpts with new classifications, repeat enhancement, rejected drafts, partial and total model failure, mismatched source identity, cancellation and sink failure. Existing minimal and complete fragment tests plus the fixed workflow handoff cover the shared runner. The two affected implementation modules have 100% statement, branch, function and line coverage.
+Owner-local tests cover six-section supplementation, unchanged source fields, extraction methods and identities, repeated excerpts with new classifications, repeat enhancement, rejected drafts, partial and total model failure, mismatched source identity, cancellation and sink failure. Existing minimal and complete fragment tests plus the fixed workflow handoff cover the shared runner. The two affected implementation modules have 100% statement, branch, function and line coverage.

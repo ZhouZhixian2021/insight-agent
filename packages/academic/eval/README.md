@@ -31,7 +31,7 @@ Optional `admittedEvidence` is the trusted original extraction batch from direct
 
 Optional `sourceStatements` preserve single-paper attributions without minting cross-paper Claims. Each statement must have support; its references undergo the same current-version, locator, hash and source-depth checks and contribute to independent-work coverage. Source statements always retain a separate semantic-review requirement and cannot authorize final publication.
 
-`evaluateClaims()` — Pass the current brief, claims, links, evidence, versions, locators, review records and evaluation time. The function checks exact snapshot/link membership, freshness, provenance, evidence depth, preprint policy and minimum work counts. Missing or invalid evidence blocks delivery. Valid references without a matching semantic review produce needs_review, never automatic semantic approval. Caller-supplied reviews must come from a trusted reviewer; this function does not authenticate their author.
+`evaluateClaims()` — Pass the current brief, claims, links, evidence, versions, locators, review records and evaluation time. The function checks exact snapshot/link membership, freshness, evidence source consistency, evidence depth, preprint policy and minimum work counts. Missing or invalid evidence blocks delivery. Valid references without a matching semantic review produce needs_review, never automatic semantic approval. Caller-supplied reviews must come from a trusted reviewer; this function does not authenticate their author.
 
 No invariant companion is published because this library is stateless; automated tests verify output relationships and failure behavior.
 

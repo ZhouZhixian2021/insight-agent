@@ -22,7 +22,7 @@ The fixed synthetic fixture covers DOI, arXiv, ACL, PMLR, and CVF references, in
 
 ## Alternatives considered
 
-**Treat every Web result as a paper.** Rejected because a search snippet does not establish a scholarly identity or evidence provenance.
+**Treat every Web result as a paper.** Rejected because a search snippet does not establish a scholarly identity or evidence source identity.
 
 **Support only DOI and arXiv references.** Rejected because valid ACL, PMLR, and CVF official records do not always expose either identifier.
 

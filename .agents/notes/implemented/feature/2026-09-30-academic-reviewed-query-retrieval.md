@@ -6,7 +6,7 @@ English | [中文](2026-09-30-academic-reviewed-query-retrieval.zh.md)
 
 ## Problem
 
-The shared search plan identifies channel-specific queries and candidate provenance, but the existing draft workflow sends one expression to Academic and Web channels and cannot derive verified candidates from those query identities. Web discovery text must not enter the scholarly evidence chain without provider verification.
+The shared search plan identifies channel-specific queries and candidate-to-query associations, but the existing draft workflow sends one expression to Academic and Web channels and cannot derive verified candidates from those query identities. Web discovery text must not enter the scholarly evidence chain without provider verification.
 
 ## Decision
 
@@ -28,6 +28,6 @@ The Controller bridge converts schema-version-3 and schema-version-4 Session sea
 
 ## Consequences
 
-The controller can integrate Q2/Q3 through a plain library API while retaining its own review and logging responsibilities. Callers must supply reviewed expansion terms, execution adapters, and budgets. Citation-seed execution and durable progress remain separate work. Focused tests cover query bounds and channel assignment, coverage identity, unverified Web exclusion, partial failures, deduplication, and merged query provenance.
+The controller can integrate Q2/Q3 through a plain library API while retaining its own review and logging responsibilities. Callers must supply reviewed expansion terms, execution adapters, and budgets. Citation-seed execution and durable progress remain separate work. Focused tests cover query bounds and channel assignment, coverage identity, unverified Web exclusion, partial failures, deduplication, and merged discovery-query associations.
 
 The bridge prevents a post-approval planner call from changing executed text and gives Q5 a tested execution boundary. Q5 now uses that boundary in formal execution and persists the approved plan and batch facts. Session recovery remains deferred.
