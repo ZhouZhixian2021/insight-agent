@@ -49,6 +49,8 @@ Production 历史读取使用 `{ recovery: 'recoverable', validation: 'transform
 
 `createSessionFormatCatalogWithChildren(childFacts)` 在组装时将显式的子 Session 证据绑定到 V3→V4，见[目录补齐规范](../session-format-v3-to-v4/README.zh.md)。`historicalSessionFormatCatalog` 使用固定的已发布 V3 事件词汇恢复 V0–V3，收集子日志前置事实而不递归补齐其目录。即使已安装写入方认识事件名，可忽略 V3 扩展仍保持不透明。独立转录回放显式提供空数组；持久化必须收集完整的可用直属子 Session 集合。在 catalog 的生命周期内保持传入证据不变。每次恢复各自拥有独立的 stage 状态。静态 `sessionFormatCatalog` 支持 header 和原生当前格式读取；历史正文读取必须使用已绑定子 Session 的 catalog。
 
+读取历史 V2 子 Session 时，会先通过相邻迁移链，再收集前置事实。此已转换路径接纳经过审计的 T0 学术事件及已校验序号引用；原生 V3 子 Session 仍使用固定的已发布 V3 事件清单，不会因此获得学术扩展支持。完整当前目录会将相同的 V2 历史继续交给 V3→V4 校验。
+
 -----
 
 <a id="understand-the-implementation"></a>

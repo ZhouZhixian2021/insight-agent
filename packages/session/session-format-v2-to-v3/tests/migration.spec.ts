@@ -408,10 +408,10 @@ describe('composed V3 system and PTC migration', () => {
 
   it.each(['academic/search-plan', 'academic/candidate-batch-decision', 'academic/recovery-checkpoint',
     'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])(
-    'refuses unclassified historical %s without changing the source', (type) => {
+    'refuses malformed historical %s without changing the source', (type) => {
       const input = [event(type, { researchBriefId: 'session:approved-plan:call', retained: true })]
       const before = structuredClone(input)
-      expect(() => migrate(input)).toThrow(`cannot safely transform unclassified event ${type}`)
+      expect(() => migrate(input)).toThrow(/unaudited payload/)
       expect(input).toEqual(before)
     },
   )

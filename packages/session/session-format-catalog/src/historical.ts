@@ -4,7 +4,9 @@ import { RELEASED_V3_EVENT_TYPES } from '@deepseek-ai/dsh-session-format-v3-to-v
 import { createSessionFormatCatalog } from '@deepseek-ai/dsh-session-format'
 import { releasedV0SessionFormatCodec, releasedV1SessionFormatCodec, sessionFormatV0ToV1 } from '@deepseek-ai/dsh-session-format-v0-to-v1'
 import { releasedV2SessionFormatCodec, sessionFormatV1ToV2 } from '@deepseek-ai/dsh-session-format-v1-to-v2'
-import { assertReleasedV3Header, releasedV3SessionFormatCodec, restoreReleasedV3Artifact, sessionFormatV2ToV3 } from '@deepseek-ai/dsh-session-format-v2-to-v3'
+import { ACADEMIC_V2_EVENT_TYPES, assertReleasedV3Header, releasedV3SessionFormatCodec, restoreReleasedV3Artifact, sessionFormatV2ToV3, validateAcademicV3History } from '@deepseek-ai/dsh-session-format-v2-to-v3'
+
+const convertedTypes = new Set([...RELEASED_V3_EVENT_TYPES, ...ACADEMIC_V2_EVENT_TYPES])
 
 /** V0–V3 decoding for historical child identity; never publishes or completes parent catalogs. */
 export const historicalSessionFormatCatalog = createSessionFormatCatalog({
@@ -13,7 +15,7 @@ export const historicalSessionFormatCatalog = createSessionFormatCatalog({
   currentEncoder: releasedV3SessionFormatCodec,
   migrations: [sessionFormatV0ToV1, sessionFormatV1ToV2, sessionFormatV2ToV3],
   restoreCurrent: artifact => restoreReleasedV3Artifact(artifact, RELEASED_V3_EVENT_TYPES),
-  restoreTransformedCurrent: artifact => restoreReleasedV3Artifact(artifact, RELEASED_V3_EVENT_TYPES),
+  restoreTransformedCurrent: artifact => restoreReleasedV3Artifact(validateAcademicV3History(artifact), convertedTypes),
   restoreCurrentHeader(header) {
     assertReleasedV3Header(header)
     return header

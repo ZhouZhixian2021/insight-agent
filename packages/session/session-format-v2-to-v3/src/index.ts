@@ -4,3 +4,4 @@ export { releasedV2SessionFormatCodec } from '@deepseek-ai/dsh-session-format-v1
 export * from './codec.ts'
 export * from './migration.ts'
 export * from './validation.ts'
+export * from './academic.ts'

@@ -119,6 +119,8 @@ A V2 `session-log-deepseek/delivery-accepted` with `data.sessionFormatVersion ==
 
 Migration classifies the [released V2 event inventory](../session-format-v1-to-v2/src/dispositions.ts), including log-only `assistant/attempt`, plus `feedback/message-put` and `feedback/message-delete`. The [payload validator](src/payload.ts) applies exact admitted envelope and payload members and released nested validation. Unknown events, even ignorable ones, and unaudited members at checked records are refused. Message-source classification covers the five Message slots below: unknown source kinds are refused, while agent relay attribution is admitted without interpreting ids as Session references.
 
+The incoming edge also admits the fixed T0 academic inventory in [`src/academic-schema.ts`](src/academic-schema.ts): 19 required log events with exact historical payloads. It validates and remaps the eight audited `requestSeq` and `selectionSeq` positions through this edge's own sequence map, checking earlier target kind and shared identity fields. Unknown academic event names and unlisted payload members are refused. Academic request-message attribution is converted by the following edge; this edge leaves its recorded messages unchanged.
+
 The content audit admits exactly `text`, `reasoning`, `image`, `file`, `tool-call`, and `tool-result`. It validates owned block fields and recursively audits every nested `tool-result.content` in this finite set of positions:
 
 | Owner | Audited content |

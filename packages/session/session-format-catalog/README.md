@@ -49,6 +49,8 @@ The catalog contains all supported historical readers directly. A profile cannot
 
 `createSessionFormatCatalogWithChildren(childFacts)` binds explicit child evidence to V3→V4 during assembly; see the [catalog-completion specification](../session-format-v3-to-v4/README.md). `historicalSessionFormatCatalog` restores V0–V3 using the fixed released-V3 event vocabulary to collect child prerequisites without recursively completing their catalogs. An ignorable V3 extension remains opaque even when the installed writer knows its name. Isolated transcript replay explicitly supplies an empty array; persistence must collect the complete available direct-child set. Keep the supplied evidence unchanged for the catalog’s lifetime. Each restore owns independent stage state. The static `sessionFormatCatalog` supports header and native current-format reads; historical body reads require the child-bound catalog.
 
+Historical V2 child reads use the adjacent migration chain before collecting prerequisites. That transformed path admits the audited T0 academic events and their checked sequence references; a native V3 child still uses the fixed released-V3 vocabulary and does not gain academic-extension support. The full current catalog carries the same V2 history through V3→V4 validation.
+
 -----
 
 <a id="understand-the-implementation"></a>

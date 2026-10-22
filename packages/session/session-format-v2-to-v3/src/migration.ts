@@ -7,6 +7,7 @@ import { assertReleasedV2Header } from '@deepseek-ai/dsh-session-format-v1-to-v2
 import { assertEvent, canonicalizeTransformedEvent, record, SURFACE_TYPES } from './payload.ts'
 import { remapEvent } from './references.ts'
 import { assertReleasedV3Header } from './validation.ts'
+import { ACADEMIC_V2_EVENT_TYPES, AcademicV2History } from './academic.ts'
 
 /** Promote system prompts, remap audited references, and canonicalize envelopes and PTC vocabulary. */
 export const sessionFormatV2ToV3 = defineSessionFormatMigration({
@@ -24,6 +25,7 @@ export const sessionFormatV2ToV3 = defineSessionFormatMigration({
 class ReleasedV2ToV3Stage implements SessionFormatMigrationStage {
   readonly headerInheritedEventCount?: number
   private readonly mapping: number[] = []
+  private readonly academic = new AcademicV2History()
   private readonly originalIds = new Set<string>()
   private readonly generatedIds = new Set<string>()
   private targetSeq = 0
@@ -43,7 +45,8 @@ class ReleasedV2ToV3Stage implements SessionFormatMigrationStage {
 
   transformEvent(event: SessionFormatEvent, context: SessionFormatMigrationContext): void {
     if (event.seq !== this.mapping.length) throw new SessionFormatError('format v2 source events must be dense')
-    assertEvent(event, 2)
+    const academic = ACADEMIC_V2_EVENT_TYPES.has(event.type)
+    if (!academic) assertEvent(event, 2)
     this.observeMessageIds(event)
     let source = event
     const data = record(event.data, event.type)
@@ -65,7 +68,8 @@ class ReleasedV2ToV3Stage implements SessionFormatMigrationStage {
       if (data['sessionFormatVersion'] === 3) throw new SessionFormatError('format v2 delivery marker claims target format v3')
       if (data['sessionFormatVersion'] === 2 && data['sessionId'] !== this.input.sourceHeader.id) this.lastForeignDeliverySeq = event.seq
     }
-    const target = remapEvent(source, this.targetSeq, this.mapping)
+    const target = academic ? this.academic.remap(source, this.targetSeq, this.mapping)
+      : remapEvent(source, this.targetSeq, this.mapping)
     this.mapping.push(this.targetSeq++)
     context.emitEvent(canonicalizeTransformedEvent(renamePtcEvent(target)))
     if (event.type === 'step/start') {

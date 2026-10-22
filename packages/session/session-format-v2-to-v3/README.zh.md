@@ -119,6 +119,8 @@ V2 `session-log-deepseek/delivery-accepted` 若携带 `data.sessionFormatVersion
 
 迁移分类[已发布 V2 事件清单](../session-format-v1-to-v2/src/dispositions.ts)，包括仅日志的 `assistant/attempt`，以及 `feedback/message-put` 和 `feedback/message-delete`。[载荷校验器](src/payload.ts)应用精确的已接纳信封和载荷成员，以及已发布嵌套校验。未知事件（即使可忽略）以及被检查记录中未经审计的成员均被拒绝。消息来源分类覆盖下表的五个消息位置：未知来源种类会被拒绝，agent（智能体）中继归属则被接纳，但标识不会被解释为会话引用。
 
+该入站边还接纳 [`src/academic-schema.ts`](src/academic-schema.ts) 中固定的 T0 学术事件清单：19 类必需日志事件，并应用精确的历史载荷校验。它会通过本边自己的序号映射校验并迁移 8 个已审计的 `requestSeq` 与 `selectionSeq` 位置，同时检查引用指向更早的目标事件类型及共同身份字段。未知学术事件名称和未列出的载荷成员均会被拒绝。学术请求消息归属由下一条迁移边转换；本边保留记录中的消息。
+
 内容审计仅接纳 `text`、`reasoning`、`image`、`file`、`tool-call` 和 `tool-result`。它校验归本格式所有的块字段，并在以下有限位置递归审计每层嵌套的 `tool-result.content`：
 
 | 所有者 | 审计内容 |

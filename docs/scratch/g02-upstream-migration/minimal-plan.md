@@ -12,7 +12,7 @@ English | [中文](minimal-plan.zh.md)
 
 ## Summary
 
-This reference records the proposed implementation scope before migration code changes. The proposal retains the adjacent 2→3→4 pipeline and current final validation. It preserves historical identities and separates successful import from approval or permission to resume. Complete historical import remains blocked until implementation and focused validation are authorized and completed.
+This reference preserves the implementation scope reviewed before migration code changes. The adjacent 2→3→4 path is now implemented with the current final validation. Historical identities remain unchanged, and successful import remains separate from approval or permission to resume. Owning package specifications describe current behavior; complete historical copy import remains unverified.
 
 ## Table of Contents
 
@@ -22,14 +22,14 @@ This reference records the proposed implementation scope before migration code c
 ## Current limits
 <a id="current-limits"></a>
 
-The [inventory](event-audit.md) and [mapping](field-mapping.md) are static audit results. Migration is unimplemented. Frozen recordings cover four of 19 event types, and format-2 PTC approval metadata has no T0 writer evidence. G03 projection work, G04 platform checks, and G05 runtime/import acceptance remain separate.
+The [inventory](event-audit.md) and [mapping](field-mapping.md) are static audit results. Frozen recordings cover four of 19 event types, and format-2 PTC approval metadata has no T0 writer evidence. Those gaps still limit acceptance. G03 projection work, G04 platform checks, and G05 runtime/import acceptance remain separate.
 
 ## Dev Note
 
 <details>
-<summary>Unimplemented proposal and future checks</summary>
+<summary>Reviewed proposal and acceptance limits</summary>
 
-The following steps describe review material, not shipped support or commands to run now.
+The following steps record the reviewed implementation scope; current behavior and supported paths live in the owning package specifications.
 
 1. Define a fixed T0 academic schema owned by the 2→3 incoming conversion. Enumerate the 19 events, exact required/optional fields, nested structures, versions, eight references, and two audited request sources. Do not derive historical permission from the installed SessionEventMap or open an entire namespace. A version-2 header alone does not identify the producer.
 

@@ -12692,6 +12692,9 @@ importers:
       '@deepseek-ai/dsh-session-format-v1-to-v2':
         specifier: workspace:*
         version: link:../session-format-v1-to-v2
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~

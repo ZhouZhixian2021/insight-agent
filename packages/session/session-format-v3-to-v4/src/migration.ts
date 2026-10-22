@@ -2,7 +2,7 @@
 
 import { defineSessionFormatMigration, SessionFormatError, SessionFormatUnsupportedMigrationError, isSessionFormatJsonObject, sessionFormatCount } from '@deepseek-ai/dsh-session-format'
 import type { SessionFormatEvent, SessionFormatEventRun, SessionFormatJsonObject, SessionFormatJsonValue, SessionFormatMigration, SessionFormatMigrationContext, SessionFormatMigrationStage, SessionFormatMigrationStageInput } from '@deepseek-ai/dsh-session-format'
-import { assertReleasedV3Header } from '@deepseek-ai/dsh-session-format-v2-to-v3'
+import { ACADEMIC_V2_EVENT_TYPES, AcademicV2History, assertReleasedV3Header, rewriteAcademicV3Sources } from '@deepseek-ai/dsh-session-format-v2-to-v3'
 import { mapEventMessages, rewriteV3MessageSource } from './sources.ts'
 import { liftToolResult } from './tool-role.ts'
 import { migrateV3EventContent } from './content.ts'
@@ -45,6 +45,7 @@ class ReleasedV3ToV4Stage implements SessionFormatMigrationStage {
   private cut: number | undefined
   private sourceCut: number | undefined
   private readonly mapping: number[] = []
+  private readonly academic = new AcademicV2History()
   private turn: number | undefined
   private stepOpen = false
   private nextTurnSpliced = false
@@ -85,6 +86,12 @@ class ReleasedV3ToV4Stage implements SessionFormatMigrationStage {
         throw new SessionFormatUnsupportedMigrationError('format v3 delivery marker claims target format v4')
       }
       if (deliveryId !== undefined && deliveryId !== this.input.sourceHeader.id) this.foreignDeliverySeq = event.seq
+    }
+    if (ACADEMIC_V2_EVENT_TYPES.has(event.type) && this.input.sourceKind === 'transformed') {
+      const remapped = this.academic.remap(event, targetSeq, this.mapping)
+      this.mapping.push(targetSeq)
+      context.emitEvent(rewriteAcademicV3Sources(remapped))
+      return
     }
     const opaque = namespaceV3OpaqueEvent(event)
     if (opaque !== event) {
