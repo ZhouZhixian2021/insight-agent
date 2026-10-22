@@ -5,6 +5,7 @@ import { lstatSync, readFileSync, readlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { historicalSchemaRegion } from './historical-schema-region.ts'
+import { checkRetainedDocumentFindings } from './retained-document-findings.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const blockedTerm = 'prove' + 'nance'
@@ -90,9 +91,11 @@ function scanRepository(repoRoot: string): ConcreteTermViolation[] {
 const invokedPath = process.argv[1]
 const isMain = invokedPath !== undefined && import.meta.url === pathToFileURL(resolve(invokedPath)).href
 if (isMain) {
-  const violations = scanRepository(root)
-  if (violations.length === 0) {
-    console.log(`verify-concrete-terms: maintained tracked files contain no ${blockedTerm}.`)
+  const { unregistered: violations, errors, retained } = checkRetainedDocumentFindings(
+    root, 'concrete-term', scanRepository(root),
+  )
+  if (violations.length === 0 && errors.length === 0) {
+    console.log(`verify-concrete-terms: no unregistered terms; ${String(retained)} exact retained findings.`)
   } else {
     console.error(`verify-concrete-terms: ${blockedTerm} is forbidden; name the exact source, field, identity, or evidence:`)
     for (const violation of violations) {
@@ -100,6 +103,7 @@ if (isMain) {
         ? `  ${violation.file} (path)`
         : `  ${violation.file}:${String(violation.line)}`)
     }
+    for (const error of errors) console.error(`  ${error}`)
     process.exitCode = 1
   }
 }

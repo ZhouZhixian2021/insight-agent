@@ -12,7 +12,7 @@ The existing [concrete prose reference](../../../skills/dsh-prose-standard/SKILL
 
 ## Decision
 
-Maintained tracked paths and text must not contain that token in any case variant. Each use is replaced with the exact local concept, such as source-event references, provider metadata, model identity, context producer, configuration source, artifact identity, or recorded evidence.
+Maintained tracked paths and text must not contain that token in any case variant, except for the [exact retained findings](2026-10-22-exact-retained-document-findings.md) that partially supersede this rule. Other uses are replaced with the exact local concept, such as source-event references, provider metadata, model identity, context producer, configuration source, artifact identity, or recorded evidence.
 
 The rule applies to source, tests, documentation, active Agent Notes, prompts, snapshots, workflow files, scripts, identifiers, fields, exported types, and filenames. Because the repository is pre-release, coordinated public symbol and current durable-field renames are preferred over aliases. A compatibility reader may reconstruct the retired durable key at runtime without embedding the token in maintained text.
 
@@ -36,4 +36,4 @@ This decision partially supersedes the earlier decision's rejection of fixed wor
 
 Callers use more specific public names, and current recordings use provider metadata instead of the retired assistant field. Generated catalogs and recorded snapshots must be refreshed when an owning symbol changes. Compatibility code remains responsible for reading the retired durable field.
 
-Future uses outside the explicit exclusions fail `doc-sync` with the matching path or line. Reviews still classify the intended meaning before choosing a replacement; passing the gate proves absence of the token from checked content, not that the replacement is precise.
+Unregistered uses outside the explicit exclusions fail `doc-sync` with the matching path or line. Reviews still classify the intended meaning before choosing a replacement; passing the check proves absence of unregistered findings and invalid registrations, not that replacement wording is precise.

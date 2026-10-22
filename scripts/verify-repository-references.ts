@@ -5,6 +5,7 @@ import { lstatSync, readFileSync, readlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { canonicalReferenceText } from './verify-public-repository-links.ts'
+import { checkRetainedDocumentFindings } from './retained-document-findings.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const organization = ['deepseek', 'harness'].join('-')
@@ -144,12 +145,15 @@ export function scanRepositoryReferences(repoRoot: string): RepositoryReference[
 
 const invokedPath = process.argv[1]
 if (invokedPath !== undefined && import.meta.url === pathToFileURL(resolve(invokedPath)).href) {
-  const references = scanRepositoryReferences(root)
-  if (references.length === 0) {
-    console.log('verify-repository-references: maintained files contain no repository commit identifiers or disallowed organization URLs.')
+  const { unregistered: references, errors, retained } = checkRetainedDocumentFindings(
+    root, 'repository-reference', scanRepositoryReferences(root),
+  )
+  if (references.length === 0 && errors.length === 0) {
+    console.log(`verify-repository-references: no unregistered references; ${String(retained)} exact retained findings.`)
   } else {
     console.error('verify-repository-references: use release tags or maintained repository links:')
     for (const { file, line, kind } of references) console.error(`  ${file}:${String(line)} ${kind}`)
+    for (const error of errors) console.error(`  ${error}`)
     process.exitCode = 1
   }
 }
