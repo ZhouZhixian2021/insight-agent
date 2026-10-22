@@ -29,7 +29,7 @@ export async function fetchAcademicFullText(
   onFullText?: AcademicFullTextObserver,
 ): Promise<EvidenceExtractionInput> {
   if (input.urls.length === 0) throw new EvidenceError('at least one full-text URL is required', 'EVIDENCE_FULLTEXT_UNCONFIRMED')
-  const { urls, ...provenance } = input
+  const { urls, ...sourceMetadata } = input
   let failure: unknown
   for (const [index, url] of urls.entries()) {
     signal?.throwIfAborted()
@@ -37,7 +37,7 @@ export async function fetchAcademicFullText(
     reportFullText(onFullText, { ...candidate, phase: 'started', settlement: null, category: null, bodyKind: null })
     try {
       const fetched = await fetcher(url, signal)
-      const prepared = { ...provenance, fetched }
+      const prepared = { ...sourceMetadata, fetched }
       const result = fetched.body.kind === 'pdf'
         ? await prepareFetchedAcademicPdf(prepared, signal)
         : prepareFetchedAcademicFullText(prepared)

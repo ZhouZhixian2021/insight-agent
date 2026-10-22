@@ -49,9 +49,9 @@ export async function prepareFetchedAcademicPdf(
       }
     }
     if (segments.length === 0) invalid('PDF contains no extractable text', 'EVIDENCE_FULLTEXT_UNCONFIRMED')
-    const { fetched: _, ...provenance } = input
+    const { fetched: _, ...sourceMetadata } = input
     return {
-      ...provenance,
+      ...sourceMetadata,
       sourceUrl: fetched.url,
       contentHash,
       segments,

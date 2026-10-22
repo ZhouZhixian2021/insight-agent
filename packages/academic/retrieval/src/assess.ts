@@ -76,7 +76,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       const matches = matchedConcepts(normalize(source.text), entry.concepts)
       return matches.length > best.length ? matches : best
     }, []) }))
-    const provenanceQuestions = new Set((discoveredBy.get(work.academicWorkId) ?? [])
+    const discoveryQuestions = new Set((discoveredBy.get(work.academicWorkId) ?? [])
       .flatMap(searchQueryId => questionsByQuery.get(searchQueryId) ?? []))
     let matchedQuestions = questions
       .filter(entry => entry.matches.length === entry.concepts.length)
@@ -160,7 +160,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
           ? 'Reviewed metadata indications identify possible relevance; quotations do not confirm evidence or scientific quality.'
           : 'Metadata screening identifies lexical relevance and contribution cues; it does not confirm evidence or scientific quality.',
         `Topic concepts matched ${topic.length}/${criteria.topic.length}: ${topic.join(', ') || 'none'}.`,
-        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} lexical concepts matched; ${reviewed !== undefined ? `reviewed metadata ${matchedQuestions.includes(entry.question) ? 'supports' : 'does not support'} the question; ` : ''}approved discovery-query provenance ${provenanceQuestions.has(entry.question) ? 'matched' : 'did not match'}.`),
+        ...questions.map(entry => `Question "${entry.question}": ${entry.matches.length}/${entry.concepts.length} lexical concepts matched; ${reviewed !== undefined ? `reviewed metadata ${matchedQuestions.includes(entry.question) ? 'supports' : 'does not support'} the question; ` : ''}approved discovery-query provenance ${discoveryQuestions.has(entry.question) ? 'matched' : 'did not match'}.`),
         `Method cues ${methods.length}/${criteria.methods.length}: ${methods.join(', ') || 'none'}; evidence cues ${evidence.length}/${criteria.evidence.length}: ${evidence.join(', ') || 'none'}. Unassessed cues score zero.`,
         `Contribution cues: ${contributionSignals.join(', ') || 'none'}.`,
         `Scope ${screening.scope.status}: ${screening.scope.reason}`,

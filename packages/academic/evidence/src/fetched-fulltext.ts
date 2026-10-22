@@ -74,9 +74,9 @@ export function prepareFetchedAcademicFullText(input: FetchedAcademicFullTextInp
 
   if (!populatedBodySection || segments.length === 0) unconfirmed()
   const contentHash = `sha256:${createHash('sha256').update(normalizedArticle).digest('hex')}`
-  const { fetched: _, ...provenance } = input
+  const { fetched: _, ...sourceMetadata } = input
   return {
-    ...provenance,
+    ...sourceMetadata,
     sourceUrl: fetched.url,
     contentHash,
     segments,
