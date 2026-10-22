@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-19-academic-report-repetition.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-19-academic-report-repetition.md
+/agent-note-academic-report-paragraph-reuse:
+  en: 71169521ba00b7b2
+  zh: a776961106fb9ab7
+/agent-note-academic-report-paragraph-reuse/problem:
+  en: 9635a9903d7c0ede
+  zh: fbe622e9578c67d0
+/agent-note-academic-report-paragraph-reuse/decision:
+  en: 51ecc9f2853f404a
+  zh: f099bb822c6e1ae6
+/agent-note-academic-report-paragraph-reuse/alternatives-considered:
+  en: 52e538b1a380ccfd
+  zh: bbf1376e5d55a73e
+/agent-note-academic-report-paragraph-reuse/consequences:
+  en: 41c2cb5b92372994
+  zh: e858127db8548604
+/agent-note-academic-report-paragraph-reuse/verification:
+  en: 3cfd9fe694f9c15e
+  zh: e9528e926dafed93

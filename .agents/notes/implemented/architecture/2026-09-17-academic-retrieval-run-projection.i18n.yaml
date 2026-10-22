@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-17-academic-retrieval-run-projection.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-17-academic-retrieval-run-projection.md
+/agent-note-academic-workflow-returns-observed-retrieval-coverage-to-web-clients:
+  en: b21245a819cf8110
+  zh: f31b36e7d65ea663
+/agent-note-academic-workflow-returns-observed-retrieval-coverage-to-web-clients/problem:
+  en: fd17498e1d7d9d85
+  zh: ed8a5567c34d4292
+/agent-note-academic-workflow-returns-observed-retrieval-coverage-to-web-clients/decision:
+  en: 5b3a4ceaba84c937
+  zh: 5a0aa5488e9f2ea2
+/agent-note-academic-workflow-returns-observed-retrieval-coverage-to-web-clients/alternatives-considered:
+  en: f47c501fe96315fa
+  zh: 53ba93a7068d9b4d
+/agent-note-academic-workflow-returns-observed-retrieval-coverage-to-web-clients/consequences:
+  en: 6390a47e5780a997
+  zh: ed9086e623d7cc87

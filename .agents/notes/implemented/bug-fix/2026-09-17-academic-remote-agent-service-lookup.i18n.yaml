@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-17-academic-remote-agent-service-lookup.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-17-academic-remote-agent-service-lookup.md
+/agent-note-academic-remote-agent-service-lookup:
+  en: 180b6f548ddadb72
+  zh: a13b6e7a9318dc0e
+/agent-note-academic-remote-agent-service-lookup/problem:
+  en: 0cec7a9cf8878386
+  zh: b1b961af7449cd89
+/agent-note-academic-remote-agent-service-lookup/decision:
+  en: 8b6c44406e067136
+  zh: 97b81b24f423f030
+/agent-note-academic-remote-agent-service-lookup/alternatives-considered:
+  en: 4d70f15814bf4a8b
+  zh: 97b0e9a7188dc3fc
+/agent-note-academic-remote-agent-service-lookup/consequences:
+  en: db9af97ad2fbc1dc
+  zh: 1d18ef9aa42419e7

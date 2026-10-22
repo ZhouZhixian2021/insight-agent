@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-07-academic-insight-preset.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-07-academic-insight-preset.md
+/agent-note-academic-insight-preset:
+  en: 541f260415f1a995
+  zh: 93d39d1bf3f98b15
+/agent-note-academic-insight-preset/problem:
+  en: b5cc1cc1aedf136d
+  zh: 0b8c246ddfefbb36
+/agent-note-academic-insight-preset/decision:
+  en: 438037aa2e03ec6e
+  zh: a17a2322ac9a7ced
+/agent-note-academic-insight-preset/evidence-policy:
+  en: efbda79e02ccc042
+  zh: f4e450dae3e1ce2a
+/agent-note-academic-insight-preset/alternatives-considered:
+  en: 484ec5c91f75930f
+  zh: 0e333abf0a96f9db
+/agent-note-academic-insight-preset/consequences:
+  en: 301e98bcb2b587aa
+  zh: 47de58860b1046ff

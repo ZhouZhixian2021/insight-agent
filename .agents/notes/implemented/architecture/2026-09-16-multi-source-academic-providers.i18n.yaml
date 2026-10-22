@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-16-multi-source-academic-providers.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-16-multi-source-academic-providers.md
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing:
+  en: 46eb58faa1faed29
+  zh: 7bc101ec47449dd9
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing/problem:
+  en: 69c8d0c7539a727a
+  zh: 9d1bc0f2300d829d
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing/decision:
+  en: 3e526c2b03aa959d
+  zh: 9b7a9855de844003
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing/package-topology:
+  en: 1b2e2825c4ae74f8
+  zh: 1b2e2825c4ae74f8
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing/alternatives-considered:
+  en: b63be007e1fb5b35
+  zh: 5a7f21bde6e2c698
+/agent-note-multi-source-academic-providers-share-search-and-full-text-plumbing/consequences:
+  en: 7fe32f4486741c60
+  zh: eaa0d9947a8c3a33

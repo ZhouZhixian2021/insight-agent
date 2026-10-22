@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-16-remove-metadata-only-academic-providers.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-16-remove-metadata-only-academic-providers.md
+/agent-note-remove-metadata-only-academic-providers:
+  en: 99eba49bb3edd5d7
+  zh: d969838be923e16a
+/agent-note-remove-metadata-only-academic-providers/problem:
+  en: ba2c246b80737f9e
+  zh: 14621ce168ea59f9
+/agent-note-remove-metadata-only-academic-providers/decision:
+  en: 9514817cc88d4af6
+  zh: 8506f4715417eb12
+/agent-note-remove-metadata-only-academic-providers/alternatives-considered:
+  en: 977c297f65720615
+  zh: 2c71618edb3eb07b
+/agent-note-remove-metadata-only-academic-providers/consequences:
+  en: fe31e62f2a25c0ab
+  zh: 08b7b1f777776c36

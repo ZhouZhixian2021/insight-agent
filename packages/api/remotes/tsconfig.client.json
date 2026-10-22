@@ -82,6 +82,9 @@
       "path": "../session-controller/tsconfig.client.json"
     },
     {
+      "path": "../academic-research-controller"
+    },
+    {
       "path": "../workspace-files/tsconfig.client.json"
     },
     {

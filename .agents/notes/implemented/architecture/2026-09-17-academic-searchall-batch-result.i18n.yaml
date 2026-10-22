@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-17-academic-searchall-batch-result.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-17-academic-searchall-batch-result.md
+/agent-note-searchall-aggregates-provider-outcomes-into-one-partial-success-batch:
+  en: ff472a6926cf8e6b
+  zh: 7f10d16e80cd193b
+/agent-note-searchall-aggregates-provider-outcomes-into-one-partial-success-batch/problem:
+  en: 9be8bcc5aa2fba62
+  zh: f1fff3fba1a9cf1c
+/agent-note-searchall-aggregates-provider-outcomes-into-one-partial-success-batch/decision:
+  en: ef94a419b4e61b85
+  zh: c51eb2ea085d122a
+/agent-note-searchall-aggregates-provider-outcomes-into-one-partial-success-batch/alternatives-considered:
+  en: 2b2988bda464fe05
+  zh: c8c828f6633d00a0
+/agent-note-searchall-aggregates-provider-outcomes-into-one-partial-success-batch/consequences:
+  en: 05cae8641c9145ce
+  zh: fa315cedfab44e79

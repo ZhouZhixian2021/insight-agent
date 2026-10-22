@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for 2026-09-11-academic-source-capability-seam.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-academic-source-capability-seam.md
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers:
+  en: 64ca76b03b42bdd2
+  zh: fc460c9dcd1a4392
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/problem:
+  en: 13c43fc8116e9994
+  zh: 936df3a719eac28e
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/decision:
+  en: 4151a7339966027f
+  zh: 6d31d547fd6a717d
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/package-topology:
+  en: 327f06ea0cc281f5
+  zh: fae5f3b83a3b1b98
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/ctx-academicsource-contract:
+  en: e0bde53dda778a8d
+  zh: 24c2e528035bb22e
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/provider-availability-and-selection:
+  en: ed90ab1ad1a6f62e
+  zh: 52ae08074b69a592
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/errors:
+  en: ab8f5028326c375f
+  zh: 8dc73beccb0aa231
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/alternatives-considered:
+  en: 6119e2aff3b6be5a
+  zh: 76136ef5249c23eb
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/alternatives-considered/fold-provider-dispatch-into-a-future-consumer-tool:
+  en: 948cf0d263edb21b
+  zh: 85273fbb06d1180e
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/alternatives-considered/let-each-provider-register-its-own-operation:
+  en: 8d7d2093a78bacb5
+  zh: 904c7e0d2f17e030
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/alternatives-considered/derive-the-result-shape-from-the-arxiv-provider-only:
+  en: 0027a29732b94ad7
+  zh: 9b659f12d90c1222
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/alternatives-considered/extend-harnesserror-from-deepseek-ai-dsh-llm:
+  en: f8e67215653e6b68
+  zh: 38aee48a90596494
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/consequences:
+  en: 9ee40f3a348ff197
+  zh: 5447c11a6ff7067c
+/agent-note-academic-source-capability-seam-one-provider-registry-over-scholarly-providers/deferred-work:
+  en: 216a8137b3c14d10
+  zh: 964eed19dfda5842

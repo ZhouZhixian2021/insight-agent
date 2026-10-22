@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-15-academic-selected-evidence-enhancement.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-15-academic-selected-evidence-enhancement.md
+/agent-note-selected-second-tier-academic-evidence-enhancement:
+  en: d25df2e10293a368
+  zh: a8e1add0cd200617
+/agent-note-selected-second-tier-academic-evidence-enhancement/problem:
+  en: aed7cbfd426747dc
+  zh: cefa0e59693bdff7
+/agent-note-selected-second-tier-academic-evidence-enhancement/decision:
+  en: 7b28f3b5bd4d49d8
+  zh: 1fca6f82ac827670
+/agent-note-selected-second-tier-academic-evidence-enhancement/alternatives-considered:
+  en: d1c0af465631e086
+  zh: f6772506096b953a
+/agent-note-selected-second-tier-academic-evidence-enhancement/consequences:
+  en: ac4bcf656861244a
+  zh: 5bf8cb1650b79200

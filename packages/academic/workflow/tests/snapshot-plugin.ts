@@ -1,0 +1,144 @@
+/** Opt-in snapshot composition: real academic extraction with only model output scripted. */
+import type { Context } from '@deepseek-ai/cordis'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { LlmAdapter, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
+import { createModelEvidenceGenerator, createModelSynthesisGenerator, extractPaperEvidence } from '@deepseek-ai/dsh-academic-workflow'
+import { prepareSynthesisInput, synthesisAnalysis, type AcademicSynthesisInput } from '@deepseek-ai/dsh-academic-analysis'
+import { generateReport } from '@deepseek-ai/dsh-academic-report'
+import type { AcademicWorkId, WorkVersionId, WorkVersion } from '@deepseek-ai/dsh-academic-model'
+import type {} from '@deepseek-ai/dsh-agent'
+
+export const name = 'academic-model-snapshot'
+export const inject = ['llm', 'sessions', 'sessionPersistence', 'tokenMeter']
+const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+
+class SnapshotAdapter extends LlmAdapter {
+  readonly #invalidSynthesisFirst: boolean
+
+  constructor(invalidSynthesisFirst: boolean) {
+    super()
+    this.#invalidSynthesisFirst = invalidSynthesisFirst
+  }
+
+  override resolveModel(provider: string, model: string) {
+    return Promise.resolve({ provider, id: model, name: model, context: { contextWindow: 32768 } })
+  }
+  override async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
+    const message = _options.messages[0]?.content[0]
+    if (message?.type === 'text' && message.text.startsWith('Decide whether the paper satisfies')) {
+      yield { type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+      return
+    }
+    if (message?.type === 'text' && message.text.includes('INPUT_JSON\n')) {
+      if (this.#invalidSynthesisFirst) {
+        const output = JSON.parse(readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8')) as {
+          sections: Array<{ sectionId: string; statementIndexes: number[]; missingReason: string | null }>
+        }
+        if (!message.text.includes('structural-validation recovery request')) {
+          const limitations = output.sections.find(section => section.sectionId === 'limitations')
+          assert.ok(limitations)
+          limitations.statementIndexes = [0]
+        }
+        yield { type: 'text-delta', index: 0, text: JSON.stringify(output) }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+        return
+      }
+      if (!message.text.includes('output_limit_compact')) {
+        yield { type: 'text-delta', index: 0, text: '{' }
+        yield { type: 'finish', reason: { kind: 'max-tokens' } }
+        return
+      }
+      yield { type: 'text-delta', index: 0, text: readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8') }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+      return
+    }
+    yield { type: 'text-delta', index: 0, text: JSON.stringify({
+      evidence: [{ segmentIndex: 0,
+        questionIndexes: [0],
+        sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
+        section: 'methods' },
+      { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Unverified model statement.', verbatimExcerpt: 'Not in the supplied source.', section: 'findings' },
+      { segmentIndex: 0, questionIndexes: [1], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.', section: 'methods' }] }) }
+    yield { type: 'finish', reason: { kind: 'stop' } }
+  }
+}
+
+export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; limitedDraft?: boolean } = {}): void {
+  ctx.effect(() => ctx.llm.registerAdapter(['academic-fixture'], new SnapshotAdapter(config.invalidSynthesisFirst === true)))
+  ctx.on('agent/pre-step', async ({ agent }, next) => {
+    if (!agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-result')) {
+      const academicWorkId = 'synthetic-work' as AcademicWorkId, workVersionId = 'synthetic-version' as WorkVersionId
+      const version: WorkVersion = { schemaVersion: 1, academicWorkId, workVersionId, versionType: 'preprint',
+        versionLabel: { status: 'available', value: 'v1' }, releaseDate: { status: 'unknown', reason: 'synthetic' },
+        externalIdentifiers: [], sourceRecords: [], contentHash: { status: 'not_extracted' },
+        supersedesWorkVersionId: null, status: 'active' }
+      const result = await extractPaperEvidence(version, { academicWorkId, workVersionId, contentHash: 'synthetic-content',
+        sourceProvider: 'fixture', sourceUrl: 'https://example.org/synthetic', retrievedAt: '2026-09-15T00:00:00Z',
+        extractionMethod: { method: 'fixture', methodVersion: '1' },
+        focusQuestions: ['Which method?', 'Which architecture?'],
+        segments: [{ text: 'Uses Method X.', locator: { kind: 'paragraph', paragraphNumber: 1 } }] },
+      false, createModelEvidenceGenerator(ctx, agent.session,
+        { provider: 'academic-fixture', model: 'fixture', maxTokens: 500 }, { maxAttempts: 1 }),
+      { inclusionRules: [], exclusionRules: [] })
+      assert.equal(result.status, 'partially_extracted')
+      if (result.status !== 'partially_extracted') throw new Error('unexpected paper settlement')
+      assert.equal(result.evidence.evidenceRecords.length, 2)
+      assert.deepEqual(result.evidence.questionLinks.map(link => link.question), ['Which method?', 'Which architecture?'])
+      assert.deepEqual(result.evidence.rejectedDrafts, [{ draftIndex: 1, segmentIndex: 0,
+        code: 'EVIDENCE_EXCERPT_NOT_FOUND', reason: 'excerpt is not uniquely present outside segment 0' }])
+      assert.equal(result.evidence.evidenceCard.workVersionId, workVersionId)
+      assert.deepEqual(result.evidence.evidenceRecords[0]?.contentHash, { status: 'available', value: 'synthetic-content' })
+      const input: AcademicSynthesisInput = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
+      const limited = { ...input, brief: { ...input.brief,
+        evidenceRequirements: { ...input.brief.evidenceRequirements,
+          minimumIncludedWorks: config.limitedDraft ? 6 : input.brief.evidenceRequirements.minimumIncludedWorks } } }
+      const admission = prepareSynthesisInput(limited)
+      assert.equal(admission.status, config.limitedDraft ? 'ready_with_warning' : 'ready')
+      const draft = await createModelSynthesisGenerator(ctx, agent.session,
+        { provider: 'academic-fixture', model: 'fixture', maxTokens: 4096 },
+        { maxAttempts: 2, retryOutputLimit: true, retryInvalidOutput: true })(admission.input)
+      const analysis = synthesisAnalysis(admission.input, draft, '2026-09-20T00:00:00Z')
+      const report = generateReport({ brief: limited.brief, claims: analysis.claims, links: analysis.links,
+        evidence: input.analysisInput.evidenceRecords, versions: input.analysisInput.workVersions,
+        sourceLocators: input.analysisInput.sourceLocators, works: input.analysisInput.academicWorks,
+        reviews: [], assessedAt: '2026-09-20T00:00:00Z', limitations: draft.limitations,
+        mode: 'draft', synthetic: true, synthesis: draft, coverage: input.coverageSummary })
+      assert.equal(report.evaluation.status, config.limitedDraft ? 'blocked' : 'needs_review')
+      if (config.limitedDraft) {
+        assert.ok(report.markdown.includes('证据有限的研究草稿'))
+        assert.ok(report.markdown.includes('Plan 至少要求 6 篇'))
+      }
+      assert.equal(report.claims.length, 1)
+      assert.equal(report.evidence.length, 2)
+      assert.equal(draft.rejectedStatements.length, 1)
+      assert.equal(draft.rejectedStatements[0]?.statementIndex, 3)
+      assert.ok(report.limitations.some(message => message.includes('模型候选段落 4 未纳入报告')))
+      assert.ok(report.markdown.includes('逐题研究结论'))
+      assert.ok(report.markdown.includes('部分回答'))
+      await using reader = await ctx.sessionPersistence.open(agent.session.id, 'read')
+      const saved = (await reader.read()).events
+      assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-request').map(event => event.data.phase),
+        ['scope', 'evidence'])
+      assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-result').map(event => event.data.phase),
+        ['scope', 'evidence'])
+      assert.equal(saved.filter(event => event.type === 'academic/synthesis-request').length, 2)
+      assert.equal(saved.filter(event => event.type === 'academic/synthesis-result').length, 2)
+      if (config.invalidSynthesisFirst === true) {
+        const requests = saved.filter(event => event.type === 'academic/synthesis-request')
+        const results = saved.filter(event => event.type === 'academic/synthesis-result')
+        assert.equal(results[0]?.data.errorCode, 'SYNTHESIS_INVALID_MODEL_OUTPUT')
+        const content = requests[1]?.data.messages[0]?.content[0]
+        assert.equal(content?.type, 'text')
+        if (content?.type === 'text') {
+          assert.ok(content.text.includes('Section "limitations" statements and missing-evidence reason disagree.'))
+        }
+      }
+      const synthesis = saved.findLast(event => event.type === 'academic/synthesis-result')
+      assert.equal(synthesis?.data.status, 'partially_validated')
+      assert.deepEqual(synthesis?.data.rejectedStatements, draft.rejectedStatements)
+    }
+    return next()
+  })
+}

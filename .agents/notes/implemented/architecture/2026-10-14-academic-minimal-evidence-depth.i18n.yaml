@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-14-academic-minimal-evidence-depth.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-14-academic-minimal-evidence-depth.md
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction:
+  en: 95becafb57f19ef8
+  zh: 1dd898e40264d3f4
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction/problem:
+  en: 8a8ba6bad6dc31bb
+  zh: a50f4dc3f874c78c
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction/decision:
+  en: fc42f4c4113ff64a
+  zh: 985d00f26f337cc8
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction/alternatives-considered:
+  en: 12b4e2417e5eb4cf
+  zh: 21fb6a45a4912d8a
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction/consequences:
+  en: 117d309acda7ecb2
+  zh: b57f685bdb223ea4
+/agent-note-minimal-evidence-shares-source-verification-with-complete-extraction/verification:
+  en: ab196f5376075b92
+  zh: b88432d5c7a1628c

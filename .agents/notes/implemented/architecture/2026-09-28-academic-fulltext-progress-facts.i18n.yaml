@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-28-academic-fulltext-progress-facts.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-28-academic-fulltext-progress-facts.md
+/agent-note-academic-full-text-acquisition-publishes-per-candidate-progress-facts:
+  en: 4f96145a0f72df34
+  zh: c8958497ea092c83
+/agent-note-academic-full-text-acquisition-publishes-per-candidate-progress-facts/problem:
+  en: 9befefce03232acb
+  zh: 1f255654d1a12094
+/agent-note-academic-full-text-acquisition-publishes-per-candidate-progress-facts/decision:
+  en: 1a69056ce34189bf
+  zh: 48e64d77f4357421
+/agent-note-academic-full-text-acquisition-publishes-per-candidate-progress-facts/alternatives-considered:
+  en: 905cf891da2127ff
+  zh: 7eb53be3f9460141
+/agent-note-academic-full-text-acquisition-publishes-per-candidate-progress-facts/consequences:
+  en: e9b554d9c66224d0
+  zh: 0126aacf8a8422c5

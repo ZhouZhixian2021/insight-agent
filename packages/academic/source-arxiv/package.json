@@ -1,0 +1,34 @@
+{
+  "name": "@deepseek-ai/dsh-academic-source-arxiv",
+  "description": "arXiv scholarly-source provider (ctx.academicSource) that searches the public Atom /api/query endpoint and normalizes each entry into the shared academic model",
+  "version": "0.1.3-alpha.1",
+  "publishConfig": { "access": "public" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/academic/source-arxiv"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib/index.js", "lib/types/**/*.d.ts"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^",
+    "fast-xml-parser": "^5.7.3"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-academic-model": "workspace:^",
+    "@deepseek-ai/dsh-academic-source": "workspace:^"
+  }
+}

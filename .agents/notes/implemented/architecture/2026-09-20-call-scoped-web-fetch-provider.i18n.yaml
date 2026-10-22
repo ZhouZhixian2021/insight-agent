@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-20-call-scoped-web-fetch-provider.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-20-call-scoped-web-fetch-provider.md
+/agent-note-academic-full-text-uses-call-scoped-web-fetch-selection:
+  en: 2a3720c12d6936de
+  zh: 169d450dec753199
+/agent-note-academic-full-text-uses-call-scoped-web-fetch-selection/problem:
+  en: 3c68f3adfdad76d0
+  zh: fe039c62f3047879
+/agent-note-academic-full-text-uses-call-scoped-web-fetch-selection/decision:
+  en: c42908a85422cfbb
+  zh: 15470636947ce2d9
+/agent-note-academic-full-text-uses-call-scoped-web-fetch-selection/alternatives-considered:
+  en: dca6f35d0c0db1f6
+  zh: 6c6f9918edc50b44
+/agent-note-academic-full-text-uses-call-scoped-web-fetch-selection/consequences:
+  en: e46f106d1b1b4dab
+  zh: cd73a11172c2362d

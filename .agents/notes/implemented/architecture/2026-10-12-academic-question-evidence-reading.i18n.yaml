@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-12-academic-question-evidence-reading.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-12-academic-question-evidence-reading.md
+/agent-note-question-focused-reading-keeps-producer-evidence-immutable:
+  en: f2381e024aee9542
+  zh: 638e470118f6a4f6
+/agent-note-question-focused-reading-keeps-producer-evidence-immutable/problem:
+  en: ab996dfb2b066023
+  zh: e76acfe6939b474e
+/agent-note-question-focused-reading-keeps-producer-evidence-immutable/decision:
+  en: 971b652c12fff5c3
+  zh: a4794c2c93f71fc1
+/agent-note-question-focused-reading-keeps-producer-evidence-immutable/alternatives-considered:
+  en: 578bd68258ac3046
+  zh: 6736a6d263d90ac6
+/agent-note-question-focused-reading-keeps-producer-evidence-immutable/consequences:
+  en: 28a3acd6b984a1b4
+  zh: 3cc723a9b474c56e

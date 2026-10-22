@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-17-academic-run-viewer.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-17-academic-run-viewer.md
+/agent-note-session-backed-academic-run-viewer:
+  en: d19af45676ad1417
+  zh: 57e30b88cb4d2699
+/agent-note-session-backed-academic-run-viewer/problem:
+  en: 84a91d0b2d18992a
+  zh: 9f9235ebbf6f6924
+/agent-note-session-backed-academic-run-viewer/decision:
+  en: 7d787f9b62bd2e56
+  zh: 8296a15e38ff84d9
+/agent-note-session-backed-academic-run-viewer/alternatives-considered:
+  en: a0545f8eb4e63d1e
+  zh: 6214dc89e271e8f5
+/agent-note-session-backed-academic-run-viewer/consequences:
+  en: c8425da6033bef44
+  zh: 89980ebdeb4274cc
+/agent-note-session-backed-academic-run-viewer/verification:
+  en: 21b3df74dc0dbc01
+  zh: dd305b984ebf44f9

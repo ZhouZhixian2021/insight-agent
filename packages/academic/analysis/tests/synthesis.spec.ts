@@ -1,0 +1,206 @@
+import { readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
+import { compactSynthesisPrompt, parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, synthesisPrompt,
+  synthesisRepairPrompt, synthesisSections, type AcademicSynthesisInput } from '../src/index.ts'
+
+const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const input = (): AcademicSynthesisInput => JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
+const output = () => JSON.parse(readFileSync(new URL('synthesis-output.sample.json', samples), 'utf8')) as Record<string, unknown>
+interface Patch { op: 'replace' | 'remove'; path: string; value?: unknown }
+function patch<T>(value: T, operations: Patch[]): T {
+  for (const operation of operations) {
+    const keys = operation.path.split('/').slice(1), last = keys.pop()!
+    const parent = keys.reduce< unknown>((value, key) => (value as Record<string, unknown>)[key], value) as Record<string, unknown>
+    if (operation.op === 'remove') {
+      if (Array.isArray(parent)) parent.splice(Number(last), 1)
+      else Reflect.deleteProperty(parent, last)
+    } else parent[last] = operation.value
+  }
+  return value
+}
+const cases = JSON.parse(readFileSync(new URL('synthesis-cases.sample.json', samples), 'utf8')) as {
+  cases: { name: string
+    inputPatch: Patch[]
+    outputPatch: Patch[]
+    expected: { invokeSynthesis?: boolean; structuralValidation?: string; rejectedStatementIndexes?: number[] } }[]
+}
+
+describe('question-driven synthesis admission and model validation', () => {
+  it.each(cases.cases)('$name', (test) => {
+    const admission = prepareSynthesisInput(patch(input(), test.inputPatch))
+    if (test.expected.invokeSynthesis === false) { expect(admission.status).toBe('blocked'); return }
+    expect(admission.status).toBe('ready')
+    if (admission.status !== 'ready') throw new Error('Fixture admission failed')
+    const parse = () => parseSynthesisDraft(JSON.stringify(patch(output(), test.outputPatch)), admission.input)
+    if (test.expected.structuralValidation === 'rejected') expect(parse).toThrow()
+    else if (test.expected.structuralValidation === 'partial') {
+      const draft = parse()
+      expect(draft.rejectedStatements.map(item => item.statementIndex)).toEqual(test.expected.rejectedStatementIndexes)
+      expect(draft.statements).toHaveLength(2)
+      expect(draft.questionAnswers[0]?.status).toBe('unanswered')
+      expect(draft.questionAnswers[1]?.statementIndexes).toEqual([0])
+    } else {
+      const analysis = synthesisAnalysis(admission.input, parse(), '2026-09-20T00:00:00Z')
+      expect(analysis.claims).toHaveLength(1)
+      expect(analysis.claims[0]?.evidenceSnapshot.evidenceItems).toHaveLength(2)
+      expect(analysis.synthesis?.statements.filter(statement => statement.kind === 'source_statement')).toHaveLength(2)
+    }
+  })
+  it('rejects unsupported Plan requirements before a caller dispatches any request', () => {
+    const value = input()
+    for (const requirements of [ { language: 'en' }, { citationStyle: 'author_year' }, { requiredSections: ['invented'] },
+      { targetLength: { unit: 'words', minimum: null, maximum: null } } ] as const) {
+      expect(() => synthesisSections({ ...value.brief,
+        reportRequirements: { ...value.brief.reportRequirements, ...requirements } })).toThrow()
+    }
+  })
+  it('names every incompatible requirement and preserves the approved Brief', () => {
+    const brief = { ...input().brief, includedWorkTypes: ['conference_paper', 'journal_article'],
+      reportRequirements: { ...input().brief.reportRequirements, language: 'en', requiredSections: ['invented'] } }
+    const before = JSON.stringify(brief)
+    expect(() => synthesisSections(brief)).toThrow('includedWorkTypes=["conference_paper","journal_article"]')
+    expect(() => synthesisSections(brief)).toThrow('language="en"')
+    expect(() => synthesisSections(brief)).toThrow('requiredSections=["invented"]')
+    expect(JSON.stringify(brief)).toBe(before)
+  })
+  it('resolves explicit section aliases and describes the exact approved questions and evidence', () => {
+    const value = input()
+    const brief = { ...value.brief, reportRequirements: { ...value.brief.reportRequirements, requiredSections: ['research_scope', 'directions'] } }
+    expect(synthesisSections(brief)).toContain('technology_overview')
+    const prompt = synthesisPrompt(value)
+    expect(JSON.parse(prompt.split('INPUT_JSON\n')[1]!)).toEqual(value)
+    expect(prompt).toContain('untrusted data')
+    expect(prompt).toContain('Return at most 12 statements total and at most 2 statementIndexes per question.')
+    expect(prompt).toContain('Each statement may cite at most 3 representative evidence records.')
+    expect(prompt).toContain('Reuse the same statement across questionAnswers and sections')
+    expect(prompt).toContain('Do not enumerate evidence, plan quotas or explain your selection process')
+    expect(prompt).toContain('statementIndexes and missingReason are mutually exclusive')
+    expect(prompt).toContain('Non-empty statementIndexes require\nmissingReason:null')
+  })
+  it('renders a complete repair request with the exact structural diagnostic', () => {
+    const value = input()
+    const prompt = synthesisRepairPrompt(value,
+      'Section "limitations" statements and missing-evidence reason disagree.', false)
+    expect(prompt).toContain('structural-validation recovery request')
+    expect(prompt).toContain('Section "limitations" statements and missing-evidence reason disagree.')
+    expect(prompt).toContain('Regenerate the entire JSON object')
+    expect(JSON.parse(prompt.split('INPUT_JSON\n')[1]!)).toEqual(value)
+  })
+  it('retains citable materials while removing duplicate structures from output-limit recovery', () => {
+    const value = input(), complete = synthesisPrompt(value), compact = compactSynthesisPrompt(value)
+    const materials = JSON.parse(compact.split('INPUT_JSON\n')[1]!) as Record<string, unknown>
+    expect(compact.length).toBeLessThan(complete.length)
+    expect(materials).toMatchObject({ recoveryMode: 'output_limit_compact', brief: {
+      researchBriefId: value.brief.researchBriefId, questions: value.brief.questions,
+    }, analysisInput: { evidenceRecords: value.analysisInput.evidenceRecords.map(record => ({
+      evidenceId: record.evidenceId, academicWorkId: record.academicWorkId,
+      verbatimExcerpt: record.verbatimExcerpt, sourcedStatement: record.sourcedStatement,
+    })) } })
+    expect((materials.analysisInput as Record<string, unknown>).evidenceCards).toBeUndefined()
+    expect((materials.analysisInput as Record<string, unknown>).sourceLocators).toBeUndefined()
+    expect(compact).toContain('output-limit recovery request')
+  })
+  it('rejects a draft that exceeds the report or per-question statement bounds', () => {
+    const oversized = output()
+    const statements = oversized.statements as unknown[]
+    oversized.statements = Array.from({ length: 13 }, () => structuredClone(statements[0]))
+    expect(() => parseSynthesisDraft(JSON.stringify(oversized), input())).toThrow('At most 12 statements')
+    const crowded = output()
+    const answers = crowded.questionAnswers as { statementIndexes: number[] }[]
+    answers[0]!.statementIndexes = [0, 1, 2]
+    expect(() => parseSynthesisDraft(JSON.stringify(crowded), input())).toThrow('At most 2 statements')
+  })
+  it.each([
+    [{ op: 'replace', path: '/questionAnswers/0/questionIndex', value: 1 }],
+    [{ op: 'replace', path: '/questionAnswers/0/status', value: 'unanswered' }],
+    [{ op: 'replace', path: '/sections/0/statementIndexes', value: [0, 0] }],
+    [{ op: 'replace', path: '/limitations', value: [] }],
+  ] satisfies Patch[][])('rejects inconsistent statements or coverage: %j', (...operations) => {
+    expect(() => parseSynthesisDraft(JSON.stringify(patch(output(), operations)), input())).toThrow()
+  })
+  it('names the section whose statements conflict with its missing-evidence reason', () => {
+    const value = output()
+    patch(value, [{ op: 'replace', path: '/sections/5/statementIndexes', value: [0] }])
+    expect(() => parseSynthesisDraft(JSON.stringify(value), input()))
+      .toThrow('Section "limitations" statements and missing-evidence reason disagree.')
+  })
+  it('retains contradicting evidence and requires uncertainty', () => {
+    const value = output()
+    const operations: Patch[] = [{ op: 'replace', path: '/statements/0/evidenceLinks', value: [
+      { evidenceId: 'sample-evidence-1', relation: 'supports', rationale: 'support' },
+      { evidenceId: 'sample-evidence-2', relation: 'contradicts', rationale: 'opposes' },
+    ] }]
+    const draft = parseSynthesisDraft(JSON.stringify(patch(value, operations)), input())
+    expect(draft.statements[0]?.evidenceLinks[1]?.relation).toBe('contradicts')
+    patch(value, [{ op: 'replace', path: '/statements/0/uncertainty', value: null }])
+    const partial = parseSynthesisDraft(JSON.stringify(value), input())
+    expect(partial.rejectedStatements).toMatchObject([{ statementIndex: 0, reason: 'Opposing evidence requires explicit uncertainty.' }])
+    expect(partial.statements).toHaveLength(2)
+  })
+  it('preserves supported paragraphs and places background-only gaps outside the report conclusions', () => {
+    const draft = parseSynthesisDraft(readFileSync(new URL('synthesis-partial-output.sample.json', samples), 'utf8'), input())
+    expect(draft.statements).toHaveLength(3)
+    expect(draft.rejectedStatements).toMatchObject([{ statementIndex: 3, code: 'SYNTHESIS_INVALID_MODEL_OUTPUT' }])
+    const gap = draft.sections.find(section => section.sectionId === 'research_gaps')
+    expect(gap?.statementIndexes).toEqual([])
+    expect(gap?.missingReason).toContain('4')
+    expect(synthesisAnalysis(input(), draft, '2026-09-20T00:00:00Z').claims).toHaveLength(1)
+  })
+  it.each([
+    [{ op: 'replace', path: '/statements/2/evidenceLinks', value: [{ evidenceId: 'sample-evidence-1', relation: 'supports', rationale: 'only one paper' }] }],
+    [{ op: 'replace', path: '/statements/2/category', value: null }],
+    [{ op: 'remove', path: '/statements/2/text' }],
+  ] satisfies Patch[][])('quarantines invalid local paragraphs: %j', (...operations) => {
+    const draft = parseSynthesisDraft(JSON.stringify(patch(output(), operations)), input())
+    expect(draft.rejectedStatements.map(item => item.statementIndex)).toEqual([2])
+    expect(draft.statements).toHaveLength(2)
+    expect(draft.sections.find(section => section.sectionId === 'cross_paper_analysis')?.statementIndexes).toEqual([])
+  })
+  it('downgrades affected question coverage and remaps references without mutating admitted evidence', () => {
+    const materials = input(), before = structuredClone(materials)
+    const value = patch(output(), [
+      { op: 'replace', path: '/statements/0/evidenceLinks/0/evidenceId', value: 'unknown' },
+      { op: 'replace', path: '/questionAnswers/0/statementIndexes', value: [0, 2] },
+    ])
+    const draft = parseSynthesisDraft(JSON.stringify(value), materials)
+    expect(draft.questionAnswers[0]).toMatchObject({ status: 'partial', statementIndexes: [1] })
+    expect(draft.questionAnswers[0]?.reason).toContain('1')
+    expect(draft.questionAnswers[1]?.statementIndexes).toEqual([0])
+    expect(materials).toEqual(before)
+  })
+  it('returns explicit rejections when all paragraphs fail and still rejects corrupted whole responses', () => {
+    const value = patch(output(), [0, 1, 2].map(index => ({ op: 'replace', path: `/statements/${index}/evidenceLinks`, value: [] })))
+    const draft = parseSynthesisDraft(JSON.stringify(value), input())
+    expect(draft.statements).toEqual([])
+    expect(draft.rejectedStatements).toHaveLength(3)
+    expect(draft.questionAnswers.every(answer => answer.status === 'unanswered')).toBe(true)
+    expect(() => parseSynthesisDraft('{', input())).toThrow('complete JSON')
+    expect(() => parseSynthesisDraft(JSON.stringify({ ...output(), rejectedStatements: [] }), input())).toThrow('fields')
+  })
+})
+
+
+describe('insufficient evidence policy', () => {
+  it.each(['minimumIncludedWorks', 'minimumFulltextWorks'] as const)('admits a warned draft below %s without modifying the Brief', (field) => {
+    const value = input()
+    const brief = { ...value.brief, evidenceRequirements: { ...value.brief.evidenceRequirements, [field]: 6 } }
+    const request = { ...value, brief }, before = JSON.stringify(request)
+    const admission = prepareSynthesisInput(request)
+    expect(admission.status).toBe('ready_with_warning')
+    expect(admission.usableWorkIds).toHaveLength(2)
+    expect(synthesisPrompt(request)).toContain('Produce only a limited draft')
+    expect(synthesisPrompt(request)).toContain('Plan 至少要求 6 篇')
+    expect(JSON.stringify(request)).toBe(before)
+    const stopped = { ...request, brief: { ...brief, evidenceRequirements: {
+      ...brief.evidenceRequirements, insufficientEvidencePolicy: 'stop_for_review' as const } } }
+    expect(prepareSynthesisInput(stopped).status).toBe('blocked')
+    expect(() => synthesisPrompt(stopped)).toThrow('Synthesis is blocked')
+  })
+  it('blocks zero usable evidence even when the plan allows warnings and zero minima', () => {
+    const value = input()
+    const request = { ...value, brief: { ...value.brief, evidenceRequirements: { ...value.brief.evidenceRequirements,
+      minimumIncludedWorks: 0, minimumFulltextWorks: 0 } }, analysisInput: { ...value.analysisInput, evidenceCards: [] } }
+    expect(prepareSynthesisInput(request).status).toBe('blocked')
+    expect(() => synthesisPrompt(request)).toThrow('没有可用于洞察分析')
+  })
+})

@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/academic/model/README.md
+/:
+  en: 678476154fe7e48c
+  zh: 069dc6f6b0f1ed2f
+/deepseek-ai-dsh-academic-model:
+  en: 290d6e54c561b057
+  zh: 5480e8cbe1c13c74
+/deepseek-ai-dsh-academic-model/summary:
+  en: 3bd7ad142edf4ff4
+  zh: 788391ca2bcb4d25
+/deepseek-ai-dsh-academic-model/table-of-contents:
+  en: cd2a60a905c978d6
+  zh: b1b90ba1050b25f4
+/deepseek-ai-dsh-academic-model/use-this-package:
+  en: c9e780a82af012c7
+  zh: 54cc227024f42fa4
+/deepseek-ai-dsh-academic-model/api:
+  en: 0b407a92218496a8
+  zh: 9869f26b9eb5f57b
+/deepseek-ai-dsh-academic-model/model-experience:
+  en: aee4337a5a21e10a
+  zh: cde2d13b9cceda2e
+/deepseek-ai-dsh-academic-model/model-experience/kv-cache-effect:
+  en: a375aa19ca60ed8f
+  zh: 3bf8896d66ac4464
+/deepseek-ai-dsh-academic-model/known-limitations-and-deferred-work:
+  en: 7dc5cfe3bee98ea3
+  zh: 47d5c2eafdc61322
+/deepseek-ai-dsh-academic-model/known-limitations-and-deferred-work/dev-note:
+  en: 747a249790d7d427
+  zh: 19b3335072e412a9

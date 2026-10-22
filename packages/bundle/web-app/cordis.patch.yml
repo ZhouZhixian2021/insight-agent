@@ -37,6 +37,17 @@
     # once the web UI owns the choice per session.
     mode: !!js process.env.DSH_TOOLS_MODE
 
+# Academic full text is larger and slower than ordinary page retrieval. The
+# generic Web tool keeps its own shorter call budget; this provider budget lets
+# the Academic controller accept complete arXiv HTML before PDF fallback.
+- id: web-fetch-http
+  config:
+    maxResponseBytes: 10000000
+    maxBodyChars: 5000000
+    timeoutMs: 120000
+    maxRedirects: 5
+    userAgent: 'deepseek-harness/0.0.1 (+https://github.com/deepseek-ai)'
+
 # ── web-only host rows, the transport layer, and the browser roster ─────────
 
 # `dsh.client` rows are the browser roster the modules node half scans into
@@ -120,6 +131,62 @@
     # Session commands, cold reads, and live control over Typert Remote.
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
+
+    # One Session-backed Academic pass across every registered full-text source.
+    - id: academic-source
+      name: '@deepseek-ai/dsh-academic-source'
+      config:
+        searchProvider: arxiv
+        searchProviders:
+          - openalex
+          - arxiv
+        searchTimeoutMs: 25000
+
+    - id: academic-source-openalex
+      name: '@deepseek-ai/dsh-academic-source-openalex'
+      config:
+        maxAttempts: 2
+        retryDelayMs: 1000
+
+    - id: academic-source-arxiv
+      name: '@deepseek-ai/dsh-academic-source-arxiv'
+      config:
+        maxAttempts: 2
+        retryDelayMs: 3000
+
+    - id: academic-source-cvf
+      name: '@deepseek-ai/dsh-academic-source-cvf'
+      config:
+        catalogUrls:
+          - https://openaccess.thecvf.com/CVPR2025?day=all
+          - https://openaccess.thecvf.com/ICCV2025?day=all
+          - https://openaccess.thecvf.com/WACV2025?day=all
+
+    - id: academic-source-acl
+      name: '@deepseek-ai/dsh-academic-source-acl'
+      config:
+        catalogUrls:
+          - https://aclanthology.org/2025.acl-long/
+          - https://aclanthology.org/2025.emnlp-main/
+          - https://aclanthology.org/2025.naacl-long/
+
+    - id: academic-source-pmlr
+      name: '@deepseek-ai/dsh-academic-source-pmlr'
+      config:
+        catalogUrls:
+          - https://proceedings.mlr.press/v258/
+          - https://proceedings.mlr.press/v267/
+
+    - id: academic-research-controller
+      name: '@deepseek-ai/dsh-api-academic-research-controller'
+      config:
+        extractionMaxTokens: 16384
+        synthesisMaxTokens: 32768
+        extractionMaxAttempts: 2
+        extractionRetryInitialDelayMs: 10000
+        extractionBatchMaxInputTokens: 12000
+        extractionBatchOverlapCharacters: 512
+        extractionAttemptTimeoutMs: 150000
 
     # One background job's observation record streamed over Typert Remote;
     # the roster rides the session control stream above.
@@ -456,6 +523,11 @@
 
     - id: ui-trajectory
       name: '@deepseek-ai/dsh-client-ui-trajectory'
+
+    # Academic research entry: a Session-header action opening the run and
+    # enhancement panels over the academicResearch Remote.
+    - id: ui-academic-research
+      name: '@deepseek-ai/dsh-client-ui-academic-research'
 
 # ── the agent plane moves behind agent presets ─────────────────────────────
 #

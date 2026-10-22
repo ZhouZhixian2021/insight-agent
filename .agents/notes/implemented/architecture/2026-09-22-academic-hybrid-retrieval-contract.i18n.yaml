@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-22-academic-hybrid-retrieval-contract.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-22-academic-hybrid-retrieval-contract.md
+/agent-note-academic-hybrid-retrieval-separates-discovery-from-verification:
+  en: b4a57ac194012550
+  zh: 2efd70c05ec31225
+/agent-note-academic-hybrid-retrieval-separates-discovery-from-verification/problem:
+  en: 14fe588fe6b4c597
+  zh: 7f343c042d5e0f0a
+/agent-note-academic-hybrid-retrieval-separates-discovery-from-verification/decision:
+  en: 010e2fcacc409976
+  zh: 42fb610593269df7
+/agent-note-academic-hybrid-retrieval-separates-discovery-from-verification/alternatives-considered:
+  en: d47315caae8c4472
+  zh: 965de262cefd9475
+/agent-note-academic-hybrid-retrieval-separates-discovery-from-verification/consequences:
+  en: 6f87d8ccc90a1927
+  zh: 0e68618d5cc192a2

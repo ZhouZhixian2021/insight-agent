@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for 2026-09-11-academic-evidence-construction.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-academic-evidence-construction.md
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction:
+  en: 2d423d6e0890795e
+  zh: 7a31960dc9aeac3c
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/problem:
+  en: f09804de6bd5154a
+  zh: e80fb813a224f919
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/decision:
+  en: 6d982bb9603f83a1
+  zh: 846b105413d74fdc
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/level-locator-pairing:
+  en: 05f6a4e7434a7257
+  zh: 3f1b31ba66e431af
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/package-topology:
+  en: ac420ddc59e1bf9c
+  zh: c658bba70aec4dbf
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered:
+  en: 6119e2aff3b6be5a
+  zh: 76136ef5249c23eb
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/fold-construction-into-the-shared-model:
+  en: e870b20d99535f61
+  zh: 9d2c1dd5d6855ab0
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/validate-with-a-typescript-only-approach:
+  en: 357344ce576d7aee
+  zh: 2554f68124031b70
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/call-ctx-llm-inside-the-evidence-package:
+  en: abcdb4566bc57226
+  zh: 03f2756011684198
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/consume-the-model-facing-web-fetch-text:
+  en: c4e99858065cc800
+  zh: add5f504610d2e97
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/add-a-general-html-parser-abstraction:
+  en: 409424240167b3a6
+  zh: 1b905f915bdaa593
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/alternatives-considered/ship-a-built-in-keyword-extractor:
+  en: 998f1c54dd1840ca
+  zh: beb0a6fd3b4878d1
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/consequences:
+  en: 4199d14237ee9232
+  zh: babaf01b8b08ad2d
+/agent-note-academic-evidence-fetched-full-text-and-deterministic-construction/deferred-work:
+  en: 47df0beeed8ed662
+  zh: f30e4d3c516764c2

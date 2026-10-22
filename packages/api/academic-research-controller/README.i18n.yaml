@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/api/academic-research-controller/README.md
+/:
+  en: 6c1d787c7d5eb638
+  zh: 12ef50df9007a2b3
+/academic-research-controller:
+  en: 100d46fb581fcd01
+  zh: 1450c6343aa91ffe
+/academic-research-controller/summary:
+  en: 1def06a5be18f7bb
+  zh: e0e8508c6cbbf23f
+/academic-research-controller/table-of-contents:
+  en: 4e53164159b5ce41
+  zh: 7404b5f020808e91
+/academic-research-controller/use-this-package:
+  en: ed1b207630d99ff1
+  zh: 817742c653caeaab
+/academic-research-controller/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/academic-research-controller/model-experience/academic-research-run:
+  en: 2bac1d5549e130b5
+  zh: 365e909c6dab7bac
+/academic-research-controller/model-experience/academic-research-run/what-the-model-sees:
+  en: 9254a90f92059160
+  zh: 61c944fa2e53fcb1
+/academic-research-controller/model-experience/academic-research-run/token-effect:
+  en: 11c3fe2bd0369309
+  zh: 8bc5286f20e968c8
+/academic-research-controller/model-experience/academic-research-run/kv-cache-effect:
+  en: 565c797a0f987448
+  zh: adb43b31e3eea129
+/academic-research-controller/known-limitations-and-deferred-work:
+  en: ab79ba6f1561c41d
+  zh: 4f5330b8ad1c0b85
+/academic-research-controller/known-limitations-and-deferred-work/dev-note:
+  en: f44c9531520f7745
+  zh: 361aa944e4427748

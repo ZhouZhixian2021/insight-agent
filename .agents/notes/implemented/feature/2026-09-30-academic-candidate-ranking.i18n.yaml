@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-30-academic-candidate-ranking.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-30-academic-candidate-ranking.md
+/agent-note-reviewed-facts-drive-academic-candidate-ranking:
+  en: 638c0609493bbde2
+  zh: 932aab31be07e75e
+/agent-note-reviewed-facts-drive-academic-candidate-ranking/problem:
+  en: 9dd182526f72905f
+  zh: 91ba4e1b5668a3e0
+/agent-note-reviewed-facts-drive-academic-candidate-ranking/decision:
+  en: 54b9ac055fb296cc
+  zh: 60dd1be1f8f51741
+/agent-note-reviewed-facts-drive-academic-candidate-ranking/alternatives-considered:
+  en: def1c1411904cb6b
+  zh: 040599bfee21d995
+/agent-note-reviewed-facts-drive-academic-candidate-ranking/consequences:
+  en: c75171097b1c1377
+  zh: 13b4c712a05b3e60

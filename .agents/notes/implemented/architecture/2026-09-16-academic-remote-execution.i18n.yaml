@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-16-academic-remote-execution.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-16-academic-remote-execution.md
+/agent-note-academic-remote-execution:
+  en: 78a661b7bed6a756
+  zh: 23edb1b027ffaec0
+/agent-note-academic-remote-execution/problem:
+  en: b5d5859dcdf18f08
+  zh: 86c126c630b161cb
+/agent-note-academic-remote-execution/decision:
+  en: 5e5c909976cbe20f
+  zh: e851ed6c967db9e7
+/agent-note-academic-remote-execution/alternatives-considered:
+  en: 82ba4407502bdbdb
+  zh: 102a258965f1691a
+/agent-note-academic-remote-execution/consequences:
+  en: 8334c76a160653dd
+  zh: b98e334574827ee4

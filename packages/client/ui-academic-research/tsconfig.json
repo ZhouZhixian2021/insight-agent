@@ -1,0 +1,41 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    { "path": "../ui-session" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../academic/report"
+    },
+    {
+      "path": "../locale/tsconfig.client.json"
+    },
+    {
+      "path": "../ui-renderer"
+    },
+    {
+      "path": "../ui-sidebar"
+    },
+    {
+      "path": "../ui-slots"
+    },
+    {
+      "path": "../ui-primitives"
+    },
+    {
+      "path": "../../api/academic-research-controller"
+    },
+    {
+      "path": "../../academic/model"
+    }
+  ]
+}

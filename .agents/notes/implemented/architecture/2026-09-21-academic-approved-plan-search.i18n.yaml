@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-21-academic-approved-plan-search.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-21-academic-approved-plan-search.md
+/agent-note-search-from-the-approved-academic-plan:
+  en: bb04aea5175dfb57
+  zh: 910390198ea945b3
+/agent-note-search-from-the-approved-academic-plan/problem:
+  en: 1ce5884be1553631
+  zh: a1dd9bbf1f98a9cc
+/agent-note-search-from-the-approved-academic-plan/decision:
+  en: 8c130d2732cafea1
+  zh: 62bce84a7fe54c3d
+/agent-note-search-from-the-approved-academic-plan/alternatives-considered:
+  en: 1314d808c41cfcff
+  zh: 1f828fb8b4dfa628
+/agent-note-search-from-the-approved-academic-plan/consequences:
+  en: 4ebd805f2aae0e3e
+  zh: dded18a7b8fb61cc

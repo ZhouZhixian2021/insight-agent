@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-10-academic-plan-rule-granularity.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-10-10-academic-plan-rule-granularity.md
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage:
+  en: 190f87796462e29b
+  zh: 64647524f210ddb6
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage/problem:
+  en: 637b3e841821eb32
+  zh: fcaee1c2cc7abfd2
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage/decision:
+  en: 0dadae8585379660
+  zh: 5e014e0711937999
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage/alternatives-considered:
+  en: 1fcf696578a10f01
+  zh: 46a4a0ea9b0e56e8
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage/consequences:
+  en: f5125215c9cd1813
+  zh: 5567ac3f255613d3
+/agent-note-academic-plans-separate-paper-eligibility-from-collection-coverage/testing:
+  en: 67d3dd0db2669ff1
+  zh: ed292d8f9314a604

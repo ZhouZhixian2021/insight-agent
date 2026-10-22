@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-29-academic-query-planning-candidate-ranking-contract.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-29-academic-query-planning-candidate-ranking-contract.md
+/agent-note-academic-query-planning-and-candidate-ranking-contract:
+  en: 968f62720dc5bf8e
+  zh: 77c6386cc0c41873
+/agent-note-academic-query-planning-and-candidate-ranking-contract/problem:
+  en: 3f0bab7394f40340
+  zh: a2409fa9c6c887cd
+/agent-note-academic-query-planning-and-candidate-ranking-contract/decision:
+  en: 0389b6cd1fee4626
+  zh: addf10154c2bb89b
+/agent-note-academic-query-planning-and-candidate-ranking-contract/consequences:
+  en: 0abb77866a709bd9
+  zh: 88c295af5550949a
+/agent-note-academic-query-planning-and-candidate-ranking-contract/verification:
+  en: 3c9019300a0002d5
+  zh: 9a6dbe1205f9fe7f
+/agent-note-academic-query-planning-and-candidate-ranking-contract/alternatives-considered:
+  en: de05314564b87d80
+  zh: b429bd813f075235

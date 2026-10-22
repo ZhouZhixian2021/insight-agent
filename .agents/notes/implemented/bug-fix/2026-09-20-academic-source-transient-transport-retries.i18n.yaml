@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-20-academic-source-transient-transport-retries.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-20-academic-source-transient-transport-retries.md
+/agent-note-academic-source-providers-bound-transient-transport-retries:
+  en: 5488e46ce7395e0c
+  zh: a8013a902e2166f6
+/agent-note-academic-source-providers-bound-transient-transport-retries/problem:
+  en: a6c85f99596a433e
+  zh: 47738d22060821b1
+/agent-note-academic-source-providers-bound-transient-transport-retries/decision:
+  en: aaf1edc9337eade0
+  zh: b8a5caa453c62c78
+/agent-note-academic-source-providers-bound-transient-transport-retries/alternatives-considered:
+  en: abc21fc2d7764d64
+  zh: 13f49c23299d7c17
+/agent-note-academic-source-providers-bound-transient-transport-retries/consequences:
+  en: 8830ddfaf70634a9
+  zh: 858f1018f33e5e7c

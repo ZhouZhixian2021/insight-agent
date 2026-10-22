@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-30-academic-ranked-candidate-batch-scheduling.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-30-academic-ranked-candidate-batch-scheduling.md
+/agent-note-academic-ranked-candidate-batch-scheduling:
+  en: d8c12a79c6690098
+  zh: 67775f953e74d1c1
+/agent-note-academic-ranked-candidate-batch-scheduling/problem:
+  en: 352310f3ced0ed32
+  zh: c67ed530575a60cd
+/agent-note-academic-ranked-candidate-batch-scheduling/decision:
+  en: 136489e8a12bbc8b
+  zh: 29af22eed015059e
+/agent-note-academic-ranked-candidate-batch-scheduling/consequences:
+  en: e8f4cb5169f609df
+  zh: bf2eaad26f55e731
+/agent-note-academic-ranked-candidate-batch-scheduling/verification:
+  en: 5fd5adbea499c71e
+  zh: 0149a098a3091200
+/agent-note-academic-ranked-candidate-batch-scheduling/alternatives-considered:
+  en: 43e2f63379ab1448
+  zh: 5e8e976d735448fd

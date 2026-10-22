@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for 2026-09-15-academic-paper-handoff.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-15-academic-paper-handoff.md
+/agent-note-academic-paper-hash-handoff:
+  en: cd49d4bb5e141fe4
+  zh: d2d89164e4aa1942
+/agent-note-academic-paper-hash-handoff/problem:
+  en: 7413111aaf03faa1
+  zh: 7edebc74e08813cb
+/agent-note-academic-paper-hash-handoff/decision:
+  en: e68a80555ab68eb3
+  zh: ccecbb14b1682d04
+/agent-note-academic-paper-hash-handoff/alternatives-considered:
+  en: f8f62366689bf3ba
+  zh: 10c788231b23fc76
+/agent-note-academic-paper-hash-handoff/pipeline:
+  en: b2a791c0d1d50ba8
+  zh: 462157cc9fcb4987
+/agent-note-academic-paper-hash-handoff/consequences:
+  en: f8653877dd740514
+  zh: fb7c4738990b0371
+/agent-note-academic-paper-hash-handoff/testing:
+  en: 0af0095e3af5f434
+  zh: c2fbe2b41260124b

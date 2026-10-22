@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for 2026-09-11-academic-source-provider-normalization.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-academic-source-provider-normalization.md
+/agent-note-academic-source-provider-normalization-arxiv:
+  en: b718d3d42b5b9ef6
+  zh: c9e7b4248e36fbf3
+/agent-note-academic-source-provider-normalization-arxiv/problem:
+  en: 17c9c41e4cd5b9f3
+  zh: 19e7b0addb707dc8
+/agent-note-academic-source-provider-normalization-arxiv/decision:
+  en: 8a13ce12f8c60ae4
+  zh: 6b833f6b69ba8cce
+/agent-note-academic-source-provider-normalization-arxiv/package-topology:
+  en: 3389dc86696cf0d0
+  zh: ef2a51c2a6439d4a
+/agent-note-academic-source-provider-normalization-arxiv/alternatives-considered:
+  en: 6119e2aff3b6be5a
+  zh: 76136ef5249c23eb
+/agent-note-academic-source-provider-normalization-arxiv/alternatives-considered/one-combined-multi-provider-package:
+  en: 5afb8ce3e663011a
+  zh: d97eaf13c3d3882b
+/agent-note-academic-source-provider-normalization-arxiv/alternatives-considered/reuse-a-single-cross-provider-doi-normalizer:
+  en: 44f07886e7e89a49
+  zh: 17e3aab17bf12e56
+/agent-note-academic-source-provider-normalization-arxiv/consequences:
+  en: 68ac983118c35db1
+  zh: adb3fd61873a02de
+/agent-note-academic-source-provider-normalization-arxiv/deferred-work:
+  en: 6213fd707cee0047
+  zh: 649df2a137961582

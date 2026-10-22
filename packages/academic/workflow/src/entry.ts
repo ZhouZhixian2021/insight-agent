@@ -1,0 +1,90 @@
+/** Stable application entry for one Academic research draft pass. */
+import type { Context } from '@deepseek-ai/cordis'
+import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
+import type { Session, SessionId } from '@deepseek-ai/dsh-session'
+import { synthesisSections } from '@deepseek-ai/dsh-academic-analysis'
+import type { EvidenceExtractionInput, EvidenceExtractionResult, EvidenceFragmentResult } from '@deepseek-ai/dsh-academic-evidence'
+import { runModelResearchDraft } from './model-pipeline.ts'
+import { createModelFragmentEvidenceEnhancer } from './fragment-model.ts'
+import type { AcademicModelPolicies } from './model-types.ts'
+import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
+
+/** All caller-owned inputs for one bounded Academic research run. */
+export interface AcademicResearchDraftRequest {
+  /** DSH context containing the model, token, Session and persistence services. */
+  readonly ctx: Context
+  /** Live Session used for durable Academic model-call records. */
+  readonly session: Session
+  /** Exact model route and generation controls; omitted reasoning uses the model route default. */
+  readonly model: LlmCallConfig
+  /** Optional output controls for final synthesis on the same selected model route. */
+  readonly synthesisModel?: LlmCallConfig
+  /** Separate bounded recovery policies for evidence extraction and final synthesis. */
+  readonly modelPolicies: AcademicModelPolicies
+  /** Approved Brief, search request and synthetic-data disclosure. */
+  readonly input: DraftPipelineInput
+  /** Search, selection, full-text acquisition and clock integrations. */
+  readonly adapters: Omit<DraftPipelineAdapters, 'generator' | 'synthesize'>
+  /** Caller-owned cancellation and elapsed-time budget. */
+  readonly signal?: AbortSignal
+}
+
+/** One pipeline and retrieval result together with the Session that owns its model records. */
+export interface AcademicResearchDraftResult extends DraftPipelineResult {
+  readonly sessionId: SessionId
+}
+
+/**
+ * Run the formal B → A → B → C Academic draft pipeline entry.
+ * Model capability is checked before search or acquisition begins. An omitted
+ * reasoning effort uses the model route default; an explicit caller choice is preserved.
+ * @param request - complete application-owned dependencies and research input.
+ * @returns the draft and terminal retrieval result with its durable model-record Session identity.
+ * @throws when the model route or requested reasoning effort is unsupported,
+ * or when the underlying pipeline cannot safely continue.
+ */
+export async function runAcademicResearchDraft(
+  request: AcademicResearchDraftRequest,
+): Promise<AcademicResearchDraftResult> {
+  synthesisSections(request.input.brief)
+  const llm = request.ctx.get('llm')
+  if (!llm) throw new Error('Academic research requires the DSH llm service.')
+  const model = await llm.resolveCallConfig(request.model, request.signal)
+  const synthesisModel = request.synthesisModel === undefined ? model
+    : await llm.resolveCallConfig(request.synthesisModel, request.signal)
+  const result = await runModelResearchDraft(
+    request.ctx,
+    request.session,
+    model,
+    request.modelPolicies,
+    request.input,
+    request.adapters,
+    request.signal,
+    synthesisModel,
+  )
+  return { ...result, sessionId: request.session.id }
+}
+
+/** Caller-selected second-tier extraction of one paper after the first-tier draft has settled. */
+export interface AcademicEvidenceEnhancementRequest {
+  readonly ctx: Context
+  readonly session: Session
+  readonly model: LlmCallConfig
+  readonly policy: AcademicModelPolicies['evidence']
+  readonly source: EvidenceExtractionInput
+  readonly initial: EvidenceExtractionResult
+  readonly signal?: AbortSignal
+}
+
+/**
+ * Supplement already committed evidence without changing the first-tier draft.
+ * @param request Selected paper, its exact source and committed evidence in the owning Session.
+ * @returns Committed additions and remaining ranges; a failed fragment retains the original evidence.
+ */
+export async function runAcademicEvidenceEnhancement(request: AcademicEvidenceEnhancementRequest): Promise<EvidenceFragmentResult> {
+  const llm = request.ctx.get('llm')
+  if (!llm) throw new Error('Academic evidence enhancement requires the DSH llm service.')
+  const model = await llm.resolveCallConfig(request.model, request.signal)
+  return createModelFragmentEvidenceEnhancer(request.ctx, request.session, model, request.policy)(
+    request.source, request.initial, request.signal)
+}

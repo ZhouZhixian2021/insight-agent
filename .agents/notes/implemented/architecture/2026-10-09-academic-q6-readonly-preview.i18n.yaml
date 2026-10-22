@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-09-academic-q6-readonly-preview.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-09-academic-q6-readonly-preview.md
+/agent-note-q6-keeps-synthetic-preview-separate-from-formal-run-projections:
+  en: 7c4def0e8a9e5644
+  zh: bbfd1b32d0a957ef
+/agent-note-q6-keeps-synthetic-preview-separate-from-formal-run-projections/problem:
+  en: d8fb83500cffd29d
+  zh: c8621c005babb14c
+/agent-note-q6-keeps-synthetic-preview-separate-from-formal-run-projections/decision:
+  en: 1e26d8c223f2d026
+  zh: bb225f554bc1c4da
+/agent-note-q6-keeps-synthetic-preview-separate-from-formal-run-projections/alternatives-considered:
+  en: f2169d632d45914f
+  zh: d32fa81fa67f3c4b
+/agent-note-q6-keeps-synthetic-preview-separate-from-formal-run-projections/consequences:
+  en: ea9fca62d4310ce1
+  zh: 3cd2798a029c7165

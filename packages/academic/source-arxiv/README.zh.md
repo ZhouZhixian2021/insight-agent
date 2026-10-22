@@ -1,0 +1,94 @@
+---
+description: "学术来源 seam（ctx.academicSource）的 arXiv 学术来源提供方：搜索公开的 Atom /api/query 端点并把每条条目规范化进共享学术模型。"
+kind: "package-reference"
+---
+
+# @deepseek-ai/dsh-academic-source-arxiv
+
+[English](README.md) | 中文
+
+## 概述
+
+`dsh-academic-source-arxiv` 向 `ctx.academicSource` 注册 `arxiv` 提供方，并搜索公开的 arXiv Atom `/api/query` 端点。每条条目成为预印本 `AcademicWork`/`WorkVersion` 对：成果携带用于合并的 arXiv 基础 id 与可选 DOI，版本保留带 `vN` 的记录 id、标签与更新时间。
+
+`verifyReference()` 通过 `id_list` 查询单个 arXiv ID，并核对返回的 ID；明确指定 `vN` 时必须匹配该版本。它返回规范化记录及 HTML/PDF 候选，不下载全文。
+
+检索与 ID 核验把 Atom `summary` 保留为学术摘要，把 `category` 词项保留为主题关键词，存入记录的 `metadata`。缺失字段保持未知；主题分类不等于作者提供的贡献类型。
+
+## 目录
+
+- [使用本包](#use-this-package)
+- [API](#api)
+- [模型体验](#model-experience)
+- [已知限制与延后工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
+
+-----
+
+<a id="use-this-package"></a>
+## 使用本包
+
+同时加载 seam 与本提供方；未注册其他提供方时，`search()` 会自动选择 `arxiv`。
+
+```yaml
+- name: '@deepseek-ai/dsh-academic-source'
+- name: '@deepseek-ai/dsh-academic-source-arxiv'
+```
+
+| 字段 | 默认值 | 含义 |
+|---|---|---|
+| `baseURL` | `https://export.arxiv.org` | arXiv export API 基址；会追加 `/api/query`。 |
+| `maxAttempts` | `1` | 连接失败后的总尝试次数；有效范围为 `1`–`3`。 |
+| `retryDelayMs` | `0` | 再次连接前的等待毫秒数；最大为 `30000`。 |
+
+提供方构造 `GET {baseURL}/api/query?search_query=all:{query}&max_results={maxResults}`，解析 Atom feed，并把每条条目通过 `normalizeArxivWork()` 映射。连接失败可在配置的尝试次数内重新发起；收到 HTTP 响应、解析失败、限流或调用方取消时都不会重试。当 feed 的 `<opensearch:totalResults>` 超过实际返回的条目数时 `truncated` 为 true；seam 自身的 `maxResults` 截断另行标记。把条目 id 传给 `arxivFullTextUrls()`，即可得到供 `fetchAcademicFullText()` 使用的首选 `/pdf/{id}` URL 与 `/html/{id}` 回退 URL，避免首先下载体积很大的 HTML 页面。
+
+-----
+
+<a id="api"></a>
+## API
+
+| 导出 | 角色 |
+|---|---|
+| `ArxivProvider` | 以 id `arxiv` 注册的 `AcademicSourceProvider` 实现。 |
+| `ArxivProviderOptions` | 一次搜索使用的已解析端点。 |
+| `parseArxivFeed()` | 把 Atom feed 正文解析为提炼后的条目与 feed 的 `totalResults` 计数。 |
+| `normalizeArxivWork()` | 把一条 arXiv 条目转换为成果/版本对。 |
+| `arxivFullTextUrls()` | 从 arXiv id 推导版本对应的 HTML 与 PDF 全文 URL。 |
+| `ArxivRawWork` | 规范化器消费的提炼后 arXiv 条目字段。 |
+| `ArxivFeedResult` | 解析结果：提炼后的条目与上游 `totalResults` 计数。 |
+
+插件入口还导出 `name`、`inject`、`Config` 与 `apply`。
+
+-----
+
+<a id="model-experience"></a>
+## 模型体验
+
+间接通过未来把规范化成果渲染进模型可见上下文的检索或工作流消费方体现；本提供方不贡献任何提示词或 schema。
+
+#### KV Cache 影响
+
+无直接失效；消费方负责记录排序与序列化进提示词。
+
+## 已知限制与延后工作
+
+<a id="known-limitations-and-deferred-work"></a>
+
+- **网络重试有界且需显式启用**——默认只发送一次请求；组合可以为连接失败配置最多三次尝试。`429`、`5xx` 和异常 Atom 响应不会重试。
+- **无分页**——arXiv 用 `max_results` 限制每次查询；更大的结果集需要基于 `start` 的分页。
+- **一律视为预印本**——arXiv 不暴露正式出版版；该关联通过可选 DOI 建立。
+- **全文解析留在 evidence 包中**——本来源提供方只推导 arXiv URL，不抓取或解析其 HTML/PDF 正文。
+- **`available()` 只看端点**——arXiv 无需密钥。
+
+<a id="dev-note"></a>
+### 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>
+
+**运行时不变量：** 不发布配套。本提供方除了已解析的选项外不拥有事件流或可变运行时数据；针对录制 Atom feed 与 stub 化 `fetch` 的聚焦单元测试固定了解析、wire 映射、查询构造与错误码。

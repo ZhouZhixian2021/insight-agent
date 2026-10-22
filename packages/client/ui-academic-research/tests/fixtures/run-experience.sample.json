@@ -1,0 +1,645 @@
+{
+  "synthetic": true,
+  "sampleSchemaVersion": 1,
+  "runs": [
+    {
+      "id": "demo-running",
+      "status": "running",
+      "elapsedMinutes": 23,
+      "cancellationReason": null,
+      "connected": true,
+      "currentWork": "preview-paper-07 / evidence segment / bounded retry",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "running",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "pending",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "pending",
+          "input": 12,
+          "output": 0,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 12,
+        "usable": 2,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [
+        "Only two partially usable papers are available.",
+        "The summary does not establish that minimum paper and full-text requirements were met."
+      ],
+      "report": {
+        "state": "not_generated",
+        "markdown": null
+      }
+    },
+    {
+      "id": "demo-paused",
+      "status": "paused",
+      "elapsedMinutes": 23,
+      "cancellationReason": null,
+      "connected": false,
+      "currentWork": "Waiting for an explicit continuation decision",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "partial_success",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "partial_success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "pending",
+          "input": 12,
+          "output": 0,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 12,
+        "usable": 2,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [
+        "Only two partially usable papers are available.",
+        "The summary does not establish that minimum paper and full-text requirements were met."
+      ],
+      "report": {
+        "state": "draft",
+        "markdown": "# Synthetic limited-report preview\n\nThis draft exists only for UI development, not research delivery.\n\n- Partially usable papers: 2\n- Validated evidence in the scenario: 12\n- Questions with scenario evidence: 4/4\n- Minimum paper and full-text requirements are not established.\n- Human semantic review has not been performed.\n"
+      }
+    },
+    {
+      "id": "demo-completed",
+      "status": "completed",
+      "elapsedMinutes": 23,
+      "cancellationReason": null,
+      "connected": false,
+      "currentWork": "Fixed recorded settlement",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "success",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "success",
+          "input": null,
+          "output": 8,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "success",
+          "input": 12,
+          "output": 1,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 25,
+        "usable": 8,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [],
+      "report": {
+        "state": "draft",
+        "markdown": "# Synthetic limited-report preview\n\nThis draft exists only for UI development, not research delivery.\n\n- Usable papers in the scenario: 8\n- Validated evidence in the scenario: 25\n- Questions with scenario evidence: 4/4\n- No unmet requirements were recorded in this synthetic scenario.\n- Human semantic review has not been performed.\n"
+      }
+    },
+    {
+      "id": "demo-completed_with_limitations",
+      "status": "completed_with_limitations",
+      "elapsedMinutes": 23,
+      "cancellationReason": null,
+      "connected": false,
+      "currentWork": "Fixed recorded settlement",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "partial_success",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "partial_success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "success",
+          "input": 12,
+          "output": 1,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 12,
+        "usable": 2,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [
+        "Only two partially usable papers are available.",
+        "The summary does not establish that minimum paper and full-text requirements were met."
+      ],
+      "report": {
+        "state": "draft",
+        "markdown": "# Synthetic limited-report preview\n\nThis draft exists only for UI development, not research delivery.\n\n- Partially usable papers: 2\n- Validated evidence in the scenario: 12\n- Questions with scenario evidence: 4/4\n- Minimum paper and full-text requirements are not established.\n- Human semantic review has not been performed.\n"
+      }
+    },
+    {
+      "id": "demo-failed",
+      "status": "failed",
+      "elapsedMinutes": 23,
+      "cancellationReason": null,
+      "connected": false,
+      "currentWork": "Report generation failed; earlier evidence retained",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "partial_success",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "partial_success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "failed",
+          "input": 12,
+          "output": 0,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 12,
+        "usable": 2,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [
+        "Only two partially usable papers are available.",
+        "The summary does not establish that minimum paper and full-text requirements were met."
+      ],
+      "report": {
+        "state": "failed",
+        "markdown": null
+      }
+    },
+    {
+      "id": "demo-cancelled",
+      "status": "cancelled",
+      "elapsedMinutes": 64,
+      "cancellationReason": "unknown",
+      "connected": false,
+      "currentWork": "Fixed recorded settlement",
+      "stages": [
+        {
+          "phase": "discovery",
+          "status": "success",
+          "input": null,
+          "output": 70,
+          "unit": "records",
+          "reasons": []
+        },
+        {
+          "phase": "verification",
+          "status": "success",
+          "input": 70,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Verification totals were not supplied in the incident summary."
+          ]
+        },
+        {
+          "phase": "screening",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Screening totals and exclusion details are unknown; no count is inferred."
+          ]
+        },
+        {
+          "phase": "ranking",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "The candidate limit is 30; it is not the number that passed ranking."
+          ]
+        },
+        {
+          "phase": "fulltext",
+          "status": "partial_success",
+          "input": 20,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Full-text success count is unknown; scheduled papers are not downloaded papers."
+          ]
+        },
+        {
+          "phase": "extraction",
+          "status": "partial_success",
+          "input": 20,
+          "output": 12,
+          "unit": "evidence",
+          "reasons": [
+            "One segment timeout does not erase already validated evidence."
+          ]
+        },
+        {
+          "phase": "inclusion",
+          "status": "partial_success",
+          "input": null,
+          "output": null,
+          "unit": "papers",
+          "reasons": [
+            "Two papers are partially usable; they are not confirmed final inclusions."
+          ]
+        },
+        {
+          "phase": "report",
+          "status": "not_run",
+          "input": 12,
+          "output": 0,
+          "unit": "reports",
+          "reasons": [
+            "Question coverage and process completion do not imply report approval."
+          ]
+        }
+      ],
+      "counts": {
+        "discovered": 70,
+        "candidateLimit": 30,
+        "scheduled": 20,
+        "processed": null,
+        "failed": null,
+        "evidence": 12,
+        "usable": 2,
+        "coveredQuestions": 4,
+        "totalQuestions": 4
+      },
+      "unmetRequirements": [
+        "Only two partially usable papers are available.",
+        "The summary does not establish that minimum paper and full-text requirements were met."
+      ],
+      "report": {
+        "state": "not_generated",
+        "markdown": null
+      }
+    }
+  ]
+}

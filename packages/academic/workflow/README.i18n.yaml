@@ -1,0 +1,61 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/academic/workflow/README.md
+/:
+  en: 89a704135caa3197
+  zh: 932d3ba83cbad61a
+/deepseek-ai-dsh-academic-workflow:
+  en: e5dac98197ab91c6
+  zh: f69bcc8601ec22de
+/deepseek-ai-dsh-academic-workflow/summary:
+  en: a9a4ee5ac399e626
+  zh: 381c81308affbba0
+/deepseek-ai-dsh-academic-workflow/table-of-contents:
+  en: d4e9596852e22009
+  zh: dccc03b6e4f30be4
+/deepseek-ai-dsh-academic-workflow/use-this-package:
+  en: 64c344304e2b040a
+  zh: 7aac71b08a3b04ad
+/deepseek-ai-dsh-academic-workflow/bounded-research-draft:
+  en: 290214c70f2ff780
+  zh: 1537cb434cec79f8
+/deepseek-ai-dsh-academic-workflow/model-response-validation:
+  en: 323aad63d2464008
+  zh: a020acbb5b8ebc0d
+/deepseek-ai-dsh-academic-workflow/session-backed-model-extraction:
+  en: 1ef1b1abaaf1b693
+  zh: ba0a57b628543ac8
+/deepseek-ai-dsh-academic-workflow/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/deepseek-ai-dsh-academic-workflow/model-experience/session-backed-model-extraction:
+  en: 5c104ea2bf6fa1a3
+  zh: 62fed8648e07dd12
+/deepseek-ai-dsh-academic-workflow/model-experience/session-backed-model-extraction/what-the-model-sees:
+  en: 474af56b6491a3ff
+  zh: f1aa08314f22d4be
+/deepseek-ai-dsh-academic-workflow/model-experience/session-backed-model-extraction/token-effect:
+  en: 884ff27d6c95d66e
+  zh: 242398d9ffd22dd6
+/deepseek-ai-dsh-academic-workflow/model-experience/session-backed-model-extraction/kv-cache-effect:
+  en: 025f6640c5b22009
+  zh: 137f1f9a2d5e60a3
+/deepseek-ai-dsh-academic-workflow/model-experience/evidence-handoff:
+  en: 4b204e26d915da90
+  zh: 4b204e26d915da90
+/deepseek-ai-dsh-academic-workflow/model-experience/evidence-handoff/what-the-model-sees:
+  en: 94ba6a94be99eb35
+  zh: f910a7bef1d3c3b9
+/deepseek-ai-dsh-academic-workflow/model-experience/evidence-handoff/token-effect:
+  en: 8933842d4c5f4423
+  zh: 6a5fb938b3980d42
+/deepseek-ai-dsh-academic-workflow/model-experience/evidence-handoff/kv-cache-effect:
+  en: efe380e5cb466d5d
+  zh: ee5f1ff0ee629fc5
+/deepseek-ai-dsh-academic-workflow/known-limitations-and-deferred-work:
+  en: ec4e471d57dfc5db
+  zh: def9ca0f93724488
+/deepseek-ai-dsh-academic-workflow/known-limitations-and-deferred-work/dev-note:
+  en: f55bfa43936f5d23
+  zh: e5dcdc804ba0a384

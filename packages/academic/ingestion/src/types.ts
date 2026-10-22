@@ -1,0 +1,117 @@
+/**
+ * Vocabulary for the academic ingestion library: deduplication keys, the in-memory
+ * deduplication index, and the per-record audit. It is a library, not a Cordis service or
+ * plugin; the durable mapping record and merge-audit persistence remain a later increment.
+ * @module @deepseek-ai/dsh-academic-ingestion/types
+ */
+
+import type {
+  AcademicWork,
+  Availability,
+  AcademicWorkId,
+  ExternalIdentifierDedupKey,
+  WorkVersion,
+  WorkVersionId,
+  SearchQueryId,
+} from '@deepseek-ai/dsh-academic-model'
+
+/** One provider-produced work/version pair handed to ingestion. */
+export interface IngestRecord {
+  readonly academicWork: AcademicWork
+  readonly workVersion: WorkVersion
+  /** Trusted scholarly metadata tied to this record's version, never Web discovery text. */
+  readonly metadata?: {
+    readonly abstract: Availability<string>
+    readonly keywords: Availability<readonly string[]>
+  }
+  /** Planned queries that discovered this record; retained when duplicate versions merge. */
+  readonly discoveredBy?: readonly SearchQueryId[]
+  /** Web URLs that led to this version after an Academic Provider verified the reference. */
+  readonly verifiedDiscoveries?: readonly {
+    readonly discoveryUrl: string
+    readonly verificationProvider: string
+  }[]
+}
+
+/** Exact and fuzzy keys identifying one work for deduplication. */
+export interface WorkDedupKeys {
+  /** Exact keys over external identifiers; any collision means the same work. */
+  readonly exact: readonly ExternalIdentifierDedupKey[]
+  /** Normalized title/author/year key, used only to flag suspected duplicates. */
+  readonly fuzzy: string | null
+}
+
+/**
+ * In-memory deduplication and merge state. A caller that needs durability
+ * persists this value; the library neither reads nor writes storage.
+ */
+export interface IngestIndex {
+  /** Exact external-identifier key to the work identity already assigned. */
+  readonly byExactKey: ReadonlyMap<ExternalIdentifierDedupKey, AcademicWorkId>
+  /** Fuzzy title/author/year key to the work identity already assigned. */
+  readonly byFuzzyKey: ReadonlyMap<string, AcademicWorkId>
+  /** Contributing provider records and verified Web discoveries per assigned work identity, in ingestion order. */
+  readonly records: ReadonlyMap<AcademicWorkId, readonly IngestRecord[]>
+}
+
+/** One ingestion decision, kept for traceability. */
+export type IngestAuditEntry =
+  | { readonly kind: 'new_work'; readonly academicWorkId: AcademicWorkId }
+  | {
+    readonly kind: 'merged_version'
+    readonly academicWorkId: AcademicWorkId
+    readonly workVersionId: WorkVersionId
+  }
+  | {
+    /** An exact-identifier bridge consolidated a later identity into this retained identity. */
+    readonly kind: 'merged_work'
+    readonly academicWorkId: AcademicWorkId
+    /** The later identity removed from the index. */
+    readonly mergedAcademicWorkId: AcademicWorkId
+  }
+  | {
+    readonly kind: 'suspected_duplicate'
+    readonly academicWorkId: AcademicWorkId
+    readonly existingAcademicWorkId: AcademicWorkId
+    readonly reason: string
+  }
+
+/** The recorded decisions for one ingestion call. */
+export interface IngestAudit {
+  readonly entries: readonly IngestAuditEntry[]
+}
+
+/** The result of one ingestion call: the updated index plus its deduplicated output. */
+export interface IngestOutcome {
+  readonly index: IngestIndex
+  /** Every deduplicated work, reconciled from its contributing records. */
+  readonly works: readonly AcademicWork[]
+  /** Every version, re-pointed at its assigned work identity. */
+  readonly versions: readonly WorkVersion[]
+  /** Verified Web discovery URLs linked to their deduplicated work and retained version identities. */
+  readonly verifiedDiscoveries: readonly {
+    readonly academicWorkId: AcademicWorkId
+    readonly workVersionId: WorkVersionId
+    readonly discoveryUrl: string
+    readonly verificationProvider: string
+  }[]
+  readonly audit: IngestAudit
+}
+
+/**
+ * Aggregated ingestion facts for progress reporting. Each counter keeps one audit
+ * meaning: `mergedWorkIdentities` counts consolidated work identities, `mergedVersionRecords`
+ * counts records merged into an already-retained version, `suspectedDuplicateRecords` counts
+ * title/author/year collisions retained separately, and `retainedWorkVersions` is the distinct
+ * version total of this outcome. The counters are independent and never substituted for one another.
+ */
+export interface IngestAuditCounts {
+  /** Exact-identifier bridges that consolidated a later work identity into a retained one. */
+  readonly mergedWorkIdentities: number
+  /** Records merged into an already-retained version. */
+  readonly mergedVersionRecords: number
+  /** Distinct versions finally retained by this ingestion outcome. */
+  readonly retainedWorkVersions: number
+  /** Title/author/year collisions retained as separate suspected duplicates. */
+  readonly suspectedDuplicateRecords: number
+}
