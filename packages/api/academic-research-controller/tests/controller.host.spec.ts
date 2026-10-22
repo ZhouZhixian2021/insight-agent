@@ -3,7 +3,8 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatch
   createFailureId, createResearchBriefId, createRetrievalRunId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import { SessionId, SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
+import type { PtcDispatchEventData } from '@deepseek-ai/dsh-tools/types'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
@@ -160,6 +161,13 @@ function nativePlanEvents(plan: string, options: { isError?: boolean; time?: num
   ] as never
 }
 
+function ptcPlanEvent(plan: string, data: Partial<PtcDispatchEventData> = {}): SessionEvent<'tool/ptc-dispatch'> {
+  return { type: 'tool/ptc-dispatch', seq: SessionSeq(3), time: Date.parse('2026-09-16T00:00:02Z'), data: {
+    rootCallId: ToolCallId('root'), parentCallId: ToolCallId('parent'), subCallId: ToolCallId('parent:ptc:1'),
+    name: 'exit_plan_mode', arguments: { plan }, isError: false, content: [], meta: { approved: true }, ...data,
+  } }
+}
+
 async function harness(options: {
   searches?: readonly string[]
   questions?: readonly string[]
@@ -251,8 +259,8 @@ async function harness(options: {
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
   ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
   ctx.provide('sessionPersistence', { open: () => Promise.resolve({
-    read: (seq: number) => Promise.resolve((agent.session.snapshotEvents() as Array<{ seq: number }>).filter(
-      event => event.seq === seq)),
+    read: (seq: number) => Promise.resolve({ eventState: 'detached',
+      events: (agent.session.snapshotEvents() as Array<{ seq: number }>).filter(event => event.seq === seq) }),
     [Symbol.asyncDispose]: () => Promise.resolve(),
   }) } as never)
   const controller = new AcademicResearchController(ctx, {
@@ -395,6 +403,64 @@ describe('AcademicResearchController', () => {
   it('does not recover an approval from a dismissed plan review', () => {
     expect(() => researchPlanFromApprovedPlan('dismissed', nativePlanEvents(briefPlan(), { approved: false })))
       .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('recovers a PTC approval using its unchanged sub-call identity and review time', () => {
+    const event = ptcPlanEvent(briefPlan())
+    const saved = structuredClone(event)
+    const result = researchPlanFromApprovedPlan('ptc-session', [event])
+    expect(result.brief.researchBriefId).toBe('ptc-session:approved-plan:parent:ptc:1')
+    expect(result.brief.approval).toMatchObject({ status: 'approved', reviewedAt: '2026-09-16T00:00:02.000Z' })
+    expect(result.brief.questions).toEqual(brief().questions)
+    expect(event).toEqual(saved)
+  })
+
+  it.each([
+    { meta: { approved: false } }, { meta: { approved: 'true' } }, { meta: null },
+    { meta: true }, { meta: [] }, { meta: {} },
+  ])('rejects a PTC review without explicit approval: %j', ({ meta }) => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent(briefPlan(), { meta })]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('rejects missing approval metadata for both native and PTC results', () => {
+    const event = ptcPlanEvent(briefPlan())
+    delete event.data.meta
+    expect(() => researchPlanFromApprovedPlan('ptc', [event])).toThrow('请先在当前会话完成研究计划审核。')
+    const events: SessionEvent[] = nativePlanEvents(briefPlan())
+    for (const item of events) if (item.type === 'tool/result') delete item.data.meta
+    expect(() => researchPlanFromApprovedPlan('native', events)).toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it.each<Partial<PtcDispatchEventData>>([
+    { isError: true }, { name: 'another_tool' }, { arguments: null },
+    { arguments: { plan: 42 } }, { arguments: {} },
+  ])('rejects unrelated, failed, or malformed PTC settlements: %j', (data) => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent(briefPlan(), data)]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('validates the structured Brief recovered from a PTC approval', () => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent('# Plan without a Brief')]))
+      .toThrow('must contain exactly one academic-research-brief-json fenced block')
+  })
+
+  it('does not infer approval from a retired code-dispatch record', () => {
+    const retired = { ...ptcPlanEvent(briefPlan()), type: 'tool/code-dispatch' }
+    expect(() => researchPlanFromApprovedPlan('retired', [retired as never]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('keeps the latest explicitly approved identity in mixed native and PTC history', () => {
+    const ptc = ptcPlanEvent(briefPlan({ ...briefPayload(), topic: 'PTC topic' }))
+    const native: SessionEvent[] = nativePlanEvents(briefPlan())
+    const dismissed = ptcPlanEvent(briefPlan(), { subCallId: ToolCallId('parent:ptc:2'), meta: { approved: false } })
+    const failed = ptcPlanEvent(briefPlan(), { subCallId: ToolCallId('parent:ptc:3'), isError: true })
+    const ordered = (events: SessionEvent[]) => events.map((event, index) => ({ ...event, seq: SessionSeq(index), time: index }))
+    const latest = researchPlanFromApprovedPlan('mixed', ordered([...native, ptc, dismissed, failed]))
+    expect(latest.brief).toMatchObject({ topic: 'PTC topic', researchBriefId: 'mixed:approved-plan:parent:ptc:1' })
+    expect(researchPlanFromApprovedPlan('mixed', ordered([ptc, ...native])).brief.researchBriefId)
+      .toBe('mixed:approved-plan:approved-brief-call')
   })
 
   it('previews the approved plan without retrieval and refuses a different approval identity', async () => {
@@ -973,12 +1039,12 @@ describe('approved Research Brief plan handoff', () => {
     }
     const events = [
       { type: 'other', seq: 0, time: 0, data: {} },
-      { type: 'tool/code-dispatch', seq: 1, time: 1, data: { name: 'other', isError: false } },
-      { type: 'tool/code-dispatch', seq: 2, time: 2, data: { name: 'exit_plan_mode', isError: true } },
-      { type: 'tool/code-dispatch', seq: 3, time: 3, data: { name: 'exit_plan_mode', isError: false, arguments: null } },
-      { type: 'tool/code-dispatch', seq: 4, time: Date.parse('2026-09-16T01:02:03Z'), data: {
+      { type: 'tool/ptc-dispatch', seq: 1, time: 1, data: { name: 'other', isError: false, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 2, time: 2, data: { name: 'exit_plan_mode', isError: true, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 3, time: 3, data: { name: 'exit_plan_mode', isError: false, arguments: null, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 4, time: Date.parse('2026-09-16T01:02:03Z'), data: {
         rootCallId: 'root', parentCallId: 'root', subCallId: 'root:code:1', name: 'exit_plan_mode',
-        arguments: { plan: briefPlan(payload) }, isError: false, content: [],
+        arguments: { plan: briefPlan(payload) }, isError: false, content: [], meta: { approved: true },
       } },
     ] as never
 

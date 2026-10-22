@@ -22,7 +22,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Approved native plan results require explicit `approved: true` tool-result metadata. Dismissal does not authorize research. Historical native results without that metadata require a fresh review; their stored records remain unchanged. Candidate model requests declare the `academic-candidate-review` message source.
+Native plan results and `tool/ptc-dispatch` settlements require explicit `approved: true` result metadata. Dismissal does not authorize research. Historical results without that metadata require a fresh review; their stored records remain unchanged. PTC approval identity uses the recorded `subCallId` without rewriting it. The reader consumes current logical events after the standard format migrations, not retired `tool/code-dispatch` tags. Web defaults to native tools; its existing process-wide `DSH_TOOLS_MODE=ptc` setting also reaches the academic preset. Candidate model requests declare the `academic-candidate-review` message source.
 
 `@deepseek-ai/dsh-api-academic-research-controller` owns `ctx.remote.academicResearch.run` and `runStream`. One call resolves an existing Session Agent, reconstructs the ResearchBrief approved through plan review, reuses the Session's selected model, executes the approved search directions, applies deterministic metadata filters, fetches full text, reviews natural-language scope rules with the model, extracts evidence, and returns the evaluated draft.
 

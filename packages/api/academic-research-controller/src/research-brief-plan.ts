@@ -1,5 +1,6 @@
 import type { ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
+import type {} from '@deepseek-ai/dsh-tools/types'
 import { MAX_DRAFT_SEARCH_QUERIES, validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-workflow'
 import type {
   AcademicDirectSearchProvider,
@@ -30,7 +31,7 @@ interface ApprovedPlan {
  * Read and validate the Academic Research Brief embedded in the latest approved plan.
  *
  * @param sessionId - Session that owns the plan review.
- * @param events - Durable Session events containing the plan call and successful result.
+ * @param events - Durable native or PTC plan results with explicit approval metadata.
  * @returns An approved version-1 Brief whose identity is stable for that reviewed plan.
  */
 export function researchBriefFromApprovedPlan(
@@ -43,7 +44,7 @@ export function researchBriefFromApprovedPlan(
 /**
  * Recover the Brief and its system-authored searches from the same approved plan.
  * @param sessionId Session that owns the approval.
- * @param events Durable plan calls and review results.
+ * @param events Durable native or PTC plan calls and explicitly approved review results.
  * @returns The approved Brief and optional legacy search handoff, without inventing missing searches.
  */
 export function researchPlanFromApprovedPlan(
@@ -101,19 +102,11 @@ function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | und
       }
       continue
     }
-    const dispatch = event as unknown as {
-      type: string
-      data: {
-        name?: unknown
-        isError?: unknown
-        arguments?: unknown
-        subCallId?: unknown
-      }
-    }
-    if (dispatch.type === 'tool/code-dispatch' && dispatch.data.name === EXIT_PLAN_MODE && dispatch.data.isError === false) {
-      const plan = planFromUnknownArguments(dispatch.data.arguments)
+    if (event.type === 'tool/ptc-dispatch' && event.data.name === EXIT_PLAN_MODE && !event.data.isError
+      && isRecord(event.data.meta) && event.data.meta.approved === true) {
+      const plan = planFromUnknownArguments(event.data.arguments)
       if (plan !== undefined) {
-        latest = { identity: String(dispatch.data.subCallId), markdown: plan, reviewedAt: eventTime(event.time) }
+        latest = { identity: String(event.data.subCallId), markdown: plan, reviewedAt: eventTime(event.time) }
       }
     }
   }

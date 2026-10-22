@@ -62,7 +62,7 @@ kind: "package-reference"
 
 需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。每次完整状态（包括最终结果和取消意图）写入 Session。Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
 
-原生计划结果必须具有明确的 `approved: true` 工具结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史原生结果需要重新评审，原存储记录保持不变。候选模型请求声明 `academic-candidate-review` 消息来源。
+原生计划结果与 `tool/ptc-dispatch` 结算必须具有明确的 `approved: true` 结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史结果需要重新评审，原存储记录保持不变。PTC 批准身份直接使用记录中的 `subCallId`，不作改写。读取器消费标准格式迁移后的当前逻辑事件，不接受已退役的 `tool/code-dispatch` 标签。Web 默认使用原生工具，其既有进程级 `DSH_TOOLS_MODE=ptc` 设置也会作用于学术预设。候选模型请求声明 `academic-candidate-review` 消息来源。
 
 ## Model Experience
 
