@@ -16,7 +16,7 @@ export class ModelOutputLimitError extends EvidenceError {
   constructor() { super('Model did not complete a text response.', 'EVIDENCE_MODEL_INCOMPLETE') }
 }
 
-/** Operation-owned callbacks keep evidence and synthesis provenance separate. */
+/** Operation-owned callbacks keep evidence and synthesis request-result records separate. */
 export interface LoggedModelRequest<T> {
   readonly messages: Message[]
   /** A local attempt deadline may be recovered by the caller with smaller input instead of repeating this request. */

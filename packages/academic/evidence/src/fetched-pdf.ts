@@ -9,7 +9,7 @@ import type { EvidenceContentSegment, EvidenceExtractionInput, FetchedAcademicFu
 /**
  * Convert one complete PDF response into page-located extraction input.
  *
- * @param input - paper identity, provenance, settings, and raw PDF fetch result.
+ * @param input - paper identity, source metadata, settings, and raw PDF fetch result.
  * @param signal - optional cancellation checked between parsed pages.
  * @returns page-located text, the final URL, and a hash of the exact PDF bytes.
  */

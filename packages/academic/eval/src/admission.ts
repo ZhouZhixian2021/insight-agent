@@ -5,7 +5,7 @@ import type { EvidenceRecord } from '@deepseek-ai/dsh-academic-model'
  * Match immutable evidence to a trusted extraction batch, never to Web search text.
  * @param record Evidence presented for assessment.
  * @param admitted Original evidence extracted from direct or scholarly-verified papers.
- * @returns Whether identity, content and provenance match an admitted record exactly.
+ * @returns Whether identity, content, source fields and extraction method match an admitted record exactly.
  */
 export function matchesAdmittedEvidence(record: EvidenceRecord, admitted: readonly EvidenceRecord[]): boolean {
   const matches = admitted.filter(item => item.evidenceId === record.evidenceId)

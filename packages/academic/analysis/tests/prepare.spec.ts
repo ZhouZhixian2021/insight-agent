@@ -3,7 +3,7 @@ import { prepareAnalysisInput } from '../src/index.ts'
 import { batch, paper } from './fixtures.ts'
 
 describe('analysis input preparation', () => {
-  it('preserves two works, six sections, evidence provenance, and caller input', () => {
+  it('preserves two works, six sections, evidence source fields, and caller input', () => {
     const input = batch(paper('a'), paper('b'))
     const before = structuredClone(input)
     const result = prepareAnalysisInput(input)

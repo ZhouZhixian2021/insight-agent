@@ -418,7 +418,7 @@ describe('Q5 evidence-gap replenishment', () => {
     }))
   })
 
-  it('rejects missing query provenance after conservatively assessing an unknown source', async () => {
+  it('rejects missing discovery-query associations after conservatively assessing an unknown source', async () => {
     const prepared = setup()
     const withoutSource = { ...prepared.works[0]!, workVersion: { ...prepared.works[0]!.workVersion,
       sourceRecords: [] } }
@@ -428,7 +428,7 @@ describe('Q5 evidence-gap replenishment', () => {
       .rejects.toThrow('candidate provenance must contain distinct planned queries')
   })
 
-  it('rejects candidate provenance that does not belong to the reviewed plan', async () => {
+  it('rejects candidate discovery queries that do not belong to the reviewed plan', async () => {
     const prepared = setup()
     const ingested = ingestWorks(createIngestIndex(), [{ ...prepared.works[0]!, discoveredBy: [createSearchQueryId()] }])
 

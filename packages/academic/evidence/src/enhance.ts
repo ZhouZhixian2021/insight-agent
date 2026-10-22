@@ -1,4 +1,4 @@
-/** Complete paper extraction that supplements committed evidence without replacing its provenance. */
+/** Complete paper extraction that supplements committed evidence without replacing its source fields or extraction methods. */
 import { isDeepStrictEqual } from 'node:util'
 import type { EvidenceCardItem, EvidenceId } from '@deepseek-ai/dsh-academic-model'
 import { runEvidenceFragments } from './fragments.ts'

@@ -15,7 +15,7 @@ import { validateScreeningQuotes } from './metadata-quotes.ts'
  * weighted points, priority thresholds, stable diversity ordering, and reasons.
  * @param plan - Reviewed Q2 plan with approved constraints and ranking policy.
  * @param brief - Approved Brief version bound to the plan.
- * @param round - Q3 deduplicated works, versions, and query provenance.
+ * @param round - Q3 deduplicated works, versions, and discovery-query associations.
  * @param assessments - Exactly one reviewed semantic assessment per work.
  * @returns Every work's evaluation and P0/P1/P2/excluded queues.
  * @throws {RangeError} The Brief, plan, work identities, or assessments disagree.

@@ -16,7 +16,7 @@ import type {
 /**
  * Fetch candidate full-text URLs in order, accepting the first confirmed HTML or PDF body.
  *
- * @param input - paper provenance and candidate URLs in preference order.
+ * @param input - paper source metadata and candidate URLs in preference order.
  * @param fetcher - caller adapter over its configured web fetch service.
  * @param signal - optional cancellation forwarded through acquisition and parsing.
  * @param onFullText - optional observer of per-candidate started and settled facts.

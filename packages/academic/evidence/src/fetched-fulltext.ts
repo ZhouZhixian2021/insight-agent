@@ -29,7 +29,7 @@ const BODY_SECTION = new RegExp(
  * Only a 2xx, untruncated HTML response with an `<article>` and at least one populated
  * academic body section is accepted. Text/PDF handling remains a separate path.
  *
- * @param input - paper identity, provenance, extraction settings, and raw fetch result.
+ * @param input - paper identity, source metadata, extraction settings, and raw fetch result.
  * @returns section-aware paragraph segments, the final URL, and a hash of the fetched article.
  * @throws {EvidenceError} when the response is failed, partial, non-HTML, or not identifiable as full text.
  */

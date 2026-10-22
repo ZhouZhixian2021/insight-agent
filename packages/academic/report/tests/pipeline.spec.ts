@@ -6,7 +6,7 @@ import { benchmark, reviewFixture } from './benchmark.ts'
 import { batch, paper } from '../../analysis/tests/fixtures.ts'
 
 describe('fixed evidence to reviewed report', () => {
-  it('produces method and finding summaries with complete multi-evidence provenance', () => {
+  it('produces method and finding summaries with complete multi-evidence source links', () => {
     const { input, analysis } = benchmark()
     expect(analysis.claims).toHaveLength(2)
     for (const claim of analysis.claims) {

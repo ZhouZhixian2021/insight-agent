@@ -35,7 +35,7 @@ export interface PaperModelResponse {
   readonly incompleteBatchCount?: number
 }
 
-/** A's generator receives program-owned provenance and optional progress without changing B's request interface. */
+/** A's generator receives program-owned source metadata and optional progress without changing B's request interface. */
 export type PaperEvidenceGenerator = (
   request: EvidenceGenerationRequest,
   source: EvidenceExtractionInput,

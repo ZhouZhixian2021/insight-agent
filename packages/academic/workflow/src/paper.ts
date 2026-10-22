@@ -14,7 +14,7 @@ export type { PaperEvidenceResult, PaperPause } from './types.ts'
  * @param version Current version after work identity reconciliation.
  * @param parsed Successful parser output for this paper and version.
  * @param hasHistoricalEvidence Whether this version already has bound historical content or evidence.
- * @param generator Semantic extractor receiving B's request and program-owned parsed provenance.
+ * @param generator Semantic extractor receiving B's request and program-owned parsed source metadata.
  * @param scope Approved natural-language inclusion and exclusion rules.
  * @param signal Optional cancellation forwarded to extraction; cancellation rejects.
  * @param onProgress Optional A-owned model and source-validation progress observer.
