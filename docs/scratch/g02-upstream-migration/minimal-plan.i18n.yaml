@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for minimal-plan.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/scratch/g02-upstream-migration/minimal-plan.md
+/:
+  en: 6040cc6ec5010684
+  zh: 8433433d28c8aee5
+/g02-minimal-migration-proposal:
+  en: 2875cd111edabf59
+  zh: 07dcc0a810d2d0b6
+/g02-minimal-migration-proposal/summary:
+  en: d530ed210f6d7bce
+  zh: 8810137e8162c5a1
+/g02-minimal-migration-proposal/table-of-contents:
+  en: d42a477aebe9ec09
+  zh: 8cd400371c685c17
+/g02-minimal-migration-proposal/current-limits:
+  en: b22ea5f7e7ae07cf
+  zh: 5299000e0dd22a83
+/g02-minimal-migration-proposal/dev-note:
+  en: 15b2b6b9e2884885
+  zh: 351ed0b1cfc75329
+/g02-minimal-migration-proposal/dev-note/proposed-files:
+  en: 65430a6fa4118013
+  zh: 1ae78243d33dcdec
+/g02-minimal-migration-proposal/dev-note/future-focused-verification:
+  en: 47fadea86e4efd00
+  zh: 40feddd607eb9123
+/g02-minimal-migration-proposal/dev-note/retained-blockers:
+  en: 568a471fe8b1c877
+  zh: 74d554af4b409658

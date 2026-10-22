@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for index.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/scratch/g02-upstream-migration/index.md
+/:
+  en: cc148c340e62983a
+  zh: 64fbff52a80ab93f
+/g02-academic-history-migration-review:
+  en: c807316bf535598a
+  zh: 280bf24578efb602
+/g02-academic-history-migration-review/summary:
+  en: a1f60df07055d690
+  zh: b1c3dfd7ea5133a9
+/g02-academic-history-migration-review/table-of-contents:
+  en: 3402b8e6b42fd208
+  zh: 641cb4e317d9f856
+/g02-academic-history-migration-review/review-materials:
+  en: 852dbbbe45f29306
+  zh: c0a38c220e3f87bc
+/g02-academic-history-migration-review/evidence-and-ownership:
+  en: f35ab2d7d2fdfed1
+  zh: 3f0ee20de2f7c540
+/g02-academic-history-migration-review/dev-note:
+  en: 1f6da8e5fdffda9f
+  zh: 2c66f3ee6df3d8b1
