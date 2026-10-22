@@ -23,10 +23,14 @@ The only append point while an agent is running is a prepended `agent/pre-step` 
 interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 ```
 
-A missing, blank, or non-string `section` and any unknown key fail at plugin load rather than being ignored. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
+A missing, blank, or non-string `section`, a non-boolean `initialActive`, a non-safe-integer `missingExitRetries`, and any unknown key fail at plugin load rather than being ignored. `initialActive: true` enters plan mode before a new session's first request without a `/plan` command; it never overrides an explicit `/plan off` or a resumed session that already carries a request header. `missingExitRetries` sends that many same-turn reminders when the model stops without calling `exit_plan_mode`. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
 
 ## The exit tool and the `/plan` command
 

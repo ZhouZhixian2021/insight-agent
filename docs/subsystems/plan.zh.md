@@ -23,10 +23,14 @@ agent 运行时，唯一的追加点是前置（prepend）注册的 `agent/pre-s
 interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 ```
 
-`section` 缺失、为空白或不是字符串，以及任何未知键，都会在插件加载时失败，而不是被忽略。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
+`section` 缺失、为空白或不是字符串，`initialActive` 不是布尔值，`missingExitRetries` 不是安全整数，以及任何未知键，都会在插件加载时失败，而不是被忽略。`initialActive: true` 会在新会话首次请求前自动进入计划模式，无需 `/plan` 命令；它不会覆盖显式的 `/plan off`，也不会覆盖已带请求头的恢复会话。`missingExitRetries` 会在模型未调用 `exit_plan_mode` 就停止时，在同一轮次内发送相应次数的提醒。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
 
 ## 退出工具与 `/plan` 命令
 

@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-唯一必需的配置是 agent 规划期间遵循的引导文本；添加任何其他配置都会在加载时失败。
+唯一必需的配置是 agent 规划期间遵循的引导文本。两个可选字段让部署在新会话首次请求前进入计划模式，并在模型未提交计划就停止时提醒它；添加任何其他字段都会在加载时失败。
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -46,6 +46,10 @@ kind: "package-reference"
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `section` | 必填 | 计划模式激活时作为 `plan:policy` 提示词段落渲染的引导 |
+| `initialActive` | `false` | 新会话首次模型请求前自动进入计划模式，无需 `/plan` 命令 |
+| `missingExitRetries` | `0` | 模型未提交计划就停止时，在同一轮次内发送的提醒次数 |
+
+使用 `initialActive: true` 时，未被触碰的会话会在首次请求前进入计划模式；显式的 `/plan off` 或已带请求头的恢复会话不会被覆盖。使用 `missingExitRetries` 时，每次提醒都要求模型通过 `exit_plan_mode` 提交完整计划，而不是在普通文本中总结。
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-plan-mode)完整列出了所有受支持的字段及其 JSDoc。
 

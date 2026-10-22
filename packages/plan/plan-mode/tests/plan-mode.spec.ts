@@ -20,6 +20,7 @@ import type { PlanUnitState } from '../src/types.ts'
 
 const TEST_PLAN_SECTION = 'Test plan mode instructions.'
 const PLAN_CONFIG = { section: TEST_PLAN_SECTION } satisfies PlanModeConfig
+const INITIAL_PLAN_CONFIG = { section: TEST_PLAN_SECTION, initialActive: true } satisfies PlanModeConfig
 
 interface QuestionAnswerer {
   ask(request: AskUserQuestionRequest): Promise<AskUserQuestionAnswer>
@@ -190,16 +191,76 @@ describe('resolveConfig', () => {
       .toThrow('needs a non-empty `section`')
   })
 
-  it('returns a detached plan config', () => {
+  it('returns a detached plan config with the defaulted first-request mode', () => {
     const config = { section: TEST_PLAN_SECTION }
     const resolved = resolveConfig(config)
-    expect(resolved).toEqual(config)
+    expect(resolved).toEqual({ ...config, initialActive: false, missingExitRetries: 0 })
     expect(resolved).not.toBe(config)
+    expect(resolveConfig({ section: TEST_PLAN_SECTION, initialActive: true }))
+      .toEqual({ section: TEST_PLAN_SECTION, initialActive: true, missingExitRetries: 0 })
+  })
+
+  it('validates initialActive and missingExitRetries when provided', () => {
+    expect(() => resolveConfig({ section: TEST_PLAN_SECTION, initialActive: 'yes' } as unknown as PlanModeConfig))
+      .toThrow('needs a boolean `initialActive` when provided')
+    expect(() => resolveConfig({ section: TEST_PLAN_SECTION, initialActive: null } as unknown as PlanModeConfig))
+      .toThrow('needs a boolean `initialActive` when provided')
+    expect(resolveConfig({ section: TEST_PLAN_SECTION, missingExitRetries: 2 }))
+      .toEqual({ section: TEST_PLAN_SECTION, initialActive: false, missingExitRetries: 2 })
+    for (const missingExitRetries of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => resolveConfig({ section: TEST_PLAN_SECTION, missingExitRetries }))
+        .toThrow('needs a non-negative safe integer `missingExitRetries` when provided')
+    }
   })
 
   it('rejects fields outside the plan policy config', () => {
     expect(() => resolveConfig({ section: TEST_PLAN_SECTION, tools: ['read'] } as unknown as PlanModeConfig))
-      .toThrow('unknown key(s) tools — config is { section }')
+      .toThrow('unknown key(s) tools — config is { section, initialActive?, missingExitRetries? }')
+  })
+})
+
+describe('initial activation', () => {
+  it('records configured initial plan mode before the first request without a switch notice', async () => {
+    const ctx = await setup(INITIAL_PLAN_CONFIG)
+    const agent = await agentWithSession(ctx, 'initial-plan')
+    openTurn(agent.session)
+    const assembly = await assembleFor(ctx, agent)
+    await boundary(ctx, agent, 'pre-step')
+
+    expect(ctx.planMode.get(agent)).toEqual({ active: true })
+    expect(agent.session.snapshotEvents().filter(event => event.type === 'plan/mode'))
+      .toEqual([expect.objectContaining({ data: { active: true } })])
+    expect(noticeTexts(agent.session)).toEqual([])
+    expect(assembly.sections.find(section => section.name === 'plan:policy')?.text)
+      .toBe(TEST_PLAN_SECTION)
+  })
+
+  it('does not override an explicit inactive selection or reinitialize a session with a request header', async () => {
+    const ctx = await setup(INITIAL_PLAN_CONFIG)
+    const explicitlyInactive = await agentWithSession(ctx, 'initial-plan-off', { active: false })
+    openTurn(explicitlyInactive.session)
+    await boundary(ctx, explicitlyInactive, 'pre-step')
+    expect(explicitlyInactive.session.snapshotEvents().filter(event => event.type === 'plan/mode'))
+      .toEqual([expect.objectContaining({ data: { active: false } })])
+
+    const resumed = await agentWithSession(ctx, 'initial-plan-resumed')
+    header(resumed.session)
+    openTurn(resumed.session)
+    await boundary(ctx, resumed, 'pre-step')
+    expect(resumed.session.snapshotEvents().some(event => event.type === 'plan/mode')).toBe(false)
+    expect(ctx.planMode.get(resumed)).toEqual({ active: false })
+  })
+
+  it('records a user opt-out that cancels automatic entry before the first request', async () => {
+    const ctx = await setup(INITIAL_PLAN_CONFIG)
+    const agent = await agentWithSession(ctx, 'initial-plan-user-off')
+    await assembleFor(ctx, agent)
+    expect(ctx.planMode.get(agent)).toEqual({ active: false, pending: true })
+
+    expect(ctx.planMode.set(agent, false)).toBe('cancelled')
+    expect(agent.session.snapshotEvents().filter(event => event.type === 'plan/mode'))
+      .toEqual([expect.objectContaining({ data: { active: false } })])
+    expect((await assembleFor(ctx, agent)).sections.find(section => section.name === 'plan:policy')?.text).toBe('')
   })
 })
 

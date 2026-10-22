@@ -9,6 +9,142 @@ Both language versions of this file are GENERATED from source (`scripts/gen-conf
 
 Each package entry labels its data with three identifiers: `inject` lists the service keys the plugin injects, so its `cordis.yml` tree must also load providers for those services; `refs` lists the referenced types that are not pasted here; `source` links the file that declares the config. Scope is the harness tier (`packages/`); the vendored cordis plugins a config tree may also load (the console logger, …) are pinned upstream source ([vendoring policy](../vendor/README.md)) and not catalogued here.
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source -->
+<a id="deepseek-aidsh-academic-source"></a>
+
+## `@deepseek-ai/dsh-academic-source`
+
+- `source`: [`packages/academic/source/src/index.ts:80`](../packages/academic/source/src/index.ts)
+
+```ts config-catalog
+/**
+ * Config for the academic source seam. `searchProvider` pins which provider wins
+ * for search; it is optional (a single registered usable provider auto-selects).
+ * Operational overrides such as environment variables must feed this same field
+ * rather than introduce a hidden priority chain.
+ */
+export interface AcademicSourceRuntimeConfig {
+  /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
+  readonly searchProvider?: string
+  /** Provider ids called by searchAll; omitted searches every usable provider. Resolvers remain registered. */
+  readonly searchProviders?: string[]
+  /** Per-provider search deadline; omitted preserves the caller-owned budget. No retries are performed. */
+  readonly searchTimeoutMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-acl -->
+<a id="deepseek-aidsh-academic-source-acl"></a>
+
+## `@deepseek-ai/dsh-academic-source-acl`
+
+- `inject`: `academicSource`
+- `source`: [`packages/academic/source-acl/src/index.ts:18`](../packages/academic/source-acl/src/index.ts)
+
+```ts config-catalog
+/** Official ACL volume pages searched by this deployment. */
+export interface Config {
+  /** ACL Anthology base used to resolve paper PDFs. */
+  readonly baseURL?: string
+  /** Official ACL Anthology volume pages searched by this provider. */
+  readonly catalogUrls?: string[]
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-acl -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-arxiv -->
+<a id="deepseek-aidsh-academic-source-arxiv"></a>
+
+## `@deepseek-ai/dsh-academic-source-arxiv`
+
+- `inject`: `academicSource`
+- `source`: [`packages/academic/source-arxiv/src/index.ts:35`](../packages/academic/source-arxiv/src/index.ts)
+
+```ts config-catalog
+/** Plugin config (optional — `apply` fills the endpoint default). */
+export interface Config {
+  /** arXiv export API base; `/api/query` is appended. Defaults to `https://export.arxiv.org`. */
+  baseURL?: string
+  /** Total transport attempts after connection failures. Defaults to `1`. */
+  maxAttempts?: number
+  /** Delay before a repeated transport attempt, in milliseconds. Defaults to `0`. */
+  retryDelayMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-arxiv -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-cvf -->
+<a id="deepseek-aidsh-academic-source-cvf"></a>
+
+## `@deepseek-ai/dsh-academic-source-cvf`
+
+- `inject`: `academicSource`
+- `source`: [`packages/academic/source-cvf/src/index.ts:18`](../packages/academic/source-cvf/src/index.ts)
+
+```ts config-catalog
+/** Official CVF conference pages searched by this deployment. */
+export interface Config {
+  /** Official CVF conference catalog pages searched by this provider. */
+  readonly catalogUrls?: string[]
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-cvf -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-openalex -->
+<a id="deepseek-aidsh-academic-source-openalex"></a>
+
+## `@deepseek-ai/dsh-academic-source-openalex`
+
+- `inject`: `academicSource`
+- `source`: [`packages/academic/source-openalex/src/index.ts:17`](../packages/academic/source-openalex/src/index.ts)
+
+```ts config-catalog
+/** OpenAlex request settings; API keys remain in the configured environment variable. */
+export interface Config {
+  /** OpenAlex REST API base; `/works` requests resolve against it. Defaults to `https://api.openalex.org`. */
+  readonly baseURL?: string
+  /** Environment variable that may hold an OpenAlex API key sent as a bearer token. Defaults to `OPENALEX_API_KEY`. */
+  readonly apiKeyEnv?: string
+  /** Query interpretation: `keyword` sends `search`, `semantic` sends `search.semantic`. Defaults to `keyword`. */
+  readonly searchMode?: 'keyword' | 'semantic'
+  /** Optional ascending `YYYY-YYYY` range restricting discovery to `publication_year`; not a first-public-release filter. */
+  readonly publicationYears?: string
+  /** Per-request timeout in milliseconds. Defaults to `20000`. */
+  readonly timeoutMs?: number
+  /** Total attempts for network failures or per-attempt timeouts. Defaults to `1`. */
+  readonly maxAttempts?: number
+  /** Delay before a repeated transport attempt, in milliseconds. Defaults to `0`. */
+  readonly retryDelayMs?: number
+  /** Maximum records requested per query; semantic mode caps this at `50` and keyword mode at `100`. Defaults to `50`. */
+  readonly maxResults?: number
+  /** Capacity of the instance-local full-text candidate map; must be at least `maxResults`. Defaults to `1000`. */
+  readonly maxCachedRecords?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-openalex -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-pmlr -->
+<a id="deepseek-aidsh-academic-source-pmlr"></a>
+
+## `@deepseek-ai/dsh-academic-source-pmlr`
+
+- `inject`: `academicSource`
+- `source`: [`packages/academic/source-pmlr/src/index.ts:18`](../packages/academic/source-pmlr/src/index.ts)
+
+```ts config-catalog
+/** Official PMLR volume pages searched by this deployment. */
+export interface Config {
+  /** PMLR base used to resolve paper PDFs. */
+  readonly baseURL?: string
+  /** Official PMLR volume pages searched by this provider. */
+  readonly catalogUrls?: string[]
+  /** Number of verified paper PDF locations retained for later full-text resolution. */
+  readonly maxCachedRecords?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-pmlr -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-acp -->
 <a id="deepseek-aidsh-acp"></a>
 
@@ -175,6 +311,69 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-agent-tool-presentation -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-academic-research-controller -->
+<a id="deepseek-aidsh-api-academic-research-controller"></a>
+
+## `@deepseek-ai/dsh-api-academic-research-controller`
+
+- `inject`: `academicSource` · `sessionController` · `typert` · `web`
+- `source`: [`packages/api/academic-research-controller/src/index.ts:52`](../packages/api/academic-research-controller/src/index.ts)
+
+```ts config-catalog
+/** Academic research deployment policy. */
+export interface Config {
+  /** Maximum concurrent papers per research run. Defaults to 3. */
+  readonly paperConcurrency?: number
+  /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
+  readonly extractionMaxTokens?: number
+  /** Final synthesis output-token reserve when the Session omits one. Defaults to 32,768. */
+  readonly synthesisMaxTokens?: number
+  /** Attempts per model input; a locally timed-out evidence input may split into two recovery inputs. Defaults to 2. */
+  readonly extractionMaxAttempts?: number
+  /** Delay before retrying a transient evidence extraction failure. Defaults to 10,000 ms. */
+  readonly extractionRetryInitialDelayMs?: number
+  /** Maximum estimated input tokens in one evidence batch. Defaults to 12,000. */
+  readonly extractionBatchMaxInputTokens?: number
+  /** Repeated source characters at adjacent long-segment boundaries. Defaults to 512. */
+  readonly extractionBatchOverlapCharacters?: number
+  /** Maximum elapsed time for one scope or evidence model attempt. Defaults to 150,000 ms. */
+  readonly extractionAttemptTimeoutMs?: number
+  /** Output-token reserve for one candidate metadata review. Defaults to 8,192. */
+  readonly candidateReviewMaxTokens?: number
+  /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
+  readonly candidateReviewAttemptTimeoutMs?: number
+  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 8. */
+  readonly candidateReviewMaximumWorks?: number
+  /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
+  readonly candidateReviewConcurrency?: number
+  /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
+  readonly initialSearchMaximumAcademicResultsPerQuery?: number
+  /** Total final synthesis attempts, including transport, timeout, output-limit, and invalid-output recovery. Defaults to 3. */
+  readonly synthesisMaxAttempts?: number
+  /** Delay before the first transient synthesis retry. Later delays double. Defaults to 1,000 ms. */
+  readonly synthesisRetryInitialDelayMs?: number
+  /** Maximum P0 candidates scheduled in the first ranked full-text batch. Defaults to 8. */
+  readonly initialCandidateBatchSize?: number
+  /** Maximum candidates scheduled to address observed question gaps. Defaults to 4. */
+  readonly evidenceGapCandidateBatchSize?: number
+  /** Maximum candidates scheduled when the inclusion target is still unmet. Defaults to 4. */
+  readonly replenishmentCandidateBatchSize?: number
+  /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
+  readonly minimumQuestionSupportingWorks?: number
+  /** Maximum queries generated in one evidence-gap replenishment round. Defaults to 4. */
+  readonly gapRoundMaximumQueriesPerRound?: number
+  /** Maximum Academic results per gap-round query. Defaults to 20. */
+  readonly gapRoundMaximumAcademicResultsPerQuery?: number
+  /** Total wall-clock bound for one selected paper's second-tier pass. Defaults to 180,000 ms. */
+  readonly enhancementMaximumElapsedMs?: number
+  /** Per-fragment model timeout during second-tier extraction. Defaults to 60,000 ms. */
+  readonly enhancementAttemptTimeoutMs?: number
+  /** Maximum output tokens per second-tier fragment. Defaults to 8,192. */
+  readonly enhancementMaxTokens?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-academic-research-controller -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-gateway -->
 <a id="deepseek-aidsh-api-gateway"></a>
@@ -2413,6 +2612,10 @@ export interface Config {
 export interface PlanModeConfig {
   /** Guidance rendered as the `plan:policy` prompt section while plan mode is active. */
   section: string
+  /** Enter plan mode before a new session's first model request. */
+  initialActive?: boolean
+  /** Number of same-turn reminders when the model stops without submitting a plan for review. */
+  missingExitRetries?: number
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-plan-mode -->
@@ -4601,6 +4804,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-locale` | — | [`packages/client/locale/src/index.ts`](../packages/client/locale/src/index.ts) |
 | `@deepseek-ai/dsh-client-modules` | `loader` | [`packages/client/modules/src/index.ts`](../packages/client/modules/src/index.ts) |
 | `@deepseek-ai/dsh-client-resources` | — | [`packages/client/resources/src/index.ts`](../packages/client/resources/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-academic-research` | — | [`packages/client/ui-academic-research/src/index.ts`](../packages/client/ui-academic-research/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-agent-preset` | — | [`packages/client/ui-agent-preset/src/index.ts`](../packages/client/ui-agent-preset/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
@@ -4731,6 +4935,14 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 <!-- BEGIN GENERATED config-catalog:library -->
 | `package` | `inject` | `source` |
 | --- | --- | --- |
+| `@deepseek-ai/dsh-academic-analysis` | — | [`packages/academic/analysis/src/index.ts`](../packages/academic/analysis/src/index.ts) |
+| `@deepseek-ai/dsh-academic-eval` | — | [`packages/academic/eval/src/index.ts`](../packages/academic/eval/src/index.ts) |
+| `@deepseek-ai/dsh-academic-evidence` | — | [`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts) |
+| `@deepseek-ai/dsh-academic-ingestion` | — | [`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts) |
+| `@deepseek-ai/dsh-academic-model` | — | [`packages/academic/model/src/index.ts`](../packages/academic/model/src/index.ts) |
+| `@deepseek-ai/dsh-academic-report` | — | [`packages/academic/report/src/index.ts`](../packages/academic/report/src/index.ts) |
+| `@deepseek-ai/dsh-academic-retrieval` | — | [`packages/academic/retrieval/src/index.ts`](../packages/academic/retrieval/src/index.ts) |
+| `@deepseek-ai/dsh-academic-workflow` | — | [`packages/academic/workflow/src/index.ts`](../packages/academic/workflow/src/index.ts) |
 | `@deepseek-ai/dsh-agent-loop-testkit` | — | [`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts) |
 | `@deepseek-ai/dsh-anonymous-user-id` | — | [`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts) |
 | `@deepseek-ai/dsh-app-boot` | — | [`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts) |

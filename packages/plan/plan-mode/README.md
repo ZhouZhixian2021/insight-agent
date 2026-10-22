@@ -33,7 +33,7 @@ Choose plan mode when the agent should explore and design before executing and y
 
 ### Minimal configuration
 
-The only required configuration is the guidance text the agent follows while planning; anything else you add fails at load.
+The only required configuration is the guidance text the agent follows while planning. Two optional fields let a deployment enter plan mode before a new session's first request and remind the model when it stops without presenting a plan; any other field fails at load.
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -46,6 +46,10 @@ The only required configuration is the guidance text the agent follows while pla
 | Field | Default | Meaning |
 |---|---|---|
 | `section` | required | Guidance rendered as the `plan:policy` prompt section while plan mode is active |
+| `initialActive` | `false` | Enter plan mode before a new session's first model request, without a `/plan` command |
+| `missingExitRetries` | `0` | Same-turn reminders sent when the model stops without presenting a plan for review |
+
+With `initialActive: true`, an untouched session enters plan mode before its first request; an explicit `/plan off` or a resumed session with a request header is never overridden. With `missingExitRetries`, each reminder asks the model to present the complete plan through `exit_plan_mode` instead of summarizing it in ordinary text.
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-plan-mode) is the exhaustive source for every accepted field and its JSDoc.
 
