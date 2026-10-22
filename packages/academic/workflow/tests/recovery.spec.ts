@@ -62,6 +62,35 @@ function coverage(): ResearchQuestionCoverageResult {
 }
 
 describe('Academic research recovery reconstruction', () => {
+  it('does not map a freshly reviewed Brief identity onto an old run', () => {
+    const events: SessionEvent[] = [sessionEvent('academic/search-plan', plan(), 0),
+      sessionEvent('academic/candidate-batch-decision', { retrievalRunId: target.retrievalRunId,
+        batchIndex: null, action: 'stop', workVersionIds: [], searchQuestions: [], reason: 'historical stop' }, 1)]
+    const before = structuredClone(events)
+    expect(reconstructAcademicResearchRecoveryState(events, { ...target, researchBriefId: createResearchBriefId() }))
+      .toMatchObject({ status: 'failed', failure: { code: 'brief_identity_mismatch' } })
+    expect(events).toEqual(before)
+  })
+
+  it('keeps the target run plan when another Brief is saved later', () => {
+    const saved = plan()
+    const events: SessionEvent[] = [sessionEvent('academic/search-plan', saved, 0),
+      sessionEvent('academic/candidate-batch-decision', { retrievalRunId: target.retrievalRunId,
+        batchIndex: 1, action: 'schedule_batch', workVersionIds: versions.slice(0, 1), searchQuestions: [], reason: 'pending' }, 1),
+      sessionEvent('academic/search-plan', { ...plan(), researchBriefId: createResearchBriefId() }, 2)]
+    expect(reconstructAcademicResearchRecoveryState(events, target))
+      .toMatchObject({ status: 'resumable', input: { searchPlan: saved, checkpoint: null } })
+  })
+
+  it.each(['completed', 'cancelled'] as const)('retains the historical %s state without making it resumable', (status) => {
+    const events: SessionEvent[] = [sessionEvent('academic/search-plan', plan(), 0),
+      sessionEvent('academic/candidate-batch-decision', { retrievalRunId: target.retrievalRunId,
+        batchIndex: null, action: 'stop', workVersionIds: [], searchQuestions: [], reason: 'historical terminal' }, 1),
+      sessionEvent('academic/run-settlement', { retrievalRunId: target.retrievalRunId, status,
+        completedAt: '2026-10-09T00:00:02.000Z' }, 2)]
+    expect(reconstructAcademicResearchRecoveryState(events, target)).toMatchObject({ status, input: { checkpoint: null } })
+  })
+
   it('rebuilds settled batches, pending candidates, and latest committed coverage', () => {
     const observedCoverage = coverage()
     const state = reconstructAcademicResearchRecoveryState([

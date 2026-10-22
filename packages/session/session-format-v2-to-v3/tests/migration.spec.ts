@@ -365,6 +365,57 @@ describe('composed V3 system and PTC migration', () => {
   const message = (plugin: string, id = plugin) => ({ ...user(id), source: { kind: 'plugin', plugin } })
   const dispatch = { rootCallId: 'tools-code-mode:root', parentCallId: 'tools-code-mode:root', subCallId: 'tools-code-mode:child', name: 'read', arguments: { text: 'tools-code-mode', type: 'tool/code-dispatch' } }
 
+  it.each([{ approved: true }, { approved: false }, { approved: undefined }])(
+    'preserves supported PTC identity and refuses unsupported historical metadata: %j', ({ approved }) => {
+      const planCall = { ...dispatch, name: 'exit_plan_mode', arguments: { plan: '# Historical plan' } }
+      const input = dense([...opening(), event('tool/code-dispatch-start', planCall),
+        event('tool/code-dispatch', { ...planCall, isError: false, content: [],
+          ...approved === undefined ? {} : { meta: { approved } } })])
+      const before = structuredClone(input)
+      if (approved !== undefined) {
+        expect(() => migrate(input)).toThrow('tool/code-dispatch data has unexpected field meta')
+        expect(input).toEqual(before)
+        return
+      }
+      const output = migrate(input).events.find(row => row.type === 'tool/ptc-dispatch')!
+      expect(output.data).toEqual(input.at(-1)?.data)
+      expect(output.data).toMatchObject({ subCallId: dispatch.subCallId })
+      expect(Object.hasOwn(output.data as SessionFormatJsonObject, 'meta')).toBe(false)
+      expect(output.time).toBe(input.at(-1)?.time)
+      expect(input).toEqual(before)
+    },
+  )
+
+  it.each([{ approved: true }, { approved: false }, { approved: undefined }])(
+    'preserves native plan call identity and metadata through format 2 conversion: %j', ({ approved }) => {
+      const callId = 'historical-native-call'
+      const argumentsJson = JSON.stringify({ plan: '# Historical plan' })
+      const input = dense([...opening(), event('request/header', request()),
+        event('assistant/message', { turn: 1, step: 1, stream: [], message: { id: 'historical-assistant', role: 'assistant',
+          source: { kind: 'model', provider: 'mock', model: 'mock' },
+          content: [{ type: 'tool-call', id: callId, name: 'exit_plan_mode', arguments: argumentsJson }] } }, 'append'),
+        event('tool/call', { turn: 1, step: 1, callId, name: 'exit_plan_mode', arguments: argumentsJson }),
+        event('tool/result', { turn: 1, step: 1, ...approved === undefined ? {} : { meta: { approved } },
+          message: { id: 'historical-result', role: 'user', source: { kind: 'tool', callId },
+            content: [{ type: 'tool-result', toolCallId: callId, isError: false, content: [] }] } }, 'append')])
+      const before = structuredClone(input)
+      const result = migrate(input).events.find(row => row.type === 'tool/result')!
+      expect(result.data).toEqual(input.at(-1)?.data)
+      expect(Object.hasOwn(result.data as SessionFormatJsonObject, 'meta')).toBe(approved !== undefined)
+      expect(input).toEqual(before)
+    },
+  )
+
+  it.each(['academic/search-plan', 'academic/candidate-batch-decision', 'academic/recovery-checkpoint',
+    'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])(
+    'refuses unclassified historical %s without changing the source', (type) => {
+      const input = [event(type, { researchBriefId: 'session:approved-plan:call', retained: true })]
+      const before = structuredClone(input)
+      expect(() => migrate(input)).toThrow(`cannot safely transform unclassified event ${type}`)
+      expect(input).toEqual(before)
+    },
+  )
+
   it('renames PTC after system insertion and remaps local references without touching tool JSON or identities', () => {
     const input = dense([
       ...opening(), event('user/message', message('tools-code-mode', 'tools-code-mode:message'), 'append'),

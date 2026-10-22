@@ -40,6 +40,56 @@ function restoreHistorical(events: readonly SessionFormatEvent[], sourceHeader: 
 }
 
 describe('V3 to V4 source preservation', () => {
+  it.each([{ approved: true }, { approved: false }, { approved: undefined }])(
+    'lifts native plan results without inventing approval metadata: %j', ({ approved }) => {
+      const callId = 'historical-plan-call'
+      const rows: SessionFormatEvent[] = [
+        { type: 'turn/start', seq: 0, time: 1, data: { turn: 1 } },
+        { type: 'step/start', seq: 1, time: 2, data: { turn: 1, step: 1 } },
+        { type: 'tool/call', seq: 2, time: 3, data: { turn: 1, step: 1, callId,
+          name: 'exit_plan_mode', arguments: JSON.stringify({ plan: '# Historical plan' }) } },
+        { type: 'tool/result', seq: 3, time: 4, surfaceOp: 'append', data: {
+          turn: 1, step: 1, ...approved === undefined ? {} : { meta: { approved } },
+          message: { id: 'historical-result', role: 'user', source: { kind: 'tool', callId },
+            content: [{ type: 'tool-result', toolCallId: callId, isError: false,
+              content: [{ type: 'text', text: 'Historical review result' }] }] },
+        } },
+        { type: 'step/end', seq: 4, time: 5, data: { turn: 1, step: 1 } },
+        { type: 'turn/end', seq: 5, time: 6, data: { turn: 1, reason: { kind: 'completed' } } },
+      ]
+      const before = structuredClone(rows)
+      const converted = migrate(rows).events.find(row => row.type === 'tool/result')!
+      expect(converted.data).toMatchObject({ message: { id: 'historical-result', role: 'tool', toolCallId: callId } })
+      expect(Object.hasOwn(converted.data as SessionFormatJsonObject, 'meta')).toBe(approved !== undefined)
+      if (approved !== undefined) expect(converted.data).toMatchObject({ meta: { approved } })
+      expect(converted.time).toBe(4)
+      expect(rows).toEqual(before)
+    },
+  )
+
+  it.each([{ approved: true }, { approved: false }, { approved: undefined }])(
+    'preserves admitted format-3 PTC identities and existing metadata: %j', ({ approved }) => {
+      const rows: SessionFormatEvent[] = [{ type: 'tool/ptc-dispatch', seq: 0, time: 1,
+        data: { rootCallId: 'root:code:1', parentCallId: 'root:code:1', subCallId: 'root:code:1:child',
+          name: 'exit_plan_mode', arguments: { plan: '# Historical plan' }, isError: false, content: [],
+          ...approved === undefined ? {} : { meta: { approved } } } }]
+      const before = structuredClone(rows)
+      expect(migrate(rows).events[0]).toEqual(rows[0])
+      expect(rows).toEqual(before)
+    },
+  )
+
+  it.each(['academic/search-plan', 'academic/candidate-batch-decision', 'academic/recovery-checkpoint',
+    'academic/evidence-request', 'academic/evidence-result', 'academic/synthesis-request', 'academic/synthesis-result'])(
+    'refuses required historical %s without treating it as ignorable', (type) => {
+      const rows: SessionFormatEvent[] = [{ type, seq: 0, time: 1,
+        data: { researchBriefId: 'session:approved-plan:call', retained: true } }]
+      const before = structuredClone(rows)
+      expect(() => migrate(rows)).toThrow(`unknown event type "${type}"`)
+      expect(rows).toEqual(before)
+    },
+  )
+
   it('rejects required V3 developer events while preserving ignorable events and native V4 admission', () => {
     const rows: SessionFormatEvent[] = [
       { type: 'turn/start', seq: 0, time: 1, data: { turn: 1 } },

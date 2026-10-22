@@ -82,6 +82,8 @@ kind: "package-reference"
 
 ## Known Limitations and Deferred Work
 
+- 重新评审会建立新的 Brief 身份，不授权继续执行绑定其他 Brief ID 或版本的运行。历史格式 2 的学术日志包含[已发布迁移分类](../../session/session-format-v2-to-v3/src/payload.ts)之外的必需扩展事件。完整导入需要审计这些事件及序号引用的迁移；仅通过批准读取检查不能证明导入兼容。不得从文本推断批准、丢弃必需事件或替换历史 Brief 身份来绕过失败。
+
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。

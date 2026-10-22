@@ -81,6 +81,8 @@ Each paper is an independent request and does not replay the Session conversatio
 
 ## Known Limitations and Deferred Work
 
+- A fresh review creates a new Brief identity; it does not authorize continuation of a run bound to another Brief ID or version. Historical format-2 Academic logs contain required extensions outside the [released migration classification](../../session/session-format-v2-to-v3/src/payload.ts). Complete import needs an audited migration of those events and sequence references; approval-reader checks alone do not establish import compatibility. Never infer approval from text, discard required events, or replace historical Brief identities to bypass a failure.
+
 <a id="known-limitations-and-deferred-work"></a>
 
 - CVF, ACL Anthology, and PMLR search only the catalog pages configured by the Web composition; adding a conference or volume is a configuration change.

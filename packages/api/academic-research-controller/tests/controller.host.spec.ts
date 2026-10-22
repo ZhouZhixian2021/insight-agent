@@ -1,6 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createCoverageSummary,
-  createFailureId, createResearchBriefId, createRetrievalRunId,
+  createFailureId, createResearchBriefId, createRetrievalRunId, createSearchQueryId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId, SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
@@ -150,8 +150,14 @@ function briefPlan(payload: unknown = briefPayload()): string {
   return `# Retrieval research\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
 }
 
-function nativePlanEvents(plan: string, options: { isError?: boolean; time?: number; argumentsJson?: string; approved?: boolean } = {}) {
-  const callId = ToolCallId('approved-brief-call')
+function nativePlanEvents(plan: string, options: {
+  isError?: boolean
+  time?: number
+  argumentsJson?: string
+  approved?: boolean
+  callId?: string
+} = {}) {
+  const callId = ToolCallId(options.callId ?? 'approved-brief-call')
   return [
     { type: 'tool/call', seq: 1, time: 1,
       data: { turn: 1, step: 1, callId, name: 'exit_plan_mode',
@@ -462,6 +468,46 @@ describe('AcademicResearchController', () => {
     expect(researchPlanFromApprovedPlan('mixed', ordered([ptc, ...native])).brief.researchBriefId)
       .toBe('mixed:approved-plan:approved-brief-call')
   })
+
+  it('gives a fresh review its own Brief identity even when the plan text is identical', () => {
+    const markdown = briefPlan()
+    const old: SessionEvent[] = nativePlanEvents(markdown, { callId: 'historical-call' })
+    const fresh: SessionEvent[] = nativePlanEvents(markdown, { callId: 'fresh-review-call' })
+    const events = [...old, ...fresh].map((event, seq) => ({ ...event, seq: SessionSeq(seq), time: seq }))
+    const before = structuredClone(events)
+    expect(researchPlanFromApprovedPlan('session', old).brief.researchBriefId)
+      .toBe('session:approved-plan:historical-call')
+    expect(researchPlanFromApprovedPlan('session', events).brief.researchBriefId)
+      .toBe('session:approved-plan:fresh-review-call')
+    expect(events).toEqual(before)
+  })
+
+  it('keeps identical call identities in different Sessions separate', () => {
+    const events: SessionEvent[] = nativePlanEvents(briefPlan(), { callId: 'historical-call' })
+    expect(researchPlanFromApprovedPlan('first', events).brief.researchBriefId)
+      .not.toBe(researchPlanFromApprovedPlan('second', events).brief.researchBriefId)
+  })
+
+  it.each([{ sameBrief: true, reason: 'candidate_state_missing' }, { sameBrief: false, reason: 'brief_identity_mismatch' }])(
+    'refuses historical continuation without a matching executable checkpoint: %j', async ({ sameBrief, reason }) => {
+      const fixture = await harness()
+      const preview = await fixture.controller.plan(fixture.sessionId)
+      const retrievalRunId = createRetrievalRunId()
+      fixture.sessionEvents.push(['academic/search-plan', { schemaVersion: 1,
+        researchBriefId: sameBrief ? preview.researchBriefId : createResearchBriefId(), researchBriefVersion: 1,
+        maximumSearchRounds: 1, queries: [{ searchQueryId: createSearchQueryId(), kind: 'academic', expression: 'retrieval',
+          purpose: 'historical search', questions: ['Which method works?'], roundIndex: 1, providers: ['arxiv'],
+          maximumResults: null, siteHost: null }] }],
+      ['academic/candidate-batch-decision', { retrievalRunId, batchIndex: null, action: 'stop',
+        workVersionIds: [], searchQuestions: [], reason: 'historical boundary' }])
+      const before = structuredClone(fixture.sessionEvents)
+      await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId,
+        resumeRetrievalRunId: retrievalRunId, synthetic: false }, fixture.signal)).rejects.toThrow(reason)
+      expect(fixture.sessionEvents).toEqual(before)
+      expect(fixture.search).not.toHaveBeenCalled()
+      expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    },
+  )
 
   it('previews the approved plan without retrieval and refuses a different approval identity', async () => {
     const fixture = await harness()
