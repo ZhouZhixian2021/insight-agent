@@ -8,6 +8,7 @@
     { "path": "../../core/tools" },
     { "path": "../../llm/llm" },
     { "path": "../../core/session" },
+    { "path": "../../session/session-projection" },
     { "path": "../../academic/model" },
     { "path": "../../academic/evidence" },
     { "path": "../../academic/ingestion" },

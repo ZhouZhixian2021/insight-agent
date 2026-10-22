@@ -21,7 +21,8 @@ const RETRIEVAL_CHANNELS = ['academic', 'web_discovery'] as const satisfies read
 const MAXIMUM_WEB_DISCOVERY_RESULTS = 8
 const MAXIMUM_REFERENCE_VERIFICATIONS = 8
 
-interface ApprovedPlan {
+/** An explicitly approved plan captured from durable Session events. */
+export interface ApprovedPlan {
   readonly identity: string
   readonly markdown: string
   readonly reviewedAt: string
@@ -59,6 +60,24 @@ export function researchPlanFromApprovedPlan(
   if (approved === undefined) {
     throw new Error('请先在当前会话完成研究计划审核。')
   }
+  return researchPlanFromApproval(sessionId, approved)
+}
+
+/**
+ * Validate and recover the plan from a previously projected explicit approval.
+ *
+ * @param sessionId - Session that owns the approval.
+ * @param approved - Explicit approval identity, Markdown, and review timestamp.
+ * @returns The validated Brief and optional search handoff from that approval.
+ */
+export function researchPlanFromApproval(
+  sessionId: string,
+  approved: ApprovedPlan,
+): {
+  brief: ResearchBrief
+  searches: readonly AcademicPlannedSearch[] | undefined
+  candidateScreening: AcademicCandidateScreening | undefined
+} {
   const { searchPlan, candidateScreening, ...payload } = parseBriefPayload(approved.markdown)
   validateResearchBriefRequirements(payload)
   return { searches: searchPlan, candidateScreening, brief: {

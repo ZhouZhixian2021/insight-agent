@@ -5,6 +5,7 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-session-projection'
 import {
   runAcademicResearchDraft,
   runAcademicEvidenceEnhancement,
@@ -22,7 +23,7 @@ import { fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
-import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
+import { researchPlanFromApproval } from './research-brief-plan.ts'
 import { approvedPaperAdapters, type GapRoundPolicy } from './search.ts'
 import { createModelCandidateReviewer, recordCandidateReviewSelection } from './candidate-review-model.ts'
 import { approvedEvidenceQuestionTerms } from './candidate-screening.ts'
@@ -30,7 +31,12 @@ import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
 import { academicQ6Projection } from './q6-projection.ts'
-import { AcademicBackgroundRuns, replayBackgroundRun, replayBackgroundRuns } from './background-run.ts'
+import { AcademicBackgroundRuns, backgroundRunFromProjection, backgroundRunsFromProjection } from './background-run.ts'
+import {
+  academicResearchProjectionDefinition,
+  recoveryEventsOf,
+  requireAcademicResearchState,
+} from './academic-research-projection.ts'
 import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
   AcademicResearchPlanView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunView,
@@ -104,7 +110,7 @@ export interface Config {
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
 export class AcademicResearchController extends TypertRemoteService {
-  static inject = ['academicSource', 'sessionController', 'typert', 'web']
+  static inject = ['academicSource', 'sessionController', 'sessionProjections', 'typert', 'web']
 
   static Config: z<Config> = z.object({
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
@@ -192,6 +198,7 @@ export class AcademicResearchController extends TypertRemoteService {
       maximumQueriesPerRound: config.gapRoundMaximumQueriesPerRound ?? 4,
       maximumAcademicResultsPerQuery: config.gapRoundMaximumAcademicResultsPerQuery ?? 20,
     }
+    ctx.sessionProjections.register(academicResearchProjectionDefinition)
     ctx.plugin(academicPlanValidation)
     ctx.effect(() => async () => { await this.backgroundRuns.dispose() }, 'academicResearchController.backgroundRuns')
   }
@@ -206,8 +213,7 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
     try {
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-      const { brief, searches } = researchPlanFromApprovedPlan(String(sessionId), found.agent.session.snapshotEvents())
+      const { brief, searches } = this.approvedPlan(String(sessionId), found.agent.session)
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       return { researchBriefId: brief.researchBriefId, topic: brief.topic, questions: brief.questions, searches }
     } catch (cause: unknown) {
@@ -239,10 +245,10 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-    const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-    const history = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+    const projection = this.projection(agent.session)
+    const approved = this.approvedPlan(String(request.sessionId), agent.session)
+    const history = reconstructAcademicResearchRecoveryState(recoveryEventsOf(projection,
+      String(request.retrievalRunId)), {
       retrievalRunId: request.retrievalRunId, researchBriefId: approved.brief.researchBriefId,
       researchBriefVersion: approved.brief.version,
     })
@@ -269,9 +275,7 @@ export class AcademicResearchController extends TypertRemoteService {
     return agent.runMaintenance(async (agentSignal) => {
       const operationSignal = AbortSignal.any([signal, agentSignal,
         AbortSignal.timeout(this.enhancementMaximumElapsedMs)])
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-      if (agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-enhancement-selection'
-          && event.data.retrievalRunId === request.retrievalRunId)) {
+      if (this.projection(agent.session).enhancedRunIds.includes(String(request.retrievalRunId))) {
         throw new RemoteError('gateway/bad-request', '本轮已经选择一篇论文进行二级补充。', {})
       }
       const source = await fetchAcademicFullText({ academicWorkId: paper.version.academicWorkId,
@@ -332,8 +336,7 @@ export class AcademicResearchController extends TypertRemoteService {
     signal.throwIfAborted()
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-    const approved = researchPlanFromApprovedPlan(String(request.sessionId), found.agent.session.snapshotEvents())
+    const approved = this.approvedPlan(String(request.sessionId), found.agent.session)
     if (approved.searches === undefined || approved.brief.researchBriefId !== request.researchBriefId) {
       throw new RemoteError('gateway/bad-request', '研究计划已更新或缺少检索方案，请重新打开学术研究确认计划。', {})
     }
@@ -364,8 +367,9 @@ export class AcademicResearchController extends TypertRemoteService {
     if (active !== undefined) return active
     const found = await this.ctx.sessionController.resolveAgent(key.sessionId)
     if ('error' in found) throw found.error
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-    const view = replayBackgroundRun(key.sessionId, key.backgroundRunId, found.agent.session.snapshotEvents())
+    const projection = this.projection(found.agent.session)
+    const view = backgroundRunFromProjection(key.sessionId, key.backgroundRunId,
+      projection.backgroundRuns[key.backgroundRunId])
     if (view === undefined) throw new RemoteError('gateway/bad-request', '找不到当前会话的学术研究运行记录。', {})
     return view
   }
@@ -379,8 +383,9 @@ export class AcademicResearchController extends TypertRemoteService {
   async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]> {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-    return replayBackgroundRuns(sessionId, found.agent.session.snapshotEvents()).slice(-20).map((saved) => {
+    const projection = this.projection(found.agent.session)
+    return backgroundRunsFromProjection(sessionId, projection.backgroundRunOrder,
+      projection.backgroundRuns).slice(-20).map((saved) => {
       const { schemaVersion, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason } =
         this.backgroundRuns.get(sessionId, saved.backgroundRunId) ?? saved
       return { schemaVersion, sessionId, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason }
@@ -420,6 +425,18 @@ export class AcademicResearchController extends TypertRemoteService {
     const active = this.backgroundRuns.cancel(request.sessionId, request.backgroundRunId,
       view => found.agent.session.append('academic/background-run-state', view))
     return active ?? this.getBackgroundRun(request)
+  }
+
+  private projection(session: Session) {
+    return requireAcademicResearchState(
+      this.ctx.sessionProjections.stateOf(session, 'academicResearch'), session,
+    )
+  }
+
+  private approvedPlan(sessionId: string, session: Session) {
+    const approved = this.projection(session).latestApprovedPlan
+    if (approved === null) throw new Error('请先在当前会话完成研究计划审核。')
+    return researchPlanFromApproval(sessionId, approved)
   }
 
   private async *streamRun(
@@ -471,8 +488,7 @@ export class AcademicResearchController extends TypertRemoteService {
     let searches
     let candidateScreening
     try {
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-      const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+      const approved = this.approvedPlan(String(request.sessionId), agent.session)
       brief = approved.brief
       searches = approved.searches
       candidateScreening = approved.candidateScreening
@@ -484,8 +500,8 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     let recovery: AcademicResearchRecoveryCheckpoint | undefined
     if (request.resumeRetrievalRunId !== undefined) {
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
-      const reconstructed = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+      const reconstructed = reconstructAcademicResearchRecoveryState(recoveryEventsOf(this.projection(agent.session),
+        String(request.resumeRetrievalRunId)), {
         retrievalRunId: request.resumeRetrievalRunId,
         researchBriefId: brief.researchBriefId,
         researchBriefVersion: brief.version,

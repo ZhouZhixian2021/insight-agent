@@ -30,7 +30,7 @@ kind: "package-reference"
 
 论文抽取结果返回 `extracted`、`partially_extracted` 或 `extraction_failed`，以及合格 `evidenceCount` 和 `rejectedDrafts`；后者包含从零开始的草稿/片段序号、稳定拒绝代码和原因。部分抽取结果同时向 `stages.extraction` 提供成功与失败观察，全部被拒的论文只贡献失败。即使没有合格证据，响应仍保留这些诊断，不会把被拒的模型陈述作为证据返回。
 
-将控制器与 `academicSource`、`sessionController`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 OpenAlex、arXiv、CVF、ACL Anthology 与 PMLR Provider。`fulltextFetchProvider` 默认为 `http`，只为 Academic 全文选择 Web 抓取 Provider，不改变部署中的普通 Web 抓取默认值。所选 Provider 必须保留有界的原始 HTML 或 PDF，因为证据包会拒绝转换后的文本和截断文档。`extractionMaxTokens` 默认为 16,384，用于证据抽取；`synthesisMaxTokens` 默认为 32,768，用于最终报告合成。只有 Session 模型选择未提供 `maxTokens` 时才使用这些预留值；Session 的明确值对两阶段均优先。`extractionMaxAttempts` 默认为 2，且只允许 1 或 2；输出 token 用尽和配置的瞬时故障可以消耗同一批次的第二次尝试。`extractionRetryInitialDelayMs` 默认为 10,000。长论文抽取使用 `extractionBatchMaxInputTokens` 12,000、`extractionBatchOverlapCharacters` 512 和 `extractionAttemptTimeoutMs` 150,000，在多批请求间保留原始片段定位。`extractionMaxAttempts` 为 2 时，本地计时超时的证据输入会拆成两个较小输入各尝试一次；模型提供方报告的瞬时超时仍按配置的重试策略处理。`synthesisMaxAttempts` 默认为 3，`synthesisRetryInitialDelayMs` 默认为 1,000；最终报告合成只重试连接和超时错误，每次失败后的等待时间加倍。先调用 `academicResearch.plan(sessionId)` 预览，再向 `academicResearch.runStream` 传入返回的 `researchBriefId`、Session ID、可选全局结果上限和合成数据声明。消费每个 `progress` 帧时，以同一 `retrievalRunId` 下的新快照替换旧快照；唯一 `result` 帧携带既有终态结果。调用方必须只打开一次这个一次性流，不能把它放进自动重连订阅。关闭流、切换 Session 或调用方取消会中止同一个维护任务，不会重新启动研究。客户端迁移期间，一元 `academicResearch.run` 接受相同请求。两个入口都会拒绝预览后已经变化的批准身份。查询只来自已批准计划，调用者不能替换；去除首尾空白后的完全重复查询只执行一次，查询数同时受三条硬上限与已批准 `maximumSearchRounds` 约束。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。开始运行前，控制器从 Agent 上下文解析 Academic 来源与 Web 服务；任一服务缺失时返回可用性错误。
+将控制器与 `academicSource`、`sessionController`、`sessionProjections`、`typert` 和 `web` 一起挂载。Web 应用在 Academic 来源运行时中挂载 OpenAlex、arXiv、CVF、ACL Anthology 与 PMLR Provider。`fulltextFetchProvider` 默认为 `http`，只为 Academic 全文选择 Web 抓取 Provider，不改变部署中的普通 Web 抓取默认值。所选 Provider 必须保留有界的原始 HTML 或 PDF，因为证据包会拒绝转换后的文本和截断文档。`extractionMaxTokens` 默认为 16,384，用于证据抽取；`synthesisMaxTokens` 默认为 32,768，用于最终报告合成。只有 Session 模型选择未提供 `maxTokens` 时才使用这些预留值；Session 的明确值对两阶段均优先。`extractionMaxAttempts` 默认为 2，且只允许 1 或 2；输出 token 用尽和配置的瞬时故障可以消耗同一批次的第二次尝试。`extractionRetryInitialDelayMs` 默认为 10,000。长论文抽取使用 `extractionBatchMaxInputTokens` 12,000、`extractionBatchOverlapCharacters` 512 和 `extractionAttemptTimeoutMs` 150,000，在多批请求间保留原始片段定位。`extractionMaxAttempts` 为 2 时，本地计时超时的证据输入会拆成两个较小输入各尝试一次；模型提供方报告的瞬时超时仍按配置的重试策略处理。`synthesisMaxAttempts` 默认为 3，`synthesisRetryInitialDelayMs` 默认为 1,000；最终报告合成只重试连接和超时错误，每次失败后的等待时间加倍。先调用 `academicResearch.plan(sessionId)` 预览，再向 `academicResearch.runStream` 传入返回的 `researchBriefId`、Session ID、可选全局结果上限和合成数据声明。消费每个 `progress` 帧时，以同一 `retrievalRunId` 下的新快照替换旧快照；唯一 `result` 帧携带既有终态结果。调用方必须只打开一次这个一次性流，不能把它放进自动重连订阅。关闭流、切换 Session 或调用方取消会中止同一个维护任务，不会重新启动研究。客户端迁移期间，一元 `academicResearch.run` 接受相同请求。两个入口都会拒绝预览后已经变化的批准身份。查询只来自已批准计划，调用者不能替换；去除首尾空白后的完全重复查询只执行一次，查询数同时受三条硬上限与已批准 `maximumSearchRounds` 约束。控制器读取该 Session 最近一次成功的 `exit_plan_mode` 审批，校验其中唯一的 `academic-research-brief-json` 区块，并补充稳定身份、版本 1 和审批元数据，因此调用方不能替换成未经审批的 Brief。模型选择仍归 Session 所有。开始运行前，控制器从 Agent 上下文解析 Academic 来源与 Web 服务；任一服务缺失时返回可用性错误。
 
 新结构化计划交接使用 `schemaVersion: 5`，必须包含 `searchPlan` 和 `candidateScreening`；每项有 `query`、中文 `purpose`、与 Brief 完全一致的 `questions`，以及与查询一同审核的 `retrieval` 策略，覆盖所有研究问题。审核过的初筛字段为各研究问题提供元数据词项，并提供方法与证据线索；贡献信号可为空。`targetIncludedWorks` 与证据充足最低值和强制停止上限分别审核，三者必须保持顺序。策略选择 `academic` 和／或 `web_discovery`，直接检索只允许 OpenAlex/arXiv，引用核验只允许 OpenAlex/arXiv/ACL/PMLR/CVF，Web 发现与核验上限均不得超过 8。依赖渠道的 Provider 列表和数量必须相符；重复值、不支持的值、未知字段、负数与超限值都会在审核前被拒绝。Controller 将交接投影为第 1 版领域 Brief 与独立流水线查询。旧第 1 至第 4 版计划仍可读取；第 1 至第 3 版保留最大数量兼作目标的行为；缺少检索方案时不能预览或运行，提示用户让系统补齐并重新审核。运行时不额外调用模型生成查询。
 
@@ -64,6 +64,8 @@ kind: "package-reference"
 
 原生计划结果与 `tool/ptc-dispatch` 结算必须具有明确的 `approved: true` 结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史结果需要重新评审，原存储记录保持不变。PTC 批准身份直接使用记录中的 `subCallId`，不作改写。读取器消费标准格式迁移后的当前逻辑事件，不接受已退役的 `tool/code-dispatch` 标签。Web 默认使用原生工具，其既有进程级 `DSH_TOOLS_MODE=ptc` 设置也会作用于学术预设。候选模型请求声明 `academic-candidate-review` 消息来源。
 
+控制器从 `academicResearch` Session 投影读取已批准计划身份、恢复事实、补充选择和后台运行状态。投影从持久化检查点恢复，并随已提交的 Session 事件增量更新；恢复数据只保留学术运行事实及每轮运行开始前的搜索计划。
+
 ## Model Experience
 
 ### Academic 研究运行
@@ -93,7 +95,7 @@ kind: "package-reference"
 
 -----
 
-本控制器不发布 invariant 伴随模块，因为每次响应直接来自 Session 与工作流结果，没有独立维护的第二份副本；调用时校验检查获批 Plan 和响应关联。
+本控制器不发布 invariant 伴随模块，因为投影只是权威 Session 日志的只读派生视图；响应仍来自 Session 与工作流结果，调用时校验检查获批 Plan 和响应关联。
 
 <a id="dev-note"></a>
 ### 开发备注

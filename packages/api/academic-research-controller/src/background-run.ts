@@ -204,6 +204,42 @@ export function replayBackgroundRuns(
   return [...latest.values()].map(interruptedIfInactive)
 }
 
+/**
+ * Recover one run from its already-folded latest view without reading Session history.
+ *
+ * @param sessionId - Session that owns the run.
+ * @param backgroundRunId - Run to recover.
+ * @param view - Latest projected state for the run, if one exists.
+ * @returns The validated run view with inactive work marked interrupted, or undefined.
+ */
+export function backgroundRunFromProjection(
+  sessionId: SessionId,
+  backgroundRunId: AcademicBackgroundRunId,
+  view: AcademicBackgroundRunView | undefined,
+): AcademicBackgroundRunView | undefined {
+  if (view?.sessionId !== sessionId || view.backgroundRunId !== backgroundRunId) return undefined
+  return interruptedIfInactive(view)
+}
+
+/**
+ * Recover recent runs in first-start order from the Session projection.
+ *
+ * @param sessionId - Session whose runs should be returned.
+ * @param order - Run IDs in their first-start order.
+ * @param latest - Latest projected state indexed by run ID.
+ * @returns Run views belonging to the Session, in first-start order.
+ */
+export function backgroundRunsFromProjection(
+  sessionId: SessionId,
+  order: readonly string[],
+  latest: Readonly<Record<string, AcademicBackgroundRunView>>,
+): AcademicBackgroundRunView[] {
+  return order.flatMap((id) => {
+    const view = latest[id]
+    return view?.sessionId === sessionId ? [interruptedIfInactive(view)] : []
+  })
+}
+
 function interruptedIfInactive(view: AcademicBackgroundRunView): AcademicBackgroundRunView {
   if (view.state !== 'running') return view
   return { ...view, state: 'interrupted',

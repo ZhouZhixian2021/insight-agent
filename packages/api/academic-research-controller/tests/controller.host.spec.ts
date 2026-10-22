@@ -20,6 +20,7 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 }))
 
 import AcademicResearchController from '../src/index.ts'
+import { academicResearchProjectionDefinition } from '../src/academic-research-projection.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
 import type { AcademicPlannedRetrieval } from '../src/types.ts'
@@ -269,6 +270,19 @@ async function harness(options: {
       events: (agent.session.snapshotEvents() as Array<{ seq: number }>).filter(event => event.seq === seq) }),
     [Symbol.asyncDispose]: () => Promise.resolve(),
   }) } as never)
+  let academicProjection: typeof academicResearchProjectionDefinition | undefined
+  ctx.provide('sessionProjections', {
+    register: (definition: typeof academicResearchProjectionDefinition) => { academicProjection = definition; return dispose },
+    stateOf: (session: { id: unknown }, key: string) => {
+      if (key !== 'academicResearch' || academicProjection === undefined) return undefined
+      if (options.eventsError === true) throw 'invalid event source'
+      let state = academicProjection.init({ id: session.id } as never, undefined as never)
+      for (const event of agent.session.snapshotEvents() as SessionEvent[]) {
+        state = academicProjection.apply(state, event)
+      }
+      return state
+    },
+  } as never)
   const controller = new AcademicResearchController(ctx, {
     fulltextFetchProvider: 'academic-raw',
     extractionMaxTokens: 16_384,
