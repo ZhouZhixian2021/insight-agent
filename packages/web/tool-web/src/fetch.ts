@@ -10,7 +10,7 @@ import TurndownService from 'turndown'
 import { gfm } from '@joplin/turndown-plugin-gfm'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { GenericCallView, ToolResult, WebFetchResultView } from '@deepseek-ai/dsh-tools'
-import type { WebFetchBody, WebFetchResult } from '@deepseek-ai/dsh-web'
+import { WebError, type WebFetchBody, type WebFetchResult } from '@deepseek-ai/dsh-web'
 import { assertNever, type JsonValue } from '@deepseek-ai/dsh-util-values'
 import { EXTERNAL_WEB_CONTENT_NOTICE } from './trust.ts'
 
@@ -240,6 +240,7 @@ interface RenderedBody {
  *   raw active markup never reaches the model-facing result.
  */
 function renderBody(body: WebFetchBody, maxInputChars: number): RenderedBody {
+  if (body.kind === 'pdf') return { text: '[PDF content omitted: use an academic PDF parser.]', sourceTruncated: false }
   const content = body.content.slice(0, maxInputChars)
   const sourceTruncated = content.length !== body.content.length
   switch (body.kind) {
@@ -502,6 +503,9 @@ export function applyWebFetchTool(ctx: Context, timeoutMs: number, maxOutputChar
         { url: input.url },
         exec.signal,
       )
+      if (result.body.kind === 'pdf') {
+        throw new WebError('PDF content is available only to programmatic ctx.web.fetch() callers', 'WEB_UNSUPPORTED_CONTENT_TYPE')
+      }
       return {
         url: result.url,
         statusCode: result.statusCode,
