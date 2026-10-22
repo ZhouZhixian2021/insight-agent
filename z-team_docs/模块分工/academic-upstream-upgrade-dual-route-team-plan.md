@@ -202,13 +202,14 @@ C 可独立安排 C-H 与 C-T 的先后，两个交付应能分别审查、测�
 | A-U1 至 A-U5 | A | 未开始 | 从 T0 合入 U0，先达到第一轮检查点。 |
 | B-U1 至 B-U5 | B | 未开始 | 从 U0 盘点并迁入 T0，先达到第一轮检查点。 |
 | C-H / C-T | C | 已分工，实现状态待 C 登记 | 独立安排开发，交付影响清单与验收证据。 |
-| C-T0 / A-T0 / B-T0 | C 主导接口，A/B 核对各路线 | C 已编写[接口提案、样例与旧版来源映射](academic-trace-v1-interface-handoff.md)；A/B 可采集性反馈待补 | 先核对运行关联、调用身份与计时缺口，再冻结接口并进入 C-T1；样例不代表运行时功能已实现。 |
+| C-T0 / A-T0 / B-T0 | C 主导接口，A/B 核对各路线 | C 已编写[接口提案、样例与旧版来源映射](academic-trace-v1-interface-handoff.md)；B 已反馈 U0 基座可采集性（[B-T0 核对](../开发记录/2026-10-22-yzyhello-B-T0-Trace观察点可行性核对.md)），A 待补 | 先核对运行关联、调用身份与计时缺口，再冻结接口并进入 C-T1；样例不代表运行时功能已实现。 |
 | 最终选型与 master 合并 | A | 未开始 | 比较路线后审查选中版本。 |
 
 问题表由各负责人补充实际证据，不能只登记“已修复”而缺少验证。
 
 | 编号 | 影响路线/功能 | 问题与证据 | 负责人 | 状态与验证结果 |
 | --- | --- | --- | --- | --- |
+| T0-1 | 共享业务基线（学术工作流） | T0 离线固定样本确定性失败：`packages/academic/workflow/tests/replenishment.spec.ts:39` 用例 `continues past unlinked papers and stops on usable evidence` 报 `expected "vi.fn()" to be called 4 times, but got 2 times`（`adapters.fetcher`）；单独复跑仍 18 tests / 1 failed。见[B-U0 T0 固定样本基线结果](../开发记录/2026-10-22-yzyhello-B-U0-T0固定样本基线结果.md)。 | B（登记） | 已登记；待 A/B 在各自路线用同一固定样本复跑确认是否复现，尚未修复。 |
 | 待登记 | — | — | — | — |
 
 相关入口：[成员与分支](../02-成员与分支.md)、[原模块归属](academic-module-ownership.md)、[简洁计划与分级证据](academic-concise-plan-tiered-evidence-team-plan.md)、[报告模板适配](academic-report-template-plan.md)。本方案优先定义本轮升级任务归属，不改写其他模块的已实现状态。
