@@ -43,18 +43,14 @@ const controllerCases: readonly {
   },
 ] as const
 
-function localScenarioSource(source: string | undefined): string | undefined {
-  return source?.includes('/') === false ? source : undefined
-}
-
 const scenarios: Scenario[] = controllerCases.map((controller) => {
   const manifestPath = join(corpusDir, controller.name, 'snapshot.yml')
   const manifest = parseSnapshotManifest(readFileSync(manifestPath, 'utf8'), manifestPath)
   if (manifest.recording === undefined || manifest.header === undefined) {
     throw new Error(`${controller.name}: ACP snapshot manifest lacks recording or header metadata`)
   }
-  const systemPromptSource = localScenarioSource(manifest.header.systemPromptSource)
-  const toolSchemasSource = localScenarioSource(manifest.header.toolSchemasSource)
+  const systemPromptSource = manifest.header.systemPromptSource
+  const toolSchemasSource = manifest.header.toolSchemasSource
   return {
     ...controller,
     recorded: manifest.recording === 'live',
@@ -87,6 +83,7 @@ defineAcpSnapshotSuite({
     tsconfigPath: fileURLToPath(new URL('../../tsconfig.json', import.meta.url)),
   },
   snapshotsDir: corpusDir,
+  corpusRoot: fileURLToPath(new URL('../', import.meta.url)),
   scenarios,
   mode: snapshotMode(process.env.DSH_SNAPSHOT),
 })
