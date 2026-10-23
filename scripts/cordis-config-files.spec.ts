@@ -29,8 +29,24 @@ describe('cordisConfigFiles', () => {
     }
 
     expect(cordisConfigFiles(root)).toEqual([
-      join('apps', 'cli', 'config', 'examples', 'agent.cordis.yaml'),
-      join('apps', 'cli', 'config', 'examples', 'headless.cordis.yml'),
+      'apps/cli/config/examples/agent.cordis.yaml',
+      'apps/cli/config/examples/headless.cordis.yml',
     ])
+  })
+
+  it('keeps nested app tests, Bundle patches, and snapshot aliases in the scan', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-cordis-config-paths-'))
+    roots.push(root)
+    const paths = [
+      'apps/cli/tests/profiles/acp/cordis.yml',
+      'packages/bundle/web/presets/cordis.patch.yml',
+      'snapshots/acp/example/cordis.yaml',
+    ]
+    for (const file of paths) {
+      mkdirSync(join(root, file, '..'), { recursive: true })
+      writeFileSync(join(root, file), '[]\n')
+      writeFileSync(join(root, `${file}.i18n.yaml`), '{}\n')
+    }
+    expect(cordisConfigFiles(root)).toEqual(paths)
   })
 })
