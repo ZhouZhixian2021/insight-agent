@@ -35,7 +35,6 @@ import {
   restorePinnedToolSchemas,
   scrubModelRequestBulk,
   scrubSessionSnapshot,
-  scrubSystemPrompts,
   sessionFixtureName,
   systemPromptPrecedesRequests,
   sessionFixtureNames,
@@ -95,10 +94,10 @@ const dshSdkChildConfig = fileURLToPath(new URL(
   '../../packages/subagent/subagent-dsh-sdk/tests/fixtures/loader/child.patch.yml',
   import.meta.url,
 ))
-
-function dirOf(url: string): string {
-  return fileURLToPath(new URL('.', url))
-}
+const sdkPlanReplayCompatibilityPatch = fileURLToPath(new URL(
+  '../../packages/test-support/session-snapshot/tests/fixtures/sdk-plan-replay.compat.yml',
+  import.meta.url,
+))
 
 interface SdkAssertions {
   /** Shipped SDK runtime profile; the manifest still identifies the SDK transport. */
@@ -427,7 +426,7 @@ function normalizeNotifications(notifications: readonly HarnessNotification[], c
   })
   let output = records.map(record => JSON.stringify(record)).join('\n') + '\n'
   if (typedIdentities) {
-    for (const [index, id] of ctx.sessionIds.entries()) output = output.replaceAll(id, '{{session:' + (index + 1) + '}}')
+    for (const [index, id] of ctx.sessionIds.entries()) output = output.replaceAll(id, '{{session:' + String(index + 1) + '}}')
   }
   return normalizeStdout(output, ctx, typedIdentities ? { identityMode: 'preserve' } : {})
 }
@@ -608,8 +607,12 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   const patchRoot = join(cwd, '.snapshot-patches')
   await mkdir(patchRoot, { recursive: true })
   const assertions = SDK_ASSERTIONS[scenario.name] ?? {}
-  const patches = [...authoredPatches(scenario, !recording), ...assertions.patches ?? []]
-    .map((patch, index) => materializeProfilePatch(patch, cwd, scenario.manifest.profile, patchRoot, index))
+  const runtimeProfile = assertions.runtimeProfile ?? scenario.manifest.profile
+  const replayCompatibilityPatches = scenario.name === 'academic-plan-chinese'
+    && runtimeProfile === 'sdk-minimal' && mode === 'replay'
+    ? [sdkPlanReplayCompatibilityPatch] : []
+  const patches = [...authoredPatches(scenario, !recording), ...assertions.patches ?? [], ...replayCompatibilityPatches]
+    .map((patch, index) => materializeProfilePatch(patch, cwd, runtimeProfile, patchRoot, index))
   let childSessionsRoot: string | undefined
   let childEnvironment: Record<string, string> = {}
   if (assertions.dshSdkChild !== undefined) {
@@ -664,7 +667,7 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   }
 
   const createHarness = (): DeepSeekHarness => new DeepSeekHarness({
-    profile: assertions.runtimeProfile ?? scenario.manifest.profile,
+    profile: runtimeProfile,
     patches,
     dshHome,
     processCwd: cwd,
@@ -970,13 +973,17 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       if (scenario.name === 'minimal-image-compaction') {
         const events = results.flatMap(result => result.events)
         const image = events.find(event => event.type === 'tool/result')
+        const attachmentId: unknown = expect.stringMatching(/^sha256:/u)
+        const imageContent: unknown = expect.arrayContaining([
+          expect.objectContaining({ type: 'image', attachment: {
+            attachmentId,
+            mediaType: 'image/png', bytes: 69, width: 1, height: 1, name: 'red.png',
+          } }),
+        ])
         expect(image).toMatchObject({ data: { message: {
           toolCallId: 'minimal-image-read',
           isError: false,
-          content: expect.arrayContaining([expect.objectContaining({ type: 'image', attachment: {
-            attachmentId: expect.stringMatching(/^sha256:/u),
-            mediaType: 'image/png', bytes: 69, width: 1, height: 1, name: 'red.png',
-          } })]),
+          content: imageContent,
         } } })
         const summaries = events.filter(event => event.type === 'compaction/summary')
         expect(summaries).toHaveLength(1)
@@ -985,8 +992,9 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           rawOutput: [{ type: 'text', text: 'Read red.png and report MINIMAL_IMAGE_OK.' }],
         } })
         expect(summaries[0]?.data).not.toHaveProperty('sourceCommandId')
-        expect(events.filter(event => event.type === 'compaction/end')).toHaveLength(1)
-        expect(events.filter(event => event.type === 'compaction/error')).toHaveLength(0)
+        const compactionEnds = events.filter(event => event.type === 'compaction/end')
+        expect(compactionEnds).toHaveLength(1)
+        expect(compactionEnds[0]?.data).not.toHaveProperty('error')
         const offloads = events.filter(event => event.type === 'image/offload')
         expect(offloads).toHaveLength(1)
         const imageSeq = events.find(event => event.type === 'tool/result')?.seq
@@ -1077,8 +1085,9 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         expect(ordered).toHaveLength(2)
         const denied = records(ordered[0]!.content).find(record => record.type === 'tool/result'
           && JSON.stringify(record).includes('call_over_capacity'))
+        const deniedText: unknown = expect.stringContaining('subagent limit reached (active child limit: 1)')
         expect(denied).toMatchObject({ data: {
-          message: { content: [{ type: 'text', text: expect.stringContaining('subagent limit reached (active child limit: 1)') }], isError: true },
+          message: { content: [{ type: 'text', text: deniedText }], isError: true },
         } })
       }
       if (scenario.name === 'tool-error-details') {
