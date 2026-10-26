@@ -1,4 +1,5 @@
 /** Render producer facts without inferring progress, coverage or semantic approval. */
+import { exportAcademicHtml, downloadAcademicHtml } from './export-html.tsx'
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RunView } from './run-types.ts'
@@ -128,6 +129,7 @@ function ReportView({ report, t }: Copy & { readonly report: NonNullable<Academi
       && <p role="note">{t('limitedDraft')}</p>}
     <p>{t(report.mode)} · {t(report.evaluation.status)} {report.synthetic && <strong>· {t('synthetic')}</strong>}</p>
     <button type="button" onClick={() => { downloadMarkdown(report.markdown) }}>{t('download')}</button>
+    <button type="button" onClick={() => { downloadAcademicHtml(exportAcademicHtml(report, t)) }}>{t('downloadHtml')}</button>
     <h4>{t('issues')}</h4><Lines values={report.evaluation.issues.map(issue => `${issue.claimId === null ? '' : `${issue.claimId}: `}${issue.code} — ${issue.message}`)} empty={t('noIssues')} />
     <h4>{t('assessments')}</h4><p>{t('reviewMethodNotice')}</p>
     {report.evaluation.assessments.length === 0 ? <p>{t('noAssessments')}</p> : <ul>{report.evaluation.assessments.map(assessment => <li key={assessment.claimAssessmentId}>

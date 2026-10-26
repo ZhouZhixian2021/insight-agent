@@ -34,8 +34,8 @@ export function runModelResearchDraft(
   synthesisConfig: LlmCallConfig = config,
 ): Promise<DraftPipelineResult> {
   return runResearchDraft(input, {
-    ...adapters, generator: createModelEvidenceGenerator(ctx, session, config, policies.evidence),
-    verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence),
-    synthesize: createModelSynthesisGenerator(ctx, session, synthesisConfig, policies.synthesis),
+    ...adapters, generator: createModelEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace),
+    verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace),
+    synthesize: createModelSynthesisGenerator(ctx, session, synthesisConfig, policies.synthesis, adapters.onTrace),
   }, signal)
 }

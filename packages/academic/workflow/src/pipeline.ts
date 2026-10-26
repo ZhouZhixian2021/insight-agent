@@ -1,3 +1,5 @@
+import { traceAcademicOperation, academicTraceSpan, observeAcademicTrace } from './trace.ts'
+import { academicTraceSpanId } from '@deepseek-ai/dsh-academic-model'
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
 import { createRetrievalRunId, isExecutableResearchBrief, targetIncludedWorks, type AcademicWorkId,
   type EvidenceRecord, type HybridSearchRound, type ProviderFailure,
@@ -65,7 +67,7 @@ export async function runResearchDraft(
     || recovery.plan.researchBriefVersion !== brief.version)) {
     throw new Error('Recovery checkpoint belongs to a different ResearchBrief version.')
   }
-  const retrievalRunId = recovery?.retrievalRunId ?? createRetrievalRunId()
+  const retrievalRunId = recovery?.retrievalRunId ?? input.retrievalRunId ?? createRetrievalRunId()
   const startedAt = recovery?.startedAt ?? adapters.now()
   const progress = createAcademicWorkflowProgressPublisher(retrievalRunId, startedAt, searches.length,
     brief.questions.length, adapters.now, adapters.onProgress)
@@ -352,8 +354,15 @@ export async function runResearchDraft(
         validatedEvidenceRecords: 0, rejectedEvidenceDrafts: 0, startedAt: fulltextAttemptStartedAt })
     }
     try {
+      const fetcher: DraftPipelineAdapters['fetcher'] = (url, fetchSignal) => traceAcademicOperation({
+        stage: 'fulltext', operation: 'fulltext_fetch', academicWorkId: version.academicWorkId,
+        workVersionId: version.workVersionId,
+      }, adapters.onTrace, () => adapters.fetcher(url, fetchSignal), fetchSignal)
       const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
-        retrievedAt: adapters.now(), focusQuestions: brief.questions }, adapters.fetcher, paperSignal, observeFulltext)
+        retrievedAt: adapters.now(), focusQuestions: brief.questions }, fetcher, paperSignal, observeFulltext)
+      observeAcademicTrace(adapters.onTrace, { ...academicTraceSpan(`paper:fulltext:${version.workVersionId}`,
+        academicTraceSpanId('stage:fulltext'), 'paper', 'fulltext', 'paper_processing'),
+      academicWorkId: version.academicWorkId, workVersionId: version.workVersionId, status: 'succeeded', endedAt: adapters.now() })
       fulltext = true
       observedFulltextSettlements += 1
       observedAvailableFulltext += 1
@@ -386,6 +395,10 @@ export async function runResearchDraft(
       const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
         { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal, observeEvidence,
         adapters.verifiedGenerator)
+      observeAcademicTrace(adapters.onTrace, { ...academicTraceSpan(`paper:extraction:${version.workVersionId}`, academicTraceSpanId('stage:extraction'), 'paper', 'extraction', 'paper_processing'),
+        academicWorkId: version.academicWorkId, workVersionId: version.workVersionId, businessStatus: result.status,
+        status: result.status === 'extracted' ? 'succeeded' : result.status === 'partially_extracted' ? 'partial_success'
+          : result.status === 'extraction_failed' ? 'failed' : 'skipped', endedAt: adapters.now() })
       observedExtractionSettlements += 1
       observedCompletedPapers += 1
       const evidenceRecords = result.status === 'extracted' || result.status === 'partially_extracted'

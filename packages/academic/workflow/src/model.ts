@@ -1,3 +1,4 @@
+import type { AcademicTraceObserver } from './trace.ts'
 /** Session-backed evidence extraction through the shared durable model transport. */
 import type { Context } from '@deepseek-ai/cordis'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
@@ -26,13 +27,14 @@ interface EvidenceSegmentPiece {
  * @param session Live Session with an active durable writer.
  * @param config Explicit model route and generation controls.
  * @param policy Bounded recovery; timed-out evidence batches split once before retrying smaller inputs.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns A source-aware generator for one paper.
  */
 export function createModelEvidenceGenerator(
-  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy,
+  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
 ): PaperEvidenceGenerator {
-  const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy)
-  const runEvidence = createLoggedModelRunner<readonly EvidenceDraft[]>(ctx, session, config, policy)
+  const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy, traceObserver)
+  const runEvidence = createLoggedModelRunner<readonly EvidenceDraft[]>(ctx, session, config, policy, traceObserver)
   const meter = ctx.get('tokenMeter')
   if (meter === undefined) throw new Error('Academic extraction requires tokenMeter.')
   if (policy.inputBatchTokenLimit !== undefined
@@ -54,7 +56,7 @@ export function createModelEvidenceGenerator(
     const firstBatch = batches[0]
     if (firstBatch === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
     const decision = await runScope({
-      messages: scopeMessages(withSegments(request, firstBatch.map(piece => piece.segment)), scope, source,
+      trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: scopeMessages(withSegments(request, firstBatch.map(piece => piece.segment)), scope, source,
         batches.length === 1 && firstBatch.length === request.segments.length),
       ...request.signal === undefined ? {} : { signal: request.signal },
       parse: parseScopeDecision,
@@ -75,7 +77,7 @@ export function createModelEvidenceGenerator(
       const batchRequest = withSegments(request, batch.map(piece => piece.segment))
       try {
         const response = await runEvidence({
-          messages: evidenceMessages(batchRequest),
+          trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: evidenceMessages(batchRequest),
           retryLocalTimeout: false,
           ...request.signal === undefined ? {} : { signal: request.signal },
           parse: parseFocusedEvidence,
@@ -201,6 +203,7 @@ function createEvidenceBatches(
  * @param tokenLimit Optional estimated input bound used by the prior whole-paper path.
  * @param overlapCharacters Repeated source characters at split boundaries.
  * @param estimate Estimate the token cost of framed model messages.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns The first admission batch and whether it contains the whole source.
  */
 export function firstScopeBatch(

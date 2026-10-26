@@ -18,6 +18,7 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./trace": { "types": "./lib/types/trace.d.ts" },
     "./package.json": "./package.json"
   },
   "files": [

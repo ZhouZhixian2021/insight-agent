@@ -140,6 +140,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'Session-owned run identity and user cancellation reason.' }],
         returns: 'Latest state, including the durable cancellation intent.',
       },
+      {
+        signature: '@Remote(\'traceList\') async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>',
+        description: 'Read safe diagnostics for one owned Session/run without starting or cancelling research.',
+        parameters: [{ name: 'query', description: 'Scope, stage/state filter, stable cursor and page bound.' }, { name: 'signal', description: 'Viewer request lifetime; never cancels research.' }],
+        returns: 'Latest-operation page, or explicit absence for historical runs.',
+      },
+      {
+        signature: '@Remote(\'traceDetail\') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>',
+        description: 'Read an operation\'s original observations under the same scoped pagination rules.',
+        parameters: [{ name: 'query', description: 'Session/run scope and required span identity.' }, { name: 'signal', description: 'Viewer request lifetime.' }],
+        returns: 'Operation and its chronological observations; raw model content is excluded.',
+      },
     ],
   },
   {
@@ -3784,6 +3796,62 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AcademicSourceWork',
     declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n    readonly metadata?: {\n        readonly abstract: Availability<string>;\n        readonly keywords: Availability<readonly string[]>;\n    };\n    readonly verifiedDiscoveries?: readonly {\n        readonly discoveryUrl: string;\n        readonly verificationProvider: string;\n    }[];\n}',
+  },
+  {
+    name: 'AcademicTraceDuration',
+    declaration: 'export interface AcademicTraceDuration {\n    readonly value: number | null;\n    readonly basis: \'monotonic\' | \'wall_clock\' | \'unknown\';\n}',
+  },
+  {
+    name: 'AcademicTraceEvent',
+    declaration: 'export interface AcademicTraceEvent {\n    readonly eventId: AcademicTraceEventId;\n    readonly sequence: number;\n    readonly kind: \'span_snapshot\';\n    readonly observedAt: string | null;\n    readonly sourceRef: {\n        readonly recordId: string;\n        readonly recordType: string;\n    } | null;\n    readonly span: AcademicTraceSpan;\n}',
+  },
+  {
+    name: 'AcademicTraceEventId',
+    declaration: 'export type AcademicTraceEventId = Branded<\'AcademicTraceEventId\'>;',
+  },
+  {
+    name: 'AcademicTraceFailure',
+    declaration: 'export interface AcademicTraceFailure {\n    readonly code: \'timeout\' | \'transport\' | \'output_limit\' | \'parse\' | \'validation\' | \'admission\' | \'other\' | \'unknown\';\n    readonly phase: \'prepare\' | \'admission\' | \'before_content\' | \'after_content\' | \'parse\' | \'unknown\';\n    readonly message: string;\n}',
+  },
+  {
+    name: 'AcademicTraceGap',
+    declaration: 'export interface AcademicTraceGap {\n    readonly code: string;\n    readonly field: string;\n    readonly message: string;\n}',
+  },
+  {
+    name: 'AcademicTraceId',
+    declaration: 'export type AcademicTraceId = Branded<\'AcademicTraceId\'>;',
+  },
+  {
+    name: 'AcademicTraceOperation',
+    declaration: 'export type AcademicTraceOperation = \'research\' | \'stage\' | \'paper_processing\' | \'academic_search\' | \'web_discovery\' | \'reference_verification\' | \'candidate_review\' | \'fulltext_fetch\' | \'fulltext_parse\' | \'scope_review\' | \'evidence_extract\' | \'evidence_validate\' | \'synthesis\' | \'report_render\' | \'tool_call\' | \'unknown\';',
+  },
+  {
+    name: 'AcademicTracePage',
+    declaration: 'export interface AcademicTracePage {\n    readonly schemaVersion: 1;\n    readonly status: \'ok\' | \'not_found\';\n    readonly traceId: AcademicTraceId;\n    readonly snapshotId: string;\n    readonly producer: {\n        readonly adapterId: string;\n        readonly adapterVersion: string;\n    };\n    readonly items: readonly AcademicTraceSpan[];\n    readonly events: readonly AcademicTraceEvent[];\n    readonly nextCursor: string | null;\n    readonly summary: AcademicTraceSummary;\n    readonly gaps: readonly AcademicTraceGap[];\n}',
+  },
+  {
+    name: 'AcademicTraceQuery',
+    declaration: 'export interface AcademicTraceQuery {\n    readonly sessionId: SessionId;\n    readonly researchRunId: RetrievalRunId;\n    readonly stage?: import(\'@deepseek-ai/dsh-academic-model\').AcademicTraceStage | null;\n    readonly status?: import(\'@deepseek-ai/dsh-academic-model\').AcademicTraceStatus | null;\n    readonly spanId?: import(\'@deepseek-ai/dsh-academic-model\').AcademicTraceSpanId | null;\n    readonly cursor?: string | null;\n    readonly limit?: number;\n}',
+  },
+  {
+    name: 'AcademicTraceSpan',
+    declaration: 'export interface AcademicTraceSpan {\n    readonly spanId: AcademicTraceSpanId;\n    readonly parentSpanId: AcademicTraceSpanId | null;\n    readonly kind: \'run\' | \'stage\' | \'paper\' | \'call\' | \'attempt\';\n    readonly stage: AcademicTraceStage | null;\n    readonly operation: AcademicTraceOperation;\n    readonly academicWorkId: AcademicWorkId | null;\n    readonly workVersionId: WorkVersionId | null;\n    readonly providerId: string | null;\n    readonly model: string | null;\n    readonly toolName: string | null;\n    readonly attemptIndex: number | null;\n    readonly status: AcademicTraceStatus;\n    readonly businessStatus: string | null;\n    readonly startedAt: string | null;\n    readonly endedAt: string | null;\n    readonly timing: {\n        readonly queueMs: AcademicTraceDuration;\n        readonly executionMs: AcademicTraceDuration;\n        readonly totalMs: AcademicTraceDuration;\n    };\n    readonly failure: AcademicTraceFailure | null;\n    readonly gaps: readonly AcademicTraceGap[];\n}',
+  },
+  {
+    name: 'AcademicTraceSpanId',
+    declaration: 'export type AcademicTraceSpanId = Branded<\'AcademicTraceSpanId\'>;',
+  },
+  {
+    name: 'AcademicTraceStage',
+    declaration: 'export type AcademicTraceStage = \'retrieval\' | \'screening\' | \'fulltext\' | \'extraction\' | \'analysis\' | \'report\';',
+  },
+  {
+    name: 'AcademicTraceStatus',
+    declaration: 'export type AcademicTraceStatus = \'queued\' | \'running\' | \'retry_wait\' | \'succeeded\' | \'partial_success\' | \'failed\' | \'cancelled\' | \'skipped\' | \'unknown\';',
+  },
+  {
+    name: 'AcademicTraceSummary',
+    declaration: 'export interface AcademicTraceSummary {\n    readonly logicalCalls: number;\n    readonly attempts: number;\n    readonly attemptStates: {\n        readonly queued: number;\n        readonly running: number;\n        readonly retry_wait: number;\n        readonly succeeded: number;\n        readonly partial_success: number;\n        readonly failed: number;\n        readonly cancelled: number;\n        readonly skipped: number;\n        readonly unknown: number;\n    };\n    readonly runTotalMs: AcademicTraceDuration;\n    readonly excludedUnlinkedRecords: number | null;\n}',
   },
   {
     name: 'AcademicVerifiedReference',

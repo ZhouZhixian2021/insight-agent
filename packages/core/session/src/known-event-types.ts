@@ -39,6 +39,7 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'academic/search-plan',
   'academic/synthesis-request',
   'academic/synthesis-result',
+  'academic/trace-v1',
   'agent-preset/selected',
   'agent/inbox/spliced',
   'approval/asked',

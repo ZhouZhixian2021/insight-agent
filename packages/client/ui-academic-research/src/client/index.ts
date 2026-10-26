@@ -28,6 +28,16 @@ export function apply(ctx: Context): void {
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'academic-research', order: 100, locale: 'academicRun',
     inject: (): ResearchEntryInjected => ({
+      traceList: async (query, signal) => {
+        const result = await ctx.remote.academicResearch.traceList(query, signal)
+        if (!result.ok) throw result.error
+        return result.value
+      },
+      traceDetail: async (query, signal) => {
+        const result = await ctx.remote.academicResearch.traceDetail(query, signal)
+        if (!result.ok) throw result.error
+        return result.value
+      },
       enhanceEvidence: async (request, signal) => {
         const result = await ctx.remote.academicResearch.enhanceEvidence(request, signal)
         if (!result.ok) throw result.error

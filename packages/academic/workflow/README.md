@@ -7,6 +7,8 @@ kind: "package-library"
 
 English | [中文](README.zh.md)
 
+The optional `onTrace` adapter observes full-text fetches and Session-backed scope, evidence and synthesis model calls. Each transport retry retains a separate attempt under one logical call. Model execution measures the observed stream interval; total timing includes preparation and validation, and queue timing remains unknown. Observer failures cannot change research results. Separate fragment-generator invocations remain separate calls; the first version does not reconstruct an unrecorded outer-fragment retry relationship.
+
 ## Summary
 
 extractPaperEvidence fills a first observed version hash before invoking the existing evidence extractor, retaining the version ID and historical objects. Conflicts return paused so callers can retain the record and continue other papers.

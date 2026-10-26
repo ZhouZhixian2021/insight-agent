@@ -1,4 +1,6 @@
 /** Shared bounded model transport; callers own prompts, parsing and durable event names. */
+import { academicTraceCallKey, academicTraceSpan, observeAcademicTrace, type AcademicTraceObserver, type AcademicTraceOperationIdentity } from './trace.ts'
+import { academicTraceSpanId, type AcademicTraceSpan } from '@deepseek-ai/dsh-academic-model'
 import type { Context } from '@deepseek-ai/cordis'
 import { setTimeout as delay } from 'node:timers/promises'
 import { isDeepStrictEqual } from 'node:util'
@@ -18,6 +20,7 @@ export class ModelOutputLimitError extends EvidenceError {
 
 /** Operation-owned callbacks keep evidence and synthesis provenance separate. */
 export interface LoggedModelRequest<T> {
+  readonly trace?: AcademicTraceOperationIdentity
   readonly messages: Message[]
   /** A local attempt deadline may be recovered by the caller with smaller input instead of repeating this request. */
   readonly retryLocalTimeout?: boolean
@@ -49,10 +52,11 @@ export interface LoggedModelAttemptObservation {
  * @param session Live Session with a durable writer.
  * @param config Selected route and output-token reserve.
  * @param policy Total attempts plus optional output-limit, invalid-response and transient-failure recovery.
+ * @param traceObserver Optional safe diagnostic sink; callback failures do not change model results.
  * @returns A tool-free model runner using the exact persisted messages.
  */
 export function createLoggedModelRunner<T>(ctx: Context, session: Session, config: LlmCallConfig,
-  policy: EvidenceModelPolicy): (request: LoggedModelRequest<T>) => Promise<T> {
+  policy: EvidenceModelPolicy, traceObserver?: AcademicTraceObserver): (request: LoggedModelRequest<T>) => Promise<T> {
   const llm = ctx.get('llm'), sessions = ctx.get('sessions'), meter = ctx.get('tokenMeter')
   const persistence = ctx.get('sessionPersistence')
   if (!llm || !sessions || !meter || !persistence) {
@@ -99,10 +103,26 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
     if (policy.retryInvalidOutput === true && request.invalidOutputRetryMessages === undefined) {
       throw new Error('Academic invalid-output retry requires recovery messages.')
     }
+    const identity = request.trace
+    const callKey = academicTraceCallKey()
+    const parent = identity === undefined ? null : academicTraceSpanId(identity.workVersionId === undefined
+      ? `stage:${identity.stage}` : `paper:${identity.stage}:${identity.workVersionId}`)
+    const call: AcademicTraceSpan = { ...academicTraceSpan(callKey, parent, 'call', identity?.stage ?? null, identity?.operation ?? 'unknown'),
+      academicWorkId: identity?.academicWorkId ?? null, workVersionId: identity?.workVersionId ?? null,
+      providerId: safeIdentifier(selectedConfig.provider), model: safeIdentifier(selectedConfig.model),
+      startedAt: new Date().toISOString() }
+    const callStarted = performance.now()
+    const observe = (span: AcademicTraceSpan) =>{  observeAcademicTrace(traceObserver, span) }
+    observe(call)
     let useOutputLimitRecovery = false
     let validationRecoveryMessages: Message[] | undefined
     for (let attempt = 1; attempt <= policy.maxAttempts; attempt++) {
       const started = performance.now()
+      const attemptSpan: AcademicTraceSpan = { ...call, spanId: academicTraceSpanId(`${callKey}:attempt:${attempt}`),
+        parentSpanId: call.spanId, kind: 'attempt', attemptIndex: attempt, startedAt: new Date().toISOString() }
+      observe(attemptSpan)
+      let streamStarted: number | undefined
+      let executionMs: number | undefined
       const timeoutController = policy.attemptTimeoutMs === undefined ? undefined : new AbortController()
       const timeout = timeoutController === undefined ? undefined : setTimeout(() => {
         timeoutController.abort(new DOMException('Academic model attempt timed out.', 'TimeoutError'))
@@ -148,6 +168,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         }
         stage = 'stream'
         // The Session's immutable event supplies exactly the config and messages dispatched.
+        streamStarted = performance.now()
         const stream = prepared.stream(Object.freeze({ ...logged.data.config, messages: logged.data.messages,
           sessionId: session.id, ...attemptSignal === undefined ? {} : { signal: attemptSignal } }))
         const iterator = stream[Symbol.asyncIterator]()
@@ -165,6 +186,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
           if (chunk.type === 'finish') finish = chunk.reason
           attemptSignal?.throwIfAborted()
         }
+        executionMs = Math.round(performance.now() - streamStarted)
         stage = 'parse'
         attemptSignal?.throwIfAborted()
         if (finish?.kind !== 'stop') {
@@ -179,7 +201,11 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         result = request.parse(text)
         status = 'validated'
       } catch (error: unknown) {
-        if (error instanceof WorkflowLogError) throw error
+        if (error instanceof WorkflowLogError) {
+          observe({ ...attemptSpan, status: 'unknown', gaps: [{ code: 'source_unavailable', field: 'status', message: 'Model record could not be committed.' }] })
+          throw error
+        }
+        if (streamStarted !== undefined && executionMs === undefined) executionMs = Math.round(performance.now() - streamStarted)
         failurePhase = stage === 'stream' || (stage === 'parse' && finish?.kind === 'error')
           ? firstContentElapsedMs === undefined ? 'before_content' : 'after_content' : stage
         if (timeoutController?.signal.aborted === true && request.signal?.aborted !== true) {
@@ -194,19 +220,35 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       } finally {
         if (timeout !== undefined) clearTimeout(timeout)
       }
-      await record(() => request.appendResult({ requestSeq, attempt,
+      const resultRecord = await record(() => request.appendResult({ requestSeq, attempt,
         maxAttempts: policy.maxAttempts, status, stream: accumulator.snapshot(),
         elapsedMs: Math.round(performance.now() - started),
         ...firstContentElapsedMs === undefined ? {} : { firstContentElapsedMs },
         ...failurePhase === undefined ? {} : { failurePhase },
         ...finish === undefined ? {} : { finish }, ...assembler.usage === undefined ? {} : { usage: assembler.usage },
         ...errorCode === undefined ? {} : { errorCode } }))
+      const observedStatus = resultRecord.type === 'academic/synthesis-result' ? resultRecord.data.status : status
+      const spanStatus = observedStatus === 'validated' ? 'succeeded'
+        : observedStatus === 'partially_validated' ? 'partial_success' : observedStatus
+      const safeFailure: AcademicTraceSpan['failure'] = errorCode === undefined ? null : {
+        code: errorCode.includes('TIMEOUT') ? 'timeout' as const : finish?.kind === 'max-tokens' ? 'output_limit' as const
+          : finish?.kind === 'error' && finish.failure.code === 'TRANSPORT' ? 'transport' as const
+            : failurePhase === 'parse' ? 'parse' as const : failurePhase === 'admission' ? 'admission' as const : 'other' as const,
+        phase: failurePhase ?? 'unknown', message: 'Model attempt did not produce a validated result.' }
+      const settledSpan: AcademicTraceSpan = { ...attemptSpan, status: spanStatus, businessStatus: observedStatus,
+        endedAt: new Date().toISOString(), failure: status === 'cancelled' ? null : safeFailure,
+        timing: { ...attemptSpan.timing, totalMs: { value: Math.round(performance.now() - started), basis: 'monotonic' },
+          executionMs: executionMs === undefined ? { value: null, basis: 'unknown' } : { value: executionMs, basis: 'monotonic' } } }
+      observe(settledSpan)
+      const finishCall = (state: AcademicTraceSpan['status']) =>{  observe({ ...call, status: state,
+        endedAt: new Date().toISOString(), failure: settledSpan.failure,
+        timing: { ...call.timing, totalMs: { value: Math.round(performance.now() - callStarted), basis: 'monotonic' } } }) }
       const settled: LoggedModelAttemptObservation = { phase: 'settled', attempt, maximumAttempts: policy.maxAttempts,
         status, finish: finish ?? null, errorCode: errorCode ?? null }
       reportAttempt(request.onAttempt, settled)
       // A cancellation arriving during result persistence still prevents downstream extraction.
       request.signal?.throwIfAborted()
-      if (result !== undefined) return result
+      if (result !== undefined) { finishCall(spanStatus); return result }
       const retryOutputLimit = policy.retryOutputLimit === true && !useOutputLimitRecovery
         && errorCode === 'EVIDENCE_MODEL_INCOMPLETE' && finish?.kind === 'max-tokens'
       const transientFailureCode = finish?.kind === 'error'
@@ -218,7 +260,10 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         && errorCode === 'SYNTHESIS_INVALID_MODEL_OUTPUT' && finish?.kind === 'stop'
         ? request.invalidOutputRetryMessages?.(failure, useOutputLimitRecovery) : undefined
       const retryInvalidOutput = nextValidationRecovery !== undefined
-      if ((!retryOutputLimit && !retryTransient && !retryInvalidOutput) || attempt === policy.maxAttempts) throw failure
+      if ((!retryOutputLimit && !retryTransient && !retryInvalidOutput) || attempt === policy.maxAttempts) {
+        finishCall(spanStatus); throw failure
+      }
+      observe({ ...call, status: 'retry_wait', failure: settledSpan.failure })
       reportAttempt(request.onAttempt, { ...settled, phase: 'retry_scheduled' })
       if (retryOutputLimit) {
         useOutputLimitRecovery = true
@@ -263,4 +308,8 @@ function reportAttempt(
   } catch {
     // Attempt progress is observational; durable model execution remains authoritative.
   }
+}
+
+function safeIdentifier(value: string | undefined): string | null {
+  return value !== undefined && /^[\w./:-]{1,120}$/u.test(value) ? value : null
 }

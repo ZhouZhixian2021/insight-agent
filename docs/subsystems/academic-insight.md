@@ -9,6 +9,8 @@ English | [中文](academic-insight.zh.md)
 
 The analysis-local `AnalysisInput` and report-local `ReportInput` accept optional producer question/evidence associations as `questionLinks`; they do not change Academic Model or Remote fields. Empty card sections retain individually valid minimal evidence, and absent question associations remain disclosed rather than inferred. The workflow integrator owns forwarding these optional associations.
 
+Trace v1 shares branded operation/event identifiers through the model's type-only trace subpath. The current Controller adapter persists safe observations and normalizes them for base-independent pagination; the Web panel reads only scoped Remote pages. Report HTML exports use the existing Markdown renderer with an inert allowlist serializer, preserving quality and evidence links without external resources. See the [Controller](../../packages/api/academic-research-controller/README.md) and [viewer](../../packages/client/ui-academic-research/README.md) for query and export details.
+
 ## Summary
 
 Academic insight is an optional business subsystem built on harness extension points.
@@ -127,6 +129,22 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Latest state, including the durable cancellation intent.
  */
 @Remote('cancelBackgroundRun') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>
+
+/**
+ * Read safe diagnostics for one owned Session/run without starting or cancelling research.
+ * @param query Scope, stage/state filter, stable cursor and page bound.
+ * @param signal Viewer request lifetime; never cancels research.
+ * @returns Latest-operation page, or explicit absence for historical runs.
+ */
+@Remote('traceList') async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
+
+/**
+ * Read an operation's original observations under the same scoped pagination rules.
+ * @param query Session/run scope and required span identity.
+ * @param signal Viewer request lifetime.
+ * @returns Operation and its chronological observations; raw model content is excluded.
+ */
+@Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)

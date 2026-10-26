@@ -6,6 +6,8 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
+`academicResearch.traceList(query, signal)` and `traceDetail(query, signal)` read safe diagnostics for a Session and retrieval run through the same Session access resolution as other Academic methods. The adapter persists `academic/trace-v1` snapshots and normalizes them before base-independent pagination and statistics. Filters select stage and state; a detail query requires spanId. Cursors bind scope, filters and immutable source watermark, with a page limit of 1–100 (default 50). Invalid cursors fail rather than mixing runs. Old runs without observations return not_found and an explicit gap; unclosed operations keep their last state with an interruption notice. A resumed run does not present one process interval as total duration; that cross-process timing remains unknown. Queries and current-page exports exclude prompts, response streams, URLs and raw errors. Trace success means operation settlement, never report approval. The new versioned Session event requires a reader that knows this event type; released log generations are not rewritten.
+
 ## Summary
 
 `paperConcurrency` defaults to 3 papers per run and can be set to 1 for serial acquisition/extraction. Searches remain ordered; synthesis starts after paper tasks settle. The approved inclusion cap can reduce effective concurrency. Existing source and Web result interfaces are unchanged. Concurrency may increase upstream rate limiting and does not guarantee proportional speedup.

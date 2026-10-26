@@ -1,3 +1,6 @@
+import { createLoggedModelRunner } from '../src/model-call.ts'
+import type { AcademicTraceSpan } from '@deepseek-ai/dsh-academic-model'
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -138,6 +141,29 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it('traces real transport retry attempts without copying prompts or overwriting the first failure', async () => {
+    const f = await fixture()
+    const spans: AcademicTraceSpan[] = []
+    f.adapter.script = [{ type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'secret upstream detail' } } }]
+    f.adapter.afterChunk = () => { f.adapter.script = script }
+    const run = createLoggedModelRunner(f.ctx, f.session, config, { maxAttempts: 2,
+      transientRetry: { failureCodes: ['TRANSPORT'], initialDelayMs: 0 } }, (span) => { spans.push(span) })
+    const source = { academicWorkId: f.source.academicWorkId, workVersionId: f.source.workVersionId }
+    await run({ trace: { stage: 'extraction', operation: 'evidence_extract', ...source },
+      messages: [createUserMessage({ source: { kind: 'plugin', plugin: 'fixture' }, content: [{ type: 'text', text: 'private prompt' }] })],
+      parse: JSON.parse,
+      appendRequest: data => f.session.append('academic/evidence-request', { source: f.source, ...data }),
+      appendResult: data => f.session.append('academic/evidence-result', { source: f.source, ...data }),
+    })
+    const attempts = spans.filter(span => span.kind === 'attempt' && span.endedAt !== null)
+    expect(attempts.map(span => [span.attemptIndex, span.status])).toEqual([[1, 'failed'], [2, 'succeeded']])
+    expect(new Set(attempts.map(span => span.parentSpanId)).size).toBe(1)
+    expect(spans.some(span => span.status === 'retry_wait')).toBe(true)
+    expect(JSON.stringify(spans)).not.toContain('private prompt')
+    expect(JSON.stringify(spans)).not.toContain('secret upstream detail')
+    expect(attempts[0]?.timing.queueMs).toEqual({ value: null, basis: 'unknown' })
+  })
+
   it('supplements committed minimal evidence without replacing its identity or scope decision', async () => {
     const f = await fixture()
     const source = { ...f.source, segments: [{ text: 'Uses Method X. Uses Method Y.',
