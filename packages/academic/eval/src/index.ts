@@ -25,11 +25,13 @@ export interface EvaluationInput {
 /** Located structural or semantic-review issue. */
 export interface EvaluationIssue {
   readonly claimId: ClaimId | null
+  /** Missing on historical records; new producers distinguish delivery failures from content notices. */
+  readonly category?: 'delivery' | 'content'
   readonly code: string
   readonly message: string
 }
 
-/** Ready requires structural checks, evidence thresholds, and explicit supporting reviews. */
+/** Ready means delivery checks passed; independent semantic review is optional. */
 export interface EvaluationResult {
   readonly status: 'ready' | 'needs_review' | 'blocked'
   readonly assessments: readonly ClaimAssessment[]
@@ -38,7 +40,7 @@ export interface EvaluationResult {
 
 /**
  * Recheck current evidence and reviewer decisions before report delivery.
- * @param input Current records and explicit semantic reviews; an empty reviews array means unreviewed.
+ * @param input Current records and explicit semantic reviews; an empty reviews array means unreviewed and does not block delivery.
  * @returns Fresh assessments and issues; never upgrades reference checks to semantic support.
  */
 export function evaluateClaims(input: EvaluationInput): EvaluationResult {
@@ -48,7 +50,7 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
   const issues: EvaluationIssue[] = []
   const assessments: ClaimAssessment[] = []
   let blocked = false
-  const add = (claimId: ClaimId | null, code: string, message: string): void => { issues.push({ claimId, code, message }) }
+  const add = (claimId: ClaimId | null, code: string, message: string): void => { issues.push({ claimId, category: 'delivery', code, message }) }
   if (evidence.size !== input.evidence.length || versions.size !== input.versions.length || locators.size !== input.sourceLocators.length
     || new Set(input.claims.map(claim => claim.claimId)).size !== input.claims.length
     || new Set(input.links.map(link => link.claimEvidenceLinkId)).size !== input.links.length) {
@@ -108,7 +110,6 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     checkEvidence(statement.evidenceLinks, null)
     if (issues.length > before) blocked = true
   }
-  if (sourceStatements.length > 0) add(null, 'source_statement_review_required', 'Attributed source statements still require independent semantic review.')
   for (const claim of input.claims) {
     const before = issues.length
     const claimLinks = input.links.filter(link => link.claimId === claim.claimId)
@@ -141,9 +142,16 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
       && review.reason.trim() !== '' && review.assessedEvidenceIds.length === snapshotIds.size
       && new Set(review.assessedEvidenceIds).size === snapshotIds.size
       && review.assessedEvidenceIds.every(id => snapshotIds.has(id))
+    if (reviews.length > 0 && !reviewMatches) {
+      blocked = true
+      add(claim.claimId, 'invalid_review', 'Supplied review records do not match the current evidence snapshot.')
+    }
     let status: ClaimAssessment['status'] = integrityFailed ? 'insufficient' : 'partially_supported'
     if (!integrityFailed && reviewMatches) status = review.status
-    if (!integrityFailed && !reviewMatches) add(claim.claimId, 'semantic_review_required', 'References pass; semantic support still requires a review of the same evidence.')
+    if (!integrityFailed && reviewMatches && review.status !== 'supported') {
+      blocked = true
+      add(claim.claimId, 'review_not_supported', 'An existing matching review does not support final delivery.')
+    }
     if (claimLinks.some(link => link.relation === 'contradicts') && claim.uncertainty === null) {
       status = 'insufficient'
       add(claim.claimId, 'undisclosed_conflict', 'Opposing evidence requires explicit uncertainty.')
@@ -165,5 +173,5 @@ export function evaluateClaims(input: EvaluationInput): EvaluationResult {
     add(null, 'insufficient_coverage', 'Cited work or full-text counts do not meet the approved brief.')
     blocked = true
   }
-  return { status: blocked ? 'blocked' : sourceStatements.length === 0 && assessments.every(a => a.status === 'supported') ? 'ready' : 'needs_review', assessments, issues }
+  return { status: blocked ? 'blocked' : 'ready', assessments, issues }
 }

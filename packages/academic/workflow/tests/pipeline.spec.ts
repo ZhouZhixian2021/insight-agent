@@ -259,7 +259,7 @@ describe('single-pass research draft', () => {
     expect(result.status).toBe('completed')
     expect(result.analysis?.claims).toHaveLength(1)
     expect(result.report?.mode).toBe('draft')
-    expect(result.report?.evaluation.status).toBe('needs_review')
+    expect(result.report?.evaluation.status).toBe('blocked')
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(result.report?.evidence).toHaveLength(2)
     expect(records[0]!.workVersion.contentHash.status).toBe('not_extracted')

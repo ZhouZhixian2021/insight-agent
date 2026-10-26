@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Callers use `prepareAnalysisInput()` to group evidence-card entries by work and actual content version. `analyzeEvidence()` creates attributed cross-paper method and finding comparisons with shared Claim records, evidence links and snapshots. This extractive baseline performs no search, model requests or persistence, and requires semantic review before final delivery.
+Callers use `prepareAnalysisInput()` to group evidence-card entries by work and actual content version. `analyzeEvidence()` creates attributed cross-paper method and finding comparisons with shared Claim records, evidence links and snapshots. This extractive baseline performs no search, model requests or persistence, and does not establish independent semantic approval.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ Admission distinguishes `ready`, `ready_with_warning`, and `blocked`. Positive u
 
 Evidence admission also returns `usableWorkIds` for bounded replenishment even when the Plan minimum is unmet. These identify independent works with admitted evidence, not downloaded or merely scope-accepted papers.
 
-`validateSynthesisRequirements()` checks proposed report requirements without granting approval. It returns supported sections or names every unsupported language, citation style, length unit, section and version state. `synthesisSections()` additionally requires current approval. Neither function rewrites the Brief.
+`validateSynthesisRequirements()` checks proposed report requirements without granting approval. It returns supported sections or names every unsupported language, citation style, section and version state. `synthesisSections()` additionally requires current approval. Neither function rewrites the Brief.
 
 `prepareSynthesisInput()` admits version-, locator- and hash-consistent evidence under the approved work/full-text minimums. `parseSynthesisDraft()` rejects invalid JSON, wrong Brief versions, invalid question/section layouts and drafts above the 12-statement report limit. One question can cite at most two statements, and one statement can cite at most three representative evidence records. Invalid paragraphs are quarantined in host-owned `rejectedStatements` with original zero-based indexes and reasons; retained paragraphs are reindexed and affected question coverage is downgraded. Empty affected sections disclose missing evidence. Unknown evidence, background-only support and insufficient independent works never become accepted conclusions. `synthesisPrompt()` asks the model to reuse statements across questions and sections and puts run-specific gaps in limitations or missing-evidence reasons. `compactSynthesisPrompt()` retains approved questions, paper identities and verified excerpts while removing duplicate version, locator and card structures for one output-limit recovery attempt. `synthesisRepairPrompt()` reuses the admitted full or compact input with the source-text-free parser diagnostic and requires a complete replacement JSON after structural validation rejects a settled response. `synthesisAnalysis()` mints shared Claims only for conclusions supported by at least two independent works. Single-paper explanations remain source statements. See the [synthesis decision](../../../.agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.md).
 

@@ -805,7 +805,7 @@ export async function runResearchDraft(
       evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
       questionLinks: admission.input.analysisInput.questionLinks,
       sourceLocators: admission.input.analysisInput.sourceLocators,
-      works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'draft', synthetic: input.synthetic }, (operation) => {
+      works: admission.input.analysisInput.academicWorks, synthesis: draft, coverage: completed.retrievalRun.coverageSummary, reviews: [], assessedAt, limitations, mode: 'auto', synthetic: input.synthetic }, (operation) => {
       progress.setActivity('report', { kind: 'report', stage: 'report', operation, attempt: null,
         maximumAttempts: null, lastFailure: null, startedAt: reportStartedAt })
     })

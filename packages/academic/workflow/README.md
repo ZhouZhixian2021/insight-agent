@@ -94,6 +94,8 @@ The Controller selects `depth: 'minimal'` for formal research runs. Scope review
 
 The draft pipeline forwards the extractor's approved-question links through evidence admission to analysis and report rendering. `runAcademicEvidenceEnhancement()` is a separate, caller-selected, complete-depth operation for one already committed paper. It preserves first-tier identities and commits additions before dispatching the next fragment; the caller owns source re-acquisition, selection, cancellation and the original report. It does not revise that report or grant semantic approval.
 
+Report generation uses automatic delivery selection: evidence integrity, minimum cited-work/full-text counts, required structure and non-synthetic data determine final versus draft. Missing independent reviews do not block delivery; question gaps are disclosed as content limitations. No additional model review call is scheduled.
+
 ## Model Experience
 
 ### Session-backed model extraction

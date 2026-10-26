@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-09-20-academic-question-synthesis.md) | 中文
 
+独立审核作为强制交付前置条件的决定由[自动交付](2026-10-26-academic-automatic-delivery.zh.md)取代，其余证据和分析决定仍有效。
+
 ## 问题
 
 证据抽取核验通过后，仍可能只生成未回答批准研究问题的简短模板。来源陈述、跨论文推理与报告交付需要独立职责和可观察的失败结果。

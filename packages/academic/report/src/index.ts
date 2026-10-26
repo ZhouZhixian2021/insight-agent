@@ -28,7 +28,7 @@ export interface ResearchReport {
   readonly limitations: readonly string[]
 }
 
-/** Caller explicitly selects publication mode and discloses synthetic data. */
+/** Caller selects automatic delivery or an explicit mode and discloses synthetic data. */
 export interface ReportInput extends EvaluationInput {
   /** Producer-observed retrieval facts; omitted by legacy callers. */
   readonly retrievalDisclosure?: RetrievalDisclosure
@@ -40,7 +40,7 @@ export interface ReportInput extends EvaluationInput {
   readonly coverage?: CoverageSummary
   readonly works: readonly AcademicWork[]
   readonly limitations: readonly string[]
-  readonly mode: 'draft' | 'final'
+  readonly mode: 'draft' | 'final' | 'auto'
   readonly synthetic: boolean
 }
 
@@ -52,7 +52,7 @@ export type ReportGenerationObserver = (operation: ReportGenerationOperation) =>
 
 /**
  * Produce a Chinese Markdown research report and retain inspectable source records.
- * @param input Current evidence and reviews; final mode requires a ready evaluation.
+ * @param input Current evidence and optional reviews; auto selects final only when delivery checks pass.
  * @param onOperation Optional observer called before evaluation and before Markdown rendering; observer errors are ignored.
  * @returns A report that discloses evidence and semantic-review limitations.
  * @throws Error if final publication is requested while evaluation is not ready.
@@ -65,15 +65,15 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   if (evaluation.issues.some(issue => issue.code === 'evidence_not_admitted')) {
     throw new Error('Unadmitted evidence cannot enter report claims or references, including drafts.')
   }
-  if (input.mode === 'final' && (evaluation.status !== 'ready' || input.synthetic)) {
-    throw new Error('Final report requires supporting reviews, current evidence, sufficient coverage and non-synthetic data.')
-  }
+  if (input.synthetic) evaluation = { ...evaluation, status: 'blocked', issues: [...evaluation.issues,
+    { claimId: null, category: 'delivery', code: 'synthetic_data', message: '合成测试材料不能作为正式报告交付。' }] }
   const supportedSections = new Set(['executive_summary', 'scope_and_method', 'cross_paper_analysis', 'limitations', 'references', 'evidence_appendix'])
-  if (input.synthesis === undefined && input.mode === 'final' && (input.brief.reportRequirements.language !== 'zh-CN'
+  if (input.synthesis === undefined && (input.brief.reportRequirements.language !== 'zh-CN'
     || input.brief.reportRequirements.citationStyle !== 'numeric'
     || input.brief.reportRequirements.includeResearchGaps
     || input.brief.reportRequirements.requiredSections.some(section => !supportedSections.has(section)))) {
-    throw new Error('Requested report language, citation style or sections require a different renderer.')
+    evaluation = { ...evaluation, status: 'blocked', issues: [...evaluation.issues,
+      { claimId: null, category: 'delivery', code: 'unsupported_format', message: 'Requested report language, citation style or sections require a different renderer.' }] }
   }
   const byWork = new Map(input.works.map(work => [work.academicWorkId, work]))
   if (byWork.size !== input.works.length) throw new Error('Duplicate work identities in report input.')
@@ -86,11 +86,11 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     : { draft: input.synthesis, coverage: requiredCoverage(input.coverage) }
   const workIds = [...new Set(evidence.map(record => record.academicWorkId))]
   const references = new Map(workIds.map((id, index) => [id, index + 1]))
-  const limitations = [...input.limitations, ...evaluation.issues.map(issue => issue.message)]
+  const limitations = [...input.limitations]
   const metadata: ReportMetadata = { works: input.works, versions: input.versions, reportDate: input.assessedAt }
   reportOperation(onOperation, 'rendering')
   const lines = [`# ${escapeMarkdown(input.brief.topic)}`, '',
-    input.mode === 'draft' ? '> 草稿：未经完整审核，不作为最终研究结论。' : '> 已完成当前证据与语义审核。',
+    '> 基于本轮证据自动生成；交付检查通过不代表独立语义审核通过。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
   if (synthesisInput !== null) {
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
@@ -107,12 +107,12 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage, metadata)
     const questions = renderQuestionEvidence(input.brief, synthesisInput.draft, evidence, input.questionLinks)
     lines.push(...questions.lines, ...rendered.lines)
-    limitations.push(...questions.limitations)
-    limitations.push(...rendered.unmet, '问题回答与单篇论文陈述尚未经过独立语义审核。')
-    evaluation = { ...evaluation, status: evaluation.status === 'blocked' ? 'blocked' : 'needs_review',
-      issues: [...evaluation.issues, { claimId: null, code: 'question_review_required', message: '逐题回答仍需内容审核。' },
-        ...rendered.unmet.map(message => ({ claimId: null, code: 'unmet_plan', message }))] }
-    if (input.mode === 'final') throw new Error('Question-driven synthesis requires independent question review before final publication.')
+    limitations.push(...questions.limitations, ...rendered.unmet)
+    const deliveryIssues = rendered.deliveryFailures.map(message => ({ claimId: null, category: 'delivery' as const, code: 'unmet_plan', message }))
+    const contentIssues = [...new Set([...questions.limitations, ...rendered.unmet])]
+      .map(message => ({ claimId: null, category: 'content' as const, code: 'content_limitation', message }))
+    evaluation = { ...evaluation, status: evaluation.status === 'blocked' || deliveryIssues.length > 0 ? 'blocked' : 'ready',
+      issues: [...evaluation.issues, ...deliveryIssues, ...contentIssues] }
   } else {
     lines.push(
       '## 管理层摘要', '', `纳入 ${workIds.length} 项研究，形成 ${input.claims.length} 条对比记录。质量状态：${evaluation.status}。`, '',
@@ -133,7 +133,10 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     }
     if (input.claims.length === 0) lines.push('证据不足，未形成可用的跨论文结论。', '')
   }
-  lines.push('## 局限与质量检查', '', ...limitations.map(text => `- ${escapeMarkdown(text)}`), '',
+  const deliveryIssues = evaluation.issues.filter(issue => issue.category !== 'content')
+  const contentIssues = [...new Set([...limitations, ...evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])]
+  lines.push('## 交付未达标原因', '', ...(deliveryIssues.length === 0 ? ['无；当前已执行的交付检查通过。'] : deliveryIssues.map(issue => `- ${escapeMarkdown(issue.message)}`)), '',
+    '## 内容限制与未回答问题', '', ...(contentIssues.length === 0 ? ['本轮未记录额外内容限制；不代表独立语义审核通过。'] : contentIssues.map(text => `- ${escapeMarkdown(text)}`)), '',
     '## 参考文献', '')
   for (const work of input.works.filter(item => references.has(item.academicWorkId))) {
     lines.push(`${references.get(work.academicWorkId)}. ${workBibliography(work, metadata, evidence)}`)
@@ -162,15 +165,11 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   }
   const body = `${lines.join('\n').trimEnd()}\n`
   const markdown = input.retrievalDisclosure === undefined ? body : appendRetrievalDisclosure(body, input.retrievalDisclosure)
-  const target = input.brief.reportRequirements.targetLength
-  if (input.mode === 'final' && (target.minimum !== null || target.maximum !== null)) {
-    if (target.unit !== 'characters') throw new Error('Final length checks support characters only.')
-    const length = Array.from(new Intl.Segmenter('zh-CN', { granularity: 'grapheme' }).segment(markdown)).length
-    if ((target.minimum !== null && length < target.minimum) || (target.maximum !== null && length > target.maximum)) {
-      throw new Error('Final report does not meet the approved length limits.')
-    }
-  }
-  return { title: input.brief.topic, mode: input.mode, synthetic: input.synthetic, markdown,
+  const mode = input.mode === 'auto' ? evaluation.status === 'ready' ? 'final' : 'draft' : input.mode
+  if (mode === 'final' && evaluation.status !== 'ready') throw new Error(`Final report requires passing delivery checks: ${evaluation.issues.filter(issue => issue.category !== 'content').map(issue => issue.message).join(' ')}`)
+  const notice = mode === 'draft' ? '> 草稿：交付条件尚未全部满足或调用方选择草稿。' : '> 报告已生成：当前交付检查通过。'
+  const deliveredMarkdown = markdown.replace('\n\n', `\n\n${notice}\n`)
+  return { title: input.brief.topic, mode, synthetic: input.synthetic, markdown: deliveredMarkdown,
     ...input.retrievalDisclosure === undefined ? {} : { retrievalDisclosureIncluded: true as const },
     evaluation, claims: input.claims, evidence, limitations }
 }

@@ -27,9 +27,6 @@ export function validateSynthesisRequirements(
   const errors: string[] = []
   if (requirements.language !== 'zh-CN') errors.push(`报告语言 language=${JSON.stringify(requirements.language)}；当前支持 zh-CN（简体中文）`)
   if (requirements.citationStyle !== 'numeric') errors.push(`引用格式 citationStyle=${JSON.stringify(requirements.citationStyle)}；当前支持 numeric（数字编号）`)
-  if (requirements.targetLength.unit !== 'characters') {
-    errors.push(`篇幅单位 targetLength.unit=${JSON.stringify(requirements.targetLength.unit)}；当前支持 characters（字符数）`)
-  }
   const unsupportedSections = requirements.requiredSections.filter((_section, index) =>
     !SYNTHESIS_SECTIONS.some(known => known === requested[index]))
   if (unsupportedSections.length > 0) errors.push(`报告章节 requiredSections=${JSON.stringify(unsupportedSections)}；当前支持 ${[...SYNTHESIS_SECTIONS, ...Object.keys(aliases)].join(', ')}`)

@@ -19,7 +19,7 @@ export { escapeMarkdown } from './markdown.ts'
  */
 export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDraft, evidence: readonly EvidenceRecord[],
   references: ReadonlyMap<AcademicWorkId, number>, coverage: CoverageSummary, metadata?: ReportMetadata) {
-  const lines: string[] = [], unmet: string[] = [], body: string[] = []
+  const lines: string[] = [], unmet: string[] = [], deliveryFailures: string[] = []
   const rendered = new Set<number>()
   const required = synthesisSections(brief)
   const records = new Map(evidence.map(record => [record.evidenceId, record]))
@@ -29,10 +29,10 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
   const citedWorks = new Set(supporting.map(record => record.academicWorkId)).size
   const citedFulltext = new Set(supporting.filter(record => record.level === 'fulltext').map(record => record.academicWorkId)).size
   const minimum = brief.evidenceRequirements
-  if (citedWorks < minimum.minimumIncludedWorks) unmet.push(`正文支持证据涉及 ${citedWorks} 篇独立论文，Plan 至少要求 ${minimum.minimumIncludedWorks} 篇。`)
-  if (citedFulltext < minimum.minimumFulltextWorks) unmet.push(`正文支持证据涉及 ${citedFulltext} 篇全文论文，Plan 至少要求 ${minimum.minimumFulltextWorks} 篇。`)
-  if (unmet.length > 0) lines.push('> 证据有限的研究草稿：未满足 Plan 的证据数量要求，不作为最终交付。',
-    ...unmet.map(reason => `> ${escapeMarkdown(reason)}`), '')
+  if (citedWorks < minimum.minimumIncludedWorks) deliveryFailures.push(`正文支持证据涉及 ${citedWorks} 篇独立论文，Plan 至少要求 ${minimum.minimumIncludedWorks} 篇。`)
+  if (citedFulltext < minimum.minimumFulltextWorks) deliveryFailures.push(`正文支持证据涉及 ${citedFulltext} 篇全文论文，Plan 至少要求 ${minimum.minimumFulltextWorks} 篇。`)
+  if (deliveryFailures.length > 0) lines.push('> 证据有限的研究草稿：未满足 Plan 的证据数量要求，不作为最终交付。',
+    ...deliveryFailures.map(reason => `> ${escapeMarkdown(reason)}`), '')
   lines.push(`本轮纳入分析 ${coverage.includedWorks} 篇论文；正文引用 ${references.size} 篇，其中 ${citedWorks} 篇用于支持正文、${citedFulltext} 篇提供全文支持证据。`, '')
   for (const rejection of draft.rejectedStatements) {
     unmet.push(`模型候选段落 ${rejection.statementIndex + 1} 未纳入报告：${rejection.code} — ${rejection.reason}`)
@@ -44,7 +44,6 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
       return
     }
     rendered.add(index)
-    body.push(item.text, item.scope, ...(item.uncertainty === null ? [] : [item.uncertainty]))
     lines.push(`<a id="academic-paragraph-${index + 1}"></a>`, '', `**分析段落 ${index + 1} · ${item.kind === 'source_statement' ? '论文陈述' : '跨论文综合'}**`, '',
       escapeMarkdown(item.text), '', `适用范围：${escapeMarkdown(item.scope)}`)
     lines.push(`不确定性：${escapeMarkdown(item.uncertainty ?? '未说明；不代表不存在限制')}`)
@@ -72,9 +71,9 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     const renderedDirections = renderDirections(brief, draft, evidence, references, metadata, statement, lines)
     unmet.push(...renderedDirections.unmet)
   } else {
-    unmet.push('缺少经校验的方向布局或书目信息，本报告未完整满足方向级报告格式。')
+    deliveryFailures.push('缺少经校验的方向布局或书目信息，本报告未完整满足方向级报告格式。')
     lines.push('> 方向布局尚未提供；以下为问题分析草稿，不表示完整方向级报告。', '')
-    lines.push('## 逐题研究结论', '', '以下问题覆盖状态由模型提议，尚未经过独立内容审核。', '')
+    lines.push('## 逐题研究结论', '', '以下状态根据本轮分析与证据关联展示；内容缺口不单独阻止报告交付。', '')
     for (const answer of draft.questionAnswers) {
       lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown(brief.questions[answer.questionIndex] as string)}`, '',
         `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')
@@ -102,15 +101,10 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     }
   }
   for (const section of required) {
-    if (!draft.sections.some(item => item.sectionId === section)) unmet.push(`Plan 要求的章节尚未生成：${section}。`)
-  }
-  const target = brief.reportRequirements.targetLength
-  const length = [...new Intl.Segmenter('zh-CN', { granularity: 'grapheme' }).segment(body.join(''))].length
-  if ((target.minimum !== null && length < target.minimum) || (target.maximum !== null && length > target.maximum)) {
-    unmet.push(`分析正文 ${length} 字，未满足批准的篇幅范围 ${target.minimum ?? '不限'}—${target.maximum ?? '不限'} 字；标题、引用、附录及重复段落不计入。`)
+    if (!draft.sections.some(item => item.sectionId === section)) deliveryFailures.push(`Plan 要求的章节尚未生成：${section}。`)
   }
   if (brief.reportRequirements.requiredSections.some(section => ['research_scope', 'directions'].includes(section))) {
     lines.push('Plan 章节映射：research_scope → scope_and_method；directions → technology_overview。', '')
   }
-  return { lines, unmet }
+  return { lines, unmet, deliveryFailures }
 }

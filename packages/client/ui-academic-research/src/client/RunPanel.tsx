@@ -119,6 +119,8 @@ export function downloadMarkdown(markdown: string, filename = 'academic-report.m
 }
 
 function ReportView({ report, t }: Copy & { readonly report: NonNullable<AcademicResearchRunValue['report']> }) {
+  const deliveryIssues = report.evaluation.issues.filter(issue => issue.category !== 'content')
+  const contentLimits = [...new Set([...report.limitations, ...report.evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])]
   const [query, setQuery] = useState('')
   const [openedEvidence, setOpenedEvidence] = useState<string | null>(null)
   const matches = (text: string) => text.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
@@ -130,7 +132,8 @@ function ReportView({ report, t }: Copy & { readonly report: NonNullable<Academi
     <p>{t(report.mode)} · {t(report.evaluation.status)} {report.synthetic && <strong>· {t('synthetic')}</strong>}</p>
     <button type="button" onClick={() => { downloadMarkdown(report.markdown) }}>{t('download')}</button>
     <button type="button" onClick={() => { downloadAcademicHtml(exportAcademicHtml(report, t)) }}>{t('downloadHtml')}</button>
-    <h4>{t('issues')}</h4><Lines values={report.evaluation.issues.map(issue => `${issue.claimId === null ? '' : `${issue.claimId}: `}${issue.code} — ${issue.message}`)} empty={t('noIssues')} />
+    <h4>{t('deliveryIssues')}</h4><Lines values={deliveryIssues.map(issue => `${issue.claimId === null ? '' : `${issue.claimId}: `}${issue.code} — ${issue.message}`)} empty={t('noDeliveryIssues')} />
+    <h4>{t('contentLimits')}</h4><Lines values={contentLimits} empty={t('noLimits')} />
     <h4>{t('assessments')}</h4><p>{t('reviewMethodNotice')}</p>
     {report.evaluation.assessments.length === 0 ? <p>{t('noAssessments')}</p> : <ul>{report.evaluation.assessments.map(assessment => <li key={assessment.claimAssessmentId}>
       {assessment.claimId} · {t(assessment.status)}<p>{assessment.reason}</p>

@@ -21,6 +21,21 @@ describe('fixed research result presentation', () => {
     expect(screen.getAllByText('部分成功').length).toBeGreaterThan(0)
     expect(screen.queryByText('人工审核通过')).toBeNull()
   })
+  it('separates delivery failures from nonblocking question gaps', () => {
+    const value = sampleRun()
+    if (value.report === null) throw new Error('report fixture missing')
+    render(<RunPanel view={{ phase: 'settled', value: { ...value, report: { ...value.report, limitations: [],
+      evaluation: { ...value.report.evaluation, issues: [
+        { claimId: null, category: 'delivery', code: 'unmet_plan', message: '正文篇幅不足。' },
+        { claimId: null, category: 'content', code: 'content_limitation', message: '缺少 CLOCK 比较。' },
+      ] } } } }} onCancel={vi.fn()} t={t} />)
+    const blockers = screen.getByRole('heading', { name: '交付未达标原因' }).nextElementSibling!
+    const limits = screen.getByRole('heading', { name: '内容限制与未回答问题' }).nextElementSibling!
+    expect(blockers.textContent).toContain('正文篇幅不足')
+    expect(blockers.textContent).not.toContain('缺少 CLOCK')
+    expect(limits.textContent).toContain('缺少 CLOCK')
+    expect(limits.textContent).not.toContain('正文篇幅不足')
+  })
   it('shows synthesis admission reasons independently of successful extraction', () => {
     const value = sampleRun()
     render(<RunPanel view={{ phase: 'settled', value: { ...value, report: null,

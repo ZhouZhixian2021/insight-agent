@@ -48,11 +48,19 @@ describe('question-driven synthesis admission and model validation', () => {
   })
   it('rejects unsupported Plan requirements before a caller dispatches any request', () => {
     const value = input()
-    for (const requirements of [ { language: 'en' }, { citationStyle: 'author_year' }, { requiredSections: ['invented'] },
-      { targetLength: { unit: 'words', minimum: null, maximum: null } } ] as const) {
+    for (const requirements of [ { language: 'en' }, { citationStyle: 'author_year' }, { requiredSections: ['invented'] } ] as const) {
       expect(() => synthesisSections({ ...value.brief,
         reportRequirements: { ...value.brief.reportRequirements, ...requirements } })).toThrow()
     }
+  })
+  it('ignores historical length requirements without changing the approved input', () => {
+    const value = input()
+    const brief = { ...value.brief, reportRequirements: { ...value.brief.reportRequirements,
+      targetLength: { unit: 'words', minimum: 999999, maximum: 9999999 } } }
+    const before = JSON.stringify(brief)
+    expect(() => synthesisSections(brief)).not.toThrow()
+    expect(synthesisPrompt({ ...value, brief })).toContain('Report length is unrestricted.')
+    expect(JSON.stringify(brief)).toBe(before)
   })
   it('names every incompatible requirement and preserves the approved Brief', () => {
     const brief = { ...input().brief, includedWorkTypes: ['conference_paper', 'journal_article'],

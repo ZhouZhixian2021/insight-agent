@@ -16,7 +16,7 @@ describe('fixed evidence to reviewed report', () => {
       expect(input.links.filter(link => link.claimId === claim.claimId)).toHaveLength(2)
     }
     const report = generateReport(input)
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
     expect(report.markdown).toContain('合成基准样例')
     expect(report.markdown).toContain('## 参考文献')
     expect(report.markdown).toContain('本合成研究分别记录')
@@ -47,11 +47,11 @@ describe('fixed evidence to reviewed report', () => {
     expect(analyzeEvidence(source, noPreprints, input.assessedAt).claims).toHaveLength(0)
   })
 
-  it('blocks final reports without review and never publishes synthetic data as final', () => {
+  it('never publishes synthetic data as final even with supporting reviews', () => {
     const { input } = benchmark()
     expect(() => generateReport({ ...input, mode: 'final' })).toThrow('Final report requires')
     expect(evaluateClaims({ ...input, reviews: reviewFixture(input) }).status).toBe('ready')
-    expect(() => generateReport({ ...input, reviews: reviewFixture(input), mode: 'final' })).toThrow('non-synthetic')
+    expect(() => generateReport({ ...input, reviews: reviewFixture(input), mode: 'final' })).toThrow('合成测试材料')
   })
 
   it.each(['missing', 'changed', 'retracted', 'background', 'unapproved', 'locator', 'wrong-review'] as const)('does not approve %s evidence', (fault) => {

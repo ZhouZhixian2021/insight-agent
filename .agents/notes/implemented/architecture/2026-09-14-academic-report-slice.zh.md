@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-09-14-academic-report-slice.md) | 中文
 
+独立审核作为强制交付前置条件的决定由[自动交付](2026-10-26-academic-automatic-delivery.zh.md)取代，其余证据和分析决定仍有效。
+
 ## Problem
 
 共享 Claim 类型既不定义分析行为，也不证明语义支持。固定证据消费方需要一条从可追溯记录到可检查报告的运行路径，同时不虚构模型适配、检索工作流或审批历史。

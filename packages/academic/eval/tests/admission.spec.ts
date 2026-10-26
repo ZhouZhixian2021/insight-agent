@@ -3,9 +3,9 @@ import { evaluateClaims } from '../src/index.ts'
 import { benchmark, reviewFixture } from '../../report/tests/benchmark.ts'
 
 describe('trusted scholarly evidence admission', () => {
-  it('retains existing review requirements even when all evidence was admitted', () => {
+  it('permits admitted evidence without requiring independent review', () => {
     const { input } = benchmark()
-    expect(evaluateClaims({ ...input, admittedEvidence: input.evidence }).status).toBe('needs_review')
+    expect(evaluateClaims({ ...input, admittedEvidence: input.evidence }).status).toBe('ready')
     expect(evaluateClaims({ ...input, admittedEvidence: input.evidence, reviews: reviewFixture(input) }).status).toBe('ready')
   })
   it('does not count unadmitted evidence towards the approved work coverage', () => {

@@ -191,7 +191,7 @@ export interface AcademicClaimAssessmentView {
 export interface AcademicEvaluationView {
   readonly status: 'ready' | 'needs_review' | 'blocked'
   readonly assessments: readonly AcademicClaimAssessmentView[]
-  readonly issues: readonly { readonly claimId: ClaimId | null; readonly code: string; readonly message: string }[]
+  readonly issues: readonly { readonly claimId: ClaimId | null; readonly category?: 'delivery' | 'content'; readonly code: string; readonly message: string }[]
 }
 
 /** Report fields consumed by the Academic report renderer. */
