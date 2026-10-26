@@ -317,8 +317,8 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-api-academic-research-controller`
 
-- `inject`: `academicSource` · `sessionController` · `typert` · `web`
-- `source`: [`packages/api/academic-research-controller/src/index.ts:52`](../packages/api/academic-research-controller/src/index.ts)
+- `inject`: `academicSource` · `sessionController` · `sessionQuery` · `typert` · `web`
+- `source`: [`packages/api/academic-research-controller/src/index.ts:53`](../packages/api/academic-research-controller/src/index.ts)
 
 ```ts config-catalog
 /** Academic research deployment policy. */

@@ -487,9 +487,11 @@ describe('normalizeSessionLog', () => {
     expect(out).not.toContain('212')
   })
 
-  it('normalizes timing inside an embedded Assistant stream and ignores opaque members', () => {
+  it.each([
+    'assistant/attempt', 'academic/evidence-result', 'academic/synthesis-result',
+  ])('normalizes timing inside %s and ignores opaque members', (type) => {
     const event = JSON.stringify({
-      type: 'assistant/attempt',
+      type,
       seq: 2,
       time: 9,
       data: {
@@ -522,6 +524,18 @@ describe('normalizeSessionLog', () => {
         ],
       },
     })
+  })
+
+  it.each(['academic/evidence-result', 'academic/synthesis-result'])('normalizes only observed %s clocks', (type) => {
+    const data = { elapsedMs: 123, firstContentElapsedMs: 45, phase: 'evidence', text: 'keep 123',
+      usage: { inputTokens: 12 }, requestSeq: 8, stream: [{ type: 'text-chunks', time0: 10, dt: [3, 4], text: ['a', 'b'] }] }
+    const input = [type, 'tool/result'].map(eventType => JSON.stringify({ type: eventType, data })).join('\n')
+    const [academic, other] = normalizeSessionLog(input, ctx).trimEnd().split('\n').map(line => JSON.parse(line) as { data: unknown })
+    expect(academic?.data).toEqual({ ...data, elapsedMs: 0, firstContentElapsedMs: 0,
+      stream: [{ ...data.stream[0], time0: 0, dt: [0, 0] }] })
+    expect(other?.data).toEqual(data)
+    const missing = JSON.stringify({ type, data: { elapsedMs: null, firstContentElapsedMs: 'unknown' } })
+    expect((JSON.parse(normalizeSessionLog(missing, ctx)) as { data: unknown }).data).toEqual({ elapsedMs: null, firstContentElapsedMs: 'unknown' })
   })
 
   it('normalizes a headerless packed-like stream record without decoding it', () => {

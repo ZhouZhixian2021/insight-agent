@@ -7,6 +7,15 @@ A service can be a core spine service, a swappable capability seam, a bundle/com
 
 ```mermaid
 flowchart LR
+  pkg_api_academic_research_controller["api-academic-research-controller"]
+  svc_academicResearchController["ctx.academicResearchController<br/>Host Academic research Remote controller"]
+  pkg_academic_source["academic-source"]
+  svc_academicSource["ctx.academicSource<br/>Academic source provider registry"]
+  pkg_academic_source_arxiv["academic-source-arxiv"]
+  pkg_academic_source_openalex["academic-source-openalex"]
+  pkg_academic_source_acl["academic-source-acl"]
+  pkg_academic_source_pmlr["academic-source-pmlr"]
+  pkg_academic_source_cvf["academic-source-cvf"]
   pkg_experimental_client_ui_cot_translation["experimental-client-ui-cot-translation"]
   svc_cotTranslation["ctx.cotTranslation<br/>Reasoning translation Remote"]
   pkg_experimental_translator["experimental-translator"]
@@ -294,10 +303,17 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_academic_source --> svc_academicSource
+  pkg_academic_source_acl --> svc_academicSource
+  pkg_academic_source_arxiv --> svc_academicSource
+  pkg_academic_source_cvf --> svc_academicSource
+  pkg_academic_source_openalex --> svc_academicSource
+  pkg_academic_source_pmlr --> svc_academicSource
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
   pkg_agent_preset_registry --> svc_agentPresets
+  pkg_api_academic_research_controller --> svc_academicResearchController
   pkg_api_gateway --> svc_typertGateway
   pkg_api_job_controller --> svc_jobController
   pkg_api_remote_access --> svc_remoteAccess
@@ -451,6 +467,7 @@ flowchart LR
   pkg_working_directory --> svc_workingDirectory
   pkg_workspace --> svc_workspaceRegistry
   pkg_workspace_changes --> svc_workspaceChanges
+  svc_academicSource --> pkg_api_academic_research_controller
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
   svc_agentLoop --> pkg_base
@@ -611,6 +628,8 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | - | - | Runs approved Session-backed research through the Academic workflow and owns progress and background-run queries. |
+| `ctx.academicSource` | `seam` | [`academic-source`](../packages/academic/source) | [`academic-source-arxiv`](../packages/academic/source-arxiv), [`academic-source-openalex`](../packages/academic/source-openalex), [`academic-source-acl`](../packages/academic/source-acl), [`academic-source-pmlr`](../packages/academic/source-pmlr), [`academic-source-cvf`](../packages/academic/source-cvf) | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | Registers scholarly search and verification providers, normalizes records, and preserves partial failures and truncation. |
 | `ctx.cotTranslation` | `service` | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | - | - | Serves reasoning translations, reuses saved results, and joins ordinary Session activation for uncached inactive Sessions. |
 | `ctx.translator` | `service` | [`experimental-translator`](../packages/experimental/translator) | - | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | Resolves Google or Bing requests and retains shared experimental records through the active Session writer. |
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | Owns module and exact configuration watchers; application mutations share its queue and automatic reloads await the application file lock. |

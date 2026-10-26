@@ -334,7 +334,7 @@ export function normalizeStdout(
 /**
  * Normalize a session JSONL log into a stable expected output: the header line's
  * volatile fields (`createdAt`, `id`, `cwd`) are zeroed/scrubbed; event,
- * historical packed-row, embedded Assistant-stream, goal lifecycle, and
+ * historical packed-row, embedded Assistant/Academic-stream, goal lifecycle, and
  * catalog child-creation clocks are zeroed; and all volatile strings are
  * scrubbed. Projected inputs remain
  * projected. Packed `data.dt` gaps are normalized even when the projected row
@@ -395,8 +395,14 @@ export function normalizeSessionLog(
     } else if ('time' in record) {
       record.time = 0
     }
-    if ((record.type === 'assistant/message' || record.type === 'assistant/attempt')
+    if ((record.type === 'assistant/message' || record.type === 'assistant/attempt'
+      || record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result')
       && record.data !== null && typeof record.data === 'object') {
+      if (record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result') {
+        const data = record.data as Record<string, unknown>
+        if (typeof data.elapsedMs === 'number') data.elapsedMs = 0
+        if (typeof data.firstContentElapsedMs === 'number') data.firstContentElapsedMs = 0
+      }
       const stream = (record.data as { stream?: unknown }).stream
       if (Array.isArray(stream)) {
         for (const member of stream) {

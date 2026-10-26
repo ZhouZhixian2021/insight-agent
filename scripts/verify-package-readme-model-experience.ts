@@ -45,6 +45,15 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  * blocks. A package moves on or off this list with its context behavior.
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
+  'packages/academic/evidence': { kind: 'indirect', reason: 'The caller owns model dispatch and logging; analysis and report consumers render the verified evidence.' },
+  'packages/academic/ingestion': { kind: 'indirect', reason: 'Retrieval and workflow consumers render normalized and deduplicated records.' },
+  'packages/academic/model': { kind: 'indirect', reason: 'Workflow and analysis consumers render shared academic records.' },
+  'packages/academic/retrieval': { kind: 'indirect', reason: 'The workflow logs and renders planned queries and verified candidates.' },
+  'packages/academic/source': { kind: 'indirect', reason: 'The source service returns normalized records; retrieval and workflow consumers render them.' },
+  'packages/academic/source-acl': { kind: 'indirect', reason: 'The provider returns scholarly records; the research workflow owns model input.' },
+  'packages/academic/source-arxiv': { kind: 'indirect', reason: 'The provider returns scholarly records; the research workflow owns model input.' },
+  'packages/academic/source-cvf': { kind: 'indirect', reason: 'The provider returns scholarly records; the research workflow owns model input.' },
+  'packages/academic/source-pmlr': { kind: 'indirect', reason: 'The provider returns scholarly records; the research workflow owns model input.' },
   'packages/experimental/client-ui-cot-translation': { kind: 'indirect', reason: 'The translator owns optional paid queries; normal Session activation delegates startup context to the preset.' },
   'packages/experimental/cot-translation-bundle': { kind: 'indirect', reason: 'The GUI consumer delegates paid query prompts to the translator and normal activation context to the Session preset.' },
   'packages/client/product-analytics': { kind: 'none', reason: 'Desktop analytics observes selected interactions without contributing model context or Session events.' },

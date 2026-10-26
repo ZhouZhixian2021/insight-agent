@@ -35,7 +35,7 @@ export type ResearchEntryProps = Pick<PropsRuntime<'conversation.session.header.
  */
 export function ResearchEntry({ t, useSession, sessionId, ...remote }: ResearchEntryProps) {
   const [open, setOpen] = useState(false)
-  const usable = useSession(s => s.blank === false)
+  const usable = useSession(s => !s.blank)
   return <>
     <Q6DemoEntry t={t} />
     <button className={css.entry} type="button" title={t('entry')} onClick={() => { setOpen(true) }}>{t('entry')}</button>

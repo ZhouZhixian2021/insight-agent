@@ -577,6 +577,7 @@ export async function runResearchDraft(
         const evidenceBefore = admittedEvidence.length
         const fulltextBefore = availableFulltextWorks
         await processGroup(group)
+        if (paperSignal.aborted) return
         completedBatchCount += 1
         // A failed download has not tested the evidence yield of a paper. Keep trying the
         // remaining ranked candidates instead of treating unavailable full text as saturation.

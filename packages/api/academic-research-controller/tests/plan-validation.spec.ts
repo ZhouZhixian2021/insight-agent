@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import * as validation from '../src/plan-validation.ts'
 import { validateAcademicPlan } from '../src/research-brief-plan.ts'
 
-const template = readFileSync(new URL('../../../preset/agent-presets/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url), 'utf8')
+const template = readFileSync(new URL('../../../bundle/web-app/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url), 'utf8')
 const pe1Plan = readFileSync(new URL('../../../../z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', import.meta.url), 'utf8')
 const unsupported = template.replace('"accepted_manuscript", "version_of_record"', '"conference_paper", "journal_article"')
 

@@ -24,7 +24,7 @@ const output = () => JSON.parse(readFileSync(new URL('synthesis-partial-output.s
 
 describe('executable direction report layout', () => {
   it('packages exactly the preset format and includes it in the existing synthesis request', () => {
-    const source = readFileSync(new URL('../../../preset/agent-presets/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../../../bundle/web-app/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
     expect(academicReportFormat).toBe(source.replaceAll('\r\n', '\n').trimEnd() + '\n')
     const prompt = synthesisPrompt(input())
     expect(prompt).toContain(academicReportFormat)

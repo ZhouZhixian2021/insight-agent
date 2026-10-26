@@ -24,15 +24,15 @@ function fixture() {
 }
 
 describe('bounded candidate replenishment', () => {
-  it.each(['excluded', 'empty', 'failed', 'all_rejected', 'unlinked'] as const)('continues past %s papers and stops on usable evidence', async (kind) => {
+  it.each(['excluded', 'empty', 'failed', 'all_rejected'] as const)('continues past %s papers and stops on usable evidence', async (kind) => {
     const { input, adapters } = fixture()
     const generated = vi.mocked(adapters.generator)
     for (let index = 0; index < 2; index++) {
       if (kind === 'failed') generated.mockRejectedValueOnce(new Error('model failed'))
       else generated.mockResolvedValueOnce({ scope: { status: kind === 'excluded' ? 'excluded' : 'included', reason: 'Synthetic scope.' },
-        evidence: kind === 'all_rejected' || kind === 'unlinked'
+        evidence: kind === 'all_rejected'
           ? [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses reranking.',
-            verbatimExcerpt: kind === 'unlinked' ? 'Uses reranking.' : 'Missing excerpt.', cardItems: [] }] : [] })
+            verbatimExcerpt: 'Missing excerpt.', cardItems: [] }] : [] })
     }
     const result = await runResearchDraft(input, adapters)
     expect(adapters.search).toHaveBeenCalledTimes(1)
@@ -40,6 +40,24 @@ describe('bounded candidate replenishment', () => {
     expect(adapters.generator).toHaveBeenCalledTimes(4)
     expect(result.retrievalRun.coverageSummary).toMatchObject({ includedWorks: 2, availableFulltextWorks: 4 })
     expect(result.retrievalRun.coverageSummary.limitations.join('\n')).toContain('证据已达到计划数量要求')
+    expect(result.synthesis.status).toBe('completed')
+    expect(result.report).not.toBeNull()
+  })
+
+  it('accepts verified question-linked evidence without card entries', async () => {
+    const { input, adapters } = fixture()
+    vi.mocked(adapters.generator).mockResolvedValue({
+      scope: { status: 'included', reason: 'Synthetic scope.' },
+      evidence: [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses reranking.',
+        verbatimExcerpt: 'Uses reranking.', cardItems: [] }],
+    })
+    const result = await runResearchDraft(input, adapters)
+    expect(adapters.fetcher).toHaveBeenCalledTimes(2)
+    expect(adapters.generator).toHaveBeenCalledTimes(2)
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
+    expect(result.papers.every(paper => paper.status === 'extracted'
+      && paper.evidence.evidenceRecords.length === 1 && paper.evidence.evidenceCard.methods.length === 0
+      && paper.evidence.questionLinks.some(link => link.question === input.brief.questions[0]))).toBe(true)
     expect(result.synthesis.status).toBe('completed')
     expect(result.report).not.toBeNull()
   })

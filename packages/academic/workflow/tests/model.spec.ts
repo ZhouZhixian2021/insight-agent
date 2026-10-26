@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import LlmRuntime, { LlmAdapter, ReasoningEffortId, ToolCallId, expandAssistantStream, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
-import SessionStore from '@deepseek-ai/dsh-session'
+import SessionStore, { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
 import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
@@ -476,7 +476,7 @@ describe('durable academic model extraction', () => {
     expect(response.data.usage).toEqual({ inputTokens: 100, outputTokens: 30 })
     expect(f.session.deriveMessages()).toEqual([])
     const files = await readdir(f.root, { recursive: true })
-    const log = files.find(file => file.endsWith('session.v2.jsonl'))
+    const log = files.find(file => file.endsWith(`session.v${SESSION_FORMAT_VERSION}.jsonl`))
     if (!log) throw new Error('missing physical log')
     const disk = await readFile(join(f.root, log), 'utf8')
     expect(disk).toContain('academic/evidence-request')

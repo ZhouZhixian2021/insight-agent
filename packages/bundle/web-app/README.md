@@ -88,6 +88,8 @@ When you launch `dsh --profile web` over SSH, the URL line still prints but the 
 
 ### Per-session agent setup
 
+The Academic insight preset enters plan mode before its first model request and permits one same-turn reminder if no review is submitted. Its approved structured plan is required by the Academic Research Controller before research starts.
+
 Each browser session selects a shipped preset (`standard` by default). The Agent presets settings page changes the default and edits preset child plugins; saves persist in `$DSH_HOME/profiles/web/cordis.patch.yml`. Creator's plugin-management tool is enabled only when the Host provides an editable profile.
 
 -----

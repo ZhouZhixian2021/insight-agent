@@ -31,6 +31,9 @@ export function PlanReviewPanel({ pending, review, t, renderSlot }: PlanReviewPa
   // hide the panel. A failed send re-enables the buttons and shows the error.
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [revision, setRevision] = useState('')
+  const academic = /(?:^|\n)```academic-research-brief-json[ \t]*\r?\n/u.test(review.plan)
   const settle = (send: () => Promise<void>, remote = false): void => {
     setBusy(true)
     setError(null)
@@ -68,18 +71,35 @@ export function PlanReviewPanel({ pending, review, t, renderSlot }: PlanReviewPa
           <h3 className={css.title}>{summary.title}</h3>
           {summary.description !== '' && <p className={css.description}>{summary.description}</p>}
         </div>
+        {editing && <div className={css.revision}>
+          <label className={css.revisionLabel}>
+            {t('plan.revisionLabel')}
+            <textarea rows={3} value={revision} disabled={busy}
+              placeholder={t('plan.revisionPlaceholder')}
+              onChange={(event) => { setRevision(event.target.value) }} />
+          </label>
+          <div className={css.revisionActions}>
+            <Button variant="ghost" disabled={busy} onClick={() => { setEditing(false) }}>
+              {t('plan.revisionBack')}
+            </Button>
+            <Button variant="outline" disabled={busy || revision.trim() === ''} onClick={() => {
+              settle(() => pending.answer({ answers: [{ id: review.id, selected: [], custom: revision.trim() }] }),
+                pending.snapshot().channel === 'rpc')
+            }}>{t('plan.revisionSend')}</Button>
+          </div>
+        </div>}
         <div className={css.footer}>
           <div className={css.feedback} role="status">{error}</div>
           <div className={css.actions}>
             <Button
               variant="outline" className={css.discuss} icon={<IconEditOutlineRegular size={14} />}
-              disabled={busy} onClick={() => { settle(() => pending.dismiss()) }}
+              disabled={busy || editing} onClick={() => { if (academic) setEditing(true); else settle(() => pending.dismiss()) }}
             >
               {t('plan.discuss')}
             </Button>
             <Button
               variant="primary" {...tooltip(review.approve.description)}
-              disabled={busy} onClick={() => { decide(review.approve.label) }}
+              disabled={busy || editing} onClick={() => { decide(review.approve.label) }}
             >
               {t('plan.approve')}
             </Button>

@@ -1,0 +1,14 @@
+- region "Approve this plan and leave plan mode?":
+  - text: Plan review
+  - button "Open plan in sidebar": View full plan
+  - heading "RAG 与大模型幻觉关系的研究计划" [level=3]
+  - paragraph: 梳理检索增强生成（RAG，先从外部资料检索证据再让模型据此作答）在什么条件下能减少大模型幻觉（模型输出看似合理但与事实或给定材料不符），以及现有研究仍未解决的问题，供希望了解该方向现状的中文读者参考。
+  - text: Requested changes
+  - textbox "Requested changes":
+    - /placeholder: Describe changes to the research scope, questions, or deliverable
+    - text: 只纳入 2023 年及以后发表的论文，请同步调整研究范围正文和执行字段，其他约定保持不变。
+  - button "Back to review"
+  - button "Send feedback"
+  - status
+  - button "Request changes" [disabled]
+  - button "Approve" [disabled]

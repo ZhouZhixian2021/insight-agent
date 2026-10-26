@@ -13,8 +13,6 @@ This package adds PMLR papers to `ctx.academicSource`. It searches configured of
 
 `verifyReference()` reads one official abstract page by volume/paper ID and checks its citation URL. The page's PDF location is retained in a bounded cache because it can differ from the derived path; verification works without volume catalogs and does not download the PDF.
 
-Verification retains scholarly abstract tags or the official `abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
-
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -48,6 +46,8 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
+
+Verification retains scholarly abstract tags or the official `abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
 
 <details>
 <summary>Implementation internals — click to expand</summary>

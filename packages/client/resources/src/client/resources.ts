@@ -47,7 +47,8 @@ export const RESOURCE_SCHEME = 'dsh-resource'
 
 /**
  * The protocol key of one address: the host of a `dsh-resource://` URL, as the
- * URL parser reads it (lower-cased). Any other string — another scheme, or one
+ * URL parser reads it (lower-cased), or its literal ASCII authority when the browser
+ * omits custom-scheme hosts. Any other string — another scheme, or one
  * the URL parser rejects — names no protocol and is treated like an address
  * whose protocol has no provider.
  * @param address - the full address.
@@ -63,8 +64,9 @@ export function protocolOf(address: string): string | undefined {
     return undefined
   }
   if (parsed.protocol !== `${RESOURCE_SCHEME}:`) return undefined
-  // A non-special scheme's host is opaque to the URL parser and keeps its case.
-  return parsed.hostname === '' ? undefined : parsed.hostname.toLowerCase()
+  // Older Chromium leaves custom-scheme authorities out of hostname.
+  const host = parsed.hostname || /^\/\/([a-z0-9._~-]+)(?=[/?#]|$)/i.exec(address.slice(parsed.protocol.length))?.[1]
+  return host?.toLowerCase()
 }
 
 function idle(status: 'none' | 'loading'): ResourceSnapshot<unknown> {

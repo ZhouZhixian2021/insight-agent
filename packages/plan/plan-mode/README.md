@@ -98,7 +98,7 @@ The command child activates only when a commands service is composed. It maps ba
 
 ### Session projection unit
 
-When `ctx.sessionProjections` is composed, the package registers the `plan` unit through optional injection. The unit turns logged `/plan` command runs into a candidate target, commits the logged state on `plan/mode`, and derives `{ active, pending }` for `view`, where `pending` is true only while an unsettled or successful selection differs from the logged state — a pure replay quantity recoverable from the log alone. The key merges into `SessionProjectionMap` from [`src/types.ts`](src/types.ts); the framework drives the unit, and unloading the plugin fiber unregisters the key. Plan-mode reads require this unit and the `turnBoundary` unit, and fail explicitly if the registry or either key is absent.
+When `ctx.sessionProjections` is composed, the package registers the `plan` unit through optional injection. The unit turns logged `/plan` command runs into a candidate target, commits the logged state on `plan/mode`, and derives `{ active, pending }` for `view`, where `pending` is true only while an unsettled or successful selection differs from the logged state — a pure replay quantity recoverable from the log alone. The unit also records the latest `exit_plan_mode` call turn to suppress a missing-review reminder after either approval or decline, without scanning Session history. The key merges into `SessionProjectionMap` from [`src/types.ts`](src/types.ts); the framework drives the unit, and unloading the plugin fiber unregisters the key. Plan-mode reads require this unit and the `turnBoundary` unit, and fail explicitly if the registry or either key is absent.
 
 ### Source map
 

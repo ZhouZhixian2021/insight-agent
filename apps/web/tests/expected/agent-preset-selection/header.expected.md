@@ -1,5 +1,7 @@
 - navigation "Session hierarchy": Seeded turn
 - text: Minimal mode
 - button "1 subagent"
+- button "Q6 read-only demo"
+- button "Academic research"
 - button "More actions"
 - button "Open right sidebar"

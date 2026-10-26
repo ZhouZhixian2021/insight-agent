@@ -42,6 +42,8 @@
               - id: plan-mode
                 name: '@deepseek-ai/dsh-plan-mode'
                 config:
+                  initialActive: true
+                  missingExitRetries: 1
                   section: |
                     You are planning an academic insight research task. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Build a decision-complete Research Brief and execution plan before conducting the full literature review or drafting the final report.
 

@@ -8,7 +8,7 @@ kind: "package-reference"
 
 ## 概述
 
-当组件只知道实时数据的 URL 地址，而数据由另一个客户端包拥有时，请使用客户端资源；例如 tab 记录、链接或提及。资源地址使用 `dsh-resource://<type>/…`；需要作用域的协议把作用域编进路径。组件通过公开的 `useResource` 钩子接收当前值与后续更新。不支持的协议与非资源 scheme（例如 `sidebar://guide`）不指向任何资源。
+当组件只知道实时数据的 URL 地址，而数据由另一个客户端包拥有时，请使用客户端资源；例如 tab 记录、链接或提及。资源地址使用 `dsh-resource://<type>/…`；需要作用域的协议把作用域编进路径。组件通过公开的 `useResource` 钩子接收当前值与后续更新。不支持的协议与非资源 scheme（例如 `sidebar://guide`）不指向任何资源。浏览器对自定义 scheme 返回空 `URL.hostname` 时，协议识别仍接受地址中原样写入的 ASCII authority。
 
 ## 目录
 

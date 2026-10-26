@@ -1196,7 +1196,16 @@ function stableSessionFixture(
   return stable
 }
 
-async function assertReplaySession(
+/**
+ * Compare persisted Sessions and header sidecars at a scenario's stable checkpoint.
+ * @param sessions Live root Sessions available at the checkpoint.
+ * @param fixturePath Recorded Session oracle.
+ * @param mode Replay comparison or explicit refresh.
+ * @param webUrl Run-local listener address.
+ * @param harnessHome Run-local harness directory.
+ * @returns Completion after comparison and optional refresh writes.
+ */
+export async function assertReplaySession(
   sessions: readonly Session[],
   fixturePath: string,
   mode: WebSnapshotMode,

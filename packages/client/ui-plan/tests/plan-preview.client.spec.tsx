@@ -343,3 +343,32 @@ describe('plan entry points and document', () => {
     }
   })
 })
+
+it.each([false, true])('folds one Academic handoff in saved or temporary previews (temporary: %s)', (temporary) => {
+  const markdown = '# 研究计划\n\n研究目标：比较检索方法\n\n```academic-research-brief-json\n{"schemaVersion":5}\n```\n\n请确认研究范围'
+  const value = { title: '研究计划', markdown }
+  const address = temporary ? reviewPreviewAddress(target.session.sessionId, 'academic') : planAddress(target)
+  const props = { t, useResource: () => ({ status: 'live', value }),
+    useTabInfo: () => ({ tab: { title: value.title, navigation: { address, params: { planReview: value } } } }),
+  } as Parameters<typeof PlanPreview>[0]
+  render(<PlanPreview {...props} />)
+  expect(screen.getByText('研究目标：比较检索方法')).toBeTruthy()
+  expect(screen.getByText('请确认研究范围')).toBeTruthy()
+  const fold = document.querySelector('details')
+  expect(fold?.open).toBe(false)
+  expect(fold?.querySelector('code')?.textContent).toContain('"schemaVersion":5')
+  expect(fold?.querySelector('summary')?.textContent).toBe(en['preview.executionDetails'])
+  fireEvent.click(fold!.querySelector('summary')!)
+  expect(fold?.open).toBe(true)
+  expect(screen.getByRole('heading', { name: value.title })).toBeTruthy()
+})
+
+it('leaves multiple Academic handoffs fully visible', () => {
+  const markdown = '# Ambiguous\n\n```academic-research-brief-json\n{}\n```\n\n```academic-research-brief-json\n{}\n```'
+  const props = { t, useResource: () => ({ status: 'live', value: { title: 'Ambiguous', markdown } }),
+    useTabInfo: () => ({ tab: { title: 'Ambiguous', navigation: { address: planAddress(target) } } }),
+  } as Parameters<typeof PlanPreview>[0]
+  render(<PlanPreview {...props} />)
+  expect(document.querySelector('details')).toBeNull()
+  expect(document.querySelectorAll('code').length).toBe(2)
+})

@@ -13,8 +13,6 @@ kind: "package-reference"
 
 `verifyReference()` 通过 `id_list` 查询单个 arXiv ID，并核对返回的 ID；明确指定 `vN` 时必须匹配该版本。它返回规范化记录及 HTML/PDF 候选，不下载全文。
 
-检索与 ID 核验把 Atom `summary` 保留为学术摘要，把 `category` 词项保留为主题关键词，存入记录的 `metadata`。缺失字段保持未知；主题分类不等于作者提供的贡献类型。
-
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -48,6 +46,8 @@ kind: "package-reference"
 <a id="api"></a>
 ## API
 
+检索与 ID 核验把 Atom `summary` 保留为学术摘要，把 `category` 词项保留为主题关键词，存入记录的 `metadata`。缺失字段保持未知；主题分类不等于作者提供的贡献类型。
+
 | 导出 | 角色 |
 |---|---|
 | `ArxivProvider` | 以 id `arxiv` 注册的 `AcademicSourceProvider` 实现。 |
@@ -65,7 +65,7 @@ kind: "package-reference"
 <a id="model-experience"></a>
 ## 模型体验
 
-间接通过未来把规范化成果渲染进模型可见上下文的检索或工作流消费方体现；本提供方不贡献任何提示词或 schema。
+间接通过把规范化成果渲染进模型可见上下文的检索或工作流消费方体现；本提供方不贡献任何提示词或 schema。
 
 #### KV Cache 影响
 

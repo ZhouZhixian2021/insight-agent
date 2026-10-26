@@ -9,6 +9,15 @@
 
 ```mermaid
 flowchart LR
+  pkg_api_academic_research_controller["api-academic-research-controller"]
+  svc_academicResearchController["ctx.academicResearchController<br/>Host Academic research Remote controller"]
+  pkg_academic_source["academic-source"]
+  svc_academicSource["ctx.academicSource<br/>Academic source provider registry"]
+  pkg_academic_source_arxiv["academic-source-arxiv"]
+  pkg_academic_source_openalex["academic-source-openalex"]
+  pkg_academic_source_acl["academic-source-acl"]
+  pkg_academic_source_pmlr["academic-source-pmlr"]
+  pkg_academic_source_cvf["academic-source-cvf"]
   pkg_experimental_client_ui_cot_translation["experimental-client-ui-cot-translation"]
   svc_cotTranslation["ctx.cotTranslation<br/>Reasoning translation Remote"]
   pkg_experimental_translator["experimental-translator"]
@@ -296,10 +305,17 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_academic_source --> svc_academicSource
+  pkg_academic_source_acl --> svc_academicSource
+  pkg_academic_source_arxiv --> svc_academicSource
+  pkg_academic_source_cvf --> svc_academicSource
+  pkg_academic_source_openalex --> svc_academicSource
+  pkg_academic_source_pmlr --> svc_academicSource
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
   pkg_agent_preset_registry --> svc_agentPresets
+  pkg_api_academic_research_controller --> svc_academicResearchController
   pkg_api_gateway --> svc_typertGateway
   pkg_api_job_controller --> svc_jobController
   pkg_api_remote_access --> svc_remoteAccess
@@ -453,6 +469,7 @@ flowchart LR
   pkg_working_directory --> svc_workingDirectory
   pkg_workspace --> svc_workspaceRegistry
   pkg_workspace_changes --> svc_workspaceChanges
+  svc_academicSource --> pkg_api_academic_research_controller
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
   svc_agentLoop --> pkg_base
@@ -613,6 +630,8 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | - | - | 通过 Academic 工作流执行 Session 中已批准的研究，并负责进度与后台运行查询。 |
+| `ctx.academicSource` | `seam` | [`academic-source`](../packages/academic/source) | [`academic-source-arxiv`](../packages/academic/source-arxiv), [`academic-source-openalex`](../packages/academic/source-openalex), [`academic-source-acl`](../packages/academic/source-acl), [`academic-source-pmlr`](../packages/academic/source-pmlr), [`academic-source-cvf`](../packages/academic/source-cvf) | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | 注册学术检索与核验提供方，规范化记录，并保留部分失败和截断信息。 |
 | `ctx.cotTranslation` | `service` | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | - | - | 为展开的思考内容提供有界的 Session 翻译请求，不改变模型可见历史。 |
 | `ctx.translator` | `service` | [`experimental-translator`](../packages/experimental/translator) | - | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | 解析 Google 或 Bing 请求，并可选保留统一的实验性 Session 记录。 |
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | 负责模块和精确配置监听；应用修改共用其队列，自动重载等待应用文件锁。 |

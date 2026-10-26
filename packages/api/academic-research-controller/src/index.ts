@@ -20,6 +20,7 @@ import {
 import type { HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
+import type {} from '@deepseek-ai/dsh-session-query'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-web'
 import { researchPlanFromApprovedPlan } from './research-brief-plan.ts'
@@ -30,7 +31,7 @@ import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
 import { academicQ6Projection } from './q6-projection.ts'
-import { AcademicBackgroundRuns, replayBackgroundRun, replayBackgroundRuns } from './background-run.ts'
+import { AcademicBackgroundRuns, AcademicResearchHostStoppedError, replayBackgroundRun, replayBackgroundRuns } from './background-run.ts'
 import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
   AcademicResearchPlanView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunView,
@@ -102,7 +103,7 @@ export interface Config {
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
 export class AcademicResearchController extends TypertRemoteService {
-  static inject = ['academicSource', 'sessionController', 'typert', 'web']
+  static inject = ['academicSource', 'sessionController', 'sessionQuery', 'typert', 'web']
 
   static Config: z<Config> = z.object({
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
@@ -201,7 +202,8 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
     try {
-      const { brief, searches } = researchPlanFromApprovedPlan(String(sessionId), found.agent.session.snapshotEvents())
+      const { events } = await this.ctx.sessionQuery.readSession(sessionId)
+      const { brief, searches } = researchPlanFromApprovedPlan(String(sessionId), events)
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       return { researchBriefId: brief.researchBriefId, topic: brief.topic, questions: brief.questions, searches }
     } catch (cause: unknown) {
@@ -233,8 +235,9 @@ export class AcademicResearchController extends TypertRemoteService {
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
     const { agent } = found
-    const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
-    const history = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+    const { events } = await this.ctx.sessionQuery.readSession(request.sessionId)
+    const approved = researchPlanFromApprovedPlan(String(request.sessionId), events)
+    const history = reconstructAcademicResearchRecoveryState(events, {
       retrievalRunId: request.retrievalRunId, researchBriefId: approved.brief.researchBriefId,
       researchBriefVersion: approved.brief.version,
     })
@@ -261,7 +264,7 @@ export class AcademicResearchController extends TypertRemoteService {
     return agent.runMaintenance(async (agentSignal) => {
       const operationSignal = AbortSignal.any([signal, agentSignal,
         AbortSignal.timeout(this.enhancementMaximumElapsedMs)])
-      if (agent.session.snapshotEvents().some(event => event.type === 'academic/evidence-enhancement-selection'
+      if ((await this.ctx.sessionQuery.readSession(request.sessionId)).events.some(event => event.type === 'academic/evidence-enhancement-selection'
           && event.data.retrievalRunId === request.retrievalRunId)) {
         throw new RemoteError('gateway/bad-request', '本轮已经选择一篇论文进行二级补充。', {})
       }
@@ -323,7 +326,8 @@ export class AcademicResearchController extends TypertRemoteService {
     signal.throwIfAborted()
     const found = await this.ctx.sessionController.resolveAgent(request.sessionId)
     if ('error' in found) throw found.error
-    const approved = researchPlanFromApprovedPlan(String(request.sessionId), found.agent.session.snapshotEvents())
+    const { events } = await this.ctx.sessionQuery.readSession(request.sessionId)
+    const approved = researchPlanFromApprovedPlan(String(request.sessionId), events)
     if (approved.searches === undefined || approved.brief.researchBriefId !== request.researchBriefId) {
       throw new RemoteError('gateway/bad-request', '研究计划已更新或缺少检索方案，请重新打开学术研究确认计划。', {})
     }
@@ -354,7 +358,7 @@ export class AcademicResearchController extends TypertRemoteService {
     if (active !== undefined) return active
     const found = await this.ctx.sessionController.resolveAgent(key.sessionId)
     if ('error' in found) throw found.error
-    const view = replayBackgroundRun(key.sessionId, key.backgroundRunId, found.agent.session.snapshotEvents())
+    const view = replayBackgroundRun(key.sessionId, key.backgroundRunId, (await this.ctx.sessionQuery.readSession(key.sessionId)).events)
     if (view === undefined) throw new RemoteError('gateway/bad-request', '找不到当前会话的学术研究运行记录。', {})
     return view
   }
@@ -368,9 +372,13 @@ export class AcademicResearchController extends TypertRemoteService {
   async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]> {
     const found = await this.ctx.sessionController.resolveAgent(sessionId)
     if ('error' in found) throw found.error
-    return replayBackgroundRuns(sessionId, found.agent.session.snapshotEvents()).slice(-20).map((saved) => {
+    const retainedActive = this.backgroundRuns.captureActive(sessionId)
+    const { events } = await this.ctx.sessionQuery.readSession(sessionId)
+    const retainedView = retainedActive()
+    return replayBackgroundRuns(sessionId, events).slice(-20).map((saved) => {
       const { schemaVersion, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason } =
-        this.backgroundRuns.get(sessionId, saved.backgroundRunId) ?? saved
+        this.backgroundRuns.get(sessionId, saved.backgroundRunId)
+          ?? (retainedView?.backgroundRunId === saved.backgroundRunId ? retainedView : saved)
       return { schemaVersion, sessionId, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason }
     })
   }
@@ -458,8 +466,10 @@ export class AcademicResearchController extends TypertRemoteService {
     let brief
     let searches
     let candidateScreening
+    let events: readonly SessionEvent[]
     try {
-      const approved = researchPlanFromApprovedPlan(String(request.sessionId), agent.session.snapshotEvents())
+      events = (await this.ctx.sessionQuery.readSession(request.sessionId)).events
+      const approved = researchPlanFromApprovedPlan(String(request.sessionId), events)
       brief = approved.brief
       searches = approved.searches
       candidateScreening = approved.candidateScreening
@@ -471,7 +481,7 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     let recovery: AcademicResearchRecoveryCheckpoint | undefined
     if (request.resumeRetrievalRunId !== undefined) {
-      const reconstructed = reconstructAcademicResearchRecoveryState(agent.session.snapshotEvents(), {
+      const reconstructed = reconstructAcademicResearchRecoveryState(events, {
         retrievalRunId: request.resumeRetrievalRunId,
         researchBriefId: brief.researchBriefId,
         researchBriefVersion: brief.version,
@@ -555,11 +565,13 @@ export class AcademicResearchController extends TypertRemoteService {
         { reason: 'academic research requires an idle Session' }, { cause })
     }
     const result = await maintenance
-    agent.session.append('academic/run-settlement', {
-      retrievalRunId: result.retrievalRun.retrievalRunId,
-      status: result.status,
-      completedAt: new Date().toISOString(),
-    })
+    if (!(result.status === 'cancelled' && signal.reason instanceof AcademicResearchHostStoppedError)) {
+      agent.session.append('academic/run-settlement', {
+        retrievalRunId: result.retrievalRun.retrievalRunId,
+        status: result.status,
+        completedAt: new Date().toISOString(),
+      })
+    }
     return result
   }
 }

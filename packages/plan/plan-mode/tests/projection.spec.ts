@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import AgentRegistry from '@deepseek-ai/dsh-agent'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import SessionStore from '@deepseek-ai/dsh-session'
-import type { Session } from '@deepseek-ai/dsh-session'
+import SessionStore, { Session, SessionId } from '@deepseek-ai/dsh-session'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
@@ -134,6 +134,24 @@ describe('plan projection unit', () => {
     })
     expect(bench.values().plan).toEqual({ active: false, pending: false })
     expect(bench.ctx.sessionProjections.stateOf(bench.session, 'plan')?.activeAtLastHeader).toBe(false)
+  })
+
+  it('recovers the last review-call turn from logged history without changing the wire view', async () => {
+    const bench = await harness(true)
+    expect(bench.ctx.sessionProjections.stateOf(bench.session, 'plan')?.lastExitCallTurn).toBeNull()
+    bench.session.append('tool/call', {
+      turn: 1, step: 1, callId: ToolCallId('review-first'), name: 'exit_plan_mode', arguments: '{"plan":"# Plan"}',
+    })
+    bench.session.append('tool/call', {
+      turn: 2, step: 1, callId: ToolCallId('read-second'), name: 'read', arguments: '{}',
+    })
+    const restored = Session.create(SessionId('plan-cold-review'), bench.session.snapshotEvents())
+    expect(bench.ctx.sessionProjections.stateOf(restored, 'plan')?.lastExitCallTurn).toBe(1)
+    restored.append('tool/call', {
+      turn: 2, step: 2, callId: ToolCallId('review-second'), name: 'exit_plan_mode', arguments: '{"plan":"# Revised"}',
+    })
+    expect(bench.ctx.sessionProjections.stateOf(restored, 'plan')?.lastExitCallTurn).toBe(2)
+    expect(bench.ctx.sessionProjections.snapshot(restored).values.plan).toEqual({ active: false, pending: false })
   })
 
   it('has no plan key when plan-mode is not composed', async () => {

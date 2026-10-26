@@ -50,6 +50,8 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  academicResearchController: 'academic-insight.md',
+  academicSource: 'academic-source.md',
   translator: 'translation.md',
   cotTranslation: 'translation.md',
   speechToText: 'voice-input.md',
@@ -284,6 +286,30 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
  * appear on more than one page.
  */
 export const LINK_MAP: Readonly<Record<string, string>> = {
+  AcademicBackgroundRunCancelRequest: 'academic-insight.md',
+  AcademicBackgroundRunKey: 'academic-insight.md',
+  AcademicBackgroundRunSummary: 'academic-insight.md',
+  AcademicBackgroundRunView: 'academic-insight.md',
+  AcademicResearchRunFrame: 'academic-insight.md',
+  AcademicResearchRunRequest: 'academic-insight.md',
+  AcademicEvidenceEnhancementRequest: 'academic-insight.md',
+  AcademicEvidenceEnhancementView: 'academic-insight.md',
+  AcademicResearchPlanView: 'academic-insight.md',
+  AcademicPlannedSearch: 'academic-insight.md',
+  AcademicResearchRunValue: 'academic-insight.md',
+  AcademicReference: 'academic-source.md',
+  AcademicReferenceVerificationOutcome: 'academic-source.md',
+  AcademicSourceFullText: 'academic-source.md',
+  AcademicSourceProvider: 'academic-source.md',
+  AcademicSourceProviderObservation: 'academic-source.md',
+  AcademicSourceProviderObserver: 'academic-source.md',
+  AcademicSourceSearchBatchResult: 'academic-source.md',
+  AcademicSourceSearchRequest: 'academic-source.md',
+  AcademicSourceSearchResult: 'academic-source.md',
+  AcademicSourceWork: 'academic-source.md',
+  BatchResult: 'academic-insight.md',
+  ProviderFailure: 'academic-insight.md',
+  WorkVersion: 'academic-insight.md',
   Principal: 'typert.md',
   PrincipalMap: 'typert.md',
   RemoteAccessResource: 'typert.md',

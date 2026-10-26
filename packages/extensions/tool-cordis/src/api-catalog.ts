@@ -82,6 +82,110 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'academicResearchController',
+    summary: 'Host service backing the generated `ctx.remote.academicResearch` namespace.',
+    description: 'Host service backing the generated `ctx.remote.academicResearch` namespace.',
+    methods: [
+      {
+        signature: '@Remote(\'plan\') async plan(sessionId: AcademicResearchRunRequest[\'sessionId\']): Promise<AcademicResearchPlanView>',
+        description: 'Preview the latest approved plan without starting retrieval or calling a model.',
+        parameters: [{ name: 'sessionId', description: 'Session whose research plan the user wants to execute.' }],
+        returns: 'Chinese research intent, search directions, and the approval identity to pass to run.',
+      },
+      {
+        signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
+        description: 'Run one multi-source research pass while the addressed Agent is idle.',
+        parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
+        returns: 'completed or cancelled draft data with its observed retrieval run and durable Session identity.',
+      },
+      {
+        signature: '@Remote(\'enhanceEvidence\') async enhanceEvidence(request: AcademicEvidenceEnhancementRequest, signal: AbortSignal): Promise<AcademicEvidenceEnhancementView>',
+        description: 'Enhance one user-selected paper after its first-tier draft has settled.',
+        parameters: [{ name: 'request', description: 'Completed run and selected paper identity.' }, { name: 'signal', description: 'Caller lifetime; cancellation preserves the original report and committed fragments.' }],
+        returns: 'Separate evidence counts; this operation does not revise or approve the original report.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) runStream(request: AcademicResearchRunRequest, signal: AbortSignal): AsyncIterable<AcademicResearchRunFrame>',
+        description: 'Stream complete workflow progress snapshots followed by one final result.',
+        parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts this one pass.' }],
+        returns: 'ordered progress frames and at most one terminal result frame.',
+      },
+      {
+        signature: '@Remote(\'startBackgroundRun\') async startBackgroundRun(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicBackgroundRunView>',
+        description: 'Start a Session-owned research task whose lifetime does not depend on the browser connection.',
+        parameters: [{ name: 'request', description: 'Approved plan identity and bounded run options.' }, { name: 'signal', description: 'Caller lifetime used only before admission; disconnect after admission leaves the task running.' }],
+        returns: 'Persisted initial state and its independent background run ID.',
+      },
+      {
+        signature: '@Remote(\'getBackgroundRun\') async getBackgroundRun(key: AcademicBackgroundRunKey): Promise<AcademicBackgroundRunView>',
+        description: 'Read the latest Session-owned task state, including after a host restart.',
+        parameters: [{ name: 'key', description: 'Session and background run identity.' }],
+        returns: 'Latest durable state; an unclosed task from a previous host is marked interrupted.',
+      },
+      {
+        signature: '@Remote(\'listBackgroundRuns\') async listBackgroundRuns(sessionId: AcademicResearchRunRequest[\'sessionId\']): Promise<readonly AcademicBackgroundRunSummary[]>',
+        description: 'Find this Session\'s recent task IDs after a page refresh or reconnection.',
+        parameters: [{ name: 'sessionId', description: 'Owning Session identity.' }],
+        returns: 'At most 20 small discovery rows, oldest first, with live tasks overriding persisted snapshots.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watchBackgroundRun(key: AcademicBackgroundRunKey, signal: AbortSignal): AsyncIterable<AcademicBackgroundRunView>',
+        description: 'Subscribe to a task without taking ownership of its lifetime.',
+        parameters: [{ name: 'key', description: 'Session and background run identity.' }, { name: 'signal', description: 'Subscriber lifetime; disconnect only ends this subscription.' }],
+        returns: 'Current view followed by live updates, or one terminal/recovered view.',
+      },
+      {
+        signature: '@Remote(\'cancelBackgroundRun\') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>',
+        description: 'Explicitly cancel an active task; closing a viewer never calls this method.',
+        parameters: [{ name: 'request', description: 'Session-owned run identity and user cancellation reason.' }],
+        returns: 'Latest state, including the durable cancellation intent.',
+      },
+    ],
+  },
+  {
+    key: 'academicSource',
+    summary: 'The academic source access service.',
+    description: 'The academic source access service. Registered as `ctx.academicSource` (one instance per context).\n\nSelection semantics (resolved at execution time, never order-dependent):\n\n- A configured id that is registered and `available()` → that provider.\n- A configured id not registered → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_MISSING`.\n- A configured id registered but unavailable → `ACADEMIC_SOURCE_PROVIDER_CONFIGURED_UNAVAILABLE`.\n- No id configured, exactly one registered usable provider → that provider.\n- No id configured, multiple usable providers → `ACADEMIC_SOURCE_PROVIDER_AMBIGUOUS`.\n- No id configured, no usable provider → `ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE`.',
+    methods: [
+      {
+        signature: 'registerSearchProvider(provider: AcademicSourceProvider): () => void',
+        description: 'Register an academic source provider. Throws AcademicSourceError `ACADEMIC_SOURCE_DUPLICATE_PROVIDER` if its id is already registered. Returns a disposer; disposed with the calling fiber.',
+        parameters: [{ name: 'provider', description: 'the provider; its `id` is the registry key.' }],
+        returns: 'the disposer that unregisters the provider.',
+      },
+      {
+        signature: 'async search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>',
+        description: 'Run one scholarly search through the selected provider. Resolves the provider at call time with the selection rules above; throws AcademicSourceError when the capability cannot run. The seam enforces `request.maxResults` on the result: if the provider over-returns, `works[]` is truncated and `truncated` set.',
+        parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
+        returns: 'the provider\'s normalized works, capped to `request.maxResults`.',
+      },
+      {
+        signature: 'async searchAll(request: AcademicSourceSearchRequest, signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>',
+        description: 'Search configured discovery providers, or every usable provider, and merge results round-robin.\n\nOne provider\'s failure never discards another provider\'s results: expected search failures become source-level `ProviderFailure` entries in `batch.failures`, and works from the remaining providers survive in `batch.items`. Every called provider succeeds — including zero-result searches — yields `batch.status: success`; at least one surviving work beside failures yields `partial_success`; only failures yields `failed` with every failure retained. Configuration failures (`ACADEMIC_SOURCE_PROVIDER_UNAVAILABLE` and the other selection codes) still throw, and caller cancellation aborts the whole round as `ACADEMIC_SOURCE_ABORTED` instead of fabricating provider failures.\n\n`discoveredRecords` counts every record the providers returned before the aggregate `request.maxResults` bound; `truncated` is set when either a provider or the aggregate bound dropped records; `limitations` carries each called provider\'s declared coverage limits and one aggregate-bound entry when the total bound dropped records. The inherited `works` and `truncated` fields mirror `batch.items` for the existing single-result adapter shape.',
+        parameters: [{ name: 'request', description: 'query and total result limit across providers.' }, { name: 'signal', description: 'optional cancellation forwarded to every provider.' }, { name: 'onProvider', description: 'optional observer of per-provider started and settled facts.' }],
+        returns: 'the aggregate batch outcome from all usable providers.',
+      },
+      {
+        signature: 'async searchProviders(request: AcademicSourceSearchRequest, providerIds: readonly string[], signal?: AbortSignal, onProvider?: AcademicSourceProviderObserver): Promise<AcademicSourceSearchBatchResult>',
+        description: 'Search only the provider ids approved for this request, regardless of discovery configuration. Reject empty, duplicate, missing, or unavailable ids before any provider search starts.',
+        parameters: [{ name: 'request', description: 'query and total result limit across selected providers.' }, { name: 'providerIds', description: 'provider ids approved for this search.' }, { name: 'signal', description: 'optional cancellation forwarded to each selected provider.' }, { name: 'onProvider', description: 'optional observer of per-provider started and settled facts.' }],
+        returns: 'the aggregate batch outcome from the selected providers.',
+      },
+      {
+        signature: 'resolveFullText(version: WorkVersion): AcademicSourceFullText | null',
+        description: 'Resolve full-text URLs through the provider named by a version\'s source records.',
+        parameters: [{ name: 'version', description: 'version selected after ingestion.' }],
+        returns: 'the first usable provider\'s ordered candidates, or `null`.',
+      },
+      {
+        signature: 'async verifyReference(reference: AcademicReference, allowedProviders: readonly string[], signal?: AbortSignal): Promise<AcademicReferenceVerificationOutcome>',
+        description: 'Verify one Web-discovered paper against the approved owning provider. Search-only availability does not prevent a registered provider from verifying a single record.',
+        parameters: [{ name: 'reference', description: 'DOI, arXiv ID, or official provider record identified from one Web result.' }, { name: 'allowedProviders', description: 'provider ids approved by the research plan for verification.' }, { name: 'signal', description: 'caller cancellation, which aborts the whole verification round.' }],
+        returns: 'the official work with optional full-text candidates and a separate candidate failure, or a failed verification.',
+      },
+    ],
+  },
+  {
     key: 'agentDefaultModel',
     summary: 'Owns the default model selection independently of any Host or transport.',
     description: 'Owns the default model selection independently of any Host or transport. Each operation reads the owning Config references.',
@@ -4658,6 +4762,274 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AcademicBackgroundRunCancelRequest',
+    declaration: 'export interface AcademicBackgroundRunCancelRequest extends AcademicBackgroundRunKey {\n    readonly reason: \'user_requested\';\n}',
+  },
+  {
+    name: 'AcademicBackgroundRunId',
+    declaration: 'export type AcademicBackgroundRunId = string;',
+  },
+  {
+    name: 'AcademicBackgroundRunKey',
+    declaration: 'export interface AcademicBackgroundRunKey {\n    readonly sessionId: SessionId;\n    readonly backgroundRunId: AcademicBackgroundRunId;\n}',
+  },
+  {
+    name: 'AcademicBackgroundRunSummary',
+    declaration: 'export type AcademicBackgroundRunSummary = Pick<AcademicBackgroundRunView, \'schemaVersion\' | \'sessionId\' | \'backgroundRunId\' | \'researchBriefId\' | \'state\' | \'startedAt\' | \'updatedAt\' | \'retrievalRunId\' | \'cancelReason\'>;',
+  },
+  {
+    name: 'AcademicBackgroundRunView',
+    declaration: 'export interface AcademicBackgroundRunView extends AcademicBackgroundRunKey {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly state: \'running\' | \'completed\' | \'cancelled\' | \'failed\' | \'interrupted\';\n    readonly startedAt: string;\n    readonly updatedAt: string;\n    readonly retrievalRunId: RetrievalRunId | null;\n    readonly progress: AcademicResearchProgressView | null;\n    readonly q6: AcademicQ6Projection | null;\n    readonly result: AcademicResearchRunValue | null;\n    readonly error: string | null;\n    readonly cancelReason: \'user_requested\' | \'service_stopped\' | null;\n}',
+  },
+  {
+    name: 'AcademicBatchDecisionEvent',
+    declaration: 'export interface AcademicBatchDecisionEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number | null;\n    readonly action: \'schedule_batch\' | \'search_evidence_gap\' | \'stop\';\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly searchQuestions: readonly string[];\n    readonly reason: string | null;\n}',
+  },
+  {
+    name: 'AcademicBatchSettlementEvent',
+    declaration: 'export interface AcademicBatchSettlementEvent {\n    readonly retrievalRunId: RetrievalRunId;\n    readonly batchIndex: number;\n    readonly admittedEvidence: number;\n    readonly coverage?: ResearchQuestionCoverageResult;\n    readonly completedAt: string;\n}',
+  },
+  {
+    name: 'AcademicClaimAssessmentView',
+    declaration: 'export interface AcademicClaimAssessmentView {\n    readonly schemaVersion: 1;\n    readonly claimAssessmentId: ClaimAssessmentId;\n    readonly claimId: ClaimId;\n    readonly status: \'supported\' | \'partially_supported\' | \'contradicted\' | \'unsupported\' | \'insufficient\';\n    readonly reason: string;\n    readonly method: string;\n    readonly methodVersion: string;\n    readonly assessedEvidenceIds: readonly EvidenceId[];\n    readonly assessedAt: string;\n}',
+  },
+  {
+    name: 'AcademicClaimView',
+    declaration: 'export interface AcademicClaimView {\n    readonly schemaVersion: 1;\n    readonly claimId: ClaimId;\n    readonly text: string;\n    readonly category: \'consensus\' | \'trend\' | \'comparison\' | \'disagreement\' | \'research_gap\' | \'limitation\';\n    readonly scope: string;\n    readonly uncertainty: string | null;\n    readonly confidence: \'high\' | \'medium\' | \'low\' | \'insufficient\';\n    readonly confidenceReasons: readonly string[];\n    readonly evidenceSnapshot: AcademicEvidenceSnapshotView;\n    readonly validity: \'current\' | \'stale\';\n}',
+  },
+  {
+    name: 'AcademicDirectSearchProvider',
+    declaration: 'export type AcademicDirectSearchProvider = \'openalex\' | \'arxiv\';',
+  },
+  {
+    name: 'AcademicEvaluationView',
+    declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
+  },
+  {
+    name: 'AcademicEvidenceEnhancementView',
+    declaration: 'export interface AcademicEvidenceEnhancementView extends AcademicEvidenceEnhancementRequest {\n    readonly status: \'completed\' | \'partial_success\';\n    readonly initialEvidenceRecords: number;\n    readonly addedEvidenceRecords: number;\n    readonly incompleteFragments: number;\n}',
+  },
+  {
+    name: 'AcademicEvidenceSnapshotItemView',
+    declaration: 'export interface AcademicEvidenceSnapshotItemView {\n    readonly evidenceId: EvidenceId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly contentHash: string | null;\n}',
+  },
+  {
+    name: 'AcademicEvidenceSnapshotView',
+    declaration: 'export interface AcademicEvidenceSnapshotView {\n    readonly schemaVersion: 1;\n    readonly evidenceSnapshotId: EvidenceSnapshotId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly evidenceItems: readonly AcademicEvidenceSnapshotItemView[];\n    readonly createdAt: string;\n}',
+  },
+  {
+    name: 'AcademicEvidenceView',
+    declaration: 'export interface AcademicEvidenceView {\n    readonly schemaVersion: 1;\n    readonly evidenceId: EvidenceId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly level: \'metadata\' | \'abstract\' | \'fulltext\';\n    readonly verbatimExcerpt: Availability<string>;\n    readonly sourcedStatement: string;\n    readonly sourceLocatorId: SourceLocatorId;\n    readonly sourceProvider: string;\n    readonly sourceUrl: string;\n    readonly retrievedAt: string;\n    readonly contentHash: Availability<string>;\n    readonly extractionMethod: ExtractionMethod;\n    readonly qualityNotes: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicHybridRetrievalCounts',
+    declaration: 'export interface AcademicHybridRetrievalCounts {\n    readonly academicDiscoveredRecords: number;\n    readonly webDiscoveredUrls: number;\n    readonly identifiedReferences: number;\n    readonly attemptedVerifications: number;\n    readonly verifiedReferences: number;\n    readonly failedVerifications: number;\n    readonly discardedWebCandidates: number;\n    readonly mergedDuplicates: number;\n    readonly deduplicatedWorks: number;\n}',
+  },
+  {
+    name: 'AcademicHybridRetrievalStageResults',
+    declaration: 'export interface AcademicHybridRetrievalStageResults {\n    readonly academicSearch: AcademicResearchStageStatus;\n    readonly webDiscovery: AcademicResearchStageStatus;\n    readonly referenceIdentification: AcademicResearchStageStatus;\n    readonly referenceVerification: AcademicResearchStageStatus;\n    readonly deduplication: AcademicResearchStageStatus;\n}',
+  },
+  {
+    name: 'AcademicHybridRetrievalView',
+    declaration: 'export interface AcademicHybridRetrievalView {\n    readonly schemaVersion: 1;\n    readonly stages: AcademicHybridRetrievalStageResults;\n    readonly counts: AcademicHybridRetrievalCounts;\n    readonly webCandidates: readonly AcademicWebDiscoveryCandidateView[];\n    readonly references: readonly AcademicReferenceView[];\n}',
+  },
+  {
+    name: 'AcademicPaperResultView',
+    declaration: 'export type AcademicPaperResultView = {\n    readonly status: \'extracted\' | \'partially_extracted\' | \'extraction_failed\';\n    readonly workVersionId: WorkVersionId;\n    readonly evidenceCount: number;\n    readonly rejectedDrafts: readonly {\n        readonly draftIndex: number;\n        readonly segmentIndex: number;\n        readonly code: \'EVIDENCE_EMPTY_EXCERPT\' | \'EVIDENCE_INVALID_SEGMENT_INDEX\' | \'EVIDENCE_EXCERPT_NOT_FOUND\' | \'EVIDENCE_INVALID_QUESTION_INDEX\';\n        readonly reason: string;\n    }[];\n} | {\n    readonly status: \'excluded\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n} | {\n    readonly status: \'paused\';\n    readonly workVersionId: WorkVersionId;\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'AcademicPlannedRetrieval',
+    declaration: 'export interface AcademicPlannedRetrieval {\n    readonly channels: readonly AcademicRetrievalChannel[];\n    readonly academicProviders: readonly AcademicDirectSearchProvider[];\n    readonly verificationProviders: readonly AcademicReferenceVerificationProvider[];\n    readonly maximumWebDiscoveryResults: number;\n    readonly maximumReferenceVerifications: number;\n}',
+  },
+  {
+    name: 'AcademicPlannedSearch',
+    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
+  },
+  {
+    name: 'AcademicQ6CandidateAssessmentView',
+    declaration: 'export interface AcademicQ6CandidateAssessmentView {\n    readonly academicWorkId: AcademicWorkId;\n    readonly abstract: Availability<string>;\n    readonly keywords: Availability<readonly string[]>;\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly matchedQuestions: readonly string[];\n    readonly screening?: CandidateScreeningDetails;\n    readonly semanticReview?: CandidateSemanticReviewStateV1;\n    readonly contributionSignals: readonly Exclude<CandidateClassification, \'background\' | \'irrelevant\'>[];\n    readonly topicRelevance: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly inclusionRuleMatches: readonly (boolean | null)[];\n    readonly exclusionRuleMatches: readonly (boolean | null)[];\n    readonly diversityTags: readonly string[];\n    readonly reasons: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6CandidateEvaluationView',
+    declaration: 'export interface AcademicQ6CandidateEvaluationView {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly discoveredBy: readonly SearchQueryId[];\n    readonly classification: CandidateClassification;\n    readonly hardFilter: {\n        readonly status: \'eligible\';\n        readonly reasons: readonly CandidateHardFilterReason[];\n    } | {\n        readonly status: \'excluded\';\n        readonly reasons: readonly CandidateHardFilterReason[];\n    };\n    readonly score: CandidateScoreBreakdown;\n    readonly priority: CandidatePriority;\n    readonly matchedQuestions: readonly string[];\n    readonly fulltextAvailability: CandidateFulltextAvailability;\n    readonly diversityTags: readonly string[];\n    readonly decisionReasons: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6CandidateView',
+    declaration: 'export interface AcademicQ6CandidateView {\n    readonly work: AcademicWork;\n    readonly version: WorkVersion;\n    readonly assessment: AcademicQ6CandidateAssessmentView;\n    readonly evaluation: AcademicQ6CandidateEvaluationView;\n}',
+  },
+  {
+    name: 'AcademicQ6Projection',
+    declaration: 'export interface AcademicQ6Projection {\n    readonly schemaVersion: 1;\n    readonly sessionId: SessionId;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly sequence: number;\n    readonly updatedAt: string;\n    readonly status: \'running\' | \'settled\' | \'cancelled\';\n    readonly plan: HybridSearchPlan;\n    readonly candidates: AcademicQ6Section<{\n        readonly items: readonly AcademicQ6CandidateView[];\n        readonly ranking: AcademicQ6RankingView;\n    }>;\n    readonly rounds: AcademicQ6Section<readonly HybridSearchRound[]>;\n    readonly batches: AcademicQ6Section<{\n        readonly decisions: readonly AcademicBatchDecisionEvent[];\n        readonly settlements: readonly AcademicBatchSettlementEvent[];\n    }>;\n    readonly coverage: AcademicQ6Section<ResearchQuestionCoverageResult>;\n    readonly stopDecision: AcademicQ6Section<SearchStopDecision>;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6RankingView',
+    declaration: 'export interface AcademicQ6RankingView {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly queues: CandidatePriorityQueues;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicQ6Section',
+    declaration: 'export type AcademicQ6Section<T> = {\n    readonly state: \'pending\';\n} | {\n    readonly state: \'available\';\n    readonly value: T;\n} | {\n    readonly state: \'truncated\';\n    readonly value: T;\n    readonly reason: string;\n} | {\n    readonly state: \'failed\';\n    readonly code: string;\n    readonly message: string;\n    readonly retryable: boolean;\n};',
+  },
+  {
+    name: 'AcademicReference',
+    declaration: 'export type AcademicReference = {\n    readonly kind: \'doi\' | \'arxiv\';\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly discoveryUrl: string;\n} | {\n    readonly kind: \'provider_record\';\n    readonly provider: \'acl\' | \'pmlr\' | \'cvf\';\n    readonly recordId: string;\n    readonly discoveryUrl: string;\n};',
+  },
+  {
+    name: 'AcademicReferenceVerificationFailure',
+    declaration: 'export interface AcademicReferenceVerificationFailure {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly category: FailureCategory;\n    readonly message: string;\n    readonly retryable: boolean;\n    readonly retryAfter: string | null;\n}',
+  },
+  {
+    name: 'AcademicReferenceVerificationOutcome',
+    declaration: 'export type AcademicReferenceVerificationOutcome = {\n    readonly status: \'verified\';\n    readonly value: AcademicVerifiedReference;\n} | {\n    readonly status: \'failed\';\n    readonly failure: AcademicReferenceVerificationFailure;\n};',
+  },
+  {
+    name: 'AcademicReferenceVerificationProvider',
+    declaration: 'export type AcademicReferenceVerificationProvider = \'openalex\' | \'arxiv\' | \'acl\' | \'pmlr\' | \'cvf\';',
+  },
+  {
+    name: 'AcademicReferenceView',
+    declaration: 'export interface AcademicReferenceView {\n    readonly query?: string;\n    readonly kind: AcademicReferenceViewKind;\n    readonly normalizedValue: string;\n    readonly discoveryUrl: string;\n    readonly verificationProvider: string | null;\n    readonly status: \'identified\' | \'verified\' | \'verification_failed\' | \'merged_duplicate\';\n    readonly message: string | null;\n}',
+  },
+  {
+    name: 'AcademicReferenceViewKind',
+    declaration: 'export type AcademicReferenceViewKind = \'doi\' | \'arxiv\' | \'acl\' | \'pmlr\' | \'cvf\';',
+  },
+  {
+    name: 'AcademicResearchPlanView',
+    declaration: 'export interface AcademicResearchPlanView {\n    readonly researchBriefId: ResearchBriefId;\n    readonly topic: string;\n    readonly questions: readonly string[];\n    readonly searches: readonly AcademicPlannedSearch[];\n}',
+  },
+  {
+    name: 'AcademicResearchProgressView',
+    declaration: 'export interface AcademicResearchProgressView extends AcademicWorkflowProgressSnapshot {\n    readonly sessionId: SessionId;\n}',
+  },
+  {
+    name: 'AcademicResearchReportView',
+    declaration: 'export interface AcademicResearchReportView {\n    readonly retrievalDisclosureIncluded?: true;\n    readonly title: string;\n    readonly mode: \'draft\' | \'final\';\n    readonly synthetic: boolean;\n    readonly markdown: string;\n    readonly evaluation: AcademicEvaluationView;\n    readonly claims: readonly AcademicClaimView[];\n    readonly evidence: readonly AcademicEvidenceView[];\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicResearchRunFrame',
+    declaration: 'export type AcademicResearchRunFrame = {\n    readonly type: \'progress\';\n    readonly progress: AcademicResearchProgressView;\n} | {\n    readonly type: \'q6\';\n    readonly projection: AcademicQ6Projection;\n} | {\n    readonly type: \'result\';\n    readonly retrievalRunId: RetrievalRunId;\n    readonly value: AcademicResearchRunValue;\n};',
+  },
+  {
+    name: 'AcademicResearchRunRequest',
+    declaration: 'export interface AcademicResearchRunRequest {\n    readonly sessionId: SessionId;\n    readonly researchBriefId: ResearchBriefId;\n    readonly resumeRetrievalRunId?: RetrievalRunId;\n    readonly maxResults?: number;\n    readonly synthetic: boolean;\n}',
+  },
+  {
+    name: 'AcademicResearchRunValue',
+    declaration: 'export interface AcademicResearchRunValue {\n    readonly synthesis: {\n        readonly status: \'not_run\' | \'blocked\' | \'failed\' | \'completed\' | \'partial_success\';\n        readonly reasons: readonly string[];\n    };\n    readonly sessionId: SessionId;\n    readonly status: \'completed\' | \'cancelled\';\n    readonly q6: AcademicQ6Projection | null;\n    readonly stages: AcademicResearchStageResults;\n    readonly hybridRetrieval?: AcademicHybridRetrievalView;\n    readonly retrievalRun: RetrievalRun;\n    readonly papers: readonly AcademicPaperResultView[];\n    readonly failures: readonly {\n        readonly workVersionId: WorkVersionId;\n        readonly stage: \'fulltext\' | \'extraction\';\n    }[];\n    readonly report: AcademicResearchReportView | null;\n}',
+  },
+  {
+    name: 'AcademicResearchStageResults',
+    declaration: 'export interface AcademicResearchStageResults {\n    readonly search: AcademicResearchStageStatus;\n    readonly fulltext: AcademicResearchStageStatus;\n    readonly extraction: AcademicResearchStageStatus;\n}',
+  },
+  {
+    name: 'AcademicResearchStageStatus',
+    declaration: 'export type AcademicResearchStageStatus = \'success\' | \'partial_success\' | \'failed\' | \'not_run\';',
+  },
+  {
+    name: 'AcademicRetrievalChannel',
+    declaration: 'export type AcademicRetrievalChannel = \'academic\' | \'web_discovery\';',
+  },
+  {
+    name: 'AcademicSearchQuery',
+    declaration: 'export interface AcademicSearchQuery extends SearchQueryBase {\n    readonly kind: \'academic\';\n    readonly providers: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceFullText',
+    declaration: 'export interface AcademicSourceFullText {\n    readonly sourceProvider: string;\n    readonly urls: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceProvider',
+    declaration: 'export interface AcademicSourceProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: AcademicSourceSearchRequest, signal?: AbortSignal): Promise<AcademicSourceSearchResult>;\n    verifyReference?(reference: AcademicReference, signal?: AbortSignal): Promise<AcademicSourceWork | null>;\n    fullTextUrls(recordId: string): readonly string[];\n    readonly limitations?: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceProviderObservation',
+    declaration: 'export interface AcademicSourceProviderObservation {\n    readonly provider: string;\n    readonly phase: AcademicSourceProviderPhase;\n    readonly settlement: AcademicSourceProviderSettlement | null;\n    readonly category: FailureCategory | null;\n    readonly works: number;\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'AcademicSourceProviderObserver',
+    declaration: 'export type AcademicSourceProviderObserver = (observation: AcademicSourceProviderObservation) => void;',
+  },
+  {
+    name: 'AcademicSourceProviderPhase',
+    declaration: 'export type AcademicSourceProviderPhase = \'started\' | \'settled\';',
+  },
+  {
+    name: 'AcademicSourceProviderSettlement',
+    declaration: 'export type AcademicSourceProviderSettlement = \'success\' | \'failed\' | \'cancelled\';',
+  },
+  {
+    name: 'AcademicSourceSearchBatchResult',
+    declaration: 'export interface AcademicSourceSearchBatchResult extends AcademicSourceSearchResult {\n    readonly providers: readonly string[];\n    readonly discoveredRecords: number;\n    readonly batch: BatchResult<AcademicSourceWork>;\n    readonly limitations: readonly string[];\n}',
+  },
+  {
+    name: 'AcademicSourceSearchRequest',
+    declaration: 'export interface AcademicSourceSearchRequest {\n    readonly query: string;\n    readonly maxResults?: number;\n}',
+  },
+  {
+    name: 'AcademicSourceSearchResult',
+    declaration: 'export interface AcademicSourceSearchResult {\n    readonly works: readonly AcademicSourceWork[];\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'AcademicSourceWork',
+    declaration: 'export interface AcademicSourceWork {\n    readonly academicWork: AcademicWork;\n    readonly workVersion: WorkVersion;\n    readonly metadata?: {\n        readonly abstract: Availability<string>;\n        readonly keywords: Availability<readonly string[]>;\n    };\n    readonly verifiedDiscoveries?: readonly {\n        readonly discoveryUrl: string;\n        readonly verificationProvider: string;\n    }[];\n}',
+  },
+  {
+    name: 'AcademicVerifiedReference',
+    declaration: 'export interface AcademicVerifiedReference {\n    readonly reference: AcademicReference;\n    readonly verificationProvider: string;\n    readonly work: AcademicSourceWork;\n    readonly fullText: AcademicSourceFullText | null;\n    readonly fullTextFailure: AcademicReferenceVerificationFailure | null;\n}',
+  },
+  {
+    name: 'AcademicWebDiscoveryCandidateView',
+    declaration: 'export interface AcademicWebDiscoveryCandidateView {\n    readonly query?: string;\n    readonly url: string;\n    readonly title: string | null;\n    readonly status: \'discovered\' | \'references_identified\' | \'discarded_non_paper\';\n    readonly identifiedReferenceCount: number;\n    readonly message: string | null;\n}',
+  },
+  {
+    name: 'AcademicWork',
+    declaration: 'export interface AcademicWork {\n    readonly schemaVersion: 1;\n    readonly academicWorkId: AcademicWorkId;\n    readonly title: string;\n    readonly authors: readonly string[];\n    readonly externalIdentifiers: readonly ExternalIdentifier[];\n    readonly workVersionIds: readonly WorkVersionId[];\n    readonly canonicalVersionId: WorkVersionId;\n    readonly firstPublicDate: Availability<PartialDate>;\n    readonly publicationStatus: Availability<PublicationStatus>;\n    readonly venue: Availability<string>;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressActivity',
+    declaration: 'export type AcademicWorkflowProgressActivity = {\n    readonly kind: \'query\';\n    readonly stage: \'retrieval\';\n    readonly queryIndex: number;\n    readonly queryCount: number;\n    readonly query: string;\n    readonly channels: readonly (\'academic\' | \'web_discovery\')[];\n    readonly startedAt: string;\n} | {\n    readonly kind: \'provider\';\n    readonly stage: \'retrieval\';\n    readonly queryIndex: number;\n    readonly queryCount: number;\n    readonly providerId: string;\n    readonly operation: \'academic_search\' | \'web_discovery\' | \'reference_identification\' | \'reference_verification\';\n    readonly status: \'running\' | \'success\' | \'partial_success\' | \'failed\' | \'cancelled\';\n    readonly itemIndex: number | null;\n    readonly itemCount: number | null;\n    readonly discoveredRecords: number | null;\n    readonly failureCode: AcademicWorkflowProgressFailureCode | null;\n    readonly startedAt: string;\n    readonly completedAt: string | null;\n} | {\n    readonly kind: \'screening\';\n    readonly stage: \'screening\';\n    readonly operation: \'deduplication\' | \'eligibility\';\n    readonly startedAt: string;\n} | {\n    readonly kind: \'screening\';\n    readonly stage: \'screening\';\n    readonly operation: \'candidate_review\';\n    readonly completedReviews: number;\n    readonly totalReviews: number;\n    readonly failedReviews: number;\n    readonly skippedReviews: number;\n    readonly title: string | null;\n    readonly startedAt: string;\n} | {\n    readonly kind: \'paper\';\n    readonly stage: \'fulltext\' | /* …truncated — full shape in source */',
+  },
+  {
+    name: 'AcademicWorkflowProgressCounts',
+    declaration: 'export interface AcademicWorkflowProgressCounts {\n    readonly completedQueries: number;\n    readonly totalQueries: number;\n    readonly discoveredRecords: number;\n    readonly deduplicatedWorks: number;\n    readonly mergedWorkIdentities: number;\n    readonly mergedVersionRecords: number;\n    readonly retainedWorkVersions: number;\n    readonly suspectedDuplicateRecords: number;\n    readonly candidateWorks: number;\n    readonly completedPapers: number;\n    readonly totalPapers: number | null;\n    readonly includedPapers: number;\n    readonly availableFulltextPapers: number;\n    readonly validatedEvidenceRecords: number;\n    readonly rejectedEvidenceDrafts: number;\n    readonly completedQuestions: number;\n    readonly totalQuestions: number;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressEvent',
+    declaration: 'export interface AcademicWorkflowProgressEvent {\n    readonly code: \'run_started\' | \'stage_started\' | \'stage_updated\' | \'stage_settled\' | \'provider_updated\' | \'paper_updated\' | \'retry_scheduled\' | \'run_completed\' | \'run_cancelled\';\n    readonly occurredAt: string;\n    readonly stage: AcademicWorkflowProgressStage;\n    readonly academicWorkId: AcademicWorkId | null;\n    readonly workVersionId: WorkVersionId | null;\n    readonly providerId: string | null;\n    readonly failureCode: AcademicWorkflowProgressFailureCode | null;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressFailureCode',
+    declaration: 'export type AcademicWorkflowProgressFailureCode = FailureCategory | \'cancelled\' | \'incomplete_output\' | \'output_limit\' | \'invalid_output\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressSnapshot',
+    declaration: 'export interface AcademicWorkflowProgressSnapshot {\n    readonly schemaVersion: 1;\n    readonly retrievalRunId: RetrievalRunId;\n    readonly sequence: number;\n    readonly startedAt: string;\n    readonly updatedAt: string;\n    readonly elapsedMs: number;\n    readonly primaryStage: AcademicWorkflowProgressStage | null;\n    readonly activeStages: readonly AcademicWorkflowProgressStage[];\n    readonly stages: AcademicWorkflowProgressStages;\n    readonly counts: AcademicWorkflowProgressCounts;\n    readonly activities: readonly AcademicWorkflowProgressActivity[];\n    readonly latestEvent: AcademicWorkflowProgressEvent;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStage',
+    declaration: 'export type AcademicWorkflowProgressStage = \'retrieval\' | \'screening\' | \'fulltext\' | \'extraction\' | \'analysis\' | \'report\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressStages',
+    declaration: 'export interface AcademicWorkflowProgressStages {\n    readonly retrieval: AcademicWorkflowProgressStageView;\n    readonly screening: AcademicWorkflowProgressStageView;\n    readonly fulltext: AcademicWorkflowProgressStageView;\n    readonly extraction: AcademicWorkflowProgressStageView;\n    readonly analysis: AcademicWorkflowProgressStageView;\n    readonly report: AcademicWorkflowProgressStageView;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStageView',
+    declaration: 'export interface AcademicWorkflowProgressStageView {\n    readonly status: AcademicWorkflowProgressStatus;\n    readonly startedAt: string | null;\n    readonly completedAt: string | null;\n    readonly completedItems: number;\n    readonly totalItems: number | null;\n    readonly unit: AcademicWorkflowProgressUnit | null;\n}',
+  },
+  {
+    name: 'AcademicWorkflowProgressStatus',
+    declaration: 'export type AcademicWorkflowProgressStatus = \'pending\' | \'running\' | \'partial_success\' | \'success\' | \'failed\' | \'cancelled\' | \'not_run\';',
+  },
+  {
+    name: 'AcademicWorkflowProgressUnit',
+    declaration: 'export type AcademicWorkflowProgressUnit = \'queries\' | \'works\' | \'papers\' | \'batches\' | \'questions\' | \'report\';',
+  },
+  {
+    name: 'AcademicWorkId',
+    declaration: 'export type AcademicWorkId = Branded<\'AcademicWorkId\'>;',
+  },
+  {
     name: 'AccountBonusBatch',
     declaration: 'export interface AccountBonusBatch {\n    readonly accountId: AccountUserId;\n    readonly bonuses: readonly AccountBonusNotification[];\n}',
   },
@@ -4946,6 +5318,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AuthorizationStatus = \'authorized\' | \'cancelled\';',
   },
   {
+    name: 'Availability',
+    declaration: 'export type Availability<T> = {\n    readonly status: \'available\';\n    readonly value: T;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n} | {\n    readonly status: \'not_applicable\';\n    readonly reason: string;\n} | {\n    readonly status: \'not_extracted\';\n    readonly reason?: string;\n} | {\n    readonly status: \'failed\';\n    readonly failureId: FailureId;\n    readonly reason: string;\n};',
+  },
+  {
     name: 'BackendRegistry',
     declaration: 'export class BackendRegistry {\n    register(name: string, backend: StorageBackend): () => void;\n    get(name: string): StorageBackend;\n    names(): string[];\n}',
   },
@@ -4960,6 +5336,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BashEnvVariableInfo',
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
+  },
+  {
+    name: 'BatchResult',
+    declaration: 'export interface BatchResult<T> {\n    readonly schemaVersion: 1;\n    readonly status: BatchStatus;\n    readonly items: readonly T[];\n    readonly failures: readonly ProviderFailure[];\n}',
+  },
+  {
+    name: 'BatchStatus',
+    declaration: 'export type BatchStatus = \'success\' | \'partial_success\' | \'failed\';',
   },
   {
     name: 'BoxProps',
@@ -4990,8 +5374,88 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ButtonProps {\n    readonly label: string;\n    readonly hotkey?: string | undefined;\n    readonly disabled?: boolean | undefined;\n    readonly onPress?: (() => unknown) | undefined;\n}',
   },
   {
+    name: 'CandidateClassification',
+    declaration: 'export type CandidateClassification = \'core_method\' | \'empirical_evaluation\' | \'benchmark_or_dataset\' | \'review\' | \'application\' | \'adjacent_technology\' | \'background\' | \'irrelevant\';',
+  },
+  {
+    name: 'CandidateFulltextAvailability',
+    declaration: 'export type CandidateFulltextAvailability = {\n    readonly status: \'resolvable\';\n} | {\n    readonly status: \'unresolved\';\n    readonly reason: string;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'CandidateHardFilterReason',
+    declaration: 'export interface CandidateHardFilterReason {\n    readonly code: CandidateHardFilterReasonCode;\n    readonly detail?: string;\n}',
+  },
+  {
+    name: 'CandidateHardFilterReasonCode',
+    declaration: 'export type CandidateHardFilterReasonCode = \'work_retracted\' | \'version_retracted\' | \'preprint_not_allowed\' | \'work_type_not_included\' | \'before_publication_window\' | \'after_publication_window\' | \'publication_date_unknown\' | \'required_term_missing\' | \'excluded_term_matched\' | \'inclusion_rule_not_met\' | \'exclusion_rule_matched\' | \'off_topic\';',
+  },
+  {
+    name: 'CandidateMetadataQuote',
+    declaration: 'export interface CandidateMetadataQuote {\n    readonly source: \'title\' | \'abstract\';\n    readonly text: string;\n}',
+  },
+  {
+    name: 'CandidateMetadataSignal',
+    declaration: 'export type CandidateMetadataSignal = {\n    readonly kind: \'question\';\n    readonly question: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'method\' | \'evidence_type\';\n    readonly label: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'contribution\';\n    readonly classification: Exclude<CandidateClassification, \'background\' | \'irrelevant\'>;\n    readonly quote: CandidateMetadataQuote;\n};',
+  },
+  {
+    name: 'CandidatePriority',
+    declaration: 'export type CandidatePriority = \'p0\' | \'p1\' | \'p2\' | \'excluded\';',
+  },
+  {
+    name: 'CandidatePriorityQueues',
+    declaration: 'export interface CandidatePriorityQueues {\n    readonly p0: readonly WorkVersionId[];\n    readonly p1: readonly WorkVersionId[];\n    readonly p2: readonly WorkVersionId[];\n    readonly excluded: readonly WorkVersionId[];\n}',
+  },
+  {
+    name: 'CandidatePriorityThresholds',
+    declaration: 'export interface CandidatePriorityThresholds {\n    readonly p0: number;\n    readonly p1: number;\n    readonly p2: number;\n}',
+  },
+  {
+    name: 'CandidateRankingPolicy',
+    declaration: 'export interface CandidateRankingPolicy {\n    readonly schemaVersion: 1;\n    readonly weights: CandidateScoreWeights;\n    readonly thresholds: CandidatePriorityThresholds;\n}',
+  },
+  {
+    name: 'CandidateScopeDecision',
+    declaration: 'export type CandidateScopeDecision = {\n    readonly status: \'potentially_relevant\';\n    readonly reason: string;\n} | {\n    readonly status: \'off_topic\';\n    readonly reason: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
+  },
+  {
+    name: 'CandidateScoreBreakdown',
+    declaration: 'export interface CandidateScoreBreakdown extends CandidateScoreValues {\n    readonly total: number;\n}',
+  },
+  {
+    name: 'CandidateScoreValues',
+    declaration: 'export interface CandidateScoreValues {\n    readonly topicRelevance: number;\n    readonly questionMatch: number;\n    readonly evidencePotential: number;\n    readonly methodMatch: number;\n    readonly workTypeFit: number;\n    readonly sourceQuality: number;\n    readonly recency: number;\n    readonly fulltextAvailability: number;\n}',
+  },
+  {
+    name: 'CandidateScoreWeights',
+    declaration: 'export type CandidateScoreWeights = CandidateScoreValues;',
+  },
+  {
+    name: 'CandidateScreeningDetails',
+    declaration: 'export interface CandidateScreeningDetails {\n    readonly schemaVersion: 1;\n    readonly signals: readonly CandidateMetadataSignal[];\n    readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[];\n    readonly uncertainties: readonly string[];\n    readonly scope: CandidateScopeDecision;\n}',
+  },
+  {
+    name: 'CandidateSemanticReviewStateV1',
+    declaration: 'export type CandidateSemanticReviewStateV1 = {\n    readonly status: \'validated\';\n    readonly scope: \'potentially_relevant\' | \'off_topic\';\n} | {\n    readonly status: \'unknown\';\n} | {\n    readonly status: \'failed\';\n    readonly code: string;\n} | {\n    readonly status: \'not_selected\';\n    readonly reason: \'not_selected_budget\' | \'hard_excluded\' | \'fulltext_unresolvable\' | \'cancelled_before_dispatch\';\n};',
+  },
+  {
+    name: 'CandidateSurfaceKeywordHit',
+    declaration: 'export interface CandidateSurfaceKeywordHit {\n    readonly term: string;\n    readonly source: \'title\' | \'abstract\' | \'keywords\';\n    readonly text: string;\n}',
+  },
+  {
     name: 'ChangeResult',
     declaration: 'export interface ChangeResult {\n    changed: boolean;\n    application: \'applied\' | \'restart-required\' | \'overridden\' | \'failed\' | \'cancelled\';\n    restartReason?: RestartReason;\n    stage: \'install\' | \'enable\' | \'remove\';\n    target: string;\n    enabled?: boolean;\n    error?: ManagementError;\n    warnings?: string[];\n    packageResult?: PackageResult;\n    bundle?: string;\n    version?: string;\n    pendingBuilds?: string[];\n    approvedBuilds?: string[];\n    registries?: Registry[];\n    failedAt?: \'registry\' | \'spec-host\';\n}',
+  },
+  {
+    name: 'CitationExpansionSeed',
+    declaration: 'export interface CitationExpansionSeed {\n    readonly academicWorkId: AcademicWorkId;\n    readonly workVersionId: WorkVersionId;\n    readonly direction: \'references\' | \'citations\' | \'related\';\n    readonly purpose: SearchRoundPurpose;\n    readonly questions: readonly string[];\n    readonly roundIndex: number;\n    readonly maximumResults: number;\n}',
+  },
+  {
+    name: 'ClaimAssessmentId',
+    declaration: 'export type ClaimAssessmentId = Branded<\'ClaimAssessmentId\'>;',
+  },
+  {
+    name: 'ClaimId',
+    declaration: 'export type ClaimId = Branded<\'ClaimId\'>;',
   },
   {
     name: 'ClientArtifactBaseline',
@@ -5474,6 +5938,38 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface EveryScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'every\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly everySeconds: number;\n    readonly scheduledAt: string;\n}',
   },
   {
+    name: 'EvidenceId',
+    declaration: 'export type EvidenceId = Branded<\'EvidenceId\'>;',
+  },
+  {
+    name: 'EvidenceSnapshotId',
+    declaration: 'export type EvidenceSnapshotId = Branded<\'EvidenceSnapshotId\'>;',
+  },
+  {
+    name: 'ExternalIdentifier',
+    declaration: 'export interface ExternalIdentifier {\n    readonly kind: ExternalIdentifierKind;\n    readonly normalizedValue: string;\n    readonly originalValue: string;\n    readonly sourceProvider: string;\n}',
+  },
+  {
+    name: 'ExternalIdentifierKind',
+    declaration: 'export type ExternalIdentifierKind = keyof ExternalIdentifierKindMap;',
+  },
+  {
+    name: 'ExternalIdentifierKindMap',
+    declaration: 'export interface ExternalIdentifierKindMap {\n    readonly doi: never;\n    readonly arxiv: never;\n    readonly openalex: never;\n    readonly pubmed: never;\n    readonly provider_record: never;\n}',
+  },
+  {
+    name: 'ExtractionMethod',
+    declaration: 'export interface ExtractionMethod {\n    readonly method: string;\n    readonly methodVersion: string;\n}',
+  },
+  {
+    name: 'FailureCategory',
+    declaration: 'export type FailureCategory = \'invalid_request\' | \'authentication_failed\' | \'rate_limited\' | \'timeout\' | \'network_error\' | \'upstream_error\' | \'not_found\' | \'parse_failed\' | \'fulltext_unavailable\' | \'unknown\';',
+  },
+  {
+    name: 'FailureId',
+    declaration: 'export type FailureId = Branded<\'FailureId\'>;',
+  },
+  {
     name: 'FeedbackCategory',
     declaration: 'export type FeedbackCategory = \'task-result\' | \'instruction-following\' | \'product-interaction\' | \'service-stability\' | \'resource-cost\' | \'security-privacy-permission\' | \'other\';',
   },
@@ -5654,6 +6150,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface HostConnectionRpc {\n    handle(channel: string, handler: ConnectionRpcHandler): () => Promise<void>;\n    intercept(channel: \'/api\', matches: ConnectionRpcEndpointMatcher, handler: ConnectionRpcHandler): () => Promise<void>;\n}',
   },
   {
+    name: 'HybridSearchConstraints',
+    declaration: 'export interface HybridSearchConstraints {\n    readonly publicationWindow: PublicationWindow;\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly requiredTerms: readonly string[];\n    readonly excludedTerms: readonly string[];\n}',
+  },
+  {
+    name: 'HybridSearchPlan',
+    declaration: 'export interface HybridSearchPlan {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly constraints: HybridSearchConstraints;\n    readonly inclusionTargets: InclusionTargets;\n    readonly rankingPolicy: CandidateRankingPolicy;\n    readonly queries: readonly HybridSearchQuery[];\n    readonly citationExpansionSeeds: readonly CitationExpansionSeed[];\n    readonly maximumSearchRounds: number;\n}',
+  },
+  {
+    name: 'HybridSearchQuery',
+    declaration: 'export type HybridSearchQuery = AcademicSearchQuery | WebDiscoveryQuery | SiteRestrictedQuery;',
+  },
+  {
+    name: 'HybridSearchRound',
+    declaration: 'export interface HybridSearchRound {\n    readonly roundIndex: number;\n    readonly purpose: SearchRoundPurpose;\n    readonly searchQueryIds: readonly SearchQueryId[];\n    readonly status: \'planned\' | \'running\' | \'success\' | \'partial_success\' | \'failed\' | \'cancelled\';\n    readonly startedAt: string | null;\n    readonly completedAt: string | null;\n}',
+  },
+  {
     name: 'ImageAttachmentLimits',
     declaration: 'export interface ImageAttachmentLimits {\n    maxImageBytes: number;\n    maxImagesPerMessage: number;\n    maxMessageImageBytes: number;\n    maxImagePixels: number;\n    maxImageDimension: number;\n    mediaTypes: readonly ImageMediaType[];\n}',
   },
@@ -5676,6 +6188,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ImageVariantId',
     declaration: 'export type ImageVariantId = Branded<\'ImageVariantId\'>;',
+  },
+  {
+    name: 'InclusionTargets',
+    declaration: 'export interface InclusionTargets {\n    readonly minimum: number;\n    readonly target: number;\n    readonly maximum: number;\n}',
   },
   {
     name: 'IncompatiblePlugin',
@@ -6358,6 +6874,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PaneOpenResult {\n    id: string;\n    isPlaced: boolean;\n    reason?: string;\n}',
   },
   {
+    name: 'PartialDate',
+    declaration: 'export interface PartialDate {\n    readonly iso: string;\n    readonly precision: PartialDatePrecision;\n}',
+  },
+  {
+    name: 'PartialDatePrecision',
+    declaration: 'export type PartialDatePrecision = \'year\' | \'month\' | \'day\';',
+  },
+  {
     name: 'PeerAdmission',
     declaration: 'export type PeerAdmission = {\n    readonly peer: PeerScope;\n} | {\n    readonly rejection: 401 | 403;\n};',
   },
@@ -6582,6 +7106,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PromptSubmitResult = {\n    text: string;\n    context?: readonly string[];\n    drop?: undefined;\n} | {\n    drop: string;\n    text?: undefined;\n    context?: undefined;\n};',
   },
   {
+    name: 'ProviderFailure',
+    declaration: 'export interface ProviderFailure {\n    readonly schemaVersion: 1;\n    readonly failureId: FailureId;\n    readonly provider: string;\n    readonly operation: string;\n    readonly category: FailureCategory;\n    readonly message: string;\n    readonly retryable: boolean;\n    readonly retryAfter: string | null;\n    readonly affectedWorkVersionId?: WorkVersionId;\n}',
+  },
+  {
+    name: 'ProviderRecordReference',
+    declaration: 'export interface ProviderRecordReference {\n    readonly provider: string;\n    readonly recordId: string;\n}',
+  },
+  {
     name: 'ProviderRequestId',
     declaration: 'export type ProviderRequestId = Branded<\'ProviderRequestId\'>;',
   },
@@ -6632,6 +7164,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PtcRunSpec',
     declaration: 'export interface PtcRunSpec extends PtcRunRequest {\n    cwd: string;\n    timeoutMs: number | null;\n}',
+  },
+  {
+    name: 'PublicationDateBasis',
+    declaration: 'export type PublicationDateBasis = \'published\' | \'first_public_release\';',
+  },
+  {
+    name: 'PublicationStatus',
+    declaration: 'export type PublicationStatus = \'preprint\' | \'accepted\' | \'published\' | \'corrected\' | \'retracted\' | \'unknown\';',
+  },
+  {
+    name: 'PublicationWindow',
+    declaration: 'export interface PublicationWindow {\n    readonly start: PartialDate | null;\n    readonly end: PartialDate | null;\n    readonly dateBasis: PublicationDateBasis;\n}',
   },
   {
     name: 'QueueAction',
@@ -6790,6 +7334,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface RequestUserInput {\n    readonly role: \'user\';\n    readonly content: UserMessage[\'content\'];\n    readonly id?: never;\n    readonly source?: never;\n}',
   },
   {
+    name: 'ResearchBriefId',
+    declaration: 'export type ResearchBriefId = Branded<\'ResearchBriefId\'>;',
+  },
+  {
+    name: 'ResearchQuestionCoverage',
+    declaration: 'export interface ResearchQuestionCoverage {\n    readonly question: string;\n    readonly status: \'uncovered\' | \'partial\' | \'covered\';\n    readonly supportingWorkIds: readonly AcademicWorkId[];\n    readonly evidenceIds: readonly EvidenceId[];\n    readonly gaps: readonly string[];\n}',
+  },
+  {
+    name: 'ResearchQuestionCoverageResult',
+    declaration: 'export interface ResearchQuestionCoverageResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly assessedAt: string;\n    readonly questions: readonly ResearchQuestionCoverage[];\n    readonly evidenceRequirementsMet: boolean;\n    readonly allQuestionsCovered: boolean;\n}',
+  },
+  {
     name: 'ResolvedAlwaysRetryPolicy',
     declaration: 'export interface ResolvedAlwaysRetryPolicy extends ResolvedRetryBackoff {\n    readonly mode: \'always\';\n}',
   },
@@ -6824,6 +7380,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ResumeAgentOptions',
     declaration: 'export interface ResumeAgentOptions {\n    readonly resumeSessionId: SessionId;\n    readonly parentAgent?: Agent;\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
+  },
+  {
+    name: 'RetrievalRun',
+    declaration: 'export type RetrievalRun = RetrievalRunData & ({\n    readonly stage: \'planning\' | \'awaiting_approval\' | \'running\';\n    readonly status: null;\n    readonly completedAt: null;\n} | {\n    readonly stage: \'completed\' | \'failed\' | \'cancelled\';\n    readonly status: BatchStatus;\n    readonly completedAt: string;\n});',
+  },
+  {
+    name: 'RetrievalRunId',
+    declaration: 'export type RetrievalRunId = Branded<\'RetrievalRunId\'>;',
   },
   {
     name: 'RpcId',
@@ -6970,8 +7534,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SearchPathsResultView {\n    card: \'search\';\n    shape: \'paths\';\n    title?: string;\n    paths: string[];\n    truncated: boolean;\n    total: number;\n}',
   },
   {
+    name: 'SearchQueryBase',
+    declaration: 'export interface SearchQueryBase {\n    readonly searchQueryId: SearchQueryId;\n    readonly expression: string;\n    readonly purpose: SearchRoundPurpose;\n    readonly questions: readonly string[];\n    readonly roundIndex: number;\n}',
+  },
+  {
+    name: 'SearchQueryId',
+    declaration: 'export type SearchQueryId = Branded<\'SearchQueryId\'>;',
+  },
+  {
     name: 'SearchResultView',
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
+  },
+  {
+    name: 'SearchRoundPurpose',
+    declaration: 'export type SearchRoundPurpose = \'core\' | \'synonym_expansion\' | \'site_restricted\' | \'citation_expansion\' | \'evidence_gap\';',
+  },
+  {
+    name: 'SearchStopDecision',
+    declaration: 'export type SearchStopDecision = {\n    readonly shouldStop: false;\n    readonly reason: null;\n    readonly details: readonly string[];\n} | {\n    readonly shouldStop: true;\n    readonly reason: SearchStopReason;\n    readonly details: readonly string[];\n};',
+  },
+  {
+    name: 'SearchStopReason',
+    declaration: 'export type SearchStopReason = \'target_and_coverage_met\' | \'saturated\' | \'candidate_exhausted\' | \'maximum_search_rounds\' | \'maximum_candidate_works\' | \'maximum_included_works\' | \'maximum_elapsed_time\' | \'cancelled\' | \'review_required\';',
   },
   {
     name: 'SendTeamMessageRequest',
@@ -7638,6 +8222,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type SignInErrorCode = \'no-response\' | \'network\' | \'protocol\' | \'expired\' | \'storage\';',
   },
   {
+    name: 'SiteRestrictedQuery',
+    declaration: 'export interface SiteRestrictedQuery extends SearchQueryBase {\n    readonly kind: \'site_restricted\';\n    readonly siteHost: string;\n    readonly maximumResults: number;\n}',
+  },
+  {
     name: 'SkillCandidate',
     declaration: 'export interface SkillCandidate extends SkillSummary {\n    readonly rank: number;\n    readonly locator: unknown;\n    readonly metadata?: Readonly<Record<string, unknown>>;\n}',
   },
@@ -7700,6 +8288,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SkillViewOptions',
     declaration: 'export interface SkillViewOptions extends SkillLookupOptions {\n    readonly scope?: ScopeKey | undefined;\n}',
+  },
+  {
+    name: 'SourceLocatorId',
+    declaration: 'export type SourceLocatorId = Branded<\'SourceLocatorId\'>;',
   },
   {
     name: 'SpawnTeammateRequest',
@@ -8574,8 +9166,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface WebBootRelease {\n    version: string;\n    commit?: string;\n}',
   },
   {
+    name: 'WebDiscoveryQuery',
+    declaration: 'export interface WebDiscoveryQuery extends SearchQueryBase {\n    readonly kind: \'web_discovery\';\n    readonly maximumResults: number;\n}',
+  },
+  {
     name: 'WebFetchBody',
-    declaration: 'export type WebFetchBody = {\n    readonly kind: \'html\';\n    readonly content: string;\n} | {\n    readonly kind: \'text\';\n    readonly content: string;\n};',
+    declaration: 'export type WebFetchBody = {\n    readonly kind: \'html\';\n    readonly content: string;\n} | {\n    readonly kind: \'text\';\n    readonly content: string;\n} | {\n    readonly kind: \'pdf\';\n    readonly content: Uint8Array;\n};',
   },
   {
     name: 'WebFetchProvider',
@@ -8868,6 +9464,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WorkspaceView',
     declaration: 'export interface WorkspaceView {\n    readonly workspaceId: WorkspaceId;\n    readonly path: string;\n    readonly title: string;\n    readonly sessionIds: readonly SessionId[];\n    readonly createdAt: string;\n    readonly updatedAt: string;\n}',
+  },
+  {
+    name: 'WorkVersion',
+    declaration: 'export interface WorkVersion {\n    readonly schemaVersion: 1;\n    readonly workVersionId: WorkVersionId;\n    readonly academicWorkId: AcademicWorkId;\n    readonly versionType: WorkVersionType;\n    readonly versionLabel: Availability<string>;\n    readonly releaseDate: Availability<PartialDate>;\n    readonly externalIdentifiers: readonly ExternalIdentifier[];\n    readonly sourceRecords: readonly ProviderRecordReference[];\n    readonly contentHash: Availability<string>;\n    readonly supersedesWorkVersionId: WorkVersionId | null;\n    readonly status: WorkVersionStatus;\n}',
+  },
+  {
+    name: 'WorkVersionId',
+    declaration: 'export type WorkVersionId = Branded<\'WorkVersionId\'>;',
+  },
+  {
+    name: 'WorkVersionStatus',
+    declaration: 'export type WorkVersionStatus = \'active\' | \'corrected\' | \'retracted\';',
+  },
+  {
+    name: 'WorkVersionType',
+    declaration: 'export type WorkVersionType = \'preprint\' | \'accepted_manuscript\' | \'version_of_record\' | \'corrected\' | \'retracted\' | \'unknown\';',
   },
 ]
 

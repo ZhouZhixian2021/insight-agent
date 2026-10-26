@@ -392,3 +392,53 @@ describe('PlanReviewPanel', () => {
     expect(screen.getByRole('button', { name: 'Request changes' })).toBeTruthy()
   })
 })
+
+describe('Academic plan revision', () => {
+  const detail = '# 研究计划\n\n研究目标：比较检索方法\n\n```academic-research-brief-json\n{}\n```'
+  function academicWait() { return wait([{ ...questions()[0]!, detail }]) }
+
+  it('sends trimmed feedback without approval and locks repeated submissions', () => {
+    const { carrier, answer, cancel } = academicWait()
+    render(<QuestionComposer matched={carrier} {...kit} />)
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.discuss'] }))
+    const send = screen.getByRole<HTMLButtonElement>('button', { name: zh['plan.revisionSend'] })
+    expect(send.disabled).toBe(true)
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: zh['plan.approve'] }).disabled).toBe(true)
+    fireEvent.change(screen.getByRole('textbox', { name: zh['plan.revisionLabel'] }), { target: { value: '  只研究 2023 年之后的论文  ' } })
+    fireEvent.click(send)
+    fireEvent.click(send)
+    expect(answer).toHaveBeenCalledExactlyOnceWith({ answers: [{ id: 'plan-review', selected: [], custom: '只研究 2023 年之后的论文' }] })
+    expect(cancel).not.toHaveBeenCalled()
+    expect(send.disabled).toBe(true)
+  })
+
+  it('returns to approval without submitting feedback and resets for a new review', () => {
+    const first = academicWait()
+    const view = render(<QuestionComposer matched={first.carrier} {...kit} />)
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.discuss'] }))
+    fireEvent.change(screen.getByRole('textbox', { name: zh['plan.revisionLabel'] }), { target: { value: '缩小范围' } })
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionBack'] }))
+    expect(first.answer).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox')).toBeNull()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: zh['plan.approve'] }).disabled).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.discuss'] }))
+    const second = academicWait()
+    view.rerender(<QuestionComposer matched={second.carrier} {...kit} />)
+    expect(screen.queryByRole('textbox')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.approve'] }))
+    expect(second.answer).toHaveBeenCalledWith(decision('Approve'))
+  })
+
+  it('keeps feedback available when delivery fails and permits retry', async () => {
+    const { carrier, answer } = academicWait()
+    answer.mockRejectedValueOnce(new Error('offline'))
+    render(<QuestionComposer matched={carrier} {...kit} />)
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.discuss'] }))
+    fireEvent.change(screen.getByRole('textbox', { name: zh['plan.revisionLabel'] }), { target: { value: '增加中文文献' } })
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionSend'] }))
+    expect(await screen.findByText('offline')).toBeTruthy()
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('增加中文文献')
+    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionSend'] }))
+    expect(answer).toHaveBeenCalledTimes(2)
+  })
+})

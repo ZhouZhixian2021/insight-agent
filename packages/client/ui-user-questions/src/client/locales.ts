@@ -33,6 +33,10 @@ export const zh = {
   'plan.approve': '同意执行',
   'plan.decline': '拒绝',
   'plan.discuss': '要求修改',
+  'plan.revisionLabel': '修改意见',
+  'plan.revisionPlaceholder': '说明需要调整的研究范围、问题或交付要求',
+  'plan.revisionBack': '返回审批',
+  'plan.revisionSend': '发送修改意见',
 } satisfies Record<string, string>
 
 /** The question namespace key union. */
@@ -71,4 +75,8 @@ export const en = {
   'plan.approve': 'Approve',
   'plan.decline': 'Refuse',
   'plan.discuss': 'Request changes',
+  'plan.revisionLabel': 'Requested changes',
+  'plan.revisionPlaceholder': 'Describe changes to the research scope, questions, or deliverable',
+  'plan.revisionBack': 'Back to review',
+  'plan.revisionSend': 'Send feedback',
 } satisfies Record<QuestionKey, string>

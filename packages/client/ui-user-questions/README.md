@@ -39,7 +39,7 @@ A question that already settled opens as a read-only card: the same pager over t
 
 ### The plan-review card
 
-A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders a compact approval card: a `Plan review` strip with a `View full plan` link, the plan title and a two-line plain-text summary, and `Request changes` / `Approve` actions. The strip uses the shared warning dot and changes it to the ongoing loader while either action settles. The complete plan opens in the sidebar through the link or its permanent Chat card. Approve answers with the asker's approval label; `Request changes` rejects the wait as `ASK_CANCELLED`, returning the composer for the user's feedback without submitting an approval. The card has no separate refusal button.
+A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders a compact approval card: a `Plan review` strip with a `View full plan` link, the plan title and a two-line plain-text summary, and `Request changes` / `Approve` actions. The strip uses the shared warning dot and changes it to the ongoing loader while either action settles. The complete plan opens in the sidebar through the link or its permanent Chat card. Approve answers with the asker's approval label; For ordinary plans, `Request changes` returns to the composer without approving. For an Academic plan carrying the named `academic-research-brief-json` fence, it opens a feedback field. `Send feedback` submits trimmed custom feedback without an approval label so the model revises and presents again. Approval is disabled while editing; `Back to review` sends nothing. A failed send retains the feedback and permits retry. The card has no separate refusal button.
 
 ### Failure and recovery
 

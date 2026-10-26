@@ -4,6 +4,7 @@
 export const zh = {
   'chip.label': '计划',
   'preview.title': '计划',
+  'preview.executionDetails': '系统执行信息',
   'preview.document': '计划 · Markdown',
   'preview.action': '打开',
   'preview.open': '在侧边栏打开计划',
@@ -28,6 +29,7 @@ export type PlanKey = keyof typeof zh
 export const en = {
   'chip.label': 'Plan',
   'preview.title': 'Plan',
+  'preview.executionDetails': 'Execution details',
   'preview.document': 'Plan · Markdown',
   'preview.action': 'Open',
   'preview.open': 'Open plan in sidebar',

@@ -18,6 +18,11 @@ type ActiveRun = {
   settled: Promise<void>
 }
 
+/** Host shutdown leaves pending research checkpoints eligible for explicit recovery. */
+export class AcademicResearchHostStoppedError extends Error {
+  override readonly name = 'AcademicResearchHostStoppedError'
+}
+
 /** Host lifetime registry; every state transition is also written to the owning Session. */
 export class AcademicBackgroundRuns {
   private readonly active = new Map<AcademicBackgroundRunId, ActiveRun>()
@@ -41,6 +46,17 @@ export class AcademicBackgroundRuns {
    * @returns Whether another background task is active.
    */
   hasActiveSession(sessionId: SessionId): boolean { return this.bySession.has(sessionId) }
+
+  /**
+   * Retain this Session's active entry across an asynchronous history read.
+   * @param sessionId Owning Session.
+   * @returns Reader of the retained entry's latest view, including settlement after registry withdrawal.
+   */
+  captureActive(sessionId: SessionId): () => AcademicBackgroundRunView | undefined {
+    const id = this.bySession.get(sessionId)
+    const entry = id === undefined ? undefined : this.active.get(id)
+    return () => entry?.view
+  }
 
   /**
    * Begin work detached from the Remote caller's AbortSignal.
@@ -115,7 +131,7 @@ export class AcademicBackgroundRuns {
       if (entry.view.cancelReason === null) {
         this.commit(entry, { ...entry.view, updatedAt: new Date().toISOString(), cancelReason: 'service_stopped' }, entry.persist)
       }
-      entry.abort.abort(new Error('Academic research Host disposed'))
+      entry.abort.abort(new AcademicResearchHostStoppedError('Academic research Host disposed'))
     }
     await Promise.all(entries.map(entry => entry.settled))
   }

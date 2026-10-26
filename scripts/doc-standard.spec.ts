@@ -55,6 +55,14 @@ const KIND_TEMPLATES: Readonly<Record<string, string>> = {
  * library; the check re-derives the entry shape so a stale entry fails loud.
  */
 const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
+  'packages/academic/analysis': 'Pure evidence preparation and synthesis helpers; the workflow owns model dispatch.',
+  'packages/academic/eval': 'Pure claim admission and evaluation functions without plugin registration.',
+  'packages/academic/evidence': 'Full-text parsing and evidence construction helpers consumed by the workflow.',
+  'packages/academic/ingestion': 'Pure scholarly-record normalization and deduplication functions.',
+  'packages/academic/model': 'Shared academic types and validation helpers without plugin registration.',
+  'packages/academic/report': 'Pure report rendering and delivery helpers consumed by the workflow.',
+  'packages/academic/retrieval': 'Query planning, candidate assessment and ranking functions without a plugin entry.',
+  'packages/academic/workflow': 'Research orchestration library; the Controller owns its service registration.',
   'packages/experimental/cua': 'Shared CUA objects and installer consumed by platform providers; no plugin entry.',
   'packages/experimental/browser-use-runtime': 'Provider-owned browser resource management and MCP integration helpers; no plugin entry.',
   'packages/boot/app-boot': 'Boot library the app bins import; plain helper exports.',

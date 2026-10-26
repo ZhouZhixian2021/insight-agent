@@ -37,6 +37,10 @@ When a Turn ends, each submitted plan appears in its final artifact area, using 
 
 A review without a logged invocation also opens automatically. Its complete text lives only in the tab’s navigation memory, and the pending review card can reopen it. Reloading the page loses that text; an expired preview directs the user back to a pending review. Plans opened from an embedded child conversation use the visible sidebar while retaining the child’s address for document reads.
 
+A plan with exactly one complete `academic-research-brief-json` block folds that execution block under “Execution details” while keeping the surrounding review text visible. Expanding shows the original block; approval and saved Markdown retain the complete plan. Multiple blocks remain fully visible.
+
+The [recorded Academic Web scenario](../../../apps/web/tests/academic-plan-review.e2e.ts) checks generation, revision feedback, reapproval and the persisted Session at approval; its background-run checks use empty external search results.
+
 ### Failures
 
 Admission failures (`matched: false`, business errors, transport faults) surface as an inline error and the chip stays until the projection confirms the exit.

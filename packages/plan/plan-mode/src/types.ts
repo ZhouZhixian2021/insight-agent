@@ -29,6 +29,8 @@ export interface PlanUnitState {
   active: boolean
   /** Whether any plan selection has been recorded, by command or `plan/mode`. */
   hasSelection: boolean
+  /** Turn containing the latest logged exit tool call, whether approved or declined. */
+  lastExitCallTurn: number | null
   /** The selection's target mode; null when no selection is outstanding. */
   wanted: boolean | null
   /** The latest plan command awaiting its paired settlement. */

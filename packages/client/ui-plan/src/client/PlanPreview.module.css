@@ -36,4 +36,6 @@
 .document { color: var(--dsw-alias-label-primary); font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
 .message { padding: 24px; color: var(--dsw-alias-label-secondary); font-size: 14px; }
 .titleIcon { flex: none; }
+.executionDetails { margin: 16px 0; padding: 12px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-sm); }
+.executionDetails > summary { cursor: pointer; font-weight: 500; }
 @media (max-width: 767px) { .preview { padding: 16px 18px 32px; } }

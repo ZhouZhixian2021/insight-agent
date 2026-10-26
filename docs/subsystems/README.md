@@ -18,6 +18,8 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | [deliverables.md](deliverables.md) | what a turn hands to the user: `PresentedFile` deliveries from `present` and the Host-served `WorkspaceChangesSummary` of changed files from git snapshots |
 | [commands.md](commands.md) | the human-command registry service: definitions, adapter discovery, direct invocation, results, and parsing views |
 | [session.md](session.md) | the full `SessionEventMap` variant catalog, `TurnEndReason`, `deriveMessages()`, execution enclosure, and standalone events |
+| [academic-insight.md](academic-insight.md) | Approved academic research, evidence, reports, and background runs |
+| [academic-source.md](academic-source.md) | Scholarly source providers, verification, and full-text candidates |
 | [working-directory.md](working-directory.md) | Session execution directories, durable changes, recovery, and user context |
 | [worktrees.md](worktrees.md) | Experimental Git branch and checkout creation under existing permissions |
 | [persistence.md](persistence.md) | the durability seam: `SessionPersistence`, the JSONL provider, `session/flush`, crash recovery, `SessionHeader` |

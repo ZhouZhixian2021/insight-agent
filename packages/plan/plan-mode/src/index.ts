@@ -139,6 +139,7 @@ export function resolveConfig(config: PlanModeConfig): Required<PlanModeConfig> 
 const planUnitStateSchema: ZodType<PlanUnitState> = zod.object({
   active: zod.boolean(),
   hasSelection: zod.boolean(),
+  lastExitCallTurn: zod.number().int().nonnegative().nullable(),
   wanted: zod.boolean().nullable(),
   running: zod.object({
     commandId: zod.string() as unknown as ZodType<CommandId>,
@@ -156,10 +157,13 @@ const planProjectionSchema: ZodType<PlanProjection> = zod.object({
 /** Projection of logged plan selections and committed mode. */
 export const planProjectionDefinition = {
   key: 'plan',
-  stateVersion: 4,
+  stateVersion: 5,
   stateSchema: planUnitStateSchema,
-  init: () => ({ active: false, hasSelection: false, wanted: null, running: null, activeAtLastHeader: null }),
+  init: () => ({ active: false, hasSelection: false, lastExitCallTurn: null, wanted: null, running: null, activeAtLastHeader: null }),
   apply: (state, event) => {
+    if (event.type === 'tool/call' && event.data.name === EXIT_PLAN_MODE) {
+      return { ...state, lastExitCallTurn: event.data.turn }
+    }
     if (event.type === 'command/run' && event.data.name === 'plan') {
       if (event.data.args === undefined) return state
       const wanted = event.data.args.trim() !== 'off'
@@ -250,7 +254,7 @@ export class PlanModeController extends Service {
       const pending = this.pendingIntents.get(agent.session)
       if (this.missingExitRetries === 0
         || !(pending?.active ?? this.loggedActive(agent.session))
-        || this.calledExitInTurn(agent.session, turn)) return
+        || this.planState(agent.session).lastExitCallTurn === turn) return
       const prior = this.missingExitAttempts.get(agent.session)
       const count = prior?.turn === turn ? prior.count : 0
       if (count >= this.missingExitRetries) return
@@ -419,12 +423,6 @@ export class PlanModeController extends Service {
         content: result.content,
       }),
     }))
-  }
-
-  /** Whether this turn already reached the structured review operation. */
-  private calledExitInTurn(session: Session, turn: number): boolean {
-    return session.snapshotEvents().some(event => event.type === 'tool/call'
-      && event.data.turn === turn && event.data.name === EXIT_PLAN_MODE)
   }
 
   private loggedActive(session: Session): boolean {

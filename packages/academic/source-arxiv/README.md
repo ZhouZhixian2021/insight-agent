@@ -13,8 +13,6 @@ English | [中文](README.zh.md)
 
 `verifyReference()` queries one arXiv ID through `id_list` and compares the returned ID; an explicit `vN` must match that version. It returns the normalized record and HTML/PDF candidates without downloading full text.
 
-Search and ID verification retain Atom `summary` as the scholarly abstract and `category` terms as subject keywords in the record's `metadata`. Missing fields remain unknown; subject categories are not author-provided contribution classifications.
-
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -48,6 +46,8 @@ The provider builds `GET {baseURL}/api/query?search_query=all:{query}&max_result
 <a id="api"></a>
 ## API
 
+Search and ID verification retain Atom `summary` as the scholarly abstract and `category` terms as subject keywords in the record's `metadata`. Missing fields remain unknown; subject categories are not author-provided contribution classifications.
+
 | Export | Role |
 |---|---|
 | `ArxivProvider` | The `AcademicSourceProvider` implementation registered under id `arxiv`. |
@@ -65,7 +65,7 @@ The plugin entry also exports `name`, `inject`, `Config`, and `apply`.
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through the future retrieval or workflow consumer that renders the normalized works into model-visible context; this provider contributes no prompt or schema of its own.
+Indirectly, through the retrieval or workflow consumer that renders the normalized works into model-visible context; this provider contributes no prompt or schema of its own.
 
 #### KV Cache effect
 

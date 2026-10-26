@@ -3,11 +3,14 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatch
   createFailureId, createResearchBriefId, createRetrievalRunId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import { SessionId, type SessionEvent } from '@deepseek-ai/dsh-session'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
 const runAcademicResearchDraft = vi.hoisted(() => vi.fn<RunAcademicResearchDraft>())
@@ -176,6 +179,7 @@ async function harness(options: {
   hybridPlan?: boolean
   retrieval?: AcademicPlannedRetrieval
   candidateScreening?: AcademicCandidateScreening
+  restoredEvents?: readonly SessionEvent[]
 } = {}) {
   const ctx = new Context()
   contexts.push(ctx)
@@ -204,7 +208,8 @@ async function harness(options: {
   const signal = new AbortController().signal
   const sessionEvents: unknown[][] = []
   const planQuestions = [...options.questions ?? briefPayload().questions]
-  const approvedPlanEvents = options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(), questions: planQuestions,
+  const approvedPlanEvents = options.restoredEvents ?? (options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({
+    ...briefPayload(), questions: planQuestions,
     ...options.saturationRounds === undefined ? {} : { stopConditions: {
       ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
     } },
@@ -222,7 +227,7 @@ async function harness(options: {
         maximumReferenceVerifications: 5,
       } } : {},
     })) },
-  }))
+  })))
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
   const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
@@ -249,10 +254,15 @@ async function harness(options: {
   }
   const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
+  const readSession = vi.fn(async (_sessionId: SessionId) => {
+    const events: readonly SessionEvent[] = agent.session.snapshotEvents()
+    return { events }
+  })
+  ctx.provide('sessionQuery', { readSession } as never)
   ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
   ctx.provide('sessionPersistence', { open: () => Promise.resolve({
-    read: (seq: number) => Promise.resolve((agent.session.snapshotEvents() as Array<{ seq: number }>).filter(
-      event => event.seq === seq)),
+    read: (seq: number) => Promise.resolve({ events: (agent.session.snapshotEvents() as Array<{ seq: number }>).filter(
+      event => event.seq === seq) }),
     [Symbol.asyncDispose]: () => Promise.resolve(),
   }) } as never)
   const controller = new AcademicResearchController(ctx, {
@@ -266,7 +276,8 @@ async function harness(options: {
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
   })
-  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents }
+  return { ctx, controller, readSession, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch,
+    sessionId, signal, sessionEvents }
 }
 
 describe('AcademicResearchController', () => {
@@ -443,7 +454,7 @@ describe('AcademicResearchController', () => {
       availableFulltextWorks: 1, includedWorks: 1 })
     expect(result.report).not.toBeNull()
     expect(fixture.fetch).toHaveBeenCalledWith({ url: 'https://arxiv.org/html/1706.03762' },
-      expect.any(AbortSignal), { providerId: 'academic-raw' })
+      expect.any(AbortSignal))
     expect(result.report?.retrievalDisclosureIncluded).toBe(true)
     expect(result.report?.markdown).toContain('Web 发现上限: 8')
     expect(result.report?.markdown).not.toContain('Untrusted title')
@@ -494,7 +505,7 @@ describe('AcademicResearchController', () => {
       && (event as { action?: string }).action === 'search_evidence_gap')).toBe(true)
   })
 
-  it('resumes an interrupted pending batch through the Controller without repeating retrieval or screening', async () => {
+  it.each([0, 1])('restores a serialized checkpoint after %i settled batches in a new Controller without repeating committed work', async (settledBatches) => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(2)
     const works = pipeline.records.map((record, index) =>
@@ -510,7 +521,7 @@ describe('AcademicResearchController', () => {
         synthesize: pipeline.adapters.synthesize,
         onRecoveryCheckpoint: (checkpoint) => {
           request.adapters.onRecoveryCheckpoint?.(checkpoint)
-          if (interruptAtNextCheckpoint) {
+          if (interruptAtNextCheckpoint && checkpoint.completedBatchCount === settledBatches) {
             interruptAtNextCheckpoint = false
             throw new Error('simulated process exit')
           }
@@ -521,19 +532,92 @@ describe('AcademicResearchController', () => {
     const preview = await fixture.controller.plan(fixture.sessionId)
     const request = { sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId, synthetic: true }
     await expect(fixture.controller.run(request, fixture.signal)).rejects.toThrow('simulated process exit')
-    const checkpoint = fixture.sessionEvents.find(([name]) => name === 'academic/recovery-checkpoint')?.[1] as
+    const checkpoint = fixture.sessionEvents.findLast(([name]) => name === 'academic/recovery-checkpoint')?.[1] as
       | { retrievalRunId: RetrievalRun['retrievalRunId'] }
       | undefined
     expect(checkpoint).toBeDefined()
-    const searchCallsBeforeResume = fixture.searchProviders.mock.calls.length
-    const result = await fixture.controller.run({ ...request,
-      resumeRetrievalRunId: checkpoint!.retrievalRunId }, fixture.signal)
-    expect(fixture.searchProviders).toHaveBeenCalledTimes(searchCallsBeforeResume)
-    expect(fixture.webSearch).toHaveBeenCalledOnce()
+    const directory = await mkdtemp(join(tmpdir(), 'academic-controller-recovery-'))
+    onTestFinished(() => rm(directory, { recursive: true, force: true }))
+    const history = join(directory, 'events.json')
+    await writeFile(history, JSON.stringify((await fixture.readSession(fixture.sessionId)).events))
+    await fixture.ctx.fiber.dispose()
+    const restoredEvents = JSON.parse(await readFile(history, 'utf8')) as SessionEvent[]
+    const restarted = await harness({ restoredEvents })
+    restarted.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    const fetchCallsBeforeResume = fixture.fetch.mock.calls.length
+    const started = await restarted.controller.startBackgroundRun({ ...request,
+      resumeRetrievalRunId: checkpoint!.retrievalRunId }, restarted.signal)
+    await expect.poll(async () => (await restarted.controller.getBackgroundRun(started)).state).toBe('completed')
+    const settled = await restarted.controller.getBackgroundRun(started)
+    const result = settled.result!
+    expect(restarted.searchProviders).not.toHaveBeenCalled()
+    expect(restarted.webSearch).not.toHaveBeenCalled()
+    expect(restarted.search).not.toHaveBeenCalled()
+    expect(restarted.fetch).toHaveBeenCalledTimes(settledBatches === 0 ? 2 : 0)
+    expect(fixture.fetch).toHaveBeenCalledTimes(fetchCallsBeforeResume)
     expect(result.retrievalRun.retrievalRunId).toBe(checkpoint!.retrievalRunId)
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
     expect(result.report).not.toBeNull()
-    expect(fixture.sessionEvents.map(([name]) => name)).toContain('academic/run-settlement')
+    expect(restarted.sessionEvents.map(([name]) => name)).toContain('academic/run-settlement')
+    await writeFile(history, JSON.stringify((await restarted.readSession(restarted.sessionId)).events))
+    await restarted.ctx.fiber.dispose()
+    const completedEvents = JSON.parse(await readFile(history, 'utf8')) as SessionEvent[]
+    const historyReader = await harness({ restoredEvents: completedEvents })
+    const dispatches = runAcademicResearchDraft.mock.calls.length
+    expect(await historyReader.controller.getBackgroundRun(started)).toEqual(settled)
+    expect(await historyReader.controller.listBackgroundRuns(request.sessionId)).toMatchObject([
+      { backgroundRunId: started.backgroundRunId, state: 'completed' },
+    ])
+    expect(runAcademicResearchDraft).toHaveBeenCalledTimes(dispatches)
+  })
+
+  it.each(['service_stopped', 'user_requested'] as const)('preserves %s recovery semantics after stopping a real pending batch', async (reason) => {
+    const fixture = await harness({ hybridPlan: true })
+    const pipeline = draftFixture(1)
+    const work = retrievalWork(pipeline.records[0]!, '1706.03762')
+    fixture.searchProviders.mockResolvedValue({ works: [work], batch: createBatchResult([work], []),
+      providers: ['arxiv'], discoveredRecords: 1, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    const fetching = Promise.withResolvers<undefined>()
+    fixture.fetch.mockImplementation(async (_request, signal) => {
+      if (signal === undefined) throw new Error('Missing full-text cancellation signal')
+      signal.throwIfAborted()
+      fetching.resolve(undefined)
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => { reject(new Error('Fixture full-text fetch aborted')) }, { once: true })
+      })
+    })
+    runAcademicResearchDraft.mockImplementation(async request => ({
+      ...await runResearchDraft(request.input, { ...request.adapters,
+        generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+      sessionId: request.session.id,
+    }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const request = { sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId, synthetic: true }
+    const started = await fixture.controller.startBackgroundRun(request, fixture.signal)
+    await fetching.promise
+    if (reason === 'user_requested') {
+      await fixture.controller.cancelBackgroundRun({ ...started, reason })
+      await expect.poll(async () => (await fixture.controller.getBackgroundRun(started)).state).toBe('cancelled')
+    }
+    await fixture.ctx.fiber.dispose()
+    const restoredEvents = JSON.parse(JSON.stringify((await fixture.readSession(fixture.sessionId)).events)) as SessionEvent[]
+    const checkpoint = restoredEvents.findLast(event => event.type === 'academic/recovery-checkpoint')
+    if (checkpoint?.type !== 'academic/recovery-checkpoint') throw new Error('No pending checkpoint was persisted')
+    const restarted = await harness({ restoredEvents })
+    expect(await restarted.controller.getBackgroundRun(started)).toMatchObject({
+      state: reason === 'service_stopped' ? 'interrupted' : 'cancelled', cancelReason: reason,
+    })
+    restarted.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    const continuation = restarted.controller.run({ ...request,
+      resumeRetrievalRunId: checkpoint.data.retrievalRunId }, restarted.signal)
+    if (reason === 'service_stopped') {
+      await expect(continuation).resolves.toMatchObject({ status: 'completed', papers: [{ status: 'extracted' }] })
+      expect(restarted.searchProviders).not.toHaveBeenCalled()
+    } else {
+      await expect(continuation).rejects.toThrow('已取消')
+      expect(restarted.fetch).not.toHaveBeenCalled()
+    }
   })
 
   it('requires legacy plans to be completed and approved instead of inventing search expressions', async () => {
@@ -680,7 +764,7 @@ describe('AcademicResearchController', () => {
     expect(Date.parse(call.adapters.now())).not.toBeNaN()
     expect(fixture.search).toHaveBeenCalledExactlyOnceWith({ query: 'retrieval' }, fixture.signal, undefined)
     expect(fixture.fetch).toHaveBeenCalledWith(
-      { url: 'https://arxiv.org/pdf/1' }, fixture.signal, { providerId: 'academic-raw' },
+      { url: 'https://arxiv.org/pdf/1' }, fixture.signal,
     )
 
     const academicWorkId = createAcademicWorkId(), workVersionId = createWorkVersionId()
@@ -743,6 +827,47 @@ describe('AcademicResearchController', () => {
       { backgroundRunId: started.backgroundRunId, state: 'completed' },
     ])
     expect(fixture.sessionEvents.map(([type]) => type)).toContain('academic/background-run-state')
+  })
+
+  it('retains terminal settlement when a history read spans background completion', async () => {
+    const fixture = await harness()
+    const draft = draftFixture()
+    const completed = { ...await runResearchDraft(draft.input, draft.adapters), sessionId: fixture.sessionId }
+    const execution = Promise.withResolvers<Awaited<ReturnType<RunAcademicResearchDraft>>>()
+    runAcademicResearchDraft.mockReturnValue(execution.promise)
+    const started = await fixture.controller.startBackgroundRun({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: true }, fixture.signal)
+    await vi.waitFor(() => { expect(runAcademicResearchDraft).toHaveBeenCalledOnce() })
+    const snapshot = await fixture.readSession(fixture.sessionId)
+    const entered = Promise.withResolvers<undefined>()
+    const history = Promise.withResolvers<typeof snapshot>()
+    fixture.readSession.mockImplementationOnce(async () => { entered.resolve(undefined); return history.promise })
+    const listing = fixture.controller.listBackgroundRuns(fixture.sessionId)
+    await entered.promise
+    fixture.readSession.mockClear()
+    try {
+      execution.resolve(completed)
+      await vi.waitFor(async () => {
+        expect((await fixture.controller.getBackgroundRun(started)).state).toBe('completed')
+        expect(fixture.readSession).toHaveBeenCalledWith(fixture.sessionId)
+      })
+    } finally {
+      execution.resolve(completed)
+      history.resolve(snapshot)
+      await listing
+    }
+    expect(await listing).toMatchObject([{ backgroundRunId: started.backgroundRunId, state: 'completed' }])
+  })
+
+  it('stops before research dispatch when the asynchronous history read fails', async () => {
+    const fixture = await harness()
+    const approved = await fixture.controller.plan(fixture.sessionId)
+    fixture.readSession.mockRejectedValueOnce(new Error('history unavailable'))
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: approved.researchBriefId, synthetic: true }, fixture.signal)).rejects.toThrow('history unavailable')
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    expect(fixture.search).not.toHaveBeenCalled()
+    expect(fixture.fetch).not.toHaveBeenCalled()
   })
 
   it('aborts background work only through an explicit cancellation request', async () => {

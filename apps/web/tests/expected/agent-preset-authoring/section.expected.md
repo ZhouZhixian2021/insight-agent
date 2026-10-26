@@ -43,5 +43,11 @@
       - 'button "模式说明: 创造模式"': 模式说明
       - 'button "如何使用: 创造模式"': 如何使用
       - 'button "查看配置: 创造模式"': 查看配置
+    - listitem:
+      - 'button "设为新任务默认: 学术洞察"':
+        - text: 学术洞察 内置
+        - code: academic
+        - text: 面向技术前沿研究，检索并核验论文证据，形成可追溯的结构化洞察报告。
+      - 'button "查看配置: 学术洞察"': 查看配置
   - heading "自定义" [level=3]
   - button "让 Agent 帮我创建预设模式"

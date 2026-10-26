@@ -107,6 +107,28 @@ describe('protocolOf', () => {
 })
 
 describe('ResourceRegistry providers', () => {
+  it('reads registered resources when URL omits custom-scheme hosts', async () => {
+    const NativeURL = URL
+    vi.stubGlobal('URL', class extends NativeURL {
+      override get hostname() {
+        return this.protocol === 'dsh-resource:' ? '' : super.hostname
+      }
+    })
+    onTestFinished(() => { vi.unstubAllGlobals() })
+    expect(protocolOf('dsh-resource://feed/one')).toBe('feed')
+    expect(protocolOf('DSH-RESOURCE://Feed/one')).toBe('feed')
+    for (const address of ['dsh-resource:///feed/one', 'dsh-resource:////feed/one', 'dsh-resource://bad host/one']) {
+      expect(protocolOf(address)).toBeUndefined()
+    }
+    const b = bench()
+    b.registry.register(b.provider)
+    const unsubscribe = b.registry.source(A).subscribe(() => {})
+    onTestFinished(unsubscribe)
+    expect(b.snapshot().status).toBe('loading')
+    b.last().push('restored')
+    await vi.waitFor(() => { expect(b.snapshot()).toMatchObject({ status: 'live', value: 'restored' }) })
+  })
+
   it('owns a protocol by exactly one provider, and frees it on dispose', () => {
     const b = bench()
     const dispose = b.registry.register(b.provider)

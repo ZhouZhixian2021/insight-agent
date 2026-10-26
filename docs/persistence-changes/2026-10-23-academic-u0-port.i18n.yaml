@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-23-academic-u0-port.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-23-academic-u0-port.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-23-academic-u0-port:
+  en: 55155d6c53144a3f
+  zh: a5fefa78673db8f4
+/2026-10-23-academic-u0-port/summary:
+  en: 3af4b04793110d96
+  zh: 184ec4a034942d4a
+/2026-10-23-academic-u0-port/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-23-academic-u0-port/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-23-academic-u0-port/compatibility:
+  en: 02413796167c94a6
+  zh: e722396af51611e7
+/2026-10-23-academic-u0-port/verification:
+  en: ba7422711a47a8a2
+  zh: 61682e737ab9313f
+/2026-10-23-academic-u0-port/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

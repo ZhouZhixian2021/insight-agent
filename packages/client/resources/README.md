@@ -8,7 +8,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use client resources when a component knows live data only by URL address, such as a tab record, link, or mention, while another client package owns the data. Resource addresses use `dsh-resource://<type>/…`; protocols that need a scope encode it in the path. Components receive the current value and later updates through the public `useResource` hook. Unsupported protocols and non-resource schemes, such as `sidebar://guide`, resolve to no resource.
+Use client resources when a component knows live data only by URL address, such as a tab record, link, or mention, while another client package owns the data. Resource addresses use `dsh-resource://<type>/…`; protocols that need a scope encode it in the path. Components receive the current value and later updates through the public `useResource` hook. Unsupported protocols and non-resource schemes, such as `sidebar://guide`, resolve to no resource. Protocol lookup accepts literal ASCII authorities when a browser leaves `URL.hostname` empty for custom schemes.
 
 ## Table of Contents
 

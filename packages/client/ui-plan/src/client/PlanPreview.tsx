@@ -32,9 +32,20 @@ export function PlanPreview({ useTabInfo, useResource, t }: PlanPreviewProps) {
       {!temporary && resource.failure !== undefined && <p>{planFailureLine(t, resource.failure)}</p>}
     </div>
   )
+  const handoffs = [...plan.markdown.matchAll(/(?:^|\n)```academic-research-brief-json[ \t]*\r?\n[\s\S]*?\r?\n```(?=\r?\n|$)/gu)]
+  const handoff = handoffs.length === 1 ? handoffs[0] : undefined
   return (
     <section className={css.preview} data-plan-preview={'callId' in plan ? plan.callId : tab.tab.navigation.address} aria-label={plan.title}>
-      <div className={css.document}><MarkdownText text={plan.markdown} labels={labels} /></div>
+      <div className={css.document}>
+        {handoff === undefined ? <MarkdownText text={plan.markdown} labels={labels} /> : <>
+          <MarkdownText text={plan.markdown.slice(0, handoff.index)} labels={labels} />
+          <details className={css.executionDetails}>
+            <summary>{t('preview.executionDetails')}</summary>
+            <MarkdownText text={handoff[0]} labels={labels} />
+          </details>
+          <MarkdownText text={plan.markdown.slice(handoff.index + handoff[0].length)} labels={labels} />
+        </>}
+      </div>
     </section>
   )
 }
