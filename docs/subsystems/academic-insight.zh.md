@@ -9,6 +9,8 @@ kind: "subsystem"
 
 分析本地 `AnalysisInput` 和报告本地 `ReportInput` 通过可选的 `questionLinks` 接收生产方问题与证据关联，不改变 Academic Model 或 Remote 字段。卡片分区为空时仍保留逐条有效的最小证据；未提供问题关联时明确披露而非推断。工作流集成负责人负责转发这些可选关联。
 
+Trace v1 通过模型的仅类型 trace 子路径共享品牌操作与事件身份。当前 Controller 适配器保存安全观察记录，标准化后交给不依赖基座的分页；Web 面板只读取限定范围的 Remote 页面。报告 HTML 导出使用现有 Markdown 渲染器与惰性允许列表序列化，保留质量和证据链接，不引入外部资源。查询与导出细节见 [Controller](../../packages/api/academic-research-controller/README.zh.md)和[查看器](../../packages/client/ui-academic-research/README.zh.md)。
+
 ## 概述
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
@@ -127,6 +129,22 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Latest state, including the durable cancellation intent.
  */
 @Remote('cancelBackgroundRun') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>
+
+/**
+ * Read safe diagnostics for one owned Session/run without starting or cancelling research.
+ * @param query Scope, stage/state filter, stable cursor and page bound.
+ * @param signal Viewer request lifetime; never cancels research.
+ * @returns Latest-operation page, or explicit absence for historical runs.
+ */
+@Remote('traceList') async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
+
+/**
+ * Read an operation's original observations under the same scoped pagination rules.
+ * @param query Session/run scope and required span identity.
+ * @param signal Viewer request lifetime.
+ * @returns Operation and its chronological observations; raw model content is excluded.
+ */
+@Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)

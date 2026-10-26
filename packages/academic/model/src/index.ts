@@ -146,6 +146,7 @@ export type {
   SiteRestrictedQuery,
   WebDiscoveryQuery,
 } from './query-workflow.ts'
+export * from './trace.ts'
 export {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
   candidatePriorityForScore,

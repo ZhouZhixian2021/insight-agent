@@ -84,3 +84,6 @@ export type {
   AcademicRecoverySearchCheckpoint,
   AcademicResearchRecoveryCheckpoint,
 } from './recovery-checkpoint.ts'
+
+export { academicTraceSpan, observeAcademicTrace } from './trace.ts'
+export type { AcademicTraceObserver, AcademicTraceOperationIdentity } from './trace.ts'

@@ -1,3 +1,6 @@
+import { AcademicTraceRecorder } from '../../../packages/api/academic-research-controller/src/trace.ts'
+import { academicTraceSpan } from '@deepseek-ai/dsh-academic-workflow'
+import { academicTraceSpanId } from '@deepseek-ai/dsh-academic-model'
 /** Real Loader, Session, Controller and browser preview using an approved synthetic plan. */
 import { readFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -10,6 +13,68 @@ import { sampleRun } from '../../../packages/client/ui-academic-research/tests/r
 import { newEnglishPage } from './support.ts'
 
 describe('hybrid plan browser preview', () => {
+  it('downloads standalone HTML and reads persisted Trace through the real Web Remote', async () => {
+    const scaffold = await launchWebScaffold({})
+    try {
+      const value = { ...sampleRun(), q6: null }
+      const id = await seedSession(scaffold, await readFile('snapshots/web/seeded-history/session.v2.jsonl', 'utf8'), value.sessionId)
+      await scaffold.ctx.sessionController.rename({ sessionId: id, title: 'HTML and Trace acceptance' })
+      const found = await scaffold.ctx.sessionController.resolveAgent(id)
+      if ('error' in found) throw found.error
+      const recorder = new AcademicTraceRecorder(found.agent.session, value.retrievalRun.retrievalRunId)
+      const work = value.report.evidence[0]!
+      const call = { ...academicTraceSpan('fixture-call', academicTraceSpanId(`paper:extraction:${work.workVersionId}`), 'call', 'extraction', 'evidence_extract'),
+        academicWorkId: work.academicWorkId, workVersionId: work.workVersionId }
+      recorder.observe(call)
+      const attempt = { ...call, spanId: academicTraceSpanId('fixture-attempt'), parentSpanId: call.spanId, kind: 'attempt' as const, attemptIndex: 1 }
+      recorder.observe(attempt); recorder.observe({ ...attempt, status: 'failed', failure: { code: 'timeout', phase: 'before_content', message: 'Observed deadline.' } })
+      recorder.observe({ ...call, status: 'failed' }); recorder.settle('partial_success')
+      const task = { schemaVersion: 1 as const, sessionId: id, backgroundRunId: 'trace-preview',
+        researchBriefId: value.retrievalRun.researchBriefId, state: 'completed' as const,
+        startedAt: '2026-10-26T00:00:00Z', updatedAt: '2026-10-26T00:01:00Z',
+        retrievalRunId: value.retrievalRun.retrievalRunId, progress: null, q6: value.q6, result: value, error: null, cancelReason: null }
+      found.agent.session.append('academic/background-run-state', task)
+      await found.agent.ctx.sessions.flush(found.agent.session)
+      const controller = scaffold.ctx.get('academicResearchController')!
+      const plan = vi.spyOn(controller, 'plan').mockResolvedValue({ researchBriefId: task.researchBriefId, topic: 'HTML and Trace acceptance', questions: [], searches: [] })
+      const browser = await chromium.launch({ channel: process.env.DSH_ACADEMIC_BROWSER_CHANNEL ?? 'chromium' })
+      try {
+        const page = await newEnglishPage(browser)
+        await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+        await page.getByText('Ungrouped', { exact: true }).click()
+        await page.getByText('HTML and Trace acceptance', { exact: true }).click()
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        const trace = page.getByRole('region', { name: 'Research call trace' })
+        await trace.getByRole('button', { name: 'Read Trace', exact: true }).click()
+        await trace.getByText('Operation identity: fixture-attempt', { exact: false }).waitFor()
+        expect(await trace.innerText()).toContain('Actual attempts: 1')
+        const downloadPromise = page.waitForEvent('download')
+        await page.getByRole('button', { name: 'Download HTML', exact: true }).click()
+        const download = await downloadPromise
+        expect(download.suggestedFilename()).toBe('academic-report.html')
+        const path = await download.path()
+        const html = await readFile(path, 'utf8')
+        expect(html).toContain('Content-Security-Policy')
+        expect(html).toContain(value.report.evidence[0]!.evidenceId)
+        expect(html).not.toContain('<script')
+        const capture = process.env.DSH_ACADEMIC_CAPTURE_DIR
+        if (capture !== undefined) {
+          await mkdir(capture, { recursive: true })
+          await page.screenshot({ path: join(capture, 'html-trace-web.png') })
+          await download.saveAs(join(capture, 'academic-report.html'))
+        }
+        await page.reload({ waitUntil: 'load' })
+        await page.getByRole('button', { name: 'Academic research', exact: true }).click()
+        await page.getByRole('button', { name: 'Read Trace', exact: true }).click()
+        await page.getByText('Operation identity: fixture-attempt', { exact: false }).waitFor()
+        const persistence = found.agent.ctx.get('sessionPersistence')
+        if (persistence === undefined) throw new Error('Session persistence fixture is required')
+        await using reader = await persistence.open(id, 'read')
+        expect((await reader.read()).some(event => event.type === 'academic/trace-v1')).toBe(true)
+      } finally { plan.mockRestore(); await browser.close() }
+    } finally { await scaffold.close() }
+  })
+
   it('opens the Q6 fixed JSON demo, filters candidates and inspects coverage without starting research', async () => {
     const scaffold = await launchWebScaffold({})
     const controller = scaffold.ctx.get('academicResearchController')

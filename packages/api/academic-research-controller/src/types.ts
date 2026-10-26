@@ -445,3 +445,14 @@ export interface AcademicResearchRunValue {
   }[]
   readonly report: AcademicResearchReportView | null
 }
+
+/** Session-scoped Trace query; list and detail use immutable-watermark cursors. */
+export interface AcademicTraceQuery {
+  readonly sessionId: SessionId
+  readonly researchRunId: RetrievalRunId
+  readonly stage?: import('@deepseek-ai/dsh-academic-model').AcademicTraceStage | null
+  readonly status?: import('@deepseek-ai/dsh-academic-model').AcademicTraceStatus | null
+  readonly spanId?: import('@deepseek-ai/dsh-academic-model').AcademicTraceSpanId | null
+  readonly cursor?: string | null
+  readonly limit?: number
+}

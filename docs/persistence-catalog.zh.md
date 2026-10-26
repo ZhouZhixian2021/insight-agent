@@ -138,7 +138,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-review-selection-v1': ReviewSelectionEvent
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:46`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:47`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-screening-request--log-only"></a>
 
@@ -149,7 +149,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-screening-request': CandidateReviewModelRequest
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:42`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:43`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-screening-result--log-only"></a>
 
@@ -160,7 +160,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-screening-result': CandidateReviewModelResult
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:44`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:45`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-semantic-review-request-v1--log-only"></a>
 
@@ -171,7 +171,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-semantic-review-request-v1': SemanticReviewRequest
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:48`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:49`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-semantic-review-result-v1--log-only"></a>
 
@@ -182,7 +182,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-semantic-review-result-v1': SemanticReviewResult
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:50`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:51`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academiccandidate-semantic-review-verified-v1--log-only"></a>
 
@@ -193,7 +193,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/candidate-semantic-review-verified-v1': VerifiedSemanticReview
 ```
 
-来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:52`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+来源：[`packages/api/academic-research-controller/src/candidate-review-model.ts:53`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
 
 <a id="academicevidence-enhancement-selection--log-only"></a>
 
@@ -292,7 +292,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/synthesis-request': SynthesisModelRequest
 ```
 
-来源： [`packages/academic/workflow/src/synthesis-model.ts:27`](../packages/academic/workflow/src/synthesis-model.ts)
+来源： [`packages/academic/workflow/src/synthesis-model.ts:28`](../packages/academic/workflow/src/synthesis-model.ts)
 
 <a id="academicsynthesis-result--log-only"></a>
 
@@ -303,7 +303,18 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/synthesis-result': SynthesisModelResult
 ```
 
-来源： [`packages/academic/workflow/src/synthesis-model.ts:29`](../packages/academic/workflow/src/synthesis-model.ts)
+来源： [`packages/academic/workflow/src/synthesis-model.ts:30`](../packages/academic/workflow/src/synthesis-model.ts)
+
+<a id="academictrace-v1--log-only"></a>
+
+#### `academic/trace-v1` — log-only
+
+```ts persistence-catalog
+/** Safe diagnostic snapshot; contains no model input, response stream, URL or credential. */
+'academic/trace-v1': AcademicTraceRecord
+```
+
+来源： [`packages/api/academic-research-controller/src/trace.ts:14`](../packages/api/academic-research-controller/src/trace.ts)
 
 ### `agent/*`
 

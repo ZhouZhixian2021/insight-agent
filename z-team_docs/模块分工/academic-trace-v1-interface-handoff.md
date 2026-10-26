@@ -1,5 +1,7 @@
 # Academic Trace v1 接口交接（C-T0）
 
+2026-10-26 实现说明：本文保留 C-T0 的提案与样例基线；当前版本的正式入口为 `academicResearch/traceList` 和 `academicResearch/traceDetail`，读取语义和首版限制以 [Controller 文档](../../packages/api/academic-research-controller/README.zh.md)为准。返回类型位于 Academic Model 的 `./trace` 子路径。已吸收 B 在迁入分支 `d8e2108222` 的事件键、RPC 与未知数据反馈；A/B 新版采集适配和联合验收仍分别维护。
+
 ## 状态与交付范围
 
 这是供 A/B 核对的接口提案，不是已经注册的 Remote API。基于团队提交 `f55934cb17` 核对现有源码；本次交付字段、固定数据、查询约定、来源映射和可执行样例校验，不创建生产采集器、持久化格式或页面。任务归属见[双路线分工](academic-upstream-upgrade-dual-route-team-plan.md#trace-接口约定与跨版本职责)。A/B 应先反馈新版可采集性，C 再实现 C-T1；HTML 报告可以独立推进。

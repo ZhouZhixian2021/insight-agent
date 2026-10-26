@@ -7,6 +7,8 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
+Settled reports offer a self-contained HTML download alongside Markdown. HTML uses the existing Markdown renderer, then an inert allowlist serializer: inline styles, local contents and evidence links, no scripts or external resources. It preserves report quality, limitations, missing evidence and synthetic markers independently of UI search. The Trace panel queries actual Session/run diagnostics on demand, filters stage and state, pages observations and exports the current safe page. Closing the viewer aborts only its query. Trace does not infer old calls or missing queue times, and does not automatically poll or start research.
+
 ## Summary
 
 The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, aggregate processing, source-search, full-text, evidence-extraction and report-quality states, coverage, evidence navigation and Markdown download.
