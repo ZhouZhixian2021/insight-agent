@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-10-15-academic-minimal-report-review.md) | 中文
 
+独立审核作为强制交付前置条件的决定由[自动交付](2026-10-26-academic-automatic-delivery.zh.md)取代，其余证据和分析决定仍有效。
+
 ## Problem
 
 最小抽取保留已核验证据时，六分区卡片可以为空。仅按卡片条目准备输入会丢弃这些证据，阻止生成有限草稿。学术审批也需要自然语言反馈入口，而不把机器字段变成用户必须编辑的内容。

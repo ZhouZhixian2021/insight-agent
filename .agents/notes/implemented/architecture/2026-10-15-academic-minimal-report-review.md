@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-10-15-academic-minimal-report-review.zh.md)
 
+The mandatory independent-review prerequisite is superseded by [automatic delivery](2026-10-26-academic-automatic-delivery.md); the remaining evidence and analysis decisions stay active.
+
 ## Problem
 
 Minimal extraction retains verified records while its six-section card can be empty. Card-entry-only preparation discards those records and blocks a useful limited draft. Academic review also needs a natural-language feedback path without exposing machine fields as editable decisions.

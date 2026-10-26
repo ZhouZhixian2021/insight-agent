@@ -63,7 +63,8 @@ export function exportAcademicHtml(report: Report, t: PropsLocale<'academicRun'>
     <title>${escape(report.title)}</title><style>body{font:16px/1.75 system-ui,sans-serif;max-width:1000px;margin:32px auto;padding:0 24px;color:#20242b}a{color:#175eb5;overflow-wrap:anywhere}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd2da;padding:8px;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:16px}blockquote,.notice{border-left:4px solid #889cb5;padding:12px;background:#f4f6f8}section{margin:24px 0}h1,h2,h3{line-height:1.4}@media print{body{max-width:none;margin:0}a{color:inherit}}</style></head><body>
     <h1>${escape(report.title)}</h1><aside class="notice"><p>${escape(t(report.mode))} · ${escape(t(report.evaluation.status))}${report.synthetic ? ` · ${escape(t('synthetic'))}` : ''}</p>
     <p>${escape(t('reviewNotice'))}</p>${report.evidence.length === 0 ? `<p>${escape(t('noEvidence'))}</p>` : ''}
-    ${list(report.evaluation.issues.map(issue => `${issue.code}: ${issue.message}`))}${list(report.limitations)}</aside>
+    <h2>${escape(t('deliveryIssues'))}</h2>${list(report.evaluation.issues.filter(issue => issue.category !== 'content').map(issue => `${issue.code}: ${issue.message}`))}
+    <h2>${escape(t('contentLimits'))}</h2>${list([...new Set([...report.limitations, ...report.evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])])}</aside>
     <nav aria-label="${escape(t('htmlContents'))}"><h2>${escape(t('htmlContents'))}</h2><ul>${headings.map(h => `<li><a href="#${h.id}">${escape(h.text)}</a></li>`).join('')}</ul></nav><main>${body}</main><h2>${escape(t('claims'))}</h2>${claims}<h2>${escape(t('evidence'))}</h2>${evidence}</body></html>`
 }
 

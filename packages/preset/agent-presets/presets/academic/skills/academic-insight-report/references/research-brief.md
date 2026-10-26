@@ -44,6 +44,8 @@
 
 `inclusionRules` 和 `exclusionRules` 只记录逐篇规则：每条规则必须能够根据一篇候选论文及其已核验来源独立判断，并应用于每一篇候选。需要多篇论文共同满足的组合目标，例如“至少纳入一篇指定基准论文”“整体覆盖多个领域、任务或方法路线”“兼顾实证论文与综述”，不得写入这两个数组；应将其拆成研究问题和对应检索方向，用论文数量表达总量要求，并在未达到时通过覆盖缺口和报告限制披露。例如，“论文直接研究 RAG 幻觉或回答忠实性”可以是逐篇纳入条件；“整体覆盖 RAGTruth、HaluEval 或 GaRAGe”属于文献组合覆盖目标。
 
+报告不设置字数上下限；`targetLength` 为兼容字段，填写 `{ "unit": "characters", "minimum": null, "maximum": null }`。不要自行向用户承诺最低字数，也不要为了凑字数重复内容。
+
 当前可执行报告使用 `language: "zh-CN"`、`citationStyle: "numeric"` 和 `targetLength.unit: "characters"`。支持的章节为 `executive_summary`、`scope_and_method`、`technology_overview`、`paper_landscape`、`cross_paper_analysis`、`key_findings`、`limitations`、`research_gaps`、`references`、`evidence_appendix`；`research_scope` 和 `directions` 分别是 `scope_and_method` 和 `technology_overview` 的别名。无法表达的要求应先用中文说明限制，再请用户选择，不要承诺不可执行的格式。
 
 ```academic-research-brief-json

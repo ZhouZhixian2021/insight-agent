@@ -47,6 +47,8 @@ Per-paper results distinguish complete, partial and failed extraction. The page 
 
 After a completed first-tier draft, users may select one extracted paper version with retained evidence and invoke the existing `enhanceEvidence` Remote. A synchronous click guard and durable Session selection prevent duplicate dispatch; reading history must succeed before selection is enabled. The panel reads selection, settlement and verified enhancement fragments through the existing Session follow snapshot and backward pages, scoped to the selected run and version. Supplemental excerpts and actual terminal counts are separate from the unchanged original report. Failed or cancelled enhancement can retain committed excerpts even when the terminal failure count is zero. Missing settlement is unconfirmed, not inferred success or automatic retry. Reopening restores durable facts. Unlike detached background research, closing this panel cancels its enhancement RPC. Enhancement does not regenerate, approve or replace the draft, and provides no server progress percentage.
 
+Report issues distinguish delivery blockers from content limitations and unanswered questions. Missing independent review alone does not prevent delivery; ready denotes delivery checks, not semantic approval. Historical reports keep their original status and are not relabeled by the client.
+
 <a id="model-experience"></a>
 ## Model Experience
 

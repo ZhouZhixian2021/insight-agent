@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-09-20-academic-question-synthesis.zh.md)
 
+The mandatory independent-review prerequisite is superseded by [automatic delivery](2026-10-26-academic-automatic-delivery.md); the remaining evidence and analysis decisions stay active.
+
 ## Problem
 
 Verified extraction can still produce a short template that does not answer the approved research questions. Source attribution, cross-paper reasoning and report delivery need distinct responsibilities and observable failures.

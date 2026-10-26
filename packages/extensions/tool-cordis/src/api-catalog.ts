@@ -3627,7 +3627,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicEvaluationView',
-    declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
+    declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly category?: \'delivery\' | \'content\';\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
   },
   {
     name: 'AcademicEvidenceEnhancementView',

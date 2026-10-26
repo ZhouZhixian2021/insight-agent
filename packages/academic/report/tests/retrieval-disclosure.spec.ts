@@ -16,7 +16,7 @@ describe('observed retrieval disclosure', () => {
     const { input } = benchmark()
     const report = generateReport({ ...input, retrievalDisclosure: disclosure })
     expect(report.markdown).toContain('arxiv timeout')
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
     expect(() => generateReport({ ...input, mode: 'final', retrievalDisclosure: disclosure })).toThrow()
   })
   it('keeps unadmitted evidence out of even a draft bibliography', () => {

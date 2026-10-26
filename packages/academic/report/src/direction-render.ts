@@ -96,7 +96,7 @@ export function renderDirections(brief: ResearchBrief, draft: AcademicSynthesisD
     lines.push(`## ${escapeMarkdown(section.title)}（补充分析索引）`, '')
     section.statementIndexes.forEach((index) => { statement(index) })
   }
-  lines.push('## 逐题研究结论', '', '回答状态是模型提议，仍需独立内容审核。', '')
+  lines.push('## 逐题研究结论', '', '回答状态根据本轮分析展示；部分回答和证据缺口不单独阻止交付。', '')
   for (const answer of draft.questionAnswers) {
     lines.push(`### 问题 ${answer.questionIndex + 1}：${escapeMarkdown((brief.questions[answer.questionIndex] as string))}`, '',
       `回答状态：${{ answered: '已提出回答', partial: '部分回答', unanswered: '尚未回答' }[answer.status]}`, '')

@@ -105,7 +105,7 @@ export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; l
         sourceLocators: input.analysisInput.sourceLocators, works: input.analysisInput.academicWorks,
         reviews: [], assessedAt: '2026-09-20T00:00:00Z', limitations: draft.limitations,
         mode: 'draft', synthetic: true, synthesis: draft, coverage: input.coverageSummary })
-      assert.equal(report.evaluation.status, config.limitedDraft ? 'blocked' : 'needs_review')
+      assert.equal(report.evaluation.status, 'blocked')
       if (config.limitedDraft) {
         assert.ok(report.markdown.includes('证据有限的研究草稿'))
         assert.ok(report.markdown.includes('Plan 至少要求 6 篇'))

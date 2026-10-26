@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-09-14-academic-report-slice.zh.md)
 
+The mandatory independent-review prerequisite is superseded by [automatic delivery](2026-10-26-academic-automatic-delivery.md); the remaining evidence and analysis decisions stay active.
+
 ## Problem
 
 Shared Claim types do not define analysis behavior or prove semantic support. A fixed-evidence consumer needs a runnable path from traceable records to an inspectable report without inventing a model adapter, search workflow or approval history.

@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-调用方通过 `prepareAnalysisInput()` 按学术成果和实际内容版本整理证据卡片条目。`analyzeEvidence()` 使用共享 Claim、证据关联和快照生成注明论文归属的方法与发现对比。这个抽取式基线不执行检索、模型请求或持久化，最终交付前必须完成语义审核。
+调用方通过 `prepareAnalysisInput()` 按学术成果和实际内容版本整理证据卡片条目。`analyzeEvidence()` 使用共享 Claim、证据关联和快照生成注明论文归属的方法与发现对比。这个抽取式基线不执行检索、模型请求或持久化，不表示已经通过独立语义审核。
 
 ## 目录
 
@@ -31,7 +31,7 @@ kind: "package-library"
 
 证据准入也返回供有界补选使用的 `usableWorkIds`，未满足 Plan 下限时仍返回该值。它列出有准入证据的独立论文，不纳入仅下载成功或仅被范围判断接受的论文。
 
-`validateSynthesisRequirements()` 检查拟议报告要求，不授予批准状态；返回支持的章节，或逐项指出不支持的语言、引用格式、篇幅单位、章节及版本状态。`synthesisSections()` 还要求当前计划已获批准。两者均不改写 Brief。
+`validateSynthesisRequirements()` 检查拟议报告要求，不授予批准状态；返回支持的章节，或逐项指出不支持的语言、引用格式、章节及版本状态。`synthesisSections()` 还要求当前计划已获批准。两者均不改写 Brief。
 
 `prepareSynthesisInput()` 按批准的论文与全文下限准入版本、定位和哈希一致的证据。`parseSynthesisDraft()` 拒绝无效 JSON、错误 Brief 版本、无效的问题/章节结构以及超过 12 条陈述的草稿。一个问题最多引用两条陈述，一条陈述最多引用三项代表性证据。不合格段落隔离到主机生成的 `rejectedStatements`，保留从零开始的原始序号和原因；合格段落重新编号，受影响的问题覆盖状态降级，空缺章节说明证据不足。未知证据、仅背景引用或独立论文支持不足不会变成合格结论。`synthesisPrompt()` 要求问题与章节复用陈述，并把本轮缺口写入限制或缺失原因。`compactSynthesisPrompt()` 保留批准的问题、论文身份和已核验摘录，同时移除重复的版本、定位与卡片结构，供输出达到上限后执行一次恢复尝试。整份已完成响应未通过结构校验时，`synthesisRepairPrompt()` 复用已经准入的完整或精简输入，加入不含原响应文本的解析诊断，并要求返回完整替代 JSON。`synthesisAnalysis()` 仅为至少两篇独立论文支持的结论创建共享 Claim，单篇解释仍是来源陈述。参见[洞察分析决策](../../../.agents/notes/implemented/architecture/2026-09-20-academic-question-synthesis.zh.md)。
 

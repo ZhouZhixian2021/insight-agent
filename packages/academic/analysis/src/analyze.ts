@@ -28,7 +28,7 @@ export function analyzeEvidence(input: AnalysisInput, brief: ResearchBrief, crea
   if (!isExecutableResearchBrief(brief)) throw new Error('Research brief requires approval for its current version.')
   const prepared = prepareAnalysisInput(input)
   const limitations = ['Extractive baseline only: no performance ranking, field-wide consensus, trend or research-gap inference.',
-    'Generated comparisons require semantic review before final publication.']
+    'Generated comparisons have not undergone independent semantic review.']
   const selected = prepared.works.flatMap((work) => {
     const canonical = work.versions.find(v => v.version.workVersionId === work.work.canonicalVersionId)
     const version = canonical ?? (work.versions.length === 1 ? work.versions[0] : undefined)

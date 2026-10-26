@@ -318,7 +318,7 @@ describe('durable academic model extraction', () => {
     if (mode === 'partial') {
       expect(result.report?.markdown).not.toContain('Unsupported paragraph')
       expect(result.report?.markdown).toContain('部分回答')
-      expect(result.report?.evaluation.status).toBe('needs_review')
+      expect(result.report?.evaluation.status).toBe('blocked')
       expect(result.report?.evaluation.issues.some(issue => issue.code === 'unmet_plan')).toBe(true)
       expect(result.analysis?.claims).toHaveLength(1)
     } else expect(result.report).toBeNull()
@@ -375,7 +375,7 @@ describe('durable academic model extraction', () => {
     expect(result.papers.map(paper => paper.status)).toEqual(['extracted', 'extracted'])
     expect(result.analysis?.claims).toHaveLength(1)
     expect(result.report?.mode).toBe('draft')
-    expect(result.report?.evaluation.status).toBe('needs_review')
+    expect(result.report?.evaluation.status).toBe('blocked')
     expect(result.report?.evidence).toHaveLength(2)
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(draft.events).toEqual(['search', 'select', 'fetch:a', 'fetch:b'])
