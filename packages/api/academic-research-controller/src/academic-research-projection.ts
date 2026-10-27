@@ -6,6 +6,7 @@ import { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { AcademicSearchPlanEvent } from '@deepseek-ai/dsh-academic-workflow'
 import type { AcademicBackgroundRunView } from './types.ts'
+import { applyBackgroundRunProgress, applyBackgroundRunQ6Update } from './background-run.ts'
 
 declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionStateMap {
@@ -67,7 +68,7 @@ const EMPTY_STATE: AcademicResearchProjectionState = {
 /** The Academic Research host projection registered by its controller plugin. */
 export const academicResearchProjectionDefinition: ProjectionDefinition<'academicResearch'> = {
   key: 'academicResearch',
-  stateVersion: 1,
+  stateVersion: 3,
   stateSchema,
   init: header => ({ ...EMPTY_STATE, sessionId: String(header.id) }),
   apply: (state, event) => {
@@ -121,6 +122,16 @@ export const academicResearchProjectionDefinition: ProjectionDefinition<'academi
           ? [...state.backgroundRunOrder, key] : state.backgroundRunOrder
         return { ...state, backgroundRunOrder,
           backgroundRuns: { ...state.backgroundRuns, [key]: event.data } }
+      }
+      case 'academic/background-run-progress': {
+        const key = event.data.backgroundRunId
+        const view = applyBackgroundRunProgress(state.backgroundRuns[key], event.data)
+        return { ...state, backgroundRuns: { ...state.backgroundRuns, [key]: view } }
+      }
+      case 'academic/background-run-q6-update': {
+        const key = event.data.backgroundRunId
+        const view = applyBackgroundRunQ6Update(state.backgroundRuns[key], event.data)
+        return { ...state, backgroundRuns: { ...state.backgroundRuns, [key]: view } }
       }
       default:
         return state

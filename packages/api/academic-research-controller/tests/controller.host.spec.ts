@@ -847,6 +847,7 @@ describe('AcademicResearchController', () => {
     let settle: ((value: Awaited<ReturnType<RunAcademicResearchDraft>>) => void) | undefined
     runAcademicResearchDraft.mockImplementation(request => new Promise((resolve) => {
       request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 1))
       settle = resolve
     }))
     const caller = new AbortController()
@@ -875,6 +876,97 @@ describe('AcademicResearchController', () => {
       { backgroundRunId: started.backgroundRunId, state: 'completed' },
     ])
     expect(fixture.sessionEvents.map(([type]) => type)).toContain('academic/background-run-state')
+    const progressEvents = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-progress')
+    expect(progressEvents).toHaveLength(1)
+    expect(progressEvents[0]?.[1]).toMatchObject({
+      sessionId: fixture.sessionId, backgroundRunId: started.backgroundRunId,
+      retrievalRunId: observed.retrievalRunId, progress: { sequence: 1 },
+    })
+    expect(progressEvents[0]?.[1]).not.toHaveProperty('q6')
+    expect(progressEvents[0]?.[1]).not.toHaveProperty('result')
+  })
+
+  it('persists new Q6 observations as metadata updates until an actual candidate fact changes', async () => {
+    const fixture = await harness()
+    const approved = await fixture.controller.plan(fixture.sessionId)
+    const observed = { ...retrievalRun(), researchBriefId: approved.researchBriefId }
+    const seed = queryWorkflowObservation(observed.retrievalRunId)
+    const record = draftFixture(1).records[0]
+    if (record === undefined) throw new Error('the controller fixture needs one candidate')
+    const first: AcademicQueryWorkflowObservation = {
+      ...seed, plan: { ...seed.plan, researchBriefId: approved.researchBriefId },
+      works: [record.academicWork], versions: [record.workVersion],
+      assessments: [{ academicWorkId: record.academicWork.academicWorkId,
+        abstract: { status: 'available', value: 'Uses reranking.' },
+        keywords: { status: 'available', value: ['reranking'] }, fulltextAvailability: { status: 'resolvable' },
+        matchedQuestions: approved.questions, contributionSignals: ['core_method'], topicRelevance: 1,
+        evidencePotential: 1, methodMatch: 1, sourceQuality: 1, recency: 1,
+        inclusionRuleMatches: [], exclusionRuleMatches: [], diversityTags: [], reasons: ['Synthetic candidate fact.'] }],
+      ranking: { ...seed.ranking, researchBriefId: approved.researchBriefId,
+        evaluations: [{ schemaVersion: 1, academicWorkId: record.academicWork.academicWorkId,
+          workVersionId: record.workVersion.workVersionId, discoveredBy: [], classification: 'core_method',
+          hardFilter: { status: 'eligible', reasons: [] },
+          score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
+            workTypeFit: 8, sourceQuality: 7, recency: 5, fulltextAvailability: 5, total: 100 },
+          priority: 'p0', matchedQuestions: approved.questions, fulltextAvailability: { status: 'resolvable' },
+          diversityTags: [], decisionReasons: ['Synthetic ranked candidate.'] }],
+        queues: { p0: [record.workVersion.workVersionId], p1: [], p2: [], excluded: [] } },
+    }
+    const second: AcademicQueryWorkflowObservation = { ...structuredClone(first), sequence: 1,
+      observedAt: '2026-10-09T00:00:01.000Z',
+      coverage: { schemaVersion: 1, researchBriefId: approved.researchBriefId, researchBriefVersion: 1,
+        assessedAt: '2026-10-09T00:00:01.000Z', questions: approved.questions.map(question => ({
+          question, status: 'uncovered', supportingWorkIds: [], evidenceIds: [], gaps: ['Evidence is pending.'],
+        })), evidenceRequirementsMet: false, allQuestionsCovered: false },
+      decisions: [{ retrievalRunId: observed.retrievalRunId, batchIndex: 1, action: 'schedule_batch',
+        workVersionIds: [record.workVersion.workVersionId], searchQuestions: [], reason: null }],
+      settlements: [{ retrievalRunId: observed.retrievalRunId, batchIndex: 1, admittedEvidence: 0,
+        completedAt: '2026-10-09T00:00:01.000Z' }],
+    }
+    const changed: AcademicQueryWorkflowObservation = { ...structuredClone(second), sequence: 2,
+      works: second.works.map(work => ({ ...work, title: 'Changed candidate title' })) }
+    const result: Awaited<ReturnType<RunAcademicResearchDraft>> = {
+      synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: observed, queryWorkflow: changed, papers: [], failures: [], analysis: null, report: null,
+    }
+    const completion = Promise.withResolvers<Awaited<ReturnType<RunAcademicResearchDraft>>>()
+    let notify: ((observation: AcademicQueryWorkflowObservation) => void) | undefined
+    runAcademicResearchDraft.mockImplementation((request) => {
+      notify = request.adapters.onQueryWorkflow
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      notify?.(first)
+      return completion.promise
+    })
+    try {
+      const started = await fixture.controller.startBackgroundRun({ sessionId: fixture.sessionId,
+        researchBriefId: approved.researchBriefId, synthetic: false }, fixture.signal)
+      await vi.waitFor(() => { expect(notify).toBeTypeOf('function') })
+      const completeBefore = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state').length
+      notify?.(second)
+      expect(fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state')).toHaveLength(completeBefore)
+      const updates = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-q6-update')
+      expect(updates).toHaveLength(1)
+      expect(updates[0]?.[1]).toMatchObject({ sessionId: fixture.sessionId, backgroundRunId: started.backgroundRunId,
+        researchBriefId: approved.researchBriefId, retrievalRunId: observed.retrievalRunId,
+        q6: { sequence: 1, coverage: { state: 'available', value: second.coverage },
+          batches: { state: 'available', value: { decisions: second.decisions, settlements: second.settlements } } } })
+      expect(updates[0]?.[1]).not.toHaveProperty('q6.candidates')
+      expect(updates[0]?.[1]).not.toHaveProperty('result')
+      expect((await fixture.controller.getBackgroundRun(started)).q6).toMatchObject({
+        sequence: 1, candidates: { state: 'available', value: { items: [{ work: record.academicWork }] } },
+      })
+      notify?.(changed)
+      const complete = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state')
+      expect(complete).toHaveLength(completeBefore + 1)
+      expect(complete.at(-1)?.[1]).toMatchObject({ q6: { sequence: 2,
+        candidates: { state: 'available', value: { items: [{ work: { title: 'Changed candidate title' } }] } } } })
+      expect(fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-q6-update')).toHaveLength(1)
+      completion.resolve(result)
+      await vi.waitFor(async () => {
+        expect((await fixture.controller.getBackgroundRun(started)).state).toBe('completed')
+      })
+      expect(runAcademicResearchDraft).toHaveBeenCalledOnce()
+    } finally { completion.resolve(result) }
   })
 
   it('aborts background work only through an explicit cancellation request', async () => {

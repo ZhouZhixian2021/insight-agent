@@ -22,6 +22,8 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `SessionHeader` | header | `1a3440e3577382704d42a6263aa463504eb74c566734a55e9503a63efcd02445` | [`SessionHeader`](#persistence-type-sha256-1a3440e3577382704d42a6263aa463504eb74c566734a55e9503a63efcd02445) |
 | `JsonlHeaderLine` | header | `18ee62b8900a4c3d046700f05d7a4d49d6cab2a660a020c87481d1603dd8bd4f` | [`HeaderLine`](#persistence-type-sha256-18ee62b8900a4c3d046700f05d7a4d49d6cab2a660a020c87481d1603dd8bd4f) |
 | `SessionEventEnvelope` | envelope | `5776e5553ff2dfe3f5bc202dbb1e7c9f93e35a531aebb7764c23b2b6153b2ccc` | [`union (3 variants)`](#persistence-type-sha256-5776e5553ff2dfe3f5bc202dbb1e7c9f93e35a531aebb7764c23b2b6153b2ccc) |
+| `event:academic/background-run-progress` | event | `9284abbbf19e64169ff34e4ff19520423a0d61e5fa9f02b3c1b7f660f7434b9a` | [`{ type: "academic/background-run-progress" }`](#persistence-type-sha256-9284abbbf19e64169ff34e4ff19520423a0d61e5fa9f02b3c1b7f660f7434b9a) |
+| `event:academic/background-run-q6-update` | event | `a81b174749513e6b65d02ba22aea76dece987e7828503eff76c14537f1315d50` | [`{ type: "academic/background-run-q6-update" }`](#persistence-type-sha256-a81b174749513e6b65d02ba22aea76dece987e7828503eff76c14537f1315d50) |
 | `event:academic/background-run-state` | event | `11da5f373e5de878797edcf915de0decc322a1cfeab6665867e21a45e101ee58` | [`{ type: "academic/background-run-state" }`](#persistence-type-sha256-11da5f373e5de878797edcf915de0decc322a1cfeab6665867e21a45e101ee58) |
 | `event:academic/candidate-batch-decision` | event | `f68426d9cee9399d34d0b6ab6f59cc2115666e1b04fafa66c698dfb2aab10e0f` | [`{ type: "academic/candidate-batch-decision" }`](#persistence-type-sha256-f68426d9cee9399d34d0b6ab6f59cc2115666e1b04fafa66c698dfb2aab10e0f) |
 | `event:academic/candidate-batch-settlement` | event | `4ae34045ce25370b647535c5788f2905a33750bf8f9ca4be0cd5ce4ea1f963e6` | [`{ type: "academic/candidate-batch-settlement" }`](#persistence-type-sha256-4ae34045ce25370b647535c5788f2905a33750bf8f9ca4be0cd5ce4ea1f963e6) |
@@ -185,16 +187,38 @@ Sources: [`packages/core/session/src/types.ts:432`](../packages/core/session/src
 
 ### `academic/*`
 
+<a id="academicbackground-run-progress--log-only"></a>
+
+#### `academic/background-run-progress` — log-only
+
+```ts persistence-catalog
+/** Progress after a complete checkpoint; required to recover the latest detached-run view. */
+'academic/background-run-progress': AcademicBackgroundRunProgress
+```
+
+Source: [`packages/api/academic-research-controller/src/background-run.ts:13`](../packages/api/academic-research-controller/src/background-run.ts)
+
+<a id="academicbackground-run-q6-update--log-only"></a>
+
+#### `academic/background-run-q6-update` — log-only
+
+```ts persistence-catalog
+/** Q6 metadata after a checkpoint with identical candidates; required for exact recovery. */
+'academic/background-run-q6-update': AcademicBackgroundRunQ6Update
+```
+
+Source: [`packages/api/academic-research-controller/src/background-run.ts:15`](../packages/api/academic-research-controller/src/background-run.ts)
+
 <a id="academicbackground-run-state--log-only"></a>
 
 #### `academic/background-run-state` — log-only
 
 ```ts persistence-catalog
-/** Latest complete detached-run view; replay uses the last event for each run ID. */
+/** Complete detached-run checkpoint; subsequent progress retains its Q6 and lifecycle facts. */
 'academic/background-run-state': AcademicBackgroundRunView
 ```
 
-Source: [`packages/api/academic-research-controller/src/background-run.ts:9`](../packages/api/academic-research-controller/src/background-run.ts)
+Source: [`packages/api/academic-research-controller/src/background-run.ts:11`](../packages/api/academic-research-controller/src/background-run.ts)
 
 <a id="academiccandidate-batch-decision--log-only"></a>
 
@@ -1640,6 +1664,22 @@ SHA-256: `60e6c53f47b7250849614717d77c5e9999cdf26bfd915fb0c04a3aa3ec6126c1`
 SHA-256: `8c67cffb2e8d876b77e05b0cb8a17c0f0fb8e7f726bd802a807fd11157d7c135`
 
 `"academic-workflow"`
+
+<a id="persistence-type-sha256-ee5c3bc8effb78e35e9ba3fe38290eb091de76e18cc9a1fd5c5bc4760457b1d5"></a>
+
+### `"academic/background-run-progress"`
+
+SHA-256: `ee5c3bc8effb78e35e9ba3fe38290eb091de76e18cc9a1fd5c5bc4760457b1d5`
+
+`"academic/background-run-progress"`
+
+<a id="persistence-type-sha256-4b4ae8789682452eec94475460b1bbf26c789b62b411400e54bde2d9ff400caa"></a>
+
+### `"academic/background-run-q6-update"`
+
+SHA-256: `4b4ae8789682452eec94475460b1bbf26c789b62b411400e54bde2d9ff400caa`
+
+`"academic/background-run-q6-update"`
 
 <a id="persistence-type-sha256-069cddc9d6cc26f2be7631d33a95c78c87ba7be06daf52d2066a4e40c800ff60"></a>
 
@@ -5284,6 +5324,80 @@ Sources: [`packages/academic/model/src/types.ts:295`](../packages/academic/model
 | `schemaVersion` | required | `1` |
 | `sourceLocatorId` | required | `string` |
 | `workVersionId` | required | `string` |
+
+<a id="persistence-type-sha256-f90573da9a543aa7b36270ee026d84fa86d130441b2948248ab200d528421596"></a>
+
+<a id="persistence-type-academicbackgroundrunprogress"></a>
+
+<a id="persistence-type-packagesapiacademic-research-controllersrcbackground-runtsacademicbackgroundrunprogress"></a>
+
+### `AcademicBackgroundRunProgress`
+
+SHA-256: `f90573da9a543aa7b36270ee026d84fa86d130441b2948248ab200d528421596`
+
+Sources: [`packages/api/academic-research-controller/src/background-run.ts:20`](../packages/api/academic-research-controller/src/background-run.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `backgroundRunId` | required | `string` |
+| `progress` | required | [`union (2 variants)`](#persistence-type-sha256-c44f211bae3dc4e90952147a885f2fdfd3f5073c4f14005a9984b5c580f70583) |
+| `researchBriefId` | required | `string` |
+| `retrievalRunId` | required | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
+| `schemaVersion` | required | `1` |
+| `sessionId` | required | `string` |
+| `updatedAt` | required | `string` |
+
+<a id="persistence-type-sha256-8eb3926040bd5cbcb4121d8835bd8cbff47edff72307bf6e88cb576881b3d6b5"></a>
+
+<a id="persistence-type-academicbackgroundrunq6metadata"></a>
+
+<a id="persistence-type-packagesapiacademic-research-controllersrcbackground-runtsacademicbackgroundrunq6metadata"></a>
+
+### `AcademicBackgroundRunQ6Metadata`
+
+SHA-256: `8eb3926040bd5cbcb4121d8835bd8cbff47edff72307bf6e88cb576881b3d6b5`
+
+Sources: [`packages/api/academic-research-controller/src/background-run.ts:31`](../packages/api/academic-research-controller/src/background-run.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `batches` | required | [`union (4 variants)`](#persistence-type-sha256-d4d2b5913faefc769d85073b876266c4a536bbad06ba17da1a28d1c707a797de) |
+| `coverage` | required | [`union (4 variants)`](#persistence-type-sha256-147ec6d0f1fcc5caf9c223cf6225b02080fd253e7b31d18296a033157508a709) |
+| `limitations` | required | [`string[]`](#persistence-type-sha256-93c33d9687613293f8c95d46c4d922fe9ceae83b84c384beff5c3315abe005f2) |
+| `plan` | required | [`HybridSearchPlan`](#persistence-type-sha256-9599172088259e61fff813ccf0c16c0bca7c581378130acf0c961dd199faa88a) |
+| `researchBriefId` | required | `string` |
+| `researchBriefVersion` | required | `number` |
+| `retrievalRunId` | required | `string` |
+| `rounds` | required | [`union (4 variants)`](#persistence-type-sha256-f58100a539463336bd03a3c70c986c6696de9455afa69d1f3feaa8dc82d2c726) |
+| `schemaVersion` | required | `1` |
+| `sequence` | required | `number` |
+| `sessionId` | required | `string` |
+| `status` | required | [`union (3 variants)`](#persistence-type-sha256-7396450283c2f4ab38bb0d34efd10efa722b4f49a6511fa31bc8c022add7e262) |
+| `stopDecision` | required | [`union (4 variants)`](#persistence-type-sha256-90bfedb8da9002706a324f5ba2e0e55d15bb9a3d6354c6ae66394bedae016560) |
+| `updatedAt` | required | `string` |
+
+<a id="persistence-type-sha256-b1d7f988340bf77ea815bc7a37e7c129664b4dd673ca72d7c858abf970dda4d8"></a>
+
+<a id="persistence-type-academicbackgroundrunq6update"></a>
+
+<a id="persistence-type-packagesapiacademic-research-controllersrcbackground-runtsacademicbackgroundrunq6update"></a>
+
+### `AcademicBackgroundRunQ6Update`
+
+SHA-256: `b1d7f988340bf77ea815bc7a37e7c129664b4dd673ca72d7c858abf970dda4d8`
+
+Sources: [`packages/api/academic-research-controller/src/background-run.ts:34`](../packages/api/academic-research-controller/src/background-run.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `backgroundRunId` | required | `string` |
+| `progress` | required | [`union (2 variants)`](#persistence-type-sha256-c44f211bae3dc4e90952147a885f2fdfd3f5073c4f14005a9984b5c580f70583) |
+| `q6` | required | [`AcademicBackgroundRunQ6Metadata`](#persistence-type-sha256-8eb3926040bd5cbcb4121d8835bd8cbff47edff72307bf6e88cb576881b3d6b5) |
+| `researchBriefId` | required | `string` |
+| `retrievalRunId` | required | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
+| `schemaVersion` | required | `1` |
+| `sessionId` | required | `string` |
+| `updatedAt` | required | `string` |
 
 <a id="persistence-type-sha256-d26f3c5f8e8a2dcf4b5151ba27490278ec9b847f60b3ed505530ffcf97e869e8"></a>
 
@@ -15833,6 +15947,38 @@ Sources: [`packages/core/session/src/types.ts:289`](../packages/core/session/src
 | Property | Presence | Type |
 |---|---|---|
 | `turn` | required | `number` |
+
+<a id="persistence-type-sha256-9284abbbf19e64169ff34e4ff19520423a0d61e5fa9f02b3c1b7f660f7434b9a"></a>
+
+<a id="persistence-type-eventacademicbackground-run-progress"></a>
+
+### `{ type: "academic/background-run-progress" }`
+
+SHA-256: `9284abbbf19e64169ff34e4ff19520423a0d61e5fa9f02b3c1b7f660f7434b9a`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`AcademicBackgroundRunProgress`](#persistence-type-sha256-f90573da9a543aa7b36270ee026d84fa86d130441b2948248ab200d528421596) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"academic/background-run-progress"` |
+
+<a id="persistence-type-sha256-a81b174749513e6b65d02ba22aea76dece987e7828503eff76c14537f1315d50"></a>
+
+<a id="persistence-type-eventacademicbackground-run-q6-update"></a>
+
+### `{ type: "academic/background-run-q6-update" }`
+
+SHA-256: `a81b174749513e6b65d02ba22aea76dece987e7828503eff76c14537f1315d50`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`AcademicBackgroundRunQ6Update`](#persistence-type-sha256-b1d7f988340bf77ea815bc7a37e7c129664b4dd673ca72d7c858abf970dda4d8) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"academic/background-run-q6-update"` |
 
 <a id="persistence-type-sha256-11da5f373e5de878797edcf915de0decc322a1cfeab6665867e21a45e101ee58"></a>
 

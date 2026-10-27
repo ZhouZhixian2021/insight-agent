@@ -31,7 +31,7 @@ import { hybridRetrievalView } from './hybrid-view.ts'
 import * as academicPlanValidation from './plan-validation.ts'
 import { AcademicResearchRunQueue } from './run-stream.ts'
 import { academicQ6Projection } from './q6-projection.ts'
-import { AcademicBackgroundRuns, backgroundRunFromProjection, backgroundRunsFromProjection } from './background-run.ts'
+import { AcademicBackgroundRuns, backgroundRunFromProjection, backgroundRunsFromProjection, createBackgroundRunPersistence } from './background-run.ts'
 import {
   academicResearchProjectionDefinition,
   recoveryEventsOf,
@@ -345,9 +345,11 @@ export class AcademicResearchController extends TypertRemoteService {
         { reason: 'academic research already has an active background run' })
     }
     signal.throwIfAborted()
-    const persist = (view: AcademicBackgroundRunView) => {
-      found.agent.session.append('academic/background-run-state', view)
-    }
+    const persist = createBackgroundRunPersistence(
+      (view) => { found.agent.session.append('academic/background-run-state', view) },
+      (progress) => { found.agent.session.append('academic/background-run-progress', progress) },
+      (update) => { found.agent.session.append('academic/background-run-q6-update', update) },
+    )
     return this.backgroundRuns.start({ sessionId: request.sessionId, researchBriefId: request.researchBriefId,
       startedAt: new Date().toISOString() }, persist, (taskSignal, update) => this.execute(request, taskSignal,
       (progress) => { update({ retrievalRunId: progress.retrievalRunId,

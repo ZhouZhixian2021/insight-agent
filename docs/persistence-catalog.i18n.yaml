@@ -9,8 +9,8 @@
   en: 1387c4505dde2faf
   zh: 48570fa1c13d6910
 /session-persistence-event-catalog/persistence-type-fingerprints:
-  en: ff9886a5cb901c8e
-  zh: 217630878cf8d972
+  en: 63d6563a399905e8
+  zh: 4bfd8b97be92b3cf
 /session-persistence-event-catalog/event-envelope:
   en: 689f781d95689e20
   zh: 602f6a7f0835d698
@@ -18,11 +18,17 @@
   en: f4776ba3d0fd53ce
   zh: e86769f50a69055a
 /session-persistence-event-catalog/events/academic:
-  en: d34dd9721b2b3ea1
-  zh: d34dd9721b2b3ea1
+  en: 333401ff7c3275bb
+  zh: 333401ff7c3275bb
+/session-persistence-event-catalog/events/academic/academic-background-run-progress-log-only:
+  en: 0696b1ab9f0ce88b
+  zh: 5a6d95571284356d
+/session-persistence-event-catalog/events/academic/academic-background-run-q6-update-log-only:
+  en: a0d41e77826dd06c
+  zh: 74a0f4b4f5ea1b2a
 /session-persistence-event-catalog/events/academic/academic-background-run-state-log-only:
-  en: 195f35c0d28621f4
-  zh: 2b86e86be302c27e
+  en: a746f2add12db79a
+  zh: c4672c60d1b7ab3b
 /session-persistence-event-catalog/events/academic/academic-candidate-batch-decision-log-only:
   en: 39bdc159fa208f7b
   zh: 9b115cbbeda8b7b6
@@ -393,8 +399,14 @@
   en: b7d9a2d5cae4e1d8
   zh: b7d9a2d5cae4e1d8
 /session-persistence-event-catalog/resolved-persistence-types/academic-workflow:
-  en: 4f6c6ae382214946
-  zh: 4f6c6ae382214946
+  en: 73f853af8d973a42
+  zh: 73f853af8d973a42
+/session-persistence-event-catalog/resolved-persistence-types/academic-background-run-progress:
+  en: fd5ee80cc3eaa17d
+  zh: fd5ee80cc3eaa17d
+/session-persistence-event-catalog/resolved-persistence-types/academic-background-run-q6-update:
+  en: 7faa6de9fbf78346
+  zh: 7faa6de9fbf78346
 /session-persistence-event-catalog/resolved-persistence-types/academic-background-run-state:
   en: ab18f23293c885a6
   zh: ab18f23293c885a6
@@ -1752,8 +1764,17 @@
   en: 003ef30f28677946
   zh: 003ef30f28677946
 /session-persistence-event-catalog/resolved-persistence-types/abstractlocator:
-  en: c4aff880a0db3ab7
-  zh: 5e84d15a53f08471
+  en: d362335b8de3a5aa
+  zh: aa257d677fb04bb8
+/session-persistence-event-catalog/resolved-persistence-types/academicbackgroundrunprogress:
+  en: b983b4558ad0cd1f
+  zh: bc6324ac7545182a
+/session-persistence-event-catalog/resolved-persistence-types/academicbackgroundrunq6metadata:
+  en: e61b081dd9e92bb7
+  zh: 9a6d89f9d2ab660f
+/session-persistence-event-catalog/resolved-persistence-types/academicbackgroundrunq6update:
+  en: 2fa06b3bfd9788dc
+  zh: 95867138ad78e4c6
 /session-persistence-event-catalog/resolved-persistence-types/academicbackgroundrunview:
   en: 3c32db927bb605d3
   zh: eeacb919634d442d
@@ -3753,8 +3774,14 @@
   en: 06e6c1837e2b5d50
   zh: 37cebfe3e41294ec
 /session-persistence-event-catalog/resolved-persistence-types/turn:
-  en: 88324add8bbb5573
-  zh: 2c3712927076bc8e
+  en: 3164489833537807
+  zh: e03126f15ad34e0e
+/session-persistence-event-catalog/resolved-persistence-types/type-academic-background-run-progress:
+  en: b6f856f987760ed5
+  zh: b2034a7c9d41fe8c
+/session-persistence-event-catalog/resolved-persistence-types/type-academic-background-run-q6-update:
+  en: 5417387cd7332444
+  zh: ac141f64358a09f3
 /session-persistence-event-catalog/resolved-persistence-types/type-academic-background-run-state:
   en: 035aee1713f041bc
   zh: c71d11a4eb8f2143

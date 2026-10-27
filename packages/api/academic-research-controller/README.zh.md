@@ -60,7 +60,15 @@ kind: "package-reference"
 
 同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
 
-需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。每次完整状态（包括最终结果和取消意图）写入 Session。Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
+需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。
+
+每个订阅者只保留一份尚未消费的最新视图。消费较慢时，新的实时更新替换待消费视图，因此中间实时帧可能被合并；持久化进度事件不会因此丢失。订阅结束前会交付待消费的终态视图；中止订阅会释放观察者及待消费视图，不会取消研究。
+
+普通进度继续使用必读的 `academic/background-run-progress` 事件，保持原有身份、时间、检索运行 ID 和进度载荷。Q6 的 Session／运行／Brief 绑定相同且候选内容相等时，包括重新创建但内容相等的候选对象，必读的 `academic/background-run-q6-update` 事件保存进度以及除 `candidates` 外的完整 Q6 元数据。读取器从匹配的完整基底继承候选。完整的 `academic/background-run-state` 检查点保留原有 `schemaVersion: 1` 载荷，在初始化、候选内容变化、绑定或检索运行 ID 变化、取消意图和终态结算时写入。
+
+读取器将三类事件折叠为相同的完整 Remote 视图；旧完整检查点和不含 Q6 元数据的旧进度事件继续可读。只认识旧 progress 标签的读取器会拒绝新的必读 Q6-update 标签，不会静默丢失元数据。学术投影缓存状态版本为 3，Session 写入格式仍为 4。[兼容记录](../../../docs/persistence-changes/2026-10-26-academic-background-progress.zh.md)说明了两类必读轻量事件。
+
+Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
 
 原生计划结果与 `tool/ptc-dispatch` 结算必须具有明确的 `approved: true` 结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史结果需要重新评审，原存储记录保持不变。PTC 批准身份直接使用记录中的 `subCallId`，不作改写。读取器消费标准格式迁移后的当前逻辑事件，不接受已退役的 `tool/code-dispatch` 标签。Web 默认使用原生工具，其既有进程级 `DSH_TOOLS_MODE=ptc` 设置也会作用于学术预设。候选模型请求声明 `academic-candidate-review` 消息来源。
 
@@ -87,6 +95,8 @@ kind: "package-reference"
 - 重新评审会建立新的 Brief 身份，不授权继续执行绑定其他 Brief ID 或版本的运行。历史格式 2 的学术日志包含[已发布迁移分类](../../session/session-format-v2-to-v3/src/payload.ts)之外的必需扩展事件。完整导入需要审计这些事件及序号引用的迁移；仅通过批准读取检查不能证明导入兼容。不得从文本推断批准、丢弃必需事件或替换历史 Brief 身份来绕过失败。
 
 <a id="known-limitations-and-deferred-work"></a>
+
+- **已有大体量历史保持不变**——轻量更新避免重复内容相等的候选，包括 Q6 重建为新对象的情况。它们不会压缩历史日志，也不约束频繁候选内容变化的成本。重新打开超大历史时的内存峰值和真实 Web 长时运行验收仍未验证。
 
 - CVF、ACL Anthology 与 PMLR 只搜索 Web 组合配置的目录页；新增会议或论文集只需修改配置。
 - 现有 `runStream` 仍是调用方拥有的一次性操作。独立后台接口已经提供，但正式 Web 页面尚未迁移。服务重启后未结算后台任务标为 `interrupted`；从 Q5 检查点恢复是一次显式新操作。跨服务重启自动续跑和检索级重试仍留待后续。
