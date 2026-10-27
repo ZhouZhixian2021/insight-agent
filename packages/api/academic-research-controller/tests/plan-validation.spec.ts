@@ -23,6 +23,15 @@ function retrievalOf(payload: Record<string, unknown>): Record<string, unknown> 
   return ((payload.searchPlan as Record<string, unknown>[])[0]!.retrieval) as Record<string, unknown>
 }
 
+function screeningPayload(alias: string): Record<string, unknown> {
+  const payload = templatePayload()
+  payload.candidateScreening = {
+    questions: [{ question: '<中文研究问题>', concepts: [[alias]] }],
+    methods: [['tool use', '工具调用']], evidence: [['benchmark', '基准']], contributions: [],
+  }
+  return payload
+}
+
 describe('Academic plan compatibility before review', () => {
   it('keeps the fixed A-PE1 review decisions aligned with an executable plan', () => {
     const visible = pe1Plan.slice(0, pe1Plan.indexOf('## 系统执行信息'))
@@ -94,6 +103,44 @@ describe('Academic plan compatibility before review', () => {
     delete (payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks
     for (const search of payload.searchPlan as Record<string, unknown>[]) delete search.retrieval
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
+
+  it.each(['planning 规划', 'tool use 工具调用', '规划 planning', 'benchmark（基准）', '基准 (benchmark)'])(
+    'rejects a bilingual annotation before review: %s', (alias) => {
+      expect(() => { validateAcademicPlan(planWithPayload(screeningPayload(alias))) })
+        .toThrow('candidateScreening.questions[0].concepts[0][0] 包含拼接的中英文别名')
+    },
+  )
+
+  it.each(['methods', 'evidence', 'contributions'] as const)(
+    'diagnoses the exact malformed %s cue', (field) => {
+      const payload = screeningPayload('planning')
+      const screening = payload.candidateScreening as Record<string, unknown>
+      screening[field] = field === 'contributions'
+        ? [{ classification: 'core_method', concepts: [['planning 规划']] }]
+        : [['planning 规划']]
+      expect(() => { validateAcademicPlan(planWithPayload(payload)) })
+        .toThrow(`candidateScreening.${field}${field === 'contributions' ? '[0].concepts' : ''}[0][0]`)
+    },
+  )
+
+  it.each(['tool use', 'reinforcement learning', 'LLM智能体', '基于 LLM 的规划', '智能体规划'])(
+    'keeps a complete term unchanged: %s', (alias) => {
+      const plan = planWithPayload(screeningPayload(alias))
+      expect(() => { validateAcademicPlan(plan) }).not.toThrow()
+      expect(plan).toContain(alias)
+    },
+  )
+
+  it('accepts separate bilingual aliases and preserves concept groups', () => {
+    const payload = screeningPayload('planning')
+    const screening = payload.candidateScreening as Record<string, unknown>
+    screening.questions = [{ question: '<中文研究问题>', concepts: [['agent', '智能体'], ['planning', '规划']] }]
+    const before = JSON.stringify(payload)
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+    expect(JSON.stringify(payload)).toBe(before)
+    expect(template).toContain('["planning", "规划"]')
+    expect(template).toContain('不得拼成')
   })
 
   it.each([
@@ -205,6 +252,9 @@ describe('Academic plan compatibility before review', () => {
       const rejected = await call(unsupported)
       expect(rejected.isError).toBe(true)
       expect(rejected.content[0]).toHaveProperty('text', expect.stringContaining('includedWorkTypes'))
+      const malformedAlias = await call(planWithPayload(screeningPayload('planning 规划')))
+      expect(malformedAlias.isError).toBe(true)
+      expect(malformedAlias.content[0]).toHaveProperty('text', expect.stringContaining('请将同义表达分别写成同组的独立字符串'))
       expect(review).not.toHaveBeenCalled()
       expect(await call(template)).not.toHaveProperty('isError', true)
       expect(await call('# Ordinary coding plan')).not.toHaveProperty('isError', true)

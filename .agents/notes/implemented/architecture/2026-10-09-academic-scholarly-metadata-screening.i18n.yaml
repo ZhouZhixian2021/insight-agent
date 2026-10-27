@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-09-academic-scholarly-metadata-screening.md
-2026-10-09-academic-scholarly-metadata-screening.md: 37739319bce6684b2e55a7408fc7f85904c3f604
-2026-10-09-academic-scholarly-metadata-screening.zh.md: 2fcd70d97bfbd870a145fca2570ba288df4d42fd
+2026-10-09-academic-scholarly-metadata-screening.md: d4a75100d6bda026369e7feb88f98563cc541308
+2026-10-09-academic-scholarly-metadata-screening.zh.md: eac733c7ac8af127b4807b129aa42e4bdc1cc74b
