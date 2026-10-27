@@ -191,8 +191,12 @@ describe.skipIf(process.platform === 'win32')('terminal-bash real shell', () => 
       text: `bash -c 'exec </dev/tty; printf "%s" "$BASHPID" > "$1"; printf "WAITING\\n"; read -r answer; printf "ANSWER=%s\\n" "$answer"' dsh "${readerPidFile}"`,
       submit: true,
     })
-    await waitForOutput(waiting, 'WAITING')
+    // The pid file is written before the child blocks on /dev/tty. Poll that
+    // durable readiness signal instead of racing the operation's transient
+    // output buffer while a loaded CI worker starts bash.
+    await expect.poll(() => existsSync(readerPidFile), { timeout: 8_000 }).toBe(true)
     const result = await waiting.done
+    expect(ctx.terminals.read(agent, created.sessionId, { offset: 0, count: 100 }).text).toContain('WAITING')
     const readerPid = Number(readFileSync(readerPidFile, 'utf8'))
     expect(readerPid).toBeGreaterThan(0)
     expect(result.waitReason).toBe(canReadLinuxProcessSyscall(readerPid) ? 'stdin_read' : 'inferred_idle')
