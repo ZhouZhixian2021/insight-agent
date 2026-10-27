@@ -745,18 +745,6 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/bundle/web-app/presets/academic/skills/academic-insight-report/SKILL.md",
-      "reason": "model-instruction",
-      "matches": [
-        {
-          "kind": "concrete-term",
-          "contextSha256": "e7229e2be5ba07ad9eca73299d5c8ce6037d569e88ea67953396a2f71c8930e0",
-          "count": 1
-        }
-      ]
-    },
-    {
-      "gate": "concrete-term",
       "file": "packages/client/ui-academic-research/src/client/q6-locales.ts",
       "reason": "visible-text",
       "matches": [
@@ -3085,11 +3073,11 @@
       "gate": "repository-reference",
       "file": "z-team_docs/模块分工/academic-candidate-semantic-review-optimization-team-plan.md",
       "reason": "historical-identity",
-      "fileSha256": "62426cfeda16786c16a515ac98f01bd46ff71036fc86ce86b17ae356775efa57",
+      "fileSha256": "6b54f68062eb1ae59a79da0b0d8875ec6bcc15b0b0654ace950ddc4cc171643a",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "97395ed4b75da16cb9f9b4d8486c729cf282c0b7454d519ceb899b767d73ca57",
+          "contextSha256": "e1c6bb4e7a4e0393811d0d22200c789e0c02f4e0af069643b00dc58a4580bc5a",
           "count": 1
         }
       ]
