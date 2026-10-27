@@ -672,6 +672,9 @@ describe('headless stream-json snapshots', () => {
       })
 
       expect(result.stderr).toBe('')
+      // A bounded transport retry repeats the identical agent request, so count
+      // distinct request bodies rather than HTTP attempts, and keep the retry
+      // payload in the failure message when another body appears.
       const retryTrace = parseJsonl(result.stdout)
         .map(record => record['event'])
         .filter(event => event !== null && typeof event === 'object' && !Array.isArray(event))
@@ -680,16 +683,20 @@ describe('headless stream-json snapshots', () => {
           return typeof type === 'string' && /retry|request-error/u.test(type)
         })
         .map(event => JSON.stringify(event).slice(0, 320))
-      expect(server.requests, JSON.stringify({
+      const diagnostic = JSON.stringify({
         requests: server.requests.map(request => ({
           title: isTitleRequest(request), maxTokens: request.max_tokens,
           messages: JSON.stringify(request['messages'] ?? null).slice(0, 120),
         })),
         retry: retryTrace,
-      })).toHaveLength(2)
-      expect(server.paths).toEqual(['/v1/messages', '/v1/messages'])
-      const agentRequest = server.requests.find(request => request.max_tokens === 256_000)
-      const titleRequest = server.requests.find(isTitleRequest)
+      })
+      const titleRequests = server.requests.filter(request => isTitleRequest(request))
+      const agentRequests = server.requests.filter(request => !isTitleRequest(request))
+      expect(titleRequests, diagnostic).toHaveLength(1)
+      expect(new Set(agentRequests.map(request => JSON.stringify(request))).size, diagnostic).toBe(1)
+      expect(server.paths.every(path => path === '/v1/messages'), diagnostic).toBe(true)
+      const agentRequest = agentRequests[0]
+      const titleRequest = titleRequests[0]
       expect(titleRequest?.max_tokens).toBe(TITLE_MAX_TOKENS)
       expect(agentRequest?.output_config).toEqual({ effort: 'low' })
       expect(titleRequest).toBeDefined()
