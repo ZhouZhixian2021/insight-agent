@@ -90,9 +90,13 @@ Headless/ACP 与 SDK 适配器在规范化之前，将原始目录中的子创�
 
 传入 `corpusRoot` 的 ACP 套件可通过 `systemPromptSource` 或 `toolSchemasSource`，以 `profile/scenario` 引用其他适配器的侧车。套件直接读取声明所有者的清单和文件，不会把检出目录中的链接占位文本当作提示或 schema 内容解析。来源必须拥有该侧车并声明相同的变更次数。跨适配器来源只读：record 和 refresh 比较捕获内容，发现差异时拒绝且不写入源文件。本地侧车的所有权仍由当前套件管理。
 
+`academic-plan-chinese` 在 `sdk-minimal` 下的 replay 兼容 overlay 将冻结的 persona 原文映射为 `personaPrefix`，同时保持 `includeHarnessIdentity` 和 `includeRuntimeContext` 为 false。原场景 patch 和提示词侧车保持不变；完整提示词与 header 比较仍须保留。
+
 ### 平台与组合变体
 
 需要非 Windows 主机的场景声明 `posixOnly`，在 Windows 上跳过运行测试，但 fixture 保护仍在所有平台覆盖其已提交文件；组合需要可用 `pwsh` 的场景声明 `pwshOnly`。当临时目录授权自身待测时，`workspaceParent` 将生成子级 cwd 移出平台临时区域；场景签入的 `workspace/` 会先复制到该子级，随后 `prepareWorkspace` 在 agent 启动前针对生成 cwd 运行。默认生成的 workspace 在会话 fixture 中存储为 `{{cwd}}`，使平台临时根目录与随机 basename 不影响录制。headless manifest 在测试 Session workspace 授权本身时使用 `workspace.parent: outside-temp`。适配器在父目录可写且位于系统临时授权之外时，于平台临时根目录旁分配目录，否则使用 home，并拒绝已被自动临时写授权覆盖的生成 cwd。
+
+SDK 适配器仅在通过实际 `sdk-minimal` profile 对 `academic-plan-chinese` 执行 replay 时使用 [`withSdkJsonCwdAlias`](src/sdk-comparison-context.ts)。这个纯函数向比较上下文最多追加已知 cwd 的一层 JSON 编码拼写，保留已有别名顺序且不新增重复项。它不改变运行输入、运行时路径或持久化数据，保留事件结构和其他载荷差异。它不提供通用 Windows 路径规范化，也不增加大小写折叠、任意分隔符转换或更多 JSON 层的处理；子路径差异仍可能可见。
 
 ### 可能出什么问题
 

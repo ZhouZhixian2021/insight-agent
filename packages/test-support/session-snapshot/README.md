@@ -90,9 +90,13 @@ A pin owns its generated `system-prompt.expected.md` or `tool-schemas.expected.j
 
 ACP suites that pass `corpusRoot` may reference another adapter's sidecar through `systemPromptSource` or `toolSchemasSource` as `profile/scenario`. The suite reads the declared owner's manifest and file directly, so a checkout's link-placeholder text is never parsed as prompt or schema content. The source must own the requested sidecar and declare the same change count. Corpus sources are read-only: record and refresh compare captured content and reject differences without writing the source. Local sidecar ownership stays within the suite.
 
+The `academic-plan-chinese` replay compatibility overlay for `sdk-minimal` maps the frozen persona text to `personaPrefix` while keeping `includeHarnessIdentity` and `includeRuntimeContext` false. The original scenario patches and prompt sidecar remain unchanged; full prompt and header comparisons remain required.
+
 ### Platform and composition variants
 
 A scenario requiring a non-Windows host declares `posixOnly`, which skips its run test on Windows while the fixture guards keep covering its committed files everywhere; a scenario whose composition needs a usable `pwsh` declares `pwshOnly`. `workspaceParent` moves the generated child cwd outside the platform temp directory when temporary-directory grants are themselves under test; a scenario's committed `workspace/` is copied into that child first, then `prepareWorkspace` runs against the generated cwd before the agent starts. Default generated workspaces are stored in session fixtures as `{{cwd}}`, so platform temp roots and random basenames do not affect recordings. Headless manifests use `workspace.parent: outside-temp` when the Session workspace grant itself is under test. The adapter allocates beside the platform temp root when its parent is writable and outside system temporary grants, otherwise under home, and rejects any generated cwd already covered by automatic temporary write grants.
+
+The SDK adapter uses [`withSdkJsonCwdAlias`](src/sdk-comparison-context.ts) only for `academic-plan-chinese` replay through the actual `sdk-minimal` profile. This pure helper adds at most one JSON-encoded spelling of the known cwd to the comparison context, preserving existing alias order without adding a duplicate. It leaves run inputs, runtime paths and persisted data unchanged, and preserves event structure and other payload differences. It does not provide general Windows path normalization or add case folding, arbitrary separator conversion or support for additional JSON layers; child-path differences may remain visible.
 
 ### What can go wrong
 

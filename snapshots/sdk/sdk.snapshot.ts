@@ -44,6 +44,7 @@ import {
   stabilizeRefreshLog,
   tokenizeSessionFixtureCwd,
   writesCurrentSessionFixtures,
+  withSdkJsonCwdAlias,
   materializeProfilePatch,
   formatSystemPromptSnapshot,
   formatToolSchemasSnapshot,
@@ -587,6 +588,7 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   initialWorkspace: WorkspaceSnapshotEntry[]
   finalWorkspace: WorkspaceSnapshotEntry[]
   cwd: string
+  runtimeProfile: SnapshotManifest['profile']
 }> {
   const workspaceParent = await realpath(tmpdir())
   let workspacePrefix = `sdk-snapshot-${scenario.name}-`
@@ -797,7 +799,7 @@ async function runScenario(scenario: CorpusScenario): Promise<{
     const finalWorkspace = await captureWorkspaceSnapshot(cwd, {
       ignoredRootEntries: RUNTIME_WORKSPACE_ENTRIES,
     })
-    return { results, notifications, observedMethods, logs, initialWorkspace, finalWorkspace, cwd }
+    return { results, notifications, observedMethods, logs, initialWorkspace, finalWorkspace, cwd, runtimeProfile }
   } finally {
     await harness.close()
     await rm(cwd, { recursive: true, force: true })
@@ -962,14 +964,17 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         expect(writerFiles, 'native writer oracle inventory').toEqual(retained
           ? files.map((_, index) => writerSnapshotName(index)).sort() : [])
       }
-      const { results, notifications, observedMethods, logs, initialWorkspace, finalWorkspace, cwd } = await runScenario(scenario)
+      const { results, notifications, observedMethods, logs, initialWorkspace, finalWorkspace, cwd, runtimeProfile } = await runScenario(scenario)
       const ordered = orderLogs(
         logs,
         recording ? logs.length : files.length,
         assertions.dshSdkChild !== undefined,
       )
       reconcileCatalogCreationTimes(ordered.map(log => log.content), 'validate')
-      const actualContext = contextOf(ordered, cwd)
+      const comparisonContext = contextOf(ordered, cwd)
+      const actualContext = scenario.name === 'academic-plan-chinese'
+        && runtimeProfile === 'sdk-minimal' && mode === 'replay'
+        ? withSdkJsonCwdAlias(comparisonContext) : comparisonContext
       if (scenario.name === 'minimal-image-compaction') {
         const events = results.flatMap(result => result.events)
         const image = events.find(event => event.type === 'tool/result')

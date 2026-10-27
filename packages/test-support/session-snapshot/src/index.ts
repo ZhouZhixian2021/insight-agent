@@ -21,6 +21,9 @@ export {
   redactSessionSnapshotIds,
 } from './identity.ts'
 export {
+  withSdkJsonCwdAlias,
+} from './sdk-comparison-context.ts'
+export {
   runScenario,
   snapshotSpillRoot,
   type HarvestedLog,
