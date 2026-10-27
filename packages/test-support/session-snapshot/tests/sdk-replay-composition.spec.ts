@@ -201,7 +201,7 @@ describe('SDK plan replay composition without launching the application', () => 
       throw new Error('SDK-02 provider compatibility requires an explicit conditional')
     }
     expect(providerCompatibility.condition.getText(source).replace(/\s+/g, ''))
-      .toBe("scenario.name==='academic-plan-validation'&&runtimeProfile==='sdk-minimal'&&mode==='replay'")
+      .toBe("mode==='replay'&&scenario.manifest.composition.startsWith('sdk-academic-')")
     expect(providerCompatibility.whenTrue.getText(source)).toBe('[sdkProviderReplayCompatibilityPatch]')
     expect(providerCompatibility.whenFalse.getText(source)).toBe('[]')
     const overlayPath = declaration('sdkPlanReplayCompatibilityPatch')
@@ -266,7 +266,7 @@ describe('SDK plan replay composition without launching the application', () => 
       throw new Error('SDK encoded-cwd comparison requires an explicit conditional')
     }
     expect(actualContext.condition.getText(source).replace(/\s+/g, ''))
-      .toBe("scenario.name==='academic-plan-chinese'&&runtimeProfile==='sdk-minimal'&&mode==='replay'")
+      .toBe("runtimeProfile==='sdk-minimal'&&mode==='replay'")
     expect(actualContext.whenTrue.getText(source)).toBe('withSdkJsonCwdAlias(comparisonContext)')
     expect(actualContext.whenFalse.getText(source)).toBe('comparisonContext')
     const aliasCalls = descendants(source, ts.isCallExpression)

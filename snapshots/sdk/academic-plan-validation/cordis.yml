@@ -5,7 +5,7 @@
   disabled: true
 - id: system-prompt
   config:
-    persona: 'Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the tool results.'
+    personaPrefix: 'Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the tool results.'
     includeHarnessIdentity: false
     includeRuntimeContext: false
 - insert:

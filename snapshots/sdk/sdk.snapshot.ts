@@ -67,12 +67,14 @@ import {
   assertSdkOracleReplayMode,
   captureSdkOracleEvidence,
   readSdkOracle,
+  sdkOracleRegistryNames,
   type ActiveSdkOracle,
 } from '../../scripts/sdk-oracle.ts'
 
 const corpusRoot = fileURLToPath(new URL('../', import.meta.url))
 const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url))
 const sdkOracleRoot = fileURLToPath(new URL('../sdk-oracles/', import.meta.url))
+const sdkOracleScenarios = new Set(sdkOracleRegistryNames(sdkOracleRoot))
 
 const MINIMAL_SYSTEM_PROMPT = 'You are the environment-selected minimal software engineer.'
 const MINIMAL_BASH_DESCRIPTION = `Run commands in a bash shell
@@ -141,8 +143,8 @@ interface SdkAssertions {
 }
 
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
-  'academic-parallel-papers': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
-  'academic-hybrid-search': { runtimeProfile: 'sdk-minimal', expectedTools: { run_hybrid_fixture: [], str_replace_editor: ['command', 'path'] } },
+  'academic-parallel-papers': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], read_image: ['file_path'], working_directory: [] } },
+  'academic-hybrid-search': { runtimeProfile: 'sdk-minimal', expectedTools: { run_hybrid_fixture: [], read_image: ['file_path'], working_directory: [] } },
   'academic-plan-chinese': {
     runtimeProfile: 'sdk-minimal',
     environment: {
@@ -150,12 +152,12 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
     },
     expectedTools: { exit_plan_mode: ['plan'], read_image: ['file_path'], working_directory: [] },
   },
-  'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
-  'academic-candidate-screening': { runtimeProfile: 'sdk-minimal', expectedTools: { run_candidate_screening_fixture: [], str_replace_editor: ['command', 'path'] } },
-  'academic-evidence-fragments': { runtimeProfile: 'sdk-minimal', expectedTools: { run_evidence_fragments_fixture: [], str_replace_editor: ['command', 'path'] } },
-  'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] } },
-  'academic-limited-draft': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
-  'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { str_replace_editor: ['command', 'path'] } },
+  'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], read_image: ['file_path'], working_directory: [] } },
+  'academic-candidate-screening': { runtimeProfile: 'sdk-minimal', expectedTools: { run_candidate_screening_fixture: [], read_image: ['file_path'], working_directory: [] } },
+  'academic-evidence-fragments': { runtimeProfile: 'sdk-minimal', expectedTools: { run_evidence_fragments_fixture: [], read_image: ['file_path'], working_directory: [] } },
+  'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], read_image: ['file_path'], working_directory: [] } },
+  'academic-limited-draft': { runtimeProfile: 'sdk-minimal', expectedTools: { read_image: ['file_path'], working_directory: [] } },
+  'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { read_image: ['file_path'], working_directory: [] } },
   'minimal-image-compaction': {
     expectedFinalResponse: 'MINIMAL_IMAGE_OK',
     expectedTools: { bash: ['command'], read_image: ['file_path'], working_directory: [] },
@@ -625,8 +627,8 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   const replayCompatibilityPatches = scenario.name === 'academic-plan-chinese'
     && runtimeProfile === 'sdk-minimal' && mode === 'replay'
     ? [sdkPlanReplayCompatibilityPatch] : []
-  const providerCompatibilityPatches = scenario.name === 'academic-plan-validation'
-    && runtimeProfile === 'sdk-minimal' && mode === 'replay'
+  // Every academic scenario patch still names the retired live provider; replay must never call it.
+  const providerCompatibilityPatches = mode === 'replay' && scenario.manifest.composition.startsWith('sdk-academic-')
     ? [sdkProviderReplayCompatibilityPatch] : []
   const patches = [...authoredPatches(scenario, !recording), ...assertions.patches ?? [],
     ...replayCompatibilityPatches, ...providerCompatibilityPatches]
@@ -962,14 +964,14 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
   })
 
   for (const scenario of sdkScenarios) {
-    const registered = scenario.name === 'academic-plan-chinese'
+    const registered = sdkOracleScenarios.has(scenario.name)
     const scenarioTest = !registered && recording
       && (scenario.manifest.recording === 'authored' || scenario.manifest.sessionFormat !== undefined)
       ? it.skip
       : it
     scenarioTest(`${mode}s ${scenario.name} through dsh --profile ${scenario.manifest.profile}`, async () => {
       const oracle = registered ? await readSdkOracle(sdkOracleRoot, scenario.dir) : undefined
-      if (oracle !== undefined) assertSdkOracleReplayMode(mode)
+      if (oracle !== undefined) assertSdkOracleReplayMode(mode, scenario.name)
       const scenarioDir = scenario.dir
       const retained = scenario.manifest.sessionFormat !== undefined
       const notificationsExpectedPath = join(scenarioDir, retained ? 'notifications.current.expected.jsonl' : 'notifications.expected.jsonl')
@@ -991,14 +993,28 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         recording ? logs.length : files.length,
         assertions.dshSdkChild !== undefined,
       )
-      if (oracle !== undefined && process.env.DSH_SDK_ORACLE_CAPTURE_DIR !== undefined) {
-        await captureSdkOracleEvidence(repositoryRoot, process.env.DSH_SDK_ORACLE_CAPTURE_DIR, oracle, ordered)
-      }
       reconcileCatalogCreationTimes(ordered.map(log => log.content), 'validate')
       const comparisonContext = contextOf(ordered, cwd)
-      const actualContext = scenario.name === 'academic-plan-chinese'
-        && runtimeProfile === 'sdk-minimal' && mode === 'replay'
+      // Every minimal SDK run records its working directory inside a JSON-quoted runtime-context text.
+      const actualContext = runtimeProfile === 'sdk-minimal' && mode === 'replay'
         ? withSdkJsonCwdAlias(comparisonContext) : comparisonContext
+      const finalResult = results.at(-1)
+      const wireExpectations = hasWireGoldens && finalResult !== undefined
+        ? {
+            notifications: normalizeNotifications(notifications, actualContext),
+            result: normalizeResult(finalResult, actualContext),
+          }
+        : undefined
+      if (oracle !== undefined && process.env.DSH_SDK_ORACLE_CAPTURE_DIR !== undefined) {
+        const primary = ordered[0]
+        if (primary === undefined) throw new Error(`${scenario.name}: no primary Session to capture`)
+        const prompts = normalizedSystemPrompts(primary.content, actualContext)
+        const schemas = normalizedToolSchemas(primary.content, actualContext)
+        await captureSdkOracleEvidence(repositoryRoot, process.env.DSH_SDK_ORACLE_CAPTURE_DIR, oracle, ordered, {
+          prompt: formatSystemPromptSnapshot(prompts[0] as string, prompts.slice(1)),
+          schemas: formatToolSchemasSnapshot(schemas[0] as unknown[], schemas.slice(1)),
+        }, wireExpectations)
+      }
       if (scenario.name === 'minimal-image-compaction') {
         const events = results.flatMap(result => result.events)
         const image = events.find(event => event.type === 'tool/result')
@@ -1213,22 +1229,21 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         oracle?.status === 'active' ? oracle : undefined)
 
       // Genuine SDK protocol cases retain their secondary wire projections.
-      const finalResult = results.at(-1)
       if (hasWireGoldens) {
-        if (finalResult === undefined) throw new Error(`${scenario.name}: SDK wire golden has no run result`)
-        const normalizedNotifications = normalizeNotifications(notifications, actualContext)
-        const normalizedResult = normalizeResult(finalResult, actualContext)
+        if (wireExpectations === undefined) throw new Error(`${scenario.name}: SDK wire golden has no run result`)
+        const normalizedNotifications = wireExpectations.notifications
+        const normalizedResult = wireExpectations.result
         if (recording || refreshing) {
           await writeFile(notificationsExpectedPath, normalizedNotifications)
           await writeFile(resultExpectedPath, normalizedResult)
         }
-        const expectedNotifications = await readFile(notificationsExpectedPath, 'utf8')
+        const expectedNotifications = oracle?.notifications ?? await readFile(notificationsExpectedPath, 'utf8')
         expect(
           notificationComparisonRecords(normalizedNotifications, ordered.map(log => log.content)),
           `${scenario.name}: notifications`,
         )
           .toEqual(notificationComparisonRecords(expectedNotifications, expectedContents))
-        expect(normalizedResult).toBe(await readFile(resultExpectedPath, 'utf8'))
+        expect(normalizedResult, `${scenario.name}: result`).toBe(oracle?.result ?? await readFile(resultExpectedPath, 'utf8'))
       }
 
       if (scenario.name === 'system-prompt-in-history') {
@@ -1257,12 +1272,12 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       if (['academic-replenishment', 'academic-parallel-papers', 'academic-hybrid-search'].includes(scenario.name)) {
         const rows = ordered[0]!.content.trim().split('\n').map(line => JSON.parse(line) as {
           type: string
-          data: { message: { content: { isError: boolean; content: { text: string }[] }[] } }
+          data: { message: { isError?: boolean; content: { text: string }[] } }
         })
-        const result = rows.find(row => row.type === 'tool/result')!.data.message.content[0]!
-        expect(result.isError).toBe(false)
+        const message = rows.find(row => row.type === 'tool/result')!.data.message
+        expect(message.isError ?? false).toBe(false)
         if (scenario.name === 'academic-hybrid-search') {
-          expect(JSON.parse(result.content[0]!.text)).toMatchObject({
+          expect(JSON.parse(message.content[0]!.text)).toMatchObject({
             calls: ['academic:arxiv', 'web', 'verify:acl'], titles: ['Verified fixture paper'],
             screening: { deduplicatedWorks: 2, selectedWorks: 1, fetched: ['https://aclanthology.org/2024.acl-long.1.pdf'] },
             directProviders: ['arxiv'], hybridRetrieval: { counts: {
@@ -1274,7 +1289,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           })
         } else {
           const concurrent = scenario.name === 'academic-parallel-papers'
-          expect(JSON.parse(result.content[0]!.text)).toMatchObject({
+          expect(JSON.parse(message.content[0]!.text)).toMatchObject({
             ...concurrent ? { peak: 3 } : {},
             attempted: Array.from({ length: concurrent ? 5 : 4 }, (_, index) => `https://example.org/${index}`),
             includedWorks: concurrent ? 3 : 2, failures: 1, synthesis: 'completed', hasReport: true,

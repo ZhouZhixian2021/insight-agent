@@ -4,7 +4,7 @@
   disabled: true
 - id: system-prompt
   config:
-    persona: 'Run run_hybrid_fixture once and reply HYBRID_DONE.'
+    personaPrefix: 'Run run_hybrid_fixture once and reply HYBRID_DONE.'
     includeHarnessIdentity: false
     includeRuntimeContext: false
 - insert:

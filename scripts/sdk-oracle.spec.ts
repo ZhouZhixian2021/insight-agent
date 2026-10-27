@@ -7,6 +7,7 @@ import {
   assertSdkOracleReplayMode,
   captureSdkOracleEvidence,
   readSdkOracle,
+  sdkOracleRegistryNames,
   sdkOracleSha256,
 } from './sdk-oracle.ts'
 
@@ -21,7 +22,7 @@ async function temporaryFixture(status: 'pending' | 'active'): Promise<{
 }> {
   const root = await mkdtemp(join(tmpdir(), 'dsh-sdk-oracle-spec-'))
   onTestFinished(() => rm(root, { recursive: true, force: true }))
-  const scenario = join(root, 'scenario')
+  const scenario = join(root, 'academic-plan-chinese')
   const output = join(root, 'oracle', 'academic-plan-chinese')
   await mkdir(scenario)
   await mkdir(dirname(output))
@@ -54,7 +55,7 @@ async function temporaryFixture(status: 'pending' | 'active'): Promise<{
 it('pins the frozen SDK-01 V4 input separately from reviewed current writer output', async () => {
   const oracle = await readSdkOracle(oracleRoot, scenarioDir)
   expect(oracle).toMatchObject({ status: 'active', source: 'session.v4.jsonl' })
-  if (oracle.status !== 'active') throw new Error('expected active SDK-01 oracle')
+  if (oracle?.status !== 'active') throw new Error('expected active SDK-01 oracle')
   const source = await readFile(join(scenarioDir, oracle.source), 'utf8')
   expect(sdkOracleSha256(source)).toBe(oracle.sourceSha256)
   expect(oracle.writer).not.toBe(source)
@@ -95,12 +96,35 @@ it('pins the frozen SDK-01 V4 input separately from reviewed current writer outp
 it('reads only an exact active native output inventory with matching digests', async () => {
   const fixture = await temporaryFixture('active')
   const oracle = await readSdkOracle(fixture.root, fixture.scenario)
-  expect(oracle.status).toBe('active')
-  if (oracle.status !== 'active') throw new Error('expected active oracle')
+  expect(oracle?.status).toBe('active')
+  if (oracle?.status !== 'active') throw new Error('expected active oracle')
   expect(oracle.writer).toBe(fixture.writer)
   expect((await readdir(join(fixture.root, 'academic-plan-chinese'))).sort()).toEqual([
     'system-prompt.expected.md', 'tool-schemas.expected.json', 'writer.expected.jsonl',
   ])
+})
+
+it('selects each registered scenario independently and ignores unregistered ones', async () => {
+  const fixture = await temporaryFixture('active')
+  const active = await readSdkOracle(fixture.root, fixture.scenario)
+  if (active?.status !== 'active') throw new Error('expected an active oracle')
+  const registryPath = join(fixture.root, 'registry.json')
+  const registry = JSON.parse(await readFile(registryPath, 'utf8')) as { scenarios: Record<string, unknown> }
+  registry.scenarios['academic-plan-validation'] = {
+    status: 'pending', source: 'session.v4.jsonl', sourceSha256: active.sourceSha256,
+  }
+  await writeFile(registryPath, `${JSON.stringify(registry)}\n`)
+
+  const sibling = join(dirname(fixture.scenario), 'academic-plan-validation')
+  await mkdir(sibling)
+  await writeFile(join(sibling, 'session.v4.jsonl'), await readFile(join(fixture.scenario, 'session.v4.jsonl'), 'utf8'))
+
+  expect(await readSdkOracle(fixture.root, sibling))
+    .toMatchObject({ status: 'pending', scenario: 'academic-plan-validation' })
+  expect(await readSdkOracle(fixture.root, join(dirname(fixture.scenario), 'academic-unregistered')))
+    .toBeUndefined()
+  expect(sdkOracleRegistryNames(fixture.root))
+    .toEqual(['academic-plan-chinese', 'academic-plan-validation'])
 })
 
 it('rejects a changed replay input and an active oracle with missing output', async () => {
@@ -145,22 +169,31 @@ it('does not accept a replay fixture copied into the writer role', async () => {
 })
 
 it('rejects record and refresh for registered frozen SDK scenarios', () => {
-  expect(() => { assertSdkOracleReplayMode('replay') }).not.toThrow()
-  expect(() => { assertSdkOracleReplayMode('record') }).toThrow('cannot write frozen fixtures')
-  expect(() => { assertSdkOracleReplayMode('refresh') }).toThrow('cannot write frozen fixtures')
+  expect(() => { assertSdkOracleReplayMode('replay', 'academic-plan-chinese') }).not.toThrow()
+  expect(() => { assertSdkOracleReplayMode('record', 'academic-plan-chinese') }).toThrow('cannot write frozen fixtures')
+  expect(() => { assertSdkOracleReplayMode('refresh', 'academic-plan-chinese') }).toThrow('cannot write frozen fixtures')
 })
 
 it('captures exact native JSONL only in an empty directory outside Git checkouts', async () => {
   const oracle = await readSdkOracle(oracleRoot, scenarioDir)
+  if (oracle === undefined) throw new Error('expected a registered SDK oracle')
   const evidence = await mkdtemp(join(tmpdir(), 'dsh-sdk-oracle-evidence-'))
   onTestFinished(() => rm(evidence, { recursive: true, force: true }))
   const raw = await readFile(join(scenarioDir, 'session.v4.jsonl'), 'utf8')
-  await captureSdkOracleEvidence(repositoryRoot, evidence, oracle, [{ content: raw }])
+  await captureSdkOracleEvidence(repositoryRoot, evidence, oracle, [{ content: raw }], {
+    prompt: 'captured prompt\n',
+    schemas: '{"initial":[],"changes":[]}\n',
+  })
   expect(await readFile(join(evidence, 'writer.raw.jsonl'), 'utf8')).toBe(raw)
+  expect(await readFile(join(evidence, 'system-prompt.expected.md'), 'utf8')).toBe('captured prompt\n')
   expect(JSON.parse(await readFile(join(evidence, 'capture.json'), 'utf8'))).toMatchObject({
     scenario: 'academic-plan-chinese',
     sourceSha256: oracle.sourceSha256,
-    writerSha256: sdkOracleSha256(raw),
+    files: [
+      { name: 'writer.raw.jsonl', sha256: sdkOracleSha256(raw) },
+      { name: 'system-prompt.expected.md' },
+      { name: 'tool-schemas.expected.json' },
+    ],
   })
   await expect(captureSdkOracleEvidence(repositoryRoot, evidence, oracle, [{ content: raw }]))
     .rejects.toThrow('must be empty')
@@ -170,6 +203,7 @@ it('captures exact native JSONL only in an empty directory outside Git checkouts
 
 it('rejects capture into another Git checkout and before a native Session exists', async () => {
   const oracle = await readSdkOracle(oracleRoot, scenarioDir)
+  if (oracle === undefined) throw new Error('expected a registered SDK oracle')
   const root = await mkdtemp(join(tmpdir(), 'dsh-sdk-oracle-git-'))
   onTestFinished(() => rm(root, { recursive: true, force: true }))
   await mkdir(join(root, '.git'))
