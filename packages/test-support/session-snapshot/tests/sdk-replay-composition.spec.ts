@@ -15,6 +15,9 @@ const repoRoot = resolve(import.meta.dirname, '../../../..')
 const scenarioDir = join(repoRoot, 'snapshots/sdk/academic-plan-chinese')
 const authoredPatches = [join(scenarioDir, 'cordis.yml'), join(scenarioDir, 'cordis.snapshot.yml')]
 const compatibilityPatch = join(import.meta.dirname, 'fixtures/sdk-plan-replay.compat.yml')
+const validationDir = join(repoRoot, 'snapshots/sdk/academic-plan-validation')
+const validationPatches = [join(validationDir, 'cordis.yml'), join(validationDir, 'cordis.snapshot.yml')]
+const providerCompatibilityPatch = join(import.meta.dirname, 'fixtures/sdk-provider-replay.compat.yml')
 const minimalBundle = join(repoRoot, 'packages/bundle/sdk-minimal/cordis.patch.yml')
 const apiKeyPackage = '@deepseek-ai/dsh-llm-deepseek-api-key'
 const replayPackage = '@deepseek-ai/dsh-llm-replay'
@@ -111,6 +114,24 @@ describe('SDK plan replay composition without launching the application', () => 
     expect(replay[0]?.disabled).not.toBe(true)
   })
 
+  it('disables only the live provider for SDK-02 replay while retaining the frozen warning', () => {
+    const before = compose(validationPatches)
+    const after = compose([...validationPatches, providerCompatibilityPatch])
+    expect(before.warnings).toEqual([legacyWarning])
+    expect(after.warnings).toEqual([legacyWarning])
+    expect(readPatches(providerCompatibilityPatch)).toEqual([
+      { id: 'llm-deepseek', name: apiKeyPackage, disabled: true },
+    ])
+    expect(after.entries.filter(entry => entry.id !== 'llm-deepseek'))
+      .toEqual(before.entries.filter(entry => entry.id !== 'llm-deepseek'))
+    expect(after.entries.filter(entry => entry.id === 'llm-deepseek'))
+      .toEqual(before.entries.filter(entry => entry.id === 'llm-deepseek').map(entry => ({ ...entry, disabled: true })))
+    const replay = after.entries.filter(entry => entry.id === 'llm-replay')
+    expect(replay).toHaveLength(1)
+    expect(replay[0]?.name).toBe(replayPackage)
+    expect(replay[0]?.disabled).not.toBe(true)
+  })
+
   it('materializes packages in the actual sdk-minimal profile and retains the academic plan entry', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'dsh-sdk-plan-replay-files-'))
     onTestFinished(() => { rmSync(cwd, { recursive: true, force: true }) })
@@ -148,7 +169,7 @@ describe('SDK plan replay composition without launching the application', () => 
     expect(composition.entries.find(entry => entry.id === 'llm-replay')?.name).toBe(replayPackage)
   })
 
-  it('uses one actual profile for package links and launch and limits compatibility to SDK-01 replay', () => {
+  it('uses one actual profile for package links and limits compatibility to the named replay cases', () => {
     const adapterPath = join(repoRoot, 'snapshots/sdk/sdk.snapshot.ts')
     // Parse declarations instead of importing the adapter, which registers formal replay cases.
     const source = ts.createSourceFile(adapterPath, readFileSync(adapterPath, 'utf8'), ts.ScriptTarget.Latest, true)
@@ -175,18 +196,35 @@ describe('SDK plan replay composition without launching the application', () => 
       .toBe("scenario.name==='academic-plan-chinese'&&runtimeProfile==='sdk-minimal'&&mode==='replay'")
     expect(compatibility.whenTrue.getText(source)).toBe('[sdkPlanReplayCompatibilityPatch]')
     expect(compatibility.whenFalse.getText(source)).toBe('[]')
+    const providerCompatibility = declaration('providerCompatibilityPatches').initializer
+    if (providerCompatibility === undefined || !ts.isConditionalExpression(providerCompatibility)) {
+      throw new Error('SDK-02 provider compatibility requires an explicit conditional')
+    }
+    expect(providerCompatibility.condition.getText(source).replace(/\s+/g, ''))
+      .toBe("scenario.name==='academic-plan-validation'&&runtimeProfile==='sdk-minimal'&&mode==='replay'")
+    expect(providerCompatibility.whenTrue.getText(source)).toBe('[sdkProviderReplayCompatibilityPatch]')
+    expect(providerCompatibility.whenFalse.getText(source)).toBe('[]')
     const overlayPath = declaration('sdkPlanReplayCompatibilityPatch')
     const overlayUrl = descendants(overlayPath, ts.isNewExpression)
       .find(node => node.expression.getText(source) === 'URL')?.arguments?.[0]
     if (overlayUrl === undefined || !ts.isStringLiteral(overlayUrl)) throw new Error('compatibility overlay URL is missing')
     expect(fileURLToPath(new URL(overlayUrl.text, pathToFileURL(adapterPath)))).toBe(compatibilityPatch)
+    const providerOverlayPath = declaration('sdkProviderReplayCompatibilityPatch')
+    const providerOverlayUrl = descendants(providerOverlayPath, ts.isNewExpression)
+      .find(node => node.expression.getText(source) === 'URL')?.arguments?.[0]
+    if (providerOverlayUrl === undefined || !ts.isStringLiteral(providerOverlayUrl)) {
+      throw new Error('provider compatibility overlay URL is missing')
+    }
+    expect(fileURLToPath(new URL(providerOverlayUrl.text, pathToFileURL(adapterPath))))
+      .toBe(providerCompatibilityPatch)
 
     const patches = declaration('patches')
     const patchArrays = descendants(patches, ts.isArrayLiteralExpression).filter(node =>
       node.elements.some(element => ts.isSpreadElement(element) && element.expression.getText(source) === 'replayCompatibilityPatches'))
     expect(patchArrays).toHaveLength(1)
     expect(patchArrays[0]?.elements[0]?.getText(source)).toBe('...authoredPatches(scenario, !recording)')
-    expect(patchArrays[0]?.elements.at(-1)?.getText(source)).toBe('...replayCompatibilityPatches')
+    expect(patchArrays[0]?.elements.at(-2)?.getText(source)).toBe('...replayCompatibilityPatches')
+    expect(patchArrays[0]?.elements.at(-1)?.getText(source)).toBe('...providerCompatibilityPatches')
     const materializers = descendants(patches, ts.isCallExpression)
       .filter(node => node.expression.getText(source) === 'materializeProfilePatch')
     expect(materializers).toHaveLength(1)

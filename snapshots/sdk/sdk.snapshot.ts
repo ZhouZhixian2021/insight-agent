@@ -107,6 +107,10 @@ const sdkPlanReplayCompatibilityPatch = fileURLToPath(new URL(
   '../../packages/test-support/session-snapshot/tests/fixtures/sdk-plan-replay.compat.yml',
   import.meta.url,
 ))
+const sdkProviderReplayCompatibilityPatch = fileURLToPath(new URL(
+  '../../packages/test-support/session-snapshot/tests/fixtures/sdk-provider-replay.compat.yml',
+  import.meta.url,
+))
 
 interface SdkAssertions {
   /** Shipped SDK runtime profile; the manifest still identifies the SDK transport. */
@@ -621,7 +625,11 @@ async function runScenario(scenario: CorpusScenario): Promise<{
   const replayCompatibilityPatches = scenario.name === 'academic-plan-chinese'
     && runtimeProfile === 'sdk-minimal' && mode === 'replay'
     ? [sdkPlanReplayCompatibilityPatch] : []
-  const patches = [...authoredPatches(scenario, !recording), ...assertions.patches ?? [], ...replayCompatibilityPatches]
+  const providerCompatibilityPatches = scenario.name === 'academic-plan-validation'
+    && runtimeProfile === 'sdk-minimal' && mode === 'replay'
+    ? [sdkProviderReplayCompatibilityPatch] : []
+  const patches = [...authoredPatches(scenario, !recording), ...assertions.patches ?? [],
+    ...replayCompatibilityPatches, ...providerCompatibilityPatches]
     .map((patch, index) => materializeProfilePatch(patch, cwd, runtimeProfile, patchRoot, index))
   let childSessionsRoot: string | undefined
   let childEnvironment: Record<string, string> = {}
