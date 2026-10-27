@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-14-academic-report-slice.md
 /agent-note-evidence-to-report-baseline-with-explicit-semantic-review:
-  en: e8338aa67be1ee69
-  zh: db208c1fb5359977
+  en: 87b60b44d797f512
+  zh: fcc91aab268cbed2
 /agent-note-evidence-to-report-baseline-with-explicit-semantic-review/problem:
   en: 96d3f905a4c065a2
   zh: 035c9beca2f83c92
@@ -12,11 +12,11 @@
   en: 7995f1f6a26de3cc
   zh: 32dabc6a101aaa5d
 /agent-note-evidence-to-report-baseline-with-explicit-semantic-review/alternatives-considered:
-  en: 3e535e707bb20d1a
-  zh: d6d4386bbde5b141
+  en: 08325e56e2c257df
+  zh: ffecc00feec1d75f
 /agent-note-evidence-to-report-baseline-with-explicit-semantic-review/consequences:
-  en: 20bc7ced395033bd
-  zh: eae22ebb6b76a170
+  en: 8ee633dfe5da5eba
+  zh: e41bd522ce40fdf2
 /agent-note-evidence-to-report-baseline-with-explicit-semantic-review/testing:
   en: 38bbf4b762c8d814
   zh: 82b665ec92b17603

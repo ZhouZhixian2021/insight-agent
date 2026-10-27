@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-15-academic-minimal-report-review.md
 /agent-note-minimal-evidence-reports-and-concise-academic-review:
-  en: 1fc0424d2ea43aaa
-  zh: 3fae13a15ae97dbf
+  en: 6b5be813b4dfb7dc
+  zh: edf42744d1522f5a
 /agent-note-minimal-evidence-reports-and-concise-academic-review/problem:
   en: 96591a1894b9a752
   zh: ea35e315c6fef3b0
@@ -15,8 +15,8 @@
   en: 69937cd0bcfab481
   zh: 4777aeeae08d5e2f
 /agent-note-minimal-evidence-reports-and-concise-academic-review/consequences:
-  en: a862030697db3405
-  zh: 28d563a3462c8cc8
+  en: 321a5085b72c2086
+  zh: 6ef93d6597835cbb
 /agent-note-minimal-evidence-reports-and-concise-academic-review/verification:
   en: d48cebcfd988207a
   zh: 61ec7e9b0da0a1c4

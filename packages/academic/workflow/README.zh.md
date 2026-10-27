@@ -7,6 +7,8 @@ kind: "package-library"
 
 [English](README.md) | 中文
 
+可选的 `onTrace` 适配器观察全文获取及基于 Session 的准入、证据和综合模型调用。同一传输调用的重试保留独立尝试。模型执行计时只覆盖已观测的流区间，总计时包含准备与校验，排队计时保持未知。观察器失败不改变研究结果。不同片段生成器调用仍为独立调用；首版不推测未记录的外层片段重试关系。
+
 ## 概述
 
 extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的版本哈希，保留版本 ID 和历史对象。冲突返回 paused，调用方保留记录并继续其他论文。
@@ -34,7 +36,7 @@ extractPaperEvidence 在调用现有证据抽取器前补齐首次观察到的�
 
 `includedWorkTypes` 按 `WorkVersion.versionType` 筛选：`preprint`、`accepted_manuscript` 或 `version_of_record`。会议与期刊类别不属于版本状态。`allowPreprints: false` 优先排除预印本。流水线也会在获取全文前拒绝适配器选出的、未被批准纳入的版本；发表场所名称不决定纳入资格。`validateResearchBriefRequirements()` 向计划审核调用方提供共用的分析要求检查。
 
-正式入口准入证据后，使用会话模型执行逐题洞察；可选的 synthesisModel 为最终合成提供独立生成参数。论文证据抽取可以重试输出截断以及配置的 `TRANSPORT` 和 `TIMEOUT` 失败，并复用同一篇已解析论文的请求，不重复检索或全文获取。最终报告合成可以独立配置对 `TRANSPORT` 和 `TIMEOUT` 失败执行指数退避重试，并复用已经准入的证据，不重复检索、全文获取或证据抽取。合成输出达到上限时最多消耗一次恢复尝试；精简请求保留批准的问题、论文身份和已核验摘录，移除重复的版本、定位与卡片数据。精简请求再次达到上限后以 `SYNTHESIS_MODEL_OUTPUT_LIMIT` 停止，不再原样重试。启用 `retryInvalidOutput` 后，已完成响应因 `SYNTHESIS_INVALID_MODEL_OUTPUT` 被拒时，可以在同一尝试次数上限内复用完整或精简的已准入输入，附加不含原响应文本的解析诊断，重新生成整份 JSON；系统不会修补或重新解释被拒响应。`academic/synthesis-request` 记录每次准确请求；`academic/synthesis-result` 记录每次尝试的原始输出、用量与拒绝诊断。段落部分合格记为 `partially_validated`；全部被拒记为 `failed` 和 `SYNTHESIS_NO_VALID_STATEMENTS`。早期事件及 JSON 解析前的失败不含 `rejectedStatements`。仍有合格段落时，Remote 返回 `partial_success`、拒绝原因与草稿；没有合格段落则不返回报告。达到配置次数后仍然结构无效、证据不足、重试耗尽或取消也不返回报告。持久化失败中止整轮。不使用模板回退、自动语义修复或放宽引用要求。
+正式入口准入证据后，使用会话模型执行逐题洞察；可选的 synthesisModel 为最终合成提供独立生成参数。论文证据抽取可以重试输出截断以及配置的 `TRANSPORT` 和 `TIMEOUT` 失败，并复用同一篇已解析论文的请求，不重复检索或全文获取。最终报告合成可以独立配置对 `TRANSPORT` 和 `TIMEOUT` 失败执行指数退避重试，并复用已经准入的证据，不重复检索、全文获取或证据抽取。合成输出达到上限时最多消耗一次恢复尝试；精简请求保留批准的问题、论文身份和已核验摘录，移除重复的版本、定位与卡片数据。精简请求再次达到上限后以 `SYNTHESIS_MODEL_OUTPUT_LIMIT` 停止，不再原样重试。启用 `retryInvalidOutput` 后，已完成响应因 `SYNTHESIS_INVALID_MODEL_OUTPUT` 被拒时，可以在同一尝试次数上限内复用完整或精简的已准入输入，附加不含原响应文本的解析诊断，重新生成整份 JSON；系统不会修补或重新解释被拒响应。`academic/synthesis-request` 记录每次准确请求；`academic/synthesis-result` 记录每次尝试的原始输出、用量与拒绝诊断。段落部分合格记为 `partially_validated`；全部被拒记为 `failed` 和 `SYNTHESIS_NO_VALID_STATEMENTS`。早期事件及 JSON 解析前的失败不含 `rejectedStatements`。仍有合格段落时，Remote 返回 `partial_success`、拒绝原因与已评测报告，由交付检查选择正式报告或草稿；没有合格段落则不返回报告。达到配置次数后仍然结构无效、证据准入被阻止、重试耗尽或取消也不返回报告。持久化失败中止整轮。不使用模板回退、自动语义修复或放宽引用要求。
 
 传入归并后的 WorkVersion、成功解析的 EvidenceExtractionInput、是否已有历史内容或证据的明确布尔值、EvidenceGenerator 和可选取消信号。首次补齐只接受 not_extracted 且无历史绑定；相同哈希复用版本。返回 extracted 时，version 与 evidence 一起传给下游，不再传原始未补齐版本。
 
@@ -48,7 +50,7 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 排序调度在权威排序旁保留审核过的 `CandidateAssessment`。排序、覆盖、批次决定、批次结算、缺口轮次或终态停止发生变化时，`runResearchDraft()` 发布完整的 `AcademicQueryWorkflowObservation` 快照。每份快照包含单一运行身份、运行内单调序号、准确计划和 Brief 版本、关联的论文与版本、权威队列、已完成轮次、绝对批次事实、当前逐题覆盖和已记录的停止决定。浏览器类型消费者通过仅含类型的 `@deepseek-ai/dsh-academic-workflow/query-workflow` 入口导入这些字段。最新快照保留在 `DraftPipelineResult.queryWorkflow`；没有排序调度的旧选择器不提供该字段。观察者异常不能改变研究结算。
 
-当 `PaperSelectionResult.candidateScheduling` 存在时，`runResearchDraft()` 按调度器批次逐批执行所选全文候选。每批完成后，工作流只依据通过原文核对、且本次运行的 `EvidenceQuestionLink` 明确指向该批准问题的证据重建覆盖，统计独立支持论文数，再向调度器请求下一步。候选级 `matchedQuestions` 可以调度可能相关的论文，但不能证明证据支持。未覆盖和部分覆盖的问题保留明确的结构化缺口。当前没有可解析全文交接的候选不占用有界 Q5 队列。调度器要求证据缺口补检时，本次草稿运行以明确限制结束；自动执行新增检索轮次及为 Session 恢复持久化批次决定仍留待后续。
+当 `PaperSelectionResult.candidateScheduling` 存在时，`runResearchDraft()` 按调度器批次逐批执行所选全文候选。每批完成后，工作流只依据通过原文核对、且本次运行的 `EvidenceQuestionLink` 明确指向该批准问题的证据重建覆盖，统计独立支持论文数，再向调度器请求下一步。候选级 `matchedQuestions` 可以调度可能相关的论文，但不能证明证据支持。未覆盖和部分覆盖的问题保留明确的结构化缺口。当前没有可解析全文交接的候选不占用有界 Q5 队列。调度器要求证据缺口补检时，可选 `replenishCandidates` 适配器在批准轮次上限内执行新轮次；缺少该适配器或恢复保留候选池时，以明确限制停止。可选结算与恢复观察器在后续工作前持久记录批次决定、已结算批次和可执行检查点。
 
 候选按选择顺序启动并结算，最多同时进行 `paperConcurrency` 篇获取和抽取（省略为 1）。连续两篇论文在证据抽取时遇到传输错误或超时后，后续启动上限降低一档，最低为 1；连续两篇没有这些故障后恢复一档，不超过配置值。已经启动的论文继续处理。前序慢论文可能延迟按序结算与补选。每篇未结算候选预留一个纳入名额，可用证据论文加预留数不得超过批准的纳入上限；排除、暂停、失败和空证据释放名额。每次结算后检查独立论文与全文下限。启用 `stopWhenEvidenceRequirementsMet` 且这些下限及 `targetIncludedWorks` 均达标时不再启动新论文，已启动论文完成后再分析，因此可在纳入上限内超过目标数量。取消停止新任务并等待在途任务收尾；持久记录失败中止其他任务，等待收尾后向上抛出。覆盖说明区分证据达标、纳入上限、选择器截断和候选耗尽，不只统计下载。查询及研究要求保持不变。
 
@@ -62,7 +64,7 @@ runResearchDraft 接收已批准的 Brief、一至三条带有已批准 `academi
 
 每条查询使用相同候选上限。已完成查询批次按轮转顺序合并，避免前一条查询独占全局名额；随后按精确标识符去重，把所有已返回论文交给日期、版本状态和全文地址初筛。只有合格论文占用全局候选名额，上限取 `maximumCandidateWorks` 与请求上限的较小值。地址解析不下载全文，也不保证全文能够成功解析。单查询发现与引用核验仍在结果进入本工作流前受各自上限约束。`coverageSummary.deduplicatedWorks` 记录各查询实际返回的记录经过跨查询去重、但尚未应用本轮全局候选上限时的数量；`academicWorkIds` 保存通过校验的已选候选；在选文前中止时保持为空。选择返回 `maximumCandidateWorks` 内的合格候选池；处理在有可用证据的论文达到 `maximumIncludedWorks` 时停止。未批准输入、查询过多、重复选择同一成果、未知版本和撤稿等非法选择会被拒绝。某条查询得到来源失败批次时仍继续后续明确查询；配置错误或无法表达为批次结果的搜索错误仍向上抛出。哈希冲突返回暂停结果；模型范围排除保留原因且不产生证据。全文或抽取失败记录论文版本与失败阶段，其他论文继续。已知抽取失败会在不暴露模型输出的前提下精确分类：非法模型 JSON/内容为 `parse_failed`，缺少模型预算为 `invalid_request`，模型输出未完成为 `upstream_error`，其他抽取失败为 `unknown`。终态 `RetrievalRun` 合并来源与论文失败、去重及纳入成果数、成功取得全文数、实际调用的 Provider、实际开始执行的查询和明确的截断原因。报告披露相同的不完整覆盖观察，不把结果标成完整覆盖。
 
-输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。report 始终使用草稿模式和空语义审核，质量状态由 report.evaluation 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。调用方负责模型与网络持久记录及取消；Plan 非空的 maximumElapsedMinutes 为检索、抽取和洞察共用的操作信号增加截止时间。
+输出 status=completed 仅表示本轮完成，不代表研究充分或审核通过。`retrievalRun.status` 根据已纳入成果和记录的失败独立表示成功、部分成功或失败；全部来源失败会返回阻塞草稿和失败的检索运行。报告使用 auto 模式和空语义审核：交付检查通过时生成正式报告，否则仍是草稿；两者均不代表独立语义审核通过。质量状态由 `report.evaluation` 给出。取消返回 cancelled、已完成论文、失败与已观察覆盖，不生成报告。配置错误及无法表达为批次结果的搜索失败向调用方抛出。调用方负责模型与网络持久记录及取消；Plan 非空的 maximumElapsedMinutes 为检索、抽取和洞察共用的操作信号增加截止时间。
 
 Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行器，并保留历史纯学术路径。`DraftSearchResult.hybridObservation` 经流水线进入可选的 `hybridSearch` 运行事实。已完成查询保留观察，中断查询仅在 RetrievalRun 限制和已启动查询中披露。实际进入的记录、精确合并记录和不同论文数从整轮论文上限应用前的 ingestion 结果结算。观察值保留单查询版本归并前的原始贡献记录，避免同一版本的归并抹掉重复计数。重复引用及被单查询上限排除的记录不算论文合并。Controller 投影这些事实，不返回原始 Web 内容。自动扩展查询、跨运行恢复、摘要降级和最终发布仍不属于本轮能力。
 
@@ -82,7 +84,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 应用调用方使用 `runAcademicResearchDraft({ ctx, session, model, modelPolicies, input, adapters, signal })`。`modelPolicies.evidence` 与 `modelPolicies.synthesis` 分别选择尝试次数、可重试的瞬时故障代码和首次等待时间；合成还可通过 `retryInvalidOutput` 在同一次数上限内启用整份响应的结构恢复。这个稳定入口会在检索或全文获取前检查准确模型路由。没有指定推理强度时使用模型路由默认值；调用方明确指定的值会被保留并校验。明确指定但不支持的推理强度会在外部论文处理开始前失败。结果在逐篇状态、失败、分析和报告之外带回 `sessionId` 与终态 `retrievalRun`，供调用方定位持久化模型记录并展示实际覆盖情况。
 
-`runModelResearchDraft(ctx, session, config, policies, input, adapters, signal)` 继续作为较底层的组合入口。adapters 提供 search、selectPapers、fetcher 和 now；它按各自策略绑定抽取与合成生成器，沿用既有流水线连接 B 的解析/证据和 C 的分析/评测草稿。两个入口都不拥有 Session 生命周期。Brief 批准、选文策略、期限、报告保存和发布仍由调用方负责。
+`runModelResearchDraft(ctx, session, config, policies, input, adapters, signal)` 继续作为较底层的组合入口。adapters 提供 search、selectPapers、fetcher 和 now；它按各自策略绑定抽取与合成生成器，沿用既有流水线连接 B 的解析/证据和 C 的分析/已评测报告。两个入口都不拥有 Session 生命周期。Brief 批准、选文策略、期限、报告保存和发布仍由调用方负责。
 
 每次尝试的请求和结果记录都带有尝试序号与上限，先追加事件，经 SessionStore 刷新，再从持久化存储读回后才继续。缺少写入器、追加失败、保存被拒绝或存储内容不一致会抛出 WorkflowLogError 并停止整轮，包括与取消同时发生的情况。结果记录不随模型请求取消。流式接收期间进程崩溃可能留下无结果的请求记录；尚未实现自动恢复。
 
@@ -90,9 +92,11 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 正式的 `runModelResearchDraft()` 现在在相同范围审核之后使用 `createModelFragmentEvidenceGenerator()`。B 的分片提取器将相邻短原文段落打包在字符上限内，按各自定位核验摘录，打包失败时沿原文段落边界缩小范围。工作流在发送下一片段前把 `academic/evidence-fragment-verified` 写入 Session 并确认持久化。每次分片模型调用仅尝试一次，由分片恢复独自管理最多三次尝试。可配置默认值为：片段最多 4,000 字、最小 1,000 字、重叠 256 字、输出最多 16,384 token、传输失败首次退避一秒；模型配置的输出上限可进一步降低片段额度。请求与结果记录包含原始片段及字符范围；打包片段还记录 `sourceRanges`。未完成的片段不清除已核验证据，后者仍可用于有限报告。固定真实论文样本在 4,096 token 时多次被输出上限截断；16,384 的默认值与 Controller 现有的抽取上限一致。整篇论文的稳定性与耗时仍需验证。
 
-Controller 为正式研究运行选择 `depth: 'minimal'`。范围审核仍独立执行；纳入论文在所有片段中最多保留五条经过来源核验、关联获批问题的记录，持久化片段只包含实际保留的记录。若有同版本计划审核过的别名词，工作流按获批 Brief 的问题顺序传入，仅用来优先调度一级原文片段；词项命中不决定纳入，也不算证据。旧计划没有审核词项时，仍按问题原文排序。达到证据上限且无片段故障不算抽取失败；真实片段故障和被拒草稿仍产生部分成功状态。未指定深度策略的调用方继续使用完整抽取。一级证据可支撑有限草稿，但不授予正式交付资格，也不证明每个获批问题均有覆盖。
+Controller 为正式研究运行选择 `depth: 'minimal'`。范围审核仍独立执行；纳入论文在所有片段中最多保留五条经过来源核验、关联获批问题的记录，持久化片段只包含实际保留的记录。若有同版本计划审核过的别名词，工作流按获批 Brief 的问题顺序传入，仅用来优先调度一级原文片段；词项命中不决定纳入，也不算证据。旧计划没有审核词项时，仍按问题原文排序。达到证据上限且无片段故障不算抽取失败；真实片段故障和被拒草稿仍产生部分成功状态。未指定深度策略的调用方继续使用完整抽取。一级深度本身既不授予也不排除正式交付资格；交付检查核对准入证据和必要结构，正式报告也不证明每个获批问题均得到充分覆盖。
 
 草稿工作流将抽取器产生的获批问题关联经过证据准入传给分析与报告。`runAcademicEvidenceEnhancement()` 是调用方明确选择、针对一篇已提交论文执行的独立完整深度操作；它保留一级身份，并在派发下一片段前提交新增内容。调用方负责重新获取原文、选择、取消及原报告；增强操作不改写原报告，也不授予语义审核通过状态。
+
+报告按交付检查自动选择正式报告或草稿：证据完整性、正文支持论文与全文最低数量、必要结构及非合成数据决定交付资格。缺少独立审核不阻止交付；逐题缺口作为内容限制披露，不新增模型审核调用。
 
 ## Model Experience
 

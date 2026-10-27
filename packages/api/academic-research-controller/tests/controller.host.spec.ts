@@ -25,7 +25,7 @@ import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
 import type { AcademicPlannedRetrieval } from '../src/types.ts'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
-import { runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
+import { academicTraceSpan, runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 
 const contexts: Context[] = []
 afterEach(async () => {
@@ -241,17 +241,19 @@ async function harness(options: {
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
   const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
+  const currentEvents = () => {
+    if (options.eventsError === true) throw 'invalid event source'
+    return [...approvedPlanEvents, ...sessionEvents.map(([type, data], index) => ({ type, data,
+      seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as SessionEvent[]
+  }
+  const legacySnapshotRead = vi.fn(() => { throw new Error('deprecated Session snapshot read') })
   const agent = {
     id: sessionId,
     ctx: agentContext,
     options: fallback,
     session: {
       id: sessionId,
-      snapshotEvents: () => {
-        if (options.eventsError === true) throw 'invalid event source'
-        return [...approvedPlanEvents, ...sessionEvents.map(([type, data], index) => ({ type, data,
-          seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as never
-      },
+      snapshotEvents: legacySnapshotRead,
       requestHeader: () => options.header === false ? undefined : { config: selected },
       append: (...args: unknown[]) => {
         const index = sessionEvents.push(args)
@@ -264,10 +266,17 @@ async function harness(options: {
   }
   const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
+  const observationDisposed = vi.fn()
+  const observeSession = vi.fn((_sessionId: unknown, readOptions: { signal?: AbortSignal; projectionMode?: 'none' } = {}) => {
+    readOptions.signal?.throwIfAborted()
+    const events = currentEvents()
+    return Promise.resolve({ events, cursor: events.at(-1)?.seq ?? -1, [Symbol.dispose]: observationDisposed })
+  })
+  ctx.provide('sessionQuery', { observeSession } as never)
   ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
   ctx.provide('sessionPersistence', { open: () => Promise.resolve({
     read: (seq: number) => Promise.resolve({ eventState: 'detached',
-      events: (agent.session.snapshotEvents() as Array<{ seq: number }>).filter(event => event.seq === seq) }),
+      events: currentEvents().filter(event => event.seq === seq) }),
     [Symbol.asyncDispose]: () => Promise.resolve(),
   }) } as never)
   let academicProjection: typeof academicResearchProjectionDefinition | undefined
@@ -277,7 +286,7 @@ async function harness(options: {
       if (key !== 'academicResearch' || academicProjection === undefined) return undefined
       if (options.eventsError === true) throw 'invalid event source'
       let state = academicProjection.init({ id: session.id } as never, undefined as never)
-      for (const event of agent.session.snapshotEvents() as SessionEvent[]) {
+      for (const event of currentEvents()) {
         state = academicProjection.apply(state, event)
       }
       return state
@@ -295,10 +304,64 @@ async function harness(options: {
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
   })
-  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents }
+  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents,
+    observeSession, observationDisposed, legacySnapshotRead }
 }
 
 describe('AcademicResearchController', () => {
+  it('reads Trace from one disposable observation without appending or starting research', async () => {
+    const fixture = await harness()
+    const researchRunId = createRetrievalRunId()
+    const span = academicTraceSpan('run', null, 'run', null, 'research')
+    fixture.sessionEvents.push(['academic/trace-v1', { schemaVersion: 1, researchRunId, span }])
+    const before = structuredClone(fixture.sessionEvents)
+    const page = await fixture.controller.traceList({ sessionId: fixture.sessionId, researchRunId }, fixture.signal)
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]?.spanId).toBe(span.spanId)
+    expect(fixture.observeSession).toHaveBeenCalledExactlyOnceWith(fixture.sessionId,
+      { signal: fixture.signal, projectionMode: 'none' })
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    expect(fixture.sessionEvents).toEqual(before)
+    expect(fixture.legacySnapshotRead).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('disposes Trace observations on invalid cursors and rejects detail requests without a span', async () => {
+    const fixture = await harness()
+    const query = { sessionId: fixture.sessionId, researchRunId: createRetrievalRunId() }
+    await expect(fixture.controller.traceList({ ...query, cursor: 'invalid' }, fixture.signal)).rejects.toThrow('invalid_cursor')
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    await expect(fixture.controller.traceDetail(query, fixture.signal)).rejects.toThrow('invalid_query')
+    expect(fixture.observeSession).toHaveBeenCalledOnce()
+  })
+
+  it('does not observe an unauthorized Session or an already-aborted Trace viewer', async () => {
+    const missing = await harness({ resolveError: true })
+    const query = { sessionId: missing.sessionId, researchRunId: createRetrievalRunId() }
+    await expect(missing.controller.traceList(query, missing.signal)).rejects.toThrow('missing Session')
+    expect(missing.observeSession).not.toHaveBeenCalled()
+    const cancelled = await harness()
+    const abort = new AbortController()
+    abort.abort(new Error('viewer stopped'))
+    await expect(cancelled.controller.traceList(query, abort.signal)).rejects.toThrow('viewer stopped')
+    expect(cancelled.observeSession).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('releases a Trace observation when its viewer aborts during observation', async () => {
+    const fixture = await harness()
+    const abort = new AbortController()
+    fixture.observeSession.mockImplementationOnce(() => {
+      abort.abort(new Error('viewer stopped during read'))
+      return Promise.resolve({ events: [] as SessionEvent[], cursor: -1, [Symbol.dispose]: fixture.observationDisposed })
+    })
+    await expect(fixture.controller.traceList({ sessionId: fixture.sessionId, researchRunId: createRetrievalRunId() }, abort.signal))
+      .rejects.toThrow('viewer stopped during read')
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    expect(fixture.legacySnapshotRead).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
   it('enhances only one selected paper after a completed first-tier run and retains the draft', async () => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(1)

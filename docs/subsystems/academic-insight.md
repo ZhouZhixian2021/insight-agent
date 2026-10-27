@@ -9,11 +9,13 @@ English | [中文](academic-insight.zh.md)
 
 The analysis-local `AnalysisInput` and report-local `ReportInput` accept optional producer question/evidence associations as `questionLinks`; they do not change Academic Model or Remote fields. Empty card sections retain individually valid minimal evidence, and absent question associations remain disclosed rather than inferred. The workflow integrator owns forwarding these optional associations.
 
+Trace v1 shares branded operation/event identifiers through the model's type-only trace subpath. The current Controller adapter persists safe observations and normalizes them for base-independent pagination; the Web panel reads only scoped Remote pages. Report HTML exports use the existing Markdown renderer with an inert allowlist serializer, preserving quality and evidence links without external resources. See the [Controller](../../packages/api/academic-research-controller/README.md) and [viewer](../../packages/client/ui-academic-research/README.md) for query and export details.
+
 ## Summary
 
 Academic insight is an optional business subsystem built on harness extension points.
 
-Formal research defaults to minimal-depth evidence extraction and passes verified records with their approved-question associations into a limited draft; uncovered questions remain gaps, and zero valid evidence produces no report. After the first-tier draft settles, a user may select one paper with existing valid evidence for complete-depth enhancement. The existing `AcademicEvidenceEnhancementRequest` identifies `sessionId`, `retrievalRunId` and `workVersionId` for that pass. `AcademicEvidenceEnhancementView` returns the same identities, `completed` or `partial_success`, and `initialEvidenceRecords`, `addedEvidenceRecords` and `incompleteFragments`. Selection and terminal facts are persisted separately; failure or cancellation can preserve earlier verified fragments and never approves or replaces the original draft. The client reads supplemental excerpts through the existing Session journal rather than synthesizing them from counts.
+Formal research defaults to minimal-depth evidence extraction and passes verified records with their approved-question associations into an evaluated report whose automatic mode selects final or draft from delivery checks; uncovered questions remain gaps, and zero valid evidence produces no report. After the first-tier report settles, a user may select one paper with existing valid evidence for complete-depth enhancement. The existing `AcademicEvidenceEnhancementRequest` identifies `sessionId`, `retrievalRunId` and `workVersionId` for that pass. `AcademicEvidenceEnhancementView` returns the same identities, `completed` or `partial_success`, and `initialEvidenceRecords`, `addedEvidenceRecords` and `incompleteFragments`. Selection and terminal facts are persisted separately; failure or cancellation can preserve earlier verified fragments and never grants semantic approval or replaces the original report. The client reads supplemental excerpts through the existing Session journal rather than synthesizing them from counts.
 
 ## Dependency direction
 
@@ -31,7 +33,7 @@ The evidence library also provides opt-in [incremental extraction](../../package
 
 The [evidence library](../../packages/academic/evidence/README.md) returns accepted records and `EvidenceExtractionResult.rejectedDrafts`. Each rejection carries zero-based `draftIndex` and `segmentIndex`, a stable `code`, and a diagnostic `reason` without source text. The workflow exposes `extracted`, `partially_extracted`, or `extraction_failed` paper settlements; only the first two supply evidence to analysis. The Academic Remote projects accepted `evidenceCount` and the rejection list for each extraction settlement. A partially extracted paper contributes both retained evidence and one failed extraction operation, while a fully rejected paper contributes no included work.
 
-The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) reconciles current evidence with explicit semantic reviews; the [report library](../../packages/academic/report/README.md) executes evaluation at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
+The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) checks current evidence and any supplied semantic reviews; missing independent reviews are disclosed without blocking otherwise valid delivery, while invalid supplied reviews still block it. The [report library](../../packages/academic/report/README.md) executes those checks at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
 
 The [ingestion library](../../packages/academic/ingestion/README.md) accepts an `IngestRecord` with optional verified Web discovery URLs and verification Provider IDs. `IngestOutcome.verifiedDiscoveries` links those values to the assigned `AcademicWorkId` and retained `WorkVersionId` after exact-identifier deduplication; separate versions remain addressable.
 
@@ -127,6 +129,22 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Latest state, including the durable cancellation intent.
  */
 @Remote('cancelBackgroundRun') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>
+
+/**
+ * Read safe diagnostics for one owned Session/run without starting or cancelling research.
+ * @param query Scope, stage/state filter, stable cursor and page bound.
+ * @param signal Viewer request lifetime; never cancels research.
+ * @returns Latest-operation page, or explicit absence for historical runs.
+ */
+@Remote('traceList') async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
+
+/**
+ * Read an operation's original observations under the same scoped pagination rules.
+ * @param query Session/run scope and required span identity.
+ * @param signal Viewer request lifetime.
+ * @returns Operation and its chronological observations; raw model content is excluded.
+ */
+@Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)

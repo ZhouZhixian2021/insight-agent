@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-09-14-academic-report-slice.zh.md)
 
+The mandatory independent-review prerequisite is superseded by [automatic delivery](2026-10-26-academic-automatic-delivery.md); the remaining evidence and analysis decisions stay active.
+
 ## Problem
 
 Shared Claim types do not define analysis behavior or prove semantic support. A fixed-evidence consumer needs a runnable path from traceable records to an inspectable report without inventing a model adapter, search workflow or approval history.
@@ -18,13 +20,13 @@ The [report library](../../../../packages/academic/report/README.md) evaluates a
 
 **Generate broad consensus and research gaps from a small fixture.** This treats sample coverage as field coverage. The baseline confines conclusions to attributed source statements and does not rank performance.
 
-**Treat working citations as semantic approval.** Existing references do not prove entailment. Final delivery requires a separately supplied review of the same evidence, while drafts disclose pending review.
+**Treat working citations as semantic approval.** Existing references do not prove entailment. Automatic delivery preserves that distinction: missing independent review remains disclosed, and a supplied non-supporting review blocks final delivery.
 
 **Simulate live research progress without workflow events.** Such progress would imply work and recovery behavior that do not exist. The viewer displays completed report data and quality status only.
 
 ## Consequences
 
-The [question-driven synthesis decision](2026-09-20-academic-question-synthesis.md) owns the formal evidence-to-insight stage and preserves this baseline's traceability and independent-review requirements.
+The [question-driven synthesis decision](2026-09-20-academic-question-synthesis.md) owns the formal evidence-to-insight stage and preserves this baseline's traceability and distinction between delivery checks and independent semantic approval.
 
 The local slice works without network or model credentials. It cannot replace full scholarly analysis, a trusted review service, Session recovery, or workflow integration. The caller remains responsible for truthful synthetic-data disclosure and review records from authentic sources. The fixed benchmark is fictional and never qualifies for final publication.
 

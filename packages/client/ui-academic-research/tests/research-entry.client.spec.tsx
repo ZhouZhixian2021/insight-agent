@@ -40,7 +40,7 @@ function fixture() {
   function props(current = sid): ResearchEntryProps {
     return { wide: true, sessionId: current, t: key => zh[key as RunKey], plan: async () => planned,
       startBackgroundRun, listBackgroundRuns, getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
-      enhanceEvidence: vi.fn(), enhancementHistory: vi.fn().mockResolvedValue(null),
+      traceList: vi.fn(), traceDetail: vi.fn(), enhanceEvidence: vi.fn(), enhancementHistory: vi.fn().mockResolvedValue(null),
       useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [current]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
   }
   return { props, publish, signals, startBackgroundRun, listBackgroundRuns,
@@ -117,6 +117,25 @@ it('preserves the running task on watch failure and explicitly reconnects withou
   fireEvent.click(screen.getByRole('button', { name: zh.backgroundReconnect }))
   await screen.findByText(zh.backgroundConnected)
   expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it.each(['ended', 'failed'] as const)('reloads the saved terminal result after an observation %s without starting or watching again', async (kind) => {
+  const f = fixture()
+  f.watchBackgroundRun.mockImplementationOnce(async function* () {
+    yield initialTask()
+    if (kind === 'failed') throw new Error('offline')
+  })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  expect((await screen.findByRole('alert')).textContent).toContain(zh.streamDisconnected)
+  await act(async () => { f.publish({ ...initialTask(), state: 'completed',
+    retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }) })
+  fireEvent.click(screen.getByRole('button', { name: zh.backgroundReconnect }))
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.queryByRole('alert')).toBeNull()
+  expect(screen.getByText(zh.backgroundSnapshot)).toBeTruthy()
+  expect(f.watchBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
 })
 it('does not admit a duplicate run when its start reply was lost after server persistence', async () => {
   const f = fixture()

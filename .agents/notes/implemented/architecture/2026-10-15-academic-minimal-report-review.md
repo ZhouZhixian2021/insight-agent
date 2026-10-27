@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-10-15-academic-minimal-report-review.zh.md)
 
+The mandatory independent-review prerequisite is superseded by [automatic delivery](2026-10-26-academic-automatic-delivery.md); the remaining evidence and analysis decisions stay active.
+
 ## Problem
 
 Minimal extraction retains verified records while its six-section card can be empty. Card-entry-only preparation discards those records and blocks a useful limited draft. Academic review also needs a natural-language feedback path without exposing machine fields as editable decisions.
@@ -22,7 +24,7 @@ Manufacturing complete card entries would disguise extraction depth. Requiring e
 
 ## Consequences
 
-Reports show approved questions, model answer proposals, cited producer associations and pending content review separately. Zero cited evidence cannot generate a synthesis report; incomplete coverage remains a limited draft. Existing evaluation checks still protect final delivery and independent-paper counts. Enhanced extraction, independent semantic review and real-model plan regeneration remain integration and joint-acceptance work, not implied by a successful structural test.
+Reports show approved questions, model answer proposals, cited producer associations and pending content review separately. Zero cited evidence cannot generate a synthesis report; counts below the approved work or full-text minimums retain a limited draft. Existing evaluation checks still protect final delivery and independent-paper counts. Enhanced extraction, independent semantic review and real-model plan regeneration remain integration and joint-acceptance work, not implied by a successful structural test.
 
 ## Verification
 

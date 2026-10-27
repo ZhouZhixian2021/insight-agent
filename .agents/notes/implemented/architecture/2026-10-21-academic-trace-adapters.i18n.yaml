@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-21-academic-trace-adapters.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-21-academic-trace-adapters.md
+/agent-note-academic-trace-adapters:
+  en: dfac6eb01d0fc482
+  zh: 127b900428ec480a
+/agent-note-academic-trace-adapters/problem:
+  en: 25933922f4529ef2
+  zh: 29f369a75553c0dd
+/agent-note-academic-trace-adapters/decision:
+  en: 73689f8f5a6be591
+  zh: fb3344ab7930c183
+/agent-note-academic-trace-adapters/alternatives-considered:
+  en: c24ce93b1922f5a8
+  zh: 8041461db3322f67
+/agent-note-academic-trace-adapters/consequences:
+  en: 99567628e9b62624
+  zh: 3af2a28ae696d537

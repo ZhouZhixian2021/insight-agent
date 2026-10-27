@@ -1,3 +1,4 @@
+import { TracePanel, type TraceRemote } from './TracePanel.tsx'
 /** Session-owned background research; browser disposal ends observation only. */
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -14,7 +15,7 @@ import type { EnhancementHistory, EnhancementKey } from './enhancement-history.t
 import { backgroundView } from './background-view.ts'
 
 /** Remote callbacks; watching and cancelling have independent lifetimes. */
-export interface ResearchEntryInjected {
+export interface ResearchEntryInjected extends TraceRemote {
   enhanceEvidence: (request: AcademicEvidenceEnhancementRequest, signal: AbortSignal) => Promise<AcademicEvidenceEnhancementView>
   enhancementHistory: (key: EnhancementKey, signal: AbortSignal) => Promise<EnhancementHistory | null>
   plan: (sessionId: AcademicResearchRunRequest['sessionId']) => Promise<AcademicResearchPlanView>
@@ -49,7 +50,7 @@ export function ResearchEntry({ t, sessionId: selectedSessionId, useSessions, ..
 }
 
 function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns, getBackgroundRun,
-  watchBackgroundRun, cancelBackgroundRun, enhanceEvidence, enhancementHistory, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
+  watchBackgroundRun, cancelBackgroundRun, enhanceEvidence, enhancementHistory, traceList, traceDetail, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
   const [approved, setApproved] = useState<AcademicResearchPlanView | null>(null)
   const [planError, setPlanError] = useState<string | null>(null)
   const [runs, setRuns] = useState<readonly AcademicBackgroundRunSummary[]>([])
@@ -192,6 +193,8 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
       {task.cancelReason !== null && <p>{t(`backgroundReason_${task.cancelReason}`)}</p>}
       {!connected && <button type="button" onClick={() => { void select(task.backgroundRunId) }}>{t('backgroundReconnect')}</button>}
     </section>}
+    {task?.retrievalRunId != null && <TracePanel key={`${sessionId}:${task.retrievalRunId}`} sessionId={sessionId}
+      researchRunId={task.retrievalRunId} traceList={traceList} traceDetail={traceDetail} t={t} />}
     {view !== null && <RunPanel view={view} t={t}
       plannedSearches={task?.researchBriefId === approved?.researchBriefId ? approved?.searches : undefined}
       onCancel={() => { void cancel() }} />}

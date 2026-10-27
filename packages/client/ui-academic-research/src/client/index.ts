@@ -48,6 +48,16 @@ export function apply(ctx: Context): void {
     const disposeEntry = ctx.slots.register({
       name: 'academic.research.entry', locale: 'academicRun',
       inject: (): ResearchEntryInjected => ({
+        traceList: async (query, signal) => {
+          const result = await ctx.remote.academicResearch.traceList(query, signal)
+          if (!result.ok) throw result.error
+          return result.value
+        },
+        traceDetail: async (query, signal) => {
+          const result = await ctx.remote.academicResearch.traceDetail(query, signal)
+          if (!result.ok) throw result.error
+          return result.value
+        },
         enhanceEvidence: async (request, signal) => {
           const result = await ctx.remote.academicResearch.enhanceEvidence(request, signal)
           if (!result.ok) throw result.error
@@ -98,7 +108,27 @@ export function apply(ctx: Context): void {
           if (!result.ok) throw result.error
           return result.value
         },
-        watchBackgroundRun: (key, signal) => ctx.remote.academicResearch.watchBackgroundRun(key, signal),
+        watchBackgroundRun: async function* (key, signal) {
+          signal.throwIfAborted()
+          const stream = ctx.remote.$stream({
+            name: 'Academic research observation',
+            open: generation => ctx.remote.academicResearch.watchBackgroundRun(key, AbortSignal.any([signal, generation])),
+            // The component owns the localized explanation for an unclosed observation.
+            ended: () => new Error(),
+          })
+          const abort = () => { void stream.dispose() }
+          signal.addEventListener('abort', abort, { once: true })
+          try {
+            for await (const item of stream) {
+              yield item.value
+              item.accept()
+              if (item.value.state !== 'running') return
+            }
+          } finally {
+            signal.removeEventListener('abort', abort)
+            await stream.dispose()
+          }
+        },
         cancelBackgroundRun: async (request) => {
           const result = await ctx.remote.academicResearch.cancelBackgroundRun(request)
           if (!result.ok) throw result.error

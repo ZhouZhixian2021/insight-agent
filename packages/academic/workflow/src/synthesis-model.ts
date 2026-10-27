@@ -1,3 +1,4 @@
+import type { AcademicTraceObserver } from './trace.ts'
 /** Session-backed question synthesis, reusing the extraction transport's durability and budgets. */
 import type { Context } from '@deepseek-ai/cordis'
 import { createUserMessage, type LlmCallConfig } from '@deepseek-ai/dsh-llm'
@@ -36,18 +37,20 @@ declare module '@deepseek-ai/dsh-session/types' {
  * @param session Live Session owning the request and response records.
  * @param config Selected model and output-token budget.
  * @param policy Bounded output-limit, invalid-response and transient-failure recovery policy.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns An adapter retaining valid paragraphs and recording local rejections; no template fallback or reference weakening.
  */
-export function createModelSynthesisGenerator(ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceModelPolicy):
+export function createModelSynthesisGenerator(ctx: Context, session: Session, config: LlmCallConfig,
+  policy: EvidenceModelPolicy, traceObserver?: AcademicTraceObserver):
 (input: AcademicSynthesisInput, signal?: AbortSignal) => Promise<AcademicSynthesisDraft> {
-  const run = createLoggedModelRunner<AcademicSynthesisDraft>(ctx, session, config, policy)
+  const run = createLoggedModelRunner<AcademicSynthesisDraft>(ctx, session, config, policy, traceObserver)
   return async (input: AcademicSynthesisInput, signal?: AbortSignal): Promise<AcademicSynthesisDraft> => {
     let draft: AcademicSynthesisDraft | undefined
     const message = (text: string) => createUserMessage({ source: { kind: 'academic-workflow' },
       content: [{ type: 'text', text }] })
     try {
       return await run({
-        messages: [message(synthesisPrompt(input))],
+        trace: { stage: 'analysis', operation: 'synthesis' }, messages: [message(synthesisPrompt(input))],
         outputLimitRetryMessages: [message(compactSynthesisPrompt(input))],
         invalidOutputRetryMessages: (error, compact) => [message(synthesisRepairPrompt(input,
           error instanceof SynthesisError ? error.message : 'The response failed structural validation.', compact))],

@@ -1,6 +1,6 @@
 /** Explicit adapters and results for one bounded research draft pass. */
 import type { AcademicCandidateRankingResult, CandidateAssessment, HybridSearchPlan,
-  ResearchBrief, ResearchQuestionCoverageResult, RetrievalRun, WorkVersionId,
+  ResearchBrief, ResearchQuestionCoverageResult, RetrievalRun, RetrievalRunId, WorkVersionId,
   ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
@@ -80,6 +80,9 @@ export const MAX_DRAFT_SEARCH_QUERIES = 3
 
 /** Callers own query planning, source execution, scope selection, model transport and durable request logging. */
 export interface DraftPipelineAdapters {
+  /** Optional diagnostic observer, isolated from research outcomes. */
+  readonly onTrace?: import('./trace.ts').AcademicTraceObserver
+
   /** Return an evidence-validated draft for the admitted research questions. */
   readonly synthesize: (input: import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisInput,
     signal?: AbortSignal) => Promise<import('@deepseek-ai/dsh-academic-analysis').AcademicSynthesisDraft>
@@ -125,8 +128,11 @@ export interface DraftPipelineAdapters {
   readonly onRecoveryCheckpoint?: AcademicRecoveryCheckpointObserver
 }
 
-/** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
+/** Ordered explicit searches followed by one merged paper-processing pass and an evaluated report. */
 export interface DraftPipelineInput {
+  /** Caller-allocated run identity for diagnostics; recovery must use the same identity. */
+  readonly retrievalRunId?: RetrievalRunId
+
   /** Maximum concurrent paper acquisitions/extractions; omitted means serial execution. */
   readonly paperConcurrency?: number
   readonly brief: ResearchBrief

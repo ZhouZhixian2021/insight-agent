@@ -7,6 +7,8 @@ kind: "package-library"
 
 [English](README.md) | 中文
 
+Trace v1 类型也通过仅类型子路径 `@deepseek-ai/dsh-academic-model/trace` 提供。操作与观察身份使用品牌类型，未知计时保持 null。诊断记录不改变证据有效性或报告审核结果。
+
 ## 概述
 
 `dsh-academic-model` 负责学术洞察包共用且不依赖提供方的数据语义。它是库，不是 Cordis 服务或插件，也不执行检索、证据抽取、跨论文分析、报告渲染或模型调用。

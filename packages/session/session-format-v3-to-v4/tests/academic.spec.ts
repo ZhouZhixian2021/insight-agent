@@ -3,7 +3,7 @@ import { SessionFormatEventCollector } from '@deepseek-ai/dsh-session-format'
 import type { SessionFormatEvent, SessionFormatJsonObject } from '@deepseek-ai/dsh-session-format'
 import { createSessionFormatV3ToV4 } from '../src/index.ts'
 import { academicSamples } from '../../session-format-v2-to-v3/tests/academic-samples.ts'
-import { academicEvent, academicHeader, academicReferencePositions, migrateAcademicV2, referenceHistory, semanticSelection } from '../../session-format-v2-to-v3/tests/academic-support.ts'
+import { academicEvent, academicHeader, academicReferencePositions, backgroundReportEvent, migrateAcademicV2, referenceHistory, semanticSelection } from '../../session-format-v2-to-v3/tests/academic-support.ts'
 
 function convert(events: readonly SessionFormatEvent[], sourceKind: 'decoded' | 'transformed' = 'transformed') {
   const migration = createSessionFormatV3ToV4([]), sourceHeader = { ...academicHeader, version: 3 }
@@ -16,6 +16,21 @@ function convert(events: readonly SessionFormatEvent[], sourceKind: 'decoded' | 
 }
 
 describe('academic intermediates in the V3 to V4 incoming edge', () => {
+  it('composes released V2 Trace through both insertions without rewriting its diagnostic payload', () => {
+    const data = structuredClone(academicSamples['academic/trace-v1']!)
+    const source = [academicEvent('turn/start', 0, { turn: 1 }), academicEvent('step/start', 1, { turn: 1, step: 1 }),
+      academicEvent('step/end', 2, { turn: 1, step: 1 }),
+      academicEvent('agent/inbox/spliced', 3, { target: 'next-turn', start: 0,
+        inserted: [{ id: 'trace-restart', role: 'user', source: { kind: 'user' }, content: [] }] }),
+      academicEvent('turn/start', 4, { turn: 2 }), academicEvent('academic/trace-v1', 5, data)]
+    const before = structuredClone(source)
+    const intermediate = migrateAcademicV2(source)
+    const saved = convert(intermediate.events).find(event => event.type === 'academic/trace-v1')
+    expect(saved).toEqual({ ...source[5]!, seq: 7 })
+    expect(saved?.data).toEqual(data)
+    expect(source).toEqual(before)
+  })
+
   it.each(Object.keys(academicSamples))('preserves %s in the audited transformed path', (type) => {
     const source = type.endsWith('verified-v1')
       ? [academicEvent('academic/candidate-semantic-review-request-v1', 0), academicEvent(type, 1)] : [academicEvent(type, 0)]
@@ -31,6 +46,18 @@ describe('academic intermediates in the V3 to V4 incoming edge', () => {
 
   it.each(Object.keys(academicSamples))('keeps direct required V3 %s unsupported', (type) => {
     expect(() => convert([academicEvent(type, 0)], 'decoded')).toThrow(/unknown event type/)
+  })
+
+  it.each([undefined, 'delivery', 'content'])('retains report issue category %s through both incoming edges', (category) => {
+    const source = backgroundReportEvent(category), before = structuredClone(source)
+    expect(convert(migrateAcademicV2([source]).events)).toEqual([before])
+    expect(source).toEqual(before)
+  })
+
+  it('refuses an unknown report issue category in a transformed background result', () => {
+    const source = backgroundReportEvent('unclassified'), before = structuredClone(source)
+    expect(() => convert([source])).toThrow(/unaudited payload/)
+    expect(source).toEqual(before)
   })
 
   it.each(academicReferencePositions)('checks $index.$field when no insertion changes seq', ({ index, field }) => {

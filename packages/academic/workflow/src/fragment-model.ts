@@ -1,3 +1,4 @@
+import type { AcademicTraceObserver } from './trace.ts'
 /** Formal Session-backed scope review and incremental source-verified extraction. */
 import { isDeepStrictEqual } from 'node:util'
 import type { Context } from '@deepseek-ai/cordis'
@@ -33,12 +34,13 @@ class FragmentModelFailure extends Error {
  * @param session Live Session with an active persistence writer.
  * @param config Selected model route and output controls.
  * @param policy Existing scope policy plus optional fragment controls.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns A scope reviewer and incrementally verified evidence generator.
  */
 export function createModelFragmentEvidenceGenerator(
-  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy,
+  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
 ): PaperVerifiedEvidenceGenerator {
-  const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy)
+  const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy, traceObserver)
   const meter = ctx.get('tokenMeter')
   if (!meter) throw new Error('Academic fragment extraction requires tokenMeter.')
 
@@ -59,7 +61,7 @@ export function createModelFragmentEvidenceGenerator(
       policy.inputBatchOverlapCharacters ?? 0,
       messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0))
     const scopeRequest = { ...baseRequest, segments: scopeSegments.segments }
-    const decision = await runScope({ messages: scopeMessages(scopeRequest, scope, source, scopeSegments.complete),
+    const decision = await runScope({ trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: scopeMessages(scopeRequest, scope, source, scopeSegments.complete),
       ...signal === undefined ? {} : { signal }, parse: parseScopeDecision,
       appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
       appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
@@ -70,7 +72,7 @@ export function createModelFragmentEvidenceGenerator(
     }
 
     const result = await extractEvidenceInFragments(extractionInput,
-      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress), signal)
+      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress, undefined, traceObserver), signal)
     if (result.evidence.evidenceRecords.length === 0 && result.failures.length > 0
       && result.failures.every(failure => failure.error instanceof FragmentModelFailure
         && failure.error.cause instanceof EvidenceError
@@ -89,24 +91,25 @@ export function createModelFragmentEvidenceGenerator(
  * @param session Session containing the previously committed minimal evidence.
  * @param config Selected model route.
  * @param policy Bounded model and fragment controls.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns A single-paper enhancement operation; it does not start automatically.
  */
 export function createModelFragmentEvidenceEnhancer(
-  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy,
+  ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
 ): (source: EvidenceExtractionInput, initial: EvidenceExtractionResult, signal?: AbortSignal) => Promise<EvidenceFragmentResult> {
   return (source, initial, signal) => enhanceEvidenceInFragments(source, initial,
-    fragmentOptions(ctx, session, config, policy, source, undefined, 'enhancement'), signal)
+    fragmentOptions(ctx, session, config, policy, source, undefined, 'enhancement', traceObserver), signal)
 }
 
 function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   policy: EvidenceExtractionModelPolicy, parsed: EvidenceExtractionInput,
-  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement'): EvidenceFragmentOptions {
+  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement', traceObserver?: AcademicTraceObserver): EvidenceFragmentOptions {
   const fragmentPolicy = policy.fragmentPolicy ?? DEFAULT_FRAGMENT_POLICY
   const outputCap = Math.min(config.maxTokens ?? fragmentPolicy.maximumOutputTokens,
     fragmentPolicy.maximumOutputTokens)
   if (!Number.isSafeInteger(outputCap) || outputCap < 1) throw new RangeError('Academic fragment output cap is invalid.')
   const runFragment = createLoggedModelRunner<readonly EvidenceDraft[]>(ctx, session, { ...config, maxTokens: outputCap },
-    { maxAttempts: 1, ...policy.attemptTimeoutMs === undefined ? {} : { attemptTimeoutMs: policy.attemptTimeoutMs } })
+    { maxAttempts: 1, ...policy.attemptTimeoutMs === undefined ? {} : { attemptTimeoutMs: policy.attemptTimeoutMs } }, traceObserver)
   const sessions = ctx.get('sessions'), persistence = ctx.get('sessionPersistence')
   if (!sessions || !persistence) throw new Error('Academic fragment extraction requires Session persistence.')
   const source: EvidenceModelSource = {
@@ -126,7 +129,7 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
         batchCount: null, attempt: fragment.attempt, maximumAttempts: fragment.maximumAttempts,
         lastFailure: null, validatedEvidenceRecords: validatedRecords, rejectedEvidenceDrafts: rejectedDrafts })
       try {
-        return await runFragment({ messages: evidenceMessages(request, purpose === 'enhancement' ? 'complete' : parsed.depth),
+        return await runFragment({ trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: evidenceMessages(request, purpose === 'enhancement' ? 'complete' : parsed.depth),
           ...request.signal === undefined ? {} : { signal: request.signal }, parse: parseFocusedEvidence,
           appendRequest: data => session.append('academic/evidence-request',
             { source, phase: 'evidence', fragment, ...data }),

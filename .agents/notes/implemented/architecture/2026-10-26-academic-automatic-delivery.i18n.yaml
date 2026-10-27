@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-26-academic-automatic-delivery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-26-academic-automatic-delivery.md
+/agent-note-academic-automatic-report-delivery:
+  en: 83d8863da58ddc20
+  zh: 1e193e9edbf0eeb6
+/agent-note-academic-automatic-report-delivery/problem:
+  en: 21f58a918d79f7da
+  zh: f132e79f87ee6f09
+/agent-note-academic-automatic-report-delivery/decision:
+  en: 2caee23e3f0dd1fa
+  zh: edaf8eb9b309a3d2
+/agent-note-academic-automatic-report-delivery/alternatives-considered:
+  en: b7ac80b574a836bc
+  zh: d4ebbdb48d6dc554
+/agent-note-academic-automatic-report-delivery/consequences:
+  en: 40e0184309f7e246
+  zh: fcb35aa7173e6756

@@ -46,6 +46,45 @@ describe('single-pass research draft', () => {
     expect(result.report?.markdown).toContain('## 研究问题与证据核对')
     expect(result.report?.markdown).not.toContain('未提供抽取关联')
   })
+  it.each([{ minimum: 999999, maximum: null }, { minimum: null, maximum: 1 }])(
+    'automatically delivers admitted evidence without enforcing historical length bounds %j', async (bounds) => {
+      const { input, adapters } = fixture()
+      // Exercise delivery flags with scripted sources; this is not real research acceptance.
+      input.synthetic = false
+      input.brief = { ...input.brief, reportRequirements: { ...input.brief.reportRequirements,
+        targetLength: { unit: 'characters', ...bounds } } }
+      const before = JSON.stringify(input), synthesize = adapters.synthesize
+      adapters.synthesize = vi.fn<typeof synthesize>(async (request, signal) => {
+        const draft = await synthesize(request, signal)
+        return { ...draft, directions: [{ title: '合成方法比较', layer: '方法', questionIndexes: [0],
+          overview: { statementIndexes: [0], missingReason: null },
+          themes: [{ title: '重排序方法', statementIndexes: [0], missingReason: null }],
+          themeLimit: '脚本材料仅支持一个方法主题。',
+          mechanism: { statementIndexes: [0], missingReason: null },
+          keyResults: { statementIndexes: [], missingReason: '脚本材料没有实验数值。', quantitative: false },
+          judgment: { statementIndexes: [], missingReason: '脚本材料不支持方法优劣判断。' },
+          implications: { statementIndexes: [], missingReason: '脚本材料不支持应用收益。' } }] }
+      })
+
+      const result = await runResearchDraft(input, adapters)
+
+      expect(result.status).toBe('completed')
+      expect(result.report?.mode).toBe('final')
+      expect(result.report?.evaluation.status).toBe('ready')
+      expect(result.report?.evaluation.assessments).toHaveLength(1)
+      expect(result.report?.evaluation.assessments.every(assessment => assessment.method === 'evidence-integrity-only'
+        && assessment.status === 'partially_supported')).toBe(true)
+      expect(result.report?.evaluation.issues.filter(issue => issue.category === 'delivery')).toEqual([])
+      expect(result.report?.evaluation.issues.some(issue => issue.category === 'content')).toBe(true)
+      const submitted = vi.mocked(adapters.synthesize).mock.calls[0]?.[0]
+      expect(result.report?.evidence.map(record => record.evidenceId))
+        .toEqual(submitted?.analysisInput.evidenceRecords.map(record => record.evidenceId))
+      expect(result.report?.claims.flatMap(claim => claim.evidenceSnapshot.evidenceItems.map(item => item.evidenceId)))
+        .toEqual(result.report?.evidence.map(record => record.evidenceId))
+      expect(adapters.synthesize).toHaveBeenCalledOnce()
+      expect(JSON.stringify(input)).toBe(before)
+    },
+  )
   it('rejects evidence replaced during synthesis against the independently captured extraction batch', async () => {
     const { input, adapters } = fixture()
     const synthesize = adapters.synthesize
@@ -259,7 +298,7 @@ describe('single-pass research draft', () => {
     expect(result.status).toBe('completed')
     expect(result.analysis?.claims).toHaveLength(1)
     expect(result.report?.mode).toBe('draft')
-    expect(result.report?.evaluation.status).toBe('needs_review')
+    expect(result.report?.evaluation.status).toBe('blocked')
     expect(result.report?.markdown).toContain('合成基准样例')
     expect(result.report?.evidence).toHaveLength(2)
     expect(records[0]!.workVersion.contentHash.status).toBe('not_extracted')

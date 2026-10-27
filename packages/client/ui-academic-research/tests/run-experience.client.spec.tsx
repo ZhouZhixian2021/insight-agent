@@ -79,6 +79,7 @@ describe('phase-one lifecycle preview', () => {
       const useSessions = (selectState: (s: unknown) => unknown) => selectState({ current, byId: { [current]: { blank: false } } })
       return { wide: true, sessionId: SessionId(current), t, plan, startBackgroundRun, listBackgroundRuns,
         getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, enhanceEvidence: vi.fn(), enhancementHistory: vi.fn(),
+        traceList: vi.fn(), traceDetail: vi.fn(),
         useSessions } as ResearchEntryProps
     }
     const view = render(<ResearchEntry {...props('one')} />); open()

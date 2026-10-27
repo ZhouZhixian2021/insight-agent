@@ -29,9 +29,9 @@ describe('question-driven report', () => {
     } })
     expect(report.claims).toEqual([])
     expect(report.evidence).toHaveLength(2)
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
     expect(report.evaluation.issues.some(issue => issue.code === 'no_claims' || issue.code === 'insufficient_coverage')).toBe(false)
-    expect(report.evaluation.issues.some(issue => issue.code === 'source_statement_review_required')).toBe(true)
+    expect(report.evaluation.issues.some(issue => issue.code === 'source_statement_review_required')).toBe(false)
   })
   it('blocks a source-specific answer when its current evidence hash disagrees', () => {
     const input = fixture()
@@ -48,16 +48,16 @@ describe('question-driven report', () => {
     expect(report.markdown).toContain('部分回答')
     expect(report.evidence).toHaveLength(2)
     expect(report.claims).toHaveLength(1)
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
     expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan')).toBe(true)
     expect(report.markdown).toContain('不能替代真实全文验收')
     await expect(report.markdown).toMatchFileSnapshot('./expected/question-report.md')
   })
-  it('does not use large quotations or repeated paragraphs to satisfy the approved body length', () => {
+  it('ignores historical body-length bounds instead of padding the report', () => {
     const input = fixture()
     const report = generateReport({ ...input, brief: { ...input.brief,
       reportRequirements: { ...input.brief.reportRequirements, targetLength: { unit: 'characters', minimum: 2000, maximum: 8000 } } } })
-    expect(report.limitations.join(' ')).toContain('未满足批准的篇幅范围 2000—8000')
+    expect(report.evaluation.issues.map(issue => issue.message).join(' ')).not.toContain('未满足批准的篇幅范围')
     expect(() => generateReport({ ...input, mode: 'final' })).toThrow()
   })
 })
@@ -104,9 +104,9 @@ describe('inspectable question argumentation', () => {
       statements: input.synthesis.statements.map(item => ({ ...item, uncertainty: null })) } })
     expect(report.markdown).toContain('未说明；不代表不存在限制')
     expect(report.markdown).toContain('本段未关联相反证据；不代表文献中不存在不同发现。')
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
   })
-  it('escapes evidence excerpts in the inline argument without counting them as analytical body length', () => {
+  it('escapes evidence excerpts without enforcing a body-length quota', () => {
     const input = fixture()
     const report = generateReport({ ...input,
       brief: { ...input.brief, reportRequirements: { ...input.brief.reportRequirements,
@@ -116,6 +116,6 @@ describe('inspectable question argumentation', () => {
     })
     expect(report.markdown).toContain('\\<script\\>')
     expect(report.markdown).not.toContain('<script>')
-    expect(report.limitations.join(' ')).toContain('未满足批准的篇幅范围 2000—8000')
+    expect(report.evaluation.issues.map(issue => issue.message).join(' ')).not.toContain('未满足批准的篇幅范围')
   })
 })

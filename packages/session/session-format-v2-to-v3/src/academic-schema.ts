@@ -1,6 +1,7 @@
-/** Fixed T0 academic payload schemas; source-object evidence lives in docs/scratch/g02-upstream-migration/audit-evidence.json. */
+/** Fixed T0 payload schemas plus the separately declared released master Trace v1 schema. */
 
 import type { JSONSchema } from 'zod/v4/core'
+import { academicTraceV1Schema } from './academic-trace-schema.ts'
 
 /** Audited historical payload schemas; current plugin declarations never extend this data. */
 export const academicV2Schema: {
@@ -67,6 +68,7 @@ export const academicV2Schema: {
     'academic/background-run-state': {
       '$ref': '#/$defs/value303',
     },
+    'academic/trace-v1': academicTraceV1Schema,
   },
   '$defs': {
     'value0': {
@@ -8950,6 +8952,10 @@ export const academicV2Schema: {
       'properties': {
         'claimId': {
           '$ref': '#/$defs/value412',
+        },
+        'category': {
+          'type': 'string',
+          'enum': ['delivery', 'content'],
         },
         'code': {
           'type': 'string',

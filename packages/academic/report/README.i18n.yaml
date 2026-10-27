@@ -3,20 +3,20 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/academic/report/README.md
 /:
-  en: 1d0727b96d452867
-  zh: 3d1b229c7f2a6377
+  en: 3cc642c2beeea28c
+  zh: 7345658069856014
 /deepseek-ai-dsh-academic-report:
   en: aa4727512df2600a
   zh: c26fc011122d53c3
 /deepseek-ai-dsh-academic-report/summary:
-  en: 6dcfcada9b48b7e4
-  zh: 42d993125c99aa1d
+  en: 01baa65663167842
+  zh: c3c336730c44053a
 /deepseek-ai-dsh-academic-report/table-of-contents:
   en: 2e89ddb1e73218cb
   zh: 4f6b39e1913e2ef2
 /deepseek-ai-dsh-academic-report/use-this-package:
-  en: 17bf00c244ee63b1
-  zh: d4c6e58fb0946bac
+  en: d931ad6ca7bce62c
+  zh: d8089d39b99dadcb
 /deepseek-ai-dsh-academic-report/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
@@ -31,10 +31,10 @@
   zh: 073579b0b8e3a04a
 /deepseek-ai-dsh-academic-report/model-experience/returned-result/kv-cache-effect:
   en: 3ee8648a86160c23
-  zh: 50b6d4d1d6205e3a
+  zh: 2c69562a410f4e5e
 /deepseek-ai-dsh-academic-report/known-limitations-and-deferred-work:
   en: 0a7646b5fde63f5c
-  zh: b24b4e10ecc71d6d
+  zh: b7ca9fd5e5913864
 /deepseek-ai-dsh-academic-report/known-limitations-and-deferred-work/dev-note:
   en: 91c18675fe1ce98d
   zh: c9f06216d835fd85

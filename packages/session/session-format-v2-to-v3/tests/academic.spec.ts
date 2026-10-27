@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import type { SessionFormatEvent, SessionFormatJsonObject } from '@deepseek-ai/dsh-session-format'
 import { ACADEMIC_V2_EVENT_TYPES } from '../src/index.ts'
 import { academicSamples } from './academic-samples.ts'
-import { academicEvent, academicReferencePositions, migrateAcademicV2, referenceHistory } from './academic-support.ts'
+import { academicEvent, academicReferencePositions, backgroundReportEvent, migrateAcademicV2, referenceHistory } from './academic-support.ts'
 
-describe('audited T0 academic incoming history', () => {
-  it('keeps the fixed 19-event inventory independent of installed event additions', () => {
+describe('audited academic incoming history', () => {
+  it('keeps T0 plus released master Trace as a fixed 20-event inventory', () => {
     expect([...ACADEMIC_V2_EVENT_TYPES].sort()).toEqual(Object.keys(academicSamples).sort())
-    expect(ACADEMIC_V2_EVENT_TYPES.size).toBe(19)
+    expect(ACADEMIC_V2_EVENT_TYPES.size).toBe(20)
     expect(() => migrateAcademicV2([academicEvent('academic/future-request', 0, {})])).toThrow(/unclassified event/)
   })
 
@@ -23,6 +23,18 @@ describe('audited T0 academic incoming history', () => {
   it.each(Object.keys(academicSamples))('refuses unclassified fields in %s', (type) => {
     expect(() => migrateAcademicV2([academicEvent(type, 0, { ...academicSamples[type]!, extraCoordinate: 0 })]))
       .toThrow(/unaudited payload/)
+  })
+
+  it.each([undefined, 'delivery', 'content'])('retains report issue category %s in a complete background result', (category) => {
+    const source = backgroundReportEvent(category), before = structuredClone(source)
+    expect(migrateAcademicV2([source]).events).toEqual([before])
+    expect(source).toEqual(before)
+  })
+
+  it('refuses an unknown report issue category in a complete background result', () => {
+    const source = backgroundReportEvent('unclassified'), before = structuredClone(source)
+    expect(() => migrateAcademicV2([source])).toThrow(/unaudited payload/)
+    expect(source).toEqual(before)
   })
 
   it.each(academicReferencePositions)('remaps $index.$field after a system insertion', ({ index, field }) => {

@@ -191,7 +191,7 @@ export interface AcademicClaimAssessmentView {
 export interface AcademicEvaluationView {
   readonly status: 'ready' | 'needs_review' | 'blocked'
   readonly assessments: readonly AcademicClaimAssessmentView[]
-  readonly issues: readonly { readonly claimId: ClaimId | null; readonly code: string; readonly message: string }[]
+  readonly issues: readonly { readonly claimId: ClaimId | null; readonly category?: 'delivery' | 'content'; readonly code: string; readonly message: string }[]
 }
 
 /** Report fields consumed by the Academic report renderer. */
@@ -444,4 +444,15 @@ export interface AcademicResearchRunValue {
     readonly stage: 'fulltext' | 'extraction'
   }[]
   readonly report: AcademicResearchReportView | null
+}
+
+/** Session-scoped Trace query; list and detail use immutable-watermark cursors. */
+export interface AcademicTraceQuery {
+  readonly sessionId: SessionId
+  readonly researchRunId: RetrievalRunId
+  readonly stage?: import('@deepseek-ai/dsh-academic-model').AcademicTraceStage | null
+  readonly status?: import('@deepseek-ai/dsh-academic-model').AcademicTraceStatus | null
+  readonly spanId?: import('@deepseek-ai/dsh-academic-model').AcademicTraceSpanId | null
+  readonly cursor?: string | null
+  readonly limit?: number
 }

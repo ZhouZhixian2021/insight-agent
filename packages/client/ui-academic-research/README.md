@@ -7,6 +7,8 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
+Settled reports offer a self-contained HTML download alongside Markdown. HTML uses the existing Markdown renderer, then an inert allowlist serializer: inline styles, local contents and evidence links, no scripts or external resources. It preserves report quality, limitations, missing evidence and synthetic markers independently of UI search. The Trace panel queries actual Session/run diagnostics on demand, filters stage and state, pages observations and exports the current safe page. Closing the viewer aborts only its query. Trace does not infer old calls or missing queue times, and does not automatically poll or start research.
+
 ## Summary
 
 The main Web sidebar starts Academic research in the selected saved Session and displays the formal Remote result, with separate lifecycle, aggregate processing, source-search, full-text, evidence-extraction and report-quality states, coverage, evidence navigation and Markdown download.
@@ -37,7 +39,7 @@ Approved search previews distinguish direct-search providers from reference-veri
 
 A draft with an `insufficient_coverage` evaluation issue keeps its Markdown download and displays a localized limited-evidence notice. Blocked final delivery does not hide an existing draft.
 
-The run panel displays insight settlement and reasons separately from extraction and review. `partial_success` retains the draft download and rejected candidate paragraph reasons; it is not report approval. Question answers and gaps appear in Markdown. Failed or blocked synthesis has no report download.
+The run panel displays insight settlement and reasons separately from extraction and review. `partial_success` retains the report download and rejected candidate paragraph reasons; it does not determine final delivery or assert independent semantic approval. Question answers and gaps appear in Markdown. Failed or blocked synthesis has no report download.
 
 `renderResearchPage()` — Pass an evaluated ResearchReport and explicit zh-CN or en viewer language. The returned HTML contains its own styles and interactions, requires no server or external assets, and escapes report text in markup and embedded JSON. Search filters claims and evidence; evidence links expand their details. Download exports the exact report Markdown. This renderer remains internal. The main Web entry registers through sidebar.footer.action and uses framework locale dictionaries.
 
@@ -45,7 +47,9 @@ After selecting a model and approving a research plan, open the sidebar entry to
 
 Per-paper results distinguish complete, partial and failed extraction. The page shows accepted evidence counts and rejected draft numbers with localized reasons. Draft numbers are displayed starting at one; source indexes remain producer-owned diagnostics. Rejected statements are not displayed as accepted report evidence.
 
-After a completed first-tier draft, users may select one extracted paper version with retained evidence and invoke the existing `enhanceEvidence` Remote. A synchronous click guard and durable Session selection prevent duplicate dispatch; reading history must succeed before selection is enabled. The panel reads selection, settlement and verified enhancement fragments through the existing Session follow snapshot and backward pages, scoped to the selected run and version. Supplemental excerpts and actual terminal counts are separate from the unchanged original report. Failed or cancelled enhancement can retain committed excerpts even when the terminal failure count is zero. Missing settlement is unconfirmed, not inferred success or automatic retry. Reopening restores durable facts. Unlike detached background research, closing this panel cancels its enhancement RPC. Enhancement does not regenerate, approve or replace the draft, and provides no server progress percentage.
+After a completed first-tier report, users may select one extracted paper version with retained evidence and invoke the existing `enhanceEvidence` Remote. A synchronous click guard and durable Session selection prevent duplicate dispatch; reading history must succeed before selection is enabled. The panel reads selection, settlement and verified enhancement fragments through the existing Session follow snapshot and backward pages, scoped to the selected run and version. Supplemental excerpts and actual terminal counts are separate from the unchanged original report. Failed or cancelled enhancement can retain committed excerpts even when the terminal failure count is zero. Missing settlement is unconfirmed, not inferred success or automatic retry. Reopening restores durable facts. Unlike detached background research, closing this panel cancels its enhancement RPC. Enhancement does not regenerate, approve or replace the report, and provides no server progress percentage.
+
+Report issues distinguish delivery blockers from content limitations and unanswered questions. Missing independent review alone does not prevent delivery; ready denotes delivery checks, not semantic approval. Historical reports keep their original status and are not relabeled by the client.
 
 <a id="model-experience"></a>
 ## Model Experience

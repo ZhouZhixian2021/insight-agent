@@ -13,7 +13,7 @@ describe('final delivery policy', () => {
     const input = reviewedInput()
     const report = generateReport({ ...input, claims: input.claims.map(claim => ({ ...claim, uncertainty: null })) })
     expect(report.mode).toBe('final')
-    expect(report.markdown).toContain('已完成当前证据与语义审核')
+    expect(report.markdown).toContain('报告已生成：当前交付检查通过')
     expect(report.markdown).not.toContain('合成基准样例：')
   })
   it.each([
@@ -27,10 +27,10 @@ describe('final delivery policy', () => {
     { unit: 'words', minimum: 1, maximum: null },
     { unit: 'characters', minimum: 999999, maximum: null },
     { unit: 'characters', minimum: null, maximum: 1 },
-  ])('rejects unmet length requirements %j', (targetLength) => {
+  ])('ignores historical length requirements %j', (targetLength) => {
     const input = reviewedInput()
-    expect(() => generateReport({ ...input, brief: { ...input.brief,
-      reportRequirements: { ...input.brief.reportRequirements, targetLength } } })).toThrow()
+    expect(generateReport({ ...input, brief: { ...input.brief,
+      reportRequirements: { ...input.brief.reportRequirements, targetLength } } }).mode).toBe('final')
   })
   it('accepts a character range containing the generated report', () => {
     const input = reviewedInput()

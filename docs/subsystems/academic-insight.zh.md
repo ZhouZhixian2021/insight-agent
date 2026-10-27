@@ -9,11 +9,13 @@ kind: "subsystem"
 
 分析本地 `AnalysisInput` 和报告本地 `ReportInput` 通过可选的 `questionLinks` 接收生产方问题与证据关联，不改变 Academic Model 或 Remote 字段。卡片分区为空时仍保留逐条有效的最小证据；未提供问题关联时明确披露而非推断。工作流集成负责人负责转发这些可选关联。
 
+Trace v1 通过模型的仅类型 trace 子路径共享品牌操作与事件身份。当前 Controller 适配器保存安全观察记录，标准化后交给不依赖基座的分页；Web 面板只读取限定范围的 Remote 页面。报告 HTML 导出使用现有 Markdown 渲染器与惰性允许列表序列化，保留质量和证据链接，不引入外部资源。查询与导出细节见 [Controller](../../packages/api/academic-research-controller/README.zh.md)和[查看器](../../packages/client/ui-academic-research/README.zh.md)。
+
 ## 概述
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 
-正式研究默认选择最小深度证据抽取，把已核验记录和对应的批准问题送入有限草稿；未覆盖的问题继续列为缺口，零有效证据不生成报告。用户可在一级草稿结束后选择一篇已有有效证据的论文进行完整深度增强。现有 `AcademicEvidenceEnhancementRequest` 使用 `sessionId`、`retrievalRunId` 和 `workVersionId` 标识这次增强。`AcademicEvidenceEnhancementView` 返回相同身份、`completed` 或 `partial_success`，以及 `initialEvidenceRecords`、`addedEvidenceRecords` 和 `incompleteFragments`。选择及终态事实独立持久化；失败或取消可保留先前已核验片段，不批准或替换原草稿。客户端通过既有 Session 日志读取新增摘录，不根据数量生成内容。
+正式研究默认选择最小深度证据抽取，把已核验记录和对应的批准问题送入已评测报告，由 auto 模式按交付检查选择正式报告或草稿；未覆盖的问题继续列为缺口，零有效证据不生成报告。用户可在一级报告结束后选择一篇已有有效证据的论文进行完整深度增强。现有 `AcademicEvidenceEnhancementRequest` 使用 `sessionId`、`retrievalRunId` 和 `workVersionId` 标识这次增强。`AcademicEvidenceEnhancementView` 返回相同身份、`completed` 或 `partial_success`，以及 `initialEvidenceRecords`、`addedEvidenceRecords` 和 `incompleteFragments`。选择及终态事实独立持久化；失败或取消可保留先前已核验片段，不授予语义审核通过状态，也不替换原报告。客户端通过既有 Session 日志读取新增摘录，不根据数量生成内容。
 
 ## 依赖方向
 
@@ -31,7 +33,7 @@ kind: "subsystem"
 
 [证据库](../../packages/academic/evidence/README.zh.md) 返回合格记录与 `EvidenceExtractionResult.rejectedDrafts`。每条拒绝记录包含从零开始的 `draftIndex` 和 `segmentIndex`、稳定的 `code`，以及不含原文的诊断 `reason`。工作流提供 `extracted`、`partially_extracted` 或 `extraction_failed` 论文结果；只有前两类向分析提供证据。Academic Remote 为每份抽取结果投影合格 `evidenceCount` 和拒绝列表。部分抽取成功的论文同时贡献保留证据和一次失败抽取操作，全部被拒的论文不计入实际纳入成果。
 
-分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测结合当前证据与明确的语义审核，报告在最终交付入口执行核验。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
+分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测核对当前证据与已提供的语义审核；缺少独立审核会披露但不阻止其他检查通过的交付，已提供但无效的审核仍会阻断。报告在最终交付入口执行这些检查。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
 
 [摄取库](../../packages/academic/ingestion/README.zh.md)接收可附带已核验 Web 发现 URL 和核验 Provider ID 的 `IngestRecord`。按精确标识符去重后，`IngestOutcome.verifiedDiscoveries` 把这些值关联到分配的 `AcademicWorkId` 和保留的 `WorkVersionId`；不同版本仍可分别寻址。
 
@@ -127,6 +129,22 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Latest state, including the durable cancellation intent.
  */
 @Remote('cancelBackgroundRun') async cancelBackgroundRun(request: AcademicBackgroundRunCancelRequest): Promise<AcademicBackgroundRunView>
+
+/**
+ * Read safe diagnostics for one owned Session/run without starting or cancelling research.
+ * @param query Scope, stage/state filter, stable cursor and page bound.
+ * @param signal Viewer request lifetime; never cancels research.
+ * @returns Latest-operation page, or explicit absence for historical runs.
+ */
+@Remote('traceList') async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
+
+/**
+ * Read an operation's original observations under the same scoped pagination rules.
+ * @param query Session/run scope and required span identity.
+ * @param signal Viewer request lifetime.
+ * @returns Operation and its chronological observations; raw model content is excluded.
+ */
+@Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
 Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)

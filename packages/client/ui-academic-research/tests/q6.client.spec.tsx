@@ -24,6 +24,7 @@ describe('Q6 fixed JSON read-only preview', () => {
     const getBackgroundRun = vi.fn(), watchBackgroundRun = vi.fn(), cancelBackgroundRun = vi.fn()
     render(<ResearchEntry {...({ wide: true, sessionId: undefined, t, plan, startBackgroundRun, listBackgroundRuns,
       getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, enhanceEvidence: vi.fn(), enhancementHistory: vi.fn(),
+      traceList: vi.fn(), traceDetail: vi.fn(),
       useSessions: (() => undefined) as ResearchEntryProps['useSessions'] } as ResearchEntryProps)} />)
     fireEvent.click(screen.getByRole('button', { name: zh.q6_entry }))
     expect(screen.getByRole('dialog', { name: zh.q6_title })).toBeTruthy()

@@ -14,6 +14,8 @@ export function streamRemote(stream: TestStream): Omit<ResearchEntryInjected, 'p
   let task = initialTask()
   let request: AcademicResearchRunRequest
   return {
+    traceList: async () => { throw new Error('Trace is not requested in this fixture') },
+    traceDetail: async () => { throw new Error('Trace is not requested in this fixture') },
     enhanceEvidence: async () => { throw new Error('Enhancement is not used by this background fixture') },
     enhancementHistory: async () => null,
     listBackgroundRuns: async () => [], getBackgroundRun: async () => task,

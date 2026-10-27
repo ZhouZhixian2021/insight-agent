@@ -1,4 +1,4 @@
-/** Fixed academic history admission and same-artifact references for the T0 incoming edges. */
+/** Fixed T0 and released master Trace history admission for the incoming edges. */
 
 import { isDeepStrictEqual } from 'node:util'
 import { z } from 'zod'
@@ -11,7 +11,7 @@ const payloads = new Map(Object.entries(academicV2Schema.properties).map(([type,
 const envelope = z.strictObject({ type: z.string(), seq: z.number().int().nonnegative(), time: z.number().int(),
   data: z.unknown(), ignorable: z.literal(true).optional() })
 
-/** Exact audited T0 event names; installed plugin declarations do not extend this set. */
+/** Exact audited T0 and released Trace event names; installed plugins do not extend this set. */
 export const ACADEMIC_V2_EVENT_TYPES: ReadonlySet<string> = new Set(payloads.keys())
 
 const requestTypes: Readonly<Record<string, string>> = {

@@ -19,7 +19,7 @@ const fixture = JSON.parse(readFileSync(new URL('./semantic-cases.json', import.
 }
 
 describe('citation existence versus semantic support', () => {
-  it.each(fixture.cases)('requires independent review for $name and respects a negative fixed review', (test) => {
+  it.each(fixture.cases)('allows unreviewed delivery for $name without ignoring a supplied negative review', (test) => {
     const { input } = benchmark()
     const evidence = input.evidence.map((record, index) => ({ ...record,
       verbatimExcerpt: { status: 'available' as const, value: test.evidence[index]! }, sourcedStatement: test.evidence[index]!,
@@ -34,8 +34,8 @@ describe('citation existence versus semantic support', () => {
         contentHash: evidence.find(record => record.sourceLocatorId === locator.sourceLocatorId)!.contentHash.value })),
     }
     const unchecked = evaluateClaims(request)
-    expect(unchecked.status).toBe('needs_review')
-    expect(unchecked.issues.some(issue => issue.code === 'semantic_review_required')).toBe(true)
+    expect(unchecked.status).toBe('ready')
+    expect(unchecked.issues.some(issue => issue.code === 'semantic_review_required')).toBe(false)
     const reviews = reviewFixture(request).map(review => ({ ...review, status: test.expectedReview,
       reason: test.reason, method: 'human-authored-synthetic-oracle' }))
     const result = evaluateClaims({ ...request, reviews })
@@ -48,7 +48,7 @@ describe('citation existence versus semantic support', () => {
     const { input } = benchmark()
     const reviews = reviewFixture(input).map(review => ({ ...review,
       assessedEvidenceIds: [...review.assessedEvidenceIds, review.assessedEvidenceIds[0]!] }))
-    expect(evaluateClaims({ ...input, reviews }).status).toBe('needs_review')
+    expect(evaluateClaims({ ...input, reviews }).status).toBe('blocked')
   })
   it('does not let global paper coverage conceal single-work support for one Claim', () => {
     const { input } = benchmark()

@@ -3825,7 +3825,7 @@
       "kind": "event",
       "event": "academic/background-run-state",
       "surface": false,
-      "digest": "11da5f373e5de878797edcf915de0decc322a1cfeab6665867e21a45e101ee58",
+      "digest": "4597342e218fd6a219340f0cedc4d3cfba1f8f511ebfba2a7004391e2e11f148",
       "schema": {
         "root": 0,
         "nodes": [
@@ -3854,7 +3854,7 @@
               },
               {
                 "name": "type",
-                "type": 418,
+                "type": 421,
                 "optional": false
               }
             ],
@@ -3920,7 +3920,7 @@
               },
               {
                 "name": "state",
-                "type": 416,
+                "type": 419,
                 "optional": false
               },
               {
@@ -3944,12 +3944,12 @@
             ]
           },
           {
-            "kind": "literal",
-            "value": "user_requested"
-          },
-          {
             "kind": "primitive",
             "type": "null"
+          },
+          {
+            "kind": "literal",
+            "value": "user_requested"
           },
           {
             "kind": "literal",
@@ -3959,13 +3959,13 @@
             "kind": "union",
             "types": [
               2,
-              5
+              4
             ]
           },
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               9
             ]
           },
@@ -4259,7 +4259,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               26
             ]
           },
@@ -4270,7 +4270,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               31,
               32,
               33,
@@ -4289,15 +4289,11 @@
           },
           {
             "kind": "literal",
-            "value": "unknown"
-          },
-          {
-            "kind": "literal",
             "value": "cancelled"
           },
           {
             "kind": "literal",
-            "value": "upstream_error"
+            "value": "unknown"
           },
           {
             "kind": "literal",
@@ -4305,15 +4301,23 @@
           },
           {
             "kind": "literal",
+            "value": "not_found"
+          },
+          {
+            "kind": "literal",
+            "value": "upstream_error"
+          },
+          {
+            "kind": "literal",
             "value": "output_limit"
           },
           {
             "kind": "literal",
-            "value": "parse_failed"
+            "value": "fulltext_unavailable"
           },
           {
             "kind": "literal",
-            "value": "fulltext_unavailable"
+            "value": "parse_failed"
           },
           {
             "kind": "literal",
@@ -4330,10 +4334,6 @@
           {
             "kind": "literal",
             "value": "network_error"
-          },
-          {
-            "kind": "literal",
-            "value": "not_found"
           },
           {
             "kind": "literal",
@@ -4599,7 +4599,7 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               69,
               70,
               71,
@@ -4862,7 +4862,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               12,
               13,
               14,
@@ -4950,7 +4950,7 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               69,
               70,
               71,
@@ -4970,7 +4970,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               14,
               95,
               96,
@@ -5002,7 +5002,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               101
             ]
           },
@@ -5326,15 +5326,15 @@
           },
           {
             "kind": "literal",
+            "value": "uncovered"
+          },
+          {
+            "kind": "literal",
             "value": "covered"
           },
           {
             "kind": "literal",
             "value": "partial"
-          },
-          {
-            "kind": "literal",
-            "value": "uncovered"
           },
           {
             "kind": "object",
@@ -5601,7 +5601,7 @@
               },
               {
                 "name": "status",
-                "type": 31,
+                "type": 32,
                 "optional": false
               }
             ],
@@ -5709,7 +5709,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               116
             ]
           },
@@ -6114,7 +6114,7 @@
             "properties": [
               {
                 "name": "status",
-                "type": 31,
+                "type": 32,
                 "optional": false
               }
             ],
@@ -6649,7 +6649,7 @@
           {
             "kind": "union",
             "types": [
-              31,
+              32,
               241,
               243,
               245,
@@ -6754,7 +6754,7 @@
           {
             "kind": "union",
             "types": [
-              31,
+              32,
               241,
               243,
               247,
@@ -7106,7 +7106,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               233
             ]
           },
@@ -7432,7 +7432,7 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               69,
               70,
               71,
@@ -7463,7 +7463,7 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               71,
               295
             ]
@@ -7519,7 +7519,7 @@
               },
               {
                 "name": "reason",
-                "type": 5,
+                "type": 4,
                 "optional": false
               },
               {
@@ -7558,7 +7558,7 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               303,
               304,
               305,
@@ -7595,11 +7595,11 @@
           },
           {
             "kind": "literal",
-            "value": "target_and_coverage_met"
+            "value": "saturated"
           },
           {
             "kind": "literal",
-            "value": "saturated"
+            "value": "target_and_coverage_met"
           },
           {
             "kind": "literal",
@@ -7624,7 +7624,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               314
             ]
           },
@@ -7658,7 +7658,7 @@
               },
               {
                 "name": "retrievalRun",
-                "type": 399,
+                "type": 402,
                 "optional": false
               },
               {
@@ -7668,17 +7668,17 @@
               },
               {
                 "name": "stages",
-                "type": 412,
+                "type": 415,
                 "optional": false
               },
               {
                 "name": "status",
-                "type": 413,
+                "type": 416,
                 "optional": false
               },
               {
                 "name": "synthesis",
-                "type": 414,
+                "type": 417,
                 "optional": false
               }
             ],
@@ -8140,7 +8140,7 @@
           {
             "kind": "union",
             "types": [
-              5,
+              4,
               356
             ]
           },
@@ -8159,7 +8159,7 @@
               },
               {
                 "name": "evidence",
-                "type": 391,
+                "type": 394,
                 "optional": false
               },
               {
@@ -8174,7 +8174,7 @@
               },
               {
                 "name": "mode",
-                "type": 396,
+                "type": 399,
                 "optional": false
               },
               {
@@ -8411,7 +8411,7 @@
               },
               {
                 "name": "status",
-                "type": 387,
+                "type": 390,
                 "optional": false
               }
             ],
@@ -8506,6 +8506,11 @@
             "kind": "object",
             "properties": [
               {
+                "name": "category",
+                "type": 387,
+                "optional": true
+              },
+              {
                 "name": "claimId",
                 "type": 7,
                 "optional": false
@@ -8527,8 +8532,23 @@
             "kind": "union",
             "types": [
               388,
-              389,
-              390
+              389
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "content"
+          },
+          {
+            "kind": "literal",
+            "value": "delivery"
+          },
+          {
+            "kind": "union",
+            "types": [
+              391,
+              392,
+              393
             ]
           },
           {
@@ -8545,7 +8565,7 @@
           },
           {
             "kind": "array",
-            "element": 392
+            "element": 395
           },
           {
             "kind": "object",
@@ -8567,12 +8587,12 @@
               },
               {
                 "name": "extractionMethod",
-                "type": 393,
+                "type": 396,
                 "optional": false
               },
               {
                 "name": "level",
-                "type": 394,
+                "type": 397,
                 "optional": false
               },
               {
@@ -8644,7 +8664,7 @@
             "types": [
               13,
               163,
-              395
+              398
             ]
           },
           {
@@ -8654,8 +8674,8 @@
           {
             "kind": "union",
             "types": [
-              397,
-              398
+              400,
+              401
             ]
           },
           {
@@ -8669,8 +8689,8 @@
           {
             "kind": "union",
             "types": [
-              400,
-              408
+              403,
+              411
             ]
           },
           {
@@ -8683,17 +8703,17 @@
               },
               {
                 "name": "completedAt",
-                "type": 5,
+                "type": 4,
                 "optional": false
               },
               {
                 "name": "coverageSummary",
-                "type": 401,
+                "type": 404,
                 "optional": false
               },
               {
                 "name": "failures",
-                "type": 402,
+                "type": 405,
                 "optional": false
               },
               {
@@ -8728,7 +8748,7 @@
               },
               {
                 "name": "stage",
-                "type": 405,
+                "type": 408,
                 "optional": false
               },
               {
@@ -8738,7 +8758,7 @@
               },
               {
                 "name": "status",
-                "type": 5,
+                "type": 4,
                 "optional": false
               }
             ],
@@ -8789,7 +8809,7 @@
               },
               {
                 "name": "providerBreakdown",
-                "type": 5,
+                "type": 4,
                 "optional": false
               },
               {
@@ -8807,7 +8827,7 @@
           },
           {
             "kind": "array",
-            "element": 403
+            "element": 406
           },
           {
             "kind": "object",
@@ -8819,7 +8839,7 @@
               },
               {
                 "name": "category",
-                "type": 404,
+                "type": 407,
                 "optional": false
               },
               {
@@ -8863,12 +8883,12 @@
           {
             "kind": "union",
             "types": [
-              31,
+              32,
               33,
               34,
-              36,
+              35,
               37,
-              40,
+              38,
               41,
               42,
               43,
@@ -8879,8 +8899,8 @@
             "kind": "union",
             "types": [
               71,
-              406,
-              407
+              409,
+              410
             ]
           },
           {
@@ -8906,12 +8926,12 @@
               },
               {
                 "name": "coverageSummary",
-                "type": 401,
+                "type": 404,
                 "optional": false
               },
               {
                 "name": "failures",
-                "type": 402,
+                "type": 405,
                 "optional": false
               },
               {
@@ -8946,7 +8966,7 @@
               },
               {
                 "name": "stage",
-                "type": 409,
+                "type": 412,
                 "optional": false
               },
               {
@@ -8956,7 +8976,7 @@
               },
               {
                 "name": "status",
-                "type": 411,
+                "type": 414,
                 "optional": false
               }
             ],
@@ -8965,9 +8985,9 @@
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               69,
-              410
+              413
             ]
           },
           {
@@ -9006,8 +9026,8 @@
           {
             "kind": "union",
             "types": [
-              32,
-              410
+              31,
+              413
             ]
           },
           {
@@ -9020,7 +9040,7 @@
               },
               {
                 "name": "status",
-                "type": 415,
+                "type": 418,
                 "optional": false
               }
             ],
@@ -9032,18 +9052,18 @@
               69,
               70,
               92,
-              388,
-              410
+              391,
+              413
             ]
           },
           {
             "kind": "union",
             "types": [
-              32,
+              31,
               69,
               71,
-              410,
-              417
+              413,
+              420
             ]
           },
           {
@@ -35629,6 +35649,567 @@
       }
     },
     {
+      "key": "event:academic/trace-v1",
+      "kind": "event",
+      "event": "academic/trace-v1",
+      "surface": false,
+      "digest": "7df75da42abf2dcc007dd64d72e5778dafd6eb32dd581753371b4abc39685639",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 68,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 69,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "researchRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "span",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "attemptIndex",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "businessStatus",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "endedAt",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "failure",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "gaps",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 32,
+                "optional": false
+              },
+              {
+                "name": "parentSpanId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "spanId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 47,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 54,
+                "optional": false
+              },
+              {
+                "name": "timing",
+                "type": 63,
+                "optional": false
+              },
+              {
+                "name": "toolName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              6
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              8
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              10
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "phase",
+                "type": 20,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "other"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "parse"
+          },
+          {
+            "kind": "literal",
+            "value": "admission"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "literal",
+            "value": "transport"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "validation"
+          },
+          {
+            "kind": "union",
+            "types": [
+              14,
+              15,
+              18,
+              21,
+              22,
+              23
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "prepare"
+          },
+          {
+            "kind": "literal",
+            "value": "after_content"
+          },
+          {
+            "kind": "literal",
+            "value": "before_content"
+          },
+          {
+            "kind": "array",
+            "element": 25
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "field",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper"
+          },
+          {
+            "kind": "literal",
+            "value": "run"
+          },
+          {
+            "kind": "literal",
+            "value": "stage"
+          },
+          {
+            "kind": "literal",
+            "value": "attempt"
+          },
+          {
+            "kind": "literal",
+            "value": "call"
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              29,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic_search"
+          },
+          {
+            "kind": "literal",
+            "value": "paper_processing"
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_review"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_verification"
+          },
+          {
+            "kind": "literal",
+            "value": "report_render"
+          },
+          {
+            "kind": "literal",
+            "value": "research"
+          },
+          {
+            "kind": "literal",
+            "value": "scope_review"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_extract"
+          },
+          {
+            "kind": "literal",
+            "value": "synthesis"
+          },
+          {
+            "kind": "literal",
+            "value": "tool_call"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_validate"
+          },
+          {
+            "kind": "literal",
+            "value": "web_discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_fetch"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_parse"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "retrieval"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext"
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              55,
+              56,
+              57,
+              58,
+              59,
+              60,
+              61,
+              62
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "queued"
+          },
+          {
+            "kind": "literal",
+            "value": "retry_wait"
+          },
+          {
+            "kind": "literal",
+            "value": "running"
+          },
+          {
+            "kind": "literal",
+            "value": "skipped"
+          },
+          {
+            "kind": "literal",
+            "value": "succeeded"
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "executionMs",
+                "type": 64,
+                "optional": false
+              },
+              {
+                "name": "queueMs",
+                "type": 64,
+                "optional": false
+              },
+              {
+                "name": "totalMs",
+                "type": 64,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "basis",
+                "type": 65,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              66,
+              67
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "monotonic"
+          },
+          {
+            "kind": "literal",
+            "value": "wall_clock"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "academic/trace-v1"
+          }
+        ]
+      }
+    },
+    {
       "key": "event:agent-preset/selected",
       "kind": "event",
       "event": "agent-preset/selected",
@@ -58196,6 +58777,11 @@
       "sources": []
     },
     {
+      "digest": "0e6ee759216fc15dd4dea8a8a0dbeb3f04c29402ae3971192810d0a15799554c",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "0e7b2a97f54f1afdb8cdfad1635abe9145327db539bfb69b4045c19d8c17755d",
       "names": [],
       "sources": []
@@ -58207,6 +58793,15 @@
       ],
       "sources": [
         "packages/academic/model/src/types.ts:150"
+      ]
+    },
+    {
+      "digest": "0ec372bddf2169c6417c71a12dc3d2d4d7c304dfc25b24ea305ce4d7170b2649",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceFailure"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:49"
       ]
     },
     {
@@ -58292,11 +58887,6 @@
       "sources": [
         "packages/experimental/hook-protocol/src/types.ts:19"
       ]
-    },
-    {
-      "digest": "11da5f373e5de878797edcf915de0decc322a1cfeab6665867e21a45e101ee58",
-      "names": [],
-      "sources": []
     },
     {
       "digest": "11f70b595aa76897fc4e25a352bfa718c659f44b799e5aa14e84e5a38fe72912",
@@ -58587,6 +59177,11 @@
       "sources": []
     },
     {
+      "digest": "1ba3ef52f2ff1c71de22b6057034bfc6028f57ead10c8223e35567235cea1555",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "1c2686c0682e7bc51d61117b2652bd4a80707e331aa276d6ef915ae32534a330",
       "names": [],
       "sources": []
@@ -58695,7 +59290,7 @@
       "digest": "1e114d23e6d68673cc15023de665d4a12569737a4dec42c642384e4b915a9f57",
       "names": [],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:20"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:21"
       ]
     },
     {
@@ -58715,6 +59310,11 @@
     },
     {
       "digest": "1e94723b88da611aa55d607e4e8b97bfaa400219ef1f68693cd322d3fafb886f",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "1e98f38116b6757c3e5b89ae26c0d4187a94746958d2956f661a7af26966e9dc",
       "names": [],
       "sources": []
     },
@@ -58992,15 +59592,6 @@
       "sources": []
     },
     {
-      "digest": "260f35e38f82cd6e5918dccc995ad280e2770dcbdd034f655900a881009e57dc",
-      "names": [
-        "packages/api/academic-research-controller/src/types.ts#AcademicResearchRunValue"
-      ],
-      "sources": [
-        "packages/api/academic-research-controller/src/types.ts:427"
-      ]
-    },
-    {
       "digest": "26347d9b21dc251e55de30c6b028a0fcedb7d116010a1f1184c6fceff68bd96e",
       "names": [],
       "sources": []
@@ -59201,11 +59792,6 @@
       "sources": []
     },
     {
-      "digest": "2c0c4a08f212df05277dbca4814a971ad8064af949345a23d8f5f7d638c4b04e",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "2c4c21f19f426a58f2dac914e34313aa43f8408972de857a486d1f086d5adb6c",
       "names": [],
       "sources": []
@@ -59221,6 +59807,11 @@
       "sources": [
         "packages/web/web-search-deepseek/src/provider.ts:71"
       ]
+    },
+    {
+      "digest": "2d164748e3c93b41a940cdfb3db5564dc98bd642ba38aa80b1b5c81e7299bccf",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "2d2e6cc1e4c544c2a4cb8215f80730da76ca530c48712939e459c22de930d64d",
@@ -59245,6 +59836,11 @@
       "sources": [
         "packages/academic/model/src/results.ts:61"
       ]
+    },
+    {
+      "digest": "2e2f82cf30a82b0342349ca29f6a5854cf712f290e225b1a77528fe7f00b27bd",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "2e3523541e942ef6cc9fbc5b91f242e0ca4c6ada479b79b96025b797f6e41f3f",
@@ -59333,6 +59929,15 @@
       ],
       "sources": [
         "packages/compaction/compaction/src/checkpoint.ts:22"
+      ]
+    },
+    {
+      "digest": "31e069620a5ac848a0607fb182866e164e2a26bb8b6ea5f964669c905d91b8a1",
+      "names": [
+        "packages/api/academic-research-controller/src/types.ts#AcademicResearchRunValue"
+      ],
+      "sources": [
+        "packages/api/academic-research-controller/src/types.ts:427"
       ]
     },
     {
@@ -59447,6 +60052,11 @@
         "packages/academic/model/src/query-workflow.ts:86",
         "packages/academic/model/src/query-workflow.ts:98"
       ]
+    },
+    {
+      "digest": "3690c6b7a7f600073b8ed8ed1544f47f7dcec3caa82c5d0999402e0d4abdecc8",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "36928de08cf25028d590e64280e9c4c28fc614f0099e677dbf8101522e102348",
@@ -59881,6 +60491,11 @@
       "sources": []
     },
     {
+      "digest": "44c9ab3bd3f550138137674ba5d7652365acf4f54bad423db744d466abd10f9e",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "44ce9eb2d22b9e1abce4499ce0b494f32c01b37afb817a57fef1111bef08dc6e",
       "names": [],
       "sources": []
@@ -59912,6 +60527,11 @@
       "sources": [
         "packages/academic/model/src/types.ts:287"
       ]
+    },
+    {
+      "digest": "4597342e218fd6a219340f0cedc4d3cfba1f8f511ebfba2a7004391e2e11f148",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "45f2a07ea94573123b6ae14db787a40062dec3834f36d8be92c523d40ba28448",
@@ -59981,6 +60601,13 @@
       "names": [],
       "sources": [
         "packages/llm/llm/src/assistant-stream.ts:44"
+      ]
+    },
+    {
+      "digest": "488e7930a8704d9f69937786e651250b581b8086f5a7912981dd0841ee49ca63",
+      "names": [],
+      "sources": [
+        "packages/api/academic-research-controller/src/types.ts:194"
       ]
     },
     {
@@ -60149,6 +60776,7 @@
     {
       "digest": "4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b",
       "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceSpanId",
         "packages/academic/model/src/types.ts#AcademicWorkId",
         "packages/academic/model/src/types.ts#ClaimAssessmentId",
         "packages/academic/model/src/types.ts#ClaimId",
@@ -60189,6 +60817,7 @@
         "packages/workflow/workflow/src/types.ts#WorkflowRunId"
       ],
       "sources": [
+        "packages/academic/model/src/trace.ts:25",
         "packages/academic/model/src/types.ts:10",
         "packages/academic/model/src/types.ts:13",
         "packages/academic/model/src/types.ts:16",
@@ -60246,6 +60875,15 @@
       ]
     },
     {
+      "digest": "4d1fb9786ac251b421ae275d8e6a0003ee19165c0f447f2a7216a4f7d8aaeb44",
+      "names": [
+        "packages/api/academic-research-controller/src/types.ts#AcademicResearchReportView"
+      ],
+      "sources": [
+        "packages/api/academic-research-controller/src/types.ts:198"
+      ]
+    },
+    {
       "digest": "4d7032067cd9bef36817466f0ce638a905cd32a8a1039f4b16f674250e761b9e",
       "names": [],
       "sources": [
@@ -60278,6 +60916,11 @@
     },
     {
       "digest": "4e44c9118152f6829634bfd508e47669ab0497caffa380c94b4be91f9390d35d",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "4e4f59e6bb291faeca11bc93ca2c8672a84a24d690616ca3318019304d9e7a46",
       "names": [],
       "sources": []
     },
@@ -60499,7 +61142,7 @@
         "packages/api/academic-research-controller/src/candidate-review-model.ts#CandidateReviewModelResult"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:30"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:31"
       ]
     },
     {
@@ -60727,6 +61370,11 @@
       ]
     },
     {
+      "digest": "5bb324b1920192e04de841fe9e62209938af2adf2aa5aacafe1b265228ddf493",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "5bb69b88517f6214f2af4d1a6d2b771e271ad3ad695cc9c2c272069ae698c9bc",
       "names": [],
       "sources": []
@@ -60901,13 +61549,6 @@
       "sources": []
     },
     {
-      "digest": "6009668f0eeb78823c289f68e7df9fe72c7a1c968c5f45808cbf96a6c1f2d54b",
-      "names": [],
-      "sources": [
-        "packages/api/academic-research-controller/src/types.ts:194"
-      ]
-    },
-    {
       "digest": "60534ed5b9a2e0caf98da2472f3b535deeb2445e355e3154645db4959af55f0c",
       "names": [],
       "sources": []
@@ -61009,9 +61650,27 @@
       "sources": []
     },
     {
+      "digest": "6406a6639852813a40d46e21c1ce4bc32f680f73268f2b135c9ddd2f8050ec98",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceStatus"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:29"
+      ]
+    },
+    {
       "digest": "642721414df1633c4479f6e880fa80f92b922ba3918bf2a88fd2e6d1aa1493e4",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "643f6c9328964a91b76dee48fb0d9a811d5e20d1cd563feec3e1dfc0ab7a7152",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceRecord"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:89"
+      ]
     },
     {
       "digest": "6487b10ba7542f3c447b1e41a1c6a590b7bfafe0b9b66b49f34028da85bb970f",
@@ -61097,6 +61756,11 @@
       ]
     },
     {
+      "digest": "671fa2058a2ef7b25758d169b9e056a437589b16552f14fd623c248733eb88bf",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "672c4aa2a9b736e3d6e5da6346d2e2ed5e3573f2d0baafa18e7407c9f3fee3db",
       "names": [
         "packages/skill/skill/src/index.ts#SkillInvocationSource"
@@ -61130,6 +61794,11 @@
     },
     {
       "digest": "68141cbe3994a5ffcd064c07c75996538437fd9dbf77ce8a2927e89ec577fabe",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "682b745ee0d203fcde78fe0d4aa1ce1c7fd94f395ede6c395e12c658318fd014",
       "names": [],
       "sources": []
     },
@@ -61181,7 +61850,7 @@
         "packages/api/academic-research-controller/src/candidate-review-model.ts#SemanticReviewResult"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:37"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:38"
       ]
     },
     {
@@ -61287,6 +61956,15 @@
       "digest": "6cf082d0fb6034dea61636787ff0ddf43b6e59aad71e644435a479bc9b83ad65",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "6d7bacc6ad247fd2edd597629a2182da7aa43f93d63735b2d5fbd9425c51f60c",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceDuration"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:38"
+      ]
     },
     {
       "digest": "6da3041f23e0df4a26bda91a95823aaaaba17092cfeaeed10862651666d4d99f",
@@ -61399,6 +62077,11 @@
     },
     {
       "digest": "6fa7e41ac6103e243c14397fba3b02a3323669cdcff3f526c341e57450bd331b",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "6fe7f889dc65ab47a340fe27a92cb683c249049c307f8911db5ab7cd53f414d7",
       "names": [],
       "sources": []
     },
@@ -61570,11 +62253,6 @@
       ]
     },
     {
-      "digest": "7804367581a1f93bce0882ab2b94619a6dc9695d92feb7f5d191686b3dd7f3a2",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "78551cc82ac8794c578b2dcfb77e329259abdc3b3452138c1ec7edcb40cf34fd",
       "names": [],
       "sources": []
@@ -61586,6 +62264,15 @@
       ],
       "sources": [
         "packages/academic/model/src/query-workflow.ts:53"
+      ]
+    },
+    {
+      "digest": "78759ecc8a93446a1f7b200c4ab79f5e7f761aa5cee66003668eaa9d823309ae",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceOperation"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:34"
       ]
     },
     {
@@ -61635,6 +62322,15 @@
       "digest": "79f024a735a9426f3f452ddee1c8ea842b1eceae25eea3d347b29bbead079ac4",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "7a11a4d32374fc43666a6b8c8549cd41db4b045cdafb78e0a38294496e4216ba",
+      "names": [
+        "packages/api/academic-research-controller/src/types.ts#AcademicBackgroundRunView"
+      ],
+      "sources": [
+        "packages/api/academic-research-controller/src/types.ts:68"
+      ]
     },
     {
       "digest": "7a234d381822873b46bd6ed6da058d9fd5d3787d17cb7e02076dc4c56d637268",
@@ -61709,6 +62405,11 @@
       "sources": []
     },
     {
+      "digest": "7cf17bd9184a0f3f457c5ab251e3132097dc3c0424275eaa51ce200ffa4ffe5b",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "7d0f0f5fbf0e0e246a88d809a3937b30b8edb8beb34f31fa7b3e58698c4eb599",
       "names": [],
       "sources": []
@@ -61747,6 +62448,11 @@
     },
     {
       "digest": "7df62978a2b7de8540e714152297743e0a622209a46a5ac9513fc0fad73ca23b",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "7df75da42abf2dcc007dd64d72e5778dafd6eb32dd581753371b4abc39685639",
       "names": [],
       "sources": []
     },
@@ -61882,6 +62588,11 @@
       "sources": [
         "packages/llm/llm/src/types.ts:68"
       ]
+    },
+    {
+      "digest": "81cec112cc37f2d180c25e093eb78fb7457a01ab59974402f5ceb8d8b7340f2a",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "82174880dd2148162b6ec86c009796e95637e97dff54c1bd8a053af792d7878a",
@@ -62102,6 +62813,11 @@
       "sources": []
     },
     {
+      "digest": "8874222cc188ee49de36d61f504d87431d8c9fd4090271999e44f55701ebb8cb",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "88841202942c7683b3b7e5ea6a796047ec326b6701ac23e58cc236d85613b9fa",
       "names": [],
       "sources": []
@@ -62229,6 +62945,11 @@
       ]
     },
     {
+      "digest": "8c33ff61832905c3fa10d7e58009ae019e56bb720f0f346238f14de4f0dded71",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "8c3e241f7299d0978ca91da1f0892ea2e2a4dce1674e13175ae98c8e402d197e",
       "names": [],
       "sources": [
@@ -62257,6 +62978,11 @@
     },
     {
       "digest": "8cf77dbc0c36b85c57459465d18abcc54848abb633f4bcbd4fc64b0a4303caf5",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "8d1e63cf7c9e717171d3cd4de83e306ef6bd199300b26d4bc71dd04a7d0ce2d0",
       "names": [],
       "sources": []
     },
@@ -62486,12 +63212,17 @@
       ]
     },
     {
+      "digest": "9564365887f193cc77b5ff5123a076b226ae2304b197374024bc21ed294aa268",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "956e753c1e2a4b71f7019ed4e30736c29f8969de06e96de2771fdc3c3248aa93",
       "names": [
         "packages/api/academic-research-controller/src/candidate-review-model.ts#CandidateReviewModelRequest"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:29"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:30"
       ]
     },
     {
@@ -62594,6 +63325,11 @@
     },
     {
       "digest": "998f22585a5d73ec005365e203f07fc3b3a029e82323fdda3fd7f13b0a9639d0",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "99accc4c5b6b8951697d38d79f6012b5b5b325a4b82faa077ae57785ddb55a76",
       "names": [],
       "sources": []
     },
@@ -63094,6 +63830,11 @@
       "sources": []
     },
     {
+      "digest": "aad9cee3a07d604c928c1d1ccff788971684c02656456ebe3d82fac1083b08b2",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "aae343bc3d663c83f2e8b5e1c7eea5d509dc7a5361bc8bd8b5ac3bb8d3b1ed56",
       "names": [],
       "sources": []
@@ -63192,7 +63933,21 @@
       "sources": []
     },
     {
+      "digest": "ae35497347f7569f9fd2e62e65f0c8e8938a68251195b39e9561642b61bcb10b",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceGap"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:43"
+      ]
+    },
+    {
       "digest": "ae63d9d1080ed8945031594d93f8d96651d7101b848719cc3e1475875cd3d649",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "aeb38564b8cfce4b86f9f29863337a15de81fe88404dc8ca78b5cdca0add8351",
       "names": [],
       "sources": []
     },
@@ -63269,7 +64024,7 @@
         "packages/academic/workflow/src/synthesis-model.ts#SynthesisModelResult"
       ],
       "sources": [
-        "packages/academic/workflow/src/synthesis-model.ts:17"
+        "packages/academic/workflow/src/synthesis-model.ts:18"
       ]
     },
     {
@@ -63432,6 +64187,11 @@
       "sources": []
     },
     {
+      "digest": "b516a280d6503f71cfad58179c121eb3c6563981718be543b214b8eea18331e8",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "b52f215a6cd691058a3413c12f161fa3b563a2f4895adb3df6f744ec4b0a6ef1",
       "names": [],
       "sources": []
@@ -63517,15 +64277,6 @@
       "sources": []
     },
     {
-      "digest": "b7f5c0d506bef207957d7937689b04610d7601c6fbd8d53adb697ad7120bf7c3",
-      "names": [
-        "packages/api/academic-research-controller/src/types.ts#AcademicEvaluationView"
-      ],
-      "sources": [
-        "packages/api/academic-research-controller/src/types.ts:191"
-      ]
-    },
-    {
       "digest": "b815d7b91cdd9fc6ccc7dcba05cfc5ce1d55fab5fc0c0801803cd3630cedb602",
       "names": [],
       "sources": []
@@ -63584,15 +64335,6 @@
       "digest": "b993441f8ce7d27b80e619e113e232ae8e62d3d5a8340f6bfe12d8c4c018e62f",
       "names": [],
       "sources": []
-    },
-    {
-      "digest": "b9941f55b85a3ebca97e860bcf59e9339629df861d5b90a394139b452bf26f6b",
-      "names": [
-        "packages/api/academic-research-controller/src/types.ts#AcademicResearchReportView"
-      ],
-      "sources": [
-        "packages/api/academic-research-controller/src/types.ts:198"
-      ]
     },
     {
       "digest": "b9b17ba699653274cb345500dd0f716a89ebf5880e9f20177fa1f0c11a6d4827",
@@ -63716,7 +64458,7 @@
         "packages/api/academic-research-controller/src/candidate-review-model.ts#SemanticReviewRequest"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:36"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:37"
       ]
     },
     {
@@ -63746,6 +64488,11 @@
       "sources": [
         "packages/workflow/tool-workflow/src/types.ts:29"
       ]
+    },
+    {
+      "digest": "c12cb755cbbd220c15279e81e8cb61f34704e7034129b702e856a1640ebe597e",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "c1328e04bee064bb796b2c194e5f2cc21912393c91f425d0ff0f0f7495753775",
@@ -63916,7 +64663,7 @@
         "packages/api/academic-research-controller/src/candidate-review-model.ts#VerifiedSemanticReview"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:38"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:39"
       ]
     },
     {
@@ -63966,17 +64713,17 @@
       "sources": []
     },
     {
-      "digest": "c97e3b4931b5facb56c00cf8813f76b9486360d00697db6322b4a5406f34bfb6",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "c99e20441bf15341e9db54385e558e5c03d21dff2eb1ac08ccbf47c2d8747954",
       "names": [],
       "sources": []
     },
     {
       "digest": "c9ad8e25810ca1dc21a80cd262f41f2841404c10e872b321e794271f4bd4da55",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "c9b57093a876898072dcb4227101f618e2058b594ccc4341e83d1abb19b06e09",
       "names": [],
       "sources": []
     },
@@ -64010,6 +64757,15 @@
       "digest": "cb1c8959e1726f82f9a3d2ef2bc90bf8c451a98fd56175e956022124c770c818",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "cb3725448bd79a9ad5d9e5b4f841c9a5093c8af1706821345870fadb1f5e9a9a",
+      "names": [
+        "packages/academic/model/src/trace.ts#AcademicTraceSpan"
+      ],
+      "sources": [
+        "packages/academic/model/src/trace.ts:55"
+      ]
     },
     {
       "digest": "cbbe8377ee744964537dbafd83607219e58ba79a13f6db0d0645c7ad3d5e8a09",
@@ -64108,6 +64864,11 @@
       ]
     },
     {
+      "digest": "d042610fe75cd0425453a0b832ca4c3cbcc13979d0811f74b2ad78751cba2556",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "d0fbb0ca1bbba059830826f33f801da1aced35a2504376d61e020bdfec8d50c0",
       "names": [],
       "sources": []
@@ -64117,15 +64878,6 @@
       "names": [],
       "sources": [
         "packages/api/academic-research-controller/src/types.ts:334"
-      ]
-    },
-    {
-      "digest": "d26f3c5f8e8a2dcf4b5151ba27490278ec9b847f60b3ed505530ffcf97e869e8",
-      "names": [
-        "packages/api/academic-research-controller/src/types.ts#AcademicBackgroundRunView"
-      ],
-      "sources": [
-        "packages/api/academic-research-controller/src/types.ts:68"
       ]
     },
     {
@@ -64421,6 +65173,11 @@
       "sources": []
     },
     {
+      "digest": "dd16e743389c88399a70157970988f7a271b693c5b9314febb94c566bdcfb734",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "dd1e128da0e39f8c530c5356bf0519d26657728bb2d418c737796b3d92fe7565",
       "names": [],
       "sources": []
@@ -64574,6 +65331,18 @@
         "packages/academic/model/src/types.ts:261",
         "packages/api/academic-research-controller/src/types.ts:160"
       ]
+    },
+    {
+      "digest": "e24887adddb70fc046f3e36a72e3c42da30c567bdec5a3a0065c33df40b3506c",
+      "names": [],
+      "sources": [
+        "packages/academic/model/src/trace.ts:71"
+      ]
+    },
+    {
+      "digest": "e255a819a279276a13abb51739b32460ad30cf2c78eef2ebd7b130b77c817948",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "e2ad8f5bcd813f268ffef1b10a12d7ddd2b8ced8b9b6d0275b3f6b7ed094a187",
@@ -64763,6 +65532,11 @@
       "sources": []
     },
     {
+      "digest": "e8ab629cc0fce5f9ca2678229cc17a472672be8e415b96b391c244beb4de6b19",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "e8de0f457fed5b9ff94dc4950b59ef75fd8ba8af665cc7899485924a62653367",
       "names": [],
       "sources": []
@@ -64947,7 +65721,7 @@
         "packages/api/academic-research-controller/src/candidate-review-model.ts#ReviewSelectionEvent"
       ],
       "sources": [
-        "packages/api/academic-research-controller/src/candidate-review-model.ts:42"
+        "packages/api/academic-research-controller/src/candidate-review-model.ts:43"
       ]
     },
     {
@@ -65277,6 +66051,15 @@
       ]
     },
     {
+      "digest": "f96a9a89f7f7e9303fdd44799fa24bc1d11ec60848b5611fd57f3b30ef36f0cf",
+      "names": [
+        "packages/api/academic-research-controller/src/types.ts#AcademicEvaluationView"
+      ],
+      "sources": [
+        "packages/api/academic-research-controller/src/types.ts:191"
+      ]
+    },
+    {
       "digest": "f97f47b0eb87905ed77cc27c5e4ed75ef805cb372c98905253709de1aab9b63c",
       "names": [],
       "sources": []
@@ -65316,6 +66099,11 @@
     },
     {
       "digest": "fabeec6e028978aca45bbc03657f80692700519c757b87754e56804e0bb40b8f",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "fadcbb9b05197c2dba473bb77b84479f3634398fee5884e887beb61c22dc49e7",
       "names": [],
       "sources": []
     },
@@ -65411,8 +66199,13 @@
         "packages/academic/workflow/src/synthesis-model.ts#SynthesisModelRequest"
       ],
       "sources": [
-        "packages/academic/workflow/src/synthesis-model.ts:12"
+        "packages/academic/workflow/src/synthesis-model.ts:13"
       ]
+    },
+    {
+      "digest": "fd76feed4d7a307fc89fe24260cefa8f0918a558e58d2b589f0041d4d64954e2",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882",

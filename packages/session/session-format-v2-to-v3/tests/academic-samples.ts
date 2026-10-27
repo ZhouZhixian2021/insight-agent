@@ -488,4 +488,18 @@ export const academicSamples: Readonly<Record<string, SessionFormatJsonObject>> 
     'sessionId': 'retained:sessionId',
     'backgroundRunId': 'retained:backgroundRunId',
   },
+  'academic/trace-v1': {
+    schemaVersion: 1,
+    researchRunId: 'retained:researchRunId',
+    span: {
+      spanId: 'retained:attempt', parentSpanId: 'retained:call', kind: 'attempt', stage: 'analysis', operation: 'synthesis',
+      academicWorkId: null, workVersionId: null, providerId: 'retained:provider', model: 'retained:model',
+      toolName: null, attemptIndex: 1, status: 'failed', businessStatus: 'retained:status',
+      startedAt: '2026-10-26T00:00:00.000Z', endedAt: '2026-10-26T00:00:01.000Z',
+      timing: { queueMs: { value: null, basis: 'unknown' }, executionMs: { value: 0, basis: 'monotonic' },
+        totalMs: { value: 2.5, basis: 'wall_clock' } },
+      failure: { code: 'transport', phase: 'after_content', message: 'retained:failure' },
+      gaps: [{ code: 'retained:gap', field: 'retained:field', message: 'retained:message' }],
+    },
+  },
 }

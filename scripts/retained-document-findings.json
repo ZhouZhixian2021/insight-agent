@@ -1941,6 +1941,1215 @@
           "count": 1
         }
       ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "packages/api/academic-research-controller/tests/candidate-pool-handoff.spec.ts",
+      "reason": "frozen-field-consumer",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2572cca0f5be359562b9ed6c59b6d586885473a84da732dddeec2b42cf9b5d1a",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bae5b496d8438c642831695f4451afdc6a5b3e9c9bfa87f046c3774ecd5a82de",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/audit.json",
+      "reason": "frozen-sample",
+      "fileSha256": "616be33045cac246b7299f4b4509bdaad220d91d75d225ebd1b6eb3746f49910",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "15dd1e048413bfd54ef4165c74951d3a987ad1df0ce0957d02f20022b0ce7161",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/candidates.md",
+      "reason": "frozen-sample",
+      "fileSha256": "dcc4bb1b380d84407274eedc2618ad494af75d190dc1decbfeab9a1a09774e30",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "26466395c9ba5faad9a8e9dc0cf09f5cfc9ee434919d05a21083d6adab8fdf71",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/historical.json",
+      "reason": "frozen-sample",
+      "fileSha256": "db1ab4562ed6e972f5d4bf5853a7295268341afbe0475d0bdfb7212c80832e55",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "05b8118b7d817d6a738b5308a8f7b5b4dfd96f26d75c3ea9b8fb055d0d6df5f1",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "05d33a52a88e05b444d4f19a36e9a0539f93e52bc9235e5f39bb4eeee4342015",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "0c521da238596c93613e67b080328d73c98b1b6a9fe50ccf7efc4d4350b19529",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "1472a3da3a09fc6d519928f2788790ce19a0dd6cedea0f351567830de7b8bc69",
+          "count": 3
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "156e183997e93d421165a6942380ccb5d34762f450c500030ac44895c2e9b9e2",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "18de7b9bc708e22579da605176579ea80b727dd37ee05f264c01fbf0cbcf98e9",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "198aa3d1c6ce21477c2d3435b999b7850374c15d67dd0146b7520f9b1093e344",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "1e4bb0992cd0a633d55df589df5fc0f63bf82dc8f43e09fe5b82a5ddc2561933",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "201f084c9890e61b283998861718bc3a7d2eadb1acf7e665ebb1637dfdb9383e",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "20259ec56d5b150d48394104ee3d3729dbcba37b67997d54f7a99f37c5c0078a",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "20604020fe4b2fe1800720110eeaafb06ddf0c2b3cd324afb2edd85f702e94c9",
+          "count": 2
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "20aa21bba356c5ae68dc6b55c4f3f983d636a1a65b663421c072f4df87ab6acb",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2461ebc1743b530a73cbf998d5c0383b51d2ef9677972fa36280f109d74e3eac",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2747c927c388aad5e1b71d20f1ad37144d035ce81c7f9853a7c4d374689aca37",
+          "count": 88
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "29803cee368cd7911dc24ef0e2bab25ab63869c215cf170a832b5fb15529a3fe",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2d00469ee55d49724e74d2908d48ba49cb4ad8109229e2a72ba0f3d0dc493e39",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2d1086158f02ee8384171715ac53751ace2ad122434484ab1aa0353fd6a0d16a",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2dc65ededcad247c53f5589e8ee54bda81b53201534b836aa8096753013ab02d",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2dca24e95e7cf35b4cc1df13da97bef0df5ea146bf9f1dd754231f0405744d98",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "316319d5d5529dc0746381a06bf2b2ad1f52a51c23b2a2f310f0f04ec04ebcea",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "36b1322c82b45bd1b7b72a63f6f99db8a5c386b3bb6da5a215deae54076f6f15",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "37ee1b7733b8fcf4877b618011dceff663250d4af169302256b0da8a8e9d044c",
+          "count": 2
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3a5fe6a9f1d224a3f10ed6ecc7c6b07b943b023621cd9f30fc024792e477c2d8",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3b7dcb546b5372d08d2175e0fed4c4035f7dde51b500d1c42aa8ee0650ac4659",
+          "count": 92
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3bba2a561e60f0c52d818470d77f3fcca961369e40fb94c62b6afa7e79d963df",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3ca82e0de3ac4e2a900693b7dba61886d44c581d4c16d07889c866eac5ae3edd",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "41f6ee8e6fe9dab5064acf6c7846962a0f2c70ecff1e9f970d32faed0b79458f",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "42be6ea414c16ff06121d61a37f03b853dc61a31742ca1ca8a3c671bdf519d22",
+          "count": 3
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "4859dae1dd7a4d92caa4502b4c49d0e8eb458641090049720fe702c69841c335",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "49c22b17052dc4656922015ae493ad55c256cf4742dfa9177c867c717c638d54",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "4e91886d812e6957572bf3d02d1c1bc16fb4751d41b8090e9b518feff6806190",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "51efff90616549ed0c44747e7ab1b698b991b690924e5cc276da9dbad9b99d44",
+          "count": 9
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "52a953183da0702d72b8d711c3a2b0b1f0b04c064de3c71d95a701b8377a56b0",
+          "count": 70
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "575f7991b131a5d2e05478c4ad390a8050ed65e198ae0258dc07524a6920e4e2",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "58a97a8c587c58a7517649a6debda629aec628a845297ea48b8630ef83b6660d",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5a37045b09e1e6b644ed39d7703e71d020f6d9744cdc380188a78022f299d928",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5c3ac198550c699b93b0b9b20d6dff45fcdbdeae6614da5019d1753e8a29f31b",
+          "count": 91
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5d14c4214bd804d91e788fd22495220d8e0d1b4d72c82e56cacea8b79fc36133",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "63024c790523bb0baa177220763b7818a077887832ccca414e17b72b0b98dea4",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "64e4ab030f6c452ee36280fb0126a172ee3767cb396d0ef735f7135d96ebe946",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "65d3ebd31a5177a10d4b5eb75882e80930bf3ea7b06973f73a56eca7dbb3515a",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "6bca91db0aa9c4da6f54875c2862c67d501164d3602b780deb2010fe149eb0b3",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "72823106ae544bc533a73000b4f793037723812e90763bf5b4a096a0e326f63b",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "7341cdea4ee0e999a79285e6f15b6a53790e3e6c6202a042372428478e88d020",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "74a66a8263ade4d7720539557e1e0f49036c207f1ff902c9f618888b98348ef0",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "77bbb70ec8d892e8d83894020663456decb13ce1f80c83e3215d061c31b3f7c4",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "7f1811d6a94ad8ec2d11957948cb57a1b15a94df4db40984eb2abc0af64459c7",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "7fb72dd9c4a15cf812121a1fe1f20b27de3b23b8a6c1d3c8c4f483bca8eddbe5",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "80b624f1c95535ace883b64cb668d7253c6cac26650644fcdc7624943268e1ca",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "83d6c7996932009defd5bcb4db5f9af150ec9f73e392fd35d291d8a00078e07b",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "873e06219e8e96295cb09b838e542853d67457669789f31bf16828d4d41edc66",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "887b5ffe3797b27ffd369684c0c35fd1df6ccd8d8b29cc3579865ed981654063",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8b34e4bc1cb2fc0ee9f50e9409766037acc1c93a178f27b23d9dbaa264daba5d",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8c3af4a15627cad5102ada9d37dbd85a2ce2ca6a0e514d0348c31621ac91a29d",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8c65d279cbafd67c9082b3283a7e7e2b2d21e97ccec32ac80f3e5ee0596a6e34",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8de9a883c78f2e155316dde97c42a24358b3c64c488f618a0bfc98929b2a786d",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9c3963f18fcf23c8244c352d2df2fa8a0c60a340ce6cab7303c69608bee0ac69",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9efe9d49d92f291fe863c299f142089f0a9a680387793e312419c02e13e9dde4",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9fb386aacd0db037a557b6785f2cf72cb2728e55b0caa69a7f1aaf895f2e6660",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a3564cd1c39e011e482d4720f3c724f716433baa842b630fead5c9e1d97fd006",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a57f6d527a9644f170879f888fa8e367106bae7d624b73bd24c63a77198a6f11",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a609a03a4c4525852dec0338da1c8f412f727c4454868dac38aea7150ddbc501",
+          "count": 9
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a7ff976b47ca93eed40a8911729df003a487fb83d0a13fddf5c408cf5435863c",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a8ee7ea52cb416a114e78807a6578f6bab98b1b12489d4baf3ffc952448be274",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "aa63be699d0068dca4a099cda4edfc8da8952647f9caee641790b2d905d5f125",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "af571e6a672b1e95582f61aba87eba2745da88fd0a46687b675294f7ec38a595",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b11d65225b8862bd5c6ae24b92801aaf993046716d663bed77827f8d43e7ffd8",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b1bd0dc5382c03453d1af78e58741320b09d24e79062c015683235a9cc77bfc9",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b2505ddadeb3a0e365a1dba15a5402d69396d5a1db269b6caed46fee46b84a53",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b826c27f344382e4faee69356917aa931b898e1dd9222727b30adbec87b66428",
+          "count": 59
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b90570cd629e62e3cec8af42ea75561d4ff314729e7795b9f4023e4e9de8d8cd",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bba922f65fee03a6191ba99d330c4ec87b3585508589a044ece917e94bcbc730",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bcc35ce61f1c108fe3fc32238ae58c4d16ed841245982c44cc3e79fe43408bc2",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bcdcc66fb6323ba327ef31d49c56cc3fb7ed8d41e5c3c10b5e8915089436db7b",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bce7c5c78d96c746bbc3464e4f350974dd179ce28117bac62fea8858de6b94b0",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bd3681c962b66e4d4862db39fcb150a6ae00f17ce5eac9c38fb4deaf3a2b95bd",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bda8b22679f5ddcc8bc4f9de96bd086fb17c21eca61332fa5480f8d8b7c9a9fa",
+          "count": 78
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "be60123fbb0ee3c122d186c6f839cf04806423655f25e7fce26f1c89be2bf8cd",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c7be88fe7285950f4ddd27172accfd7dd43adc0fa04f214dcd28427871030a5a",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c99386a4e527d36691ad1543dd03631ef954ea85e8b644cda8a72f715c3e591a",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "cacc76e98aba563bb4336d67722ee54fa3f9c0120cd47201de888d5f0e75f2c3",
+          "count": 91
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ccd113d80921f7116c765d4289d41e2953e10daf8e1b0203565fc4f2502ad6e3",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ccf5094593070a2404cb46bd0a2864ed13c1c3d01291f1aca3a7631bae2dc9aa",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ced8afadb0a09cb1a52333cd01f102958a7987dd6aec77d692150114b8880eac",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "d7e7f13416acbee4238d334fb37510bdfcfbc1106c3e17f23bead4d66dd651c3",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dac8a3da40b6c3687aea3f5202e25eee171963d2480026ffa79c9c395b117c20",
+          "count": 67
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dde722da8b90c5e5eeef82b6c90b61f1a633737d1a08fb21e3654106f577c95e",
+          "count": 88
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dea50c59fce6a838eb56c2a7ee420d98b6e213053278bea4b76c06542753f7de",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dfb2eb4473906fdce386cdd899768be972861aa661656c45d810dbf91565da17",
+          "count": 78
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e5544421ed9cf544217c2b58d7ce64b459b3fa44c8d9cab3efd249a65380b42c",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e56a29003a9c98214e947e75f6188942a72018aa8ac919bdddc4445848ca4212",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e770c2c8ebac31692625b19155ffb0c18e74614fbcac9a233ef970bd70867802",
+          "count": 67
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e9bf7b14f4085f2a6734c76d63fb44a6a8a31f08a2489492b4ee8515be2a1b6f",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ea42985b043ae8c12ef95aebf695a5e49c39bf32cdd8220fdbae50fbc509fb3b",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "eec3e5ea73d68bddc03197eaf8dcdf8eb470abe1602802f30bc2665a0cb46a88",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "efe93393391a1a6da2d8e9d6b41a61e7e96e73ca06624a45c7a1355ac369092a",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "f161bac46a7bb0291251355944dd6efe979f463f8489ab9899ae06878ff3719d",
+          "count": 92
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "f3bfafa0a25d8f38f78b32223fd8e7da3d7abf7b98e7249accdef64df9b86563",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fc52ace1b7c930849f18f48b9385bf17cd065e6e427e7859305ffbdf805e2db4",
+          "count": 59
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fd0497c70b26581be5144c82da0e4026ef5f58c02c60affe0cea69bb7aaf93b5",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fd5b09573cba23de39e90e541f753d82909192440dbc6d2cc8bb6c710317988a",
+          "count": 70
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fe2e095d88ba32b5dbb579e43cfea2cf495921c90d76c740e0f8580ca3e1e1ba",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/input.json",
+      "reason": "frozen-sample",
+      "fileSha256": "900e45afec9a69c54a49824f14d9acc1a21abb02db0cc7ab0f78a2b955425bba",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "107887e5bcfe0d5a36b9cbb536f2a74264647258ae91fd49e22dcdbfd8c35679",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2d0517d5083d602fd1494a081b099fdf1a4a1f745604a6c2f5ceef070ac9e1d7",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "41bc5afabc01f5fef19bfd21b6aeac0a0ac9d4a94e8e9991c7cfb83c820f63ce",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "483a9f61588eaf8787f17f0100a99bbde6ffb2cd1e61af0c809b00b21d69afa5",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "78c88211ac7ecf920f9a12255355a1eb1b9356506142d2b51d50dd2d1ba2f426",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8dfe0ca5803666379590e24ac311b98c878b411f1c1a2acf28bd767e34608e7f",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b182eccf06b62011e25085097c4401aac028d6be5f18f5f21ed0c78f774cbf13",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c691d8a0bfb30c09dfbc542b5feeab7b1edb85ef5e155c2b6e4242d27bfca4bb",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "f965cdee3ddc1595bbdcd87e3b34de1cacaad221424a7a87651472006a884d05",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.i18n.yaml",
+      "reason": "frozen-sample",
+      "fileSha256": "acc7bab47274fca95a5ebabd8295997e7b0953598ce9a750f4ae9a15a885396c",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e2d09f253aee3d91a57d0837c8371ef89d8adc630342bcf533abe6ac015d5cf0",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.md",
+      "reason": "frozen-sample",
+      "fileSha256": "3237f4c826ad469d183c5da64086c05cd1bc1f2379511b8477338799a8385613",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "4ee9d4aa71217d8f1372dfb28633fde71eafb9f594d4d78daea8cf4f74102942",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5f4933427d7d17d7b630fae4d983a97d0e474ba064fdddd2c2a0545275544b69",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "concrete-term",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
+      "reason": "frozen-sample",
+      "fileSha256": "26b7045a68215c1a8d6a35035fafc9c392e435e3e13ca35bbb93e6ccb5258e95",
+      "matches": [
+        {
+          "kind": "concrete-term",
+          "contextSha256": "05b8118b7d817d6a738b5308a8f7b5b4dfd96f26d75c3ea9b8fb055d0d6df5f1",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "0c521da238596c93613e67b080328d73c98b1b6a9fe50ccf7efc4d4350b19529",
+          "count": 9
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "1472a3da3a09fc6d519928f2788790ce19a0dd6cedea0f351567830de7b8bc69",
+          "count": 3
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "156e183997e93d421165a6942380ccb5d34762f450c500030ac44895c2e9b9e2",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "198aa3d1c6ce21477c2d3435b999b7850374c15d67dd0146b7520f9b1093e344",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "1b624b35147ac7dd43039be8bc4ee81301d9e943844917db1b9bf149ee3825f2",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "20604020fe4b2fe1800720110eeaafb06ddf0c2b3cd324afb2edd85f702e94c9",
+          "count": 2
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "20aa21bba356c5ae68dc6b55c4f3f983d636a1a65b663421c072f4df87ab6acb",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2461ebc1743b530a73cbf998d5c0383b51d2ef9677972fa36280f109d74e3eac",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2747c927c388aad5e1b71d20f1ad37144d035ce81c7f9853a7c4d374689aca37",
+          "count": 89
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "29803cee368cd7911dc24ef0e2bab25ab63869c215cf170a832b5fb15529a3fe",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2d00469ee55d49724e74d2908d48ba49cb4ad8109229e2a72ba0f3d0dc493e39",
+          "count": 18
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2d1086158f02ee8384171715ac53751ace2ad122434484ab1aa0353fd6a0d16a",
+          "count": 18
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2dc65ededcad247c53f5589e8ee54bda81b53201534b836aa8096753013ab02d",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "2dca24e95e7cf35b4cc1df13da97bef0df5ea146bf9f1dd754231f0405744d98",
+          "count": 94
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "36b1322c82b45bd1b7b72a63f6f99db8a5c386b3bb6da5a215deae54076f6f15",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "37ee1b7733b8fcf4877b618011dceff663250d4af169302256b0da8a8e9d044c",
+          "count": 2
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3a5fe6a9f1d224a3f10ed6ecc7c6b07b943b023621cd9f30fc024792e477c2d8",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3b7dcb546b5372d08d2175e0fed4c4035f7dde51b500d1c42aa8ee0650ac4659",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3bba2a561e60f0c52d818470d77f3fcca961369e40fb94c62b6afa7e79d963df",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "3ca82e0de3ac4e2a900693b7dba61886d44c581d4c16d07889c866eac5ae3edd",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "42be6ea414c16ff06121d61a37f03b853dc61a31742ca1ca8a3c671bdf519d22",
+          "count": 3
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "4e91886d812e6957572bf3d02d1c1bc16fb4751d41b8090e9b518feff6806190",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "51efff90616549ed0c44747e7ab1b698b991b690924e5cc276da9dbad9b99d44",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "52a953183da0702d72b8d711c3a2b0b1f0b04c064de3c71d95a701b8377a56b0",
+          "count": 70
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5a37045b09e1e6b644ed39d7703e71d020f6d9744cdc380188a78022f299d928",
+          "count": 94
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5c3ac198550c699b93b0b9b20d6dff45fcdbdeae6614da5019d1753e8a29f31b",
+          "count": 92
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "5d14c4214bd804d91e788fd22495220d8e0d1b4d72c82e56cacea8b79fc36133",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "63024c790523bb0baa177220763b7818a077887832ccca414e17b72b0b98dea4",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "651e371c70579c0fa61bf8f57251c24878c389915c9d04ebae88330449300e2d",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "65d3ebd31a5177a10d4b5eb75882e80930bf3ea7b06973f73a56eca7dbb3515a",
+          "count": 9
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "77bbb70ec8d892e8d83894020663456decb13ce1f80c83e3215d061c31b3f7c4",
+          "count": 94
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "7f1811d6a94ad8ec2d11957948cb57a1b15a94df4db40984eb2abc0af64459c7",
+          "count": 82
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "83d6c7996932009defd5bcb4db5f9af150ec9f73e392fd35d291d8a00078e07b",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "873e06219e8e96295cb09b838e542853d67457669789f31bf16828d4d41edc66",
+          "count": 17
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8b34e4bc1cb2fc0ee9f50e9409766037acc1c93a178f27b23d9dbaa264daba5d",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8c3af4a15627cad5102ada9d37dbd85a2ce2ca6a0e514d0348c31621ac91a29d",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "8c65d279cbafd67c9082b3283a7e7e2b2d21e97ccec32ac80f3e5ee0596a6e34",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9c3963f18fcf23c8244c352d2df2fa8a0c60a340ce6cab7303c69608bee0ac69",
+          "count": 94
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9efe9d49d92f291fe863c299f142089f0a9a680387793e312419c02e13e9dde4",
+          "count": 8
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "9fb386aacd0db037a557b6785f2cf72cb2728e55b0caa69a7f1aaf895f2e6660",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a3564cd1c39e011e482d4720f3c724f716433baa842b630fead5c9e1d97fd006",
+          "count": 81
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a609a03a4c4525852dec0338da1c8f412f727c4454868dac38aea7150ddbc501",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "a8ee7ea52cb416a114e78807a6578f6bab98b1b12489d4baf3ffc952448be274",
+          "count": 9
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "aa63be699d0068dca4a099cda4edfc8da8952647f9caee641790b2d905d5f125",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b826c27f344382e4faee69356917aa931b898e1dd9222727b30adbec87b66428",
+          "count": 59
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "b90570cd629e62e3cec8af42ea75561d4ff314729e7795b9f4023e4e9de8d8cd",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bba922f65fee03a6191ba99d330c4ec87b3585508589a044ece917e94bcbc730",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bcc35ce61f1c108fe3fc32238ae58c4d16ed841245982c44cc3e79fe43408bc2",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bce7c5c78d96c746bbc3464e4f350974dd179ce28117bac62fea8858de6b94b0",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bd3681c962b66e4d4862db39fcb150a6ae00f17ce5eac9c38fb4deaf3a2b95bd",
+          "count": 16
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "bda8b22679f5ddcc8bc4f9de96bd086fb17c21eca61332fa5480f8d8b7c9a9fa",
+          "count": 78
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c1e24252f369c10fb20c840e17a7c04fd5cef5293491c73305b89819db13c53d",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c7be88fe7285950f4ddd27172accfd7dd43adc0fa04f214dcd28427871030a5a",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "c99386a4e527d36691ad1543dd03631ef954ea85e8b644cda8a72f715c3e591a",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "cacc76e98aba563bb4336d67722ee54fa3f9c0120cd47201de888d5f0e75f2c3",
+          "count": 92
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ccb51a3831ff57730c5f9c2a28058b842235f658568efe2262308bd93002635e",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ccd113d80921f7116c765d4289d41e2953e10daf8e1b0203565fc4f2502ad6e3",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ccf5094593070a2404cb46bd0a2864ed13c1c3d01291f1aca3a7631bae2dc9aa",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "ced8afadb0a09cb1a52333cd01f102958a7987dd6aec77d692150114b8880eac",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "d7e7f13416acbee4238d334fb37510bdfcfbc1106c3e17f23bead4d66dd651c3",
+          "count": 10
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dac8a3da40b6c3687aea3f5202e25eee171963d2480026ffa79c9c395b117c20",
+          "count": 67
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dde722da8b90c5e5eeef82b6c90b61f1a633737d1a08fb21e3654106f577c95e",
+          "count": 89
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dea50c59fce6a838eb56c2a7ee420d98b6e213053278bea4b76c06542753f7de",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "dfb2eb4473906fdce386cdd899768be972861aa661656c45d810dbf91565da17",
+          "count": 78
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e5544421ed9cf544217c2b58d7ce64b459b3fa44c8d9cab3efd249a65380b42c",
+          "count": 1
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e56a29003a9c98214e947e75f6188942a72018aa8ac919bdddc4445848ca4212",
+          "count": 4
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e770c2c8ebac31692625b19155ffb0c18e74614fbcac9a233ef970bd70867802",
+          "count": 67
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "e9bf7b14f4085f2a6734c76d63fb44a6a8a31f08a2489492b4ee8515be2a1b6f",
+          "count": 7
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "eec3e5ea73d68bddc03197eaf8dcdf8eb470abe1602802f30bc2665a0cb46a88",
+          "count": 17
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "efe93393391a1a6da2d8e9d6b41a61e7e96e73ca06624a45c7a1355ac369092a",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "f161bac46a7bb0291251355944dd6efe979f463f8489ab9899ae06878ff3719d",
+          "count": 93
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fc52ace1b7c930849f18f48b9385bf17cd065e6e427e7859305ffbdf805e2db4",
+          "count": 59
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fd0497c70b26581be5144c82da0e4026ef5f58c02c60affe0cea69bb7aaf93b5",
+          "count": 83
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fd5b09573cba23de39e90e541f753d82909192440dbc6d2cc8bb6c710317988a",
+          "count": 70
+        },
+        {
+          "kind": "concrete-term",
+          "contextSha256": "fe2e095d88ba32b5dbb579e43cfea2cf495921c90d76c740e0f8580ca3e1e1ba",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "packages/session/session-format-v2-to-v3/src/academic-trace-schema.ts",
+      "reason": "historical-identity",
+      "fileSha256": "42ddb03f96790639fa306f5e7768ae81a1adaaf032b1e76bca833e1750639e71",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "16db42770ddddd126e46878290b32a70e1ae361b74859b5de4a3727b9548bc2d",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-20-yzyhello-B-CR2-评分与队列核对.md",
+      "reason": "historical-identity",
+      "fileSha256": "88f01502bea013f65d1caa86662ffb548333f3dd4825b10bb8bd42af4af14e8e",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "171d17c2c349e3954b13a58946de25b1f9749ca4b4f37730dca3989b9d3da95a",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "ef28d32316beb95ac5196fc943e366bd8c7a27f750a8f0a3e0cd1c4b312776c6",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-21-ykxy11-Trace接口与固定样例交接.md",
+      "reason": "historical-identity",
+      "fileSha256": "fc3542d6b99083f08649398d3a3ba8a8b5eaa04b5aaabf403dafcc3492859375",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "fbb8a48ddcb421ac0b1d6d49615d4178fd1b692392ef20db390fa6db9dfbf7fb",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-21-yzyhello-B-CR3-全池送审与遗漏核对.md",
+      "reason": "historical-identity",
+      "fileSha256": "7feea6c6c2de5a1f73ae36df10ab84c95bf0359f4903d9b4379a046dbcf36549",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "564599de98c74d4761e455958765624682c9d0d24b2da6da6b233c1a9bd3b6fa",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-21-zhouzhixian2021-完整候选池与送审交接.md",
+      "reason": "historical-identity",
+      "fileSha256": "3bb3a88770fd70cdbfd8e5081869966f5bd178d91dd20e07b09341a092dd6cbb",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "4979362310c5b7e649f185f87ce7d0956ab5f86465af59064bf315a6b06d0658",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-21-上游升级双路线方案与分支.md",
+      "reason": "historical-identity",
+      "fileSha256": "fd268f4fe8d9cf8e47f330dbb69011eaa84efab6ba3cc6e5dbb5c48adf57c92a",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "01db6b2b598fb88db127d2aea335cb99f8d6d11f443f520cb04c76516750b29e",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "1f093a6c6a46aaf812df2bcb3974a50670d03dba440c7cebfb09dc080468e896",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "810e2e7db024b335d76d6cde04b1a734665f130175de1a0c909908304e79436c",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/开发记录/2026-10-26-ykxy11-HTML导出与真实Trace.md",
+      "reason": "historical-identity",
+      "fileSha256": "966bc7ff8ca15254614f193fb79451b2619cef03a05a03a881e80365a3626008",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "a635a4c6d3185a4db2d0ee3bd199edc857ec2e95f463117a100634696bb055fc",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/模块分工/academic-candidate-semantic-review-optimization-team-plan.md",
+      "reason": "historical-identity",
+      "fileSha256": "62426cfeda16786c16a515ac98f01bd46ff71036fc86ce86b17ae356775efa57",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "97395ed4b75da16cb9f9b4d8486c729cf282c0b7454d519ceb899b767d73ca57",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/模块分工/academic-trace-v1-interface-handoff.md",
+      "reason": "historical-identity",
+      "fileSha256": "f75e1145fc7c5eee4b441cfd44c87e87a74e3bb230884088df4cabc4cca79896",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "9142f1bebaa8e816ec014ddce54c872b2d8d13e77ed0897a59a06f565529f740",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/模块分工/academic-upstream-upgrade-dual-route-team-plan.md",
+      "reason": "historical-identity",
+      "fileSha256": "edf3bcb3f85cfd832aec4f5baec83dbd2bcb05db299ddf6746ac93ee5e0652a0",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "b75f88fe4dc44c6ca0cc6486bfa88f39d2e14b97e5c966d9ad48784b1dd6db6d",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "e1343654e303eccfb87d8e4959d9f7051d5ce082a82b4cd946084f07545e63be",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/manifest.json",
+      "reason": "frozen-sample",
+      "fileSha256": "927eeda477a636bcb72c037f0158d00ca362ef325436b67381f94f266da2ecaa",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "153065bd0eba05696810f9e4069ffa808c6adb8d423f0299362d5fe24a9e1f53",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
+      "reason": "frozen-sample",
+      "fileSha256": "26b7045a68215c1a8d6a35035fafc9c392e435e3e13ca35bbb93e6ccb5258e95",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "c084cecd022fe8c4e2caeb2f8a63c110d0829ed0d25bbd2a1c1c428007af748d",
+          "count": 1
+        }
+      ]
     }
   ]
 }

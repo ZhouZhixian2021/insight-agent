@@ -1,3 +1,4 @@
+import type { AcademicTraceObserver } from '@deepseek-ai/dsh-academic-workflow'
 /** Session-backed semantic review of canonical scholarly metadata before full-text work. */
 import { isDeepStrictEqual } from 'node:util'
 import type { Context } from '@deepseek-ai/cordis'
@@ -101,14 +102,15 @@ export async function recordCandidateReviewSelection(ctx: Context, session: Sess
  * @param session Active Session with a writer.
  * @param config Selected model route.
  * @param policy Deployment-owned output and per-attempt time limits.
+ * @param traceObserver Optional safe diagnostic sink.
  * @returns A per-candidate reviewer; recoverable failures retain lexical screening and a failure code.
  */
 export function createModelCandidateReviewer(ctx: Context, session: Session,
-  config: LlmCallConfig, policy: CandidateReviewModelPolicy): CandidateReviewer {
+  config: LlmCallConfig, policy: CandidateReviewModelPolicy, traceObserver?: AcademicTraceObserver): CandidateReviewer {
   return async (input: CandidateReviewInput, signal?: AbortSignal) => {
     const runner = createLoggedModelRunner<CandidateSemanticReviewV1>(ctx, session, {
       ...config, maxTokens: Math.min(config.maxTokens ?? policy.maxTokens, policy.maxTokens),
-    }, { maxAttempts: 1, attemptTimeoutMs: policy.attemptTimeoutMs })
+    }, { maxAttempts: 1, attemptTimeoutMs: policy.attemptTimeoutMs }, traceObserver)
     const identity: SemanticReviewIdentity = {
       academicWorkId: input.academicWorkId, workVersionId: input.workVersionId,
       researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
@@ -127,7 +129,7 @@ export function createModelCandidateReviewer(ctx: Context, session: Session,
     let dispatch = false
     let failureCode = 'CANDIDATE_REVIEW_CALL_FAILED'
     try {
-      const review = await runner({ messages, ...signal === undefined ? {} : { signal },
+      const review = await runner({ trace: { stage: 'screening', operation: 'candidate_review', academicWorkId: input.academicWorkId, workVersionId: input.workVersionId }, messages, ...signal === undefined ? {} : { signal },
         parse: (text) => {
           try {
             return parseCandidateSemanticReview(text, input.title, input.abstract, request.research.questions)

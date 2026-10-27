@@ -23,15 +23,15 @@ Evaluate evidence integrity and reconcile explicit semantic reviews before repor
 
 Each cross-paper Claim needs supporting evidence from at least two distinct work identities independently of global report coverage. Multiple excerpts or versions of one work do not satisfy this requirement. Duplicate claim/evidence links are blocked, and matching reviews list every snapshot evidence ID exactly once. Source statements retain their separate single-paper rules.
 
-The fixed synthetic semantic cases cover scope expansion, correlation claimed as causation, omitted opposing findings, lack of evidence claimed as negative proof, and comparisons across different datasets. Without a trusted review these structurally intact cases remain needs_review; explicit unsupported, contradicted or insufficient reviewer decisions block delivery. The cases are human-authored oracles for review-policy regressions, not an automated semantic detector or real-model accuracy measurement.
+The fixed synthetic semantic cases cover scope expansion, correlation claimed as causation, omitted opposing findings, lack of evidence claimed as negative proof, and comparisons across different datasets. Without a review, structurally intact cases may pass delivery checks without semantic approval; supplied matching reviews that do not support a claim block delivery. The cases are human-authored oracles for review-policy regressions, not an automated semantic detector or real-model accuracy measurement.
 
 Manual reviewers read the original excerpts, compare stated scope and experiment conditions, check whether causal language is warranted, retain material opposing evidence, and distinguish unmeasured outcomes from negative findings. They record the same evidence IDs, a supporting or negative assessment, method/version and an explicit reason. The generator's own confidence is not independent review.
 
 Optional `admittedEvidence` is the trusted original extraction batch from direct or scholarly-verified papers. Cited records, including source statements, must match its unique evidence identity, work/version, locator, excerpt, hash, source and extraction method. Rejected records cannot contribute to work coverage. This check does not perform scholarly verification: the workflow must supply the independent producer batch, not a copy of the records under review. The workflow captures this batch independently at successful source-checked extraction settlement, before synthesis receives its working records. Other callers that omit the option retain legacy integrity checks and prove no Web admission.
 
-Optional `sourceStatements` preserve single-paper attributions without minting cross-paper Claims. Each statement must have support; its references undergo the same current-version, locator, hash and source-depth checks and contribute to independent-work coverage. Source statements always retain a separate semantic-review requirement and cannot authorize final publication.
+Optional `sourceStatements` preserve single-paper attributions without minting cross-paper Claims. Each statement must have support; its references undergo the same current-version, locator, hash and source-depth checks and contribute to independent-work coverage. Source statements require no independent semantic-review record for delivery.
 
-`evaluateClaims()` — Pass the current brief, claims, links, evidence, versions, locators, review records and evaluation time. The function checks exact snapshot/link membership, freshness, evidence source consistency, evidence depth, preprint policy and minimum work counts. Missing or invalid evidence blocks delivery. Valid references without a matching semantic review produce needs_review, never automatic semantic approval. Caller-supplied reviews must come from a trusted reviewer; this function does not authenticate their author.
+`evaluateClaims()` — Pass the current brief, claims, links, evidence, versions, locators, review records and evaluation time. The function checks exact snapshot/link membership, freshness, work/version identities, source locators and hashes, evidence depth, preprint policy and minimum work counts. Missing or invalid evidence blocks delivery. Missing independent reviews do not block delivery. Ready means the implemented delivery checks passed, not semantic approval. Supplied invalid or non-supporting reviews remain blockers. Issues carry optional delivery/content categories; historical issues may omit the category. Caller-supplied reviews must come from a trusted reviewer; this function does not authenticate their author.
 
 No invariant companion is published because this library is stateless; automated tests verify output relationships and failure behavior.
 
@@ -53,7 +53,6 @@ No direct tokens. Consumers own subsequent rendering and request logging.
 This package performs no model cache operations.
 
 ## Known Limitations and Deferred Work
-
 <a id="known-limitations-and-deferred-work"></a>
 
 - No model judge, truth oracle, external retrieval or reviewer authentication. Required-field types are validated at the external input owner.

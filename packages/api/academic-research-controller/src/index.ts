@@ -6,6 +6,7 @@ import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
+import type {} from '@deepseek-ai/dsh-session-query'
 import {
   runAcademicResearchDraft,
   runAcademicEvidenceEnhancement,
@@ -18,6 +19,9 @@ import {
   type AcademicWorkflowProgressObserver,
   type DraftPipelineAdapters,
 } from '@deepseek-ai/dsh-academic-workflow'
+import { createRetrievalRunId, type AcademicTracePage } from '@deepseek-ai/dsh-academic-model'
+import { AcademicTraceRecorder, queryAcademicTrace } from './trace.ts'
+import type { AcademicTraceQuery } from './types.ts'
 import type { HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
@@ -110,7 +114,7 @@ export interface Config {
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
 export class AcademicResearchController extends TypertRemoteService {
-  static inject = ['academicSource', 'sessionController', 'sessionProjections', 'typert', 'web']
+  static inject = ['academicSource', 'sessionController', 'sessionProjections', 'sessionQuery', 'typert', 'web']
 
   static Config: z<Config> = z.object({
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
@@ -441,6 +445,39 @@ export class AcademicResearchController extends TypertRemoteService {
     return researchPlanFromApproval(sessionId, approved)
   }
 
+  /**
+   * Read safe diagnostics for one owned Session/run without starting or cancelling research.
+   * @param query Scope, stage/state filter, stable cursor and page bound.
+   * @param signal Viewer request lifetime; never cancels research.
+   * @returns Latest-operation page, or explicit absence for historical runs.
+   */
+  @Remote('traceList')
+  async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage> {
+    signal.throwIfAborted()
+    const found = await this.ctx.sessionController.resolveAgent(query.sessionId)
+    if ('error' in found) throw found.error
+    const projection = this.projection(found.agent.session)
+    const active = projection.backgroundRunOrder.some(id =>
+      projection.backgroundRuns[id]?.retrievalRunId === query.researchRunId
+      && this.backgroundRuns.get(query.sessionId, id)?.state === 'running')
+    using observation = await this.ctx.sessionQuery.observeSession(query.sessionId, { signal, projectionMode: 'none' })
+    signal.throwIfAborted()
+    try { return queryAcademicTrace(observation.events, query, active) }
+    catch (cause: unknown) { throw new RemoteError('gateway/bad-request', cause instanceof Error && cause.message === 'invalid_cursor' ? 'invalid_cursor' : 'invalid_query', {}) }
+  }
+
+  /**
+   * Read an operation's original observations under the same scoped pagination rules.
+   * @param query Session/run scope and required span identity.
+   * @param signal Viewer request lifetime.
+   * @returns Operation and its chronological observations; raw model content is excluded.
+   */
+  @Remote('traceDetail')
+  async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage> {
+    if (query.spanId == null) throw new RemoteError('gateway/bad-request', 'invalid_query', {})
+    return this.traceList(query, signal)
+  }
+
   private async *streamRun(
     request: AcademicResearchRunRequest,
     signal: AbortSignal,
@@ -521,6 +558,7 @@ export class AcademicResearchController extends TypertRemoteService {
       }
       recovery = reconstructed.input.checkpoint
     }
+    const retrievalRunId = recovery?.retrievalRunId ?? createRetrievalRunId()
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
     if (selectedModel.provider === undefined || selectedModel.model === undefined) {
       throw new RemoteError('gateway/bad-request', 'the Session has no selected model', {})
@@ -530,6 +568,15 @@ export class AcademicResearchController extends TypertRemoteService {
       maxTokens: selectedModel.maxTokens ?? this.extractionMaxTokens }
     const synthesisModel: LlmCallConfig = { ...model,
       maxTokens: selectedModel.maxTokens ?? this.synthesisMaxTokens }
+    let previousTraceStartedAt: string | null = null
+    if (recovery !== undefined) {
+      using observation = await this.ctx.sessionQuery.observeSession(agent.session.id, { signal, projectionMode: 'none' })
+      signal.throwIfAborted()
+      const previous = observation.events.findLast(event => event.type === 'academic/trace-v1'
+        && event.data.researchRunId === retrievalRunId && event.data.span.kind === 'run')
+      if (previous?.type === 'academic/trace-v1') previousTraceStartedAt = previous.data.span.startedAt
+    }
+    const trace = new AcademicTraceRecorder(agent.session, retrievalRunId, recovery !== undefined, previousTraceStartedAt)
     const questionTerms = approvedEvidenceQuestionTerms(brief.questions, candidateScreening)
     const onSettlement: AcademicSettlementObserver = (fact) => {
       if (fact.kind === 'batch-decision') {
@@ -543,7 +590,7 @@ export class AcademicResearchController extends TypertRemoteService {
         recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
         candidateScreening,
         candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
-          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }),
+          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
         this.initialSearchMaximumAcademicResultsPerQuery, this.candidateReviewMaximumWorks,
         { concurrency: this.candidateReviewConcurrency,
           recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
@@ -555,7 +602,8 @@ export class AcademicResearchController extends TypertRemoteService {
       now: () => new Date().toISOString(),
       onSettlement,
       onRecoveryCheckpoint: checkpoint => agent.session.append('academic/recovery-checkpoint', checkpoint),
-      ...(onProgress === undefined ? {} : { onProgress }),
+      onTrace: trace.observe,
+      onProgress: (progress) => { trace.progress(progress); onProgress?.(progress) },
       ...(onQueryWorkflow === undefined ? {} : { onQueryWorkflow }),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
@@ -575,7 +623,7 @@ export class AcademicResearchController extends TypertRemoteService {
           synthesis: { maxAttempts: this.synthesisMaxAttempts, retryOutputLimit: true, retryInvalidOutput: true,
             transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: this.synthesisRetryInitialDelayMs } },
         },
-        input: { brief, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
+        input: { brief, retrievalRunId, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
           channels: search.retrieval?.channels ?? ['academic'],
           ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic,
         ...(recovery === undefined ? {} : { recovery }) },
@@ -583,10 +631,21 @@ export class AcademicResearchController extends TypertRemoteService {
         signal: AbortSignal.any([signal, agentSignal]),
       }))
     } catch (cause: unknown) {
+      trace.settle('skipped')
       throw new RemoteError('session/agent-busy', `session "${request.sessionId}" already has active work`,
         { reason: 'academic research requires an idle Session' }, { cause })
     }
-    const result = await maintenance
+    let result: AcademicResearchDraftResult
+    try {
+      result = await maintenance
+      trace.settle(result.status === 'cancelled' ? 'cancelled'
+        : result.retrievalRun.status === 'success' ? 'succeeded'
+          : result.retrievalRun.status === 'partial_success' ? 'partial_success'
+            : result.retrievalRun.status === 'failed' ? 'failed' : 'unknown')
+    } catch (cause: unknown) {
+      trace.settle(signal.aborted ? 'cancelled' : 'failed')
+      throw cause
+    }
     agent.session.append('academic/run-settlement', {
       retrievalRunId: result.retrievalRun.retrievalRunId,
       status: result.status,

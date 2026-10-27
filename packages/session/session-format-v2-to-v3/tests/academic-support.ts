@@ -10,6 +10,34 @@ export function academicEvent(type: string, seq: number, data = structuredClone(
   return { type, seq, time: seq + 1, data }
 }
 
+export function backgroundReportEvent(category?: string): SessionFormatEvent {
+  return academicEvent('academic/background-run-state', 0, {
+    ...structuredClone(academicSamples['academic/background-run-state']!), state: 'completed',
+    retrievalRunId: 'retained:retrievalRunId',
+    result: {
+      synthesis: { status: 'completed', reasons: [] }, sessionId: 'retained:sessionId', status: 'completed', q6: null,
+      stages: { search: 'success', fulltext: 'success', extraction: 'success' },
+      retrievalRun: {
+        schemaVersion: 1, retrievalRunId: 'retained:retrievalRunId', researchBriefId: 'retained:researchBriefId',
+        researchBriefVersion: 1, startedAt: 'retained:startedAt', completedAt: 'retained:completedAt',
+        queries: [], providers: [], academicWorkIds: [], failures: [], stage: 'completed', status: 'success',
+        coverageSummary: {
+          schemaVersion: 1, discoveredRecords: 0, deduplicatedWorks: 0, includedWorks: 0, availableFulltextWorks: 0,
+          abstractOnlyWorks: 0, metadataOnlyWorks: 0, failedOperations: 0, truncated: false,
+          limitations: [], providerBreakdown: null,
+        },
+      },
+      papers: [], failures: [],
+      report: {
+        title: 'retained:title', mode: 'draft', synthetic: true, markdown: 'retained markdown',
+        evaluation: { status: 'needs_review', assessments: [], issues: [{ claimId: null,
+          ...category === undefined ? {} : { category }, code: 'retained:issue', message: 'retained issue' }] },
+        claims: [], evidence: [], limitations: ['retained limitation'],
+      },
+    },
+  })
+}
+
 export function migrateAcademicV2(events: readonly SessionFormatEvent[], seeded = false) {
   const sourceHeader = { ...academicHeader, isSeeded: seeded }
   const stage = sessionFormatV2ToV3.createStage({ sourceHeader,

@@ -39,9 +39,44 @@ describe('direction report-format hierarchy', () => {
     for (const match of report.markdown.matchAll(/\]\(#academic-paragraph-(\d+)\)/gu)) {
       expect(report.markdown).toContain(`<a id="academic-paragraph-${match[1]}"></a>`)
     }
-    expect(report.evaluation.status).toBe('needs_review')
+    expect(report.evaluation.status).toBe('blocked')
     expect(JSON.stringify(input)).toBe(before)
     await expect(report.markdown).toMatchFileSnapshot('./expected/direction-report.md')
+  })
+  it('delivers without independent reviews while keeping partial answers as content notices', () => {
+    const input = fixture()
+    const synthesis = { ...input.synthesis, questionAnswers: input.synthesis.questionAnswers.map(answer => ({ ...answer,
+      status: 'partial' as const, reason: '缺少 CLOCK 同条件性能比较。' })) }
+    const report = generateReport({ ...input, synthesis, mode: 'auto', synthetic: false })
+    expect(report.mode).toBe('final')
+    expect(report.evaluation.status).toBe('ready')
+    expect(report.evaluation.issues.filter(issue => issue.category === 'delivery')).toEqual([])
+    const missingComparison: unknown = expect.stringContaining('缺少 CLOCK')
+    expect(report.evaluation.issues).toContainEqual(expect.objectContaining({ category: 'content', message: missingComparison }))
+    expect(report.markdown).toContain('## 内容限制与未回答问题')
+    expect(report.markdown).toContain('交付检查通过不代表独立语义审核通过')
+    expect(report.markdown).not.toContain('已完成当前证据与语义审核')
+  })
+  it.each([{ unit: 'characters', minimum: 999999, maximum: null },
+    { unit: 'characters', minimum: null, maximum: 1 }])('does not gate automatic delivery on length %j', (targetLength) => {
+    const input = fixture()
+    const report = generateReport({ ...input, mode: 'auto', synthetic: false,
+      brief: { ...input.brief, reportRequirements: { ...input.brief.reportRequirements, targetLength } } })
+    expect(report.mode).toBe('final')
+    expect(report.evaluation.issues.some(issue => issue.message.includes('篇幅'))).toBe(false)
+  })
+  it.each(['coverage', 'version', 'synthetic'] as const)('keeps %s failures as delivery blockers', (fault) => {
+    const input = fixture()
+    const report = generateReport({ ...input, mode: 'auto', synthetic: fault === 'synthetic',
+      brief: { ...input.brief, evidenceRequirements: { ...input.brief.evidenceRequirements,
+        minimumIncludedWorks: fault === 'coverage' ? 99 : input.brief.evidenceRequirements.minimumIncludedWorks },
+      reportRequirements: input.brief.reportRequirements },
+      versions: input.versions.map(version => fault === 'version' ? { ...version, status: 'retracted' as const } : version),
+    })
+    expect(report.mode).toBe('draft')
+    expect(report.evaluation.status).toBe('blocked')
+    expect(report.evaluation.issues.some(issue => issue.category === 'delivery')).toBe(true)
+    expect(report.markdown).toContain('## 交付未达标原因')
   })
   it('groups appendix by paper title independently of evidence and bibliography input order', () => {
     const input = fixture()
@@ -81,7 +116,7 @@ describe('direction report-format hierarchy', () => {
     const report = generateReport({ ...input, synthesis })
     expect(report.markdown).toContain('| 结果描述 | 适用条件 | 全文依据 | 不确定性 |')
     expect(report.markdown).toContain('不据此对不同数据集或指标建立统一排名')
-    expect(() => generateReport({ ...input, mode: 'final', synthetic: false })).toThrow()
+    expect(generateReport({ ...input, mode: 'auto', synthetic: false }).mode).toBe('final')
   })
   it('labels a legacy output as incomplete instead of inventing directions', () => {
     const input = fixture()

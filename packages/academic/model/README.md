@@ -7,6 +7,8 @@ kind: "package-library"
 
 English | [中文](README.zh.md)
 
+Trace v1 types are also available from the type-only `@deepseek-ai/dsh-academic-model/trace` subpath. Operation and observation identities are branded; unknown timings remain null. These diagnostic records do not change evidence validity or report approval.
+
 ## Summary
 
 `dsh-academic-model` owns the provider-neutral data vocabulary shared by academic-insight packages. It is a library, not a Cordis service or plugin, and performs no retrieval, evidence extraction, cross-paper analysis, report rendering, or model call.
