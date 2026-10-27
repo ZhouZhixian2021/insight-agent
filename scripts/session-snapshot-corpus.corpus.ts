@@ -18,6 +18,7 @@ import {
   type SnapshotManifest,
 } from '@deepseek-ai/dsh-session-snapshot'
 import { assertSnapshotCorpusPolicy } from './session-snapshot-corpus-policy.ts'
+import { readSdkOracle } from './sdk-oracle.ts'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const corpusRoot = join(repoRoot, 'snapshots')
@@ -213,4 +214,10 @@ it('keeps V3 replay input plus bounded declared historical migration coverage', 
     retainedRoles: 13,
     retainedScenarios: 10,
   })
+})
+
+it('keeps the SDK-01 native writer registration separate from frozen replay input', async () => {
+  const oracle = await readSdkOracle(join(corpusRoot, 'sdk-oracles'), join(corpusRoot, 'sdk', 'academic-plan-chinese'))
+  expect(oracle.source).toBe('session.v4.jsonl')
+  expect(oracle.status).toMatch(/^(pending|active)$/u)
 })

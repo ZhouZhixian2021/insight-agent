@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "scenarios": {
+    "academic-plan-chinese": {
+      "status": "pending",
+      "source": "session.v4.jsonl",
+      "sourceSha256": "df1e4be987974bf4c0436b62ea1e7cad76f4cc44e8861e49f01ff8f453043c52"
+    }
+  }
+}

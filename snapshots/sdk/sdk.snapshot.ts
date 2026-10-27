@@ -63,8 +63,16 @@ import {
 } from '@deepseek-ai/dsh-sdk-client'
 import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
 import { deriveReplayScript, parseSessionLog } from '@deepseek-ai/dsh-llm-replay'
+import {
+  assertSdkOracleReplayMode,
+  captureSdkOracleEvidence,
+  readSdkOracle,
+  type ActiveSdkOracle,
+} from '../../scripts/sdk-oracle.ts'
 
 const corpusRoot = fileURLToPath(new URL('../', import.meta.url))
+const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url))
+const sdkOracleRoot = fileURLToPath(new URL('../sdk-oracles/', import.meta.url))
 
 const MINIMAL_SYSTEM_PROMPT = 'You are the environment-selected minimal software engineer.'
 const MINIMAL_BASH_DESCRIPTION = `Run commands in a bash shell
@@ -868,10 +876,11 @@ async function verifyHeaders(
   ordered: readonly PersistedLog[],
   ctx: NormalizeContext,
   dshSdkChildConfig?: Readonly<Record<string, unknown>>,
+  oracle?: ActiveSdkOracle,
 ): Promise<void> {
   const pin = headerPin(scenario)
   const [pinFixturePath] = await fixtureFiles(pin)
-  const pinFixture = await readFile(pinFixturePath as string, 'utf8')
+  const pinFixture = oracle?.writer ?? await readFile(pinFixturePath as string, 'utf8')
   const firstLine = pinFixture.split('\n').find(line => line.trim() !== '') ?? '{}'
   const pinHeader = JSON.parse(firstLine) as JsonObject
   const pinned = normalizedHeaders(pinFixture, {
@@ -880,8 +889,9 @@ async function verifyHeaders(
   })
   const promptOwner = sourceScenario(pin, pin.manifest.header.systemPromptSource)
   const schemaOwner = sourceScenario(pin, pin.manifest.header.toolSchemasSource)
-  const prompt = await readFile(join(promptOwner.dir, 'system-prompt.expected.md'), 'utf8')
-  const schemas = parseToolSchemasSnapshot(await readFile(join(schemaOwner.dir, 'tool-schemas.expected.json'), 'utf8'))
+  const prompt = oracle?.prompt ?? await readFile(join(promptOwner.dir, 'system-prompt.expected.md'), 'utf8')
+  const schemas = parseToolSchemasSnapshot(oracle?.schemas
+    ?? await readFile(join(schemaOwner.dir, 'tool-schemas.expected.json'), 'utf8'))
   const schemaSets = [schemas.initial, ...schemas.changes]
   const reconstructed = pinned.map((header, index) => restorePinnedToolSchemas(
     header,
@@ -944,11 +954,14 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
   })
 
   for (const scenario of sdkScenarios) {
-    const scenarioTest = recording
+    const registered = scenario.name === 'academic-plan-chinese'
+    const scenarioTest = !registered && recording
       && (scenario.manifest.recording === 'authored' || scenario.manifest.sessionFormat !== undefined)
       ? it.skip
       : it
     scenarioTest(`${mode}s ${scenario.name} through dsh --profile ${scenario.manifest.profile}`, async () => {
+      const oracle = registered ? await readSdkOracle(sdkOracleRoot, scenario.dir) : undefined
+      if (oracle !== undefined) assertSdkOracleReplayMode(mode)
       const scenarioDir = scenario.dir
       const retained = scenario.manifest.sessionFormat !== undefined
       const notificationsExpectedPath = join(scenarioDir, retained ? 'notifications.current.expected.jsonl' : 'notifications.expected.jsonl')
@@ -970,6 +983,9 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         recording ? logs.length : files.length,
         assertions.dshSdkChild !== undefined,
       )
+      if (oracle !== undefined && process.env.DSH_SDK_ORACLE_CAPTURE_DIR !== undefined) {
+        await captureSdkOracleEvidence(repositoryRoot, process.env.DSH_SDK_ORACLE_CAPTURE_DIR, oracle, ordered)
+      }
       reconcileCatalogCreationTimes(ordered.map(log => log.content), 'validate')
       const comparisonContext = contextOf(ordered, cwd)
       const actualContext = scenario.name === 'academic-plan-chinese'
@@ -1125,9 +1141,11 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         for (const turnEnd of turnEnds) expect(turnEnd).toMatchObject({ data: { reason: { kind: 'completed' } } })
       }
 
-      let expectedContents = retained && !refreshing
-        ? await Promise.all(files.map((_, index) => readFile(join(scenarioDir, writerSnapshotName(index)), 'utf8')))
-        : replayContents
+      let expectedContents = oracle?.status === 'active'
+        ? [oracle.writer]
+        : retained && !refreshing
+          ? await Promise.all(files.map((_, index) => readFile(join(scenarioDir, writerSnapshotName(index)), 'utf8')))
+          : replayContents
 
       if (recording) {
         expectedContents = redactSessionSnapshotIds(stabilizeFixtureMessageIds(
@@ -1183,7 +1201,8 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       const actualSnapshots = normalizeSessionSnapshots(ordered.map(log => log.content), actualContext, { nativeWriterOutput: true })
       const expectedSnapshots = normalizeSessionSnapshots(expectedContents, expectedContext, { nativeWriterOutput: true })
       expect(actualSnapshots.map(records), `${scenario.name}: sessions`).toEqual(expectedSnapshots.map(records))
-      await verifyHeaders(scenario, ordered, actualContext, assertions.dshSdkChild?.agentConfig)
+      await verifyHeaders(scenario, ordered, actualContext, assertions.dshSdkChild?.agentConfig,
+        oracle?.status === 'active' ? oracle : undefined)
 
       // Genuine SDK protocol cases retain their secondary wire projections.
       const finalResult = results.at(-1)
