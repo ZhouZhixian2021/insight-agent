@@ -58,6 +58,45 @@ function endSuffix(loc) {
   return ` (to ${end.line}:${end.column + 1})`;
 }
 
+/** Exact records shared by the diagnostic and the reviewed coverage-debt gate. */
+function uncoveredRecords(fc, projectRoot) {
+  const rel = path.relative(projectRoot, fc.path).split(path.sep).join('/');
+  const items = [];
+  const add = (loc, text) => items.push({ line: loc.start.line, column: loc.start.column, text });
+
+  for (const id of Object.keys(fc.statementMap)) {
+    if (fc.s[id] !== 0) continue;
+    const loc = fc.statementMap[id];
+    if (!usable(loc)) continue;
+    add(loc, `${rel}:${pos(loc)} uncovered statement${endSuffix(loc)}`);
+  }
+
+  for (const id of Object.keys(fc.fnMap)) {
+    if (fc.f[id] !== 0) continue;
+    const fn = fc.fnMap[id];
+    const loc = usable(fn.decl) ? fn.decl : fn.loc;
+    if (!usable(loc)) continue;
+    const name = fn.name ? ` ${fn.name}` : '';
+    add(loc, `${rel}:${pos(loc)} uncovered function${name}`);
+  }
+
+  for (const id of Object.keys(fc.branchMap)) {
+    const counts = fc.b[id];
+    const branch = fc.branchMap[id];
+    for (let i = 0; i < counts.length; i += 1) {
+      if (counts[i] !== 0) continue;
+      // Implicit arms (e.g. a missing else) may carry an empty location;
+      // fall back to the branch's own span so the record stays clickable.
+      const loc = usable(branch.locations && branch.locations[i]) ? branch.locations[i] : branch.loc;
+      if (!usable(loc)) continue;
+      add(loc, `${rel}:${pos(loc)} uncovered branch (${branch.type}, path ${i + 1}/${counts.length})`);
+    }
+  }
+
+  items.sort((a, b) => a.line - b.line || a.column - b.column);
+  return items.map(item => item.text);
+}
+
 class UncoveredLocationsReport extends ReportBase {
   constructor(opts = {}) {
     super(opts);
@@ -71,43 +110,7 @@ class UncoveredLocationsReport extends ReportBase {
   }
 
   onDetail(node) {
-    const fc = node.getFileCoverage();
-    const rel = path.relative(this.projectRoot, fc.path).split(path.sep).join('/');
-    const items = [];
-    const add = (loc, text) => items.push({ line: loc.start.line, column: loc.start.column, text });
-
-    for (const id of Object.keys(fc.statementMap)) {
-      if (fc.s[id] !== 0) continue;
-      const loc = fc.statementMap[id];
-      if (!usable(loc)) continue;
-      add(loc, `${rel}:${pos(loc)} uncovered statement${endSuffix(loc)}`);
-    }
-
-    for (const id of Object.keys(fc.fnMap)) {
-      if (fc.f[id] !== 0) continue;
-      const fn = fc.fnMap[id];
-      const loc = usable(fn.decl) ? fn.decl : fn.loc;
-      if (!usable(loc)) continue;
-      const name = fn.name ? ` ${fn.name}` : '';
-      add(loc, `${rel}:${pos(loc)} uncovered function${name}`);
-    }
-
-    for (const id of Object.keys(fc.branchMap)) {
-      const counts = fc.b[id];
-      const branch = fc.branchMap[id];
-      for (let i = 0; i < counts.length; i += 1) {
-        if (counts[i] !== 0) continue;
-        // Implicit arms (e.g. a missing else) may carry an empty location;
-        // fall back to the branch's own span so the record stays clickable.
-        const loc = usable(branch.locations && branch.locations[i]) ? branch.locations[i] : branch.loc;
-        if (!usable(loc)) continue;
-        add(loc, `${rel}:${pos(loc)} uncovered branch (${branch.type}, path ${i + 1}/${counts.length})`);
-      }
-    }
-
-    if (items.length === 0) return;
-    items.sort((a, b) => a.line - b.line || a.column - b.column);
-    for (const item of items) this.records.push(item.text);
+    this.records.push(...uncoveredRecords(node.getFileCoverage(), this.projectRoot));
   }
 
   onEnd() {
@@ -119,3 +122,4 @@ class UncoveredLocationsReport extends ReportBase {
 }
 
 module.exports = UncoveredLocationsReport;
+module.exports.uncoveredRecords = uncoveredRecords;

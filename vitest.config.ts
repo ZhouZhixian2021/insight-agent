@@ -13,6 +13,8 @@ import { LOCAL_TEST_PARALLELISM_CAP, defaultParallelism } from './scripts/parall
 // threshold ERRORs name only the file. Absolute path because istanbul-reports
 // require()s custom reporters (which is also why the reporter is CJS).
 const uncoveredLocationsReporter = fileURLToPath(new URL('./scripts/coverage-uncovered-locations.cjs', import.meta.url))
+const coverageDebtReporter = fileURLToPath(new URL('./scripts/coverage-debt-gate.cjs', import.meta.url))
+const linuxCoverageDebtBaseline = fileURLToPath(new URL('./scripts/coverage-debt-baseline.linux.json', import.meta.url))
 
 // Resolution facade shared by every plugin instance below: tsconfig.base.json
 // has no include, which vite-tsconfig-paths treats as match-all, so its paths
@@ -177,7 +179,7 @@ const claudeCodeTestingAliases = {
   'claude-code': fileURLToPath(new URL('./packages/experimental/claude-code-mods/tests/support/claude-code.ts', import.meta.url)),
 }
 
-export default defineConfig({
+const vitestConfig = defineConfig({
   plugins: [pathsPlugin(), standardDecoratorPlugin()],
   resolve: { alias: claudeCodeTestingAliases },
   test: {
@@ -383,8 +385,9 @@ export default defineConfig({
         ...windowsRunnerCoverageExclusions,
         ...pwshCoverageExclusions,
       ],
-      // 100% or it doesn't merge (docs/testing.md: excessive tests are welcome).
-      // Per-file so a well-covered big file can't subsidize a bare one.
+      // Per-file 100% (docs/testing.md); reviewed Linux debt is checked by
+      // exact source hash and uncovered locations below. A well-covered big
+      // file cannot subsidize a bare one.
       // Every v8 ignore comment must carry a reason — see the testing policy
       // (docs/testing.md).
       thresholds: coveragePartitionMode
@@ -404,3 +407,24 @@ export default defineConfig({
     },
   },
 })
+
+// The reviewed Linux debt is tied to exact source hashes and uncovered
+// locations. Every other covered source still requires all four metrics at
+// 100%; Windows and other platforms retain the original native thresholds.
+if (!coveragePartitionMode && process.platform === 'linux') {
+  const coverage = vitestConfig.test?.coverage
+  if (!coverage || !Array.isArray(coverage.include) || !Array.isArray(coverage.exclude)
+    || !Array.isArray(coverage.reporter)) {
+    throw new Error('vitest config: coverage debt gate requires explicit source globs and reporters')
+  }
+  coverage.thresholds = undefined
+  coverage.reporter = [
+    ...coverage.reporter,
+    [coverageDebtReporter, {
+      baselines: { linux: linuxCoverageDebtBaseline },
+      sourceGlobs: { include: coverage.include, exclude: coverage.exclude },
+    }],
+  ]
+}
+
+export default vitestConfig
