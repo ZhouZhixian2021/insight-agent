@@ -1,12 +1,11 @@
 /** Reject maintained references to repository commits and the disallowed organization URL. */
 
 import { execFileSync } from 'node:child_process'
-import { lstatSync, readFileSync, readlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { canonicalReferenceText } from './verify-public-repository-links.ts'
 import { checkRetainedDocumentFindings, documentFindingDigest, documentTextDigest,
-  loadRetainedDocumentEntries, type RetainedDocumentEntry } from './retained-document-findings.ts'
+  loadRetainedDocumentEntries, readDocumentSources, type RetainedDocumentEntry } from './retained-document-findings.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const organization = ['deepseek', 'harness'].join('-')
@@ -64,14 +63,7 @@ function readMaintainedFiles(repoRoot: string): Map<string, string> {
     encoding: 'utf8',
     maxBuffer: gitOutputLimit,
   }).split('\0').filter(file => file !== '' && isMaintained(file))
-  const sources = new Map<string, string>()
-  for (const file of files) {
-    const path = resolve(repoRoot, file)
-    const stat = lstatSync(path, { throwIfNoEntry: false })
-    if (stat?.isSymbolicLink() === true) sources.set(file, readlinkSync(path))
-    else if (stat?.isFile() === true) sources.set(file, readFileSync(path, 'utf8'))
-  }
-  return sources
+  return readDocumentSources(repoRoot, files)
 }
 
 function gitLines(repoRoot: string, args: readonly string[], maxBuffer: number, input?: string): string[] {

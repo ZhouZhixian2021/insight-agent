@@ -124,6 +124,12 @@ export function checkRetainedDocumentFindings<T extends DocumentFinding>(
   const entries = loadRetainedDocumentEntries(repoRoot)
   const files = new Set([...findings.map(finding => finding.file),
     ...entries.filter(entry => entry.gate === gate).map(entry => entry.file)])
+  const sources = readDocumentSources(repoRoot, files)
+  return reviewRetainedDocumentFindings(gate, findings, sources, entries)
+}
+
+/** Read maintained file bytes or symlink targets for documentation checks. */
+export function readDocumentSources(repoRoot: string, files: Iterable<string>): Map<string, string> {
   const sources = new Map<string, string>()
   for (const file of files) {
     const path = resolve(repoRoot, file)
@@ -131,7 +137,7 @@ export function checkRetainedDocumentFindings<T extends DocumentFinding>(
     if (stat?.isSymbolicLink() === true) sources.set(file, readlinkSync(path))
     else if (stat?.isFile() === true) sources.set(file, readFileSync(path, 'utf8'))
   }
-  return reviewRetainedDocumentFindings(gate, findings, sources, entries)
+  return sources
 }
 
 /**
