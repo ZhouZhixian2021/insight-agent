@@ -403,11 +403,11 @@ describe('PiAiAdapter provider routing', () => {
       onTransportDiagnostic: callback,
     }))
 
-    const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
+    const result = await assemble(ctx, { model: 'deepseek-flash', messages: [] })
     expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'TRANSPORT' } })
     expect(callback).toHaveBeenCalledOnce()
     expect(callback.mock.calls[0]?.[0]).toMatchObject({
-      provider: 'deepseek', model: 'deepseek-v4-flash', failureCode: 'TRANSPORT',
+      provider: 'deepseek', model: 'deepseek-flash', failureCode: 'TRANSPORT',
       phase: 'request', errorName: 'TypeError', causeCodes: ['ECONNRESET'],
     })
     expect(JSON.stringify(callback.mock.calls[0]?.[0])).not.toContain('private proxy address')

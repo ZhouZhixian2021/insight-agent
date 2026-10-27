@@ -17,6 +17,8 @@
   border-radius: var(--dsw-radius-xl);
   background: var(--dsw-specific-input-major);
   box-shadow: var(--dsw-elevation-panel);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
   color: var(--dsw-alias-label-primary);
 }
 
@@ -126,7 +128,7 @@
   max-height: 100px;
   resize: vertical;
   border: 1px solid var(--dsw-alias-state-warn-secondary);
-  border-radius: 8px;
+  border-radius: var(--dsw-radius-sm);
   padding: 8px;
   background: var(--dsw-specific-input-major);
   color: inherit;

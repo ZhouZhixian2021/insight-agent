@@ -107,7 +107,7 @@ describe('plan mode through the agent loop', () => {
     expect(planMode.data.active).toBe(true)
     expect(planMode.seq).toBeLessThan(header.seq)
     expect(header.data.reason).toBe('initial')
-    expect(header.data.header.system).toContain(PLAN_CONFIG.section)
+    expect(requestSystem(adapter.requests[0])).toContain(PLAN_CONFIG.section)
     expect(log.some(event => event.type === 'command/run')).toBe(false)
     expect(log.some(event => event.type === 'user/message' && event.data.source.kind === 'plan-mode')).toBe(false)
   })
