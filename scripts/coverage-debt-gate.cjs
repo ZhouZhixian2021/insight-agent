@@ -74,7 +74,7 @@ function difference(left, right) {
   });
 }
 
-/** Compare all source files in both directions, then enforce exact debt. */
+/** Compare all source files in both directions, then reject debt beyond the reviewed ceiling. */
 function compareCoverage({ baseline, expectedSources, current }) {
   if (baseline?.schema !== 1 || !PLATFORMS.includes(baseline.platform) || !baseline.files
     || typeof baseline.files !== 'object' || Array.isArray(baseline.files)) {
@@ -123,9 +123,7 @@ function compareCoverage({ baseline, expectedSources, current }) {
       continue;
     }
     const added = difference(observed.uncovered, allowed.uncovered);
-    const gone = difference(allowed.uncovered, observed.uncovered);
     if (added.length) errors.push(`${file}: ${added.length} new uncovered location(s)`);
-    if (gone.length) errors.push(`${file}: ${gone.length} stale debt location(s)`);
   }
   return errors;
 }

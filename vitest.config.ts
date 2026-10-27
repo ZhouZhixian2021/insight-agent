@@ -240,6 +240,11 @@ const vitestConfig = defineConfig({
         'packages/*/*/src/types.ts',
         'packages/*/*/src/bin.ts',
         'packages/*/*/src/worker.ts',
+        // These two SSH entry files execute only as spawned Node/SEA processes.
+        // Their existing v8-ignore-file annotations cannot produce a parent
+        // Vitest coverage map entry when the process is never imported.
+        'packages/ssh/ssh-helper-runtime/src/index.ts',
+        'packages/ssh/ssh/src/helper-entry.ts',
         // The built Node entry invokes the independently covered process bootstrap through fd 7.
         'packages/ptc-runtime/ptc-runtime-node/src/process-entry.ts',
         'packages/ptc-runtime/ptc-runtime-node/src/persistent-process-entry.ts',

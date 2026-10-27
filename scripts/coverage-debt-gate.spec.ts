@@ -124,15 +124,15 @@ describe('coverage debt comparison', () => {
     expect(gate.compareCoverage(value).join('\n')).toContain('stale debt path')
   })
 
-  it('rejects new and stale debt locations', () => {
+  it('rejects new debt locations while allowing previously uncovered paths to become covered', () => {
     const added = input()
     added.current[debtFile]!.uncovered.push(newLocation)
     expect(gate.compareCoverage(added).join('\n')).toContain('new uncovered location')
 
-    const stale = input()
-    stale.current[debtFile]!.uncovered = []
-    expect(gate.compareCoverage(stale).join('\n')).toContain('stale debt location')
-
+    const improved = input()
+    improved.current[debtFile]!.uncovered = []
+    improved.current[debtFile]!.summary = summary()
+    expect(gate.compareCoverage(improved)).toEqual([])
   })
 
   it('rejects debt source changes even when locations stay fixed', () => {
@@ -144,7 +144,9 @@ describe('coverage debt comparison', () => {
   it('compares duplicate locations as a multiset', () => {
     const value = input()
     value.baseline.files[debtFile]!.uncovered.push(oldLocation)
-    expect(gate.compareCoverage(value).join('\n')).toContain('stale debt location')
+    expect(gate.compareCoverage(value)).toEqual([])
+    value.current[debtFile]!.uncovered.push(oldLocation, oldLocation)
+    expect(gate.compareCoverage(value).join('\n')).toContain('new uncovered location')
   })
 
   it('rejects an empty or duplicate source inventory', () => {
