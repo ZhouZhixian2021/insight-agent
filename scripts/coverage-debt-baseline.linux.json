@@ -1074,18 +1074,18 @@
       ]
     },
     "packages/api/academic-research-controller/src/research-brief-plan.ts": {
-      "sourceSha256": "32f9b86b82c62f9ea0908d4002dfa5347508d1cb39d98abc60ccbde95b5d4c30",
+      "sourceSha256": "866c29f78db4adea358b8282164ad448fe315ce204e66757820a7219d3b8cd87",
       "uncovered": [
-        "220:3 uncovered branch (if, path 1/2)",
-        "220:39 uncovered statement",
-        "233:3 uncovered branch (if, path 1/2)",
-        "243:3 uncovered branch (if, path 1/2)",
-        "244:5 uncovered statement",
-        "253:3 uncovered branch (if, path 1/2)",
-        "253:30 uncovered statement",
-        "284:48 uncovered branch (cond-expr, path 2/2)",
-        "453:3 uncovered branch (if, path 1/2)",
-        "453:30 uncovered statement"
+        "248:3 uncovered branch (if, path 1/2)",
+        "248:39 uncovered statement",
+        "261:3 uncovered branch (if, path 1/2)",
+        "271:3 uncovered branch (if, path 1/2)",
+        "272:5 uncovered statement",
+        "281:3 uncovered branch (if, path 1/2)",
+        "281:30 uncovered statement",
+        "312:48 uncovered branch (cond-expr, path 2/2)",
+        "481:3 uncovered branch (if, path 1/2)",
+        "481:30 uncovered statement"
       ]
     },
     "packages/api/academic-research-controller/src/run-stream.ts": {
