@@ -121,11 +121,9 @@ export function reviewRetainedDocumentFindings<T extends DocumentFinding>(
 export function checkRetainedDocumentFindings<T extends DocumentFinding>(
   repoRoot: string, gate: z.infer<typeof gateSchema>, findings: readonly T[],
 ): ReturnType<typeof reviewRetainedDocumentFindings<T>> {
-  const registry = registrySchema.parse(JSON.parse(readFileSync(
-    resolve(repoRoot, 'scripts/retained-document-findings.json'), 'utf8',
-  )))
+  const entries = loadRetainedDocumentEntries(repoRoot)
   const files = new Set([...findings.map(finding => finding.file),
-    ...registry.entries.filter(entry => entry.gate === gate).map(entry => entry.file)])
+    ...entries.filter(entry => entry.gate === gate).map(entry => entry.file)])
   const sources = new Map<string, string>()
   for (const file of files) {
     const path = resolve(repoRoot, file)
@@ -133,5 +131,16 @@ export function checkRetainedDocumentFindings<T extends DocumentFinding>(
     if (stat?.isSymbolicLink() === true) sources.set(file, readlinkSync(path))
     else if (stat?.isFile() === true) sources.set(file, readFileSync(path, 'utf8'))
   }
-  return reviewRetainedDocumentFindings(gate, findings, sources, registry.entries)
+  return reviewRetainedDocumentFindings(gate, findings, sources, entries)
+}
+
+/**
+ * Read and validate exact retained findings for a repository checkout.
+ * @param repoRoot - Repository containing the retained-finding registry.
+ * @returns Validated entries used by documentation detectors and reconciliation.
+ */
+export function loadRetainedDocumentEntries(repoRoot: string): RetainedDocumentEntry[] {
+  return registrySchema.parse(JSON.parse(readFileSync(
+    resolve(repoRoot, 'scripts/retained-document-findings.json'), 'utf8',
+  ))).entries
 }

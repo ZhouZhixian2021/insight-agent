@@ -5,7 +5,8 @@ import { lstatSync, readFileSync, readlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { canonicalReferenceText } from './verify-public-repository-links.ts'
-import { checkRetainedDocumentFindings } from './retained-document-findings.ts'
+import { checkRetainedDocumentFindings, documentFindingDigest, documentTextDigest,
+  loadRetainedDocumentEntries, type RetainedDocumentEntry } from './retained-document-findings.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const organization = ['deepseek', 'harness'].join('-')
@@ -133,20 +134,53 @@ export function repositoryCommits(repoRoot: string, sources: Iterable<string>): 
 }
 
 /**
- * Scan tracked and nonignored new files using only the local Git object database.
- * @param repoRoot - Working tree whose files and Git objects are inspected.
- * @returns Prohibited references outside vendor and frozen Agent Notes; absent shallow-history objects cannot match.
+ * Recover exact reviewed references when another checkout lacks their commit objects.
+ * @param sources - Maintained file text from the current checkout.
+ * @param entries - Validated retained findings with pinned file and context digests.
+ * @returns Commit candidates in unchanged reviewed lines.
  */
-export function scanRepositoryReferences(repoRoot: string): RepositoryReference[] {
+export function retainedCommitCandidates(
+  sources: ReadonlyMap<string, string>, entries: readonly RetainedDocumentEntry[],
+): Set<string> {
+  const candidates = new Set<string>()
+  for (const entry of entries) {
+    if (entry.gate !== 'repository-reference' || entry.fileSha256 === undefined) continue
+    const source = sources.get(entry.file)
+    if (source === undefined || documentTextDigest(source) !== entry.fileSha256) continue
+    const contexts = new Set(entry.matches.filter(match => match.kind === 'commit-hash')
+      .map(match => match.contextSha256))
+    if (contexts.size === 0) continue
+    for (const [index, line] of source.split('\n').entries()) {
+      const matches = [...line.matchAll(commitCandidate)]
+      if (matches.length === 0) continue
+      const finding: RepositoryReference = { file: entry.file, line: index + 1, kind: 'commit-hash' }
+      if (!contexts.has(documentFindingDigest(finding, source))) continue
+      for (const match of matches) candidates.add(match[0].toLowerCase())
+    }
+  }
+  return candidates
+}
+
+/**
+ * Scan tracked and nonignored new files against local commits and exact reviewed references.
+ * @param repoRoot - Working tree whose files and Git objects are inspected.
+ * @param retainedEntries - Reviewed exact references that remain detectable when a clone lacks their objects.
+ * @returns Prohibited references outside vendor and frozen Agent Notes.
+ */
+export function scanRepositoryReferences(
+  repoRoot: string, retainedEntries: readonly RetainedDocumentEntry[] = [],
+): RepositoryReference[] {
   const sources = readMaintainedFiles(repoRoot)
   const commits = repositoryCommits(repoRoot, sources.values())
+  for (const candidate of retainedCommitCandidates(sources, retainedEntries)) commits.add(candidate)
   return [...sources].flatMap(([file, source]) => findRepositoryReferences(file, source, commits))
 }
 
 const invokedPath = process.argv[1]
 if (invokedPath !== undefined && import.meta.url === pathToFileURL(resolve(invokedPath)).href) {
+  const retainedEntries = loadRetainedDocumentEntries(root)
   const { unregistered: references, errors, retained } = checkRetainedDocumentFindings(
-    root, 'repository-reference', scanRepositoryReferences(root),
+    root, 'repository-reference', scanRepositoryReferences(root, retainedEntries),
   )
   if (references.length === 0 && errors.length === 0) {
     console.log(`verify-repository-references: no unregistered references; ${String(retained)} exact retained findings.`)

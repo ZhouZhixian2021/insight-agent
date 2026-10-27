@@ -4,6 +4,8 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, unlinkSync, writeFileSync 
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { describe, expect, it, type TestContext } from 'vitest'
+import { documentFindingDigest, documentTextDigest, reviewRetainedDocumentFindings,
+  type RetainedDocumentEntry } from './retained-document-findings.ts'
 import { findRepositoryReferences, scanRepositoryReferences, uniquePrefixMatch } from './verify-repository-references.ts'
 
 const organizationUrl = `https://${['github.com', ['deepseek', 'harness'].join('-')].join('/')}`
@@ -104,6 +106,38 @@ describe('maintained repository reference policy', () => {
     expect(scanRepositoryReferences(fixture.root)).toEqual([
       { file: 'unreachable.md', line: 1, kind: 'commit-hash' },
     ])
+  })
+
+  it('keeps an exact reviewed commit reference stable across different object inventories', (test) => {
+    const fixture = repository(test)
+    const historical = fixture.git(['commit-tree', fixture.tree, '-m', 'local-only historical commit'])
+    const source = `Historical identity: ${historical.slice(0, 12)}\n`
+    const finding = { file: 'retained.md', line: 1, kind: 'commit-hash' } as const
+    fixture.write(finding.file, source)
+    fixture.git(['add', finding.file])
+    fixture.git(['commit', '-m', 'record historical reference'])
+    const entry: RetainedDocumentEntry = {
+      gate: 'repository-reference', file: finding.file, reason: 'historical-identity',
+      fileSha256: documentTextDigest(source),
+      matches: [{ kind: 'commit-hash', contextSha256: documentFindingDigest(finding, source), count: 1 }],
+    }
+    expect(scanRepositoryReferences(fixture.root)).toEqual([finding])
+
+    const clone = join(fixture.root, 'inventory-clone')
+    fixture.git(['clone', '--no-local', fixture.root, clone])
+    expect(scanRepositoryReferences(clone)).toEqual([])
+    const retained = scanRepositoryReferences(clone, [entry])
+    expect(retained).toEqual([finding])
+    expect(reviewRetainedDocumentFindings('repository-reference', retained,
+      new Map([[finding.file, source]]), [entry])).toEqual({ unregistered: [], errors: [], retained: 1 })
+    const stale = { ...entry, matches: [{ ...entry.matches[0]!, count: 2 }] }
+    expect(reviewRetainedDocumentFindings('repository-reference', retained,
+      new Map([[finding.file, source]]), [stale]).errors).toEqual([
+      expect.stringContaining('retained count 1 differs from 2'),
+    ])
+    expect(scanRepositoryReferences(clone, [{ ...entry, fileSha256: '0'.repeat(64) }])).toEqual([])
+    expect(scanRepositoryReferences(clone, [{ ...entry,
+      matches: [{ kind: 'commit-hash', contextSha256: '0'.repeat(64), count: 1 }] }])).toEqual([])
   })
 
   it('does not fetch missing commits from a partial clone\'s promisor remote', (test) => {
