@@ -64,7 +64,7 @@ describe('executable direction report layout', () => {
     expect(parseSynthesisDraft(JSON.stringify(raw), source).directions![0]!.keyResults.quantitative).toBe(true)
   })
   it('reads an existing question-only output without claiming a direction layout', () => {
-    const raw = JSON.parse(readFileSync(new URL('synthesis-output.sample.json', root), 'utf8')) as unknown
+    const raw: unknown = JSON.parse(readFileSync(new URL('synthesis-output.sample.json', root), 'utf8'))
     expect(parseSynthesisDraft(JSON.stringify(raw), input()).directions).toBeUndefined()
   })
 })

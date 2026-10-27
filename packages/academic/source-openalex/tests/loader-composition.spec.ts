@@ -26,10 +26,16 @@ it('loads discovery through YAML and returns real batch and full-text output wit
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([['@deepseek-ai/dsh-academic-source', AcademicSourceRuntime],
       ['@deepseek-ai/dsh-academic-source-openalex', openalex]])
-    ctx.loader.internal = { version: 'v2', async import(specifier: string) {
-      if (!modules.has(specifier)) throw new Error(`unexpected import: ${specifier}`)
-      return modules.get(specifier)
-    } } as unknown as NonNullable<typeof ctx.loader.internal>
+    const internal = ctx.loader.internal
+    if (internal === undefined) throw new Error('Node module loader is unavailable')
+    ctx.loader.internal = new Proxy(internal, { get(target, property, receiver) {
+      if (property === 'import') return async (specifier: string) => {
+        if (!modules.has(specifier)) throw new Error(`unexpected import: ${specifier}`)
+        return modules.get(specifier)
+      }
+      const value: unknown = Reflect.get(target, property, receiver)
+      return value
+    } })
     await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(file).href } })
     await ctx.loader.await()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ meta: { count: 1 }, results: [{

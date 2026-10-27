@@ -56,7 +56,7 @@
     "lint:contracts-ready": "tsx scripts/run-oxlint.ts .",
     "lint:fix": "tsx scripts/compile-referenced-projects.ts host-contracts && npm run lint:fix:contracts-ready",
     "lint:fix:contracts-ready": "tsx scripts/run-oxlint.ts --config .oxlintrc.staged.json packages/typert/generator/tests/fixtures/type-model --fix && tsx scripts/run-oxlint.ts . --fix",
-    "duplication": "jscpd --config .jscpd.json packages scripts",
+    "duplication": "tsx scripts/verify-duplication.ts",
     "test": "pnpm run build:native-system && vitest run",
     "test:coverage": "pnpm run build:native-system && vitest run --coverage",
     "build:native-system": "tsx native/system/scripts/build.ts --host-addon-only",

@@ -200,9 +200,13 @@ describe('resolveConfig', () => {
 
   it('accepts an explicit initial mode and rejects a non-boolean value', () => {
     expect(resolveConfig(INITIAL_PLAN_CONFIG)).toEqual({ ...INITIAL_PLAN_CONFIG, missingExitRetries: 0 })
-    expect(() => resolveConfig({ section: TEST_PLAN_SECTION, initialActive: 'yes' } as unknown as PlanModeConfig))
+    const stringActive: PlanModeConfig = { section: TEST_PLAN_SECTION }
+    Object.assign(stringActive, { initialActive: 'yes' })
+    expect(() => resolveConfig(stringActive))
       .toThrow('needs a boolean `initialActive` when provided')
-    expect(() => resolveConfig({ section: TEST_PLAN_SECTION, initialActive: null } as unknown as PlanModeConfig))
+    const nullActive: PlanModeConfig = { section: TEST_PLAN_SECTION }
+    Object.assign(nullActive, { initialActive: null })
+    expect(() => resolveConfig(nullActive))
       .toThrow('needs a boolean `initialActive` when provided')
   })
 

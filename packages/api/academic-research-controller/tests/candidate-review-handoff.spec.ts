@@ -51,7 +51,8 @@ function readFixture(name: string): unknown {
   const entry = manifest.files.find(item => item.path === name)
   expect(entry, `manifest entry for ${name}`).toBeDefined()
   expect(createHash('sha256').update(bytes).digest('hex'), `sha256 for ${name}`).toBe(entry?.sha256)
-  return JSON.parse(bytes.toString()) as unknown
+  const parsed: unknown = JSON.parse(bytes.toString())
+  return parsed
 }
 
 function restoreRound(input: HandoffInput, plan: HybridSearchPlan): PlannedSearchRoundResult {

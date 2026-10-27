@@ -44,8 +44,9 @@ export function PlanReviewPanel({ pending, review, t, renderSlot }: PlanReviewPa
   const [editing, setEditing] = useState(false)
   const [revision, setRevision] = useState('')
   const readable = (text: string): string => {
-    const labels = ['研究目标', '核心问题', '研究范围', '执行方式', '交付结果', '待确认事项']
-    return labels.every(label => text.includes(`${label}：`))
+    // These are fields in the model-produced Brief, regardless of the viewer's locale.
+    const briefFields = ['研究目标', '核心问题', '研究范围', '执行方式', '交付结果', '待确认事项']
+    return briefFields.every(field => text.includes(`${field}：`))
       ? text.replace(/(核心问题|研究范围|执行方式|交付结果|待确认事项)：/gu, '\n\n$1：') : text
   }
   const settle = (send: () => Promise<void>, remote = false): void => {

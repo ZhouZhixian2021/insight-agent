@@ -143,6 +143,9 @@
     "6770425e763df5cd99384a405194cdf588f2ff1815ab6c2ed0b8a231a9c15776": 1,
     "851114a0852473e0906e628282926cb9b638c6ef0ca0f5218ec6b2d46b8c8f2b": 2
   },
+  "packages/api/academic-research-controller/src/academic-research-projection.ts": {
+    "d9e0c6da7afcd38d71bf1a59135e44c5ee229bd70a4e6792f03fc980171e2f7a": 1
+  },
   "packages/api/gateway/src/index.ts": {
     "099e513016a77c37185ffa1b5b7aab222118f08bcbcfe677d149d9fae4d4b62e": 1,
     "1b6933acdc52143e31b5f49ed1344cc78e6e407ac200f7e12487b35d3cbccec0": 1
@@ -426,6 +429,12 @@
     "8eb8ea3592cbd4e828a33b2cbe2876089d3923738996fb2259ded563811a1a85": 1,
     "c4f0b7f87a16d26a1e4e7ef7a07991e789f0bbcfdbe2240a97fcd879668b5b3f": 1,
     "f549d88ac2b1db67fb33f18a024c116051ff83d3f8ad0433ba4ceedc679e9044": 2
+  },
+  "packages/client/ui-academic-research/tests/fixtures.client.ts": {
+    "bc3a76686561255fe908a11b72a2facc070f3e5b478be8f13bbca0599b1f5707": 1
+  },
+  "packages/client/ui-academic-research/tests/run-sample.ts": {
+    "81d1d05364a476ea25c5015a7fd643f70e25d6118adeffeb08b3df03ef6f9cbc": 1
   },
   "packages/client/ui-agent-preset/tests/apply.client.spec.ts": {
     "5c8c41ba658c0576bea6c34b1226c27e7b0328c03c9eea0d6c920f940c9d8f5b": 1,

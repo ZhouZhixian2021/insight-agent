@@ -97,7 +97,24 @@ function compactText(text: string): string {
 }
 
 function looksLikeNaturalText(text: string): boolean {
-  const normalized = text.replace(/\s+/g, ' ').trim()
+  // HTML document templates can contain CSS and tag names without owning UI copy.
+  // Inspect rendered text and copy-bearing attributes while ignoring markup.
+  let candidate = text
+  if (/^\s*<!doctype html>/iu.test(text)) {
+    const markup = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, '')
+    const attributes = [...markup.matchAll(/\s(?:aria-label|aria-description|aria-valuetext|alt|title|placeholder)=(['"])(.*?)\1/giu)]
+      .map(match => match[2])
+    const inputValues = [...markup.matchAll(/<input\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu)]
+      .flatMap(([tag]) => {
+        const type = /\stype\s*=\s*(?:(["'])(.*?)\1|([^\s/>]+))/iu.exec(tag)
+        if (!/^(?:submit|button|reset)$/iu.test(type?.[2] ?? type?.[3] ?? '')) return []
+        const value = /\svalue\s*=\s*(?:(["'])(.*?)\1|([^\s/>]+))/iu.exec(tag)
+        return value === null ? [] : [value[2] ?? value[3] ?? '']
+      })
+    if (inputValues.some(containsProductText)) return true
+    candidate = [...attributes, markup.replace(/<[^>]*>/gu, ' ')].join(' ')
+  }
+  const normalized = candidate.replace(/\s+/g, ' ').trim()
   return /\s|[\u3400-\u9fff]/u.test(normalized) || /^[A-Z]/.test(normalized)
 }
 
