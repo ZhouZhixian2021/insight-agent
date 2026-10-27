@@ -1,7 +1,6 @@
 {
   "schema": 1,
   "platform": "linux",
-  "head": "0cfe52f95fdc4f33cc6659d36a2d6d7a0b76921f",
   "jobId": "121983605387",
   "files": {
     "packages/academic/analysis/src/synthesis-input.ts": {
