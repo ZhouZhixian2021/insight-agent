@@ -42,6 +42,7 @@ class Adapter extends LlmAdapter {
   synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
   afterChunk?: () => void
+  scriptForCall?: (options: GenerateOptions) => StreamChunk[]
   waitForAbort = false
   ignoreAbort = false
   supportsReasoning = true
@@ -84,7 +85,7 @@ class Adapter extends LlmAdapter {
     const chunks: StreamChunk[] = admission
       ? this.scopeScript ?? [{ type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) },
         { type: 'finish', reason: { kind: 'stop' } }]
-      : synthesis === null ? compactEvidenceScript(this.script) : this.synthesisScript
+      : synthesis === null ? compactEvidenceScript(this.scriptForCall?.(options) ?? this.script) : this.synthesisScript
       ?? [{ type: 'text-delta', index: 0, text: synthesis }, { type: 'finish', reason: { kind: 'stop' } }]
     for (const chunk of chunks) { yield chunk; if (!admission) this.afterChunk?.() }
   }
@@ -776,10 +777,12 @@ describe('durable academic model extraction', () => {
     ]
     f.adapter.waitForAbort = true
     f.adapter.beforeDispatch = async () => { if (f.adapter.calls.length > 0) f.adapter.waitForAbort = false }
-    f.adapter.afterChunk = () => {
-      if (f.adapter.calls.length === 2) f.adapter.script = [
-        { type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'unavailable' } } },
-      ]
+    f.adapter.scriptForCall = (options) => {
+      const content = options.messages[0]?.content[0]
+      if (content?.type !== 'text') throw new Error('missing recovery input')
+      return content.text.includes('Second segment.')
+        ? [{ type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'unavailable' } } }]
+        : script
     }
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, attemptTimeoutMs: 100,
       transientRetry: { failureCodes: ['TIMEOUT'], initialDelayMs: 0 } })
