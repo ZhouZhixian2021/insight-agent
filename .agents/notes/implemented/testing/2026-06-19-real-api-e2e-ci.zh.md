@@ -28,11 +28,12 @@ ci.yml 的价值在于它无密钥、可 fork、始终为绿：任何贡献者�
 
 ### 不可信 PR 的门禁
 
-GitHub 对两类 PR 扣留 repo secret：来自 **fork** 的 PR，以及 **Dependabot** PR（同仓库分支，`head.repo.fork == false`，但 secret 仍被扣留）。一个 job 级 `if:` 对两者都跳过整个 job：
+GitHub 对两类 PR 扣留 repo secret：head 位于**另一仓库**的 PR，以及 **Dependabot** PR（即使分支位于同一仓库）。仓库自身的 `fork` 属性描述其来源，不表示这次 PR 是否跨仓；本仓库即使是 fork，仍可接收同仓 PR。job 级 `if:` 比较 head 与 base 的仓库 ID，对这两类 PR 跳过整个 job：
 
 ```
 github.event_name != 'pull_request'
-  || !(github.event.pull_request.head.repo.fork || github.event.pull_request.user.login == 'dependabot[bot]')
+  || (github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
+      && github.event.pull_request.user.login != 'dependabot[bot]')
 ```
 
 Dependabot 子句基于 PR **作者**（`pull_request.user.login`）而非 `github.actor`（运行触发者）：维护者重新打开或重跑 Dependabot PR 时，`github.actor` 会变成人类，但该 PR 仍然无密钥；基于作者的判断在这种情况下依然正确。被 **job 级** `if:` 跳过的 job 报告为*成功*检查（不同于工作流/触发级跳过会保持 pending），因此如果需要将此工作流标记为 required status check 也是安全的——fork/Dependabot PR 的跳过但绿色的检查不会阻塞合并。

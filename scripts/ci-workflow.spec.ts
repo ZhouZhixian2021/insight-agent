@@ -522,7 +522,7 @@ describe('CI workflow', () => {
       return evaluateRunsOn(expression, {
         vars,
         fromJSON: JSON.parse,
-        github: { event: { pull_request: { user: { login } } } },
+        github: { repository: 'deepseek-ai/deepseek-harness', event: { pull_request: { user: { login } } } },
       })
     }
     for (const [name, selector, variable, pool, hosted] of [
@@ -558,6 +558,32 @@ describe('CI workflow', () => {
     // and exists to collect as much Windows-native evidence per run as
     // possible, so the first failure must not truncate the rest.
     expect(observational?.env).toMatchObject({ DSH_GATE_FAIL_FAST: '' })
+  })
+
+  it('uses standard hosted runners in repository forks without changing explicit failover', () => {
+    const ci = loadWorkflow('.github/workflows/ci.yml')
+    const selectors = [
+      ['node-24', 'DSH_CI_FAILOVER_LINUX', 'ubuntu-24.04', 'dsh-ubuntu-24-04-16core', 'blacksmith-8vcpu-ubuntu-2404', ['self-hosted', 'linux', 'x64', 'vm-backup']],
+      ['node-24-coverage', 'DSH_CI_FAILOVER_LINUX', 'ubuntu-24.04', 'dsh-ubuntu-24-04-16core', 'blacksmith-16vcpu-ubuntu-2404', ['self-hosted', 'linux', 'x64', 'vm-backup']],
+      ['node-24-consumers', 'DSH_CI_FAILOVER_LINUX', 'ubuntu-24.04', 'dsh-ubuntu-24-04-16core', 'blacksmith-16vcpu-ubuntu-2404', ['self-hosted', 'linux', 'x64', 'vm-backup']],
+      ['windows-build', 'DSH_CI_FAILOVER_WINDOWS', 'windows-2025', 'dsh-windows-2025-16core', 'blacksmith-16vcpu-windows-2025', ['self-hosted', 'dsh-win-ci', 'windows']],
+      ['windows-coverage', 'DSH_CI_FAILOVER_WINDOWS', 'windows-2025', 'dsh-windows-2025-16core', 'blacksmith-16vcpu-windows-2025', ['self-hosted', 'dsh-win-ci', 'windows']],
+      ['windows-native-tests', 'DSH_CI_FAILOVER_WINDOWS', 'windows-2025', 'dsh-windows-2025-16core', 'blacksmith-2vcpu-windows-2025', ['self-hosted', 'dsh-win-ci', 'windows']],
+    ] as const
+    for (const [name, variable, forkRunner, upstreamRunner, blacksmithRunner, selfhostedRunner] of selectors) {
+      const selector = workflowJob(ci, name)['runs-on']
+      const evaluate = (repository: string, mode = '', login = 'maintainer'): unknown => evaluateRunsOn(selector, {
+        vars: { [variable]: mode },
+        fromJSON: JSON.parse,
+        github: { repository, event: { pull_request: { user: { login } } } },
+      })
+      expect(evaluate('ZhouZhixian2021/insight-agent'), `${name} in the fork`).toBe(forkRunner)
+      expect(evaluate('deepseek-ai/deepseek-harness'), `${name} upstream`).toBe(upstreamRunner)
+      expect(evaluate('ZhouZhixian2021/insight-agent', 'blacksmith'), `${name} explicit Blacksmith`).toBe(blacksmithRunner)
+      expect(evaluate('ZhouZhixian2021/insight-agent', 'selfhosted'), `${name} explicit selfhosted`).toEqual(selfhostedRunner)
+      expect(evaluate('ZhouZhixian2021/insight-agent', 'selfhosted', 'dependabot[bot]'),
+        `${name} excludes Dependabot from the persistent pool`).toBe(forkRunner)
+    }
   })
 
   it('runs the darwin unit parity inventory at the coverage lanes\' test budget', () => {
@@ -975,6 +1001,35 @@ describe('bubblewrap preparation script', () => {
 })
 
 describe('DeepSeek e2e workflow', () => {
+  it('runs only trusted same-repository PRs even when the repository is itself a fork', () => {
+    const workflow = loadWorkflow('.github/workflows/e2e.yml')
+    const e2e = workflowJob(workflow, 'e2e')
+    const selector = e2e.if
+    if (typeof selector !== 'string' || !isRecord(workflow.on)) {
+      throw new TypeError('DeepSeek e2e job must define a trust guard and triggers')
+    }
+    expect(Object.keys(workflow.on)).toContain('pull_request')
+    expect(Object.keys(workflow.on)).not.toContain('pull_request_target')
+
+    const eligible = (headId: number, baseId: number, author: string, fork: boolean): boolean =>
+      Boolean(runInNewContext(selector, {
+        github: {
+          event_name: 'pull_request',
+          event: { pull_request: {
+            head: { repo: { id: headId, fork } },
+            base: { repo: { id: baseId } },
+            user: { login: author },
+          } },
+        },
+      }, { timeout: 1000 }))
+
+    expect(eligible(101, 101, 'maintainer', true), 'same repository that is itself a fork').toBe(true)
+    expect(eligible(101, 101, 'maintainer', false), 'ordinary same-repository PR').toBe(true)
+    expect(eligible(102, 101, 'contributor', true), 'different repository').toBe(false)
+    expect(eligible(102, 101, 'contributor', false), 'different repository with an unset fork flag').toBe(false)
+    expect(eligible(101, 101, 'dependabot[bot]', true), 'Dependabot author on a same-repository branch').toBe(false)
+  })
+
   it('prepares bubblewrap from the pinned payload without a package transaction', () => {
     const workflow = loadWorkflow('.github/workflows/e2e.yml')
     const e2e = workflowJob(workflow, 'e2e')

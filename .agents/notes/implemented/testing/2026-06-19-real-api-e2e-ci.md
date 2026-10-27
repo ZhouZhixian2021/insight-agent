@@ -28,11 +28,12 @@ Internal inference cost is not the limiting constraint, so the workflow optimize
 
 ### The untrusted-PR gate
 
-GitHub withholds repo secrets from two kinds of PR: those from **forks**, and **Dependabot** PRs (same-repo branch, so `head.repo.fork == false`, but secrets are still withheld). A job-level `if:` skips the whole job for both:
+GitHub withholds repo secrets from two kinds of PR: those whose head is in **another repository**, and **Dependabot** PRs (even with a same-repository branch). The repository's own `fork` property describes its ancestry, not whether a PR comes from another repository; this repository can be a fork and still receive same-repository PRs. A job-level `if:` compares head and base repository IDs and skips the whole job for both:
 
 ```
 github.event_name != 'pull_request'
-  || !(github.event.pull_request.head.repo.fork || github.event.pull_request.user.login == 'dependabot[bot]')
+  || (github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
+      && github.event.pull_request.user.login != 'dependabot[bot]')
 ```
 
 The Dependabot clause keys on the PR **author** (`pull_request.user.login`), not `github.actor` (the run trigger): a maintainer who reopens or re-runs a Dependabot PR would make `github.actor` a human while the PR is still keyless, and an author-based test stays correct across that. A job skipped by a **job-level** `if:` reports as a *successful* check (unlike a workflow/trigger-level skip, which stays pending), so this workflow is safe to mark as a required status check if desired — a fork/Dependabot PR's skipped-but-green check does not block the merge.

@@ -6,9 +6,11 @@ name: E2E (real DeepSeek API)
 # https://api.deepseek.com/anthropic (DEEPSEEK_BASE_URL is pinned explicitly so a
 # stray repo-root .env can't redirect the run).
 #
-# pull_request IS a trigger, but GitHub withholds repo secrets from BOTH forked
-# PRs and Dependabot PRs (the latter are same-repo, fork==false, but still
-# keyless). The job-level `if:` below skips the whole job for those untrusted
+# pull_request IS a trigger, but GitHub withholds repo secrets from BOTH PRs
+# whose head is in another repository and Dependabot PRs (even same-repo ones).
+# A repository can itself be a fork while the PR remains same-repo, so compare
+# head/base repository IDs instead of the repository's `fork` property.
+# The job-level `if:` below skips the whole job for those untrusted
 # PRs. The Dependabot test keys on the PR AUTHOR (pull_request.user.login), not
 # github.actor (the run trigger) — a maintainer reopening a Dependabot PR would
 # make github.actor human while the PR is still keyless. When the job runs, the
@@ -61,7 +63,8 @@ jobs:
     # the secret is withheld — they would otherwise hard-fail the preflight.
     if: >-
       github.event_name != 'pull_request'
-      || !(github.event.pull_request.head.repo.fork || github.event.pull_request.user.login == 'dependabot[bot]')
+      || (github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
+          && github.event.pull_request.user.login != 'dependabot[bot]')
     # Profile e2e files can each own several complete dsh subprocess trees, so
     # four file workers preserve process/PTY headroom. Tests retain 120s/test
     # and retry 2; 45m still bounds retry storms against a slow API.
