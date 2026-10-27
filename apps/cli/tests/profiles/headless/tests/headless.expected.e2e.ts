@@ -672,10 +672,18 @@ describe('headless stream-json snapshots', () => {
       })
 
       expect(result.stderr).toBe('')
-      expect(server.requests, JSON.stringify(server.requests.map(request => ({
-        title: isTitleRequest(request), maxTokens: request.max_tokens,
-        messages: JSON.stringify(request['messages'] ?? null).slice(0, 120),
-      })))).toHaveLength(2)
+      const eventTypes = parseJsonl(result.stdout)
+        .map(record => record['event'])
+        .filter(event => event !== null && typeof event === 'object' && !Array.isArray(event))
+        .map(event => (event as JsonObject)['type'])
+        .filter(type => typeof type === 'string' && /retry|request-error|request\/header/u.test(type))
+      expect(server.requests, JSON.stringify({
+        requests: server.requests.map(request => ({
+          title: isTitleRequest(request), maxTokens: request.max_tokens,
+          messages: JSON.stringify(request['messages'] ?? null).slice(0, 120),
+        })),
+        events: eventTypes,
+      })).toHaveLength(2)
       expect(server.paths).toEqual(['/v1/messages', '/v1/messages'])
       const agentRequest = server.requests.find(request => request.max_tokens === 256_000)
       const titleRequest = server.requests.find(isTitleRequest)
