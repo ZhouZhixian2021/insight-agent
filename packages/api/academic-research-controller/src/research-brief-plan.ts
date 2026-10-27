@@ -96,11 +96,39 @@ export function researchPlanFromApproval(
 
 /**
  * Reject an incompatible Academic plan before presenting it for user review.
+ * Bilingual screening annotations are rejected here; approved Session reads retain their saved aliases.
  * @param markdown Complete proposed plan, including its structured Brief.
  * @returns Nothing when the plan can be executed; approval remains a separate user action.
  */
 export function validateAcademicPlan(markdown: string): void {
-  validateResearchBriefRequirements(parseBriefPayload(markdown))
+  const payload = parseBriefPayload(markdown)
+  validateResearchBriefRequirements(payload)
+  if (payload.candidateScreening !== undefined) validateProposedScreeningAliases(payload.candidateScreening)
+}
+
+function validateProposedScreeningAliases(screening: AcademicCandidateScreening): void {
+  const groups = [
+    ...screening.questions.map((entry, index) => ({ concepts: entry.concepts,
+      label: `candidateScreening.questions[${index}].concepts` })),
+    { concepts: screening.methods, label: 'candidateScreening.methods' },
+    { concepts: screening.evidence, label: 'candidateScreening.evidence' },
+    ...screening.contributions.map((entry, index) => ({ concepts: entry.concepts,
+      label: `candidateScreening.contributions[${index}].concepts` })),
+  ]
+  for (const { concepts, label } of groups) {
+    concepts.forEach((aliases, conceptIndex) => {
+      aliases.forEach((alias, aliasIndex) => {
+        // Reject translation annotations, not English phrases or embedded technical abbreviations.
+        const term = alias.normalize('NFKC')
+        const spaced = /^(?:[a-z][a-z\d -]*\s+\p{Script=Han}+|\p{Script=Han}+\s+[a-z][a-z\d -]*)$/iu
+        const parenthesized = /^(?:[a-z][a-z\d -]*\s*\(\p{Script=Han}+\)|\p{Script=Han}+\s*\([a-z][a-z\d -]*\))$/iu
+        if (spaced.test(term) || parenthesized.test(term)) {
+          throw new Error(`${label}[${conceptIndex}][${aliasIndex}] 包含拼接的中英文别名 ${JSON.stringify(alias)}。`
+            + '请将同义表达分别写成同组的独立字符串，例如 ["planning", "规划"]；保留 "tool use" 等完整英文短语后重新提交计划。')
+        }
+      })
+    })
+  }
 }
 
 function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | undefined {

@@ -451,23 +451,25 @@ describe('AcademicResearchController', () => {
       searchPlan: [...searchPlan, { ...searchPlan[0], query: 'second' }] })))).toThrow('1 条查询上限')
   })
 
-  it('recovers reviewed candidate cues from the same approved Session plan', () => {
-    const question = 'Which method works?'
-    const candidateScreening = {
-      questions: [{ question, concepts: [['retrieval faithfulness']] }],
-      methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
-      contributions: [],
-    }
-    const base = briefPayload()
-    const payload = { ...base, schemaVersion: 5, candidateScreening,
-      evidenceRequirements: { ...base.evidenceRequirements, targetIncludedWorks: 2 },
-      searchPlan: [{ query: 'retrieval faithfulness', purpose: '比较方法', questions: [question], retrieval: {
-        channels: ['academic'], academicProviders: ['openalex'], verificationProviders: [],
-        maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0,
-      } }] }
-    expect(researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan(payload))).candidateScreening)
-      .toEqual(candidateScreening)
-  })
+  it.each(['retrieval faithfulness', 'planning 规划'])(
+    'recovers approved candidate cues without rewriting historical aliases: %s', (alias) => {
+      const question = 'Which method works?'
+      const candidateScreening = {
+        questions: [{ question, concepts: [[alias]] }],
+        methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
+        contributions: [],
+      }
+      const base = briefPayload()
+      const payload = { ...base, schemaVersion: 5, candidateScreening,
+        evidenceRequirements: { ...base.evidenceRequirements, targetIncludedWorks: 2 },
+        searchPlan: [{ query: 'retrieval faithfulness', purpose: '比较方法', questions: [question], retrieval: {
+          channels: ['academic'], academicProviders: ['openalex'], verificationProviders: [],
+          maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0,
+        } }] }
+      expect(researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan(payload))).candidateScreening)
+        .toEqual(candidateScreening)
+    },
+  )
 
   it('rejects duplicate expressions with different approved retrieval policies', () => {
     const retrieval = {
