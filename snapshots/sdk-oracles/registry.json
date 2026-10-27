@@ -2,9 +2,12 @@
   "version": 1,
   "scenarios": {
     "academic-plan-chinese": {
-      "status": "pending",
+      "status": "active",
       "source": "session.v4.jsonl",
-      "sourceSha256": "df1e4be987974bf4c0436b62ea1e7cad76f4cc44e8861e49f01ff8f453043c52"
+      "sourceSha256": "df1e4be987974bf4c0436b62ea1e7cad76f4cc44e8861e49f01ff8f453043c52",
+      "writerSha256": "124a1cebb0abcfdfba06244e7f58199316a37a42255de8aab7f3f540cd4f2a69",
+      "promptSha256": "94018f0f4885ac20e7d5c9642a75657c9e3cc5a5bfc1d529f1fbb0502169436b",
+      "schemasSha256": "08b758426918b49311a3a7a60c8f79f86187def4e0a54ce500dfcccfb3b889ca"
     }
   }
 }

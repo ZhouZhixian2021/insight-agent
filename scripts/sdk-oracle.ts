@@ -72,7 +72,8 @@ export function sdkOracleSha256(content: string): string {
  * @returns Pending registration or reviewed current-writer file contents.
  */
 export async function readSdkOracle(oracleRoot: string, scenarioDir: string): Promise<SdkOracle> {
-  const registry = object(JSON.parse(await readFile(join(oracleRoot, 'registry.json'), 'utf8')) as unknown, 'SDK oracle registry')
+  const parsed: unknown = JSON.parse(await readFile(join(oracleRoot, 'registry.json'), 'utf8'))
+  const registry = object(parsed, 'SDK oracle registry')
   keys(registry, ['version', 'scenarios'], 'SDK oracle registry')
   if (registry.version !== 1) throw new Error('SDK oracle registry version must be 1')
   const scenarios = object(registry.scenarios, 'SDK oracle scenarios')

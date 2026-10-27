@@ -51,11 +51,45 @@ async function temporaryFixture(status: 'pending' | 'active'): Promise<{
   return { root: join(root, 'oracle'), scenario, writer }
 }
 
-it('pins the real SDK-01 V4 input while its independent writer expectation is pending', async () => {
+it('pins the frozen SDK-01 V4 input separately from reviewed current writer output', async () => {
   const oracle = await readSdkOracle(oracleRoot, scenarioDir)
-  expect(oracle).toMatchObject({ status: 'pending', source: 'session.v4.jsonl' })
+  expect(oracle).toMatchObject({ status: 'active', source: 'session.v4.jsonl' })
+  if (oracle.status !== 'active') throw new Error('expected active SDK-01 oracle')
   const source = await readFile(join(scenarioDir, oracle.source), 'utf8')
   expect(sdkOracleSha256(source)).toBe(oracle.sourceSha256)
+  expect(oracle.writer).not.toBe(source)
+  expect(oracle.prompt).not.toBe(await readFile(join(scenarioDir, 'system-prompt.expected.md'), 'utf8'))
+  expect(oracle.schemas).not.toBe(await readFile(join(scenarioDir, 'tool-schemas.expected.json'), 'utf8'))
+
+  const events = oracle.writer.trimEnd().split('\n').slice(1).map((line) => {
+    const parsed: unknown = JSON.parse(line)
+    if (parsed === null || typeof parsed !== 'object' || !('type' in parsed)
+      || typeof parsed.type !== 'string') throw new Error('invalid SDK-01 writer event')
+    return parsed as {
+      type: string
+      data?: {
+        source?: { kind?: string }
+        message?: { isError?: boolean; content?: Array<{ type?: string; name?: string; text?: string }> }
+        reason?: { kind?: string }
+      }
+    }
+  })
+  expect(events.filter(event => event.type === 'system/message')).toHaveLength(1)
+  expect(events.filter(event => event.type === 'user/message' && event.data?.source?.kind === 'runtime-context'))
+    .toHaveLength(1)
+  expect(events.filter(event => event.type === 'session-log-deepseek/delivery-accepted')).toHaveLength(3)
+  expect(events.filter(event => event.type === 'assistant/message')
+    .flatMap(event => event.data?.message?.content ?? [])
+    .filter(block => block.name === 'exit_plan_mode')).toHaveLength(2)
+  expect(events.filter(event => event.type === 'tool/result').map(event => event.data?.message?.isError))
+    .toEqual([true, true])
+  expect(events.filter(event => event.type === 'turn/end').map(event => event.data?.reason?.kind))
+    .toEqual(['completed'])
+  const parsedSchemas: unknown = JSON.parse(oracle.schemas)
+  if (parsedSchemas === null || typeof parsedSchemas !== 'object' || !('initial' in parsedSchemas)
+    || !Array.isArray(parsedSchemas.initial)) throw new Error('invalid SDK-01 tool schemas')
+  const schemas = parsedSchemas as { initial: Array<{ name: string }> }
+  expect(schemas.initial.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read_image', 'working_directory'])
 })
 
 it('reads only an exact active native output inventory with matching digests', async () => {
@@ -87,6 +121,17 @@ it('rejects an active oracle with extra output or a changed writer digest', asyn
   const changed = await temporaryFixture('active')
   await writeFile(join(changed.root, 'academic-plan-chinese', 'writer.expected.jsonl'), `${changed.writer}\n`)
   await expect(readSdkOracle(changed.root, changed.scenario)).rejects.toThrow('output digest changed')
+})
+
+it('rejects unredacted writer output even when the registry digest is updated', async () => {
+  const fixture = await temporaryFixture('active')
+  const unredacted = fixture.writer.replace('{{system}}', 'unreviewed system prompt')
+  expect(unredacted).not.toBe(fixture.writer)
+  await writeFile(join(fixture.root, 'academic-plan-chinese', 'writer.expected.jsonl'), unredacted)
+  const registryPath = join(fixture.root, 'registry.json')
+  const registry = await readFile(registryPath, 'utf8')
+  await writeFile(registryPath, registry.replace(sdkOracleSha256(fixture.writer), sdkOracleSha256(unredacted)))
+  await expect(readSdkOracle(fixture.root, fixture.scenario)).rejects.toThrow('redacted fixture fixed point')
 })
 
 it('does not accept a replay fixture copied into the writer role', async () => {

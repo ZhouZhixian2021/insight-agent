@@ -144,7 +144,7 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
     environment: {
       DSH_TEST_ACADEMIC_BRIEF_TEMPLATE: fileURLToPath(new URL('../../packages/bundle/web-app/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url)),
     },
-    expectedTools: { exit_plan_mode: ['plan'], str_replace_editor: ['command', 'path'] },
+    expectedTools: { exit_plan_mode: ['plan'], read_image: ['file_path'], working_directory: [] },
   },
   'academic-replenishment': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], str_replace_editor: ['command', 'path'] } },
   'academic-candidate-screening': { runtimeProfile: 'sdk-minimal', expectedTools: { run_candidate_screening_fixture: [], str_replace_editor: ['command', 'path'] } },
