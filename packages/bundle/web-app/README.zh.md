@@ -29,7 +29,7 @@ kind: "package-bundle"
 <a id="use-this-package"></a>
 ## 使用本包
 
-学术预设是 `presets/academic.patch.yml` 中的声明式 `dsh-agent-preset` 条目。其研究技能和参考资料随包发布在 `presets/academic/skills` 中，补丁相对于自身 URL 解析这些文件。
+学术预设是 `presets/academic.patch.yml` 中的声明式 `dsh-agent-preset` 条目。其研究技能和参考资料随包发布在 `presets/academic/skills` 中，补丁从已安装的 `dsh-web-app` 包中解析这些文件。当前工作目录通过必需的运行时上下文提供给模型，不使用 persona 模板变量。
 
 启动 GUI、打开浏览器，然后开始与 agent（智能体）对话。flag 用于微调本次调用。
 
