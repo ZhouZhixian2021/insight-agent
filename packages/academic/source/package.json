@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-academic-source",
   "description": "Abstract scholarly-source access capability seam (ctx.academicSource) for the DeepSeek Harness — provider registry, registration-order-independent selection, request/result vocabulary, and the AcademicSourceError taxonomy",
-  "version": "0.1.3-alpha.1",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,14 +26,14 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-academic-model": "workspace:*"
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-academic-model": "workspace:*"
   }
 }

@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "name": "dsh-web-tools",
+  "version": "0.3.5+insight.1",
+  "testedRuntime": "0.2.1-rc.2",
+  "upstream": {
+    "repository": "https://github.com/A3Boy/dsh-web-tools",
+    "tag": "v0.3.5",
+    "commit": "a3a2ffe7433a883e6cd0f72e632b1330fd15f396",
+    "packageSha256": "7d7dd8b7d2f39f505e88083802cc616b2ea97f05e5a97420c9ca8d57f1b0d33a"
+  },
+  "archive": {
+    "filename": "dsh-web-tools-0.3.5-insight.1.tgz",
+    "sha256": "f2b749925479f0f3fd68136c8b54e98d34f0f9d58397f23db08bd637aa1e54d6"
+  },
+  "packedFiles": {
+    "lib/host/index.js": "656670462e715ece2c20202281f65667626451b5da086c2dd9a45dc0ba20dd15",
+    "lib/host/context-types.d.ts": "b008446d5f30aca4067794e7b05cb4c44160986ac747194284a261ced206e554",
+    "lib/host/config.js": "7999be934ba2bc1560bcc2b0c2d39888b1c78b97e5c3c75c0a1c9c52728195ae",
+    "lib/client.js": "83e7e00b47e8520249365bff6cf7f68789f4a99373f92988b9cbb84f9a296323",
+    "cordis.patch.yml": "b003236ee45d3c97966d54e32576133dd43b6d45d61560ba386609d57915e736",
+    "LICENSE": "fb7039a8aec684632b3f79f87352edd3f69ac826dc902d313b5853969c669840",
+    "node_modules/@acemir/cssom/package.json": "d899f1f63788a778068d113fa695f773b832cb8557db930969d6cb3d36d1e6bc",
+    "node_modules/@acemir/cssom/LICENSE.txt": "e539937c489c4928ad7461669ec017f4d916fb3565fc26f5b8a0ce816d2ed23c",
+    "node_modules/@xmldom/xmldom/package.json": "b61c2dd342e0e1abb800302ec62c0b06ae7a07cd9b907c88428ff80100f64c6a",
+    "node_modules/@xmldom/xmldom/LICENSE": "4da724fc305d81606b245b324d4d2586916b9d248b23d82183df753ace0fdf71",
+    "node_modules/boolbase/package.json": "59824f6c9ee5925b67e15cd6f44df46bc05ad6b3f67ffff500582b2c45e89cff",
+    "node_modules/boolbase/LICENSE": "cdf4d87ae0a6c160227263bf4e39a0a10e30e89ae7256e0f7ac7bde0836552c6",
+    "node_modules/commander/package.json": "4ee3239971f47b1be752b2a9510184a5ece7c2d888890772b6ab69443ce089de",
+    "node_modules/commander/LICENSE": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+    "node_modules/css-select/package.json": "3683be28175097610a1a7bd09935d8a16d94eb6cfd5d07001a1d9fa95cbec68d",
+    "node_modules/css-select/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/css-what/package.json": "97311bb818a3fba0490a923157152a4e33714e2d1cab71a9faae37718cdabcc2",
+    "node_modules/css-what/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/defuddle/package.json": "ce58de4da99bc076c916d8c83663e8f309110b91f3095fb0f9152875df9321fd",
+    "node_modules/defuddle/LICENSE": "c63e6774d9c9da3de01428e0809080c4758de3636c8e9e6fe51525c9ab4cd092",
+    "node_modules/dom-serializer/package.json": "82dcf82f2014284b51039db7009f53c7f2182fe48a6fb14e8da122b11fa7f9ee",
+    "node_modules/dom-serializer/LICENSE": "fd495b1bdd024995c6b3bd612584a4e37513250317bb5a6586f62c7756f9aff1",
+    "node_modules/dom-serializer/node_modules/domelementtype/package.json": "6aef69cf18e284cbda52541d945e839b99163f537f4d53c0764bb2d1be2b179e",
+    "node_modules/dom-serializer/node_modules/domelementtype/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/domelementtype/package.json": "4ddf28a1e60ae7ec15f62cda0d72eb06bcae05b3819942d971c841b7cc0b6930",
+    "node_modules/domelementtype/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/domhandler/package.json": "2132f2aabc2f6628cb99040c66a2a4378e30a1df05130e7c706eea7576c38ffe",
+    "node_modules/domhandler/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/domhandler/node_modules/domelementtype/package.json": "6aef69cf18e284cbda52541d945e839b99163f537f4d53c0764bb2d1be2b179e",
+    "node_modules/domhandler/node_modules/domelementtype/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/domutils/package.json": "574c1892db5635787664a6da36fb37081496d8dbba6d32e21413805fcae20899",
+    "node_modules/domutils/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/domutils/node_modules/domelementtype/package.json": "6aef69cf18e284cbda52541d945e839b99163f537f4d53c0764bb2d1be2b179e",
+    "node_modules/domutils/node_modules/domelementtype/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/entities/package.json": "b6ff1175be0fa103f032d52e42af95d95c674e3cba08d93670cc8944697bcc42",
+    "node_modules/entities/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/html-escaper/package.json": "d9417e798be1f2f1183ee86e7c32e144f531c373afb19002d4e2f2faeb4214ab",
+    "node_modules/html-escaper/LICENSE.txt": "27d06bbb2eb031be8aa376868a2e1f11b6acba938d4cc8e1234b66b9739c54a3",
+    "node_modules/htmlparser2/package.json": "8aa0d39ff4c9df2d53b02a0fe434d03a6348353cb1d23ea2b448692687b8c8ab",
+    "node_modules/htmlparser2/LICENSE": "204cfa747341660e4da64cd23e8c876c6b20279d247f48564993d3fc4a2eab47",
+    "node_modules/htmlparser2/node_modules/dom-serializer/package.json": "098603e7fee62c07fb392e31dae4dc151a3e03c72555ce1f9182011fbf898501",
+    "node_modules/htmlparser2/node_modules/dom-serializer/LICENSE": "94cfe87de9b178e8fee313a19178e625129e2ce559db32e772e7bd95114ee6ff",
+    "node_modules/htmlparser2/node_modules/dom-serializer/node_modules/entities/package.json": "c92f657f679669a91bc32cd98f0b4812b3f4a9c6f3b3af3022a70cb25b7efc7c",
+    "node_modules/htmlparser2/node_modules/dom-serializer/node_modules/entities/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/htmlparser2/node_modules/domhandler/package.json": "cbb42a446eef285863e04158c7f269e0e7b8e868c1042d6845e996d760f7376c",
+    "node_modules/htmlparser2/node_modules/domhandler/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/htmlparser2/node_modules/domutils/package.json": "9a04689cc67f52e9f7323e0dd4d18c8cbe68744c3373ad524d133ddf12bf99ab",
+    "node_modules/htmlparser2/node_modules/domutils/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/htmlparser2/node_modules/entities/package.json": "b33b5d3fd4a8e196d3245c10ebb8feb2e076fc8d392f99a1050377d6e2b8b641",
+    "node_modules/htmlparser2/node_modules/entities/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/linkedom/package.json": "1ea2f7c77f1eb65cd96e73ffb5da96ec160a5f61e13ca498e9f90f75cdedb936",
+    "node_modules/linkedom/LICENSE": "dc6d4961d8b6ee747231582ae9c53ce1d66bf76bc9f5a28f554c0e97210953bf",
+    "node_modules/mathml-to-latex/package.json": "f05e225a8317917b4789ea3308b8b5da6ad31f8f93e05e6fc8faadae4f8bbf9b",
+    "node_modules/mathml-to-latex/LICENSE.md": "a2d336698e8cc990c1b32010dbf6df1bd0f2c9f1735f446023fddaaa6f0e662c",
+    "node_modules/nth-check/package.json": "1d6be7ad3e33dcca56774fb48b0c8f6c0200bf5ff1364a0f3ba0b5aefee4db1a",
+    "node_modules/nth-check/LICENSE": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164",
+    "node_modules/uhyphen/package.json": "5909de06aab4c4a969deb4c758541f5ec0584a651160f00fbbf73998d591024a",
+    "node_modules/uhyphen/LICENSE": "2b0748436e16684ec912b82f153343c6063ae7a7f24fac680058ca06bf02f2a7",
+    "node_modules/undici/package.json": "df5d9c505f8db601e62bf67eb835117985e549cfbbb61c4c1a84c55d57ab3532",
+    "node_modules/undici/LICENSE": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27",
+    "node_modules/ws/package.json": "c1ef91ca04eb4754c011c5f0e7638b5078ff71104fada400c44ac761cf93e0b1",
+    "node_modules/ws/LICENSE": "2b29dcfe0d6471f7e8c92c5fb38c9f93edee10330937055440192f1832b1ecef"
+  },
+  "dependencyVersions": [
+    {
+      "name": "@acemir/cssom",
+      "version": "0.9.32"
+    },
+    {
+      "name": "@xmldom/xmldom",
+      "version": "0.9.12"
+    },
+    {
+      "name": "boolbase",
+      "version": "2.0.0"
+    },
+    {
+      "name": "commander",
+      "version": "12.1.0"
+    },
+    {
+      "name": "css-select",
+      "version": "7.0.0"
+    },
+    {
+      "name": "css-what",
+      "version": "8.0.0"
+    },
+    {
+      "name": "defuddle",
+      "version": "0.19.6"
+    },
+    {
+      "name": "dom-serializer",
+      "version": "2.0.0"
+    },
+    {
+      "name": "dom-serializer",
+      "version": "3.1.1"
+    },
+    {
+      "name": "domelementtype",
+      "version": "2.3.0"
+    },
+    {
+      "name": "domelementtype",
+      "version": "3.0.0"
+    },
+    {
+      "name": "domhandler",
+      "version": "5.0.3"
+    },
+    {
+      "name": "domhandler",
+      "version": "6.0.1"
+    },
+    {
+      "name": "domutils",
+      "version": "3.2.2"
+    },
+    {
+      "name": "domutils",
+      "version": "4.0.2"
+    },
+    {
+      "name": "entities",
+      "version": "4.5.0"
+    },
+    {
+      "name": "entities",
+      "version": "7.0.1"
+    },
+    {
+      "name": "entities",
+      "version": "8.1.0"
+    },
+    {
+      "name": "html-escaper",
+      "version": "3.0.3"
+    },
+    {
+      "name": "htmlparser2",
+      "version": "10.1.0"
+    },
+    {
+      "name": "linkedom",
+      "version": "0.18.14"
+    },
+    {
+      "name": "mathml-to-latex",
+      "version": "1.8.0"
+    },
+    {
+      "name": "nth-check",
+      "version": "3.0.1"
+    },
+    {
+      "name": "uhyphen",
+      "version": "0.2.0"
+    },
+    {
+      "name": "undici",
+      "version": "6.29.1"
+    },
+    {
+      "name": "ws",
+      "version": "8.22.0"
+    }
+  ],
+  "packaging": "ordinary-dependencies-bundled",
+  "bundledPackages": [
+    {
+      "path": "node_modules/@acemir/cssom",
+      "name": "@acemir/cssom",
+      "version": "0.9.32",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "path": "node_modules/@xmldom/xmldom",
+      "name": "@xmldom/xmldom",
+      "version": "0.9.12",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/boolbase",
+      "name": "boolbase",
+      "version": "2.0.0",
+      "license": "ISC",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/commander",
+      "name": "commander",
+      "version": "12.1.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/css-select",
+      "name": "css-select",
+      "version": "7.0.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/css-what",
+      "name": "css-what",
+      "version": "8.0.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/defuddle",
+      "name": "defuddle",
+      "version": "0.19.6",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/dom-serializer",
+      "name": "dom-serializer",
+      "version": "3.1.1",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/dom-serializer/node_modules/domelementtype",
+      "name": "domelementtype",
+      "version": "3.0.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/domelementtype",
+      "name": "domelementtype",
+      "version": "2.3.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/domhandler",
+      "name": "domhandler",
+      "version": "6.0.1",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/domhandler/node_modules/domelementtype",
+      "name": "domelementtype",
+      "version": "3.0.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/domutils",
+      "name": "domutils",
+      "version": "4.0.2",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/domutils/node_modules/domelementtype",
+      "name": "domelementtype",
+      "version": "3.0.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/entities",
+      "name": "entities",
+      "version": "8.1.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/html-escaper",
+      "name": "html-escaper",
+      "version": "3.0.3",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2",
+      "name": "htmlparser2",
+      "version": "10.1.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2/node_modules/dom-serializer",
+      "name": "dom-serializer",
+      "version": "2.0.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2/node_modules/dom-serializer/node_modules/entities",
+      "name": "entities",
+      "version": "4.5.0",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2/node_modules/domhandler",
+      "name": "domhandler",
+      "version": "5.0.3",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2/node_modules/domutils",
+      "name": "domutils",
+      "version": "3.2.2",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/htmlparser2/node_modules/entities",
+      "name": "entities",
+      "version": "7.0.1",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/linkedom",
+      "name": "linkedom",
+      "version": "0.18.14",
+      "license": "ISC",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/mathml-to-latex",
+      "name": "mathml-to-latex",
+      "version": "1.8.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "path": "node_modules/nth-check",
+      "name": "nth-check",
+      "version": "3.0.1",
+      "license": "BSD-2-Clause",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/uhyphen",
+      "name": "uhyphen",
+      "version": "0.2.0",
+      "license": "ISC",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/undici",
+      "name": "undici",
+      "version": "6.29.1",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "path": "node_modules/ws",
+      "name": "ws",
+      "version": "8.22.0",
+      "license": "MIT",
+      "licenseFiles": [
+        "LICENSE"
+      ]
+    }
+  ],
+  "directDependencies": {
+    "defuddle": "0.19.6",
+    "linkedom": "0.18.14",
+    "undici": "6.29.1",
+    "ws": "8.22.0"
+  }
+}

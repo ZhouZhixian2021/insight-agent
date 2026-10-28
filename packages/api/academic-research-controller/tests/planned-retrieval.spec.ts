@@ -88,7 +88,7 @@ describe('approved Session plan to Q2/Q3 retrieval bridge', () => {
     expect(handoff.plan.citationExpansionSeeds).toEqual([])
   })
 
-  it('runs one approved round through the retrieval package and keeps query provenance', async () => {
+  it('runs one approved round through the retrieval package and keeps discovery-query associations', async () => {
     const direct = record('10.1000/direct', 'openalex')
     const verified = record('10.1000/web', 'openalex')
     const searchAcademic = vi.fn(async () => ({ works: [direct], batch: createBatchResult([direct], []),

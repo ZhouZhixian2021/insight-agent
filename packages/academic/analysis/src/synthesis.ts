@@ -160,7 +160,7 @@ function compactSynthesisInput(input: AcademicSynthesisInput) {
 /**
  * Mint immutable Claims only for validated cross-paper statements.
  * @param input Exact admitted model request.
- * @param draft Structurally validated response; semantic review remains required.
+ * @param draft Structurally validated response; it does not establish independent semantic approval.
  * @param createdAt Host-owned creation time.
  * @returns Shared Claims and links plus single-paper answers for the report renderer.
  */

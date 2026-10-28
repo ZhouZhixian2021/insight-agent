@@ -12,7 +12,7 @@ The Q7.4 follow-up requires a page that explains a long run, partial evidence an
 
 Phase one adds a fixed JSON lifecycle preview within the explicit Q6 demo. The parent entry owns preview records across modal unmounts. Closing or switching records changes only viewing connection; explicit local demo cancellation changes run status and records its known source. Reopening reads the same record and existing draft without creating a request or generating a report. Refresh and plugin disposal reset this local prototype.
 
-The preview shows stage input/output units, reason text, separate run and connection states, cancellation provenance, limitations and draft availability. Unknown counters and stage durations remain unknown. The incident's 70 discovered records, 30 candidate limit, 20 scheduled papers, 12 evidence records and two partially usable papers are not collapsed into confirmed final inclusions. Synthetic report downloads have a distinct filename.
+The preview shows stage input/output units, reason text, separate run and connection states, cancellation initiator, limitations and draft availability. Unknown counters and stage durations remain unknown. The incident's 70 discovered records, 30 candidate limit, 20 scheduled papers, 12 evidence records and two partially usable papers are not collapsed into confirmed final inclusions. Synthetic report downloads have a distinct filename.
 
 ## Alternatives considered
 

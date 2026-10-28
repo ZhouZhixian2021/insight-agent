@@ -5,7 +5,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import LlmRuntime, { LlmAdapter, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import SessionStore from '@deepseek-ai/dsh-session'
-import JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { isExecutableResearchBrief } from '@deepseek-ai/dsh-academic-model'
@@ -82,7 +82,7 @@ async function fixture(attemptTimeoutMs = 1000) {
     { provider: 'fixture', model: 'fixture' }, { maxTokens: 512, attemptTimeoutMs })
   const read = async () => {
     await using handle = await ctx.sessionPersistence.open(session.id, 'read')
-    return await handle.read()
+    return (await handle.read()).events
   }
   return { ctx, session, adapter, input, reviewer, read }
 }

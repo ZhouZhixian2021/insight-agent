@@ -22,7 +22,7 @@ interface EvidenceSegmentPiece {
 }
 
 /**
- * Bind extraction to a live Session with exact provenance and durable model records.
+ * Bind extraction to a live Session with exact source metadata and durable model records.
  * @param ctx DSH model, token-meter and persistence services.
  * @param session Live Session with an active durable writer.
  * @param config Explicit model route and generation controls.

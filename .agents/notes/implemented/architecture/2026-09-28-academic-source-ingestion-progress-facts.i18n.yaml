@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-28-academic-source-ingestion-progress-facts.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-28-academic-source-ingestion-progress-facts.md
-2026-09-28-academic-source-ingestion-progress-facts.md: 1e64cc727fd2d6b078e9a38650a571322a255b92
-2026-09-28-academic-source-ingestion-progress-facts.zh.md: d3fc35e27aff1a8499afbf70414b81ab6c9a8d98
+/agent-note-academic-source-and-ingestion-publish-progress-facts-from-their-own-packages:
+  en: 020fe6da11181c59
+  zh: 92e1b93a36b59766
+/agent-note-academic-source-and-ingestion-publish-progress-facts-from-their-own-packages/problem:
+  en: 42c3a10ad0434458
+  zh: 4884c1c95d2a8b56
+/agent-note-academic-source-and-ingestion-publish-progress-facts-from-their-own-packages/decision:
+  en: bfd8e5f38884cafe
+  zh: 5b414fe8677b82c7
+/agent-note-academic-source-and-ingestion-publish-progress-facts-from-their-own-packages/alternatives-considered:
+  en: 8e65f4049f582cd1
+  zh: cbf4aefa410d9b39
+/agent-note-academic-source-and-ingestion-publish-progress-facts-from-their-own-packages/consequences:
+  en: 0924058978eba6cc
+  zh: 00c265fcc29a10eb

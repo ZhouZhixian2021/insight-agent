@@ -97,7 +97,24 @@ function compactText(text: string): string {
 }
 
 function looksLikeNaturalText(text: string): boolean {
-  const normalized = text.replace(/\s+/g, ' ').trim()
+  // HTML document templates can contain CSS and tag names without owning UI copy.
+  // Inspect rendered text and copy-bearing attributes while ignoring markup.
+  let candidate = text
+  if (/^\s*<!doctype html>/iu.test(text)) {
+    const markup = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, '')
+    const attributes = [...markup.matchAll(/\s(?:aria-label|aria-description|aria-valuetext|alt|title|placeholder)=(['"])(.*?)\1/giu)]
+      .map(match => match[2])
+    const inputValues = [...markup.matchAll(/<input\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu)]
+      .flatMap(([tag]) => {
+        const type = /\stype\s*=\s*(?:(["'])(.*?)\1|([^\s/>]+))/iu.exec(tag)
+        if (!/^(?:submit|button|reset)$/iu.test(type?.[2] ?? type?.[3] ?? '')) return []
+        const value = /\svalue\s*=\s*(?:(["'])(.*?)\1|([^\s/>]+))/iu.exec(tag)
+        return value === null ? [] : [value[2] ?? value[3] ?? '']
+      })
+    if (inputValues.some(containsProductText)) return true
+    candidate = [...attributes, markup.replace(/<[^>]*>/gu, ' ')].join(' ')
+  }
+  const normalized = candidate.replace(/\s+/g, ' ').trim()
   return /\s|[\u3400-\u9fff]/u.test(normalized) || /^[A-Z]/.test(normalized)
 }
 
@@ -114,7 +131,7 @@ export function findUiI18nViolations(file: string, sourceText: string): UiI18nVi
     sourceText,
     ts.ScriptTarget.Latest,
     true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : file.endsWith('.js') ? ts.ScriptKind.JS : ts.ScriptKind.TS,
   )
   const violations = new Map<number, UiI18nViolation>()
 
@@ -254,11 +271,25 @@ export function findUiI18nViolations(file: string, sourceText: string): UiI18nVi
       && (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))
     ) collectExpression(node.expression, 'JSX child')
 
-    if (file.endsWith('.tsx') && ts.isPropertyAssignment(node)) {
+    if ((file.endsWith('.tsx') || file.startsWith('apps/desktop/')) && ts.isPropertyAssignment(node)) {
       const name = propertyName(node.name)
       if (name !== undefined && (COPY_NAME.test(name) || COPY_SUFFIX.test(name))) {
         collectExpression(node.initializer, `${name} property`)
       }
+    }
+
+    if (file.startsWith('apps/desktop/') && ts.isBinaryExpression(node)
+      && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isPropertyAccessExpression(node.left)
+      && (node.left.name.text === 'textContent' || node.left.name.text === 'innerText')) {
+      collectExpression(node.right, `${node.left.name.text} assignment`)
+    }
+
+    if (file.startsWith('apps/desktop/') && ts.isCallExpression(node)
+      && ts.isPropertyAccessExpression(node.expression)
+      && (node.expression.name.text === 'setTitle' || node.expression.name.text === 'prompt')) {
+      const copy = node.arguments[0]
+      if (copy !== undefined) collectExpression(copy, `${node.expression.name.text} argument`)
     }
 
     if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
@@ -314,6 +345,8 @@ function sourceFiles(): string[] {
     ...[...clientComponentRoots].flatMap(clientRoot =>
       globSync(`${clientRoot}/**/*.{ts,tsx}`, { cwd: root })),
     ...globSync('apps/web/src/**/*.{ts,tsx}', { cwd: root }),
+    ...globSync('apps/desktop/src/{main,update-coordinator}.{ts,tsx}', { cwd: root }),
+    ...globSync('apps/desktop/renderer/*.js', { cwd: root }),
   ])]
     .map(file => file.replaceAll('\\', '/'))
     .filter(file => !file.endsWith('.d.ts'))

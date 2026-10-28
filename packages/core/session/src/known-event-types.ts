@@ -20,6 +20,8 @@
  * `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`.
  */
 export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'academic/background-run-progress',
+  'academic/background-run-q6-update',
   'academic/background-run-state',
   'academic/candidate-batch-decision',
   'academic/candidate-batch-settlement',
@@ -53,10 +55,17 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'compaction/prune',
   'compaction/start',
   'compaction/summary',
+  'deliverables/presented',
+  'developer/message',
+  'feedback/message-delete',
+  'feedback/message-put',
   'feedback/record',
   'goal/change',
   'hook/invoked',
   'hook/result',
+  'image/offload',
+  'job/registered',
+  'job/settled',
   'llm/retry',
   'llm/retry-started',
   'model/selection',
@@ -72,8 +81,10 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'session/title-llm-request',
   'step/end',
   'step/start',
+  'subagent/catalog',
   'subagent/descriptor',
   'subagent/model-selection-policy',
+  'system/message',
   'team/member',
   'team/message/delivered',
   'team/message/queued',
@@ -84,11 +95,18 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'tool-workflow/run-end',
   'tool-workflow/run-start',
   'tool/call',
-  'tool/code-dispatch',
-  'tool/code-dispatch-start',
+  'tool/ptc-dispatch',
+  'tool/ptc-dispatch-start',
   'tool/result',
   'turn/end',
   'turn/start',
   'user/message',
   'web/deepseek-search-llm-request',
+  'working-directory/change',
+  'workspace/changes',
+])
+
+/** Event types whose model-visible effects require an explicit pure interpreter. */
+export const MESSAGE_PROJECTION_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'image/offload',
 ])

@@ -4,7 +4,7 @@
   disabled: true
 - id: system-prompt
   config:
-    persona: 'Run run_candidate_screening_fixture once and reply SCREENING_DONE.'
+    personaPrefix: 'Run run_candidate_screening_fixture once and reply SCREENING_DONE.'
     includeHarnessIdentity: false
     includeRuntimeContext: false
 - insert:

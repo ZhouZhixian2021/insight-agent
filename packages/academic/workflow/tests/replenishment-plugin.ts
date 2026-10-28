@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { createBatchResult, type AcademicWorkId, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
 import { parseSynthesisDraft, synthesisSections, type AcademicSynthesisInput } from '@deepseek-ai/dsh-academic-analysis'
-import { runResearchDraft, selectResearchPapers } from '../src/index.ts'
+import { runResearchDraft, selectResearchPapers } from '@deepseek-ai/dsh-academic-workflow'
 
 export const name = 'academic-replenishment-fixture'
 export const inject = ['tools']
@@ -81,6 +81,7 @@ export function apply(ctx: Context, config: { paperConcurrency?: number } = {}):
       assert.ok(result.report)
       assert.equal(result.report.retrievalDisclosureIncluded, true)
       assert.ok(result.report.markdown.includes('## 检索渠道与覆盖说明'))
+      assert.ok(result.report.markdown.includes(`目标纳入论文: ${included}`))
       assert.ok(result.report.markdown.includes('extract\\_evidence'))
       return JSON.stringify({ ...concurrency === 3 ? { peak } : {}, attempted, papers: result.papers.map(paper => paper.status),
         includedWorks: result.retrievalRun.coverageSummary.includedWorks, failures: result.failures.length,

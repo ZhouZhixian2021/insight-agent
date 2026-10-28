@@ -5,6 +5,16 @@ import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, Token
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
 
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    /** Complete request text remains readable without this producer.
+     * The kind attributes the prompt and carries no execution control.
+     * @persistenceAttribution
+     */
+    'academic-workflow': { kind: 'academic-workflow' }
+  }
+}
+
 /** Approved natural-language rules applied to one fetched paper. */
 export interface PaperScopeRules {
   readonly inclusionRules: readonly string[]
@@ -25,7 +35,7 @@ export interface PaperModelResponse {
   readonly incompleteBatchCount?: number
 }
 
-/** A's generator receives program-owned provenance and optional progress without changing B's request interface. */
+/** A's generator receives program-owned source metadata and optional progress without changing B's request interface. */
 export type PaperEvidenceGenerator = (
   request: EvidenceGenerationRequest,
   source: EvidenceExtractionInput,

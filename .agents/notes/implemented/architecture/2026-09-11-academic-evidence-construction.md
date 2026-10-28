@@ -68,7 +68,7 @@ Rejected. The current HTML path needs only semantic article headings and paragra
 
 ### Ship a built-in keyword extractor
 
-Rejected. Keyword rules cannot reliably distinguish methods, findings, conditions, and limitations. The operation instead accepts a semantic generator and applies deterministic provenance checks to its output.
+Rejected. Keyword rules cannot reliably distinguish methods, findings, conditions, and limitations. The operation instead accepts a semantic generator and applies deterministic source-field and excerpt checks to its output.
 
 ## Consequences
 

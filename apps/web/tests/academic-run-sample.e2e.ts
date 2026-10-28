@@ -70,7 +70,7 @@ describe('hybrid plan browser preview', () => {
         const persistence = found.agent.ctx.get('sessionPersistence')
         if (persistence === undefined) throw new Error('Session persistence fixture is required')
         await using reader = await persistence.open(id, 'read')
-        expect((await reader.read()).some(event => event.type === 'academic/trace-v1')).toBe(true)
+        expect((await reader.read()).events.some(event => event.type === 'academic/trace-v1')).toBe(true)
       } finally { plan.mockRestore(); await browser.close() }
     } finally { await scaffold.close() }
   })

@@ -1,0 +1,5850 @@
+{
+  "schemaVersion": 1,
+  "auditedDate": "2026-10-22",
+  "status": "audit_complete_proposal_unimplemented",
+  "sourceTrees": {
+    "T0": {
+      "objectType": "tree",
+      "oid": "c5a96d9ef8cf3b19e8ea7cf2b0abea13e639a767"
+    },
+    "U0": {
+      "objectType": "tree",
+      "oid": "f127f0f96a815eac4dea336a2ae0d9cd0f2aa82d",
+      "tag": "dsh-v0.2.1-rc.2"
+    },
+    "A": {
+      "objectType": "tree",
+      "oid": "39f3a4b719bed461157ebdc50d3d0d79f1d17958"
+    }
+  },
+  "sourceFiles": [
+    {
+      "file": "packages/academic/workflow/src/fragment-model.ts",
+      "blobs": {
+        "T0": "f0d9e748c6c00e384e9c26e5780cd360ed6e78a6",
+        "U0": null,
+        "A": "24ca7c47dd1664c7135049cc03f0221453ae0c35"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/model-types.ts",
+      "blobs": {
+        "T0": "5274ab68e51e22e858f3b8e9057df36ff1fb82d5",
+        "U0": null,
+        "A": "03b99e6adda03ea3b7d8a14bdc94084fa552edb5"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/model.ts",
+      "blobs": {
+        "T0": "6cb8607e17ba28fcebd2a6d6552601db6436ce53",
+        "U0": null,
+        "A": "c19d1ed7eaa3e743d5ea0cabc0b2410c5a08d3ea"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/recovery.ts",
+      "blobs": {
+        "T0": "22965a75d33e16bda4cb0ebb901da24b4f8b6839",
+        "U0": null,
+        "A": "22965a75d33e16bda4cb0ebb901da24b4f8b6839"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/settlement-events.ts",
+      "blobs": {
+        "T0": "7147de8adacd16eb276e94fe4ed19418de702e7f",
+        "U0": null,
+        "A": "7147de8adacd16eb276e94fe4ed19418de702e7f"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/synthesis-model.ts",
+      "blobs": {
+        "T0": "c085c94512677a682f010d2df9c6653d2b9b4d2b",
+        "U0": null,
+        "A": "bc0cf475fea21c4b726ee12e8ed27b2ca2d3df0d"
+      }
+    },
+    {
+      "file": "packages/api/academic-research-controller/src/background-run.ts",
+      "blobs": {
+        "T0": "e65bc037191bfee329da7d5a5c0443771e380b8f",
+        "U0": null,
+        "A": "e65bc037191bfee329da7d5a5c0443771e380b8f"
+      }
+    },
+    {
+      "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+      "blobs": {
+        "T0": "5ec4382171186327a024d23d6dc778891ab53aa8",
+        "U0": null,
+        "A": "5877b53e0239301fc4b3638bde2c8734c0590b10"
+      }
+    },
+    {
+      "file": "packages/api/academic-research-controller/src/index.ts",
+      "blobs": {
+        "T0": "5feea721e07047bee0036aa88d1ed2c0c91d8a4d",
+        "U0": null,
+        "A": "2526dab71c98256a09d0cc33add940c0514b9a93"
+      }
+    },
+    {
+      "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+      "blobs": {
+        "T0": "4a0206b61a918a7a22f1fb3100f86b790a202618",
+        "U0": null,
+        "A": "4a0206b61a918a7a22f1fb3100f86b790a202618"
+      }
+    },
+    {
+      "file": "packages/core/session/src/known-event-types.ts",
+      "blobs": {
+        "T0": "389d560cf75e76741450e80922c5773887c55a17",
+        "U0": "a0f5c17795be074e3c521c525a0eb59ee25248d6",
+        "A": "fa3f573306266f235ea277198f98d5c6c76eb69b"
+      }
+    },
+    {
+      "file": "packages/test-support/session-snapshot/src/normalize.ts",
+      "blobs": {
+        "T0": "b06ca2496c7281b3aea9477f5cf3f88ac660cc1e",
+        "U0": "39f3522a8c706f606533923bd6184da5530349b3",
+        "A": "ef0ee1c91706c5e6c2010c113db6a344de9e79fa"
+      }
+    },
+    {
+      "file": "packages/academic/evidence/src/types.ts",
+      "blobs": {
+        "T0": "d0a12398371c0c66cc060aafa223a0e3de850d40",
+        "U0": null,
+        "A": "58917aaa504e189e23ba7c0a3e18343761acd836"
+      }
+    },
+    {
+      "file": "packages/util/brand/src/index.ts",
+      "blobs": {
+        "T0": "7f89f3eddc5e78208da31eb0a6a40b09aa3f71fd",
+        "U0": "7f89f3eddc5e78208da31eb0a6a40b09aa3f71fd",
+        "A": "7f89f3eddc5e78208da31eb0a6a40b09aa3f71fd"
+      }
+    },
+    {
+      "file": "packages/academic/model/src/types.ts",
+      "blobs": {
+        "T0": "40cb29c1cc685de1dc2e4904d42cd8fcf05be898",
+        "U0": null,
+        "A": "40cb29c1cc685de1dc2e4904d42cd8fcf05be898"
+      }
+    },
+    {
+      "file": "packages/academic/evidence/src/fragment-types.ts",
+      "blobs": {
+        "T0": "0b34a5a888b07bd900bc0d7e6fbc91b83906187f",
+        "U0": null,
+        "A": "0b34a5a888b07bd900bc0d7e6fbc91b83906187f"
+      }
+    },
+    {
+      "file": "packages/llm/llm/src/call-config.ts",
+      "blobs": {
+        "T0": "9d012cd5c1b056c52444c6be4c9aedae8b9b9ce3",
+        "U0": "29b97bb46805dae14abfd8045f733b90ba9afad9",
+        "A": "29b97bb46805dae14abfd8045f733b90ba9afad9"
+      }
+    },
+    {
+      "file": "packages/llm/llm/src/message.ts",
+      "blobs": {
+        "T0": "89e05aaf47412ddd3019b6b018629ebee09c60ea",
+        "U0": "d96a63edb6d78d64508875ebc1cc6a1cc5a824b6",
+        "A": "d96a63edb6d78d64508875ebc1cc6a1cc5a824b6"
+      }
+    },
+    {
+      "file": "packages/llm/llm/src/types.ts",
+      "blobs": {
+        "T0": "c480f57b892b3fdea8eb210b5807e24f07bd35bb",
+        "U0": "8001ab81d8f4e159f1b5e02e12af4f7f6223f625",
+        "A": "8001ab81d8f4e159f1b5e02e12af4f7f6223f625"
+      }
+    },
+    {
+      "file": "packages/attachment/attachment/src/types.ts",
+      "blobs": {
+        "T0": "a69b2363dc02fde4da59d588beb4ea94bd122be0",
+        "U0": "455d6c9de06f09ac4cbac5590d41fff0dab326b8",
+        "A": "455d6c9de06f09ac4cbac5590d41fff0dab326b8"
+      }
+    },
+    {
+      "file": "packages/llm/llm/src/assistant-stream.ts",
+      "blobs": {
+        "T0": "74ba2e831aaf760478cc03258f76fe5bb43177c1",
+        "U0": "7fca34c5d5bf432f7fad81bd48edfbdaf5083e83",
+        "A": "7fca34c5d5bf432f7fad81bd48edfbdaf5083e83"
+      }
+    },
+    {
+      "file": "packages/academic/analysis/src/synthesis-types.ts",
+      "blobs": {
+        "T0": "26dd9a89ec2ac513f1969008daf9815095305641",
+        "U0": null,
+        "A": "26dd9a89ec2ac513f1969008daf9815095305641"
+      }
+    },
+    {
+      "file": "packages/academic/analysis/src/types.ts",
+      "blobs": {
+        "T0": "1d43f0301bc3647d1399e7b8d1b4b3086ae9b213",
+        "U0": null,
+        "A": "1d43f0301bc3647d1399e7b8d1b4b3086ae9b213"
+      }
+    },
+    {
+      "file": "packages/academic/model/src/results.ts",
+      "blobs": {
+        "T0": "31f49ff2af6f440267c873830c894bc33695f8bf",
+        "U0": null,
+        "A": "31f49ff2af6f440267c873830c894bc33695f8bf"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/query-workflow.ts",
+      "blobs": {
+        "T0": "c85a0be37c482fea63ed0d1522fc30f69db07b1a",
+        "U0": null,
+        "A": "c85a0be37c482fea63ed0d1522fc30f69db07b1a"
+      }
+    },
+    {
+      "file": "packages/academic/model/src/query-workflow.ts",
+      "blobs": {
+        "T0": "2129e8d1f17b037ce5ae497a920e840f0f5b20d8",
+        "U0": null,
+        "A": "47836523d3f78238a6b6b9b91cdefafbda78b2fa"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+      "blobs": {
+        "T0": "699b5f40db8acc336f333367c5822e2bd5df6685",
+        "U0": null,
+        "A": "699b5f40db8acc336f333367c5822e2bd5df6685"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/candidate-batches.ts",
+      "blobs": {
+        "T0": "d0c049db22432f03a808ee43de111b7671157181",
+        "U0": null,
+        "A": "d0c049db22432f03a808ee43de111b7671157181"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/types.ts",
+      "blobs": {
+        "T0": "7acdff67638c94a82ce020e044d651d0d35bd111",
+        "U0": null,
+        "A": "7acdff67638c94a82ce020e044d651d0d35bd111"
+      }
+    },
+    {
+      "file": "packages/api/academic-research-controller/src/types.ts",
+      "blobs": {
+        "T0": "6243cb9b8ba627ef1ae036a8644a05938c5c62ba",
+        "U0": null,
+        "A": "6243cb9b8ba627ef1ae036a8644a05938c5c62ba"
+      }
+    },
+    {
+      "file": "packages/academic/workflow/src/progress.ts",
+      "blobs": {
+        "T0": "3dd2ef9486928d89142a6fdf23c50c8471d507c5",
+        "U0": null,
+        "A": "3dd2ef9486928d89142a6fdf23c50c8471d507c5"
+      }
+    },
+    {
+      "file": "packages/academic/model/src/retrieval.ts",
+      "blobs": {
+        "T0": "b55737686b4151414e8c7e0155e14e5eb86570f6",
+        "U0": null,
+        "A": "b55737686b4151414e8c7e0155e14e5eb86570f6"
+      }
+    },
+    {
+      "file": "packages/compaction/compaction/src/checkpoint.ts",
+      "blobs": {
+        "T0": "116ff18aa583bde1d387510b87f2ff99b4195047",
+        "U0": "5cba6ca14cf6929030eba1f0518d1f61cd5bacc3",
+        "A": "5cba6ca14cf6929030eba1f0518d1f61cd5bacc3"
+      }
+    },
+    {
+      "file": "packages/core/tools/src/types.ts",
+      "blobs": {
+        "T0": "84052261abdfe057c36652aeb50da5b7af40637e",
+        "U0": "dc41c299a02771e4144c60b95882b3facad35f82",
+        "A": "dc41c299a02771e4144c60b95882b3facad35f82"
+      }
+    },
+    {
+      "file": "packages/core/tools/src/ptc.ts",
+      "blobs": {
+        "T0": "8af4f87303581dc241cc5ff0148c3edc035c8067",
+        "U0": "b3d85428c1df0ae0ae429989d2b9a5b6d8298652",
+        "A": "b3d85428c1df0ae0ae429989d2b9a5b6d8298652"
+      }
+    },
+    {
+      "file": "packages/session/session-format/src/types.ts",
+      "blobs": {
+        "T0": "c1cca774dd0d45b36cc9ccfebb79d4fc59d9a256",
+        "U0": "f748cc302c9bfc3ad27902b2a23379b6da663566",
+        "A": "f748cc302c9bfc3ad27902b2a23379b6da663566"
+      }
+    },
+    {
+      "file": "packages/session/session-format/src/chain.ts",
+      "blobs": {
+        "T0": "155e3949d8771171707c803c99233c96a4e3d5f3",
+        "U0": "75b9395051e8ed8f05421818c15d56131d2b5985",
+        "A": "75b9395051e8ed8f05421818c15d56131d2b5985"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v0-to-v1/src/dispositions.ts",
+      "blobs": {
+        "T0": "24702e8bb11eab013d8e22b2653d1f690067dcb7",
+        "U0": "24702e8bb11eab013d8e22b2653d1f690067dcb7",
+        "A": "24702e8bb11eab013d8e22b2653d1f690067dcb7"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v1-to-v2/src/codec.ts",
+      "blobs": {
+        "T0": "6708f8e4510af8245847898ff0bb17951aa395dd",
+        "U0": "40e935e7b4dea196b880d5fe058b25d8b82cb894",
+        "A": "40e935e7b4dea196b880d5fe058b25d8b82cb894"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v2-to-v3/src/payload.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "3aa2add118102df7e9638253a08a62bc204d8660",
+        "A": "3aa2add118102df7e9638253a08a62bc204d8660"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v2-to-v3/src/migration.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "3aecf8a518cf12b60a56308d97fbab9e41d52b0c",
+        "A": "3aecf8a518cf12b60a56308d97fbab9e41d52b0c"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v2-to-v3/src/references.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "a7e66bc72f62d95bcc7d9158e88bc7d797cd8819",
+        "A": "a7e66bc72f62d95bcc7d9158e88bc7d797cd8819"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v3-to-v4/src/migration.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "63a3460608283625552a6377d97bf43a537f4c8a",
+        "A": "63a3460608283625552a6377d97bf43a537f4c8a"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v3-to-v4/src/references.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "f28b3ebc74567d41e1e086059c443b2eb5bd7303",
+        "A": "f28b3ebc74567d41e1e086059c443b2eb5bd7303"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v3-to-v4/src/sources.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "3c6a2886132701fed5b5db980f66386d585dde15",
+        "A": "3c6a2886132701fed5b5db980f66386d585dde15"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v3-to-v4/src/content.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "51cc21e12b5eb083abac36768336eeb61c0d08c1",
+        "A": "51cc21e12b5eb083abac36768336eeb61c0d08c1"
+      }
+    },
+    {
+      "file": "packages/session/session-format-v3-to-v4/src/tool-role.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "239a299fdc25e2134b50d2388beb9e410aa20473",
+        "A": "239a299fdc25e2134b50d2388beb9e410aa20473"
+      }
+    },
+    {
+      "file": "packages/session/session-format-catalog/src/historical.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "e04434ce72e0378ea12f29a1511c2d3bc299abe6",
+        "A": "e04434ce72e0378ea12f29a1511c2d3bc299abe6"
+      }
+    },
+    {
+      "file": "packages/session/session-format-catalog/src/children.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "580e46d2ae3dd6e1b1c568d874ce5614243f0764",
+        "A": "580e46d2ae3dd6e1b1c568d874ce5614243f0764"
+      }
+    },
+    {
+      "file": "packages/session/session-format-catalog/src/generated.ts",
+      "blobs": {
+        "T0": "888d07d8125e60487d982089cbe4b83d6ec4bcde",
+        "U0": "eab9d914564be9be6ccd331562bd9d4be97a6bd9",
+        "A": "eab9d914564be9be6ccd331562bd9d4be97a6bd9"
+      }
+    },
+    {
+      "file": "packages/session/session-persistence-jsonl/src/catalog-migration.ts",
+      "blobs": {
+        "T0": null,
+        "U0": "f0aefc057f661465028a301518f1e25a4494ab8d",
+        "A": "f0aefc057f661465028a301518f1e25a4494ab8d"
+      }
+    },
+    {
+      "file": "packages/test-support/llm-replay/src/index.ts",
+      "blobs": {
+        "T0": "61776ae251848f783c264006a3e227d711763001",
+        "U0": "656ec3bcb651e64e70f5d247cf9af577006b7852",
+        "A": "656ec3bcb651e64e70f5d247cf9af577006b7852"
+      }
+    }
+  ],
+  "eventTypes": [
+    {
+      "name": "academic/background-run-state",
+      "payloadType": "AcademicBackgroundRunView",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/background-run.ts",
+        "T0Line": 9,
+        "ALine": 9
+      },
+      "fields": [
+        {
+          "name": "schemaVersion",
+          "optional": false,
+          "type": "1",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 69
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 70
+        },
+        {
+          "name": "state",
+          "optional": false,
+          "type": "\"failed\" | \"cancelled\" | \"completed\" | \"running\" | \"interrupted\"",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 71
+        },
+        {
+          "name": "startedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 72
+        },
+        {
+          "name": "updatedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 73
+        },
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 74
+        },
+        {
+          "name": "progress",
+          "optional": false,
+          "type": "AcademicResearchProgressView | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 75
+        },
+        {
+          "name": "q6",
+          "optional": false,
+          "type": "AcademicQ6Projection | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 76
+        },
+        {
+          "name": "result",
+          "optional": false,
+          "type": "AcademicResearchRunValue | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 77
+        },
+        {
+          "name": "error",
+          "optional": false,
+          "type": "string | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 78
+        },
+        {
+          "name": "cancelReason",
+          "optional": false,
+          "type": "\"user_requested\" | \"service_stopped\" | null",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 79
+        },
+        {
+          "name": "sessionId",
+          "optional": false,
+          "type": "SessionId",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 58
+        },
+        {
+          "name": "backgroundRunId",
+          "optional": false,
+          "type": "string",
+          "file": "packages/api/academic-research-controller/src/types.ts",
+          "line": 59
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.progress.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.progress.sequence",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.elapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.retrieval.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.retrieval.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.screening.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.screening.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.fulltext.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.fulltext.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.extraction.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.extraction.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.analysis.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.analysis.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.report.completedItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.stages.report.totalItems",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.completedQueries",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.totalQueries",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.discoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.deduplicatedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.mergedWorkIdentities",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.mergedVersionRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.retainedWorkVersions",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.suspectedDuplicateRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.candidateWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.completedPapers",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.totalPapers",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.includedPapers",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.availableFulltextPapers",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.validatedEvidenceRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.rejectedEvidenceDrafts",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.completedQuestions",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.counts.totalQuestions",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].queryIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].queryCount",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].itemIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].itemCount",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].discoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].completedReviews",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].totalReviews",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].failedReviews",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].skippedReviews",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].batchCount",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].validatedEvidenceRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].rejectedEvidenceDrafts",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].questionIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.progress.activities[].questionCount",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.sequence",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.plan.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.inclusionTargets.minimum",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.inclusionTargets.target",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.inclusionTargets.maximum",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.weights.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.thresholds.p0",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.thresholds.p1",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.rankingPolicy.thresholds.p2",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.queries[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.queries[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.citationExpansionSeeds[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.citationExpansionSeeds[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.plan.maximumSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].work.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].version.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.screening.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].assessment.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.total",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.items[].evaluation.score.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.candidates.value.ranking.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.candidates.value.ranking.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.rounds.value[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.batches.value.decisions[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.batches.value.settlements[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.batches.value.settlements[].admittedEvidence",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.batches.value.settlements[].coverage.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.batches.value.settlements[].coverage.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.q6.coverage.value.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.q6.coverage.value.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.sequence",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.plan.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.inclusionTargets.minimum",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.inclusionTargets.target",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.inclusionTargets.maximum",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.weights.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.thresholds.p0",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.thresholds.p1",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.rankingPolicy.thresholds.p2",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.queries[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.queries[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.citationExpansionSeeds[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.citationExpansionSeeds[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.plan.maximumSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].work.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].version.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.screening.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].assessment.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.total",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.items[].evaluation.score.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.candidates.value.ranking.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.candidates.value.ranking.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.rounds.value[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.batches.value.decisions[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.batches.value.settlements[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.batches.value.settlements[].admittedEvidence",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.batches.value.settlements[].coverage.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.batches.value.settlements[].coverage.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.q6.coverage.value.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.q6.coverage.value.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.academicDiscoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.webDiscoveredUrls",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.identifiedReferences",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.attemptedVerifications",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.verifiedReferences",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.failedVerifications",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.discardedWebCandidates",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.mergedDuplicates",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.counts.deduplicatedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.hybridRetrieval.webCandidates[].identifiedReferenceCount",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.retrievalRun.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.discoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.deduplicatedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.includedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.availableFulltextWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.abstractOnlyWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.metadataOnlyWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.coverageSummary.failedOperations",
+          "type": "number"
+        },
+        {
+          "path": "data.result.retrievalRun.failures[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.papers[].evidenceCount",
+          "type": "number"
+        },
+        {
+          "path": "data.result.papers[].rejectedDrafts[].draftIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.papers[].rejectedDrafts[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.result.report.evaluation.assessments[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.report.claims[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.report.claims[].evidenceSnapshot.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.result.report.claims[].evidenceSnapshot.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.result.report.evidence[].schemaVersion",
+          "type": "1"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 9
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 181
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 200
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 341
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 414
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 23
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 9
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 181
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "line": 200
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 346
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 421
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 23
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-batch-decision",
+      "payloadType": "AcademicBatchDecisionEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 59,
+        "ALine": 59
+      },
+      "fields": [
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 17
+        },
+        {
+          "name": "batchIndex",
+          "optional": false,
+          "type": "number | null",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 19
+        },
+        {
+          "name": "action",
+          "optional": false,
+          "type": "\"stop\" | \"schedule_batch\" | \"search_evidence_gap\"",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 20
+        },
+        {
+          "name": "workVersionIds",
+          "optional": false,
+          "type": "readonly WorkVersionId[]",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 21
+        },
+        {
+          "name": "searchQuestions",
+          "optional": false,
+          "type": "readonly string[]",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 22
+        },
+        {
+          "name": "reason",
+          "optional": false,
+          "type": "string | null",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 23
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.batchIndex",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 125
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 222
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 59
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 509
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 24
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 125
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 222
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 59
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 518
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 24
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-batch-settlement",
+      "payloadType": "AcademicBatchSettlementEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 61,
+        "ALine": 61
+      },
+      "fields": [
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 28
+        },
+        {
+          "name": "batchIndex",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 30
+        },
+        {
+          "name": "admittedEvidence",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 32
+        },
+        {
+          "name": "coverage",
+          "optional": true,
+          "type": "ResearchQuestionCoverageResult",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 34
+        },
+        {
+          "name": "completedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/query-workflow.ts",
+          "line": 35
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.admittedEvidence",
+          "type": "number"
+        },
+        {
+          "path": "data.coverage.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.coverage.researchBriefVersion",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 127
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 223
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 61
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 511
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 25
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 127
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 223
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 61
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 520
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 25
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-review-selection-v1",
+      "payloadType": "ReviewSelectionEvent",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 46,
+        "ALine": 56
+      },
+      "fields": [
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 33
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 34
+        },
+        {
+          "name": "roundIndex",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 35
+        },
+        {
+          "name": "selection",
+          "optional": false,
+          "type": "CandidateReviewSelectionV1",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 36
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.selection.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.selection.maximumModelReviews",
+          "type": "number"
+        },
+        {
+          "path": "data.selection.attemptedBefore",
+          "type": "number"
+        },
+        {
+          "path": "data.selection.remainingBudget",
+          "type": "number"
+        },
+        {
+          "path": "data.selection.decisions[].selectionOrder",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 46
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 84
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 26
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 56
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 94
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 26
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-screening-request",
+      "payloadType": "CandidateReviewModelRequest",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 42,
+        "ALine": 52
+      },
+      "fields": [
+        {
+          "name": "academicWorkId",
+          "optional": false,
+          "type": "AcademicWorkId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 15
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 16
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 17
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 129
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 130
+        },
+        {
+          "name": "config",
+          "optional": false,
+          "type": "LlmCallConfig",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 131
+        },
+        {
+          "name": "messages",
+          "optional": false,
+          "type": "Message[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 132
+        },
+        {
+          "name": "estimatedInputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 133
+        },
+        {
+          "name": "contextWindow",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 134
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 135
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 136
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 137
+        },
+        {
+          "name": "decision",
+          "optional": false,
+          "type": "\"dispatch\" | \"skip_input_limit\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 138
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.config.temperature",
+          "type": "number"
+        },
+        {
+          "path": "data.config.maxTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.estimatedInputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.contextWindow",
+          "type": "number"
+        },
+        {
+          "path": "data.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.messages[].source.replayState",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 42
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 27
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 52
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 27
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-screening-result",
+      "payloadType": "CandidateReviewModelResult",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 44,
+        "ALine": 54
+      },
+      "fields": [
+        {
+          "name": "academicWorkId",
+          "optional": false,
+          "type": "AcademicWorkId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 15
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 16
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 17
+        },
+        {
+          "name": "usage",
+          "optional": true,
+          "type": "TokenUsage",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 161
+        },
+        {
+          "name": "finish",
+          "optional": true,
+          "type": "FinishReason",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 160
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 145
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 146
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 149
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 150
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"validated\" | \"failed\" | \"cancelled\" | \"skipped\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 151
+        },
+        {
+          "name": "requestSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 148
+        },
+        {
+          "name": "elapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 153
+        },
+        {
+          "name": "firstContentElapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 155
+        },
+        {
+          "name": "failurePhase",
+          "optional": true,
+          "type": "\"prepare\" | \"admission\" | \"before_content\" | \"after_content\" | \"parse\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 157
+        },
+        {
+          "name": "stream",
+          "optional": false,
+          "type": "readonly AssistantStreamRecord[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 159
+        },
+        {
+          "name": "errorCode",
+          "optional": true,
+          "type": "string",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 162
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.requestSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.providerRetryAfterMs",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.elapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.firstContentElapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time0",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].dt[]",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.providerRetryAfterMs",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.stream[].chunk.replayState.response",
+          "type": "unknown"
+        },
+        {
+          "path": "data.stream[].chunk.replayState.blocks[]",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 44
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 28
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 54
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 28
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-semantic-review-request-v1",
+      "payloadType": "SemanticReviewRequest",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 48,
+        "ALine": 58
+      },
+      "fields": [
+        {
+          "name": "workVersionId",
+          "optional": false,
+          "type": "WorkVersionId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 22
+        },
+        {
+          "name": "roundIndex",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 23
+        },
+        {
+          "name": "selectionSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 24
+        },
+        {
+          "name": "academicWorkId",
+          "optional": false,
+          "type": "AcademicWorkId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 15
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 16
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 17
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 129
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 130
+        },
+        {
+          "name": "config",
+          "optional": false,
+          "type": "LlmCallConfig",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 131
+        },
+        {
+          "name": "messages",
+          "optional": false,
+          "type": "Message[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 132
+        },
+        {
+          "name": "estimatedInputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 133
+        },
+        {
+          "name": "contextWindow",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 134
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 135
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 136
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 137
+        },
+        {
+          "name": "decision",
+          "optional": false,
+          "type": "\"dispatch\" | \"skip_input_limit\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 138
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.selectionSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.config.temperature",
+          "type": "number"
+        },
+        {
+          "path": "data.config.maxTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.estimatedInputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.contextWindow",
+          "type": "number"
+        },
+        {
+          "path": "data.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.messages[].source.replayState",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 48
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 129
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 29
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 58
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 139
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 29
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-semantic-review-result-v1",
+      "payloadType": "SemanticReviewResult",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 50,
+        "ALine": 60
+      },
+      "fields": [
+        {
+          "name": "workVersionId",
+          "optional": false,
+          "type": "WorkVersionId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 22
+        },
+        {
+          "name": "roundIndex",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 23
+        },
+        {
+          "name": "selectionSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 24
+        },
+        {
+          "name": "academicWorkId",
+          "optional": false,
+          "type": "AcademicWorkId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 15
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 16
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 17
+        },
+        {
+          "name": "usage",
+          "optional": true,
+          "type": "TokenUsage",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 161
+        },
+        {
+          "name": "finish",
+          "optional": true,
+          "type": "FinishReason",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 160
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 145
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 146
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 149
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 150
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"validated\" | \"failed\" | \"cancelled\" | \"skipped\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 151
+        },
+        {
+          "name": "requestSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 148
+        },
+        {
+          "name": "elapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 153
+        },
+        {
+          "name": "firstContentElapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 155
+        },
+        {
+          "name": "failurePhase",
+          "optional": true,
+          "type": "\"prepare\" | \"admission\" | \"before_content\" | \"after_content\" | \"parse\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 157
+        },
+        {
+          "name": "stream",
+          "optional": false,
+          "type": "readonly AssistantStreamRecord[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 159
+        },
+        {
+          "name": "errorCode",
+          "optional": true,
+          "type": "string",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 162
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.selectionSeq",
+          "type": "SessionSeq | null"
+        },
+        {
+          "path": "data.requestSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.providerRetryAfterMs",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.elapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.firstContentElapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time0",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].dt[]",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.providerRetryAfterMs",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.stream[].chunk.replayState.response",
+          "type": "unknown"
+        },
+        {
+          "path": "data.stream[].chunk.replayState.blocks[]",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 50
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 134
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 30
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 60
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 144
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 30
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/candidate-semantic-review-verified-v1",
+      "payloadType": "VerifiedSemanticReview",
+      "declaration": {
+        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "T0Line": 52,
+        "ALine": 62
+      },
+      "fields": [
+        {
+          "name": "requestSeq",
+          "optional": false,
+          "type": "SessionSeq",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 29
+        },
+        {
+          "name": "review",
+          "optional": false,
+          "type": "CandidateSemanticReviewV1",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 30
+        },
+        {
+          "name": "workVersionId",
+          "optional": false,
+          "type": "WorkVersionId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 22
+        },
+        {
+          "name": "roundIndex",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 23
+        },
+        {
+          "name": "selectionSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 24
+        },
+        {
+          "name": "academicWorkId",
+          "optional": false,
+          "type": "AcademicWorkId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 15
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 16
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "line": 17
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.requestSeq",
+          "type": "SessionSeq"
+        },
+        {
+          "path": "data.selectionSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.review.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 52
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 146
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 31
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 62
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "line": 156
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 31
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/evidence-enhancement-selection",
+      "payloadType": "AcademicEvidenceEnhancementSelectionEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 67,
+        "ALine": 67
+      },
+      "fields": [
+        {
+          "name": "schemaVersion",
+          "optional": false,
+          "type": "1",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 40
+        },
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 41
+        },
+        {
+          "name": "workVersionId",
+          "optional": false,
+          "type": "WorkVersionId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 42
+        },
+        {
+          "name": "selectedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 43
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.schemaVersion",
+          "type": "1"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 67
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 269
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 285
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 44
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 55
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 32
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 67
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 273
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 289
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 44
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 55
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 32
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/evidence-enhancement-settlement",
+      "payloadType": "AcademicEvidenceEnhancementSettlementEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 69,
+        "ALine": 69
+      },
+      "fields": [
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"failed\" | \"cancelled\" | \"completed\" | \"partial_success\"",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 48
+        },
+        {
+          "name": "completedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 49
+        },
+        {
+          "name": "addedEvidenceRecords",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 50
+        },
+        {
+          "name": "incompleteFragments",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 51
+        },
+        {
+          "name": "schemaVersion",
+          "optional": false,
+          "type": "1",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 40
+        },
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 41
+        },
+        {
+          "name": "workVersionId",
+          "optional": false,
+          "type": "WorkVersionId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 42
+        },
+        {
+          "name": "selectedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 43
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.addedEvidenceRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.incompleteFragments",
+          "type": "number"
+        },
+        {
+          "path": "data.schemaVersion",
+          "type": "1"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 69
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 289
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 51
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 33
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 69
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 293
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 51
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 33
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/evidence-fragment-verified",
+      "payloadType": "EvidenceFragmentVerifiedRecord",
+      "declaration": {
+        "file": "packages/academic/workflow/src/model-types.ts",
+        "T0Line": 172,
+        "ALine": 182
+      },
+      "fields": [
+        {
+          "name": "source",
+          "optional": false,
+          "type": "EvidenceModelSource",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 52
+        },
+        {
+          "name": "fragment",
+          "optional": false,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 53
+        },
+        {
+          "name": "evidence",
+          "optional": false,
+          "type": "EvidenceExtractionResult",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 54
+        },
+        {
+          "name": "purpose",
+          "optional": true,
+          "type": "\"enhancement\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 56
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.sourceLocators[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.evidence.sourceLocators[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.sourceLocators[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.sourceLocators[].pdfPage",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.sourceLocators[].paragraphNumber",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.evidenceRecords[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.evidence.evidenceCard.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.evidence.evidenceCard.metrics[].value.value",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.rejectedDrafts[].draftIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.evidence.rejectedDrafts[].segmentIndex",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 150
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 172
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 63
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 34
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 150
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 182
+          },
+          {
+            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "line": 63
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 34
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/evidence-request",
+      "payloadType": "EvidenceModelRequest",
+      "declaration": {
+        "file": "packages/academic/workflow/src/model-types.ts",
+        "T0Line": 168,
+        "ALine": 178
+      },
+      "fields": [
+        {
+          "name": "source",
+          "optional": false,
+          "type": "EvidenceModelSource",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 127
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 129
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 130
+        },
+        {
+          "name": "config",
+          "optional": false,
+          "type": "LlmCallConfig",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 131
+        },
+        {
+          "name": "messages",
+          "optional": false,
+          "type": "Message[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 132
+        },
+        {
+          "name": "estimatedInputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 133
+        },
+        {
+          "name": "contextWindow",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 134
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 135
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 136
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 137
+        },
+        {
+          "name": "decision",
+          "optional": false,
+          "type": "\"dispatch\" | \"skip_input_limit\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 138
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.config.temperature",
+          "type": "number"
+        },
+        {
+          "path": "data.config.maxTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.estimatedInputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.contextWindow",
+          "type": "number"
+        },
+        {
+          "path": "data.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.messages[].source.replayState",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 64
+          },
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 131
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 168
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 61
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 82
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 35
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 64
+          },
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 131
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 178
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 61
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 82
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 35
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/evidence-result",
+      "payloadType": "EvidenceModelResult",
+      "declaration": {
+        "file": "packages/academic/workflow/src/model-types.ts",
+        "T0Line": 170,
+        "ALine": 180
+      },
+      "fields": [
+        {
+          "name": "source",
+          "optional": false,
+          "type": "EvidenceModelSource",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 143
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 145
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 146
+        },
+        {
+          "name": "requestSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 148
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 149
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 150
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"validated\" | \"failed\" | \"cancelled\" | \"skipped\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 151
+        },
+        {
+          "name": "elapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 153
+        },
+        {
+          "name": "firstContentElapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 155
+        },
+        {
+          "name": "failurePhase",
+          "optional": true,
+          "type": "\"prepare\" | \"admission\" | \"before_content\" | \"after_content\" | \"parse\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 157
+        },
+        {
+          "name": "stream",
+          "optional": false,
+          "type": "readonly AssistantStreamRecord[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 159
+        },
+        {
+          "name": "finish",
+          "optional": true,
+          "type": "FinishReason",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 160
+        },
+        {
+          "name": "usage",
+          "optional": true,
+          "type": "TokenUsage",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 161
+        },
+        {
+          "name": "errorCode",
+          "optional": true,
+          "type": "string",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 162
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.requestSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.elapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.firstContentElapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time0",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].dt[]",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.providerRetryAfterMs",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.providerRetryAfterMs",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.reasoningTokens",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.stream[].chunk.replayState.response",
+          "type": "unknown"
+        },
+        {
+          "path": "data.stream[].chunk.replayState.blocks[]",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 65
+          },
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 133
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 170
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 62
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 83
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 36
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 361
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 363
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 65
+          },
+          {
+            "file": "packages/academic/workflow/src/fragment-model.ts",
+            "line": 133
+          },
+          {
+            "file": "packages/academic/workflow/src/model-types.ts",
+            "line": 180
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 62
+          },
+          {
+            "file": "packages/academic/workflow/src/model.ts",
+            "line": 83
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 36
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 399
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 401
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/recovery-checkpoint",
+      "payloadType": "AcademicResearchRecoveryCheckpoint",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 65,
+        "ALine": 65
+      },
+      "fields": [
+        {
+          "name": "schemaVersion",
+          "optional": false,
+          "type": "1",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 41
+        },
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 42
+        },
+        {
+          "name": "startedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 43
+        },
+        {
+          "name": "executedQueries",
+          "optional": false,
+          "type": "readonly string[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 44
+        },
+        {
+          "name": "search",
+          "optional": false,
+          "type": "AcademicRecoverySearchCheckpoint | null",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 45
+        },
+        {
+          "name": "works",
+          "optional": false,
+          "type": "readonly AcademicWork[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 46
+        },
+        {
+          "name": "versions",
+          "optional": false,
+          "type": "readonly WorkVersion[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 47
+        },
+        {
+          "name": "candidates",
+          "optional": false,
+          "type": "readonly AcademicRecoveryCandidateCheckpoint[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 48
+        },
+        {
+          "name": "plan",
+          "optional": false,
+          "type": "HybridSearchPlan",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 49
+        },
+        {
+          "name": "assessments",
+          "optional": false,
+          "type": "readonly CandidateAssessment[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 50
+        },
+        {
+          "name": "ranking",
+          "optional": false,
+          "type": "AcademicCandidateRankingResult",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 51
+        },
+        {
+          "name": "policy",
+          "optional": false,
+          "type": "CandidateBatchPolicy",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 52
+        },
+        {
+          "name": "rounds",
+          "optional": false,
+          "type": "readonly HybridSearchRound[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 53
+        },
+        {
+          "name": "decisions",
+          "optional": false,
+          "type": "readonly AcademicBatchDecisionEvent[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 54
+        },
+        {
+          "name": "settlements",
+          "optional": false,
+          "type": "readonly AcademicBatchSettlementEvent[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 55
+        },
+        {
+          "name": "coverage",
+          "optional": false,
+          "type": "ResearchQuestionCoverageResult | null",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 56
+        },
+        {
+          "name": "papers",
+          "optional": false,
+          "type": "readonly PaperEvidenceResult[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 57
+        },
+        {
+          "name": "paperFailures",
+          "optional": false,
+          "type": "readonly { readonly workVersionId: WorkVersionId; readonly stage: \"extraction\" | \"fulltext\"; }[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 58
+        },
+        {
+          "name": "providerFailures",
+          "optional": false,
+          "type": "readonly ProviderFailure[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 62
+        },
+        {
+          "name": "availableFulltextWorks",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 63
+        },
+        {
+          "name": "selectionTruncated",
+          "optional": false,
+          "type": "boolean",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 64
+        },
+        {
+          "name": "selectionLimitations",
+          "optional": false,
+          "type": "readonly string[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 65
+        },
+        {
+          "name": "scheduledWorkVersionIds",
+          "optional": false,
+          "type": "readonly WorkVersionId[]",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 66
+        },
+        {
+          "name": "completedBatchCount",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 67
+        },
+        {
+          "name": "consecutiveBatchesWithoutEvidence",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 68
+        },
+        {
+          "name": "completedSearchRounds",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 69
+        },
+        {
+          "name": "pendingBatchIndex",
+          "optional": false,
+          "type": "number | null",
+          "file": "packages/academic/workflow/src/recovery-checkpoint.ts",
+          "line": 71
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.search.discoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.search.deduplicatedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.search.failures[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.works[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.versions[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.candidates[].version.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.plan.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.plan.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.inclusionTargets.minimum",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.inclusionTargets.target",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.inclusionTargets.maximum",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.weights.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.thresholds.p0",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.thresholds.p1",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.rankingPolicy.thresholds.p2",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.queries[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.queries[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.citationExpansionSeeds[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.citationExpansionSeeds[].maximumResults",
+          "type": "number"
+        },
+        {
+          "path": "data.plan.maximumSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.assessments[].screening.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.assessments[].topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.assessments[].evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.assessments[].methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.assessments[].sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.assessments[].recency",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.ranking.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.total",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.topicRelevance",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.questionMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.evidencePotential",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.methodMatch",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.workTypeFit",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.sourceQuality",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.recency",
+          "type": "number"
+        },
+        {
+          "path": "data.ranking.evaluations[].score.fulltextAvailability",
+          "type": "number"
+        },
+        {
+          "path": "data.policy.initialBatchSize",
+          "type": "number"
+        },
+        {
+          "path": "data.policy.evidenceGapBatchSize",
+          "type": "number"
+        },
+        {
+          "path": "data.policy.replenishmentBatchSize",
+          "type": "number"
+        },
+        {
+          "path": "data.policy.minimumQuestionSupportingWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.rounds[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.decisions[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.settlements[].batchIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.settlements[].admittedEvidence",
+          "type": "number"
+        },
+        {
+          "path": "data.settlements[].coverage.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.settlements[].coverage.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.coverage.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.coverage.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].version.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.papers[].evidence.sourceLocators[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.papers[].evidence.sourceLocators[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.sourceLocators[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.sourceLocators[].pdfPage",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.sourceLocators[].paragraphNumber",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.evidenceRecords[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.papers[].evidence.evidenceCard.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.papers[].evidence.evidenceCard.metrics[].value.value",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.rejectedDrafts[].draftIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.papers[].evidence.rejectedDrafts[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.providerFailures[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.availableFulltextWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.completedBatchCount",
+          "type": "number"
+        },
+        {
+          "path": "data.consecutiveBatchesWithoutEvidence",
+          "type": "number"
+        },
+        {
+          "path": "data.completedSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.pendingBatchIndex",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 131
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 225
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 65
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 530
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 37
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 131
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 225
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 65
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 539
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 37
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/run-settlement",
+      "payloadType": "AcademicRunSettlementEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 63,
+        "ALine": 63
+      },
+      "fields": [
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 33
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"cancelled\" | \"completed\"",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 34
+        },
+        {
+          "name": "completedAt",
+          "optional": false,
+          "type": "string",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 35
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 129
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 224
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 232
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 63
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 563
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 38
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 129
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 224
+          },
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 232
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 63
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 572
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 38
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/search-plan",
+      "payloadType": "AcademicSearchPlanEvent",
+      "declaration": {
+        "file": "packages/academic/workflow/src/settlement-events.ts",
+        "T0Line": 57,
+        "ALine": 57
+      },
+      "fields": [
+        {
+          "name": "schemaVersion",
+          "optional": false,
+          "type": "1",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 24
+        },
+        {
+          "name": "researchBriefId",
+          "optional": false,
+          "type": "ResearchBriefId",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 25
+        },
+        {
+          "name": "researchBriefVersion",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 26
+        },
+        {
+          "name": "maximumSearchRounds",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 27
+        },
+        {
+          "name": "queries",
+          "optional": false,
+          "type": "readonly AcademicSearchPlanQueryEvent[]",
+          "file": "packages/academic/workflow/src/settlement-events.ts",
+          "line": 28
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.researchBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.maximumSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.queries[].roundIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.queries[].maximumResults",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 112
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 57
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 516
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 39
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/recovery.ts",
+            "line": 112
+          },
+          {
+            "file": "packages/academic/workflow/src/settlement-events.ts",
+            "line": 57
+          },
+          {
+            "file": "packages/api/academic-research-controller/src/index.ts",
+            "line": 525
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 39
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/synthesis-request",
+      "payloadType": "SynthesisModelRequest",
+      "declaration": {
+        "file": "packages/academic/workflow/src/synthesis-model.ts",
+        "T0Line": 27,
+        "ALine": 27
+      },
+      "fields": [
+        {
+          "name": "input",
+          "optional": false,
+          "type": "AcademicSynthesisInput",
+          "file": "packages/academic/workflow/src/synthesis-model.ts",
+          "line": 13
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 129
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 130
+        },
+        {
+          "name": "config",
+          "optional": false,
+          "type": "LlmCallConfig",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 131
+        },
+        {
+          "name": "messages",
+          "optional": false,
+          "type": "Message[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 132
+        },
+        {
+          "name": "estimatedInputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 133
+        },
+        {
+          "name": "contextWindow",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 134
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 135
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 136
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 137
+        },
+        {
+          "name": "decision",
+          "optional": false,
+          "type": "\"dispatch\" | \"skip_input_limit\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 138
+        }
+      ],
+      "referencePositions": [],
+      "numericPaths": [
+        {
+          "path": "data.input.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.brief.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.brief.version",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.evidenceRequirements.minimumIncludedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.evidenceRequirements.targetIncludedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.evidenceRequirements.minimumFulltextWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.reportRequirements.targetLength.minimum",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.reportRequirements.targetLength.maximum",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.stopConditions.maximumSearchRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.stopConditions.maximumCandidateWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.stopConditions.maximumIncludedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.stopConditions.maximumElapsedMinutes",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.stopConditions.saturationRounds",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.approval.approvedBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.input.brief.approval.reviewedBriefVersion",
+          "type": "number"
+        },
+        {
+          "path": "data.input.analysisInput.academicWorks[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.analysisInput.workVersions[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.analysisInput.evidenceRecords[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.analysisInput.evidenceCards[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.analysisInput.evidenceCards[].metrics[].value.value",
+          "type": "number"
+        },
+        {
+          "path": "data.input.analysisInput.sourceLocators[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.analysisInput.sourceLocators[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.input.analysisInput.sourceLocators[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.input.analysisInput.sourceLocators[].pdfPage",
+          "type": "number"
+        },
+        {
+          "path": "data.input.analysisInput.sourceLocators[].paragraphNumber",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.input.coverageSummary.discoveredRecords",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.deduplicatedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.includedWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.availableFulltextWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.abstractOnlyWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.metadataOnlyWorks",
+          "type": "number"
+        },
+        {
+          "path": "data.input.coverageSummary.failedOperations",
+          "type": "number"
+        },
+        {
+          "path": "data.input.sourceFailures[].schemaVersion",
+          "type": "1"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.config.temperature",
+          "type": "number"
+        },
+        {
+          "path": "data.config.maxTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.messages[].content[].attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.estimatedInputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.contextWindow",
+          "type": "number"
+        },
+        {
+          "path": "data.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.messages[].source.replayState",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 27
+          },
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 56
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 40
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 27
+          },
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 56
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 40
+          }
+        ]
+      }
+    },
+    {
+      "name": "academic/synthesis-result",
+      "payloadType": "SynthesisModelResult",
+      "declaration": {
+        "file": "packages/academic/workflow/src/synthesis-model.ts",
+        "T0Line": 29,
+        "ALine": 29
+      },
+      "fields": [
+        {
+          "name": "retrievalRunId",
+          "optional": false,
+          "type": "RetrievalRunId",
+          "file": "packages/academic/workflow/src/synthesis-model.ts",
+          "line": 18
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"validated\" | \"failed\" | \"cancelled\" | \"skipped\" | \"partially_validated\"",
+          "file": "packages/academic/workflow/src/synthesis-model.ts",
+          "line": 19
+        },
+        {
+          "name": "rejectedStatements",
+          "optional": true,
+          "type": "readonly RejectedSynthesisStatement[]",
+          "file": "packages/academic/workflow/src/synthesis-model.ts",
+          "line": 21
+        },
+        {
+          "name": "usage",
+          "optional": true,
+          "type": "TokenUsage",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 161
+        },
+        {
+          "name": "finish",
+          "optional": true,
+          "type": "FinishReason",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 160
+        },
+        {
+          "name": "phase",
+          "optional": true,
+          "type": "\"scope\" | \"evidence\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 145
+        },
+        {
+          "name": "fragment",
+          "optional": true,
+          "type": "EvidenceFragmentAttempt",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 146
+        },
+        {
+          "name": "attempt",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 149
+        },
+        {
+          "name": "maxAttempts",
+          "optional": false,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 150
+        },
+        {
+          "name": "requestSeq",
+          "optional": false,
+          "type": "SessionSeq | null",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 148
+        },
+        {
+          "name": "elapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 153
+        },
+        {
+          "name": "firstContentElapsedMs",
+          "optional": true,
+          "type": "number",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 155
+        },
+        {
+          "name": "failurePhase",
+          "optional": true,
+          "type": "\"prepare\" | \"admission\" | \"before_content\" | \"after_content\" | \"parse\"",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 157
+        },
+        {
+          "name": "stream",
+          "optional": false,
+          "type": "readonly AssistantStreamRecord[]",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 159
+        },
+        {
+          "name": "errorCode",
+          "optional": true,
+          "type": "string",
+          "file": "packages/academic/workflow/src/model-types.ts",
+          "line": 162
+        }
+      ],
+      "referencePositions": [
+        {
+          "path": "data.requestSeq",
+          "type": "SessionSeq | null"
+        }
+      ],
+      "numericPaths": [
+        {
+          "path": "data.rejectedStatements[].statementIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.finish.failure.providerRetryAfterMs",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.maximumOutputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.fragmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.sourceRanges[].characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.segmentIndex",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterStart",
+          "type": "number"
+        },
+        {
+          "path": "data.fragment.characterEnd",
+          "type": "number"
+        },
+        {
+          "path": "data.attempt",
+          "type": "number"
+        },
+        {
+          "path": "data.maxAttempts",
+          "type": "number"
+        },
+        {
+          "path": "data.elapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.firstContentElapsedMs",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time0",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].dt[]",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].time",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.index",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.bytes",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.width",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.block.attachment.originalDimensions.height",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.inputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.outputTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.totalTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheReadTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.cacheWriteTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.usage.reasoningTokens",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.status",
+          "type": "number"
+        },
+        {
+          "path": "data.stream[].chunk.reason.failure.providerRetryAfterMs",
+          "type": "number"
+        }
+      ],
+      "opaquePositions": [
+        {
+          "path": "data.stream[].chunk.replayState.response",
+          "type": "unknown"
+        },
+        {
+          "path": "data.stream[].chunk.replayState.blocks[]",
+          "type": "unknown"
+        }
+      ],
+      "sourceOccurrences": {
+        "T0": [
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 29
+          },
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 57
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 41
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 361
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 363
+          }
+        ],
+        "A": [
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 29
+          },
+          {
+            "file": "packages/academic/workflow/src/synthesis-model.ts",
+            "line": 57
+          },
+          {
+            "file": "packages/core/session/src/known-event-types.ts",
+            "line": 41
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 399
+          },
+          {
+            "file": "packages/test-support/session-snapshot/src/normalize.ts",
+            "line": 401
+          }
+        ]
+      }
+    }
+  ],
+  "counts": {
+    "events": 19,
+    "eventsWithSessionReferences": 6,
+    "referencePositions": 8,
+    "T0ReachableDeclarationOwners": 133,
+    "AReachableDeclarationOwners": 140,
+    "recordings": 9,
+    "recordingsWithAcademicEvents": 2,
+    "requiredRecordedAcademicEvents": 16,
+    "recordedEventTypes": 4,
+    "protectedTrackedFilesVerified": 4701,
+    "frozenCopiesVerified": 223
+  },
+  "recordings": [
+    {
+      "file": "snapshots/sdk/academic-candidate-screening/session.v2.jsonl",
+      "sha256": "b306140cd48e22c74e9380874695d3a88eb4c83323316bc8bbb32f3e9fb68422",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "a3e8c41fbbed4e84245501dd4add8fa5e9ea4a9c"
+    },
+    {
+      "file": "snapshots/sdk/academic-evidence-fragments/session.v2.jsonl",
+      "sha256": "5980b97a11b82da57664c2c68be09d66e9979e1349657d1bb1defd92d5e1852d",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "94e10887a660d393b6ff6588fc5f3d7e20367f1b"
+    },
+    {
+      "file": "snapshots/sdk/academic-evidence/session.v2.jsonl",
+      "sha256": "54a7757ef4a1de45fd7cf5cbbf412eae7eaf3b23972b47f9c06ced291e918b20",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 8,
+      "events": [
+        {
+          "type": "academic/evidence-request",
+          "seq": 3,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "source",
+            "phase",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/evidence-result",
+          "seq": 4,
+          "ignorable": false,
+          "requestSeq": 3,
+          "fields": [
+            "source",
+            "phase",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish"
+          ],
+          "referenceTargetType": "academic/evidence-request"
+        },
+        {
+          "type": "academic/evidence-request",
+          "seq": 5,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "source",
+            "phase",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/evidence-result",
+          "seq": 6,
+          "ignorable": false,
+          "requestSeq": 5,
+          "fields": [
+            "source",
+            "phase",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish"
+          ],
+          "referenceTargetType": "academic/evidence-request"
+        },
+        {
+          "type": "academic/synthesis-request",
+          "seq": 7,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "input",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/synthesis-result",
+          "seq": 8,
+          "ignorable": false,
+          "requestSeq": 7,
+          "fields": [
+            "retrievalRunId",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "failurePhase",
+            "finish",
+            "errorCode"
+          ],
+          "referenceTargetType": "academic/synthesis-request"
+        },
+        {
+          "type": "academic/synthesis-request",
+          "seq": 9,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "input",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/synthesis-result",
+          "seq": 10,
+          "ignorable": false,
+          "requestSeq": 9,
+          "fields": [
+            "retrievalRunId",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish",
+            "rejectedStatements"
+          ],
+          "referenceTargetType": "academic/synthesis-request"
+        }
+      ],
+      "gitBlobOid": "38c98878e478b915876a89c3864bf16b2b846767"
+    },
+    {
+      "file": "snapshots/sdk/academic-hybrid-search/session.v2.jsonl",
+      "sha256": "db4adb15099ceb944c801ed8348a1b39a6366df097808760914ba133d0dcbe1c",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "abd60ba7bdd13ffaf07d3c9dc01f4cef4cbcb9fc"
+    },
+    {
+      "file": "snapshots/sdk/academic-limited-draft/session.v2.jsonl",
+      "sha256": "fb42b6611abeb0081e0ce5411242b24ef2e8f1780b453689427addb37248f3e3",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 8,
+      "events": [
+        {
+          "type": "academic/evidence-request",
+          "seq": 3,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "source",
+            "phase",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/evidence-result",
+          "seq": 4,
+          "ignorable": false,
+          "requestSeq": 3,
+          "fields": [
+            "source",
+            "phase",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish"
+          ],
+          "referenceTargetType": "academic/evidence-request"
+        },
+        {
+          "type": "academic/evidence-request",
+          "seq": 5,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "source",
+            "phase",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/evidence-result",
+          "seq": 6,
+          "ignorable": false,
+          "requestSeq": 5,
+          "fields": [
+            "source",
+            "phase",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish"
+          ],
+          "referenceTargetType": "academic/evidence-request"
+        },
+        {
+          "type": "academic/synthesis-request",
+          "seq": 7,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "input",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/synthesis-result",
+          "seq": 8,
+          "ignorable": false,
+          "requestSeq": 7,
+          "fields": [
+            "retrievalRunId",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "failurePhase",
+            "finish",
+            "errorCode"
+          ],
+          "referenceTargetType": "academic/synthesis-request"
+        },
+        {
+          "type": "academic/synthesis-request",
+          "seq": 9,
+          "ignorable": false,
+          "messageSources": [
+            {
+              "kind": "plugin",
+              "plugin": "dsh-academic-workflow"
+            }
+          ],
+          "fields": [
+            "input",
+            "config",
+            "messages",
+            "estimatedInputTokens",
+            "contextWindow",
+            "outputTokens",
+            "attempt",
+            "maxAttempts",
+            "decision"
+          ],
+          "referenceTargetType": null
+        },
+        {
+          "type": "academic/synthesis-result",
+          "seq": 10,
+          "ignorable": false,
+          "requestSeq": 9,
+          "fields": [
+            "retrievalRunId",
+            "requestSeq",
+            "attempt",
+            "maxAttempts",
+            "status",
+            "stream",
+            "elapsedMs",
+            "firstContentElapsedMs",
+            "finish",
+            "rejectedStatements"
+          ],
+          "referenceTargetType": "academic/synthesis-request"
+        }
+      ],
+      "gitBlobOid": "f3db0ca193f22ffa499341bdc96d488064c00904"
+    },
+    {
+      "file": "snapshots/sdk/academic-parallel-papers/session.v2.jsonl",
+      "sha256": "7a991f0cb7f439d030b1d8c724fc3dd47ea6c2d15b1c6158de6d9c0be66bab69",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "a15649a54bca3eaecb933c368f5740322f3a4bbd"
+    },
+    {
+      "file": "snapshots/sdk/academic-plan-chinese/session.v2.jsonl",
+      "sha256": "418c7fb92c445939868735c6f01eaa97175bb7ebcbe0721274c571dfdd4df443",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "14a911ce7b31578670446cd346ab1b0c41a5c6ac"
+    },
+    {
+      "file": "snapshots/sdk/academic-plan-validation/session.v2.jsonl",
+      "sha256": "43a1a0fc38389ceb61aaa673da80f596e23acad7b9f85d68fa83444823af2701",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "a753e31c7398942ca6af4f832910ef92ccbc2865"
+    },
+    {
+      "file": "snapshots/sdk/academic-replenishment/session.v2.jsonl",
+      "sha256": "c73551d6c586b421e79745af260bfec3790ab6ecce846f8cd442cfd326323892",
+      "version": 2,
+      "normalizedFixture": true,
+      "eventCount": 0,
+      "events": [],
+      "gitBlobOid": "30387f098b7810ec583799872ae1330145d967e6"
+    }
+  ],
+  "interpretation": {
+    "sourceObjects": "Git tree/blob objects locate audited source content; revision identities remain in the external upgrade ledger and Git history.",
+    "recordingPositions": "Normalized body ordinals; not production physical envelopes.",
+    "newNestedTypes": "Top-level equality does not imply identical shared Message internals."
+  },
+  "executed": {
+    "staticSourceAudit": true,
+    "frozenHashVerification": true,
+    "migration": false,
+    "recordingReplay": false,
+    "actualSessionImport": false,
+    "productRun": false,
+    "smokeTest": false
+  },
+  "invariants": {
+    "approvalBackfilled": false,
+    "briefAutomaticallyMapped": false,
+    "sourceOrModelOrUserVisibleContentChanged": false,
+    "historicalGenerationsChanged": false
+  }
+}

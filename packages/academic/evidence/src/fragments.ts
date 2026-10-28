@@ -9,7 +9,7 @@ import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragment
 
 /**
  * Verify each fragment before dispatching the next, and recover only failed source ranges.
- * @param input Verified paper identity, provenance and locatable content.
+ * @param input Verified paper identity, source metadata and locatable content.
  * @param options Explicit source/output limits, semantic generator, failure classifier and verified-result sink.
  * @param signal Cancellation forwarded to every call and retry delay.
  * Minimal depth retains at most five unique records across the paper, including the verified-result sink.

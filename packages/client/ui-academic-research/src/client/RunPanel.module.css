@@ -4,7 +4,7 @@
 .page p { margin: 8px 0; }
 .page input { display: block; width: 100%; padding: 8px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0; }
-.stats > div, .card { padding: 12px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; }
+.stats > div, .card { padding: 12px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-sm); }
 .stats dt { color: var(--dsw-alias-label-secondary); }
 .stats dd { margin: 6px 0 0; font-weight: 600; }
 .notice { color: var(--dsw-alias-label-secondary); }

@@ -299,7 +299,7 @@ export interface CandidateAssessment {
   /** Trusted scholarly-provider keywords only; unavailable values retain their explicit state. */
   readonly keywords: Availability<readonly string[]>
   readonly fulltextAvailability: CandidateFulltextAvailability
-  /** Content-matched Brief questions only; approved query provenance is routed separately from Q3. */
+  /** Content-matched Brief questions only; approved discovery-query associations are routed separately from Q3. */
   readonly matchedQuestions: readonly string[]
   readonly screening?: CandidateScreeningDetails
   readonly semanticReview?: CandidateSemanticReviewStateV1
@@ -564,7 +564,7 @@ export function candidatePriorityForScore(
  * @param plan - Exact reviewed plan used to produce the result.
  * @param approvedQuestions - Exact questions from the plan-bound ResearchBrief version.
  * @returns A copied result with one correctly queued entry for every evaluation.
- * @throws {RangeError} Plan binding, scores, priorities, provenance, or queue membership are inconsistent.
+ * @throws {RangeError} Plan binding, scores, priorities, discovery-query associations, or queue membership are inconsistent.
  */
 export function createCandidateRankingResult(
   result: AcademicCandidateRankingResult,

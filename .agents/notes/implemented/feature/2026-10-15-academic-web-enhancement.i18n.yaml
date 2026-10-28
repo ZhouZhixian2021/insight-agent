@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-15-academic-web-enhancement.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-15-academic-web-enhancement.md
-2026-10-15-academic-web-enhancement.md: d15420835c3b679beada045dbb577dbc95cbf282
-2026-10-15-academic-web-enhancement.zh.md: 1c294f329e56c351e1a9e69b2d01382bfd609e9c
+/agent-note-web-selection-for-second-tier-evidence:
+  en: 7fc0dc51811b6207
+  zh: aba5e424cfbd54ae
+/agent-note-web-selection-for-second-tier-evidence/problem:
+  en: 0465ac89f5b7443b
+  zh: 5d284f6accd08f17
+/agent-note-web-selection-for-second-tier-evidence/decision:
+  en: 1848322b23c651e0
+  zh: adced362f158b783
+/agent-note-web-selection-for-second-tier-evidence/alternatives-considered:
+  en: a388c9a048fa3bb2
+  zh: 5bd1961899bee197
+/agent-note-web-selection-for-second-tier-evidence/consequences:
+  en: 633b00f17ab119dd
+  zh: 7c12412a5aab96ec
+/agent-note-web-selection-for-second-tier-evidence/verification:
+  en: 61c1a0d286ba109f
+  zh: c3aa5425a714d02a

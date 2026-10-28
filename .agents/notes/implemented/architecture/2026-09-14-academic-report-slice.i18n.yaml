@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-14-academic-report-slice.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-14-academic-report-slice.md
-2026-09-14-academic-report-slice.md: 21de31e950d23933112fc5ae482d9b6ea1b368af
-2026-09-14-academic-report-slice.zh.md: a127cd369d90ebac3d8435cfa60da8f1dff23a2a
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review:
+  en: 87b60b44d797f512
+  zh: fcc91aab268cbed2
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review/problem:
+  en: 96d3f905a4c065a2
+  zh: 035c9beca2f83c92
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review/decision:
+  en: 7995f1f6a26de3cc
+  zh: 32dabc6a101aaa5d
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review/alternatives-considered:
+  en: 08325e56e2c257df
+  zh: ffecc00feec1d75f
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review/consequences:
+  en: 8ee633dfe5da5eba
+  zh: e41bd522ce40fdf2
+/agent-note-evidence-to-report-baseline-with-explicit-semantic-review/testing:
+  en: 38bbf4b762c8d814
+  zh: 82b665ec92b17603

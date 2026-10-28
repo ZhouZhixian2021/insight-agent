@@ -1,6 +1,9 @@
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createResearchBriefId, createSearchQueryId,
   type ExecutableResearchBrief, type HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { describe, expect, it } from 'vitest'
+import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
+import { normalizeAcademicCatalogRecord } from '@deepseek-ai/dsh-academic-source'
+import { assessPlannedCandidates } from '@deepseek-ai/dsh-academic-retrieval'
 import { approvedCandidateScreeningCriteria, approvedEvidenceQuestionTerms } from '../src/candidate-screening.ts'
 
 const question = '检索增强生成如何影响答案忠实性？'
@@ -131,6 +134,32 @@ describe('approved candidate screening criteria', () => {
     expect(approvedCandidateScreeningCriteria(brief, planFor(), reviewed)).toMatchObject(reviewed)
     expect(approvedCandidateScreeningCriteria(brief, planFor(), reviewed).questions[0]?.concepts)
       .toEqual([['faithfulness', '忠实性']])
+  })
+
+  it('matches an English abstract with separate bilingual aliases while retaining complete method phrases', () => {
+    const source = normalizeAcademicCatalogRecord('acl', {
+      recordId: 'faithfulness-evaluation', title: 'Evaluating retrieved answers', authors: ['A. Researcher'],
+      year: '2024', venue: 'ACL', doi: '10.1000/faithfulness-evaluation',
+      abstract: 'Retrieval evaluation measures faithfulness on a benchmark.',
+    })
+    const ingested = ingestWorks(createIngestIndex(), [source])
+    const input = { ingested, queries: [], discoveredBy: [] }
+    const facts = new Map(ingested.versions.map(version => [version.workVersionId, { status: 'resolvable' as const }]))
+    const plan = planFor()
+    const reviewed = {
+      questions: [{ question, concepts: [['retrieval', '检索'], ['faithfulness', '忠实性']] }],
+      methods: [['retrieval evaluation', '检索评估']], evidence: [['benchmark', '基准']], contributions: [],
+    }
+    const corrected = assessPlannedCandidates(plan, brief, input,
+      approvedCandidateScreeningCriteria(brief, plan, reviewed), facts)[0]
+    expect(corrected).toMatchObject({ matchedQuestions: [question], methodMatch: 1, evidencePotential: 1 })
+    const historical = { ...reviewed,
+      questions: [{ question, concepts: [['retrieval 检索'], ['faithfulness 忠实性']] }],
+      methods: [['retrieval evaluation 检索评估']], evidence: [['benchmark 基准']],
+    }
+    expect(assessPlannedCandidates(plan, brief, input,
+      approvedCandidateScreeningCriteria(brief, plan, historical), facts)[0])
+      .toMatchObject({ matchedQuestions: [], methodMatch: 0, evidencePotential: 0 })
   })
 
   it('rejects a plan bound to another approved Brief version', () => {

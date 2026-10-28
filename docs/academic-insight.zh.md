@@ -99,7 +99,7 @@ pnpm run insight:web
 ## 延伸阅读
 
 - [架构与交付计划](academic-insight-plan.zh.md)
-- [Agent 预设包](../packages/preset/agent-presets/README.zh.md)
+- [Agent 预设包](../packages/preset/agent-preset-registry/README.zh.md)
 - [架构](architecture.zh.md)
 - [测试](testing.zh.md)
 

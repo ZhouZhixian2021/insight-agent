@@ -128,7 +128,7 @@ export interface DraftPipelineAdapters {
   readonly onRecoveryCheckpoint?: AcademicRecoveryCheckpointObserver
 }
 
-/** Ordered explicit searches followed by one merged paper-processing pass and a draft only. */
+/** Ordered explicit searches followed by one merged paper-processing pass and an evaluated report. */
 export interface DraftPipelineInput {
   /** Caller-allocated run identity for diagnostics; recovery must use the same identity. */
   readonly retrievalRunId?: RetrievalRunId

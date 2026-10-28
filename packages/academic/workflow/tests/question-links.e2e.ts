@@ -5,9 +5,9 @@ import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { expect, it, vi } from 'vitest'
 import LlmRuntime from '@deepseek-ai/dsh-llm'
-import * as DeepSeek from '@deepseek-ai/dsh-llm-deepseek'
+import * as DeepSeek from '@deepseek-ai/dsh-llm-deepseek-api-key'
 import SessionStore from '@deepseek-ai/dsh-session'
-import JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
@@ -62,7 +62,7 @@ it.skipIf(!process.env.DEEPSEEK_API_KEY)('associates real paper evidence with it
       expect(result.evidence.evidenceRecords.some(record => record.evidenceId === link.evidenceId)).toBe(true)
     }
     await using reader = await ctx.sessionPersistence.open(session.id, 'read')
-    const events = await reader.read()
+    const events = (await reader.read()).events
     expect(events.filter(event => event.type === 'academic/evidence-request').map(event => event.data.phase))
       .toEqual(['scope', 'evidence'])
     expect(events.filter(event => event.type === 'academic/evidence-result').map(event => event.data.phase))

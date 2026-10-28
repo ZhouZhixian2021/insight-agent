@@ -48,11 +48,11 @@ type DraftRejection = Pick<EvidenceDraftRejection, 'code' | 'reason'>
  * Extracts traceable evidence from one paper version. The caller supplies the semantic
  * generator so workflow code can own model routing and durable request logging.
  *
- * @param input - paper identity, provenance, content hash, and locatable text segments.
+ * @param input - paper identity, source metadata, content hash, and locatable text segments.
  * @param generator - semantic extraction implementation, normally backed by the workflow model.
  * @param signal - optional cancellation signal forwarded to the generator.
  * Invalid model source references are rejected individually; accepted drafts continue.
- * Generator failures, cancellation and invalid program-owned provenance still reject the call.
+ * Generator failures, cancellation and invalid program-owned source metadata still reject the call.
  * Minimal depth requires focus questions and retains at most five verified, question-linked drafts.
  * @returns verified locators, records, run-specific question links, one six-section card, and rejected draft diagnostics.
  */

@@ -118,7 +118,7 @@ export function apply(ctx: Context, config: { invalidSynthesisFirst?: boolean; l
       assert.ok(report.markdown.includes('逐题研究结论'))
       assert.ok(report.markdown.includes('部分回答'))
       await using reader = await ctx.sessionPersistence.open(agent.session.id, 'read')
-      const saved = await reader.read()
+      const saved = (await reader.read()).events
       assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-request').map(event => event.data.phase),
         ['scope', 'evidence'])
       assert.deepEqual(saved.filter(event => event.type === 'academic/evidence-result').map(event => event.data.phase),

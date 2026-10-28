@@ -14,10 +14,11 @@ const t: ResearchEntryProps['t'] = key => zh[key as RunKey]
 afterEach(cleanup)
 function props(runStream: TestStream): ResearchEntryProps {
   const result = sampleRun()
-  return { wide: true, t, ...streamRemote(runStream), plan: async () => ({ researchBriefId: result.retrievalRun.researchBriefId,
-    topic: 'Real Remote preview', questions: [], searches: [] }),
-  useSessions: ((select: (s: unknown) => unknown) => select({ current: result.sessionId,
-    byId: { [result.sessionId]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
+  return { wide: true, t, sessionId: result.sessionId, ...streamRemote(runStream),
+    plan: async () => ({ researchBriefId: result.retrievalRun.researchBriefId,
+      topic: 'Real Remote preview', questions: [], searches: [] }),
+    useSessions: ((select: (s: unknown) => unknown) => select({ current: result.sessionId,
+      byId: { [result.sessionId]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
 }
 async function start() {
   fireEvent.click(screen.getByRole('button', { name: zh.entry }))

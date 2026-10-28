@@ -16,7 +16,7 @@ Cursors bind the Session, run, filter and immutable event watermark. Summary tot
 
 ## Alternatives considered
 
-Parsing Session JSONL in the UI couples presentation to persistence generations and exposes raw content. Inferring calls from titles or adjacent timestamps merges unrelated operations. Copying all requests into a second store duplicates sensitive data. The [Session lineage and event tracing](../../implemented/feature/2026-07-13-session-query-tracing.md) remains a separate relationship query.
+Parsing Session JSONL in the UI couples presentation to persistence generations and exposes raw content. Inferring calls from titles or adjacent timestamps merges unrelated operations. Copying all requests into a second store duplicates sensitive data. The [Session lineage and event tracing](../../../../docs/subsystems/session-query.md) remains a separate relationship query.
 
 ## Consequences
 

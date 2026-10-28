@@ -294,7 +294,7 @@ function buildRanking(
     return { academicWorkId: work.academicWorkId,
       searchQueryIds: [...new Set(records.flatMap(record => record.discoveredBy ?? []))] }
   })
-  const provenance = new Map(discoveredBy.map(item => [item.academicWorkId, item.searchQueryIds]))
+  const queryIdsByWork = new Map(discoveredBy.map(item => [item.academicWorkId, item.searchQueryIds]))
   const papers = new Map<string, SelectedPaper>()
   const fulltextFacts = new Map<WorkVersionId, CandidateFulltextAvailability>()
   for (const work of ingested.works) {
@@ -302,8 +302,8 @@ function buildRanking(
     /* v8 ignore next -- ingestWorks reconciles every canonicalVersionId into the versions collection returned beside the work. */
     if (version === undefined) throw new Error('Ranked candidate requires its canonical version.')
     const resolved = resolveFullText(version, resolutions, academicSource, key)
-    const queryIds = provenance.get(work.academicWorkId)
-    /* v8 ignore next -- provenance is built from the same ingested.works iteration immediately above. */
+    const queryIds = queryIdsByWork.get(work.academicWorkId)
+    /* v8 ignore next -- The query map is built from the same ingested.works iteration immediately above. */
     if (queryIds === undefined) throw new Error('Ranked candidate requires query provenance.')
     const sourceProviders = [...new Set(version.sourceRecords.map(record => record.provider))]
     papers.set(version.workVersionId, {
@@ -364,7 +364,7 @@ async function replenishRankedCandidates(
   }
   const { plan } = extendPlanForEvidenceGaps(scheduling.plan, coverage, nextRoundIndex, options)
   // Evidence-gap queries are Academic-only by construction. Q3 remains the single owner of
-  // query settlement, provenance, and ingestion for both the approved and replenishment rounds.
+  // query settlement, discovery-query associations, and ingestion for both the approved and replenishment rounds.
   const executed = await executePlannedSearchRound(plan, nextRoundIndex, {
     maximumAcademicResultsPerQuery: gapPolicy.maximumAcademicResultsPerQuery,
     // The Q3 contract requires a positive bound. No Web query or verification provider exists

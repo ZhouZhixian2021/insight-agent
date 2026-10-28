@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-28-academic-research-progress-snapshots.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-28-academic-research-progress-snapshots.md
-2026-09-28-academic-research-progress-snapshots.md: f8822b89818dae9bfc852cff3f0e7976975f9143
-2026-09-28-academic-research-progress-snapshots.zh.md: 28b19adc2969f494e09fda6f41beccdd790d83dc
+/agent-note-academic-research-progress-uses-complete-stage-snapshots:
+  en: 00707b1bc175aa0c
+  zh: 6e7428a29826a79c
+/agent-note-academic-research-progress-uses-complete-stage-snapshots/problem:
+  en: 7046a99cc1f26377
+  zh: 71fc72083674ff37
+/agent-note-academic-research-progress-uses-complete-stage-snapshots/decision:
+  en: a08cb7c54d60917c
+  zh: 9045f2d9d1fcaf89
+/agent-note-academic-research-progress-uses-complete-stage-snapshots/alternatives-considered:
+  en: 65cfe6fb60d3d608
+  zh: 09ee5b1887c06a40
+/agent-note-academic-research-progress-uses-complete-stage-snapshots/consequences:
+  en: 522c0cf110fefd33
+  zh: d17fdf34da4375b1

@@ -7,8 +7,8 @@ import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import LlmRuntime, { LlmAdapter, ReasoningEffortId, ToolCallId, expandAssistantStream, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
-import SessionStore from '@deepseek-ai/dsh-session'
-import JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import SessionStore, { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
+import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import SessionProjections from '@deepseek-ai/dsh-session-projection'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import { createAcademicWorkId, createWorkVersionId, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
@@ -42,6 +42,7 @@ class Adapter extends LlmAdapter {
   synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
   afterChunk?: () => void
+  scriptForCall?: (options: GenerateOptions) => StreamChunk[]
   waitForAbort = false
   ignoreAbort = false
   supportsReasoning = true
@@ -84,7 +85,7 @@ class Adapter extends LlmAdapter {
     const chunks: StreamChunk[] = admission
       ? this.scopeScript ?? [{ type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) },
         { type: 'finish', reason: { kind: 'stop' } }]
-      : synthesis === null ? compactEvidenceScript(this.script) : this.synthesisScript
+      : synthesis === null ? compactEvidenceScript(this.scriptForCall?.(options) ?? this.script) : this.synthesisScript
       ?? [{ type: 'text-delta', index: 0, text: synthesis }, { type: 'finish', reason: { kind: 'stop' } }]
     for (const chunk of chunks) { yield chunk; if (!admission) this.afterChunk?.() }
   }
@@ -132,7 +133,7 @@ async function fixture(writer = true) {
   const generate = createModelEvidenceGenerator(ctx, session, config, policy)
   const read = async () => {
     await using handle = await ctx.sessionPersistence.open(session.id, 'read')
-    return await handle.read()
+    return (await handle.read()).events
   }
   const version: WorkVersion = { schemaVersion: 1, academicWorkId: source.academicWorkId, workVersionId: source.workVersionId,
     versionType: 'preprint', versionLabel: { status: 'available', value: 'v1' }, releaseDate: { status: 'unknown', reason: 'fixture' },
@@ -150,7 +151,7 @@ describe('durable academic model extraction', () => {
       transientRetry: { failureCodes: ['TRANSPORT'], initialDelayMs: 0 } }, (span) => { spans.push(span) })
     const source = { academicWorkId: f.source.academicWorkId, workVersionId: f.source.workVersionId }
     await run({ trace: { stage: 'extraction', operation: 'evidence_extract', ...source },
-      messages: [createUserMessage({ source: { kind: 'plugin', plugin: 'fixture' }, content: [{ type: 'text', text: 'private prompt' }] })],
+      messages: [createUserMessage({ source: { kind: 'academic-workflow' }, content: [{ type: 'text', text: 'private prompt' }] })],
       parse: JSON.parse,
       appendRequest: data => f.session.append('academic/evidence-request', { source: f.source, ...data }),
       appendResult: data => f.session.append('academic/evidence-result', { source: f.source, ...data }),
@@ -502,7 +503,7 @@ describe('durable academic model extraction', () => {
     expect(response.data.usage).toEqual({ inputTokens: 100, outputTokens: 30 })
     expect(f.session.deriveMessages()).toEqual([])
     const files = await readdir(f.root, { recursive: true })
-    const log = files.find(file => file.endsWith('session.v2.jsonl'))
+    const log = files.find(file => file.endsWith(`session.v${SESSION_FORMAT_VERSION}.jsonl`))
     if (!log) throw new Error('missing physical log')
     const disk = await readFile(join(f.root, log), 'utf8')
     expect(disk).toContain('academic/evidence-request')
@@ -776,10 +777,12 @@ describe('durable academic model extraction', () => {
     ]
     f.adapter.waitForAbort = true
     f.adapter.beforeDispatch = async () => { if (f.adapter.calls.length > 0) f.adapter.waitForAbort = false }
-    f.adapter.afterChunk = () => {
-      if (f.adapter.calls.length === 2) f.adapter.script = [
-        { type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'unavailable' } } },
-      ]
+    f.adapter.scriptForCall = (options) => {
+      const content = options.messages[0]?.content[0]
+      if (content?.type !== 'text') throw new Error('missing recovery input')
+      return content.text.includes('Second segment.')
+        ? [{ type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'unavailable' } } }]
+        : script
     }
     const generate = createModelEvidenceGenerator(f.ctx, f.session, config, { maxAttempts: 2, attemptTimeoutMs: 100,
       transientRetry: { failureCodes: ['TIMEOUT'], initialDelayMs: 0 } })
@@ -1042,7 +1045,7 @@ describe('durable academic model extraction', () => {
     const open = f.ctx.sessionPersistence.open.bind(f.ctx.sessionPersistence)
     vi.spyOn(f.ctx.sessionPersistence, 'open').mockImplementation(async (id, access, options) => {
       const handle = await open(id, access, options)
-      vi.spyOn(handle, 'read').mockResolvedValue([])
+      vi.spyOn(handle, 'read').mockResolvedValue({ eventState: 'detached', events: [] })
       return handle
     })
     await expect(f.generate(f.request, f.source, scope)).rejects.toBeInstanceOf(WorkflowLogError)

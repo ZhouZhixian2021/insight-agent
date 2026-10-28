@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write integrations/dsh-web-tools/README.md
+/:
+  en: 46102af0db2090f8
+  zh: a146b6877d379d92
+/pinned-web-search-installation:
+  en: ac8cad65dd776671
+  zh: e0886da942192e42
+/pinned-web-search-installation/summary:
+  en: 52a83597cdb31e8f
+  zh: 58b735121a758f1b
+/pinned-web-search-installation/table-of-contents:
+  en: 06986a30ba096c60
+  zh: f65355b277110ee3
+/pinned-web-search-installation/install:
+  en: 76369dd22370ca04
+  zh: 0b4bfdf2dd2f9e4a
+/pinned-web-search-installation/fixed-package:
+  en: bf6bd6135b73a410
+  zh: 86e87914311ac8ff
+/pinned-web-search-installation/local-state-and-failures:
+  en: cf84ad9b10eddcfb
+  zh: 5035abb2aef189a0
+/pinned-web-search-installation/verification:
+  en: bbfe0cd05fac63ed
+  zh: 36114e379dd76176

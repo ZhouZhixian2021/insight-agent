@@ -11,10 +11,6 @@ English | [中文](README.zh.md)
 
 Search OpenAlex without downloading conference catalogs for each query. Each transport attempt sends the caller's unchanged query and returns normalized bibliography and version-matched full-text candidates. Discovery does not guarantee a downloadable full text or a verified first-public date. The workflow remains responsible for query planning, date eligibility, and evidence quality.
 
-`verifyReference()` retrieves one OpenAlex work through its DOI singleton endpoint, checks the returned DOI, and retains its version-specific full-text candidates. This lookup ignores discovery search mode and publication-year filters; it does not download full text.
-
-Both discovery and DOI verification reconstruct `abstract_inverted_index` by contiguous token position and retain OpenAlex keyword labels in `metadata`. Ambiguous positions or malformed keyword records cause a parse error; absent fields remain unknown. OpenAlex keywords are automatically generated topic labels, not evidence of a contribution type.
-
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -27,6 +23,10 @@ Both discovery and DOI verification reconstruct `abstract_inverted_index` by con
 
 <a id="use-this-package"></a>
 ## Use this package
+
+`verifyReference()` retrieves one OpenAlex work through its DOI singleton endpoint, checks the returned DOI, and retains its version-specific full-text candidates. This lookup ignores discovery search mode and publication-year filters; it does not download full text.
+
+Both discovery and DOI verification reconstruct `abstract_inverted_index` by contiguous token position and retain OpenAlex keyword labels in `metadata`. Ambiguous positions or malformed keyword records cause a parse error; absent fields remain unknown. OpenAlex keywords are automatically generated topic labels, not evidence of a contribution type.
 
 The composition must make this plugin resolvable and mount the [source service](../source/README.md). The YAML loader composition is exercised by the package test; installation in the Web profile is an integration-owner step, not performed by this package.
 

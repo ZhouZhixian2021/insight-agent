@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-14-academic-analysis-input.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-14-academic-analysis-input.md
-2026-09-14-academic-analysis-input.md: 746d16b32e2c2246795e9ad0f28f9a9c29d8da30
-2026-09-14-academic-analysis-input.zh.md: 00ff7d0e486215590c1c0ea1fe34cb7318438b84
+/agent-note-academic-analysis-input-preparation:
+  en: 5a0a1a711cfe12bd
+  zh: 5807736643e309c2
+/agent-note-academic-analysis-input-preparation/problem:
+  en: d459a8866797a7d2
+  zh: d272bbdba5cc5b31
+/agent-note-academic-analysis-input-preparation/decision:
+  en: 4c8d89bac4541b6b
+  zh: efd1e5f1a47314f6
+/agent-note-academic-analysis-input-preparation/alternatives-considered:
+  en: e27f48f555abdbca
+  zh: 946c9dc06b7f2ea6
+/agent-note-academic-analysis-input-preparation/consequences:
+  en: 14ffa74fb8012dc8
+  zh: af33b64fc1fb3fe1
+/agent-note-academic-analysis-input-preparation/testing:
+  en: e6ce0ab19c1039b7
+  zh: e741397ade28b75a

@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for field-mapping.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/scratch/g02-upstream-migration/field-mapping.md
+/:
+  en: 6c9814c041e604ae
+  zh: 50bc39a06d845bb8
+/g02-reference-and-field-mapping:
+  en: 96fba49771a9c527
+  zh: 356f3162f6c17ecf
+/g02-reference-and-field-mapping/summary:
+  en: d550c57571c60cab
+  zh: 9a6dd21b731dc2a4
+/g02-reference-and-field-mapping/table-of-contents:
+  en: 07c96a100999d481
+  zh: d2e5e9c1fe0af2b2
+/g02-reference-and-field-mapping/reference-positions:
+  en: d0a6ee7715636f9d
+  zh: 89b73717a2cda6a5
+/g02-reference-and-field-mapping/top-level-fields:
+  en: 1b54d2f80293687c
+  zh: f00e2ed95bb5e583
+/g02-reference-and-field-mapping/preserved-values:
+  en: 40ea393ea0895925
+  zh: e94055f5d798b67d
+/g02-reference-and-field-mapping/dev-note:
+  en: 86c575459b6665c5
+  zh: 7c95d52eae4e7d70

@@ -24,7 +24,7 @@ Manufacturing complete card entries would disguise extraction depth. Requiring e
 
 ## Consequences
 
-Reports show approved questions, model answer proposals, cited producer associations and pending content review separately. Zero cited evidence cannot generate a synthesis report; incomplete coverage remains a limited draft. Existing evaluation checks still protect final delivery and independent-paper counts. Enhanced extraction, independent semantic review and real-model plan regeneration remain integration and joint-acceptance work, not implied by a successful structural test.
+Reports show approved questions, model answer proposals, cited producer associations and pending content review separately. Zero cited evidence cannot generate a synthesis report; counts below the approved work or full-text minimums retain a limited draft. Existing evaluation checks still protect final delivery and independent-paper counts. Enhanced extraction, independent semantic review and real-model plan regeneration remain integration and joint-acceptance work, not implied by a successful structural test.
 
 ## Verification
 

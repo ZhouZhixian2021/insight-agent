@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/academic/retrieval/README.md
-README.md: 274ebde359126a3bc605f30175163c0b7e53495b
-README.zh.md: daba8aab0bc36142d128e884ee6e85e6e8351b4a
+/:
+  en: 4be867fdbfbb9657
+  zh: 645978e073056fb7
+/deepseek-ai-dsh-academic-retrieval:
+  en: 81c0c40dc593a453
+  zh: 904473e06015c314
+/deepseek-ai-dsh-academic-retrieval/summary:
+  en: 9e28c18917b6c5d7
+  zh: 453ebfcb1ed1ad9b
+/deepseek-ai-dsh-academic-retrieval/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-academic-retrieval/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-academic-retrieval/use-this-package/when-to-use-it:
+  en: 420a10ec9dd9b386
+  zh: 0c854959ebed70de
+/deepseek-ai-dsh-academic-retrieval/use-this-package/metadata-screening:
+  en: 71a722f90af84006
+  zh: 0827b689373a957b
+/deepseek-ai-dsh-academic-retrieval/use-this-package/minimal-semantic-review-and-review-selection:
+  en: f38d29128b153bb5
+  zh: ca6dc2dc6acd98d1
+/deepseek-ai-dsh-academic-retrieval/use-this-package/entry-point:
+  en: 880a343498502c53
+  zh: 82818a8bbd1f091e
+/deepseek-ai-dsh-academic-retrieval/understand-the-implementation:
+  en: 6fd41b3c821f12f7
+  zh: b1bb91d998dd7412
+/deepseek-ai-dsh-academic-retrieval/further-exploration:
+  en: b56701a2f702df2d
+  zh: 9e7d5267ceee6e95
+/deepseek-ai-dsh-academic-retrieval/model-experience:
+  en: 3cb86b34e2d30095
+  zh: 764d5e27be57fd77
+/deepseek-ai-dsh-academic-retrieval/model-experience/kv-cache-effect:
+  en: 2626a3dff671ccc9
+  zh: 96de8c9d70765bba
+/deepseek-ai-dsh-academic-retrieval/known-limitations-and-deferred-work:
+  en: 867c6fd14b367142
+  zh: fa5edaf4a8584ff8
+/deepseek-ai-dsh-academic-retrieval/known-limitations-and-deferred-work/dev-note:
+  en: d205b68eb9f86db5
+  zh: 9713c6401b456a45

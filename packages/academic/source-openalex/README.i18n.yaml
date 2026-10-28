@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/academic/source-openalex/README.md
-README.md: fa25c32195d8f44a9bff1b0561b5ee9202d916e8
-README.zh.md: d3dd48cda5b7dbf68612086a17eb7b7059cd14d7
+/:
+  en: b3ded9d3b44c0a94
+  zh: 526fba429a60bdee
+/deepseek-ai-dsh-academic-source-openalex:
+  en: 8c678d26a16a4461
+  zh: 3d8379c2be77fb93
+/deepseek-ai-dsh-academic-source-openalex/summary:
+  en: 92efe441562353b9
+  zh: 5ca49cb831e3550e
+/deepseek-ai-dsh-academic-source-openalex/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: b4a2a0e132e8ddf8
+/deepseek-ai-dsh-academic-source-openalex/use-this-package:
+  en: 956a0ed2d3b8e407
+  zh: 957c4dd70ed624b1
+/deepseek-ai-dsh-academic-source-openalex/use-this-package/failures-and-date-filtering:
+  en: e93721e317023185
+  zh: 054579a0a08f4110
+/deepseek-ai-dsh-academic-source-openalex/understand-the-implementation:
+  en: 6e9be65edd7fbaa7
+  zh: 591d2b496974d9dc
+/deepseek-ai-dsh-academic-source-openalex/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-academic-source-openalex/model-experience/workflow-owned-scholarly-context:
+  en: 74928b818c471339
+  zh: 85710024158d6fd7
+/deepseek-ai-dsh-academic-source-openalex/model-experience/workflow-owned-scholarly-context/what-the-model-sees:
+  en: 38f238d80d877b0c
+  zh: f32d856cf1d9a011
+/deepseek-ai-dsh-academic-source-openalex/model-experience/workflow-owned-scholarly-context/token-effect:
+  en: 1120c0803163756b
+  zh: 14802ea89b1cb0f6
+/deepseek-ai-dsh-academic-source-openalex/model-experience/workflow-owned-scholarly-context/kv-cache-effect:
+  en: fc5cb67313309870
+  zh: 1d05e68b06440cd0
+/deepseek-ai-dsh-academic-source-openalex/known-limitations-and-deferred-work:
+  en: a7c39f702949cf4e
+  zh: 5d5e18f9ae46b0c5
+/deepseek-ai-dsh-academic-source-openalex/known-limitations-and-deferred-work/dev-note:
+  en: 8a1cbc89a8a5487f
+  zh: e2452ddda7d6a1de

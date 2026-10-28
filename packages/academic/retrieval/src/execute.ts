@@ -24,7 +24,7 @@ export interface PlannedSearchLimits {
   readonly verificationProviders: readonly string[]
 }
 
-/** Deduplicated works, retained versions, query provenance, and independent query settlements. */
+/** Deduplicated works, retained versions, discovery-query associations, and independent query settlements. */
 export interface PlannedSearchRoundResult {
   readonly ingested: IngestOutcome
   readonly discoveredBy: readonly {
@@ -93,7 +93,7 @@ type QueryResult = PlannedSearchRoundResult['queries'][number] & {
  * @param adapters - Session-owned Academic and Web operations.
  * @param signal - Caller cancellation propagated to each operation.
  * @param onProgress - Optional observer for live Web discovery, identification, and verification facts.
- * @returns Deduplicated candidates, verified discoveries, query provenance, and per-query facts.
+ * @returns Deduplicated candidates, verified discoveries, discovery-query associations, and per-query facts.
  */
 export async function executePlannedSearchRound(
   plan: HybridSearchPlan,

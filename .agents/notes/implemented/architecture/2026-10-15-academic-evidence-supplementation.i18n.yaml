@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-15-academic-evidence-supplementation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-15-academic-evidence-supplementation.md
-2026-10-15-academic-evidence-supplementation.md: 1df71b8035496cbcc5a08803b59f6d936f89e09f
-2026-10-15-academic-evidence-supplementation.zh.md: 9778a4928e809f071c1523dcd985f0fe61863dd7
+/agent-note-complete-extraction-supplements-committed-paper-evidence:
+  en: cd39bb1b0558c0ea
+  zh: d47a419a7485cbe1
+/agent-note-complete-extraction-supplements-committed-paper-evidence/problem:
+  en: ec1eac68ec0a3089
+  zh: d6d8741d55dd7188
+/agent-note-complete-extraction-supplements-committed-paper-evidence/decision:
+  en: cb861fe64e8cedb9
+  zh: 46cbc7a95de32674
+/agent-note-complete-extraction-supplements-committed-paper-evidence/alternatives-considered:
+  en: 5a250dcdb2d9d3b7
+  zh: 8e209d6126e1d210
+/agent-note-complete-extraction-supplements-committed-paper-evidence/consequences:
+  en: 338fdd5aa8183052
+  zh: fa21459603b51942
+/agent-note-complete-extraction-supplements-committed-paper-evidence/verification:
+  en: 77481e652d28438e
+  zh: dfb7f2f93a3d8863

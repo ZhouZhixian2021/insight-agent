@@ -11,10 +11,6 @@ kind: "package-reference"
 
 本包把 PMLR 论文接入 `ctx.academicSource`。它搜索已配置的官方论文集页面、规范化命中论文，并把规范 PDF 交给共享 evidence 流程。
 
-`verifyReference()` 按论文集/论文 ID 读取单篇官方摘要页，并核对页面的引用 URL。页面给出的 PDF 位置可能不同于推导路径，因此保存在有容量限制的缓存中；未配置论文集目录也可核验，且不会下载 PDF。
-
-核验把学术摘要标签或官方 `abstract` 块及引用关键词保留在 `metadata` 中。不含这些字段的目录记录明确保持未知；普通页面描述和 Web 摘要不充当学术摘要。
-
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -27,6 +23,10 @@ kind: "package-reference"
 
 <a id="use-this-package"></a>
 ## 使用本包
+
+`verifyReference()` 按论文集/论文 ID 读取单篇官方摘要页，并核对页面的引用 URL。页面给出的 PDF 位置可能不同于推导路径，因此保存在有容量限制的缓存中；未配置论文集目录也可核验，且不会下载 PDF。
+
+核验把学术摘要标签或官方 `abstract` 块及引用关键词保留在 `metadata` 中。不含这些字段的目录记录明确保持未知；普通页面描述和 Web 摘要不充当学术摘要。
 
 在 `dsh-academic-source` 之后挂载本包，并列出当前部署需要搜索的 PMLR 论文集页面。
 

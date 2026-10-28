@@ -28,11 +28,12 @@ Internal inference cost is not the limiting constraint, so the workflow optimize
 
 ### The untrusted-PR gate
 
-GitHub withholds repo secrets from two kinds of PR: those from **forks**, and **Dependabot** PRs (same-repo branch, so `head.repo.fork == false`, but secrets are still withheld). A job-level `if:` skips the whole job for both:
+GitHub withholds repo secrets from two kinds of PR: those whose head is in **another repository**, and **Dependabot** PRs (even with a same-repository branch). The repository's own `fork` property describes its ancestry, not whether a PR comes from another repository; this repository can be a fork and still receive same-repository PRs. A job-level `if:` compares head and base repository IDs and skips the whole job for both:
 
 ```
 github.event_name != 'pull_request'
-  || !(github.event.pull_request.head.repo.fork || github.event.pull_request.user.login == 'dependabot[bot]')
+  || (github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
+      && github.event.pull_request.user.login != 'dependabot[bot]')
 ```
 
 The Dependabot clause keys on the PR **author** (`pull_request.user.login`), not `github.actor` (the run trigger): a maintainer who reopens or re-runs a Dependabot PR would make `github.actor` a human while the PR is still keyless, and an author-based test stays correct across that. A job skipped by a **job-level** `if:` reports as a *successful* check (unlike a workflow/trigger-level skip, which stays pending), so this workflow is safe to mark as a required status check if desired — a fork/Dependabot PR's skipped-but-green check does not block the merge.
@@ -49,12 +50,12 @@ The repo secret is named `DEEPSEEK_API_KEY_EXTERNAL`; it is mapped to the `DEEPS
 
 - **Step-scoped secret.** `DEEPSEEK_API_KEY` is set in the `env:` of only the preflight and e2e steps, never job-level — so checkout/setup-node/install never see it. A compromised install-time lifecycle script in a dependency cannot read a secret that isn't in its environment.
 - **`permissions: contents: read`.** The job only reads the repo to run tests; it needs no write scopes (no PR comments, no status writes), so the `GITHUB_TOKEN` is dropped to least privilege.
-- **`DEEPSEEK_BASE_URL` pinned** to `https://api.deepseek.com` on the e2e step. The adapter would default to this when unset ([packages/llm/llm-deepseek/src/index.ts](../../../../packages/llm/llm-deepseek/src/index.ts) `PUBLIC_BASE_URL`), but pinning is self-documenting and hermetic — a stray repo-root `.env` (which `vitest.e2e.config.ts` loads if present) cannot silently redirect the run to another endpoint.
+- **`DEEPSEEK_BASE_URL` pinned** to `https://api.deepseek.com/anthropic` on the e2e step. The adapter would default to this when unset ([packages/llm/llm-deepseek/src/index.ts](../../../../packages/llm/llm-deepseek/src/index.ts) `PUBLIC_BASE_URL`), but pinning is self-documenting and hermetic — a stray repo-root `.env` (which `vitest.e2e.config.ts` loads if present) cannot silently redirect the run to another endpoint.
 - **No secret echoed.** The preflight prints only `DEEPSEEK_API_KEY present.` — not the value or its length.
 
 ### Scope, runtime shape
 
-The job runs only `test:e2e` on Node 24; keyless gates and version compatibility belong to the main CI workflow. Tests run unbuilt through the workspace paths map with a bounded configurable worker pool, per-test retries, and a job timeout. Superseded PR runs are cancelled, while push and scheduled runs complete for post-merge signal.
+The job runs only `test:e2e` on Node 24; keyless gates and version compatibility belong to the main CI workflow. Tests run unbuilt through the workspace paths map with a bounded configurable worker pool, per-test retries, and a job timeout. The [superseded-CI cancellation policy](../../../../.github/workflows/e2e.yml) cancels older runs in the same workflow/ref group across PR, push, schedule, and manual triggers; a post-merge or nightly trigger does not guarantee completion.
 
 The DeepSeek native `web_search` probe is registered but skipped. The live Anthropic-compatible endpoint can return a successful response without structured source blocks, so its positive-source assertion is not a reliable merge signal; unit coverage still pins response parsing, but CI does not prove the live source-block wire shape.
 

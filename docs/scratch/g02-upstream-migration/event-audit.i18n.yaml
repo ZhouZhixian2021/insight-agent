@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for event-audit.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/scratch/g02-upstream-migration/event-audit.md
+/:
+  en: 43d6d54edbcc2c37
+  zh: c423a3909fd613f8
+/g02-academic-event-inventory:
+  en: 4c1590f68a003e8d
+  zh: 6d2f7dae7de4aa86
+/g02-academic-event-inventory/summary:
+  en: 9db2252182c2cdcb
+  zh: d9c229f0f718fba8
+/g02-academic-event-inventory/table-of-contents:
+  en: cba65092cca8ea77
+  zh: 91e6eb96230c84fa
+/g02-academic-event-inventory/inventory:
+  en: 1265595fa84ea949
+  zh: be295253ed451447
+/g02-academic-event-inventory/recording-coverage:
+  en: 9ad0c10f92a1c044
+  zh: 1bbd49ba453042c0
+/g02-academic-event-inventory/audit-limits:
+  en: c220c85b57929891
+  zh: 5dcadf58decd205a
+/g02-academic-event-inventory/dev-note:
+  en: 5894652166ba4c60
+  zh: 0765bc0282d7f544

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-15-academic-minimal-report-review.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-15-academic-minimal-report-review.md
-2026-10-15-academic-minimal-report-review.md: e3590a20e6ea96e891fe3135135b10db0c234ab7
-2026-10-15-academic-minimal-report-review.zh.md: e845167cb846acd4d9dd0e9b15d2fccf53928307
+/agent-note-minimal-evidence-reports-and-concise-academic-review:
+  en: 6b5be813b4dfb7dc
+  zh: edf42744d1522f5a
+/agent-note-minimal-evidence-reports-and-concise-academic-review/problem:
+  en: 96591a1894b9a752
+  zh: ea35e315c6fef3b0
+/agent-note-minimal-evidence-reports-and-concise-academic-review/decision:
+  en: 1e0b8151486d537e
+  zh: 5589e695afc7f874
+/agent-note-minimal-evidence-reports-and-concise-academic-review/alternatives-considered:
+  en: 69937cd0bcfab481
+  zh: 4777aeeae08d5e2f
+/agent-note-minimal-evidence-reports-and-concise-academic-review/consequences:
+  en: 321a5085b72c2086
+  zh: 6ef93d6597835cbb
+/agent-note-minimal-evidence-reports-and-concise-academic-review/verification:
+  en: d48cebcfd988207a
+  zh: 61ec7e9b0da0a1c4

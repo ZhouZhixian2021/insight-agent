@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "writer": "retired candidate-screening request/result writer",
+  "verifiedAncestorOfT0": true,
+  "replacedBy": "versioned semantic review writer",
+  "files": [
+    {
+      "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+      "blob": "765fb38102ab3a912a5cb2b6c9bd2010760128a9",
+      "lineEvidence": [
+        {
+          "line": 23,
+          "text": "'academic/candidate-screening-request': CandidateReviewModelRequest"
+        },
+        {
+          "line": 25,
+          "text": "'academic/candidate-screening-result': CandidateReviewModelResult"
+        },
+        {
+          "line": 80,
+          "text": "const messages = [createUserMessage({ source: { kind: 'plugin', plugin: 'dsh-api-academic-research-controller' },"
+        },
+        {
+          "line": 103,
+          "text": "appendRequest: data => session.append('academic/candidate-screening-request', { ...identity, ...data }),"
+        },
+        {
+          "line": 104,
+          "text": "appendResult: data => session.append('academic/candidate-screening-result', { ...identity, ...data }),"
+        }
+      ]
+    },
+    {
+      "file": "packages/academic/workflow/src/model-types.ts",
+      "blob": "06c87aee7a73ff9dbbad6b15d8ec1f915440ce54",
+      "lineEvidence": [
+        {
+          "line": 142,
+          "text": "readonly requestSeq: SessionSeq | null"
+        }
+      ]
+    },
+    {
+      "file": "packages/academic/workflow/src/model-call.ts",
+      "blob": "e7145db95fde7e9aed5eb6c53c584e376ea789a7",
+      "lineEvidence": [
+        {
+          "line": 113,
+          "text": "let requestSeq: SessionSeq | null = null"
+        },
+        {
+          "line": 141,
+          "text": "requestSeq = logged.seq"
+        },
+        {
+          "line": 197,
+          "text": "await record(() => request.appendResult({ requestSeq, attempt,"
+        }
+      ]
+    }
+  ],
+  "requestSource": {
+    "kind": "plugin",
+    "plugin": "dsh-api-academic-research-controller"
+  },
+  "reference": "The model runner assigns requestSeq from the durable request event seq."
+}
