@@ -88,6 +88,15 @@ function git(repo, args) {
 }
 
 /**
+ * Whether `ref:path` exists in the object database.
+ *
+ * @param {string} repo @param {string} ref @param {string} path
+ */
+function fileExistsAt(repo, ref, path) {
+  return spawnSync('git', ['cat-file', '-e', `${ref}:${path}`], { cwd: repo, stdio: 'ignore' }).status === 0
+}
+
+/**
  * Paths that differ from the merge base of `base` and `HEAD`.
  *
  * @param {string} repo @param {string} base
@@ -191,11 +200,21 @@ function main() {
   if (!options.allowStale) for (const entry of stale) violations.push({ kind: 'stale-registration', path: entry.path })
 
   if (options.against) {
-    const previousRaw = git(repo, ['show', `${options.against}:${'scripts/upgrade/upstream-overrides.json'}`])
-    const previous = JSON.parse(previousRaw)
-    const previousFork = new Set(previous.entries.filter(entry => entry.category === 'fork').map(entry => entry.path))
-    for (const path of forkPaths) {
-      if (!previousFork.has(path)) violations.push({ kind: 'new-fork-requires-review', path })
+    const ledger = 'scripts/upgrade/upstream-overrides.json'
+    if (!fileExistsAt(repo, options.against, ledger)) {
+      process.stderr.write(`upstream overrides: ${options.against} carries no ledger; skipping the new-fork check\n`)
+    } else {
+      const previousRaw = git(repo, ['show', `${options.against}:${ledger}`])
+      let previous
+      try {
+        previous = JSON.parse(previousRaw)
+      } catch {
+        throw new Error(`${options.against} carries an unreadable ledger`)
+      }
+      const previousFork = new Set(previous.entries.filter(entry => entry.category === 'fork').map(entry => entry.path))
+      for (const path of forkPaths) {
+        if (!previousFork.has(path)) violations.push({ kind: 'new-fork-requires-review', path })
+      }
     }
   }
 
