@@ -111,19 +111,24 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
 
   useEffect(() => {
     let current = true
-    setLoading(true); setMessage(null)
-    void plan(sessionId).then((value) => { if (current) setApproved(value) }, (error: unknown) => {
-      if (current) setPlanError(error instanceof Error ? error.message : t('planFailed'))
-    })
-    void listBackgroundRuns(sessionId).then((rows) => {
+    setLoading(true); setMessage(null); setApproved(null); setPlanError(null); setTask(null); setView(null)
+    void Promise.allSettled([plan(sessionId), listBackgroundRuns(sessionId)]).then(([latestPlan, history]) => {
       if (!current) return
+      if (latestPlan.status === 'fulfilled') setApproved(latestPlan.value)
+      else setPlanError(latestPlan.reason instanceof Error ? latestPlan.reason.message : t('planFailed'))
+      if (history.status === 'rejected') {
+        setMessage(history.reason instanceof Error ? history.reason.message : t('requestFailed'))
+        // Admission stays disabled until the Session's active task can be discovered.
+        return
+      }
+      const rows = history.value
       setRuns(rows)
-      const selected = rows.findLast(row => row.state === 'running') ?? rows.at(-1)
+      const selected = rows.findLast(row => row.state === 'running')
+        ?? (latestPlan.status === 'fulfilled'
+          ? rows.findLast(row => row.researchBriefId === latestPlan.value.researchBriefId)
+          : rows.at(-1))
       if (selected === undefined) setLoading(false)
       else void select(selected.backgroundRunId)
-    }, (error: unknown) => {
-      if (current) setMessage(error instanceof Error ? error.message : t('requestFailed'))
-      // Admission stays disabled until the Session's active task can be discovered.
     })
     return () => {
       current = false; currentTask.current = null
@@ -137,6 +142,13 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     active.current = operation
     setLoading(true); setMessage(null); setView(null); setTask(null); currentTask.current = null
     try {
+      const latest = await plan(sessionId)
+      if (active.current !== operation) return
+      if (latest.researchBriefId !== approved.researchBriefId) {
+        setApproved(latest); setPlanError(null); setMessage(t('planUpdated'))
+        active.current = null; setLoading(false)
+        return
+      }
       const initial = await startBackgroundRun({ sessionId,
         researchBriefId: approved.researchBriefId, synthetic: false }, operation.signal)
       if (active.current !== operation) return
@@ -170,6 +182,8 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
       }
     }
   }
+  const hasRunningTask = runs.some(row => row.state === 'running')
+  const hasCurrentPlanRun = approved !== null && runs.some(row => row.researchBriefId === approved.researchBriefId)
   return <>
     <p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('backgroundNotice')}</p>
     {planError !== null && <p role="alert">{planError}</p>}
@@ -179,13 +193,27 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     {loading && message !== null && task === null && <button type="button" onClick={() => { setRevision(previous => previous + 1) }}>
       {t('backgroundReconnect')}
     </button>}
+    {approved !== null && <section aria-label={t('currentPlan')}>
+      <h3>{t('currentPlan')}: {approved.topic}</h3>
+      <ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
+      <h4>{t('searchDirections')}</h4><SearchPolicies searches={approved.searches} t={t} />
+      {!loading && !hasCurrentPlanRun && <p role="status">{t(hasRunningTask ? 'previousPlanRunning' : 'planNotStarted')}</p>}
+      <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
+        <button type="submit" disabled={loading || hasRunningTask}>{t('start')}</button>
+      </form>
+    </section>}
     {runs.length > 0 && <label>{t('backgroundRecords')}<select aria-label={t('backgroundRecords')} value={task?.backgroundRunId ?? ''}
-      onChange={(event) => { void select(event.target.value) }}>
-      {task === null && <option value="" disabled>{t('backgroundLoading')}</option>}
+      onChange={(event) => {
+        if (event.target.value === '') setRevision(previous => previous + 1)
+        else void select(event.target.value)
+      }}>
+      <option value="">{t('currentPlan')}</option>
       {runs.map(row => <option key={row.backgroundRunId} value={row.backgroundRunId}>
-        {row.startedAt} · {t(`background_${row.state}`)} · {row.backgroundRunId}
+        {row.startedAt} · {t(`background_${row.state}`)} · {t(row.researchBriefId === approved?.researchBriefId ? 'currentPlan' : 'historicalPlan')} · {row.backgroundRunId}
       </option>)}
     </select></label>}
+    {approved !== null && task !== null && task.researchBriefId !== approved.researchBriefId
+      && <p role="note">{t('historicalPlanResult')}</p>}
     {task !== null && <section aria-label={t('backgroundTask')}>
       <p>{t('backgroundTask')}: {task.backgroundRunId} · {t(`background_${task.state}`)}</p>
       <p>{t(connected ? 'backgroundConnected' : task.state === 'running' ? 'backgroundDisconnected' : 'backgroundSnapshot')}</p>
@@ -201,12 +229,5 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     {view?.phase === 'settled' && view.value.report !== null && view.value.status === 'completed' && <EnhancementPanel
       key={`${sessionId}:${view.value.retrievalRun.retrievalRunId}`} value={view.value}
       enhanceEvidence={enhanceEvidence} enhancementHistory={enhancementHistory} t={t} />}
-    {approved !== null && <>
-      <h3>{approved.topic}</h3><ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
-      <h4>{t('searchDirections')}</h4><SearchPolicies searches={approved.searches} t={t} />
-      <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
-        <button type="submit" disabled={loading || runs.some(row => row.state === 'running')}>{t('start')}</button>
-      </form>
-    </>}
   </>
 }

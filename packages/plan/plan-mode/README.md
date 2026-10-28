@@ -35,7 +35,7 @@ Choose plan mode when the agent should explore and design before executing and y
 
 ### Minimal configuration
 
-The guidance text is required. Set `initialActive: true` when every fresh session using this composition should plan its first request automatically. Set `missingExitRetries` when a deployment should retry a model response that stops without opening plan review; unknown fields fail at load.
+The guidance text is required. Set `initialActive: true` when every fresh session using this composition should plan its first request automatically. Set `reenterOnUserMessage: true` to plan each new human message in the same session. Set `missingExitRetries` when a deployment should retry a model response that stops without opening plan review; unknown fields fail at load.
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -51,6 +51,7 @@ The guidance text is required. Set `initialActive: true` when every fresh sessio
 |---|---|---|
 | `section` | required | Guidance rendered as the `plan:policy` prompt section while plan mode is active |
 | `initialActive` | `false` | Enter plan mode before a fresh session's first model request |
+| `reenterOnUserMessage` | `false` | Re-enter plan mode when each new human message is claimed, including after session resume |
 | `missingExitRetries` | `0` | Maximum same-turn reminders after the model stops without calling `exit_plan_mode` |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-plan-mode) is the exhaustive source for every accepted field and its JSDoc.
@@ -60,7 +61,9 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 Type `/plan` to enter plan mode, or `/plan <message>` to enter with an instruction — the message becomes your next request under plan guidance. Type `/plan off` to leave plan mode directly; it also cancels a plan-mode entry that has not taken effect yet.
 
-With `initialActive: true`, an untouched session enters before its first request without requiring `/plan` or adding a switch notice. An explicit logged selection or an existing request header suppresses this initialization, so resumed sessions and sessions that already left plan mode do not re-enter automatically.
+With `initialActive: true`, an untouched session enters before its first request without requiring `/plan` or adding a switch notice. An explicit logged selection or an existing request header suppresses this initialization.
+
+With `reenterOnUserMessage: true`, each newly claimed human message queues entry before prompt assembly, and the accepted pre-step records it as `plan/mode`. This includes new messages in resumed sessions; historical messages are not replayed as new input. Tool continuations after approval and system notices do not trigger entry. `/plan off` exits the current plan, but the next human message enters again. The Academic Insight Web preset enables this option; other presets retain explicit entry.
 
 You can attach images and generic files to a `/plan` message, and they are included with your instruction in selection order. `/plan off` with attachments is rejected before the mode changes, so the draft and cards remain available. The `/plan` command is available wherever slash commands are supported, such as the Web client.
 

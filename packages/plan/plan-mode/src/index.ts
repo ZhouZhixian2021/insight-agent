@@ -71,6 +71,11 @@ export interface PlanModeConfig {
   section: string
   /** Enter plan mode before a new session's first model request. */
   initialActive?: boolean
+  /**
+   * Re-enter plan mode when a new human message is claimed, including in resumed
+   * sessions; tool continuations and system notices do not trigger entry.
+   */
+  reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
 }
@@ -122,6 +127,11 @@ export function resolveConfig(config: PlanModeConfig): Required<PlanModeConfig> 
     throw new Error('PlanModeConfig needs a boolean `initialActive` when provided')
   }
   const initialActive = configuredInitialActive ?? false
+  const configuredReentry = (config as Partial<PlanModeConfig>).reenterOnUserMessage
+  if (configuredReentry !== undefined && typeof configuredReentry !== 'boolean') {
+    throw new Error('PlanModeConfig needs a boolean `reenterOnUserMessage` when provided')
+  }
+  const reenterOnUserMessage = configuredReentry ?? false
   const configuredMissingExitRetries = (config as Partial<PlanModeConfig>).missingExitRetries
   if (configuredMissingExitRetries !== undefined
     && (!Number.isSafeInteger(configuredMissingExitRetries) || configuredMissingExitRetries < 0)) {
@@ -129,11 +139,12 @@ export function resolveConfig(config: PlanModeConfig): Required<PlanModeConfig> 
   }
   const missingExitRetries = configuredMissingExitRetries ?? 0
   const unknown = Object.keys(config)
-    .filter(key => key !== 'section' && key !== 'initialActive' && key !== 'missingExitRetries')
+    .filter(key => key !== 'section' && key !== 'initialActive'
+      && key !== 'reenterOnUserMessage' && key !== 'missingExitRetries')
   if (unknown.length > 0) {
-    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section, initialActive?, missingExitRetries? }`)
+    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section, initialActive?, reenterOnUserMessage?, missingExitRetries? }`)
   }
-  return { section, initialActive, missingExitRetries }
+  return { section, initialActive, reenterOnUserMessage, missingExitRetries }
 }
 
 const planUnitStateSchema: ZodType<PlanUnitState> = zod.object({
@@ -222,6 +233,15 @@ export class PlanModeController extends Service {
     this.initialActive = resolved.initialActive
     this.missingExitRetries = resolved.missingExitRetries
     let disposed = false
+    if (resolved.reenterOnUserMessage) {
+      // Claim precedes prompt assembly, including for restored inbox messages.
+      // Commit through the existing accepted pre-step, never at inbox insertion.
+      ctx.on('agent/inbox/claimed', ({ agent, message }) => {
+        if (message.source.kind === 'user') {
+          this.pendingIntents.set(agent.session, { active: true, narrate: true })
+        }
+      })
+    }
     // Pre-step is outside Session.append publication, so it can append the
     // log-only mode event inside an open turn without re-entering the session.
     // A failed append remains pending for a later accepted in-turn pre-step,

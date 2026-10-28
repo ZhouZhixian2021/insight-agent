@@ -25,12 +25,17 @@ interface PlanModeConfig {
   section: string
   /** Enter plan mode before a new session's first model request. */
   initialActive?: boolean
+  /**
+   * Re-enter plan mode when a new human message is claimed, including in resumed
+   * sessions; tool continuations and system notices do not trigger entry.
+   */
+  reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
 }
 ```
 
-A missing, blank, or non-string `section`, a non-boolean `initialActive`, an invalid `missingExitRetries`, and any unknown key fail at plugin load rather than being ignored. `initialActive` defaults to `false`; when true, prompt assembly queues plan mode for an untouched session and the first accepted pre-step records it before the request header. An existing plan selection or request header suppresses initialization, so resume and later requests never re-enter automatically. `missingExitRetries` defaults to `0` and accepts a non-negative safe integer. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
+A missing, blank, or non-string `section`, a non-boolean `initialActive` or `reenterOnUserMessage`, an invalid `missingExitRetries`, and any unknown key fail at plugin load rather than being ignored. `initialActive` defaults to `false`; when true, prompt assembly queues plan mode for an untouched session and the first accepted pre-step records it before the request header. An existing plan selection or request header suppresses initialization. `reenterOnUserMessage` defaults to `false`; when true, `agent/inbox/claimed` queues entry for a newly claimed message with source kind `user`, before assembly and the same accepted pre-step commit. Resumed sessions follow the same rule; approval continuations and system notices do not re-enter. `missingExitRetries` defaults to `0` and accepts a non-negative safe integer. While plan mode is active, the exact `section` text renders as the `plan:policy` [system-prompt section](system-prompt.md) at order 50; inactive plan mode contributes no text.
 
 ## The exit tool and the `/plan` command
 

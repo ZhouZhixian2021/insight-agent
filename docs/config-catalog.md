@@ -2616,6 +2616,11 @@ export interface PlanModeConfig {
   section: string
   /** Enter plan mode before a new session's first model request. */
   initialActive?: boolean
+  /**
+   * Re-enter plan mode when a new human message is claimed, including in resumed
+   * sessions; tool continuations and system notices do not trigger entry.
+   */
+  reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
 }

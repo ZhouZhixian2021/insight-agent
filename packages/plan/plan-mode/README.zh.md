@@ -35,7 +35,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-唯一必需的配置是 agent 规划期间遵循的引导文本；添加任何其他配置都会在加载时失败。
+必须配置 agent 规划期间遵循的引导文本。设置 `initialActive: true` 可让此组合中的每个新会话自动为首条请求制定计划。设置 `reenterOnUserMessage: true` 可在同一会话中为每条新用户消息制定计划。设置 `missingExitRetries` 可在模型未开启计划评审就停止时提醒其重试；未知字段会在加载时失败。
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -51,6 +51,7 @@ kind: "package-reference"
 |---|---|---|
 | `section` | 必填 | 计划模式激活时作为 `plan:policy` 提示词段落渲染的引导 |
 | `initialActive` | `false` | 在新会话的首个模型请求前进入计划模式 |
+| `reenterOnUserMessage` | `false` | 每条新用户消息被领取时重新进入计划模式，包括恢复后的会话 |
 | `missingExitRetries` | `0` | 模型未调用 `exit_plan_mode` 就停止后，同一轮次内最多发送的提醒数 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-plan-mode)完整列出了所有受支持的字段及其 JSDoc。
@@ -60,7 +61,9 @@ kind: "package-reference"
 
 输入 `/plan` 进入计划模式，或输入 `/plan <message>` 连同一条指令一起进入——该消息会成为你在计划引导下的下一条请求。输入 `/plan off` 直接离开计划模式；它还会取消尚未生效的计划模式进入。
 
-设置 `initialActive: true` 后，未使用过的新会话会在首个请求前进入计划模式，无需输入 `/plan`，也不会增加切换通知。已有明确日志选择或请求头会阻止该初始化，因此恢复的会话和已经离开计划模式的会话不会自动重新进入。
+设置 `initialActive: true` 后，未使用过的新会话会在首个请求前进入计划模式，无需输入 `/plan`，也不会增加切换通知。已有明确日志选择或请求头会阻止该初始化。
+
+设置 `reenterOnUserMessage: true` 后，每条新领取的用户消息会在提示词组装前排队进入计划模式，由被接受的 pre-step 记录为 `plan/mode`。恢复会话后的新消息也适用；历史消息不会作为新输入重新执行。批准后的工具续步与系统通知不会触发进入。`/plan off` 退出当前计划，但下一条用户消息会再次进入。学术洞察 Web 预设启用此选项，其他预设仍由用户明确选择进入。
 
 你可以在 `/plan` 消息中附带图片与通用文件，它们按选择顺序随指令一起提交。带附件的 `/plan off` 会在模式变更前被拒绝，因此草稿和附件卡仍可继续使用。`/plan` 命令在支持斜杠命令的界面中可用，例如 Web 客户端。
 

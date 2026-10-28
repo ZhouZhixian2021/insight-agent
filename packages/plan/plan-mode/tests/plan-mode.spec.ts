@@ -194,12 +194,12 @@ describe('resolveConfig', () => {
   it('returns a detached plan config', () => {
     const config = { section: TEST_PLAN_SECTION }
     const resolved = resolveConfig(config)
-    expect(resolved).toEqual({ ...config, initialActive: false, missingExitRetries: 0 })
+    expect(resolved).toEqual({ ...config, initialActive: false, reenterOnUserMessage: false, missingExitRetries: 0 })
     expect(resolved).not.toBe(config)
   })
 
   it('accepts an explicit initial mode and rejects a non-boolean value', () => {
-    expect(resolveConfig(INITIAL_PLAN_CONFIG)).toEqual({ ...INITIAL_PLAN_CONFIG, missingExitRetries: 0 })
+    expect(resolveConfig(INITIAL_PLAN_CONFIG)).toEqual({ ...INITIAL_PLAN_CONFIG, reenterOnUserMessage: false, missingExitRetries: 0 })
     const stringActive: PlanModeConfig = { section: TEST_PLAN_SECTION }
     Object.assign(stringActive, { initialActive: 'yes' })
     expect(() => resolveConfig(stringActive))
@@ -212,16 +212,24 @@ describe('resolveConfig', () => {
 
   it('accepts a missing-exit retry limit and rejects invalid values', () => {
     expect(resolveConfig({ ...PLAN_CONFIG, missingExitRetries: 1 }))
-      .toEqual({ ...PLAN_CONFIG, initialActive: false, missingExitRetries: 1 })
+      .toEqual({ ...PLAN_CONFIG, initialActive: false, reenterOnUserMessage: false, missingExitRetries: 1 })
     for (const missingExitRetries of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
       expect(() => resolveConfig({ ...PLAN_CONFIG, missingExitRetries }))
         .toThrow('needs a non-negative safe integer `missingExitRetries` when provided')
     }
   })
 
+  it('accepts per-message reentry only as a boolean', () => {
+    expect(resolveConfig({ ...PLAN_CONFIG, reenterOnUserMessage: true }).reenterOnUserMessage).toBe(true)
+    for (const value of ['yes', null, 1]) {
+      expect(() => resolveConfig({ ...PLAN_CONFIG, reenterOnUserMessage: value } as unknown as PlanModeConfig))
+        .toThrow('needs a boolean `reenterOnUserMessage` when provided')
+    }
+  })
+
   it('rejects fields outside the plan policy config', () => {
     expect(() => resolveConfig({ section: TEST_PLAN_SECTION, tools: ['read'] } as unknown as PlanModeConfig))
-      .toThrow('unknown key(s) tools — config is { section, initialActive?, missingExitRetries? }')
+      .toThrow('unknown key(s) tools — config is { section, initialActive?, reenterOnUserMessage?, missingExitRetries? }')
   })
 })
 
