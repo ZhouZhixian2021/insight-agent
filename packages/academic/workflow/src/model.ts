@@ -53,16 +53,16 @@ export function createModelEvidenceGenerator(
     }
     const batches = createEvidenceBatches(request, policy.inputBatchTokenLimit,
       policy.inputBatchOverlapCharacters ?? 0, messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0))
-    const firstBatch = batches[0]
-    if (firstBatch === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
-    const decision = await runScope({
-      trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: scopeMessages(withSegments(request, firstBatch.map(piece => piece.segment)), scope, source,
-        batches.length === 1 && firstBatch.length === request.segments.length),
-      ...request.signal === undefined ? {} : { signal: request.signal },
-      parse: parseScopeDecision,
-      appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
-      appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
-    })
+    const decision = await reviewPaperScope(request, policy,
+      messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0),
+      (scopeRequest, complete) => runScope({
+        trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
+        messages: scopeMessages(scopeRequest, scope, source, complete),
+        ...request.signal === undefined ? {} : { signal: request.signal },
+        parse: parseScopeDecision,
+        appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
+        appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
+      }))
     if (decision.status !== 'included') return { scope: decision, evidence: [] }
     const work = batches.map(batch => ({ batch, splitDepth: 0 }))
     const responses: EvidenceDraft[][] = []
@@ -198,25 +198,31 @@ function createEvidenceBatches(
   return batches
 }
 
-/** Reuse the existing admission context bound when the formal evidence path uses fragments.
+/** Inspect additional source batches only while the model cannot resolve the approved scope.
  * @param request Complete parsed segments and approved focus questions.
- * @param tokenLimit Optional estimated input bound used by the prior whole-paper path.
- * @param overlapCharacters Repeated source characters at split boundaries.
+ * @param policy Per-request input bounds and maximum number of scope batches.
  * @param estimate Estimate the token cost of framed model messages.
- * @param traceObserver Optional safe diagnostic sink.
- * @returns The first admission batch and whether it contains the whole source.
+ * @param review Logged scope review of one source batch and its completeness flag.
+ * @returns The first conclusive decision, or the last unresolved decision at the configured limit.
  */
-export function firstScopeBatch(
+export async function reviewPaperScope(
   request: EvidenceGenerationRequest,
-  tokenLimit: number | undefined,
-  overlapCharacters: number,
+  policy: EvidenceExtractionModelPolicy,
   estimate: (messages: ReturnType<typeof evidenceMessages>) => number,
-): { readonly segments: readonly EvidenceContentSegment[]; readonly complete: boolean } {
-  const batches = createEvidenceBatches(request, tokenLimit, overlapCharacters, estimate)
-  const first = batches[0]
-  if (first === undefined) throw new EvidenceError('No evidence batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
-  return { segments: first.map(piece => piece.segment),
-    complete: batches.length === 1 && first.length === request.segments.length }
+  review: (request: EvidenceGenerationRequest, complete: boolean) => Promise<PaperScopeDecision>,
+): Promise<PaperScopeDecision> {
+  const maximum = policy.scopeReviewMaximumBatches ?? 1
+  if (!Number.isSafeInteger(maximum) || maximum < 1) throw new RangeError('scopeReviewMaximumBatches must be a positive integer')
+  const batches = createEvidenceBatches(request, policy.inputBatchTokenLimit,
+    policy.inputBatchOverlapCharacters ?? 0, estimate)
+  for (const batch of batches.slice(0, maximum)) {
+    request.signal?.throwIfAborted()
+    const decision = await review(withSegments(request, batch.map(piece => piece.segment)),
+      batches.length === 1 && batch.length === request.segments.length)
+    if (decision.status !== 'needs_more_context') return decision
+    if (batch === batches.at(-1) || batch === batches[maximum - 1]) return decision
+  }
+  throw new EvidenceError('No scope batch was available.', 'EVIDENCE_INPUT_TOO_LARGE')
 }
 
 function splitPiece(

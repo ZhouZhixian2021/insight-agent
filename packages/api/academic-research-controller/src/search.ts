@@ -56,6 +56,8 @@ export type CandidateReviewer = (input: CandidateReviewInput,
 /** Deployment concurrency and durable pre-dispatch selection recording. */
 export interface CandidateReviewExecution {
   readonly concurrency: number
+  /** Reviews reserved for newly discovered evidence-gap candidates; omitted reserves none. */
+  readonly gapReserve?: number
   readonly recordSelection?: (selection: CandidateReviewSelectionV1, roundIndex: number) => Promise<SessionSeq>
 }
 
@@ -86,9 +88,9 @@ export function approvedPaperAdapters(
   candidateScreening?: AcademicCandidateScreening,
   reviewCandidate?: CandidateReviewer,
   initialAcademicResultsPerQuery?: number,
-  maximumModelReviews = 8,
+  maximumModelReviews = 24,
   reviewExecution: CandidateReviewExecution = { concurrency: 1 },
-): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'replenishCandidates'> {
+): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'reviewCandidates' | 'replenishCandidates'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
   }
@@ -99,13 +101,16 @@ export function approvedPaperAdapters(
   const resolutions = new Map<string, AcademicSourceFullText | null>()
   const reviewedScreenings = new Map<AcademicWorkId, CandidateScreeningDetails>()
   const attemptedReviews = new Set<AcademicWorkId>()
+  let initialReviewComplete = false
   const reviewStates = new Map<AcademicWorkId, CandidateSemanticReviewStateV1>()
   if (!Number.isSafeInteger(reviewExecution.concurrency) || reviewExecution.concurrency < 1 || reviewExecution.concurrency > 2) {
     throw new RangeError('Candidate review concurrency must be 1 or 2.')
   }
   const key = (provider: string, recordId: string) => JSON.stringify([provider, recordId])
   const reviewIngested = async (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal,
-    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex = 0) => {
+    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex = 0,
+    questions?: readonly string[], scheduled: readonly WorkVersionId[] = [],
+    maximumReviews = candidateBatchPolicy.initialBatchSize) => {
     if (reviewCandidate === undefined) return
     // Rank the full pool with the existing lexical assessment first. The final ranking is
     // rebuilt after the bounded model review, so review evidence can still change priorities.
@@ -113,8 +118,16 @@ export function approvedPaperAdapters(
       candidateScreening, reviewedScreenings, reviewStates)
     const worksByVersion = new Map(ingested.works.map(work => [work.canonicalVersionId, work]))
     const versions = new Map(ingested.versions.map(version => [version.workVersionId, version]))
-    const selection = selectCandidateReviews(approvedBrief, plan, lexical.ranking, lexical.assessments,
-      attemptedReviews, maximumModelReviews)
+    const skippedVersions = new Set(scheduled)
+    const eligibleRanking = { ...lexical.ranking,
+      evaluations: lexical.ranking.evaluations.filter(item => !skippedVersions.has(item.workVersionId)),
+    }
+    const reserve = roundIndex < 2 && plan.maximumSearchRounds > 1 ? reviewExecution.gapReserve ?? 0 : 0
+    const selection = selectCandidateReviews(approvedBrief, plan, eligibleRanking, lexical.assessments,
+      attemptedReviews, maximumModelReviews, {
+        maximumReviews: Math.min(maximumReviews, Math.max(0, maximumModelReviews - attemptedReviews.size - reserve)),
+        ...(questions === undefined ? {} : { questions }),
+      })
     signal?.throwIfAborted()
     const selectionSeq = await reviewExecution.recordSelection?.(selection, roundIndex)
     signal?.throwIfAborted()
@@ -190,6 +203,14 @@ export function approvedPaperAdapters(
     if (rejected?.status === 'rejected') throw rejected.reason
   }
   return {
+    reviewCandidates: async (scheduling, ingested, coverage, scheduled, signal) => {
+      const questions = coverage.questions.filter(item => item.status !== 'covered').map(item => item.question)
+      const roundIndex = Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
+      await reviewIngested(scheduling.plan, ingested, signal, undefined, roundIndex, questions, scheduled,
+        candidateBatchPolicy.replenishmentBatchSize)
+      return rankedPaperSelection(approvedBrief, approvedBrief, scheduling.plan, ingested,
+        resolutions, academicSource, key, candidateBatchPolicy, candidateScreening, reviewedScreenings, reviewStates)
+    },
     search: async (request, signal, onProvider, onHybrid) => {
       const directionIndex = searches.findIndex(search => search.query === request.query)
       const approvedSearch = searches[directionIndex]
@@ -213,7 +234,10 @@ export function approvedPaperAdapters(
       return projected
     },
     selectPapers: async (ingested, effectiveBrief, signal, onCandidateReview) => {
-      await reviewIngested(handoff.plan, ingested, signal, onCandidateReview)
+      if (!initialReviewComplete) {
+        await reviewIngested(handoff.plan, ingested, signal, onCandidateReview)
+        initialReviewComplete = true
+      }
       return rankedPaperSelection(approvedBrief, effectiveBrief, handoff.plan,
         ingested, resolutions, academicSource, key, candidateBatchPolicy, candidateScreening, reviewedScreenings,
         reviewStates)
@@ -350,7 +374,8 @@ async function replenishRankedCandidates(
   nextRoundIndex: number,
   candidateScreening?: AcademicCandidateScreening,
   reviewIngested?: (plan: HybridSearchPlan, ingested: IngestOutcome, signal?: AbortSignal,
-    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex?: number) => Promise<void>,
+    onCandidateReview?: (observation: CandidateReviewProgressObservation) => void, roundIndex?: number,
+    questions?: readonly string[], scheduled?: readonly WorkVersionId[]) => Promise<void>,
   reviewedScreenings?: ReadonlyMap<AcademicWorkId, CandidateScreeningDetails>,
   reviewStates?: ReadonlyMap<AcademicWorkId, CandidateSemanticReviewStateV1>,
   signal?: AbortSignal,
@@ -385,7 +410,9 @@ async function replenishRankedCandidates(
     return true
   })
   const mergedIngested = ingestWorks(ingested.index, gapRecords)
-  await reviewIngested?.(plan, mergedIngested, signal, undefined, nextRoundIndex)
+  await reviewIngested?.(plan, mergedIngested, signal, undefined, nextRoundIndex,
+    coverage.questions.filter(item => item.status !== 'covered').map(item => item.question),
+    ingested.works.map(work => work.canonicalVersionId))
   const previousWorkIds = new Set(ingested.index.records.keys())
   const versionWorks = new Map(mergedIngested.versions.map(version => [version.workVersionId, version.academicWorkId]))
   const built = buildRanking(approvedBrief, plan, mergedIngested, resolutions, academicSource, key,

@@ -14,7 +14,7 @@ import { WorkflowLogError } from './model-errors.ts'
 import { evidenceMessages, scopeMessages } from './model-prompt.ts'
 import { parseFocusedEvidence, parseScopeDecision } from './parse-evidence.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
-import { firstScopeBatch } from './model.ts'
+import { reviewPaperScope } from './model.ts'
 import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperScopeDecision,
   PaperEvidenceProgressObserver, PaperVerifiedEvidenceGenerator } from './model-types.ts'
 
@@ -57,15 +57,15 @@ export function createModelFragmentEvidenceGenerator(
       instruction: '', focusQuestions: [...(parsed.focusQuestions ?? [])], segments: parsed.segments,
       ...signal === undefined ? {} : { signal },
     }
-    const scopeSegments = firstScopeBatch(baseRequest, policy.inputBatchTokenLimit,
-      policy.inputBatchOverlapCharacters ?? 0,
-      messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0))
-    const scopeRequest = { ...baseRequest, segments: scopeSegments.segments }
-    const decision = await runScope({ trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: scopeMessages(scopeRequest, scope, source, scopeSegments.complete),
-      ...signal === undefined ? {} : { signal }, parse: parseScopeDecision,
-      appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
-      appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
-    })
+    const decision = await reviewPaperScope(baseRequest, policy,
+      messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0),
+      (scopeRequest, complete) => runScope({
+        trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
+        messages: scopeMessages(scopeRequest, scope, source, complete),
+        ...signal === undefined ? {} : { signal }, parse: parseScopeDecision,
+        appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
+        appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
+      }))
     if (decision.status !== 'included') {
       return { scope: decision, evidence: await extractEvidenceFromContent(extractionInput, () => Promise.resolve([]), signal),
         incompleteFragmentCount: 0 }

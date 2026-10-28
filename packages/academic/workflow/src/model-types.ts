@@ -108,6 +108,8 @@ export interface EvidenceModelPolicy {
 
 /** Evidence extraction policy with deterministic batching and one bounded local-timeout split when maxAttempts exceeds one. */
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
+  /** Maximum distinct scope-review batches; omitted inspects only the first batch. */
+  readonly scopeReviewMaximumBatches?: number
   /** Formal fragment extraction depth; omitted keeps complete extraction for existing callers. */
   readonly depth?: 'minimal' | 'complete'
   /** Approved aliases for each focus question, in Brief order; only prioritizes minimal-depth source ranges. */

@@ -149,6 +149,7 @@ export type {
 export * from './trace.ts'
 export {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+  ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
   candidatePriorityForScore,
   createCandidateRankingResult,
   createCandidateScoreBreakdown,

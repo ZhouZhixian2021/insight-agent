@@ -82,8 +82,12 @@ export interface Config {
   readonly candidateReviewMaxTokens?: number
   /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
   readonly candidateReviewAttemptTimeoutMs?: number
-  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 8. */
+  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 24. */
   readonly candidateReviewMaximumWorks?: number
+  /** Reviews reserved for evidence-gap search results. Defaults to 4. */
+  readonly candidateReviewGapReserve?: number
+  /** Maximum distinct source batches inspected to resolve one paper's scope. Defaults to 3. */
+  readonly scopeReviewMaximumBatches?: number
   /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
   readonly candidateReviewConcurrency?: number
   /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
@@ -128,7 +132,9 @@ export class AcademicResearchController extends TypertRemoteService {
     extractionAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     candidateReviewMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8_192),
     candidateReviewAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
-    candidateReviewMaximumWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(8),
+    candidateReviewMaximumWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(24),
+    candidateReviewGapReserve: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(4),
+    scopeReviewMaximumBatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     candidateReviewConcurrency: z.number().step(1).min(1).max(2).default(1),
     initialSearchMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(100),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
@@ -156,6 +162,8 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly candidateReviewMaxTokens: number
   private readonly candidateReviewAttemptTimeoutMs: number
   private readonly candidateReviewMaximumWorks: number
+  private readonly candidateReviewGapReserve: number
+  private readonly scopeReviewMaximumBatches: number
   private readonly candidateReviewConcurrency: number
   private readonly initialSearchMaximumAcademicResultsPerQuery: number
   private readonly synthesisMaxAttempts: number
@@ -184,7 +192,9 @@ export class AcademicResearchController extends TypertRemoteService {
     this.extractionAttemptTimeoutMs = config.extractionAttemptTimeoutMs ?? 150_000
     this.candidateReviewMaxTokens = config.candidateReviewMaxTokens ?? 8_192
     this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
-    this.candidateReviewMaximumWorks = config.candidateReviewMaximumWorks ?? 8
+    this.candidateReviewMaximumWorks = config.candidateReviewMaximumWorks ?? 24
+    this.candidateReviewGapReserve = config.candidateReviewGapReserve ?? 4
+    this.scopeReviewMaximumBatches = config.scopeReviewMaximumBatches ?? 3
     this.candidateReviewConcurrency = config.candidateReviewConcurrency ?? 1
     this.initialSearchMaximumAcademicResultsPerQuery = config.initialSearchMaximumAcademicResultsPerQuery ?? 100
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
@@ -592,7 +602,7 @@ export class AcademicResearchController extends TypertRemoteService {
         candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
           { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
         this.initialSearchMaximumAcademicResultsPerQuery, this.candidateReviewMaximumWorks,
-        { concurrency: this.candidateReviewConcurrency,
+        { concurrency: this.candidateReviewConcurrency, gapReserve: this.candidateReviewGapReserve,
           recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
             researchBriefId: brief.researchBriefId, researchBriefVersion: brief.version, roundIndex, selection,
           }) }),
@@ -615,6 +625,7 @@ export class AcademicResearchController extends TypertRemoteService {
         synthesisModel,
         modelPolicies: {
           evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
+            scopeReviewMaximumBatches: this.scopeReviewMaximumBatches,
             ...(questionTerms === undefined ? {} : { questionTerms }),
             inputBatchTokenLimit: this.extractionBatchMaxInputTokens,
             inputBatchOverlapCharacters: this.extractionBatchOverlapCharacters,

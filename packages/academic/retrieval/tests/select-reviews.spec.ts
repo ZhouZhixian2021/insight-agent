@@ -148,6 +148,22 @@ describe('pre-model candidate review selection', () => {
       .toBe('not_selected_budget')
   })
 
+  it('prioritizes uncovered questions within one batch without shrinking the shared budget', () => {
+    const a = build({ priority: 'p0', score: 90, discoveredBy: [queryA], abstract: 'available' })
+    const c = build({ priority: 'p1', score: 70, discoveredBy: [queryC], abstract: 'available' })
+    const result = selectCandidateReviews(brief, plan, rankingOf([a, c]), [a.assessment, c.assessment], new Set(), 3,
+      { maximumReviews: 1, questions: [q3] })
+    expect(result.remainingBudget).toBe(3)
+    expect(result.decisions.find(entry => entry.academicWorkId === c.evaluation.academicWorkId))
+      .toMatchObject({ status: 'selected', selectionOrder: 0 })
+    expect(result.decisions.find(entry => entry.academicWorkId === a.evaluation.academicWorkId))
+      .toMatchObject({ status: 'not_selected_budget' })
+    expect(() => selectCandidateReviews(brief, plan, rankingOf([a]), [a.assessment], new Set(), 3,
+      { maximumReviews: -1 })).toThrow(/non-negative safe integer/u)
+    expect(() => selectCandidateReviews(brief, plan, rankingOf([a]), [a.assessment], new Set(), 3,
+      { questions: ['Unapproved question'] })).toThrow(/approved/u)
+  })
+
   it('breaks ties by canonical work identity for equal priority, abstract, and score', () => {
     const one = build({ priority: 'p0', score: 90, discoveredBy: [queryC], abstract: 'available' })
     const two = build({ priority: 'p0', score: 90, discoveredBy: [queryC], abstract: 'available' })

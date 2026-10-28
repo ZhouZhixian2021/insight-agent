@@ -14,6 +14,14 @@ export const name = 'academic-hybrid-search-fixture'
 export const inject = ['tools', 'academicSource', 'web']
 
 export function apply(ctx: Context): void {
+  applyHybridFixture(ctx)
+}
+
+/** Register the shared synthetic hybrid flow with an optional policy result.
+ * @param ctx Fixture service context.
+ * @param includeRankingPolicy Whether the tool exposes the current ranking thresholds.
+ */
+export function applyHybridFixture(ctx: Context, includeRankingPolicy = false): void {
   const calls: string[] = []
   const work = normalizeAcademicCatalogRecord('acl', { recordId: '2024.acl-long.1', title: 'Verified fixture paper',
     authors: ['Fixture author'], year: '2024', venue: 'ACL', doi: null })
@@ -42,12 +50,14 @@ export function apply(ctx: Context): void {
       const sample = JSON.parse(readFileSync(new URL(
         '../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url,
       ), 'utf8')) as { brief: ResearchBrief }
+      let rankingThresholds: { readonly p0: number; readonly p1: number; readonly p2: number } | undefined
       const adapters = approvedPaperAdapters(sample.brief, [{ query: 'synthetic', purpose: '核验合成论文',
         questions: ['论文是否可核验？'],
         retrieval: { channels: ['academic', 'web_discovery'], academicProviders: ['arxiv'], verificationProviders: ['acl'],
           maximumWebDiscoveryResults: 2, maximumReferenceVerifications: 1 } }], ctx.academicSource, ctx.web,
       { initialBatchSize: 2, evidenceGapBatchSize: 2, replenishmentBatchSize: 2, minimumQuestionSupportingWorks: 1 },
-      { maximumQueriesPerRound: 4, maximumAcademicResultsPerQuery: 20 })
+      { maximumQueriesPerRound: 4, maximumAcademicResultsPerQuery: 20 },
+      (plan) => { rankingThresholds = plan.rankingPolicy.thresholds })
       const pipeline = await runResearchDraft({
         brief: { ...sample.brief, publicationWindow: { ...sample.brief.publicationWindow, start: null, end: null } },
         synthetic: true, searches: [{ query: 'synthetic', maxResults: 3,
@@ -71,7 +81,8 @@ export function apply(ctx: Context): void {
       assert.equal(JSON.stringify(view).includes('Unverified generated answer'), false)
       const screening = await screeningFixture(sample.brief, signal)
       return JSON.stringify({ calls, titles: pipeline.hybridSearch.returnedRecords.map(item => item.academicWork.title),
-        directProviders: pipeline.retrievalRun.providers, hybridRetrieval: view, screening })
+        directProviders: pipeline.retrievalRun.providers, hybridRetrieval: view, screening,
+        ...includeRankingPolicy ? { rankingThresholds } : {} })
     },
   })))
 }

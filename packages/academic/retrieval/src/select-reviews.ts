@@ -25,12 +25,14 @@ interface EligibleCandidate {
  * @param assessments - One reviewed assessment per ranked candidate, supplying provider abstract availability.
  * @param attemptedWorkIds - Candidates already sent to the model in this or an earlier round.
  * @param maximumModelReviews - Shared total model-review budget across initial and gap rounds.
+ * @param options - Optional per-batch limit and approved questions to prioritize before other questions.
  * @returns One decision per ranked candidate with zero-based selection order, routing, and reasons.
  * @throws {RangeError} The Brief, plan, ranking, assessments, or budget disagree.
  */
 export function selectCandidateReviews(brief: ExecutableResearchBrief, plan: HybridSearchPlan,
   ranking: AcademicCandidateRankingResult, assessments: readonly CandidateAssessment[],
-  attemptedWorkIds: ReadonlySet<AcademicWorkId>, maximumModelReviews: number): CandidateReviewSelectionV1 {
+  attemptedWorkIds: ReadonlySet<AcademicWorkId>, maximumModelReviews: number,
+  options: { readonly maximumReviews?: number; readonly questions?: readonly string[] } = {}): CandidateReviewSelectionV1 {
   if (brief.researchBriefId !== plan.researchBriefId || brief.version !== plan.researchBriefVersion
     || brief.approval.approvedBriefVersion !== brief.version) {
     throw new RangeError('review selection requires the approved Brief version bound to the plan')
@@ -42,6 +44,14 @@ export function selectCandidateReviews(brief: ExecutableResearchBrief, plan: Hyb
     throw new RangeError('maximumModelReviews must be a non-negative safe integer')
   }
   const approvedQuestions = [...new Set(brief.questions)]
+  if (options.maximumReviews !== undefined
+    && (!Number.isSafeInteger(options.maximumReviews) || options.maximumReviews < 0)) {
+    throw new RangeError('maximumReviews must be a non-negative safe integer')
+  }
+  if (options.questions?.some(question => !approvedQuestions.includes(question))) {
+    throw new RangeError('review priorities must reference approved questions')
+  }
+  const questionOrder = [...new Set([...(options.questions ?? []), ...approvedQuestions])]
   const questionsByQuery = new Map(plan.queries.map(query => [query.searchQueryId, query.questions]))
   const byAssessment = new Map(assessments.map(assessment => [assessment.academicWorkId, assessment]))
   if (byAssessment.size !== assessments.length
@@ -50,6 +60,7 @@ export function selectCandidateReviews(brief: ExecutableResearchBrief, plan: Hyb
   }
   const attemptedBefore = attemptedWorkIds.size
   const budget = Math.max(0, maximumModelReviews - attemptedBefore)
+  const batchBudget = Math.min(budget, options.maximumReviews ?? budget)
   const routing = new Map<AcademicWorkId, readonly string[]>(ranking.evaluations.map(evaluation =>
     [evaluation.academicWorkId, routeQuestions(approvedQuestions, questionsByQuery, evaluation.discoveredBy)]))
   const eligible: EligibleCandidate[] = []
@@ -65,8 +76,8 @@ export function selectCandidateReviews(brief: ExecutableResearchBrief, plan: Hyb
   const chosen = new Map<AcademicWorkId, { readonly order: number; readonly reason: 'question_coverage' | 'lexical_fill' }>()
   const covered = new Set<string>()
   let order = 0
-  for (const question of approvedQuestions) {
-    if (order >= budget) break
+  for (const question of questionOrder) {
+    if (order >= batchBudget) break
     if (covered.has(question)) continue
     const pick = eligible.find(candidate => !chosen.has(candidate.evaluation.academicWorkId)
       && candidate.routedQuestions.includes(question))
@@ -76,7 +87,7 @@ export function selectCandidateReviews(brief: ExecutableResearchBrief, plan: Hyb
     for (const coveredQuestion of pick.routedQuestions) covered.add(coveredQuestion)
   }
   for (const candidate of eligible) {
-    if (order >= budget) break
+    if (order >= batchBudget) break
     if (chosen.has(candidate.evaluation.academicWorkId)) continue
     chosen.set(candidate.evaluation.academicWorkId, { order, reason: 'lexical_fill' })
     order += 1

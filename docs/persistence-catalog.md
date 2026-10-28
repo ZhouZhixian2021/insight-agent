@@ -340,7 +340,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:69`](../packages/a
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:182`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:184`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -351,7 +351,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:182`](../packages/academ
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:178`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:180`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -362,7 +362,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:178`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:180`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:182`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -5666,7 +5666,7 @@ Array of [`AcademicBatchSettlementEvent`](#persistence-type-sha256-04c2c0bb66f11
 
 SHA-256: `614a88afd1dab2447e22d79a16e6c6941d5ab750cfc09440aef96411d99d92a6`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:336`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:342`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -5701,7 +5701,7 @@ Array of [`AcademicCandidateEvaluation`](#persistence-type-sha256-614a88afd1dab2
 
 SHA-256: `fc914d39e902eba8ea86d3812d09f22b7d5b63a45243f6e248409d9ecb21a5e7`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:360`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:366`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7101,7 +7101,7 @@ One of:
 
 SHA-256: `3c9955856211eb41fecc7f0e804a18a6ebb25a047d6835613d98b441612e14e2`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:295`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:301`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7160,7 +7160,7 @@ Sources: [`packages/academic/workflow/src/candidate-batches.ts:11`](../packages/
 
 SHA-256: `6e7b23c4d3674130b0bfde4ec2cee53e0945398e603fd8e100deb71815ea92d9`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:136`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:142`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7183,7 +7183,7 @@ One of:
 
 SHA-256: `fea880a4bf0ee42e6f77f484e86dae424248d777d35010dac6ad776bc4c0db12`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:171`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:177`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7201,7 +7201,7 @@ One of:
 
 SHA-256: `206405980382030ff6e08b8c5e91c108b6eaafaa16cebd0951f8284bc48065b0`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:165`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:171`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7218,7 +7218,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:165`](../packages/acade
 
 SHA-256: `585585d3b43dc05b0b3efc39c4085abf3d48fb2b9c40b2abe2b48e05059a5ab8`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:150`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:156`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7253,7 +7253,7 @@ Array of [`CandidateHardFilterReason`](#persistence-type-sha256-206405980382030f
 
 SHA-256: `454cc46943ac35a8a09cae64dc6dae94898f867cccc87f75697071977bfbdc3c`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:325`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:331`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7270,7 +7270,7 @@ One of:
 
 SHA-256: `01c9fb335534c734eb48bdb01eb2dafae8427f3d1456c7f2ba11a7197d62072f`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:177`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:183`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7287,7 +7287,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:177`](../packages/acade
 
 SHA-256: `3b6c564c699f5281ef3a9f290b0c1eeca88d46257eb18a14035995908aaa2c93`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:183`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:189`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7313,7 +7313,7 @@ Array of [`CandidateMetadataSignal`](#persistence-type-sha256-3b6c564c699f5281ef
 
 SHA-256: `70664feecde2745d374a2975795172c5532988f0922ad5bef0a7fea3dcdcd575`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:147`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:153`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7332,7 +7332,7 @@ One of:
 
 SHA-256: `187508a1c9770adec2b28734b4d216fff49b5cdd7c8b2215cd85bec8f784c413`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:352`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:358`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7446,7 +7446,7 @@ Sources: [`packages/api/academic-research-controller/src/candidate-review-model.
 
 SHA-256: `ab49b02ec6378638830cf5fd45a9f514d5c327e5a5a6d5790606657b835c8886`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:256`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:262`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7475,7 +7475,7 @@ Array of [`CandidateReviewSelectionDecisionV1`](#persistence-type-sha256-ab49b02
 
 SHA-256: `d92d8acc71fb72ae5a2ab574bce82cd4fc1120ccd012fc668ab64348caed8a5d`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:274`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:280`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7495,7 +7495,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:274`](../packages/acade
 
 SHA-256: `c2413bf0f4b8eed21dea3ccdf22903baee433033cfb3fe708abb3670492e0465`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:208`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:214`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7513,7 +7513,7 @@ One of:
 
 SHA-256: `4b06365010ee66964be796f6bdd288e5fbad776bb863a75ab27b8ae7154d94b5`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:131`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:137`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7564,7 +7564,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:86`](../packages/academ
 
 SHA-256: `7e1a2bf36c8b9e68c81952568494bc4eaaf3902a4032e9ae692d21c7892363ee`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:214`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:220`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7584,7 +7584,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:214`](../packages/acade
 
 SHA-256: `cf88ce82a8cf8a834d4b8e55c7534325efcaa6693fe77ff05c1c37d3e2fdda4f`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:238`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:244`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -7601,7 +7601,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:238`](../packages/acade
 
 SHA-256: `445059c223406b657f74c02fc40f8281b2ba64ed6e09ea6581d6ea2f0bc40804`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:244`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:250`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -7618,7 +7618,7 @@ One of:
 
 SHA-256: `fce2082be991cb9df167cac3ad07ef2c6370bcde771541faaafd11325758ca45`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:201`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:207`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8113,7 +8113,7 @@ One of:
 
 SHA-256: `61f8f129c1d8ad9cd278175a2412a4ed469a2568cef92d073d99ed43f12c6838`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:136`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:138`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8139,7 +8139,7 @@ Sources: [`packages/academic/workflow/src/model-types.ts:136`](../packages/acade
 
 SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:152`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:154`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8168,7 +8168,7 @@ Sources: [`packages/academic/workflow/src/model-types.ts:152`](../packages/acade
 
 SHA-256: `fc3691ea824279dcbc6f2524063a599058c6f1e2b2b15e19baa42f67fd93f7be`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:132`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:134`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8728,7 +8728,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:67`](../packages/academ
 
 SHA-256: `9599172088259e61fff813ccf0c16c0bca7c581378130acf0c961dd199faa88a`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:399`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:405`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8778,7 +8778,7 @@ Array of [`HybridSearchQuery`](#persistence-type-sha256-41ab16c5455b4705af57fe56
 
 SHA-256: `7e819b856e73e9831b563fa36ed62e5c04050d06518169e31690a9ddbbaf1214`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:418`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:424`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -10252,7 +10252,7 @@ Sources: [`packages/academic/model/src/types.ts:150`](../packages/academic/model
 
 SHA-256: `ee2d1494b3e08c4dbe429d700cc1a263059eff16608a597951f2ebfcf38e53c9`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:370`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:376`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -10272,7 +10272,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:370`](../packages/acade
 
 SHA-256: `55e33991f01b3ddb0a3ad1aceb6c723d3b6aebf39f20593956b22abcd0a8af77`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:380`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:386`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -10478,7 +10478,7 @@ One of:
 
 SHA-256: `444bcf413d6463a318e21d2e7ea2623555f792988d8d912132d489cdd4b5cc1b`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:440`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:446`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -10495,7 +10495,7 @@ One of:
 
 SHA-256: `c5b077ab499db2a9187ce2314b70abfd6e6be8ee74feca4be8b4196ca363ca5b`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:428`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:434`](../packages/academic/model/src/query-workflow.ts)
 
 One of:
 
@@ -13518,7 +13518,7 @@ Sources: [`packages/core/session/src/types.ts:384`](../packages/core/session/src
 
 SHA-256: `4d7032067cd9bef36817466f0ce638a905cd32a8a1039f4b16f674250e761b9e`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:288`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:294`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -13781,7 +13781,7 @@ Array of [`{ description, name }`](#persistence-type-sha256-83079c8a3f733ac3fa60
 
 SHA-256: `17f3f57a3483bd92292689f82d5776f0c5178ade3e853bed925ad6d617c71dd8`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:441`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:447`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -13795,7 +13795,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:441`](../packages/acade
 
 SHA-256: `74f94a1a78329b0c4da90e11a8978d68d878ba112d14cce6a3b4fb3c62af261d`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:442`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:448`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -14154,7 +14154,7 @@ Sources: [`packages/api/academic-research-controller/src/types.ts:406`](../packa
 
 SHA-256: `f69422ff9ec557ad65ad2ae106a2a79dc2f4ea0221d0f5dbdef73ec3fee5ba40`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:189`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:195`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -14229,7 +14229,7 @@ Sources: [`packages/core/session/src/types.ts:203`](../packages/core/session/src
 
 SHA-256: `07a90a326be0fe3f404f92da31e5680a0a2c4529feb08fa20eab18e2826e210e`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:194`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:200`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -14828,7 +14828,7 @@ Sources: [`packages/academic/workflow/src/progress.ts:137`](../packages/academic
 
 SHA-256: `11855c8862970eb5380f3d24bb8d1a10a8d894866fd267ef655e9902d28a30ba`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:184`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:190`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15742,7 +15742,7 @@ Sources: [`packages/interaction/permission-presets/src/index.ts:59`](../packages
 
 SHA-256: `4890913a6ee5150f95295b632f83d120a22b3282009d9123778c4eb1ddf591f5`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:210`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:216`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15826,7 +15826,7 @@ Sources: [`packages/api/academic-research-controller/src/types.ts:335`](../packa
 
 SHA-256: `0058ac8cfee5153e904e070735e65d27ff4c20d8804b0648010024a2ef2e7692`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:209`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:215`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15839,7 +15839,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:209`](../packages/acade
 
 SHA-256: `10652cfdb51f56220d9336d17addafcf96ac3d4103c6e8e8b4a28b851f87ffec`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:174`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/query-workflow.ts:211`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/types.ts:51`](../packages/academic/model/src/types.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:180`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/query-workflow.ts:217`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/types.ts:51`](../packages/academic/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15852,7 +15852,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:174`](../packages/acade
 
 SHA-256: `13268b9b81f32ccb4c2ae7f601225a96f8d6ce010fac046454078ea98ec8c6fe`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:289`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:295`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15878,7 +15878,7 @@ Sources: [`packages/academic/model/src/types.ts:52`](../packages/academic/model/
 
 SHA-256: `9f04f9814a7cd94f4cc7563bbabfa26bdbaa3c0a595b3178235ca74aba75993e`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:173`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:179`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15945,7 +15945,7 @@ Sources: [`packages/academic/model/src/types.ts:53`](../packages/academic/model/
 
 SHA-256: `5a2e67e0037591838bee9198a23c94ab811931d053a5a1919d68b6b9beea2631`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:330`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:336`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -15971,7 +15971,7 @@ Sources: [`packages/api/academic-research-controller/src/types.ts:368`](../packa
 
 SHA-256: `890e7c90e6ba453873ddd77715f7715de002c2d476229855c9e1c93cc35c2790`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:326`](../packages/academic/model/src/query-workflow.ts) · [`packages/api/academic-research-controller/src/types.ts:367`](../packages/api/academic-research-controller/src/types.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:332`](../packages/academic/model/src/query-workflow.ts) · [`packages/api/academic-research-controller/src/types.ts:367`](../packages/api/academic-research-controller/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16010,7 +16010,7 @@ Sources: [`packages/web/web-search-deepseek/src/provider.ts:64`](../packages/web
 
 SHA-256: `f1ff13edfef3c6b7a290c484757ef15a45484f91bdf98074e9d6e8d2554bbb77`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:286`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:292`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16149,7 +16149,7 @@ Sources: [`packages/api/academic-research-controller/src/types.ts:334`](../packa
 
 SHA-256: `ab40c66fc38b3069a5cd946aa21e65db7eeb65a76174b3fc0a6f7eb95465bf5f`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:287`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:293`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16173,7 +16173,7 @@ Sources: [`packages/academic/model/src/types.ts:127`](../packages/academic/model
 
 SHA-256: `d291d882c9b782628f4cfa9d7499b86bcdfc3e0d423eb01a3a21efbf7f4bad5b`
 
-Sources: [`packages/academic/model/src/query-workflow.ts:172`](../packages/academic/model/src/query-workflow.ts)
+Sources: [`packages/academic/model/src/query-workflow.ts:178`](../packages/academic/model/src/query-workflow.ts)
 
 | Property | Presence | Type |
 |---|---|---|

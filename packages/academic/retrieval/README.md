@@ -37,6 +37,8 @@ The optional sixth `reviewedScreenings` argument is a work-keyed map of external
 
 External review instructions must provide the exact Plan questions and scope rules, approved cues, canonical title and scholarly abstract. Distinguish actual research goals from mentions and negation, quote original text, and use `unknown` when metadata is insufficient. Judge code generation, image generation and security research against the current Plan rather than a global blacklist. Output only `schemaVersion: 1`, `signals`, `surfaceKeywordHits`, `uncertainties` and `scope`, with no scores or paper identities. The caller owns model transport, token policy and durable request/result records; this library makes no model calls.
 
+With a zero P2 floor, metadata scores only order candidates: missing cues or a low score never exclude a work. Unknown lexical scope without a contribution signal is classified as background. Approved English phrases also match a trailing regular `s` plural; other variants require explicit aliases. Date, type, retraction, approved-rule and quoted off-topic exclusions still apply. Historical policies with a positive P2 floor retain exact phrase matching and their score cutoff.
+
 ### Minimal semantic review and review selection
 
 `parseCandidateSemanticReview(text, title, abstract, approvedQuestions)` accepts the minimal judgment defined by `CandidateSemanticReviewRequestV1`/`CandidateSemanticReviewV1`: a three-state `scope` and approved-question matches whose quotations occur verbatim in the canonical title or scholarly abstract. It rejects unexpected fields, unapproved or duplicate questions, fabricated or unavailable-source quotations, and contradictory scope/question lists. Transport, timeout, truncation, and invalid JSON remain caller failures, never a model `unknown`.
@@ -53,6 +55,8 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 ```
 
 The [screening tests](tests/rank.spec.ts) provide an executable handoff with reviewed Chinese/English aliases, a one-question P0 paper, an unrelated excluded paper, and explicit missing metadata. The Controller owns terminology review, full-text resolution, integration, and logging; metadata matches do not establish evidence coverage.
+
+`selectCandidateReviews()` also accepts optional `maximumReviews` and `questions`: the batch limit cannot exceed the remaining shared budget, and prioritized questions must belong to the approved Brief. `remainingBudget` reports the shared remainder; `not_selected_budget` can mean either the current batch limit or total budget was reached. Discovery routing allocates opportunities, not evidence support.
 
 ### Entry point
 

@@ -145,6 +145,7 @@ interface SdkAssertions {
 const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
   'academic-parallel-papers': { runtimeProfile: 'sdk-minimal', expectedTools: { run_replenishment_fixture: [], read_image: ['file_path'], working_directory: [] } },
   'academic-hybrid-search': { runtimeProfile: 'sdk-minimal', expectedTools: { run_hybrid_fixture: [], read_image: ['file_path'], working_directory: [] } },
+  'academic-screening-policy': { runtimeProfile: 'sdk-minimal', expectedTools: { run_hybrid_fixture: [], read_image: ['file_path'], working_directory: [] } },
   'academic-plan-chinese': {
     runtimeProfile: 'sdk-minimal',
     environment: {
@@ -1269,16 +1270,17 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
       }
 
       // Wire-shape invariants that must hold in every mode.
-      if (['academic-replenishment', 'academic-parallel-papers', 'academic-hybrid-search'].includes(scenario.name)) {
+      if (['academic-replenishment', 'academic-parallel-papers', 'academic-hybrid-search', 'academic-screening-policy'].includes(scenario.name)) {
         const rows = ordered[0]!.content.trim().split('\n').map(line => JSON.parse(line) as {
           type: string
           data: { message: { isError?: boolean; content: { text: string }[] } }
         })
         const message = rows.find(row => row.type === 'tool/result')!.data.message
         expect(message.isError ?? false).toBe(false)
-        if (scenario.name === 'academic-hybrid-search') {
+        if (scenario.name === 'academic-hybrid-search' || scenario.name === 'academic-screening-policy') {
           expect(JSON.parse(message.content[0]!.text)).toMatchObject({
             calls: ['academic:arxiv', 'web', 'verify:acl'], titles: ['Verified fixture paper'],
+            ...scenario.name === 'academic-screening-policy' ? { rankingThresholds: { p0: 80, p1: 65, p2: 0 } } : {},
             screening: { deduplicatedWorks: 2, selectedWorks: 1, fetched: ['https://aclanthology.org/2024.acl-long.1.pdf'] },
             directProviders: ['arxiv'], hybridRetrieval: { counts: {
               academicDiscoveredRecords: 0, webDiscoveredUrls: 2, identifiedReferences: 1,

@@ -324,6 +324,7 @@ export async function runResearchDraft(
     result.status === 'extracted' || result.status === 'partially_extracted' || result.status === 'extraction_failed'
       ? result.evidence.rejectedDrafts.length : 0), 0)
   const transientExtractionFailures = new Set<WorkVersionId>()
+  const incompleteExtractionPapers = new Set<WorkVersionId>()
   let activePaperLimit = paperConcurrency
   let consecutiveTransientPapers = 0
   let consecutiveCleanPapers = 0
@@ -380,6 +381,7 @@ export async function runResearchDraft(
       let observedBatchIndex: number | null = null
       let observedBatchCount: number | null = null
       const observeEvidence = (observation: PaperEvidenceProgressObservation): void => {
+        if (observation.lastFailure !== null) incompleteExtractionPapers.add(paper.workVersionId)
         if (observation.lastFailure === 'network_error' || observation.lastFailure === 'timeout') {
           transientExtractionFailures.add(paper.workVersionId)
         }
@@ -588,13 +590,14 @@ export async function runResearchDraft(
           return candidate
         })
         const evidenceBefore = admittedEvidence.length
-        const fulltextBefore = availableFulltextWorks
+        const papersBefore = papers.length
         await processGroup(group)
         completedBatchCount += 1
-        // A failed download has not tested the evidence yield of a paper. Keep trying the
-        // remaining ranked candidates instead of treating unavailable full text as saturation.
+        const inspectedWithoutEvidence = papers.slice(papersBefore).some(paper => paper.status === 'excluded'
+          || (paper.status === 'extraction_failed' && paper.evidence.rejectedDrafts.length === 0
+            && !incompleteExtractionPapers.has(paperWorkVersionId(paper))))
         consecutiveBatchesWithoutEvidence = admittedEvidence.length > evidenceBefore ? 0
-          : availableFulltextWorks > fulltextBefore ? consecutiveBatchesWithoutEvidence + 1
+          : inspectedWithoutEvidence ? consecutiveBatchesWithoutEvidence + 1
             : consecutiveBatchesWithoutEvidence
         const settlementCoverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready',
           scheduling.policy.minimumQuestionSupportingWorks, adapters.now())
@@ -607,6 +610,23 @@ export async function runResearchDraft(
         updateQueryWorkflow({ coverage: settlementCoverage,
           settlements: [...(queryWorkflow?.settlements ?? []), settlementEvent] })
         persistCheckpoint(null)
+        if (recovery === undefined && adapters.reviewCandidates !== undefined && !paperSignal.aborted && fatal === undefined
+          && consecutiveBatchesWithoutEvidence < limits.saturationRounds
+          && scheduled.length < maxResults
+          && usableWorkIds.length < limits.maximumIncludedWorks
+          && (!limits.stopWhenEvidenceRequirementsMet || usableWorkIds.length < includedWorkTarget
+            || !settlementCoverage.evidenceRequirementsMet || !settlementCoverage.allQuestionsCovered)) {
+          const selection = await adapters.reviewCandidates(scheduling, ingested, settlementCoverage, scheduled, paperSignal)
+          if (selection.candidateScheduling === undefined) throw new Error('Candidate review requires ranked scheduling.')
+          scheduling = selection.candidateScheduling
+          const appended = reconcileSelectedPapers(selection.papers.filter(paper => !byVersion.has(paper.workVersionId)),
+            versions, selectedWorks, brief)
+          validated = [...validated, ...appended]
+          academicWorkIds = validated.map(item => item.version.academicWorkId)
+          plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+          for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
+          persistCheckpoint(null)
+        }
       }
       if (recovery?.pendingBatchIndex !== null && recovery?.pendingBatchIndex !== undefined) {
         const pendingDecision = recovery.decisions.find(decision => decision.action === 'schedule_batch'
@@ -626,11 +646,12 @@ export async function runResearchDraft(
           ranking: scheduling.ranking,
           coverage,
         })
-        const decision = planCandidateBatch({ brief, plan: scheduling.plan,
-          ranking: scheduling.ranking, coverage, policy: scheduling.policy,
-          scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
-          includedWorks: usableWorkIds.length, completedSearchRounds,
-          cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
+        const decision = planCandidateBatch({ brief: { ...brief,
+          stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, plan: scheduling.plan,
+        ranking: scheduling.ranking, coverage, policy: scheduling.policy,
+        scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
+        includedWorks: usableWorkIds.length, completedSearchRounds,
+        cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
         const decisionEvent: AcademicBatchDecisionEvent = {
           retrievalRunId,
           batchIndex: decision.action === 'schedule_batch' ? decision.batch.batchIndex : null,

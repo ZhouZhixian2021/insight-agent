@@ -1,6 +1,6 @@
 /** Bridge reviewed Session searches to the provider-neutral Academic retrieval plan. */
 import {
-  ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+  ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
   createSearchQueryId,
   isExecutableResearchBrief,
   targetIncludedWorks,
@@ -99,7 +99,7 @@ export function approvedHybridSearchHandoff(
         excludedTerms: [],
       },
       inclusionTargets: { minimum, target, maximum },
-      rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+      rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
       queries,
       citationExpansionSeeds: [],
       maximumSearchRounds: brief.stopConditions.maximumSearchRounds,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createResearchBriefId,
+import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, ACADEMIC_CANDIDATE_RANKING_POLICY_V2, createAcademicWorkId, createResearchBriefId,
   createSearchQueryId, createWorkVersionId, type AcademicWork, type ExecutableResearchBrief,
   type HybridSearchPlan, type WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingestion'
@@ -155,6 +155,27 @@ describe('scholarly metadata screening', () => {
     const facts = new Map(ingested.versions.map(version => [version.workVersionId, { status: 'resolvable' as const }]))
     return { input, facts }
   }
+
+  it('keeps low-scoring metadata and regular plural topic matches available for scope review', () => {
+    const { input, facts } = inputs('LLM-based agents for tool learning')
+    const priorityPlan = { ...plan, rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
+      constraints: { ...plan.constraints, requiredTerms: [] } }
+    const partialCriteria = { ...criteria, topic: [['LLM-based agent']], methods: [], evidence: [], contributions: [], asOfYear: 2030 }
+    const assessed = assessPlannedCandidates(priorityPlan, specializedBrief, input, partialCriteria, facts)
+    expect(assessed[0]?.topicRelevance).toBe(1)
+    const evaluation = rankPlannedCandidates(priorityPlan, specializedBrief, input, assessed).evaluations[0]!
+    expect(evaluation.score.total).toBeLessThan(50)
+    expect(evaluation.priority).toBe('p2')
+    expect(evaluation.hardFilter.status).toBe('eligible')
+    const unmatched = assessPlannedCandidates(priorityPlan, specializedBrief, input,
+      { ...partialCriteria, topic: [['unrelated concept']] }, facts)
+    expect(rankPlannedCandidates(priorityPlan, specializedBrief, input, unmatched).evaluations[0])
+      .toMatchObject({ priority: 'p2', classification: 'background' })
+    const retracted = { ...input, ingested: { ...input.ingested,
+      versions: input.ingested.versions.map(version => ({ ...version, status: 'retracted' as const })) } }
+    expect(rankPlannedCandidates(priorityPlan, specializedBrief, retracted, assessed).evaluations[0])
+      .toMatchObject({ priority: 'excluded', hardFilter: { reasons: [{ code: 'version_retracted' }] } })
+  })
 
   it('keeps a specialized one-question paper at P0 with an explained assessment', () => {
     const { input, facts } = inputs('Retrieval faithfulness', 'Retrieval evaluation improves faithfulness.', ['retrieval'])

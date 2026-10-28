@@ -155,4 +155,17 @@ describe('ranked candidate batch scheduling', () => {
     const decision = planCandidateBatch(input)
     expect(decision).toMatchObject({ action: 'stop', stop: { shouldStop: true, reason: 'saturated' } })
   })
+
+  it('preserves the cumulative candidate cap when a later ranking changes queue order', () => {
+    const base = fixture()
+    const input = { ...base, brief: { ...base.brief,
+      stopConditions: { ...base.brief.stopConditions, maximumCandidateWorks: 2 } },
+    ranking: { ...base.ranking, queues: { p0: versions.slice(2), p1: versions.slice(0, 2), p2: [], excluded: [] } },
+    scheduledWorkVersionIds: [versions[0]!], completedBatchCount: 1,
+    policy: { ...base.policy, evidenceGapBatchSize: 3 } }
+    expect(planCandidateBatch(input)).toMatchObject({ action: 'schedule_batch',
+      batch: { workVersionIds: [versions[2]] } })
+    expect(planCandidateBatch({ ...input, scheduledWorkVersionIds: [versions[0]!, versions[2]!] }))
+      .toMatchObject({ action: 'stop', stop: { reason: 'maximum_candidate_works' } })
+  })
 })

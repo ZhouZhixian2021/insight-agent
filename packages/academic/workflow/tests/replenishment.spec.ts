@@ -118,81 +118,102 @@ describe('bounded candidate replenishment', () => {
     } finally { timeout.mockRestore() }
   })
 
-  it.each([[true, false], [false, false], [true, true]] as const)('ranked batches: covered=%s failedDownloads=%s', async (coverBoth, failedDownloads) => {
-    const { input, adapters, records } = fixture()
-    const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
-    adapters.onQueryWorkflow = observation => observations.push(observation)
-    input.brief = { ...input.brief, questions: ['Compare methods', 'Identify limitations'],
-      stopConditions: { ...input.brief.stopConditions,
-        maximumCandidateWorks: 5, maximumIncludedWorks: 5, saturationRounds: 2,
-        stopWhenEvidenceRequirementsMet: true } }
-    if (failedDownloads) vi.mocked(adapters.fetcher)
-      .mockRejectedValueOnce(new Error('full text unavailable'))
-      .mockRejectedValueOnce(new Error('full text unavailable'))
-    const generate = adapters.generator
-    let extractionCall = 0
-    adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => {
-      const response = await generate(...args)
-      const questionIndex = coverBoth ? extractionCall++ : 0
-      return { ...response, evidence: response.evidence.map(draft => ({ ...draft, questionIndexes: [questionIndex] })) }
-    })
-    const queryId = createSearchQueryId()
-    const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
-      researchBriefVersion: input.brief.version,
-      constraints: { publicationWindow: input.brief.publicationWindow,
-        includedWorkTypes: input.brief.includedWorkTypes, inclusionRules: [], exclusionRules: [],
-        requiredTerms: [], excludedTerms: [] }, inclusionTargets: { minimum: 2, target: 2, maximum: 5 },
-      rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
-      queries: [{ kind: 'academic', searchQueryId: queryId, expression: 'synthetic methods', purpose: 'core',
-        questions: input.brief.questions, roundIndex: 1, providers: ['fixture'] }],
-      citationExpansionSeeds: [], maximumSearchRounds: 1 }
-    const evaluations = records.map(({ academicWork, workVersion }, index): AcademicCandidateEvaluation => ({
-      schemaVersion: 1, academicWorkId: academicWork.academicWorkId,
-      workVersionId: workVersion.workVersionId, discoveredBy: [queryId], classification: 'background',
-      hardFilter: { status: 'eligible', reasons: [] },
-      score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
-        workTypeFit: 8, sourceQuality: 7, recency: 5, fulltextAvailability: 5, total: 100 - index },
-      priority: 'p0', matchedQuestions: input.brief.questions,
-      fulltextAvailability: { status: 'resolvable' }, diversityTags: [`candidate:${index}`],
-      decisionReasons: ['fixture'],
-    }))
-    const ranking: AcademicCandidateRankingResult = { schemaVersion: 1,
-      researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
-      evaluations, queues: { p0: evaluations.map(item => item.workVersionId), p1: [], p2: [], excluded: [] },
-      limitations: [] }
-    adapters.selectPapers = ingested => ({
-      papers: ingested.versions.map(version => ({ workVersionId: version.workVersionId,
-        urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
-        extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
-      truncated: false,
-      candidateScheduling: { plan, assessments: [], ranking, policy: { initialBatchSize: 2, evidenceGapBatchSize: 1,
-        replenishmentBatchSize: 1, minimumQuestionSupportingWorks: 1 } },
-    })
-    const result = await runResearchDraft(input, adapters)
-    expect(adapters.fetcher).toHaveBeenCalledTimes(coverBoth ? failedDownloads ? 4 : 2 : 5)
-    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(coverBoth ? 2 : 5)
-    if (failedDownloads) expect(result.failures).toHaveLength(2)
-    if (coverBoth) expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
-    expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
-    expect(observations.at(-1)).toMatchObject({ status: 'settled',
-      stopDecision: { shouldStop: true, reason: coverBoth ? 'target_and_coverage_met' : 'maximum_included_works' } })
-    const coverage = observations.at(-1)?.coverage
-    if (!coverBoth) {
-      expect(coverage?.questions[0]?.status).toBe('covered')
-      expect(coverage?.questions[1]).toMatchObject({ question: 'Identify limitations',
-        status: 'uncovered', supportingWorkIds: [], evidenceIds: [], gaps: [expect.any(String)] })
+  it.each([
+    [true, false, false, false], [false, false, false, false], [true, true, false, false],
+    [true, false, true, false], [true, true, false, true],
+  ] as const)(
+    'ranked batches: covered=%s failedDownloads=%s failedExtractions=%s bounded=%s', async (
+      coverBoth, failedDownloads, failedExtractions, bounded,
+    ) => {
+      const { input, adapters, records } = fixture()
+      if (bounded) input.searches = [{ query: 'bounded', maxResults: 2, channels: ['academic'] }]
+      const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
+      adapters.onQueryWorkflow = observation => observations.push(observation)
+      input.brief = { ...input.brief, questions: ['Compare methods', 'Identify limitations'],
+        stopConditions: { ...input.brief.stopConditions,
+          maximumCandidateWorks: 5, maximumIncludedWorks: 5, saturationRounds: failedExtractions ? 1 : 2,
+          stopWhenEvidenceRequirementsMet: true } }
+      if (failedDownloads) vi.mocked(adapters.fetcher)
+        .mockRejectedValueOnce(new Error('full text unavailable'))
+        .mockRejectedValueOnce(new Error('full text unavailable'))
+      if (failedExtractions) vi.mocked(adapters.generator)
+        .mockRejectedValueOnce(new Error('model timed out'))
+        .mockRejectedValueOnce(new Error('model timed out'))
+      const generate = adapters.generator
+      let extractionCall = 0
+      adapters.generator = vi.fn<typeof adapters.generator>(async (...args) => {
+        const response = await generate(...args)
+        const questionIndex = coverBoth ? extractionCall++ : 0
+        return { ...response, evidence: response.evidence.map(draft => ({ ...draft, questionIndexes: [questionIndex] })) }
+      })
+      const queryId = createSearchQueryId()
+      const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
+        researchBriefVersion: input.brief.version,
+        constraints: { publicationWindow: input.brief.publicationWindow,
+          includedWorkTypes: input.brief.includedWorkTypes, inclusionRules: [], exclusionRules: [],
+          requiredTerms: [], excludedTerms: [] }, inclusionTargets: { minimum: 2, target: 2, maximum: 5 },
+        rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+        queries: [{ kind: 'academic', searchQueryId: queryId, expression: 'synthetic methods', purpose: 'core',
+          questions: input.brief.questions, roundIndex: 1, providers: ['fixture'] }],
+        citationExpansionSeeds: [], maximumSearchRounds: 1 }
+      const evaluations = records.map(({ academicWork, workVersion }, index): AcademicCandidateEvaluation => ({
+        schemaVersion: 1, academicWorkId: academicWork.academicWorkId,
+        workVersionId: workVersion.workVersionId, discoveredBy: [queryId], classification: 'background',
+        hardFilter: { status: 'eligible', reasons: [] },
+        score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
+          workTypeFit: 8, sourceQuality: 7, recency: 5, fulltextAvailability: 5, total: 100 - index },
+        priority: 'p0', matchedQuestions: input.brief.questions,
+        fulltextAvailability: { status: 'resolvable' }, diversityTags: [`candidate:${index}`],
+        decisionReasons: ['fixture'],
+      }))
+      const ranking: AcademicCandidateRankingResult = { schemaVersion: 1,
+        researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
+        evaluations, queues: { p0: evaluations.map(item => item.workVersionId), p1: [], p2: [], excluded: [] },
+        limitations: [] }
+      adapters.selectPapers = (ingested, effectiveBrief) => ({
+        papers: ingested.versions.slice(0, effectiveBrief.stopConditions.maximumCandidateWorks).map(version => ({
+          workVersionId: version.workVersionId, urls: [`https://example.org/${version.sourceRecords[0]!.recordId}`], sourceProvider: 'fixture',
+          extractionMethod: { method: 'fixture', methodVersion: '1' }, hasHistoricalEvidence: false })),
+        truncated: false,
+        candidateScheduling: { plan, assessments: [], ranking, policy: { initialBatchSize: 2, evidenceGapBatchSize: 1,
+          replenishmentBatchSize: 1, minimumQuestionSupportingWorks: 1 } },
+      })
+      let checkpoint: Parameters<NonNullable<DraftPipelineAdapters['onRecoveryCheckpoint']>>[0] | undefined
+      adapters.onRecoveryCheckpoint = (value) => { checkpoint = value }
+      adapters.reviewCandidates = vi.fn<NonNullable<DraftPipelineAdapters['reviewCandidates']>>(async (scheduling) => {
+        expect(checkpoint?.pendingBatchIndex).toBeNull()
+        expect(checkpoint?.completedBatchCount).toBeGreaterThan(0)
+        return { papers: [], truncated: false, candidateScheduling: scheduling }
+      })
+      const result = await runResearchDraft(input, adapters)
+      expect(adapters.fetcher).toHaveBeenCalledTimes(bounded ? 2 : coverBoth ? failedDownloads || failedExtractions ? 4 : 2 : 5)
+      expect(result.retrievalRun.coverageSummary.includedWorks).toBe(bounded ? 0 : coverBoth ? 2 : 5)
+      if (failedDownloads || failedExtractions) expect(result.failures).toHaveLength(2)
+      expect(adapters.reviewCandidates).toHaveBeenCalledTimes(
+        bounded ? 0 : coverBoth ? failedDownloads || failedExtractions ? 2 : 0 : 3)
+      if (coverBoth && !bounded) expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('desired inclusion target')
+      expect(observations[0]).toMatchObject({ sequence: 0, status: 'running', coverage: null })
+      expect(observations.at(-1)).toMatchObject({ status: 'settled',
+        stopDecision: { shouldStop: true,
+          reason: bounded ? 'maximum_candidate_works' : coverBoth ? 'target_and_coverage_met' : 'maximum_included_works' } })
+      if (bounded) return
+      const coverage = observations.at(-1)?.coverage
+      if (!coverBoth) {
+        expect(coverage?.questions[0]?.status).toBe('covered')
+        expect(coverage?.questions[1]).toMatchObject({ question: 'Identify limitations',
+          status: 'uncovered', supportingWorkIds: [], evidenceIds: [], gaps: [expect.any(String)] })
+        expect(result.queryWorkflow).toEqual(observations.at(-1))
+        return
+      }
+      expect(coverage?.questions).toEqual([
+        expect.objectContaining({ question: 'Compare methods', status: 'covered' }),
+        expect.objectContaining({ question: 'Identify limitations', status: 'covered' }),
+      ])
+      expect(coverage?.questions[0]?.evidenceIds).toHaveLength(1)
+      expect(coverage?.questions[1]?.evidenceIds).toHaveLength(1)
+      expect(coverage?.questions[0]?.evidenceIds).not.toEqual(coverage?.questions[1]?.evidenceIds)
       expect(result.queryWorkflow).toEqual(observations.at(-1))
-      return
-    }
-    expect(coverage?.questions).toEqual([
-      expect.objectContaining({ question: 'Compare methods', status: 'covered' }),
-      expect.objectContaining({ question: 'Identify limitations', status: 'covered' }),
-    ])
-    expect(coverage?.questions[0]?.evidenceIds).toHaveLength(1)
-    expect(coverage?.questions[1]?.evidenceIds).toHaveLength(1)
-    expect(coverage?.questions[0]?.evidenceIds).not.toEqual(coverage?.questions[1]?.evidenceIds)
-    expect(result.queryWorkflow).toEqual(observations.at(-1))
-  })
+    })
 
   it('resumes a pending ranked batch without repeating retrieval or screening', async () => {
     const { input, adapters, records } = fixture()

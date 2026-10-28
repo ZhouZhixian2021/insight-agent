@@ -37,6 +37,8 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion: 1`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
 
+P2 下限为零时，元数据分数只决定候选顺序：缺少线索或低分不会排除论文。没有贡献信号且词项范围未知的候选归为背景。已批准英文短语也匹配末尾加 `s` 的规则复数；其他变体仍需明确别名。日期、类型、撤稿、批准规则及附原文的偏题排除继续生效。P2 下限为正的历史策略保持精确短语匹配和评分门槛。
+
 ### 最小语义审核与送审选择
 
 `parseCandidateSemanticReview(text, title, abstract, approvedQuestions)` 接受 `CandidateSemanticReviewRequestV1`／`CandidateSemanticReviewV1` 定义的最小判断：三态 `scope` 以及引文逐字出现在规范标题或学术摘要中的已批准问题匹配。它拒绝额外字段、未批准或重复问题、捏造或来源不可用的引文，以及自相矛盾的范围结论与问题列表。传输失败、超时、截断和无效 JSON 仍属调用方失败，不会变成模型的 `unknown`。
@@ -53,6 +55,8 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 ```
 
 [初筛测试](tests/rank.spec.ts)提供可执行交接样例，包含已审核中英文别名、只匹配一个问题的 P0 论文、无关排除论文，以及明确缺失的元数据。Controller 负责术语审核、全文解析、接入与日志；元数据匹配不代表证据覆盖。
+
+`selectCandidateReviews()` 还接受可选的 `maximumReviews` 和 `questions`：批次上限不能超过剩余共享预算，优先问题必须属于已批准 Brief。`remainingBudget` 报告共享剩余额度；`not_selected_budget` 可以表示本批上限或总预算已经达到。发现路由只分配审核机会，不代表证据支持。
 
 ### 入口
 
