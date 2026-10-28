@@ -103,7 +103,9 @@ function fileExistsAt(repo, ref, path) {
  */
 function changedPaths(repo, base) {
   const mergeBase = git(repo, ['merge-base', base, 'HEAD']).trim()
-  if (!mergeBase) throw new Error(`no merge base with ${base}`)
+  if (!mergeBase) {
+    throw new Error(`no merge base with ${base}; fetch its full history (--filter=blob:none), not a --depth=1 clone`)
+  }
   const raw = git(repo, ['diff', '--name-status', '-M', mergeBase, 'HEAD'])
   const modified = new Set()
   const added = new Set()
