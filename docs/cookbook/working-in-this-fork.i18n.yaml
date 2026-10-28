@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for working-in-this-fork.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cookbook/working-in-this-fork.md
+/working-in-this-fork:
+  en: b4e93538d0ee6d9e
+  zh: 3e39ecbb3897e494
+/working-in-this-fork/1-classify-the-file-before-editing-it:
+  en: 3d9eb230a92bbfde
+  zh: 5e56a6c3f1185217
+/working-in-this-fork/2-keep-new-behavior-in-added-files:
+  en: c4b24115c23cdc7b
+  zh: 63b835000e6975a7
+/working-in-this-fork/3-never-hand-edit-a-generated-artifact:
+  en: df21cbf679b2870b
+  zh: fdae784b59d20232
+/working-in-this-fork/4-register-every-upstream-rewrite:
+  en: 58e7546133bd3446
+  zh: b88d8fe2d2ddbd5d
+/working-in-this-fork/5-respect-the-structural-constraints:
+  en: 743af83307d4a01b
+  zh: 41e3b5091bebc67d
+/working-in-this-fork/6-add-ci-checks-as-their-own-workflow:
+  en: 8378b9f17d3c45c3
+  zh: 080c63e54356c6fd
+/working-in-this-fork/7-documentation-is-bilingual:
+  en: 2e5dfc3dbd1ec40b
+  zh: c3c18d841ac86d26
+/working-in-this-fork/8-cite-releases-not-commit-hashes:
+  en: 1483c66e86163d41
+  zh: 1e2c94cf3ad15f58
+/working-in-this-fork/9-install-before-trusting-a-type-error:
+  en: 78067d3537505761
+  zh: f42bd5a7a30e7cca
+/working-in-this-fork/10-verify-with-the-same-gates-ci-runs:
+  en: 3c31233bfad47775
+  zh: 6ecdc94272bd9dd2
+/working-in-this-fork/upgrading-upstream:
+  en: 79386ebf0c5faa90
+  zh: eac3d067d3b87ed6
