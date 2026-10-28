@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write scripts/upgrade/README.md
+/upstream-overrides-and-generated-artifact-replay:
+  en: 97eb91d53e31b196
+  zh: 1cb35ac52469f9ea
+/upstream-overrides-and-generated-artifact-replay/why-it-exists:
+  en: a7a72fb38da9ebce
+  zh: d7ecd46a7a74be26
+/upstream-overrides-and-generated-artifact-replay/everyday-commands:
+  en: 56ce2752a1bd0f47
+  zh: 5605003746d81f40
+/upstream-overrides-and-generated-artifact-replay/predicting-the-next-upgrade:
+  en: 4cf5198db58bd638
+  zh: 91a4459f706aa1cf
+/upstream-overrides-and-generated-artifact-replay/using-it-during-an-upgrade:
+  en: a9e6c3722dbfc8f7
+  zh: 4e2687d6d3b7ef7c
+/upstream-overrides-and-generated-artifact-replay/adding-a-rewrite:
+  en: 3f8339dc50519766
+  zh: 280e0fd16081be37
+/upstream-overrides-and-generated-artifact-replay/generated-artifacts:
+  en: eb34ca536da823d1
+  zh: 645c0b73b011d878

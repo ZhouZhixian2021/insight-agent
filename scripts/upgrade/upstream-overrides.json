@@ -1,0 +1,1593 @@
+{
+  "schemaVersion": 2,
+  "upstream": {
+    "remote": "https://github.com/deepseek-ai/deepseek-harness.git",
+    "baseline": "dsh-v0.2.1-rc.2",
+    "recordedAt": "2026-10-28"
+  },
+  "budget": {
+    "maxForkFiles": 129
+  },
+  "generatedExemptions": [
+    "pnpm-lock.yaml",
+    "docs/persistence-schema.json"
+  ],
+  "note": "有意改写上游文件的登记表。owner/reason 必填；fork 数量只降不升；generated 条目不参与预算。",
+  "entries": [
+    {
+      "path": ".agents/notes/implemented/architecture/2026-06-24-web-capability-seam.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 032eef079789cb48",
+      "addedLines": 8,
+      "removedLines": 8,
+      "upstreamChurn6mo": 24
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 4,
+      "removedLines": 4,
+      "upstreamChurn6mo": 14
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-06-24-web-capability-seam.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 4,
+      "removedLines": 4,
+      "upstreamChurn6mo": 20
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 1bb5b8dc958eda92",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 21
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Built-process replay fixtures keep their own TypeScript erasable",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 15
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：构建进程的回放夹具保持自身 TypeScript 可擦除，并通过包入口导入工作流实现。[Academic 补检夹具](../..",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 20
+    },
+    {
+      "path": ".agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: b1be4b7de2a2d35c",
+      "addedLines": 4,
+      "removedLines": 4,
+      "upstreamChurn6mo": 5
+    },
+    {
+      "path": ".agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Maintained tracked paths and text must not contain that token in",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": ".agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：在明确排除范围之外的未登记匹配项会使 `doc-sync` 失败，并报告对应路径或行号。审查仍需先判断预期含义再选择替代名称；通",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": ".agents/notes/implemented/testing/2026-06-19-real-api-e2e-ci.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: ae9646826fab9f7e",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 19
+    },
+    {
+      "path": ".agents/notes/implemented/testing/2026-06-19-real-api-e2e-ci.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：GitHub withholds repo secrets from two kinds of PR: those whose ",
+      "addedLines": 3,
+      "removedLines": 2,
+      "upstreamChurn6mo": 11
+    },
+    {
+      "path": ".agents/notes/implemented/testing/2026-06-19-real-api-e2e-ci.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：GitHub 对两类 PR 扣留 repo secret：head 位于**另一仓库**的 PR，以及 **Dependabot",
+      "addedLines": 3,
+      "removedLines": 2,
+      "upstreamChurn6mo": 14
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：登记学术包与预设",
+      "addedLines": 14,
+      "removedLines": 7,
+      "upstreamChurn6mo": 272
+    },
+    {
+      "path": ".github/workflows/e2e.yml",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：登记学术包与预设",
+      "addedLines": 7,
+      "removedLines": 4,
+      "upstreamChurn6mo": 40
+    },
+    {
+      "path": ".gitignore",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "其他：学术能力接入",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 39
+    },
+    {
+      "path": "AGENTS.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：academic/ academic research",
+      "addedLines": 3,
+      "removedLines": 2,
+      "upstreamChurn6mo": 304
+    },
+    {
+      "path": "apps/cli/tests/profiles/acp/tests/acp.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：学术能力接入",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "apps/cli/tests/profiles/acp/tests/escalation.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：学术能力接入",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "apps/cli/tests/profiles/acp/tests/hooks.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：学术能力接入",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/goal-snapshot.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：inject: [sessionPersistence]",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/retry-snapshot.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：inject: [sessionPersistence]",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/subagent-settlement-snapshot.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：inject: [sessionPersistence]",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/team-snapshot.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：inject: [sessionPersistence]",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/tests/fixtures/cli.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：inject: [sessionPersistence]",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "apps/cli/tests/profiles/headless/tests/headless.expected.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：const retryTrace = parseJsonl(result.stdout)",
+      "addedLines": 44,
+      "removedLines": 4,
+      "upstreamChurn6mo": 44
+    },
+    {
+      "path": "apps/cli/tests/web-agent-presets.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：reviews consecutive academic plans with the working directory in runtime context",
+      "addedLines": 110,
+      "removedLines": 1,
+      "upstreamChurn6mo": 105
+    },
+    {
+      "path": "apps/web/tests/agent-preset-selection.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：expect(snapshot).toContain('Academic insight')",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 59
+    },
+    {
+      "path": "apps/web/tests/expected/agent-preset-selection/menu.expected.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：menuitem \"Academic insight Research agent for technical frontier",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 12
+    },
+    {
+      "path": "apps/web/tests/plan-review.e2e.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：academic concise approval browser flow",
+      "addedLines": 54,
+      "removedLines": 1,
+      "upstreamChurn6mo": 26
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：登记学术包与预设",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 209
+    },
+    {
+      "path": "docs/AGENTS.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Use relative Markdown links for current files and tags or PR num",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 76
+    },
+    {
+      "path": "docs/capability-seams.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: c3538ffe2c5ae475",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 107
+    },
+    {
+      "path": "docs/capability-seams.md",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：svc_academicResearchController[\"ctx.academicResearchController<b",
+      "addedLines": 11,
+      "removedLines": 0,
+      "upstreamChurn6mo": 215
+    },
+    {
+      "path": "docs/capability-seams.zh.md",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：svc_academicResearchController[\"ctx.academicResearchController<b",
+      "addedLines": 11,
+      "removedLines": 0,
+      "upstreamChurn6mo": 108
+    },
+    {
+      "path": "docs/config-catalog.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 223,
+      "removedLines": 0,
+      "upstreamChurn6mo": 1273
+    },
+    {
+      "path": "docs/config-catalog.zh.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 223,
+      "removedLines": 0,
+      "upstreamChurn6mo": 656
+    },
+    {
+      "path": "docs/event-producer-consumer.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 3,
+      "removedLines": 3,
+      "upstreamChurn6mo": 632
+    },
+    {
+      "path": "docs/event-producer-consumer.zh.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 3,
+      "removedLines": 3,
+      "upstreamChurn6mo": 294
+    },
+    {
+      "path": "docs/module-graph.md",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：subgraph group_academic[\"packages/academic\"]",
+      "addedLines": 82,
+      "removedLines": 0,
+      "upstreamChurn6mo": 666
+    },
+    {
+      "path": "docs/module-graph.zh.md",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：subgraph group_academic[\"packages/academic\"]",
+      "addedLines": 82,
+      "removedLines": 0,
+      "upstreamChurn6mo": 352
+    },
+    {
+      "path": "docs/persistence-catalog.i18n.yaml",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "配置：en: 5a44e069bb7d9a70",
+      "addedLines": 2362,
+      "removedLines": 331,
+      "upstreamChurn6mo": 199
+    },
+    {
+      "path": "docs/persistence-catalog.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 12419,
+      "removedLines": 3608,
+      "upstreamChurn6mo": 331
+    },
+    {
+      "path": "docs/persistence-catalog.zh.md",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 12419,
+      "removedLines": 3608,
+      "upstreamChurn6mo": 197
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: faa69f53072b02b0",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 33
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 32
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 32
+    },
+    {
+      "path": "docs/persistence-schema.json",
+      "category": "generated",
+      "owner": "Yzyhello",
+      "reason": "配置：新增 key",
+      "addedLines": 53101,
+      "removedLines": 12962,
+      "upstreamChurn6mo": 89
+    },
+    {
+      "path": "docs/subsystems/plan.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 1448628417f93867",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 25
+    },
+    {
+      "path": "docs/subsystems/plan.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 10,
+      "removedLines": 1,
+      "upstreamChurn6mo": 21
+    },
+    {
+      "path": "docs/subsystems/plan.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 10,
+      "removedLines": 1,
+      "upstreamChurn6mo": 24
+    },
+    {
+      "path": "docs/subsystems/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 95f7c312c72a9260",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 58
+    },
+    {
+      "path": "docs/subsystems/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 52
+    },
+    {
+      "path": "docs/subsystems/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 58
+    },
+    {
+      "path": "docs/subsystems/web.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 9b2943e2f479d2ce",
+      "addedLines": 4,
+      "removedLines": 4,
+      "upstreamChurn6mo": 22
+    },
+    {
+      "path": "docs/subsystems/web.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 18,
+      "removedLines": 6,
+      "upstreamChurn6mo": 18
+    },
+    {
+      "path": "docs/subsystems/web.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 18,
+      "removedLines": 6,
+      "upstreamChurn6mo": 21
+    },
+    {
+      "path": "docs/testing.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 0e6c8c9df6054b5b",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 69
+    },
+    {
+      "path": "docs/testing.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 90
+    },
+    {
+      "path": "docs/testing.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 68
+    },
+    {
+      "path": "package.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：新增 duplication",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 353
+    },
+    {
+      "path": "packages/api/remotes/package.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：登记学术包与预设",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 96
+    },
+    {
+      "path": "packages/api/remotes/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 268929960cd83e15",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 37
+    },
+    {
+      "path": "packages/api/remotes/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：The Client assembly mounts Academic research, Office conversion,",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 33
+    },
+    {
+      "path": "packages/api/remotes/src/client/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：import academicResearchRemote from '@deepseek-ai/dsh-api-academi",
+      "addedLines": 3,
+      "removedLines": 1,
+      "upstreamChurn6mo": 57
+    },
+    {
+      "path": "packages/api/remotes/tsconfig.client.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：新增 path",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 36
+    },
+    {
+      "path": "packages/bundle/web-app/cordis.patch.yml",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：config:",
+      "addedLines": 72,
+      "removedLines": 0,
+      "upstreamChurn6mo": 161
+    },
+    {
+      "path": "packages/bundle/web-app/package.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：登记学术包与预设",
+      "addedLines": 13,
+      "removedLines": 2,
+      "upstreamChurn6mo": 151
+    },
+    {
+      "path": "packages/bundle/web-app/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: b80099a314656fde",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 75
+    },
+    {
+      "path": "packages/bundle/web-app/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：The Academic preset is a declarative `dsh-agent-preset` row in `",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 70
+    },
+    {
+      "path": "packages/bundle/web-app/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：学术预设是 `presets/academic.patch.yml` 中的声明式 `dsh-agent-preset` 条目。其",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 73
+    },
+    {
+      "path": "packages/client/ui-agent-preset/src/client/locales.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：接入学术能力",
+      "addedLines": 6,
+      "removedLines": 0,
+      "upstreamChurn6mo": 47
+    },
+    {
+      "path": "packages/client/ui-theme/tests/expected/radius-exceptions.expected.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：覆盖学术场景",
+      "addedLines": 4,
+      "removedLines": 0,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "packages/client/ui-user-questions/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 029c634137b7051f",
+      "addedLines": 4,
+      "removedLines": 4,
+      "upstreamChurn6mo": 28
+    },
+    {
+      "path": "packages/client/ui-user-questions/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Academic review bodies containing the six concise Chinese decisi",
+      "addedLines": 4,
+      "removedLines": 0,
+      "upstreamChurn6mo": 25
+    },
+    {
+      "path": "packages/client/ui-user-questions/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：学术审批正文包含六个简洁中文决策标签时，界面将标签分为独立段落，不截断范围或改变待审批计划。审批卡提供本地化修改框；提交非空自然",
+      "addedLines": 4,
+      "removedLines": 0,
+      "upstreamChurn6mo": 27
+    },
+    {
+      "path": "packages/client/ui-user-questions/src/client/locales.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：接入学术能力",
+      "addedLines": 15,
+      "removedLines": 1,
+      "upstreamChurn6mo": 13
+    },
+    {
+      "path": "packages/client/ui-user-questions/src/client/PlanReviewPanel.module.css",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "样式：学术界面调整",
+      "addedLines": 43,
+      "removedLines": 0,
+      "upstreamChurn6mo": 9
+    },
+    {
+      "path": "packages/client/ui-user-questions/src/client/PlanReviewPanel.tsx",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 handoff",
+      "addedLines": 55,
+      "removedLines": 7,
+      "upstreamChurn6mo": 16
+    },
+    {
+      "path": "packages/client/ui-user-questions/tests/plan-review-panel.client.spec.tsx",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：folds the academic handoff while preserving readable scope and the original appr",
+      "addedLines": 73,
+      "removedLines": 2,
+      "upstreamChurn6mo": 45
+    },
+    {
+      "path": "packages/core/session/src/known-event-types.ts",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：接入学术能力",
+      "addedLines": 22,
+      "removedLines": 0,
+      "upstreamChurn6mo": 31
+    },
+    {
+      "path": "packages/experimental/client-ui-cot-translation/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：学术能力接入",
+      "addedLines": 0,
+      "removedLines": 1,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "packages/extensions/cordis-client-runner/src/client/slot-catalog.ts",
+      "category": "generated",
+      "owner": "ykxy11",
+      "reason": "源码：keyDomain: 'fixed by the owner\\'s key table { [Kind in ChatNodeK",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 224
+    },
+    {
+      "path": "packages/extensions/tool-cordis/src/api-catalog.ts",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：新增 AcademicBackgroundRunCancelRequest",
+      "addedLines": 687,
+      "removedLines": 3,
+      "upstreamChurn6mo": 537
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: dd9d0db5b84767eb",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 123
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Transport and timeout failures record call-local bounded diagnos",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 137
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：传输或超时失败会记录调用独立的有界诊断，包括失败阶段、错误与原因码，以及可用的 HTTP 状态和请求 ID；不记录凭据、请求正文",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 120
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/src/adapter.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 transport",
+      "addedLines": 29,
+      "removedLines": 0,
+      "upstreamChurn6mo": 65
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：onTransportDiagnostic: (detail) => {",
+      "addedLines": 3,
+      "removedLines": 0,
+      "upstreamChurn6mo": 52
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/tests/adapter.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：reports the fetch cause separately from the user-visible transport failure",
+      "addedLines": 24,
+      "removedLines": 0,
+      "upstreamChurn6mo": 81
+    },
+    {
+      "path": "packages/plan/plan-mode/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: fe62fdc51a40bc92",
+      "addedLines": 12,
+      "removedLines": 12,
+      "upstreamChurn6mo": 36
+    },
+    {
+      "path": "packages/plan/plan-mode/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Tool results persist the explicit `approved` decision in metadat",
+      "addedLines": 16,
+      "removedLines": 6,
+      "upstreamChurn6mo": 36
+    },
+    {
+      "path": "packages/plan/plan-mode/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：工具结果在元数据中保存明确的 `approved` 决定。学术消费者要求 `approved: true`；放弃评审或缺少该元数",
+      "addedLines": 14,
+      "removedLines": 4,
+      "upstreamChurn6mo": 35
+    },
+    {
+      "path": "packages/plan/plan-mode/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：新增 resolveConfig",
+      "addedLines": 103,
+      "removedLines": 9,
+      "upstreamChurn6mo": 45
+    },
+    {
+      "path": "packages/plan/plan-mode/src/types.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：接入学术能力",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "packages/plan/plan-mode/tests/integration.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：reviews successive human requests in one session without replanning approved con",
+      "addedLines": 110,
+      "removedLines": 3,
+      "upstreamChurn6mo": 33
+    },
+    {
+      "path": "packages/plan/plan-mode/tests/plan-mode.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：accepts an explicit initial mode and rejects a non-boolean value",
+      "addedLines": 78,
+      "removedLines": 2,
+      "upstreamChurn6mo": 60
+    },
+    {
+      "path": "packages/preset/agent-preset-registry/src/display.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：接入学术能力",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 1
+    },
+    {
+      "path": "packages/preset/agent-preset-registry/tests/display.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：resolves the shipped academic preset through its dictionary keys",
+      "addedLines": 7,
+      "removedLines": 0,
+      "upstreamChurn6mo": 1
+    },
+    {
+      "path": "packages/preset/agent-preset/skills/cordis-composition-reference/references/packages.md",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 13,
+      "removedLines": 0,
+      "upstreamChurn6mo": 43
+    },
+    {
+      "path": "packages/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 75761f4a4e23dc2a",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 91
+    },
+    {
+      "path": "packages/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 181
+    },
+    {
+      "path": "packages/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：补充学术行为说明",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 82
+    },
+    {
+      "path": "packages/session/session-format-catalog/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 98514c3d18e77ad7",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 17
+    },
+    {
+      "path": "packages/session/session-format-catalog/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Historical V2 child reads use the adjacent migration chain befor",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 15
+    },
+    {
+      "path": "packages/session/session-format-catalog/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：读取历史 V2 子 Session 时，会先通过相邻迁移链，再收集前置事实。此已转换路径接纳经过审计的 T0 学术事件及已校验序",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 16
+    },
+    {
+      "path": "packages/session/session-format-catalog/src/historical.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 convertedTypes",
+      "addedLines": 4,
+      "removedLines": 2,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/package.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：新增 zod",
+      "addedLines": 2,
+      "removedLines": 1,
+      "upstreamChurn6mo": 31
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 72b5a93c8fb44d14",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 17
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：The incoming edge also admits the fixed T0 academic inventory in",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 15
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：该入站边还接纳 [`src/academic-schema.ts`](src/academic-schema.ts) 中固定的 ",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 16
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：export * from './academic.ts'",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/src/migration.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 academic",
+      "addedLines": 6,
+      "removedLines": 2,
+      "upstreamChurn6mo": 7
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/tests/migration.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：it.each([{ approved: true }, { approved: false }, { approved: un",
+      "addedLines": 51,
+      "removedLines": 0,
+      "upstreamChurn6mo": 9
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 5592e2795c0f61e2",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 28
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Academic events from V2→V3 are admitted here only as transformed",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 27
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：只有当本边收到前序 V2→V3 迁移链生成的已转换输入时，才接纳其中的学术事件。本边会重新校验固定载荷，通过 V3→V4 映射迁",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 27
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/src/migration.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 remapped",
+      "addedLines": 8,
+      "removedLines": 1,
+      "upstreamChurn6mo": 14
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/tests/migration.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：it.each([{ approved: true }, { approved: false }, { approved: un",
+      "addedLines": 50,
+      "removedLines": 0,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "packages/terminal/terminal-bash/tests/local.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：await expect.poll(() => existsSync(readerPidFile), { timeout: 8_",
+      "addedLines": 5,
+      "removedLines": 1,
+      "upstreamChurn6mo": 30
+    },
+    {
+      "path": "packages/test-support/session-snapshot/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 3e2b7c52d783dbdc",
+      "addedLines": 8,
+      "removedLines": 8,
+      "upstreamChurn6mo": 51
+    },
+    {
+      "path": "packages/test-support/session-snapshot/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Academic extraction and synthesis result streams normalize their",
+      "addedLines": 9,
+      "removedLines": 1,
+      "upstreamChurn6mo": 49
+    },
+    {
+      "path": "packages/test-support/session-snapshot/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：传入 `corpusRoot` 的 ACP 套件可通过 `systemPromptSource` 或 `toolSchemasS",
+      "addedLines": 9,
+      "removedLines": 1,
+      "upstreamChurn6mo": 49
+    },
+    {
+      "path": "packages/test-support/session-snapshot/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：export {",
+      "addedLines": 3,
+      "removedLines": 0,
+      "upstreamChurn6mo": 17
+    },
+    {
+      "path": "packages/test-support/session-snapshot/src/normalize.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 data",
+      "addedLines": 7,
+      "removedLines": 1,
+      "upstreamChurn6mo": 33
+    },
+    {
+      "path": "packages/test-support/session-snapshot/src/suite.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：新增 resolveCorpusSidecarSource",
+      "addedLines": 154,
+      "removedLines": 59,
+      "upstreamChurn6mo": 23
+    },
+    {
+      "path": "packages/test-support/session-snapshot/tests/normalize.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：it.each(['assistant/attempt', 'academic/evidence-result', 'acade",
+      "addedLines": 8,
+      "removedLines": 2,
+      "upstreamChurn6mo": 35
+    },
+    {
+      "path": "packages/web/tool-web/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: a7794605b56fba54",
+      "addedLines": 8,
+      "removedLines": 8,
+      "upstreamChurn6mo": 32
+    },
+    {
+      "path": "packages/web/tool-web/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：Call `web_fetch` with one `url`. HTML bodies are filtered and re",
+      "addedLines": 4,
+      "removedLines": 3,
+      "upstreamChurn6mo": 45
+    },
+    {
+      "path": "packages/web/tool-web/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：用一个 `url` 调用 `web_fetch`。HTML 主体经过过滤后渲染为 markdown（含 GFM 表格与删除线）；",
+      "addedLines": 4,
+      "removedLines": 3,
+      "upstreamChurn6mo": 30
+    },
+    {
+      "path": "packages/web/tool-web/src/fetch.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：import { WebError, type WebFetchBody, type WebFetchResult } from",
+      "addedLines": 7,
+      "removedLines": 3,
+      "upstreamChurn6mo": 28
+    },
+    {
+      "path": "packages/web/tool-web/tests/tool-web.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：does not render PDF bytes into model-facing output",
+      "addedLines": 27,
+      "removedLines": 0,
+      "upstreamChurn6mo": 31
+    },
+    {
+      "path": "packages/web/web-fetch-http/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 6547dc704ce2eec6",
+      "addedLines": 14,
+      "removedLines": 14,
+      "upstreamChurn6mo": 13
+    },
+    {
+      "path": "packages/web/web-fetch-http/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：description: \"The anonymous public HTTP(S) fetch backend for ctx",
+      "addedLines": 8,
+      "removedLines": 8,
+      "upstreamChurn6mo": 10
+    },
+    {
+      "path": "packages/web/web-fetch-http/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：description: \"ctx.web 的匿名公共 HTTP(S) 抓取后端：有界、安全的 URL 抓取，含同源重定向、文本",
+      "addedLines": 8,
+      "removedLines": 8,
+      "upstreamChurn6mo": 12
+    },
+    {
+      "path": "packages/web/web-fetch-http/src/policy.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "源码：新增 FetchableKind",
+      "addedLines": 7,
+      "removedLines": 5,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "packages/web/web-fetch-http/src/provider.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "源码：接入学术能力",
+      "addedLines": 13,
+      "removedLines": 3,
+      "upstreamChurn6mo": 10
+    },
+    {
+      "path": "packages/web/web-fetch-http/tests/fetch-http.spec.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "测试：fetches a PDF body without decoding its bytes",
+      "addedLines": 7,
+      "removedLines": 0,
+      "upstreamChurn6mo": 7
+    },
+    {
+      "path": "packages/web/web/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：en: 11edc4165e7a1da7",
+      "addedLines": 14,
+      "removedLines": 14,
+      "upstreamChurn6mo": 21
+    },
+    {
+      "path": "packages/web/web/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：A composition that needs web access loads the `dsh-web` service ",
+      "addedLines": 11,
+      "removedLines": 6,
+      "upstreamChurn6mo": 25
+    },
+    {
+      "path": "packages/web/web/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：需要 web 访问的组合会加载 `dsh-web` 服务并挂载至少一个后端——搜索提供方和／或抓取提供方——插件或工具作者随后直",
+      "addedLines": 13,
+      "removedLines": 6,
+      "upstreamChurn6mo": 19
+    },
+    {
+      "path": "packages/web/web/src/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：新增 WebFetchExecutionOptions",
+      "addedLines": 13,
+      "removedLines": 2,
+      "upstreamChurn6mo": 13
+    },
+    {
+      "path": "packages/web/web/src/types.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "源码：接入学术能力",
+      "addedLines": 4,
+      "removedLines": 3,
+      "upstreamChurn6mo": 11
+    },
+    {
+      "path": "packages/web/web/tests/web.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试：uses a call-scoped fetch provider without changing the deployment default",
+      "addedLines": 19,
+      "removedLines": 0,
+      "upstreamChurn6mo": 7
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "category": "generated",
+      "owner": "ykxy11",
+      "reason": "配置：devDependencies:",
+      "addedLines": 385,
+      "removedLines": 0,
+      "upstreamChurn6mo": 1303
+    },
+    {
+      "path": "scripts/check-workspace-constraints.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 1,
+      "removedLines": 1,
+      "upstreamChurn6mo": 161
+    },
+    {
+      "path": "scripts/ci-workflow.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 ci",
+      "addedLines": 56,
+      "removedLines": 1,
+      "upstreamChurn6mo": 153
+    },
+    {
+      "path": "scripts/client-build-environment.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：maxBuffer: 16 * 1024 * 1024,",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 7
+    },
+    {
+      "path": "scripts/cordis-config-files.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 root",
+      "addedLines": 18,
+      "removedLines": 2,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "scripts/cordis-config-files.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "scripts/coverage-exempt.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 3,
+      "removedLines": 0,
+      "upstreamChurn6mo": 14
+    },
+    {
+      "path": "scripts/coverage-uncovered-locations.cjs",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 uncoveredRecords",
+      "addedLines": 41,
+      "removedLines": 37,
+      "upstreamChurn6mo": 3
+    },
+    {
+      "path": "scripts/doc-standard.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 8,
+      "removedLines": 0,
+      "upstreamChurn6mo": 32
+    },
+    {
+      "path": "scripts/gen-cordis-catalog.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：在 SERVICE_PAGE 与 LINK_MAP 中登记学术页面和类型",
+      "addedLines": 29,
+      "removedLines": 0,
+      "upstreamChurn6mo": 378
+    },
+    {
+      "path": "scripts/gen-doc-graphs.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：在 SERVICE_ROLES 中登记 academicResearchController 与 academicSource",
+      "addedLines": 22,
+      "removedLines": 0,
+      "upstreamChurn6mo": 292
+    },
+    {
+      "path": "scripts/no-unknown-casts.baseline.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 9,
+      "removedLines": 0,
+      "upstreamChurn6mo": 71
+    },
+    {
+      "path": "scripts/persistence-epoch-header.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 timeout",
+      "addedLines": 6,
+      "removedLines": 1,
+      "upstreamChurn6mo": 2
+    },
+    {
+      "path": "scripts/project-doc-site.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 linked",
+      "addedLines": 10,
+      "removedLines": 3,
+      "upstreamChurn6mo": 47
+    },
+    {
+      "path": "scripts/session-snapshot-corpus.corpus.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 oracleRoot",
+      "addedLines": 12,
+      "removedLines": 0,
+      "upstreamChurn6mo": 17
+    },
+    {
+      "path": "scripts/type-equiv.manifest.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 5,
+      "removedLines": 0,
+      "upstreamChurn6mo": 296
+    },
+    {
+      "path": "scripts/verify-client-ui-i18n.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 safe",
+      "addedLines": 22,
+      "removedLines": 0,
+      "upstreamChurn6mo": 4
+    },
+    {
+      "path": "scripts/verify-client-ui-i18n.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 markup",
+      "addedLines": 18,
+      "removedLines": 1,
+      "upstreamChurn6mo": 5
+    },
+    {
+      "path": "scripts/verify-concrete-terms.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：import { checkRetainedDocumentFindings } from './retained-docume",
+      "addedLines": 7,
+      "removedLines": 3,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "scripts/verify-cordis-config.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 configFixture",
+      "addedLines": 149,
+      "removedLines": 3,
+      "upstreamChurn6mo": 8
+    },
+    {
+      "path": "scripts/verify-cordis-config.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 verifyCordisConfigs",
+      "addedLines": 133,
+      "removedLines": 90,
+      "upstreamChurn6mo": 43
+    },
+    {
+      "path": "scripts/verify-node-next-types.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "脚本：symlinkSync(pkg.dir, link, process.platform === 'win32' ? 'junct",
+      "addedLines": 2,
+      "removedLines": 2,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "scripts/verify-package-readme-model-experience.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：扩展以收录学术包",
+      "addedLines": 9,
+      "removedLines": 0,
+      "upstreamChurn6mo": 240
+    },
+    {
+      "path": "scripts/verify-repository-references.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 fixture",
+      "addedLines": 34,
+      "removedLines": 0,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "scripts/verify-repository-references.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "脚本：新增 retainedCommitCandidates",
+      "addedLines": 45,
+      "removedLines": 15,
+      "upstreamChurn6mo": 6
+    },
+    {
+      "path": "snapshots/acp/acp.snapshot.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "源码：修改 systemPromptSource",
+      "addedLines": 3,
+      "removedLines": 6,
+      "upstreamChurn6mo": 8
+    },
+    {
+      "path": "snapshots/AGENTS.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "文档：An SDK scenario with a frozen replay input can register an indep",
+      "addedLines": 2,
+      "removedLines": 0,
+      "upstreamChurn6mo": 14
+    },
+    {
+      "path": "snapshots/sdk/sdk.snapshot.ts",
+      "category": "fork",
+      "owner": "Yzyhello",
+      "reason": "源码：修改 sdkOracleScenarios",
+      "addedLines": 137,
+      "removedLines": 34,
+      "upstreamChurn6mo": 51
+    },
+    {
+      "path": "tsconfig.base.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：academic 包名不等于 dsh-<目录>，gen-tsconfig-paths 跳过它们，别名只能手写",
+      "addedLines": 23,
+      "removedLines": 0,
+      "upstreamChurn6mo": 347
+    },
+    {
+      "path": "tsconfig.client.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：新增 path",
+      "addedLines": 1,
+      "removedLines": 0,
+      "upstreamChurn6mo": 115
+    },
+    {
+      "path": "tsconfig.host.json",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：引用列表必须扁平——doc-typecheck 与 gen-doc-graphs/gen-cordis-catalog 按单层读取 references，嵌套 solution 会让它们判定学术服务角色失效",
+      "addedLines": 16,
+      "removedLines": 0,
+      "upstreamChurn6mo": 412
+    },
+    {
+      "path": "vitest.config.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "配置：覆盖率债务 reporter、SSH 入口排除与阈值调整",
+      "addedLines": 32,
+      "removedLines": 3,
+      "upstreamChurn6mo": 168
+    }
+  ]
+}
