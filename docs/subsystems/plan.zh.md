@@ -25,12 +25,17 @@ interface PlanModeConfig {
   section: string
   /** Enter plan mode before a new session's first model request. */
   initialActive?: boolean
+  /**
+   * Re-enter plan mode when a new human message is claimed, including in resumed
+   * sessions; tool continuations and system notices do not trigger entry.
+   */
+  reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
 }
 ```
 
-`section` 缺失、为空白或不是字符串，`initialActive` 不是布尔值，`missingExitRetries` 无效，以及存在任何未知键，都会在插件加载时失败，而不是被忽略。`initialActive` 默认为 `false`；设为 true 时，提示词组装会为未使用过的会话排队进入计划模式，第一个被接受的 pre-step 会在请求头之前记录该状态。已有计划选择或请求头会阻止初始化，因此恢复和后续请求绝不会自动重新进入。`missingExitRetries` 默认为 `0`，只接受非负安全整数。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
+`section` 缺失、为空白或不是字符串，`initialActive` 或 `reenterOnUserMessage` 不是布尔值，`missingExitRetries` 无效，以及存在任何未知键，都会在插件加载时失败，而不是被忽略。`initialActive` 默认为 `false`；设为 true 时，提示词组装会为未使用过的会话排队进入计划模式，第一个被接受的 pre-step 会在请求头之前记录该状态。已有计划选择或请求头会阻止初始化。`reenterOnUserMessage` 默认为 `false`；设为 true 时，`agent/inbox/claimed` 为新领取的、来源类型为 `user` 的消息排队进入计划模式，随后组装提示词并在同一个被接受的 pre-step 提交状态。恢复后的会话遵循相同规则；批准后的续步及系统通知不会重新进入。`missingExitRetries` 默认为 `0`，只接受非负安全整数。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
 
 ## 退出工具与 `/plan` 命令
 

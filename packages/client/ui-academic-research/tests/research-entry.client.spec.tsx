@@ -81,6 +81,47 @@ it('recovers the server result after remount without execution or report-quality
   expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
   expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
 })
+it('shows the latest approved plan without treating a completed historical report as its result', async () => {
+  const f = fixture()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId,
+    result: sampleRun() })
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId,
+    topic: 'Next topic', questions: ['New question'] }
+  render(<ResearchEntry {...f.props()} plan={async () => nextPlan} />)
+  await open()
+  expect(screen.getByRole('heading', { name: `${zh.currentPlan}: ${nextPlan.topic}` })).toBeTruthy()
+  expect(screen.getByText(zh.planNotStarted)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+  expect(f.getBackgroundRun).not.toHaveBeenCalled()
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+
+  fireEvent.change(screen.getByRole('combobox', { name: zh.backgroundRecords }),
+    { target: { value: initialTask().backgroundRunId } })
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.getByText(zh.historicalPlanResult)).toBeTruthy()
+  fireEvent.change(screen.getByRole('combobox', { name: zh.backgroundRecords }), { target: { value: '' } })
+  await waitFor(() => { expect(screen.queryByRole('button', { name: zh.download })).toBeNull() })
+  expect(screen.getByText(zh.planNotStarted)).toBeTruthy()
+})
+it('rechecks approval before starting and requires a second click after the plan changes', async () => {
+  const f = fixture()
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId,
+    topic: 'Next topic' }
+  let latest = planned
+  const plan = vi.fn(async () => latest)
+  f.startBackgroundRun.mockImplementationOnce(async () => ({ ...initialTask(), researchBriefId: nextPlan.researchBriefId }))
+  render(<ResearchEntry {...f.props()} plan={plan} />)
+  await open()
+  latest = nextPlan
+  fireEvent.click(screen.getByRole('button', { name: zh.start }))
+  await screen.findByText(zh.planUpdated)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+  expect(screen.getByRole('heading', { name: `${zh.currentPlan}: ${nextPlan.topic}` })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: zh.start }))
+  await waitFor(() => { expect(f.startBackgroundRun).toHaveBeenCalledWith({ sessionId: sid,
+    researchBriefId: nextPlan.researchBriefId, synthetic: false }, expect.any(AbortSignal)) })
+  expect(plan).toHaveBeenCalledTimes(3)
+})
 it('switching Sessions detaches observation; switching back recovers the original task', async () => {
   const f = fixture(); const other = 'other' as typeof sid
   const originalList = f.listBackgroundRuns.getMockImplementation()!

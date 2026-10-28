@@ -63,6 +63,25 @@ class MinimalCompactionAdapter extends LlmAdapter {
     yield { type: 'finish', reason: { kind: 'stop' } }
   }
 }
+
+/** Each human request proposes a plan; its approved continuation completes. */
+class AcademicPlanAdapter extends MinimalCompactionAdapter {
+  override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+    if (options.purpose !== undefined) {
+      yield * super.stream(options)
+      return
+    }
+    const ordinal = this.requests.filter(request => request.purpose === undefined).length + 1
+    this.requests.push(options)
+    const planning = ordinal % 2 === 1
+    yield { type: 'block-start', index: 0, blockType: planning ? 'tool-call' : 'text' }
+    yield { type: 'block-end', index: 0, block: planning
+      ? { type: 'tool-call', id: ToolCallId(`academic-plan-${ordinal}`), name: 'exit_plan_mode',
+        arguments: JSON.stringify({ plan: `# 研究计划 ${ordinal}\n\n按用户本次要求研究。` }) }
+      : { type: 'text', text: 'Plan approved.' } }
+    yield { type: 'finish', reason: { kind: planning ? 'tool-calls' : 'stop' } }
+  }
+}
 /** Emits one image read, then retains the request carrying its settled result. */
 class MinimalImageAdapter extends LlmAdapter {
   readonly requests: GenerateOptions[] = []
@@ -310,10 +329,10 @@ describe('the shipped Web composition', () => {
     }
   })
 
-  it('runs consecutive academic requests with the working directory in runtime context', async () => {
+  it('reviews consecutive academic plans with the working directory in runtime context', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'dsh-academic-prompt-'))
     onTestFinished(() => rm(cwd, { recursive: true, force: true }))
-    const adapter = new MinimalCompactionAdapter()
+    const adapter = new AcademicPlanAdapter()
     const unregister = ctx.llm.registerAdapter(['academic-prompt-test'], adapter)
     onTestFinished(unregister)
     const handle = await ctx.agents.create({
@@ -321,6 +340,11 @@ describe('the shipped Web composition', () => {
       agentOptions: { provider: 'academic-prompt-test', model: 'academic-prompt-test' },
       setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'academic').then(() => undefined),
     })
+    const stopReview = ctx.on('user-questions/request', (request, next) => {
+      if (request.agent?.id !== handle.agent.id) return next()
+      return Promise.resolve({ answers: [{ id: 'plan-review', selected: ['Approve'] }] })
+    }, { prepend: true })
+    onTestFinished(() => { stopReview() })
     try {
       const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
       expect(assembly.sections.find(section => section.name === 'deployment:persona-prefix')?.text)
@@ -357,7 +381,12 @@ describe('the shipped Web composition', () => {
         await handle.agent.whenIdle()
         const requests = adapter.requests.filter(request => request.purpose === undefined)
         expect(requests.length, JSON.stringify(handle.agent.session.snapshotEvents()
-          .filter(event => event.type === 'turn/end').map(event => event.data.reason))).toBeGreaterThan(before)
+          .filter(event => event.type === 'turn/end').map(event => event.data.reason))).toBe(before + 2)
+        const hasPlanPolicy = (request: GenerateOptions) => request.messages
+          .filter(message => message.role === 'system').flatMap(message => message.content)
+          .some(block => block.type === 'text' && block.text.includes('You are planning an academic insight research task.'))
+        expect(hasPlanPolicy(requests[before]!)).toBe(true)
+        expect(hasPlanPolicy(requests[before + 1]!)).toBe(false)
         expect(requests.at(-1)?.messages.flatMap(message => message.content)
           .some(block => block.type === 'text' && block.text === prompt)).toBe(true)
       }
@@ -375,6 +404,12 @@ describe('the shipped Web composition', () => {
       expect(await ctx.sessions.flush(handle.agent.session)).toBe(true)
       await using reader = await ctx.sessionPersistence.open(handle.agent.session.id, 'read')
       const { events } = await reader.read()
+      expect(events.filter(event => event.type === 'plan/mode').map(event => event.data.active))
+        .toEqual([true, false, true, false])
+      const reviewCalls = new Set(events.flatMap(event =>
+        event.type === 'tool/call' && event.data.name === 'exit_plan_mode' ? [event.data.callId] : []))
+      expect(events.flatMap(event => event.type === 'tool/result' && reviewCalls.has(event.data.message.toolCallId)
+        ? [event.data.message.isError] : [])).toEqual([false, false])
       expect(events.filter(event => event.type === 'turn/end').map(event => event.data.reason))
         .toEqual([{ kind: 'completed' }, { kind: 'completed' }])
       expect(events.flatMap(event => event.type === 'user/message' && event.data.source.kind === 'user'

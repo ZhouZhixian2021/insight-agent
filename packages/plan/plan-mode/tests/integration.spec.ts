@@ -93,6 +93,48 @@ function findEvent<T extends SessionEvent['type']>(
 }
 
 describe('plan mode through the agent loop', () => {
+  it('reviews successive human requests in one session without replanning approved continuations', async () => {
+    const adapter = new MockAdapter([
+      toolCallResponse('plan-1', 'exit_plan_mode', { plan: '# First plan\n\nResearch A.' }),
+      textResponse('First approved plan finished.'),
+      textResponse('Background notice received.'),
+      toolCallResponse('plan-2', 'exit_plan_mode', { plan: '# Second plan\n\nResearch B.' }),
+      textResponse('Second approved plan finished.'),
+      toolCallResponse('plan-3', 'exit_plan_mode', { plan: '# Third plan\n\nResearch C.' }),
+      textResponse('Third approved plan finished.'),
+    ])
+    const ctx = await harness(adapter, { ...PLAN_CONFIG, reenterOnUserMessage: true })
+    const handle = await ctx.agents.create({
+      sessionId: SessionId('it-plan-repeat'), agentOptions: { provider: 'mock', model: 'mock' },
+    })
+    const { agent } = handle
+    try {
+      await ctx.plugin(UserQuestionService)
+      ctx.on('user-questions/request', () => Promise.resolve({
+        answers: [{ id: 'plan-review', selected: ['Approve'] }],
+      }))
+      for (const content of ['Research A', 'Background update', 'Research B', 'Research C']) {
+        const idle = waitForIdle(ctx, agent)
+        agent.followup(createUserMessage({
+          content: [{ type: 'text', text: content }],
+          source: content === 'Background update'
+            ? { kind: 'plan-mode', form: 'notice', summary: content }
+            : { kind: 'user' },
+        }))
+        await idle
+        expect(planActive(ctx, agent)).toBe(false)
+      }
+      expect(adapter.requests.map(request => requestSystem(request).includes(PLAN_CONFIG.section)))
+        .toEqual([true, false, false, true, false, true, false])
+      expect(agent.session.snapshotEvents().filter(event => event.type === 'plan/mode')
+        .map(event => event.data.active)).toEqual([true, false, true, false, true, false])
+      expect(agent.session.snapshotEvents().filter(event => event.type === 'tool/result')
+        .map(event => event.data.message.isError)).toEqual([false, false, false])
+    } finally {
+      await handle.dispose()
+    }
+  })
+
   it('configured initial plan mode shapes the first request without a command', async () => {
     const adapter = new MockAdapter([textResponse('A plan ready for review.')])
     const ctx = await harness(adapter, { ...PLAN_CONFIG, initialActive: true })
