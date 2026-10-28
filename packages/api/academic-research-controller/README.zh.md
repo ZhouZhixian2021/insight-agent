@@ -6,7 +6,7 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
-`academicResearch.traceList(query, signal)` 和 `traceDetail(query, signal)` 通过与其他学术方法相同的 Session 访问解析，读取指定会话及检索运行的安全诊断。适配器保存 `academic/trace-v1` 快照，标准化后交给不依赖基座的分页和统计。可按阶段、状态筛选，详情必须提供 spanId。游标绑定范围、筛选条件和不可变来源水位，单页为 1—100 条（默认 50）；无效游标报错，不混合运行。旧研究没有观察记录时返回 not_found 与明确缺口，未结算操作保留最后状态并提示中断。恢复运行不会把单个进程区间当作整轮耗时，跨进程计时保持未知。查询和当前页导出不包含提示词、响应流、URL 或原始错误。Trace 成功仅表示操作结算，不表示报告通过审核。新增的版本化 Session 事件要求读取程序认识此类型，不覆写已发布日志代际。
+`academicResearch.traceList(query, signal)` 和 `traceDetail(query, signal)` 通过只读 Session 观察读取指定会话及检索运行的安全诊断。适配器保存 `academic/trace-v1` 快照，标准化后交给不依赖基座的分页和统计。可按阶段、状态筛选，详情必须提供 spanId。游标绑定范围、筛选条件和不可变来源水位，单页为 1—100 条（默认 50）；无效游标报错，不混合运行。旧研究没有观察记录时返回 not_found 与明确缺口，未结算操作保留最后状态并提示中断。恢复运行不会把单个进程区间当作整轮耗时，跨进程计时保持未知。查询和当前页导出不包含提示词、响应流、URL 或原始错误。Trace 成功仅表示操作结算，不表示报告通过审核。新增的版本化 Session 事件要求读取程序认识此类型，不覆写已发布日志代际。
 
 ## 概述
 
@@ -40,7 +40,7 @@ kind: "package-reference"
 
 同一条流还发送包含完整 `AcademicQ6Projection` 快照的 `q6` 帧。快照绑定 Session、检索运行和准确 Brief 版本，把每项权威候选评估与论文、版本及审核过的评估输入关联，并原样提供轮次、批次决定与结算、逐题覆盖、停止决定和限制，不重新计算业务事实。`sequence` 在同一检索运行内单调递增。分区状态区分尚未产生、已完成的空值、截断和失败。终态 `AcademicResearchRunValue.q6` 重复最后一份快照；只有没有产生排序工作流的旧选择器返回 `null`。客户端不从 Session 事件重建这些事实，也不为读取数据启动第二次研究。可选的 `assessment.screening` 在 B 产出后承载元数据原文片段、表面关键词命中、不确定项和相对 Plan 的范围判断；旧评估不包含此字段。
 
-需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。
+需要关闭页面后仍继续研究时，在 `plan(sessionId)` 后调用 `startBackgroundRun(request)`，立即取得归属该 Session 的 `backgroundRunId`。`getBackgroundRun({ sessionId, backgroundRunId })` 读取最新状态，`listBackgroundRuns(sessionId)` 供刷新页面后找回近期运行，`watchBackgroundRun(key, signal)` 发送当前状态及后续更新。计划预览、近期运行列表、历史运行详情和 Trace 查询从只读 Session 观察还原，即使另一个 Web 进程持有 Session 写入句柄，也能重新打开已保存的结果。断开订阅不会取消研究；只有 `cancelBackgroundRun({ ...key, reason: 'user_requested' })` 才请求取消。
 
 每个订阅者只保留一份尚未消费的最新视图。消费较慢时，新的实时更新替换待消费视图，因此中间实时帧可能被合并；持久化进度事件不会因此丢失。订阅结束前会交付待消费的终态视图；中止订阅会释放观察者及待消费视图，不会取消研究。
 
