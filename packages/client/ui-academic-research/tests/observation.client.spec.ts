@@ -1,3 +1,4 @@
+import { ConversationEventRegistry } from '@deepseek-ai/dsh-client-ui-conversation/client'
 /** The UI callback uses Gateway generations while the server retains task ownership. */
 import { Context } from '@deepseek-ai/cordis'
 import { expect, it, onTestFinished, vi } from 'vitest'
@@ -13,6 +14,7 @@ import { sampleRun } from './run-sample.ts'
 
 async function observerFixture() {
   const ctx = new Context()
+  ctx.provide('uiConversation', { events: new ConversationEventRegistry(ctx) })
   const viewer = new AbortController()
   onTestFinished(async () => { viewer.abort(); await ctx.fiber.dispose() })
   await ctx.plugin(SlotRegistry).await()
@@ -30,9 +32,9 @@ async function observerFixture() {
   ctx.provide('remote.session', {} as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
   const slots = ctx.get('slots') as SlotRegistry
-  slots.register({ name: 'root', children: { 'sidebar.footer.action': { kind: 'list', scope: 'root' } } } as never, () => null)
+  slots.register({ name: 'root', children: { 'conversation.chat.node': { kind: 'keyed', scope: 'session' } } } as never, () => null)
   await ctx.plugin({ inject, apply }).await()
-  const face = slots.entries('academic.research.entry')[0]!.inject!() as Readonly<ResearchEntryInjected>
+  const face = slots.entries('conversation.chat.node')[0]!.inject!() as Readonly<ResearchEntryInjected>
   const key = { sessionId: initialTask().sessionId, backgroundRunId: initialTask().backgroundRunId }
   const completed = { ...initialTask(), state: 'completed' as const, result: sampleRun() }
   const setReady = (value: boolean) => { ready = value ? {} : undefined; for (const listener of listeners) listener() }
