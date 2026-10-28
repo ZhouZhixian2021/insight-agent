@@ -43,10 +43,10 @@
       "status": "active",
       "source": "session.v4.jsonl",
       "sourceSha256": "65490bc9a63714b3ec7958b67157f16c58a95244c2d591af3142f2a67ebfc07e",
-      "writerSha256": "4bc1c2783bd79df1f9b45eaec71b4b2a17ad85eea1252d902955fd6171ce7f2c",
+      "writerSha256": "8f2934008e87cf65042a7e338cd35f15f9a1dbfb2eeec4b151839ad6b1f53d48",
       "promptSha256": "64e64ade71c7e4a1f61ad8b6a1f47e58f0f614c9910278922eb1343e2221a89b",
       "schemasSha256": "f58363003bcc79a4d4f169624f7e93d8cf0853ad6d7b5dad123a8bf37bc14925",
-      "notificationsSha256": "7c70f9fd36857d87253e5c106fc9ce8c74843f7e76e35280c770b33eda460ea1",
+      "notificationsSha256": "260478245c24214fdbe24e053ada165c91c6fc6b5990dcd19885a971247deaee",
       "resultSha256": "84e7025abd0aeea0451feb789478efb04ba8b649b47b88cbe28479f106a321fc"
     },
     "academic-evidence-fragments": {

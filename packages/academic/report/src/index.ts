@@ -11,6 +11,7 @@ import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval
 const relationLabels: Record<ClaimEvidenceRelation, string> = {
   supports: '支持依据', contradicts: '不同发现／相反证据', background: '背景材料（不直接支持结论）',
 }
+export { renderResearchPage } from './html-preview.ts'
 export { appendRetrievalDisclosure } from './retrieval-disclosure.ts'
 export type { RetrievalDisclosure } from './retrieval-disclosure.ts'
 
@@ -93,6 +94,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     '> 基于本轮证据自动生成；交付检查通过不代表独立语义审核通过。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
   if (synthesisInput !== null) {
+    const scopeStart = lines.length
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
       `发表时间窗口：${escapeMarkdown(input.brief.publicationWindow.start?.iso ?? '未限定')}—${escapeMarkdown(input.brief.publicationWindow.end?.iso ?? '未限定')}；`
         + `日期口径：${input.brief.publicationWindow.dateBasis === 'published' ? '所选版本发布日期' : '首次公开日期'}`, `报告日期：${escapeMarkdown(metadata.reportDate.slice(0, 10))}`,
@@ -106,7 +108,10 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
         : '实际检索渠道、来源失败及数量上限见本次检索披露；引用证据来源不代表全部检索来源。', '')
     const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage, metadata)
     const questions = renderQuestionEvidence(input.brief, synthesisInput.draft, evidence, input.questionLinks)
-    lines.push(...questions.lines, ...rendered.lines)
+    if (synthesisInput.draft.writingStyle === 'evidence_narrative') {
+      const scope = lines.splice(scopeStart)
+      lines.push(...rendered.lines, ...scope, ...questions.lines)
+    } else lines.push(...questions.lines, ...rendered.lines)
     limitations.push(...questions.limitations, ...rendered.unmet)
     const deliveryIssues = rendered.deliveryFailures.map(message => ({ claimId: null, category: 'delivery' as const, code: 'unmet_plan', message }))
     const contentIssues = [...new Set([...questions.limitations, ...rendered.unmet])]

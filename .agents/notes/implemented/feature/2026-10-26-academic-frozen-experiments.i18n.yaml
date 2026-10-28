@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-26-academic-frozen-experiments.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-26-academic-frozen-experiments.md
+/agent-note-frozen-academic-c-module-experiments:
+  en: cd9f77ff85386de1
+  zh: 6d09b7b28fc23de4
+/agent-note-frozen-academic-c-module-experiments/problem:
+  en: 7932790bfb260c09
+  zh: b86360ebdd6e969f
+/agent-note-frozen-academic-c-module-experiments/decision:
+  en: 7b600bfcdfcd0498
+  zh: 121d9ba91cd91d17
+/agent-note-frozen-academic-c-module-experiments/alternatives-considered:
+  en: fbe1a0ef70e4eac1
+  zh: de208f320e333fcd
+/agent-note-frozen-academic-c-module-experiments/consequences:
+  en: c4eb0c32fbd53c65
+  zh: b4b6389e545521fd

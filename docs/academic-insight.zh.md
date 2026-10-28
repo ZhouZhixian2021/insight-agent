@@ -58,9 +58,9 @@ pnpm run insight:web
 
 | 路径 | 当前职责 |
 |---|---|
-| `packages/preset/agent-presets/presets/academic/` | 内置预设元数据与 Cordis 组装。 |
-| `packages/preset/agent-presets/presets/academic/skills/academic-insight-report/` | 从用户提供的参考报告提炼的研究方法和报告层级。 |
-| `packages/preset/agent-presets/src/display.ts` | 内置预设标识符到本地化键的映射。 |
+| `packages/bundle/web-app/presets/academic/` | 内置预设元数据与 Cordis 组装。 |
+| `packages/bundle/web-app/presets/academic/skills/academic-insight-report/` | 从用户提供的参考报告提炼的研究方法和报告层级。 |
+| `packages/preset/agent-preset-registry/src/display.ts` | 内置预设标识符到本地化键的映射。 |
 | `packages/client/ui-agent-preset/src/client/locales.ts` | 选择器的中英文文案。 |
 | `scripts/start-insight-web.ps1` 与 `pnpm run insight:web` | 将当前检出绑定到私有 `.dsh-runtime` 的 Windows 启动入口。 |
 | `.gitignore` | 阻止运行时会话、凭据、设置和已安装 bundle 进入提交。 |

@@ -88,6 +88,8 @@ export interface SynthesisDirection {
 
 /** Validated paragraphs with remapped references and host-owned rejection diagnostics. */
 export interface AcademicSynthesisDraft {
+  /** New narrative outputs use concise evidence-backed prose; omission retains historical layouts. */
+  readonly writingStyle?: 'evidence_narrative'
   readonly schemaVersion: 1
   readonly researchBriefId: ResearchBriefId
   readonly researchBriefVersion: number
