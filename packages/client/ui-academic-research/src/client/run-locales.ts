@@ -44,6 +44,7 @@ export const zh = {
   trace_basis_unknown: '未知',
 
   downloadHtml: '下载 HTML', htmlContents: '目录', htmlCopy: '复制', htmlCopied: '已复制', htmlFootnotes: '脚注',
+  htmlEvidenceKey: 'E1、E2 等为本报告的证据编号，点击可查看原文与来源；方括号数字为论文引用。补充资料可点击展开。',
   traceTitle: '研究调用追踪', traceLoad: '读取 Trace', traceRefresh: '刷新 Trace', traceMore: '加载更多', traceLoading: '正在读取 Trace…',
   traceUnavailable: '本次研究没有已记录的 Trace；历史调用不会按标题或时间推测归属。', traceError: 'Trace 读取失败，请重试。',
   traceStage: '阶段', traceState: '状态', traceAll: '全部', traceDetails: '查看记录', traceTotal: '运行总耗时（毫秒）',
@@ -308,6 +309,7 @@ export const en: Record<RunKey, string> = {
   trace_basis_unknown: 'unknown',
 
   downloadHtml: 'Download HTML', htmlContents: 'Contents', htmlCopy: 'Copy', htmlCopied: 'Copied', htmlFootnotes: 'Footnotes',
+  htmlEvidenceKey: 'E1, E2, etc. link to excerpts and sources; bracketed numbers cite papers. Expand supplementary material as needed.',
   traceTitle: 'Research call trace', traceLoad: 'Read Trace', traceRefresh: 'Refresh Trace', traceMore: 'Load more', traceLoading: 'Reading Trace…',
   traceUnavailable: 'No Trace was recorded for this run; historical calls are not assigned by title or time.', traceError: 'Trace could not be read. Please retry.',
   traceStage: 'Stage', traceState: 'State', traceAll: 'All', traceDetails: 'View observations', traceTotal: 'Run total (ms)',

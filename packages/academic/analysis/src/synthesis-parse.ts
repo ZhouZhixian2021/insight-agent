@@ -36,11 +36,13 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
   try { value = JSON.parse(response) } catch { return invalid('Expected complete JSON.') }
   const root = object(value, ['schemaVersion', 'researchBriefId', 'researchBriefVersion',
     'statements', 'questionAnswers', 'sections', 'limitations',
+    ...value !== null && typeof value === 'object' && Object.hasOwn(value, 'writingStyle') ? ['writingStyle'] : [],
     ...value !== null && typeof value === 'object' && Object.hasOwn(value, 'directions') ? ['directions'] : []])
   if (root.schemaVersion !== 1 || root.researchBriefId !== input.brief.researchBriefId
     || root.researchBriefVersion !== input.brief.version) {
     invalid('Synthesis must reference the exact approved Brief version.')
   }
+  const writingStyle = root.writingStyle === undefined ? undefined : choice(root.writingStyle, ['evidence_narrative'])
   const evidence = new Map(input.analysisInput.evidenceRecords.map(record => [record.evidenceId, record]))
   const candidates = array(root.statements)
   if (candidates.length > MAX_SYNTHESIS_STATEMENTS) invalid(`At most ${MAX_SYNTHESIS_STATEMENTS} statements are allowed.`)
@@ -74,7 +76,7 @@ export function parseSynthesisDraft(response: string, input: AcademicSynthesisIn
   const rejectionReason = (original: readonly number[]) =>
     `模型候选段落 ${original.filter(index => !retained.has(index)).map(index => index + 1).join('、')} 未通过校验，相关内容尚未完整覆盖。`
   return { schemaVersion: 1, researchBriefId: input.brief.researchBriefId, researchBriefVersion: input.brief.version,
-    statements, limitations, rejectedStatements,
+    statements, limitations, rejectedStatements, ...writingStyle === undefined ? {} : { writingStyle },
     ...directions === undefined ? {} : { directions: directions.map((direction) => {
       const component = (original: DirectionComponent): DirectionComponent => {
         const statementIndexes = remap(original.statementIndexes)

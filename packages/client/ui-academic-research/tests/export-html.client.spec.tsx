@@ -10,6 +10,25 @@ const t: RunPanelProps['t'] = key => zh[key as RunKey]
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('standalone report delivery', () => {
+  it('puts the argument before supplementary checks and keeps evidence, warnings and navigation reachable', () => {
+    const report = sampleRun().report
+    const id = report.evidence[0]!.evidenceId
+    const markdown = `# ${report.title}\n\n## 报告信息与研究范围\n\n范围完整保留\n\n## 执行洞察\n\n正文判断\n\n**主要依据**\n\n- ${id} 原文说明\n\n## 局限\n\n条件仍然有限`
+    const doc = new DOMParser().parseFromString(exportAcademicHtml({ ...report, markdown }, t), 'text/html')
+    expect(doc.querySelectorAll('h1')).toHaveLength(1)
+    expect(doc.querySelector('main h2')?.textContent).toBe('执行洞察')
+    expect(doc.querySelector('details.supplement')?.textContent).toContain('范围完整保留')
+    expect(doc.querySelector('details.support')?.textContent).toContain('原文说明')
+    expect(doc.querySelector('details.support')?.hasAttribute('open')).toBe(false)
+    expect(doc.querySelector('main a[href="#evidence-1"]')?.textContent).toBe('E1')
+    expect(doc.getElementById('evidence-1')?.textContent).toContain(id)
+    expect(doc.querySelector('header')?.textContent).toContain(zh.draft)
+    expect(doc.body.textContent).toContain('条件仍然有限')
+    for (const anchor of doc.querySelectorAll('a[href^="#"]')) {
+      expect(doc.getElementById(anchor.getAttribute('href')!.slice(1))).not.toBeNull()
+    }
+  })
+
   it('exports formatted content, local evidence links and quality without active content or external resources', () => {
     const report = sampleRun().report
     const markdown = '# Scope\n\n| Method | Result |\n|---|---|\n| A | Limited |\n\n<a id="academic-paragraph-1"></a>\n\n[paragraph](#academic-paragraph-1)\n\n<script>alert(1)</script>\n\n![image](https://example.invalid/tracker)\n\n[unsafe](javascript:alert(1))'

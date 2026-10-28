@@ -9,7 +9,7 @@ describe('standalone research report viewer', () => {
       evidence: report.evidence.map(record => ({ ...record, verbatimExcerpt: { status: 'not_extracted' } })) }, 'zh-CN')
     expect(html).toContain('没有可用结论')
     expect(html).toContain('原文不可用')
-    expect(html).toContain('最终报告')
+    expect(html).toContain('报告（交付检查通过）')
     expect(html).toContain('待语义审核')
   })
   it('renders the actual pipeline result with draft state, evidence navigation and download', () => {

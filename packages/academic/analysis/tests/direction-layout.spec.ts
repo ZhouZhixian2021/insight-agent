@@ -23,12 +23,13 @@ const output = () => JSON.parse(readFileSync(new URL('synthesis-partial-output.s
 }
 
 describe('executable direction report layout', () => {
-  it('packages exactly the preset format and includes it in the existing synthesis request', () => {
+  it('retains the historical preset reference while new requests select evidence narrative writing', () => {
     const source = readFileSync(new URL('../../../preset/agent-presets/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
     expect(academicReportFormat).toBe(source.replaceAll('\r\n', '\n').trimEnd() + '\n')
     const prompt = synthesisPrompt(input())
-    expect(prompt).toContain(academicReportFormat)
-    expect(prompt).toContain('directions is required in new outputs')
+    expect(prompt).toContain('writingStyle:"evidence_narrative"')
+    expect(prompt).toContain('directions may be omitted')
+    expect(prompt).toContain('PaperQA')
   })
   it('keeps every approved question and source identity while quarantining an unsupported paragraph', () => {
     const source = input(), raw = output(), before = JSON.stringify(raw)

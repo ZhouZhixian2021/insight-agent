@@ -4,6 +4,7 @@ import type { AcademicWorkId, CoverageSummary, EvidenceRecord, ResearchBrief } f
 
 import { escapeMarkdown } from './markdown.ts'
 import { renderDirections } from './direction-render.ts'
+import { renderEvidenceNarrative } from './narrative-render.ts'
 import type { ReportMetadata } from './bibliography.ts'
 export { escapeMarkdown } from './markdown.ts'
 
@@ -67,7 +68,11 @@ export function renderSynthesis(brief: ResearchBrief, draft: AcademicSynthesisDr
     }
     lines.push('')
   }
-  if (draft.directions !== undefined && metadata !== undefined) {
+  if (draft.writingStyle === 'evidence_narrative') {
+    const narrative = renderEvidenceNarrative(brief, draft, evidence, references)
+    lines.push(...narrative.lines)
+    unmet.push(...narrative.unmet)
+  } else if (draft.directions !== undefined && metadata !== undefined) {
     const renderedDirections = renderDirections(brief, draft, evidence, references, metadata, statement, lines)
     unmet.push(...renderedDirections.unmet)
   } else {

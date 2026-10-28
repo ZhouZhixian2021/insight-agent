@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "paths": {
+      "@deepseek-ai/dsh-academic-analysis": ["../../packages/academic/analysis/src/index.ts"],
+      "@deepseek-ai/dsh-academic-report": ["../../packages/academic/report/src/index.ts"],
+      "@deepseek-ai/dsh-academic-eval": ["../../packages/academic/eval/src/index.ts"]
+    }
+  },
+  "include": ["./*.ts", "../academic-experiment.ts"]
+}

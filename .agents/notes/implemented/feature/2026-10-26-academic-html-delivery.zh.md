@@ -19,3 +19,5 @@ Status: implemented
 ## Consequences
 
 文件可以离线打开，不需要凭据或 Harness 服务；点击外部引文目标仍需要网络。Markdown 继续保留原始文本及不支持的排版。导出只是展示操作，不改变报告审核。定向测试覆盖正常、有限、空证据、恶意标记及真实 Web 下载。
+
+阅读排版借鉴 [Quarto](https://quarto.org/docs/output-formats/html-basics.html) 的侧栏导航和 [Tufte CSS](https://github.com/edwardtufte/tufte-css) 的克制排版，不复制其代码或新增依赖。正文先于折叠的补充核对资料，本地证据简称保留完整记录。依据列表在论述旁折叠。交付未达标原因直接显示，内容限制明确显示数量。源 Markdown 和交付判断保持不变。定向测试覆盖顺序、可达锚点、完整记录和输入不变性；浏览器视觉与打印验收尚未完成。
