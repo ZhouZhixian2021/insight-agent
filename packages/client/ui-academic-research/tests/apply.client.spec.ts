@@ -1,3 +1,4 @@
+import { ConversationEventRegistry } from '@deepseek-ai/dsh-client-ui-conversation/client'
 /** Slot lifecycle: registration waits for its owner and unwinds on plugin disposal. */
 import { Context } from '@deepseek-ai/cordis'
 import { describe, it, expect, vi } from 'vitest'
@@ -17,10 +18,11 @@ async function collect<T>(stream: AsyncIterable<T>): Promise<T[]> {
   return values
 }
 
-describe('academic sidebar registration', () => {
-  it('waits for the sidebar declaration and removes its entry on disposal', async () => {
+describe('academic Chat registration', () => {
+  it('waits for the Chat declaration and removes its entry on disposal', async () => {
     expect(hostApply).not.toThrow()
     const ctx = new Context()
+    ctx.provide('uiConversation', { events: new ConversationEventRegistry(ctx) })
     try {
       await ctx.plugin(SlotRegistry).await()
       const completed = { ...initialTask(), state: 'completed' as const, result: sampleRun() }
@@ -39,17 +41,14 @@ describe('academic sidebar registration', () => {
       const slots = ctx.get('slots') as SlotRegistry
       const fiber = ctx.plugin({ inject, apply })
       await fiber.await()
-      expect(slots.entries('sidebar.footer.action')).toHaveLength(0)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(0)
       const disposeOwner = slots.register({ name: 'root', children: {
-        'sidebar.footer.action': { kind: 'list', scope: 'root' },
+        'conversation.chat.node': { kind: 'keyed', scope: 'session' },
       } } as never, () => null)
-      expect(slots.entries('sidebar.footer.action')).toHaveLength(1)
-      expect(slots.entries('sidebar.footer.action')[0]!.children).toEqual({
-        'academic.research.entry': { kind: 'single', scope: 'session-maybe' },
-      })
-      expect(slots.entries('academic.research.entry')).toHaveLength(1)
-      expect(slots.entries('academic.research.entry')[0]!.locale).toBe('academicRun')
-      const face = slots.entries('academic.research.entry')[0]!.inject!() as Readonly<ResearchEntryInjected>
+      expect(slots.entries('conversation.chat.node')).toHaveLength(1)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(1)
+      expect(slots.entries('conversation.chat.node')[0]!.locale).toBe('academicRun')
+      const face = slots.entries('conversation.chat.node')[0]!.inject!() as Readonly<ResearchEntryInjected>
       const request = { sessionId: sampleRun().sessionId, researchBriefId: sampleRun().retrievalRun.researchBriefId, synthetic: false }
       const signal = new AbortController().signal
       const key = { sessionId: request.sessionId, backgroundRunId: initialTask().backgroundRunId }
@@ -92,15 +91,15 @@ describe('academic sidebar registration', () => {
       remoteRun.mockImplementationOnce(async function* () { throw failure })
       await expect(collect(face.watchBackgroundRun(key, signal))).rejects.toThrow(failure.message)
       disposeOwner()
-      expect(slots.entries('sidebar.footer.action')).toHaveLength(0)
-      expect(slots.entries('academic.research.entry')).toHaveLength(0)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(0)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(0)
       slots.register({ name: 'root', children: {
-        'sidebar.footer.action': { kind: 'list', scope: 'root' },
+        'conversation.chat.node': { kind: 'keyed', scope: 'session' },
       } } as never, () => null)
-      expect(slots.entries('sidebar.footer.action')).toHaveLength(1)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(1)
       await fiber.dispose()
-      expect(slots.entries('sidebar.footer.action')).toHaveLength(0)
-      expect(slots.entries('academic.research.entry')).toHaveLength(0)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(0)
+      expect(slots.entries('conversation.chat.node')).toHaveLength(0)
     } finally { await ctx.fiber.dispose() }
   })
 })

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-28-academic-chat-research.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-28-academic-chat-research.md
+/agent-note-academic-research-in-chat:
+  en: 0ec94a4296f942b1
+  zh: 8ac245eddd45da90
+/agent-note-academic-research-in-chat/problem:
+  en: 0877ddc541cc49dd
+  zh: 33d70c92d188dcdc
+/agent-note-academic-research-in-chat/decision:
+  en: 4b5a4e02968fd7bb
+  zh: 875586dd66cf3cbf
+/agent-note-academic-research-in-chat/alternatives-considered:
+  en: 583f312f5cbf4281
+  zh: ff96325324f6a4f5
+/agent-note-academic-research-in-chat/consequences:
+  en: 35486d3489d1f2fe
+  zh: b9ad47f9edc79797

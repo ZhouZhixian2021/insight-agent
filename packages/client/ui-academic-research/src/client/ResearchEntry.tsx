@@ -2,7 +2,7 @@ import { TracePanel, type TraceRemote } from './TracePanel.tsx'
 /** Session-owned background research; browser disposal ends observation only. */
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsLocale, ScopeStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
 import type { AcademicResearchPlanView, AcademicResearchRunRequest, AcademicBackgroundRunView,
   AcademicEvidenceEnhancementRequest, AcademicEvidenceEnhancementView, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest, AcademicBackgroundRunSummary } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { RunPanel } from './RunPanel.tsx'
@@ -26,7 +26,7 @@ export interface ResearchEntryInjected extends TraceRemote {
   cancelBackgroundRun: (request: AcademicBackgroundRunCancelRequest) => Promise<AcademicBackgroundRunView>
 }
 /** Framework Session selection, locale and background Remote callbacks. */
-export type ResearchEntryProps = Pick<PropsRuntime<'academic.research.entry'>, 'sessionId' | 'useSessions'>
+export type ResearchEntryProps = Pick<ScopeStandardProps<'session-maybe'>, 'sessionId' | 'useSessions'>
   & PropsLocale<'academicRun'> & ResearchEntryInjected
 
 /**
@@ -49,8 +49,15 @@ export function ResearchEntry({ t, sessionId: selectedSessionId, useSessions, ..
   </>
 }
 
-function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns, getBackgroundRun,
-  watchBackgroundRun, cancelBackgroundRun, enhanceEvidence, enhancementHistory, traceList, traceDetail, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'>) {
+/**
+ * Observe one approved research, or recover the compatibility viewer's selected task.
+ * @param props Session, optional immutable Brief filter and server-owned research callbacks.
+ * @returns Research progress, original reports and explicit cancellation controls.
+ */
+export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStart = false, admissionBlocked = false, plan,
+  startBackgroundRun, listBackgroundRuns, getBackgroundRun,
+  watchBackgroundRun, cancelBackgroundRun, enhanceEvidence, enhancementHistory, traceList, traceDetail, t }: ResearchEntryInjected & PropsLocale<'academicRun'> & Pick<AcademicResearchRunRequest, 'sessionId'> & { expectedBriefId?: AcademicResearchRunRequest['researchBriefId']; knownTaskId?: string | undefined; autoStart?: boolean; admissionBlocked?: boolean }) {
+  const automaticAttempt = useRef(false)
   const [approved, setApproved] = useState<AcademicResearchPlanView | null>(null)
   const [planError, setPlanError] = useState<string | null>(null)
   const [runs, setRuns] = useState<readonly AcademicBackgroundRunSummary[]>([])
@@ -67,7 +74,8 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     let shown: RunView | null = null
     const receive = (next: AcademicBackgroundRunView) => {
       if (active.current !== operation) return false
-      if (next.sessionId !== sessionId || next.backgroundRunId !== initial.backgroundRunId
+      if ((expectedBriefId !== undefined && next.researchBriefId !== expectedBriefId)
+        || next.sessionId !== sessionId || next.backgroundRunId !== initial.backgroundRunId
         || next.researchBriefId !== initial.researchBriefId) throw new Error(t('streamMismatch'))
       if (currentTask.current !== null && currentTask.current.state !== 'running' && next.state === 'running') return true
       shown = backgroundView(next, shown, t('streamMismatch'), t('backgroundInterrupted'), t('cancelledRequest'), t('requestFailed'))
@@ -114,36 +122,43 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
     setLoading(true); setMessage(null); setApproved(null); setPlanError(null); setTask(null); setView(null)
     void Promise.allSettled([plan(sessionId), listBackgroundRuns(sessionId)]).then(([latestPlan, history]) => {
       if (!current) return
-      if (latestPlan.status === 'fulfilled') setApproved(latestPlan.value)
+      if (latestPlan.status === 'fulfilled') setApproved(expectedBriefId === undefined || latestPlan.value.researchBriefId === expectedBriefId ? latestPlan.value : null)
       else setPlanError(latestPlan.reason instanceof Error ? latestPlan.reason.message : t('planFailed'))
       if (history.status === 'rejected') {
         setMessage(history.reason instanceof Error ? history.reason.message : t('requestFailed'))
-        // Admission stays disabled until the Session's active task can be discovered.
+        // A logged task can still be read; without one, admission stays disabled.
+        if (knownTaskId !== undefined) void select(knownTaskId)
         return
       }
       const rows = history.value
       setRuns(rows)
-      const selected = rows.findLast(row => row.state === 'running')
+      const matching = expectedBriefId === undefined ? rows : rows.filter(row => row.researchBriefId === expectedBriefId)
+      const selected = expectedBriefId !== undefined ? matching.at(-1) : matching.findLast(row => row.state === 'running')
         ?? (latestPlan.status === 'fulfilled'
-          ? rows.findLast(row => row.researchBriefId === latestPlan.value.researchBriefId)
-          : rows.at(-1))
-      if (selected === undefined) setLoading(false)
+          ? matching.findLast(row => row.researchBriefId === latestPlan.value.researchBriefId)
+          : matching.at(-1))
+      if (knownTaskId !== undefined) void select(knownTaskId)
+      else if (selected === undefined) setLoading(false)
       else void select(selected.backgroundRunId)
     })
     return () => {
       current = false; currentTask.current = null
       const operation = active.current; active.current = null; operation?.abort()
     }
-  }, [sessionId, plan, listBackgroundRuns, revision])
+  }, [sessionId, expectedBriefId, knownTaskId, plan, listBackgroundRuns, revision])
 
   const start = async () => {
-    if (loading || active.current !== null || runs.some(row => row.state === 'running') || approved === null) return
+    if (admissionBlocked || loading || active.current !== null || runs.some(row => row.state === 'running') || approved === null
+      || (expectedBriefId !== undefined && runs.some(row => row.researchBriefId === expectedBriefId))) return
     const operation = new AbortController()
     active.current = operation
     setLoading(true); setMessage(null); setView(null); setTask(null); currentTask.current = null
     try {
       const latest = await plan(sessionId)
       if (active.current !== operation) return
+      if (expectedBriefId !== undefined && latest.researchBriefId !== expectedBriefId) {
+        setApproved(null); setMessage(t('chatHistorical')); active.current = null; setLoading(false); return
+      }
       if (latest.researchBriefId !== approved.researchBriefId) {
         setApproved(latest); setPlanError(null); setMessage(t('planUpdated'))
         active.current = null; setLoading(false)
@@ -165,6 +180,12 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
       }
     }
   }
+  useEffect(() => {
+    if (!autoStart || admissionBlocked || knownTaskId !== undefined || automaticAttempt.current || loading || approved === null
+      || runs.some(row => row.state === 'running') || runs.some(row => row.researchBriefId === expectedBriefId)) return
+    automaticAttempt.current = true
+    void start()
+  }, [autoStart, admissionBlocked, knownTaskId, loading, approved, runs, expectedBriefId, start])
   const cancel = async () => {
     const selected = currentTask.current
     if (selected === null || selected.state !== 'running' || selected.cancelReason === 'user_requested') return
@@ -187,7 +208,7 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
   return <>
     <p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('backgroundNotice')}</p>
     {planError !== null && <p role="alert">{planError}</p>}
-    {approved === null && planError === null && <p role="status">{t('loadingPlan')}</p>}
+    {approved === null && planError === null && <p role="status">{t(expectedBriefId !== undefined && !loading ? 'chatHistorical' : 'loadingPlan')}</p>}
     {loading && <p>{t('backgroundLoading')}</p>}
     {message !== null && <p role="alert">{message}</p>}
     {loading && message !== null && task === null && <button type="button" onClick={() => { setRevision(previous => previous + 1) }}>
@@ -197,12 +218,14 @@ function ResearchForm({ sessionId, plan, startBackgroundRun, listBackgroundRuns,
       <h3>{t('currentPlan')}: {approved.topic}</h3>
       <ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
       <h4>{t('searchDirections')}</h4><SearchPolicies searches={approved.searches} t={t} />
-      {!loading && !hasCurrentPlanRun && <p role="status">{t(hasRunningTask ? 'previousPlanRunning' : 'planNotStarted')}</p>}
+      {admissionBlocked && !hasCurrentPlanRun && <p role="status">{t('chatWaiting')}</p>}
+      {!admissionBlocked && !loading && !hasCurrentPlanRun && <p role="status">{t(hasRunningTask ? 'previousPlanRunning' : 'planNotStarted')}</p>}
+      {expectedBriefId !== undefined && hasRunningTask && task === null && <button type="button" onClick={() => { setRevision(previous => previous + 1) }}>{t('backgroundReconnect')}</button>}
       <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
-        <button type="submit" disabled={loading || hasRunningTask}>{t('start')}</button>
+        <button type="submit" disabled={admissionBlocked || loading || hasRunningTask || (expectedBriefId !== undefined && hasCurrentPlanRun)}>{t('start')}</button>
       </form>
     </section>}
-    {runs.length > 0 && <label>{t('backgroundRecords')}<select aria-label={t('backgroundRecords')} value={task?.backgroundRunId ?? ''}
+    {expectedBriefId === undefined && runs.length > 0 && <label>{t('backgroundRecords')}<select aria-label={t('backgroundRecords')} value={task?.backgroundRunId ?? ''}
       onChange={(event) => {
         if (event.target.value === '') setRevision(previous => previous + 1)
         else void select(event.target.value)
