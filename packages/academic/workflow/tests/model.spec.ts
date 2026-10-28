@@ -38,6 +38,7 @@ class Adapter extends LlmAdapter {
   contextWindow: number | undefined = 10000
   script = script
   scopeScript?: StreamChunk[]
+  scopeScriptForCall?: (options: GenerateOptions) => StreamChunk[]
   synthesisScript?: StreamChunk[]
   synthesisTransform?: (draft: AcademicSynthesisDraft) => AcademicSynthesisDraft
   beforeDispatch?: () => Promise<void>
@@ -83,7 +84,7 @@ class Adapter extends LlmAdapter {
         : this.synthesisTransform(synthesisFixture(JSON.parse(prompt.text.split('INPUT_JSON\n')[1]!) as AcademicSynthesisInput)),
       (key, value: unknown) => key === 'rejectedStatements' ? undefined : value) : null
     const chunks: StreamChunk[] = admission
-      ? this.scopeScript ?? [{ type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) },
+      ? this.scopeScriptForCall?.(options) ?? this.scopeScript ?? [{ type: 'text-delta', index: 0, text: JSON.stringify({ status: 'included', reason: 'Matches scope.' }) },
         { type: 'finish', reason: { kind: 'stop' } }]
       : synthesis === null ? compactEvidenceScript(this.scriptForCall?.(options) ?? this.script) : this.synthesisScript
       ?? [{ type: 'text-delta', index: 0, text: synthesis }, { type: 'finish', reason: { kind: 'stop' } }]
@@ -142,6 +143,37 @@ async function fixture(writer = true) {
 }
 
 describe('durable academic model extraction', () => {
+  it.each(['whole', 'fragments'] as const)('supplements unresolved scope with bounded source batches for %s extraction', async (mode) => {
+    const f = await fixture()
+    const source = { ...f.source, segments: Array.from({ length: 2 }, (_, index) => ({
+      text: `Uses Method X. ${'Background. '.repeat(180)}`,
+      locator: { kind: 'paragraph' as const, paragraphNumber: index + 1 },
+    })) }
+    const request = { ...f.request, segments: source.segments }
+    const nextPolicy = { ...policy, inputBatchTokenLimit: 600, scopeReviewMaximumBatches: 2 }
+    f.adapter.scopeScriptForCall = () => [
+      { type: 'text-delta', index: 0, text: JSON.stringify(f.adapter.scopeCalls.length === 1
+        ? { status: 'needs_more_context', reason: 'Read the method section.' }
+        : { status: 'included', reason: 'The supplied method section satisfies scope.' }) },
+      { type: 'finish', reason: { kind: 'stop' } },
+    ]
+    const run = () => mode === 'whole'
+      ? createModelEvidenceGenerator(f.ctx, f.session, config, nextPolicy)(request, source, scope)
+      : createModelFragmentEvidenceGenerator(f.ctx, f.session, config, nextPolicy)(source, scope)
+    expect((await run()).scope.status).toBe('included')
+    expect(f.adapter.scopeCalls).toHaveLength(2)
+    const events = await f.read()
+    expect(events.filter(event => event.type === 'academic/evidence-request' && event.data.phase === 'scope')).toHaveLength(2)
+    f.adapter.scopeScriptForCall = () => [
+      { type: 'text-delta', index: 0, text: JSON.stringify({ status: 'needs_more_context', reason: 'Still unknown.' }) },
+      { type: 'finish', reason: { kind: 'stop' } },
+    ]
+    const before = f.adapter.calls.length
+    expect((await run()).scope.status).toBe('needs_more_context')
+    expect(f.adapter.scopeCalls).toHaveLength(4)
+    expect(f.adapter.calls).toHaveLength(before)
+  })
+
   it('traces real transport retry attempts without copying prompts or overwriting the first failure', async () => {
     const f = await fixture()
     const spans: AcademicTraceSpan[] = []

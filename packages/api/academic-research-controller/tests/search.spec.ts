@@ -40,6 +40,7 @@ function setup(options: {
   readonly maximumModelReviews?: number
   readonly reviewExecution?: CandidateReviewExecution
   readonly initialWorkCount?: number
+  readonly initialBatchSize?: number
   readonly initialAcademicResultsPerQuery?: number
   readonly publicationWindow?: PublicationWindow
   readonly transformWork?: (work: AcademicSourceWork, index: number) => AcademicSourceWork
@@ -85,7 +86,8 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  batchPolicy, gapPolicy, undefined, options.candidateScreening,
+  { ...batchPolicy, initialBatchSize: options.initialBatchSize ?? batchPolicy.initialBatchSize },
+  gapPolicy, undefined, options.candidateScreening,
   options.reviewCandidate === undefined ? undefined : (input, signal) => {
     input.onDispatch?.()
     return options.reviewCandidate!(input, signal)
@@ -111,9 +113,29 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
+  it('reviews successive batches once and reserves calls for new gap-round candidates', async () => {
+    const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed', code: 'TIMEOUT' }))
+    const gapRecord = identified(draftFixture(1).records[0]!, 'gap-only')
+    const prepared = setup({ initialWorkCount: 3, reviewCandidate, maximumModelReviews: 3,
+      gapWorks: [{ ...gapRecord, academicWork: { ...gapRecord.academicWork, title: 'Synthetic gap' } }],
+      reviewExecution: { concurrency: 1, gapReserve: 1 } })
+    const state = await initialState(prepared)
+    expect(reviewCandidate).toHaveBeenCalledTimes(2)
+    const reviewMore = prepared.adapters.reviewCandidates
+    if (reviewMore === undefined) throw new Error('expected batched review adapter')
+    await reviewMore(state.scheduling, state.ingested, uncovered(prepared.brief), [])
+    await prepared.adapters.selectPapers(state.ingested, prepared.brief)
+    expect(reviewCandidate).toHaveBeenCalledTimes(2)
+    const gap = await prepared.replenishCandidates(state.scheduling, state.ingested, uncovered(prepared.brief), 2)
+    expect(reviewCandidate).toHaveBeenCalledTimes(3)
+    expect(reviewCandidate.mock.calls[2]?.[0].title).toBe('Synthetic gap')
+    await reviewMore(gap.scheduling, gap.ingested, uncovered(prepared.brief), [])
+    expect(reviewCandidate).toHaveBeenCalledTimes(3)
+  })
+
   it('uses a review budget independent of the later Plan candidate cap', async () => {
     const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed', code: 'TRANSPORT' }))
-    const prepared = setup({ initialWorkCount: 3, reviewCandidate, maximumModelReviews: 3 })
+    const prepared = setup({ initialWorkCount: 3, initialBatchSize: 3, reviewCandidate, maximumModelReviews: 3 })
     const searched = await prepared.adapters.search({ query: 'synthetic', maxResults: 3 })
     const ingested = ingestWorks(createIngestIndex(), searched.works)
     const selection = await prepared.adapters.selectPapers(ingested, { ...prepared.brief,
@@ -136,7 +158,7 @@ describe('Q5 evidence-gap replenishment', () => {
         screening: { schemaVersion: 1, signals: [], surfaceKeywordHits: [], uncertainties: [],
           scope: { status: 'unknown', reason: 'Metadata alone does not establish relevance.' } } }
     })
-    const prepared = setup({ initialWorkCount: 3, reviewCandidate, reviewExecution: { concurrency: 2 } })
+    const prepared = setup({ initialWorkCount: 3, initialBatchSize: 3, reviewCandidate, reviewExecution: { concurrency: 2 } })
     const pending = initialState(prepared)
     await vi.waitFor(() => { expect(reviewCandidate).toHaveBeenCalledTimes(2) })
     const firstTwo = [...release.keys()]
@@ -248,7 +270,7 @@ describe('Q5 evidence-gap replenishment', () => {
         ? { status: 'off_topic', reason: 'This work does not address the approved method question.',
           quote: { source: 'title', text: input.title } }
         : { status: 'potentially_relevant', reason: 'The title concerns the approved question.' } } })
-    const prepared = setup({ questions: [question], initialWorkCount: 3, reviewCandidate,
+    const prepared = setup({ questions: [question], initialWorkCount: 3, initialBatchSize: 3, reviewCandidate,
       metadata: { abstract: { status: 'available', value: 'Synthetic evaluation reports comparative results.' },
         keywords: { status: 'available', value: ['synthetic', 'comparison'] } },
       candidateScreening: { questions: [{ question, concepts: [['comparative results']] }],
@@ -265,11 +287,12 @@ describe('Q5 evidence-gap replenishment', () => {
       .toHaveLength(4)
     expect(state.scheduling.assessments.find(item => item.reasons.some(reason => reason.includes('review failed'))))
       .toBeDefined()
-    expect(state.scheduling.ranking.queues.excluded).toHaveLength(2)
+    expect(state.scheduling.ranking.queues.excluded).toHaveLength(1)
     const [related, fallback, offTopic] = state.scheduling.ranking.evaluations
     expect(related).toMatchObject({ priority: 'p0', score: { questionMatch: 20, methodMatch: 10,
       evidencePotential: 15 } })
     expect(fallback?.score.questionMatch).toBe(0)
+    expect(fallback?.priority).toBe('p2')
     expect(offTopic).toMatchObject({ priority: 'excluded', hardFilter: { status: 'excluded' } })
   })
 

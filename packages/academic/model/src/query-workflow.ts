@@ -127,6 +127,12 @@ export const ACADEMIC_CANDIDATE_RANKING_POLICY_V1: CandidateRankingPolicy = {
   thresholds: { p0: 80, p1: 65, p2: 50 },
 }
 
+/** Metadata scores order candidates; only hard exclusions remove them from the queues. */
+export const ACADEMIC_CANDIDATE_RANKING_POLICY_V2: CandidateRankingPolicy = {
+  ...ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
+  thresholds: { p0: 80, p1: 65, p2: 0 },
+}
+
 /** Weighted points and their producer-computed total for one candidate. */
 export interface CandidateScoreBreakdown extends CandidateScoreValues {
   readonly total: number

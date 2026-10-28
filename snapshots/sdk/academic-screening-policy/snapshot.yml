@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-screening-policy
+profile: sdk
+composition: sdk-academic-screening-policy
+recording: authored
+header:
+  class: academic-screening-policy
+  pin: true

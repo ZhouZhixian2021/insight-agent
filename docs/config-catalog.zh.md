@@ -347,8 +347,12 @@ export interface Config {
   readonly candidateReviewMaxTokens?: number
   /** Maximum elapsed time for one candidate metadata review. Defaults to 150,000 ms. */
   readonly candidateReviewAttemptTimeoutMs?: number
-  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 8. */
+  /** Total semantic reviews across initial and evidence-gap rounds, independent of the Plan candidate limit. Defaults to 24. */
   readonly candidateReviewMaximumWorks?: number
+  /** Reviews reserved for evidence-gap search results. Defaults to 4. */
+  readonly candidateReviewGapReserve?: number
+  /** Maximum distinct source batches inspected to resolve one paper's scope. Defaults to 3. */
+  readonly scopeReviewMaximumBatches?: number
   /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
   readonly candidateReviewConcurrency?: number
   /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */

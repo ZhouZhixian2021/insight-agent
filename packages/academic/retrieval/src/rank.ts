@@ -78,7 +78,7 @@ export function rankPlannedCandidates(
         assessment.fulltextAvailability.status === 'resolvable' ? 1 : 0),
     }, plan.rankingPolicy)
     const priority = candidatePriorityForScore(score.total, hardFilter.status === 'excluded', plan.rankingPolicy)
-    const classification = classify(assessment)
+    const classification = classify(assessment, plan.rankingPolicy.thresholds.p2)
     const sourceTags = version.sourceRecords.map(record => `source:${record.provider}`)
     const teamTag = work.authors[0]?.trim().toLowerCase()
     const diversityTags = [...new Set([
@@ -254,9 +254,9 @@ function workTypeFits(version: WorkVersion, plan: HybridSearchPlan, brief: Execu
     && (brief.evidenceRequirements.allowPreprints || version.versionType !== 'preprint')
 }
 
-function classify(assessment: CandidateAssessment): CandidateClassification {
+function classify(assessment: CandidateAssessment, minimumScore: number): CandidateClassification {
   if (assessment.screening?.scope.status === 'off_topic') return 'irrelevant'
-  if (assessment.topicRelevance === 0 && assessment.matchedQuestions.length === 0) return 'irrelevant'
+  if (minimumScore > 0 && assessment.topicRelevance === 0 && assessment.matchedQuestions.length === 0) return 'irrelevant'
   for (const kind of ['review', 'benchmark_or_dataset', 'empirical_evaluation', 'core_method',
     'application', 'adjacent_technology'] as const) {
     if (assessment.contributionSignals.includes(kind)) return kind

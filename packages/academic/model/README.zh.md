@@ -69,6 +69,8 @@ Trace v1 类型也通过仅类型子路径 `@deepseek-ai/dsh-academic-model/trac
 | `HybridSearchRound` / `SearchStopDecision` | 有界检索轮次结算及明确的继续／停止结果。 |
 | `QueryWorkflowProgressEvent` | 供界面使用的查询规划与候选漏斗实际进度事实。 |
 
+`ACADEMIC_CANDIDATE_RANKING_POLICY_V2` 将 P2 下限设为零，保留所有通过硬条件的候选。分数仍决定优先级；缺失元数据不能证明偏题。V1 继续供需要原评分门槛的调用方和已保存计划使用。每份计划保存完整策略，恢复时沿用记录中的阈值。
+
 `ProviderFailure` 保存不依赖提供方的错误分类、重试资格和可空的绝对 UTC 重试时间。`createFailureId()` 创建与失败态 `Availability` 共用的标识。`createBatchResult()` 同时保留成功项和错误：没有错误时，即使零结果也为成功；成功项和错误并存时为部分成功；只有错误时为失败。它复制输入数组，但不复制数组中的对象。
 
 `CoverageSummary` 保存实际统计和覆盖限制。`createCoverageSummary()` 拒绝非非负安全整数的计数，以及没有非空白限制说明的截断结果。它复制限制说明数组，不估算统计值。`providerBreakdown` 为 null，表示没有提供数据源分项统计。这些函数不执行重试、不解析不可信 JSON，也不批准报告发布。

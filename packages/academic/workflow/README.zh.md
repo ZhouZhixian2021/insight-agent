@@ -46,7 +46,7 @@ paused 包含论文及版本 ID、新旧哈希、来源地址、获取时间和�
 
 ## 有界研究草稿
 
-`planCandidateBatch()` 是 B 的候选排序与 A 的全文工作流之间的 Q5 决策边界。它保持权威 P0/P1/P2 顺序，按调用方明确配置选择首批候选，后续优先选择已审核问题匹配能补充未覆盖或部分覆盖问题、且尚未调度的候选。如果已有排序候选无法补足需求，它返回 Brief 中需要补证的原始问题，由 B 生成缺口查询，而不会自行编造检索词。函数对目标与覆盖达成、纳入上限、饱和、检索轮次与候选上限、时间、取消、人工审核及候选耗尽返回稳定停止决定。只有批次中至少一篇取得可用全文，才将没有新增证据计入饱和轮数；全文下载失败时继续尝试剩余的已排序候选。该函数是可重放的纯决策；调用方在启动网络或模型工作前持久化输入和已完成批次事实。批次大小必须由调用方策略明确传入，不是包内隐藏常量。
+`planCandidateBatch()` 是 B 的候选排序与 A 的全文工作流之间的 Q5 决策边界。它保持权威 P0/P1/P2 顺序，按调用方明确配置选择首批候选，后续优先选择已审核问题匹配能补充未覆盖或部分覆盖问题、且尚未调度的候选。如果已有排序候选无法补足需求，它返回 Brief 中需要补证的原始问题，由 B 生成缺口查询，而不会自行编造检索词。函数对目标与覆盖达成、纳入上限、饱和、检索轮次与候选上限、时间、取消、人工审核及候选耗尽返回稳定停止决定。只有已完成的范围排除或成功抽取没有产生可用证据，批次才计入证据饱和。下载、模型和来源核验失败不证明饱和。队列重排后的候选上限按累计已调度身份计数。该函数是可重放的纯决策；调用方在启动网络或模型工作前持久化输入和已完成批次事实。批次大小必须由调用方策略明确传入，不是包内隐藏常量。
 
 排序调度在权威排序旁保留审核过的 `CandidateAssessment`。排序、覆盖、批次决定、批次结算、缺口轮次或终态停止发生变化时，`runResearchDraft()` 发布完整的 `AcademicQueryWorkflowObservation` 快照。每份快照包含单一运行身份、运行内单调序号、准确计划和 Brief 版本、关联的论文与版本、权威队列、已完成轮次、绝对批次事实、当前逐题覆盖和已记录的停止决定。浏览器类型消费者通过仅含类型的 `@deepseek-ai/dsh-academic-workflow/query-workflow` 入口导入这些字段。最新快照保留在 `DraftPipelineResult.queryWorkflow`；没有排序调度的旧选择器不提供该字段。观察者异常不能改变研究结算。
 
@@ -78,7 +78,7 @@ Academic Controller 为已批准的第 3 版和第 4 版查询挂载混合执行
 
 论文处理结果区分 `extracted`、`partially_extracted` 与 `extraction_failed`。部分抽取成功论文的合格记录携带原有来源字段与抽取方法参与分析，被拒草稿不会进入卡片或报告引用。全部草稿被拒的论文仍保留处理结果，但不计入实际纳入论文。每篇受影响论文记一次 `extract_evidence` 失败操作，不按被拒条目数重复计数；逐条序号和原因保留在 `evidence.rejectedDrafts`。覆盖限制与报告限制披露保留和拒绝数量。这不会增加模型重试，也不放宽整份 JSON 的结构校验；JSON 的 `validated` 状态与逐字原文核验不同。
 
-将 `createModelEvidenceGenerator(ctx, session, config, policy)` 绑定到具有活动持久化写入器的 Session，并显式传入 `LlmCallConfig` 和正数 `maxAttempts`。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。生成器先用首个有序证据批次判断范围；排除会停止抽取，材料不足会暂停论文，不计作排除。`inputBatchTokenLimit` 按完整证据输入估算值切分有序来源片段；单个过大片段按 `inputBatchOverlapCharacters` 重叠切分，局部片段序号在来源核验前映射回原始序号。`attemptTimeoutMs` 限制每次范围判断或证据尝试。输出上限和模型提供方报告的瞬时故障可在各操作内重试。若本地证据尝试超过时限且 `maxAttempts` 大于一，生成器把该批次替换为两个更小的来源输入，不原样重试超时输入，也不再次拆分；工具调用、非法 JSON、不支持的内容、准入失败和外部取消不会重试。调用方选择模型路由和全部部署限制。
+将 `createModelEvidenceGenerator(ctx, session, config, policy)` 绑定到具有活动持久化写入器的 Session，并显式传入 `LlmCallConfig` 和正数 `maxAttempts`。上下文需要 llm、sessions、sessionPersistence 和 tokenMeter。配置的提供方解析模型容量和输出上限；缺少容量或上限时，该论文在发送前失败。生成器按有界的有序证据批次判断范围；排除会停止抽取，范围仍不确定时暂停论文，不计作排除。`inputBatchTokenLimit` 按完整证据输入估算值切分有序来源片段；单个过大片段按 `inputBatchOverlapCharacters` 重叠切分，局部片段序号在来源核验前映射回原始序号。`attemptTimeoutMs` 限制每次范围判断或证据尝试。输出上限和模型提供方报告的瞬时故障可在各操作内重试。若本地证据尝试超过时限且 `maxAttempts` 大于一，生成器把该批次替换为两个更小的来源输入，不原样重试超时输入，也不再次拆分；工具调用、非法 JSON、不支持的内容、准入失败和外部取消不会重试。调用方选择模型路由和全部部署限制。
 
 返回的 PaperEvidenceGenerator 接收 B 的请求、解析来源元数据和批准的自然语言范围规则，可直接作为 runResearchDraft 的 generator。B 接收的 EvidenceGenerationRequest 不变；由 A 的包装层把调用关联到论文、版本、内容哈希、来源、抽取方法及范围决定。
 
@@ -98,13 +98,15 @@ Controller 为正式研究运行选择 `depth: 'minimal'`。范围审核仍独�
 
 报告按交付检查自动选择正式报告或草稿：证据完整性、正文支持论文与全文最低数量、必要结构及非合成数据决定交付资格。缺少独立审核不阻止交付；逐题缺口作为内容限制披露，不新增模型审核调用。
 
+`DraftPipelineAdapters.reviewCandidates` 可在全文批次结算后，按已观察的问题覆盖情况审核尚未调度的候选，并返回权威调度状态及新增全文交接。恢复运行使用已保存评估，不会再次调用此适配器。流水线保留已调度身份和累计候选上限。
+
 ## Model Experience
 
 ### 带会话记录的模型抽取
 
 #### What the model sees
 
-`createModelEvidenceGenerator()` 在任何证据请求前发送一次无工具范围判断。范围判断接收获批纳入和排除规则、程序持有的来源 Provider 与 URL，以及首个有序文本批次；`sourceComplete` 标明输入是否完整，只返回决定和理由。纳入论文随后把 B 的指令、研究问题及有序正文/定位批次送入不含范围规则的证据请求。证据输出最多六条直接回答，每条包含逐字摘录及一个卡片分区；程序在来源核验前把未抽取的分区字段标为 `not_extracted`。来源元数据可证明官方来源或稳定标识，但不能支撑研究结论。两阶段都使用由 `phase` 区分的不可变 `academic/evidence-request` 和 `academic/evidence-result` 记录；没有 `phase` 的历史记录仍表示合并指令。结果保留无损流、已提供的用量、尝试耗时、首段内容延迟及粗粒度失败阶段；这些事实不能定位故障的具体网络跳。`validated` 仅代表 JSON 校验通过；仅用于记录的事件不进入主对话历史。
+`createModelEvidenceGenerator()` 在任何证据请求前发送有次数上限的无工具范围判断。范围判断接收获批纳入和排除规则、程序持有的来源 Provider 与 URL，以及每次请求中的一个有序文本批次；`sourceComplete` 标明输入是否完整，只返回决定和理由。纳入论文随后把 B 的指令、研究问题及有序正文/定位批次送入不含范围规则的证据请求。证据输出最多六条直接回答，每条包含逐字摘录及一个卡片分区；程序在来源核验前把未抽取的分区字段标为 `not_extracted`。来源元数据可证明官方来源或稳定标识，但不能支撑研究结论。两阶段都使用由 `phase` 区分的不可变 `academic/evidence-request` 和 `academic/evidence-result` 记录；没有 `phase` 的历史记录仍表示合并指令。结果保留无损流、已提供的用量、尝试耗时、首段内容延迟及粗粒度失败阶段；这些事实不能定位故障的具体网络跳。`validated` 仅代表 JSON 校验通过；仅用于记录的事件不进入主对话历史。
 
 #### Token effect
 
@@ -130,7 +132,7 @@ DSH 现有消息估算器计算完整包装后的输入。启用分批后，每�
 
 ## Known Limitations and Deferred Work
 
-- 论文超出配置的输入上限时，范围判断只读取首个证据批次。模型可以返回 `needs_more_context`，使论文暂停待审；程序不会自动补取后续片段。对部分文本返回 `included`，不证明未读章节也满足规则。精简证据草稿会填写卡片分区和陈述，但分区特有属性保留为 `not_extracted`。
+- `scopeReviewMaximumBatches` 限制范围判断可读取的有序来源批次数；省略时保留单批行为。只有 `needs_more_context` 才推进到下一批。达到上限后仍无法判断的论文暂停待审。每次补读请求都会记录，取消后停止后续派发。对部分文本返回 `included`，不证明未读章节也满足规则。精简证据草稿会填写卡片分区和陈述，但分区特有属性保留为 `not_extracted`。
 
 - 该库提供有界明确查询草稿流水线、单篇交接和显式启用的模型适配器。`@deepseek-ai/dsh-academic-workflow/recovery` 类型入口固定归一化恢复契约，根入口导出的 `reconstructAcademicResearchRecoveryState()` 则从一份完整且有序的 Session 日志执行纯 A-S2 重建。A-S3 会在每个排序批次开始前和结算后持久化可安全序列化为 JSON 的可执行检查点。Session 后端接受 `resumeRetrievalRunId`，取得 Session 写入句柄，校验检查点与已批准计划及已提交批次历史一致，跳过检索和筛选，保留原运行身份，不重复已结算批次，并把一个未结算批次作为整体重新执行。没有检查点的历史未完成运行返回 `candidate_state_missing`。恢复后的保留候选池不会开启新的证据缺口检索轮次，因为来源运行时解析缓存尚未持久化。自适应查询规划和最终语义审核仍留待后续；来源 Provider 可以在自身配置上限内重试临时传输失败。它不证明文件的学术身份，也不判断格式差异或内容改版。
 

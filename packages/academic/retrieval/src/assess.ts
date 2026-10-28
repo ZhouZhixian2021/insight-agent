@@ -51,6 +51,8 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     throw new RangeError('reviewed screening must belong to a verified work in this round')
   }
   const versions = new Map(round.ingested.versions.map(version => [version.workVersionId, version]))
+  const match = (text: string, concepts: CandidateTermConcepts) => matchedConcepts(text, concepts,
+    plan.rankingPolicy.thresholds.p2 === 0)
   const questionsByQuery = new Map(plan.queries.map(query => [query.searchQueryId, query.questions]))
   const discoveredBy = new Map(round.discoveredBy.map(item => [item.academicWorkId, item.searchQueryIds]))
   return round.ingested.works.map((work): DetailedCandidateAssessment => {
@@ -66,14 +68,14 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     const sources: CandidateMetadataQuote[] = [{ source: 'title', text: work.title },
       ...metadata.abstract.status === 'available' ? [{ source: 'abstract' as const, text: metadata.abstract.value }] : []]
     const quoteFor = (concepts: CandidateTermConcepts): CandidateMetadataQuote => {
-      const relevant = sources.filter(source => matchedConcepts(normalize(source.text), concepts).length === concepts.length)
+      const relevant = sources.filter(source => match(normalize(source.text), concepts).length === concepts.length)
       const only = relevant[0]
       if (only === undefined) throw new RangeError('scored metadata indication requires a title or abstract quote')
       return only
     }
-    const topic = matchedConcepts(text, criteria.topic)
+    const topic = match(text, criteria.topic)
     const questions = criteria.questions.map(entry => ({ ...entry, matches: sources.reduce<string[]>((best, source) => {
-      const matches = matchedConcepts(normalize(source.text), entry.concepts)
+      const matches = match(normalize(source.text), entry.concepts)
       return matches.length > best.length ? matches : best
     }, []) }))
     const discoveryQuestions = new Set((discoveredBy.get(work.academicWorkId) ?? [])
@@ -81,19 +83,19 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
     let matchedQuestions = questions
       .filter(entry => entry.matches.length === entry.concepts.length)
       .map(entry => entry.question)
-    let methods = matchedConcepts(text, criteria.methods)
-    let evidence = matchedConcepts(text, criteria.evidence)
+    let methods = match(text, criteria.methods)
+    let evidence = match(text, criteria.evidence)
     const contributions = criteria.contributions.filter(entry => sources.some(source =>
-      matchedConcepts(normalize(source.text), entry.concepts).length === entry.concepts.length))
+      match(normalize(source.text), entry.concepts).length === entry.concepts.length))
     let contributionSignals = [...new Set(contributions.map(entry => entry.classification))]
     const signals: CandidateMetadataSignal[] = [
       ...questions.filter(entry => matchedQuestions.includes(entry.question)).map(entry => ({
         kind: 'question' as const, question: entry.question, quote: quoteFor(entry.concepts),
       })),
-      ...criteria.methods.filter(concept => matchedConcepts(text, [concept]).length > 0).map(concept => ({
+      ...criteria.methods.filter(concept => match(text, [concept]).length > 0).map(concept => ({
         kind: 'method' as const, label: firstAlias(concept), quote: quoteFor([concept]),
       })),
-      ...criteria.evidence.filter(concept => matchedConcepts(text, [concept]).length > 0).map(concept => ({
+      ...criteria.evidence.filter(concept => match(text, [concept]).length > 0).map(concept => ({
         kind: 'evidence_type' as const, label: firstAlias(concept), quote: quoteFor([concept]),
       })),
       ...contributions.map(entry => ({
@@ -109,7 +111,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       ? ['Lexical indications do not resolve negation or establish that a paper answers a research question.']
       : ['No scholarly abstract is available; title indications do not establish the paper scope.']
     const surfaceKeywordHits: CandidateSurfaceKeywordHit[] = surfaceSources.flatMap(source => terms.filter(term =>
-      matchedConcepts(normalize(source.text), [[term]]).length > 0).map(term => ({ term, ...source })))
+      match(normalize(source.text), [[term]]).length > 0).map(term => ({ term, ...source })))
     const reviewed = reviewedScreenings?.get(work.academicWorkId)
     const screening: CandidateScreeningDetails = reviewed === undefined ? {
       schemaVersion: 1, signals, surfaceKeywordHits, uncertainties: uncertainty,
@@ -225,12 +227,13 @@ function normalize(value: string): string {
   return value.normalize('NFKC').toLowerCase().replace(/[-‐‑–—]/gu, ' ').replace(/\s+/gu, ' ').trim()
 }
 
-function matchedConcepts(text: string, concepts: CandidateTermConcepts): string[] {
+function matchedConcepts(text: string, concepts: CandidateTermConcepts, pluralVariants = false): string[] {
   return concepts.filter(aliases => aliases.some((alias) => {
     const phrase = normalize(alias)
     if (/\p{Script=Han}/u.test(phrase)) return text.includes(phrase)
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
-    return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'u').test(text)
+    const plural = pluralVariants && /[a-z]$/u.test(phrase) && !phrase.endsWith('s') ? 's?' : ''
+    return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}${plural}(?![\\p{L}\\p{N}])`, 'u').test(text)
   })).flatMap(aliases => aliases.slice(0, 1))
 }
 

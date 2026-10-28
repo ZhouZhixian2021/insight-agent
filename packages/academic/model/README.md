@@ -69,6 +69,8 @@ Academic packages import these types instead of declaring provider-specific subs
 | `HybridSearchRound` / `SearchStopDecision` | Bounded round settlement and explicit continue-or-stop result. |
 | `QueryWorkflowProgressEvent` | Observed query-planning and candidate-funnel progress facts for UI consumers. |
 
+`ACADEMIC_CANDIDATE_RANKING_POLICY_V2` retains every hard-eligible candidate by setting the P2 floor to zero. Scores still determine priority; missing metadata does not establish irrelevance. V1 remains available for callers and saved plans that require its score cutoff. Each plan stores its complete policy, so recovery uses the recorded thresholds.
+
 `ProviderFailure` records a provider-neutral category, retry eligibility, and an optional absolute UTC retry time. `createFailureId()` creates the identity shared with failed `Availability` values. `createBatchResult()` keeps successful items and failures together: no failures means success even with zero items; items plus failures means partial success; failures without items means failure. It copies the input arrays without cloning their elements.
 
 `CoverageSummary` contains observed counts and coverage limitations. `createCoverageSummary()` rejects counts that are not non-negative safe integers and truncated results without a non-blank limitation. It copies the limitation list and never estimates statistics. `providerBreakdown` is null because per-provider statistics are not supplied. These helpers do not execute retries, parse untrusted JSON, or authorize report publication.

@@ -145,6 +145,9 @@ function terminalDecision(input: CandidateBatchPlanningInput): Extract<SearchSto
   if (input.includedWorks >= brief.stopConditions.maximumIncludedWorks) {
     return stopped('maximum_included_works', 'The approved included-work limit has been reached.')
   }
+  if (input.scheduledWorkVersionIds.length >= brief.stopConditions.maximumCandidateWorks) {
+    return stopped('maximum_candidate_works', 'The approved candidate-work limit has been reached.')
+  }
   if (input.completedBatchCount > 0
     && input.consecutiveBatchesWithoutEvidence >= brief.stopConditions.saturationRounds) {
     return stopped('saturated', 'Consecutive completed batches added no usable evidence.')
@@ -154,7 +157,8 @@ function terminalDecision(input: CandidateBatchPlanningInput): Extract<SearchSto
 
 function batchDecision(input: CandidateBatchPlanningInput, reason: CandidateBatchReason,
   selected: readonly WorkVersionId[], questions: readonly string[]): CandidateBatchDecision {
-  const availableSlots = input.brief.stopConditions.maximumIncludedWorks - input.includedWorks
+  const availableSlots = Math.min(input.brief.stopConditions.maximumIncludedWorks - input.includedWorks,
+    input.brief.stopConditions.maximumCandidateWorks - input.scheduledWorkVersionIds.length)
   const bounded = selected.slice(0, availableSlots)
   if (bounded.length === 0) throw new RangeError('A scheduled candidate batch cannot be empty.')
   return {

@@ -58423,7 +58423,7 @@
       "digest": "0058ac8cfee5153e904e070735e65d27ff4c20d8804b0648010024a2ef2e7692",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:209"
+        "packages/academic/model/src/query-workflow.ts:215"
       ]
     },
     {
@@ -58442,7 +58442,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateMetadataQuote"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:177"
+        "packages/academic/model/src/query-workflow.ts:183"
       ]
     },
     {
@@ -58610,7 +58610,7 @@
       "digest": "07a90a326be0fe3f404f92da31e5680a0a2c4529feb08fa20eab18e2826e210e",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:194"
+        "packages/academic/model/src/query-workflow.ts:200"
       ]
     },
     {
@@ -58854,8 +58854,8 @@
       "digest": "10652cfdb51f56220d9336d17addafcf96ac3d4103c6e8e8b4a28b851f87ffec",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:174",
-        "packages/academic/model/src/query-workflow.ts:211",
+        "packages/academic/model/src/query-workflow.ts:180",
+        "packages/academic/model/src/query-workflow.ts:217",
         "packages/academic/model/src/types.ts:51"
       ]
     },
@@ -58878,7 +58878,7 @@
       "digest": "11855c8862970eb5380f3d24bb8d1a10a8d894866fd267ef655e9902d28a30ba",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:184"
+        "packages/academic/model/src/query-workflow.ts:190"
       ]
     },
     {
@@ -58928,7 +58928,7 @@
       "digest": "13268b9b81f32ccb4c2ae7f601225a96f8d6ce010fac046454078ea98ec8c6fe",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:289"
+        "packages/academic/model/src/query-workflow.ts:295"
       ]
     },
     {
@@ -59057,7 +59057,7 @@
       "digest": "17f3f57a3483bd92292689f82d5776f0c5178ade3e853bed925ad6d617c71dd8",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:441"
+        "packages/academic/model/src/query-workflow.ts:447"
       ]
     },
     {
@@ -59066,7 +59066,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidatePriorityQueues"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:352"
+        "packages/academic/model/src/query-workflow.ts:358"
       ]
     },
     {
@@ -59384,7 +59384,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateHardFilterReason"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:165"
+        "packages/academic/model/src/query-workflow.ts:171"
       ]
     },
     {
@@ -60224,7 +60224,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateMetadataSignal"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:183"
+        "packages/academic/model/src/query-workflow.ts:189"
       ]
     },
     {
@@ -60269,7 +60269,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateAssessment"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:295"
+        "packages/academic/model/src/query-workflow.ts:301"
       ]
     },
     {
@@ -60461,7 +60461,7 @@
         "packages/academic/model/src/query-workflow.ts#SearchStopDecision"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:440"
+        "packages/academic/model/src/query-workflow.ts:446"
       ]
     },
     {
@@ -60470,7 +60470,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateSemanticReviewV1"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:244"
+        "packages/academic/model/src/query-workflow.ts:250"
       ]
     },
     {
@@ -60511,7 +60511,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateHardFilterResult"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:325"
+        "packages/academic/model/src/query-workflow.ts:331"
       ]
     },
     {
@@ -60614,7 +60614,7 @@
       "digest": "4890913a6ee5150f95295b632f83d120a22b3282009d9123778c4eb1ddf591f5",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:210"
+        "packages/academic/model/src/query-workflow.ts:216"
       ]
     },
     {
@@ -60696,7 +60696,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateScoreBreakdown"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:131"
+        "packages/academic/model/src/query-workflow.ts:137"
       ]
     },
     {
@@ -60887,7 +60887,7 @@
       "digest": "4d7032067cd9bef36817466f0ce638a905cd32a8a1039f4b16f674250e761b9e",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:288"
+        "packages/academic/model/src/query-workflow.ts:294"
       ]
     },
     {
@@ -61133,7 +61133,7 @@
         "packages/academic/model/src/query-workflow.ts#ResearchQuestionCoverageResult"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:380"
+        "packages/academic/model/src/query-workflow.ts:386"
       ]
     },
     {
@@ -61231,7 +61231,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateHardFilterReasonCode"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:150"
+        "packages/academic/model/src/query-workflow.ts:156"
       ]
     },
     {
@@ -61293,7 +61293,7 @@
       "digest": "5a2e67e0037591838bee9198a23c94ab811931d053a5a1919d68b6b9beea2631",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:330"
+        "packages/academic/model/src/query-workflow.ts:336"
       ]
     },
     {
@@ -61588,7 +61588,7 @@
         "packages/academic/model/src/query-workflow.ts#AcademicCandidateEvaluation"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:336"
+        "packages/academic/model/src/query-workflow.ts:342"
       ]
     },
     {
@@ -61602,7 +61602,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelRequest"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:136"
+        "packages/academic/workflow/src/model-types.ts:138"
       ]
     },
     {
@@ -62010,7 +62010,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateClassification"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:136"
+        "packages/academic/model/src/query-workflow.ts:142"
       ]
     },
     {
@@ -62091,7 +62091,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidatePriority"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:147"
+        "packages/academic/model/src/query-workflow.ts:153"
       ]
     },
     {
@@ -62208,7 +62208,7 @@
       "digest": "74f94a1a78329b0c4da90e11a8978d68d878ba112d14cce6a3b4fb3c62af261d",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:442"
+        "packages/academic/model/src/query-workflow.ts:448"
       ]
     },
     {
@@ -62462,7 +62462,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateScreeningDetails"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:214"
+        "packages/academic/model/src/query-workflow.ts:220"
       ]
     },
     {
@@ -62479,7 +62479,7 @@
         "packages/academic/model/src/query-workflow.ts#HybridSearchRound"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:418"
+        "packages/academic/model/src/query-workflow.ts:424"
       ]
     },
     {
@@ -62838,7 +62838,7 @@
       "digest": "890e7c90e6ba453873ddd77715f7715de002c2d476229855c9e1c93cc35c2790",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:326",
+        "packages/academic/model/src/query-workflow.ts:332",
         "packages/api/academic-research-controller/src/types.ts:367"
       ]
     },
@@ -63231,7 +63231,7 @@
         "packages/academic/model/src/query-workflow.ts#HybridSearchPlan"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:399"
+        "packages/academic/model/src/query-workflow.ts:405"
       ]
     },
     {
@@ -63475,7 +63475,7 @@
       "digest": "9f04f9814a7cd94f4cc7563bbabfa26bdbaa3c0a595b3178235ca74aba75993e",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:173"
+        "packages/academic/model/src/query-workflow.ts:179"
       ]
     },
     {
@@ -63848,7 +63848,7 @@
       "digest": "ab40c66fc38b3069a5cd946aa21e65db7eeb65a76174b3fc0a6f7eb95465bf5f",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:287"
+        "packages/academic/model/src/query-workflow.ts:293"
       ]
     },
     {
@@ -63857,7 +63857,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateReviewSelectionDecisionV1"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:256"
+        "packages/academic/model/src/query-workflow.ts:262"
       ]
     },
     {
@@ -64543,7 +64543,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateScopeDecision"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:208"
+        "packages/academic/model/src/query-workflow.ts:214"
       ]
     },
     {
@@ -64654,7 +64654,7 @@
         "packages/academic/model/src/query-workflow.ts#SearchStopReason"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:428"
+        "packages/academic/model/src/query-workflow.ts:434"
       ]
     },
     {
@@ -64783,7 +64783,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelResult"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:152"
+        "packages/academic/workflow/src/model-types.ts:154"
       ]
     },
     {
@@ -64851,7 +64851,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateSemanticQuestionMatch"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:238"
+        "packages/academic/model/src/query-workflow.ts:244"
       ]
     },
     {
@@ -64889,7 +64889,7 @@
       "digest": "d291d882c9b782628f4cfa9d7499b86bcdfc3e0d423eb01a3a21efbf7f4bad5b",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:172"
+        "packages/academic/model/src/query-workflow.ts:178"
       ]
     },
     {
@@ -65018,7 +65018,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateReviewSelectionV1"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:274"
+        "packages/academic/model/src/query-workflow.ts:280"
       ]
     },
     {
@@ -65648,7 +65648,7 @@
         "packages/academic/model/src/query-workflow.ts#ResearchQuestionCoverage"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:370"
+        "packages/academic/model/src/query-workflow.ts:376"
       ]
     },
     {
@@ -65812,7 +65812,7 @@
       "digest": "f1ff13edfef3c6b7a290c484757ef15a45484f91bdf98074e9d6e8d2554bbb77",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:286"
+        "packages/academic/model/src/query-workflow.ts:292"
       ]
     },
     {
@@ -65944,7 +65944,7 @@
       "digest": "f69422ff9ec557ad65ad2ae106a2a79dc2f4ea0221d0f5dbdef73ec3fee5ba40",
       "names": [],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:189"
+        "packages/academic/model/src/query-workflow.ts:195"
       ]
     },
     {
@@ -66147,7 +66147,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelSource"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:132"
+        "packages/academic/workflow/src/model-types.ts:134"
       ]
     },
     {
@@ -66156,7 +66156,7 @@
         "packages/academic/model/src/query-workflow.ts#AcademicCandidateRankingResult"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:360"
+        "packages/academic/model/src/query-workflow.ts:366"
       ]
     },
     {
@@ -66165,7 +66165,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateSurfaceKeywordHit"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:201"
+        "packages/academic/model/src/query-workflow.ts:207"
       ]
     },
     {
@@ -66255,7 +66255,7 @@
         "packages/academic/model/src/query-workflow.ts#CandidateFulltextAvailability"
       ],
       "sources": [
-        "packages/academic/model/src/query-workflow.ts:171"
+        "packages/academic/model/src/query-workflow.ts:177"
       ]
     },
     {

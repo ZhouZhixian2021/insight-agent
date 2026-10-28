@@ -100,6 +100,14 @@ export interface DraftPipelineAdapters {
   readonly selectPapers: (ingested: IngestOutcome, brief: ResearchBrief,
     signal?: AbortSignal, onCandidateReview?: (observation: CandidateReviewProgressObservation) => void,
   ) => PaperSelectionResult | Promise<PaperSelectionResult>
+  /** Review another bounded batch against current evidence gaps without repeating retrieval. */
+  readonly reviewCandidates?: (
+    scheduling: CandidateScheduling,
+    ingested: IngestOutcome,
+    coverage: ResearchQuestionCoverageResult,
+    scheduledWorkVersionIds: readonly WorkVersionId[],
+    signal?: AbortSignal,
+  ) => Promise<PaperSelectionResult>
   /**
    * Execute one evidence-gap replenishment round and re-rank the merged candidate pool.
    * Invoked only when Q5 scheduling requests more evidence and another search round remains.

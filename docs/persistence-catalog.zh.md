@@ -342,7 +342,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:182`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:184`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -353,7 +353,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:178`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:180`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -364,7 +364,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:180`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:182`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -5668,7 +5668,7 @@ SHA-256: `b8dd27f890edaea2ad283ebf17151f8f6bf5a53dedae73a7cf2c95c975ed7250`
 
 SHA-256: `614a88afd1dab2447e22d79a16e6c6941d5ab750cfc09440aef96411d99d92a6`
 
-来源：[`packages/academic/model/src/query-workflow.ts:336`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:342`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -5703,7 +5703,7 @@ SHA-256: `47f8b66144c25833c06c3c44c4135a1dd04319d490a1966ac9971f5dad0db863`
 
 SHA-256: `fc914d39e902eba8ea86d3812d09f22b7d5b63a45243f6e248409d9ecb21a5e7`
 
-来源：[`packages/academic/model/src/query-workflow.ts:360`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:366`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7103,7 +7103,7 @@ SHA-256: `5b1d186d0f4b1abb0d5c87f1b3e1aa5228e1795ed916e6414372204f2197d256`
 
 SHA-256: `3c9955856211eb41fecc7f0e804a18a6ebb25a047d6835613d98b441612e14e2`
 
-来源：[`packages/academic/model/src/query-workflow.ts:295`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:301`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7162,7 +7162,7 @@ SHA-256: `e4d3c2011dd561c0b7d7a025d865f849803268b015d4599f097c150bef810881`
 
 SHA-256: `6e7b23c4d3674130b0bfde4ec2cee53e0945398e603fd8e100deb71815ea92d9`
 
-来源：[`packages/academic/model/src/query-workflow.ts:136`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:142`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7185,7 +7185,7 @@ SHA-256: `6e7b23c4d3674130b0bfde4ec2cee53e0945398e603fd8e100deb71815ea92d9`
 
 SHA-256: `fea880a4bf0ee42e6f77f484e86dae424248d777d35010dac6ad776bc4c0db12`
 
-来源：[`packages/academic/model/src/query-workflow.ts:171`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:177`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7203,7 +7203,7 @@ SHA-256: `fea880a4bf0ee42e6f77f484e86dae424248d777d35010dac6ad776bc4c0db12`
 
 SHA-256: `206405980382030ff6e08b8c5e91c108b6eaafaa16cebd0951f8284bc48065b0`
 
-来源：[`packages/academic/model/src/query-workflow.ts:165`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:171`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7220,7 +7220,7 @@ SHA-256: `206405980382030ff6e08b8c5e91c108b6eaafaa16cebd0951f8284bc48065b0`
 
 SHA-256: `585585d3b43dc05b0b3efc39c4085abf3d48fb2b9c40b2abe2b48e05059a5ab8`
 
-来源：[`packages/academic/model/src/query-workflow.ts:150`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:156`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7255,7 +7255,7 @@ SHA-256: `c66d3ad16d6bc2e30b62ea9b0b411add011bc75df8d965c3ed6646764adfac36`
 
 SHA-256: `454cc46943ac35a8a09cae64dc6dae94898f867cccc87f75697071977bfbdc3c`
 
-来源：[`packages/academic/model/src/query-workflow.ts:325`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:331`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7272,7 +7272,7 @@ SHA-256: `454cc46943ac35a8a09cae64dc6dae94898f867cccc87f75697071977bfbdc3c`
 
 SHA-256: `01c9fb335534c734eb48bdb01eb2dafae8427f3d1456c7f2ba11a7197d62072f`
 
-来源：[`packages/academic/model/src/query-workflow.ts:177`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:183`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7289,7 +7289,7 @@ SHA-256: `01c9fb335534c734eb48bdb01eb2dafae8427f3d1456c7f2ba11a7197d62072f`
 
 SHA-256: `3b6c564c699f5281ef3a9f290b0c1eeca88d46257eb18a14035995908aaa2c93`
 
-来源：[`packages/academic/model/src/query-workflow.ts:183`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:189`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7315,7 +7315,7 @@ SHA-256: `503c3bd67a3888e815b9a7080bbd08b8cbd0e4430268db7bca293623240e5a15`
 
 SHA-256: `70664feecde2745d374a2975795172c5532988f0922ad5bef0a7fea3dcdcd575`
 
-来源：[`packages/academic/model/src/query-workflow.ts:147`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:153`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7334,7 +7334,7 @@ SHA-256: `70664feecde2745d374a2975795172c5532988f0922ad5bef0a7fea3dcdcd575`
 
 SHA-256: `187508a1c9770adec2b28734b4d216fff49b5cdd7c8b2215cd85bec8f784c413`
 
-来源：[`packages/academic/model/src/query-workflow.ts:352`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:358`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7448,7 +7448,7 @@ SHA-256: `55e6f83b194fdeba294b3f165729a101f55bbdb75e25faa46825baa255b48bab`
 
 SHA-256: `ab49b02ec6378638830cf5fd45a9f514d5c327e5a5a6d5790606657b835c8886`
 
-来源：[`packages/academic/model/src/query-workflow.ts:256`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:262`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7477,7 +7477,7 @@ SHA-256: `b1b958dc2fa3001ea29a114f96533b305928c54c676844357f5666944432584e`
 
 SHA-256: `d92d8acc71fb72ae5a2ab574bce82cd4fc1120ccd012fc668ab64348caed8a5d`
 
-来源：[`packages/academic/model/src/query-workflow.ts:274`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:280`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7497,7 +7497,7 @@ SHA-256: `d92d8acc71fb72ae5a2ab574bce82cd4fc1120ccd012fc668ab64348caed8a5d`
 
 SHA-256: `c2413bf0f4b8eed21dea3ccdf22903baee433033cfb3fe708abb3670492e0465`
 
-来源：[`packages/academic/model/src/query-workflow.ts:208`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:214`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7515,7 +7515,7 @@ SHA-256: `c2413bf0f4b8eed21dea3ccdf22903baee433033cfb3fe708abb3670492e0465`
 
 SHA-256: `4b06365010ee66964be796f6bdd288e5fbad776bb863a75ab27b8ae7154d94b5`
 
-来源：[`packages/academic/model/src/query-workflow.ts:131`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:137`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7566,7 +7566,7 @@ SHA-256: `366240f4ddae13af37f4ced0b20287dbd1c6cf36e2a3ad162b83b48bed500290`
 
 SHA-256: `7e1a2bf36c8b9e68c81952568494bc4eaaf3902a4032e9ae692d21c7892363ee`
 
-来源：[`packages/academic/model/src/query-workflow.ts:214`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:220`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7586,7 +7586,7 @@ SHA-256: `7e1a2bf36c8b9e68c81952568494bc4eaaf3902a4032e9ae692d21c7892363ee`
 
 SHA-256: `cf88ce82a8cf8a834d4b8e55c7534325efcaa6693fe77ff05c1c37d3e2fdda4f`
 
-来源：[`packages/academic/model/src/query-workflow.ts:238`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:244`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -7603,7 +7603,7 @@ SHA-256: `cf88ce82a8cf8a834d4b8e55c7534325efcaa6693fe77ff05c1c37d3e2fdda4f`
 
 SHA-256: `445059c223406b657f74c02fc40f8281b2ba64ed6e09ea6581d6ea2f0bc40804`
 
-来源：[`packages/academic/model/src/query-workflow.ts:244`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:250`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -7620,7 +7620,7 @@ SHA-256: `445059c223406b657f74c02fc40f8281b2ba64ed6e09ea6581d6ea2f0bc40804`
 
 SHA-256: `fce2082be991cb9df167cac3ad07ef2c6370bcde771541faaafd11325758ca45`
 
-来源：[`packages/academic/model/src/query-workflow.ts:201`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:207`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8115,7 +8115,7 @@ SHA-256: `91ff1a956e640bdee389667aa2ea2490209844fad7728e57d6fd320794ff3033`
 
 SHA-256: `61f8f129c1d8ad9cd278175a2412a4ed469a2568cef92d073d99ed43f12c6838`
 
-来源：[`packages/academic/workflow/src/model-types.ts:136`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:138`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8141,7 +8141,7 @@ SHA-256: `61f8f129c1d8ad9cd278175a2412a4ed469a2568cef92d073d99ed43f12c6838`
 
 SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
-来源：[`packages/academic/workflow/src/model-types.ts:152`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:154`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8170,7 +8170,7 @@ SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
 SHA-256: `fc3691ea824279dcbc6f2524063a599058c6f1e2b2b15e19baa42f67fd93f7be`
 
-来源：[`packages/academic/workflow/src/model-types.ts:132`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:134`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8730,7 +8730,7 @@ SHA-256: `dc06a2fdcc33de2285664c58fe6a940bb2023e38029bc6869910359918d971fa`
 
 SHA-256: `9599172088259e61fff813ccf0c16c0bca7c581378130acf0c961dd199faa88a`
 
-来源：[`packages/academic/model/src/query-workflow.ts:399`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:405`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8780,7 +8780,7 @@ SHA-256: `542126781376c01cfd6ea478e8fad78d9fa31428546c74dc4bd3fca9ae77f843`
 
 SHA-256: `7e819b856e73e9831b563fa36ed62e5c04050d06518169e31690a9ddbbaf1214`
 
-来源：[`packages/academic/model/src/query-workflow.ts:418`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:424`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -10254,7 +10254,7 @@ SHA-256: `0ebf26773990207c320db964468c5c503712644aa9a268eec6c7a12b2f56571c`
 
 SHA-256: `ee2d1494b3e08c4dbe429d700cc1a263059eff16608a597951f2ebfcf38e53c9`
 
-来源：[`packages/academic/model/src/query-workflow.ts:370`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:376`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -10274,7 +10274,7 @@ SHA-256: `ee2d1494b3e08c4dbe429d700cc1a263059eff16608a597951f2ebfcf38e53c9`
 
 SHA-256: `55e33991f01b3ddb0a3ad1aceb6c723d3b6aebf39f20593956b22abcd0a8af77`
 
-来源：[`packages/academic/model/src/query-workflow.ts:380`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:386`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -10480,7 +10480,7 @@ SHA-256: `8c20019a99576fb0a39b6bf03d3652639001d3137884bbee205a2314879887e4`
 
 SHA-256: `444bcf413d6463a318e21d2e7ea2623555f792988d8d912132d489cdd4b5cc1b`
 
-来源：[`packages/academic/model/src/query-workflow.ts:440`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:446`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -10497,7 +10497,7 @@ SHA-256: `444bcf413d6463a318e21d2e7ea2623555f792988d8d912132d489cdd4b5cc1b`
 
 SHA-256: `c5b077ab499db2a9187ce2314b70abfd6e6be8ee74feca4be8b4196ca363ca5b`
 
-来源：[`packages/academic/model/src/query-workflow.ts:428`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:434`](../packages/academic/model/src/query-workflow.ts)
 
 以下类型之一：
 
@@ -13520,7 +13520,7 @@ SHA-256: `a81059ca06999da1e712414520c2c65e491d052fcf9640fae20aa38f0a5dc735`
 
 SHA-256: `4d7032067cd9bef36817466f0ce638a905cd32a8a1039f4b16f674250e761b9e`
 
-来源：[`packages/academic/model/src/query-workflow.ts:288`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:294`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -13783,7 +13783,7 @@ SHA-256: `aba175fb20ffc71112c55efe70458ff5d7dbfb83501892b4ba8d077f0ea5d7ba`
 
 SHA-256: `17f3f57a3483bd92292689f82d5776f0c5178ade3e853bed925ad6d617c71dd8`
 
-来源：[`packages/academic/model/src/query-workflow.ts:441`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:447`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -13797,7 +13797,7 @@ SHA-256: `17f3f57a3483bd92292689f82d5776f0c5178ade3e853bed925ad6d617c71dd8`
 
 SHA-256: `74f94a1a78329b0c4da90e11a8978d68d878ba112d14cce6a3b4fb3c62af261d`
 
-来源：[`packages/academic/model/src/query-workflow.ts:442`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:448`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -14156,7 +14156,7 @@ SHA-256: `ddf46486cca6bf9e4c2db559b0c083e0253dbfcc87c5a547ae4fdf0ca5d28113`
 
 SHA-256: `f69422ff9ec557ad65ad2ae106a2a79dc2f4ea0221d0f5dbdef73ec3fee5ba40`
 
-来源：[`packages/academic/model/src/query-workflow.ts:189`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:195`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -14231,7 +14231,7 @@ SHA-256: `b6ef9c6210be8350cd465f485cf520031fffa6bf3809c61a1e713e834c5982d0`
 
 SHA-256: `07a90a326be0fe3f404f92da31e5680a0a2c4529feb08fa20eab18e2826e210e`
 
-来源：[`packages/academic/model/src/query-workflow.ts:194`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:200`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -14830,7 +14830,7 @@ SHA-256: `978f2c887d0498edb979f4bd6ece456e7075497752a206277eb6e783b450da5d`
 
 SHA-256: `11855c8862970eb5380f3d24bb8d1a10a8d894866fd267ef655e9902d28a30ba`
 
-来源：[`packages/academic/model/src/query-workflow.ts:184`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:190`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15744,7 +15744,7 @@ SHA-256: `8a9c990773f798eac10ca8878e6bcc531ee080bc589cac956730e462cc6a09ad`
 
 SHA-256: `4890913a6ee5150f95295b632f83d120a22b3282009d9123778c4eb1ddf591f5`
 
-来源：[`packages/academic/model/src/query-workflow.ts:210`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:216`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15828,7 +15828,7 @@ SHA-256: `ff3dd8ae5f372a4574fb043834f394a5337af592fed8dac6e90f940a39b74c37`
 
 SHA-256: `0058ac8cfee5153e904e070735e65d27ff4c20d8804b0648010024a2ef2e7692`
 
-来源：[`packages/academic/model/src/query-workflow.ts:209`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:215`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15841,7 +15841,7 @@ SHA-256: `0058ac8cfee5153e904e070735e65d27ff4c20d8804b0648010024a2ef2e7692`
 
 SHA-256: `10652cfdb51f56220d9336d17addafcf96ac3d4103c6e8e8b4a28b851f87ffec`
 
-来源：[`packages/academic/model/src/query-workflow.ts:174`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/query-workflow.ts:211`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/types.ts:51`](../packages/academic/model/src/types.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:180`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/query-workflow.ts:217`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/model/src/types.ts:51`](../packages/academic/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15854,7 +15854,7 @@ SHA-256: `10652cfdb51f56220d9336d17addafcf96ac3d4103c6e8e8b4a28b851f87ffec`
 
 SHA-256: `13268b9b81f32ccb4c2ae7f601225a96f8d6ce010fac046454078ea98ec8c6fe`
 
-来源：[`packages/academic/model/src/query-workflow.ts:289`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:295`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15880,7 +15880,7 @@ SHA-256: `8c3e241f7299d0978ca91da1f0892ea2e2a4dce1674e13175ae98c8e402d197e`
 
 SHA-256: `9f04f9814a7cd94f4cc7563bbabfa26bdbaa3c0a595b3178235ca74aba75993e`
 
-来源：[`packages/academic/model/src/query-workflow.ts:173`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:179`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15947,7 +15947,7 @@ SHA-256: `fe43a49154af34a6093b19da9e8dd8155b0f0146d1faa50a7bcfc4475a809072`
 
 SHA-256: `5a2e67e0037591838bee9198a23c94ab811931d053a5a1919d68b6b9beea2631`
 
-来源：[`packages/academic/model/src/query-workflow.ts:330`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:336`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15973,7 +15973,7 @@ SHA-256: `7f6605d77f6a6146a7261c29ca9fedcc41674209793cd00caa08597b74fddead`
 
 SHA-256: `890e7c90e6ba453873ddd77715f7715de002c2d476229855c9e1c93cc35c2790`
 
-来源：[`packages/academic/model/src/query-workflow.ts:326`](../packages/academic/model/src/query-workflow.ts) · [`packages/api/academic-research-controller/src/types.ts:367`](../packages/api/academic-research-controller/src/types.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:332`](../packages/academic/model/src/query-workflow.ts) · [`packages/api/academic-research-controller/src/types.ts:367`](../packages/api/academic-research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16012,7 +16012,7 @@ SHA-256: `9a2a9029f8d7ede05336980d8342737557f487b913bfd28853d0ab5214600ab5`
 
 SHA-256: `f1ff13edfef3c6b7a290c484757ef15a45484f91bdf98074e9d6e8d2554bbb77`
 
-来源：[`packages/academic/model/src/query-workflow.ts:286`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:292`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16151,7 +16151,7 @@ SHA-256: `e5275fe75128c76221a78f04bf5b510316bacae02a61bf8dc5f53bdc684c4ae7`
 
 SHA-256: `ab40c66fc38b3069a5cd946aa21e65db7eeb65a76174b3fc0a6f7eb95465bf5f`
 
-来源：[`packages/academic/model/src/query-workflow.ts:287`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:293`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16175,7 +16175,7 @@ SHA-256: `c807a6e7d08d2b2c440b8e6c6e844ad20af6a13c9d37a79a827e919bf7e6cadd`
 
 SHA-256: `d291d882c9b782628f4cfa9d7499b86bcdfc3e0d423eb01a3a21efbf7f4bad5b`
 
-来源：[`packages/academic/model/src/query-workflow.ts:172`](../packages/academic/model/src/query-workflow.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:178`](../packages/academic/model/src/query-workflow.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
