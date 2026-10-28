@@ -217,7 +217,10 @@
     "verify-official-bundle-catalog": "tsx scripts/gen-official-bundle-catalog.ts --check",
     "gen-provider-data": "tsx packages/llm/llm-pi-ai/scripts/gen-provider-data.ts",
     "verify-provider-data": "tsx packages/llm/llm-pi-ai/scripts/gen-provider-data.ts --check",
-    "verify-product-use": "tsx scripts/verify-product-use.ts"
+    "verify-product-use": "tsx scripts/verify-product-use.ts",
+    "upgrade:check": "node scripts/upgrade/verify-upstream-overrides.mjs",
+    "upgrade:check:strict": "node scripts/upgrade/verify-upstream-overrides.mjs --against origin/master",
+    "upgrade:replay": "node scripts/upgrade/replay-generated.mjs --apply"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-hooks-claude-code": "workspace:*",
