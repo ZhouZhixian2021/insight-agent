@@ -28,11 +28,13 @@ jobs:
 
       - name: Track upstream and compare base
         shell: pwsh
+        # Full commit history without blobs: the gate diffs the merge base
+        # against HEAD, so a --depth=1 fetch would leave no parents to walk.
         run: |
           git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git
-          git fetch --no-tags --depth=1 upstream master
+          git fetch --no-tags --filter=blob:none upstream master
           $base = if ('${{ github.base_ref }}' -eq '') { 'master' } else { '${{ github.base_ref }}' }
-          git fetch --no-tags --depth=1 origin "+refs/heads/${base}:refs/remotes/origin/${base}"
+          git fetch --no-tags --filter=blob:none origin "+refs/heads/${base}:refs/remotes/origin/${base}"
 
       - uses: actions/setup-node@v4
         with:
