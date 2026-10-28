@@ -692,8 +692,27 @@ describe('headless stream-json snapshots', () => {
       })
       const titleRequests = server.requests.filter(request => isTitleRequest(request))
       const agentRequests = server.requests.filter(request => !isTitleRequest(request))
+      // The recorded bodies can differ only in attempt-scoped fields; name the
+      // first divergence so a real difference stays diagnosable from CI.
+      const attemptBodies = agentRequests.map(request => JSON.stringify(request))
+      const [firstBody, retryBody] = attemptBodies
+      let divergence = 'identical'
+      if (firstBody !== undefined && retryBody !== undefined && firstBody !== retryBody) {
+        const limit = Math.max(firstBody.length, retryBody.length)
+        let index = 0
+        while (index < limit && firstBody[index] === retryBody[index]) index += 1
+        divergence = `${index}|${firstBody.slice(Math.max(0, index - 60), index + 60)}`
+          + `<>${retryBody.slice(Math.max(0, index - 60), index + 60)}`
+      }
+      const sentRequest = (request: JsonObject): string => JSON.stringify({
+        model: request['model'],
+        maxTokens: request['max_tokens'],
+        system: request['system'],
+        messages: request['messages'],
+        tools: request['tools'],
+      })
       expect(titleRequests, diagnostic).toHaveLength(1)
-      expect(new Set(agentRequests.map(request => JSON.stringify(request))).size, diagnostic).toBe(1)
+      expect(new Set(agentRequests.map(sentRequest)).size, `${diagnostic} divergence=${divergence}`).toBe(1)
       expect(server.paths.every(path => path === '/v1/messages'), diagnostic).toBe(true)
       const agentRequest = agentRequests[0]
       const titleRequest = titleRequests[0]
