@@ -34,6 +34,15 @@ node scripts/upgrade/replay-generated.mjs
 
 `--allow-stale` 只在升级合并窗口内使用：那段时间清单与树必然不一致，合并完成后必须重新跑通门禁。
 
+## 预判下次升级
+
+合并之前先跑一次影响报告。它把上游自基线以来改过的文件与登记表求交，冲突面在动手之前就已知，而不是逐个 hunk 才发现。
+
+```sh
+node scripts/upgrade/impact.mjs
+node scripts/upgrade/impact.mjs --fail-on-overlap
+```
+
 ## 升级时怎么用
 
 1. 合并之前先记下 `UPSTREAM_SHA=$(git rev-parse upstream/master)`；

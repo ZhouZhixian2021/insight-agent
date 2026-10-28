@@ -34,6 +34,15 @@ node scripts/upgrade/replay-generated.mjs
 
 `--allow-stale` is for an upgrade merge window only: the manifest and the tree disagree by definition while the merge is open, and the gate must pass again once it closes.
 
+## Predicting the next upgrade
+
+Run the impact report before merging. It intersects the files upstream changed since the recorded baseline with the registered rewrites, so the conflict surface is known in advance instead of discovered hunk by hunk.
+
+```sh
+node scripts/upgrade/impact.mjs
+node scripts/upgrade/impact.mjs --fail-on-overlap
+```
+
 ## Using it during an upgrade
 
 1. Record `UPSTREAM_SHA=$(git rev-parse upstream/master)` before merging;
