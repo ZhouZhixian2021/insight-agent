@@ -4,6 +4,7 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatch
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId, SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
+import { SessionQueryError } from '@deepseek-ai/dsh-session-query'
 import type { PtcDispatchEventData } from '@deepseek-ai/dsh-tools/types'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
@@ -23,7 +24,7 @@ import AcademicResearchController from '../src/index.ts'
 import { academicResearchProjectionDefinition } from '../src/academic-research-projection.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
-import type { AcademicPlannedRetrieval } from '../src/types.ts'
+import type { AcademicBackgroundRunView, AcademicPlannedRetrieval } from '../src/types.ts'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
 import { academicTraceSpan, runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 
@@ -187,6 +188,7 @@ async function harness(options: {
   missingModel?: boolean
   eventsError?: boolean
   resolveError?: boolean
+  writerHeld?: boolean
   reasoning?: boolean
   hybridPlan?: boolean
   retrieval?: AcademicPlannedRetrieval
@@ -264,13 +266,19 @@ async function harness(options: {
     runMaintenance: options.busy ? () => { throw new Error('already has active work') }
       : (task: (maintenanceSignal: AbortSignal) => Promise<unknown>) => task(signal),
   }
-  const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
-  ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
+  const resolution = options.resolveError === true ? { error: new Error('missing Session') }
+    : options.writerHeld === true ? { error: new Error('active write handle') } : { agent }
+  const resolveAgent = vi.fn(() => Promise.resolve(resolution))
+  ctx.provide('sessionController', { resolveAgent } as never)
   const observationDisposed = vi.fn()
   const observeSession = vi.fn((_sessionId: unknown, readOptions: { signal?: AbortSignal; projectionMode?: 'none' } = {}) => {
     readOptions.signal?.throwIfAborted()
+    if (options.resolveError === true) {
+      throw new SessionQueryError('missing Session', 'SESSION_QUERY_SESSION_NOT_FOUND')
+    }
     const events = currentEvents()
-    return Promise.resolve({ events, cursor: events.at(-1)?.seq ?? -1, [Symbol.dispose]: observationDisposed })
+    return Promise.resolve({ header: { id: sessionId, cwd: '/work' }, inheritedEventCount: 0,
+      events, cursor: events.at(-1)?.seq ?? -1, [Symbol.dispose]: observationDisposed })
   })
   ctx.provide('sessionQuery', { observeSession } as never)
   ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
@@ -305,10 +313,39 @@ async function harness(options: {
     synthesisRetryInitialDelayMs: 1_000,
   })
   return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents,
-    observeSession, observationDisposed, legacySnapshotRead }
+    observeSession, observationDisposed, legacySnapshotRead, resolveAgent }
 }
 
 describe('AcademicResearchController', () => {
+  it('reopens a saved plan and completed run while another Web process owns the Session writer', async () => {
+    const fixture = await harness({ writerHeld: true })
+    const plan = await fixture.controller.plan(fixture.sessionId)
+    const observed = { ...retrievalRun(), researchBriefId: plan.researchBriefId }
+    const saved: AcademicBackgroundRunView = {
+      schemaVersion: 1, sessionId: fixture.sessionId, backgroundRunId: 'saved-run',
+      researchBriefId: plan.researchBriefId, state: 'completed',
+      startedAt: '2026-10-09T00:00:00Z', updatedAt: '2026-10-09T00:01:00Z',
+      retrievalRunId: observed.retrievalRunId, progress: null, q6: null,
+      result: { synthesis: { status: 'not_run', reasons: [] }, status: 'completed',
+        sessionId: fixture.sessionId, q6: null,
+        stages: { search: 'success', fulltext: 'not_run', extraction: 'not_run' },
+        retrievalRun: observed, papers: [], failures: [], report: null },
+      error: null, cancelReason: null,
+    }
+    fixture.sessionEvents.push(['academic/background-run-state', saved])
+    expect(await fixture.controller.listBackgroundRuns(fixture.sessionId)).toMatchObject([
+      { backgroundRunId: saved.backgroundRunId, state: 'completed' },
+    ])
+    expect(await fixture.controller.getBackgroundRun(saved)).toEqual(saved)
+    const span = academicTraceSpan('run', null, 'run', null, 'research')
+    fixture.sessionEvents.push(['academic/trace-v1', { schemaVersion: 1,
+      researchRunId: observed.retrievalRunId, span }])
+    expect((await fixture.controller.traceList({ sessionId: fixture.sessionId,
+      researchRunId: observed.retrievalRunId }, fixture.signal)).items).toHaveLength(1)
+    expect(fixture.resolveAgent).not.toHaveBeenCalled()
+    expect(fixture.observationDisposed).toHaveBeenCalledTimes(4)
+  })
+
   it('reads Trace from one disposable observation without appending or starting research', async () => {
     const fixture = await harness()
     const researchRunId = createRetrievalRunId()
@@ -335,11 +372,12 @@ describe('AcademicResearchController', () => {
     expect(fixture.observeSession).toHaveBeenCalledOnce()
   })
 
-  it('does not observe an unauthorized Session or an already-aborted Trace viewer', async () => {
+  it('rejects a missing Session and an already-aborted Trace viewer', async () => {
     const missing = await harness({ resolveError: true })
     const query = { sessionId: missing.sessionId, researchRunId: createRetrievalRunId() }
-    await expect(missing.controller.traceList(query, missing.signal)).rejects.toThrow('missing Session')
-    expect(missing.observeSession).not.toHaveBeenCalled()
+    await expect(missing.controller.traceList(query, missing.signal)).rejects.toMatchObject({ code: 'session/not-found' })
+    expect(missing.observeSession).toHaveBeenCalledOnce()
+    expect(missing.resolveAgent).not.toHaveBeenCalled()
     const cancelled = await harness()
     const abort = new AbortController()
     abort.abort(new Error('viewer stopped'))
@@ -353,7 +391,8 @@ describe('AcademicResearchController', () => {
     const abort = new AbortController()
     fixture.observeSession.mockImplementationOnce(() => {
       abort.abort(new Error('viewer stopped during read'))
-      return Promise.resolve({ events: [] as SessionEvent[], cursor: -1, [Symbol.dispose]: fixture.observationDisposed })
+      return Promise.resolve({ header: { id: fixture.sessionId, cwd: '/work' }, inheritedEventCount: 0,
+        events: [] as SessionEvent[], cursor: -1, [Symbol.dispose]: fixture.observationDisposed })
     })
     await expect(fixture.controller.traceList({ sessionId: fixture.sessionId, researchRunId: createRetrievalRunId() }, abort.signal))
       .rejects.toThrow('viewer stopped during read')
@@ -424,7 +463,7 @@ describe('AcademicResearchController', () => {
   })
   it('reports unavailable sessions and unreadable history during preview without running research', async () => {
     const missing = await harness({ resolveError: true })
-    await expect(missing.controller.plan(missing.sessionId)).rejects.toThrow('missing Session')
+    await expect(missing.controller.plan(missing.sessionId)).rejects.toMatchObject({ code: 'session/not-found' })
     const invalid = await harness({ eventsError: true })
     await expect(invalid.controller.plan(invalid.sessionId)).rejects.toThrow('无法读取研究计划')
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()

@@ -6,7 +6,7 @@ import type {} from '@deepseek-ai/dsh-agent'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
-import type {} from '@deepseek-ai/dsh-session-query'
+import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
 import {
   runAcademicResearchDraft,
   runAcademicEvidenceEnhancement,
@@ -40,6 +40,7 @@ import {
   academicResearchProjectionDefinition,
   recoveryEventsOf,
   requireAcademicResearchState,
+  type AcademicResearchProjectionState,
 } from './academic-research-projection.ts'
 import type {
   AcademicResearchRunFrame, AcademicResearchRunRequest, AcademicResearchRunValue, AcademicResearchStageStatus,
@@ -224,13 +225,15 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   @Remote('plan')
   async plan(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchPlanView> {
-    const found = await this.ctx.sessionController.resolveAgent(sessionId)
-    if ('error' in found) throw found.error
     try {
-      const { brief, searches } = this.approvedPlan(String(sessionId), found.agent.session)
+      const projection = await this.readProjection(sessionId)
+      const approved = projection.latestApprovedPlan
+      if (approved === null) throw new Error('请先在当前会话完成研究计划审核。')
+      const { brief, searches } = researchPlanFromApproval(String(sessionId), approved)
       if (searches === undefined) throw new Error('当前已批准计划缺少检索方案，请在聊天中让系统补齐计划并重新审核，无需填写检索词。')
       return { researchBriefId: brief.researchBriefId, topic: brief.topic, questions: brief.questions, searches }
     } catch (cause: unknown) {
+      if (cause instanceof RemoteError) throw cause
       throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : '无法读取研究计划，请先完成计划审核。', {}, { cause })
     }
   }
@@ -381,9 +384,7 @@ export class AcademicResearchController extends TypertRemoteService {
   async getBackgroundRun(key: AcademicBackgroundRunKey): Promise<AcademicBackgroundRunView> {
     const active = this.backgroundRuns.get(key.sessionId, key.backgroundRunId)
     if (active !== undefined) return active
-    const found = await this.ctx.sessionController.resolveAgent(key.sessionId)
-    if ('error' in found) throw found.error
-    const projection = this.projection(found.agent.session)
+    const projection = await this.readProjection(key.sessionId)
     const view = backgroundRunFromProjection(key.sessionId, key.backgroundRunId,
       projection.backgroundRuns[key.backgroundRunId])
     if (view === undefined) throw new RemoteError('gateway/bad-request', '找不到当前会话的学术研究运行记录。', {})
@@ -397,9 +398,7 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   @Remote('listBackgroundRuns')
   async listBackgroundRuns(sessionId: AcademicResearchRunRequest['sessionId']): Promise<readonly AcademicBackgroundRunSummary[]> {
-    const found = await this.ctx.sessionController.resolveAgent(sessionId)
-    if ('error' in found) throw found.error
-    const projection = this.projection(found.agent.session)
+    const projection = await this.readProjection(sessionId)
     return backgroundRunsFromProjection(sessionId, projection.backgroundRunOrder,
       projection.backgroundRuns).slice(-20).map((saved) => {
       const { schemaVersion, backgroundRunId, researchBriefId, state, startedAt, updatedAt, retrievalRunId, cancelReason } =
@@ -449,6 +448,41 @@ export class AcademicResearchController extends TypertRemoteService {
     )
   }
 
+  /** Read one Session's Academic state without claiming its write handle. */
+  private async readProjection(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchProjectionState> {
+    using observation = await this.readObservation(sessionId)
+    return this.projectionOfObservation(sessionId, observation)
+  }
+
+  /** Keep read-only viewers independent of Agent activation and writer ownership. */
+  private async readObservation(sessionId: AcademicResearchRunRequest['sessionId'],
+    signal?: AbortSignal): Promise<SessionObservation> {
+    try {
+      return await this.ctx.sessionQuery.observeSession(sessionId,
+        { projectionMode: 'none', ...(signal === undefined ? {} : { signal }) })
+    } catch (error: unknown) {
+      if (error instanceof SessionQueryError && error.code === 'SESSION_QUERY_SESSION_NOT_FOUND') {
+        throw new RemoteError('session/not-found', `session "${sessionId}" not found`, { sessionId })
+      }
+      throw error
+    }
+  }
+
+  /** Validate an ordinary Session before reading its exact observed projection. */
+  private projectionOfObservation(sessionId: AcademicResearchRunRequest['sessionId'],
+    observation: SessionObservation): AcademicResearchProjectionState {
+    if (observation.header.id !== sessionId || observation.header.cwd === undefined) {
+      throw new RemoteError('session/not-found', `session "${sessionId}" not found`, { sessionId })
+    }
+    if (observation.header.origin === 'subagent') {
+      throw new RemoteError('session/agent-busy', `session "${sessionId}" is owned by subagent routing`,
+        { reason: 'use subagent delivery for this child session' })
+    }
+    let state = academicResearchProjectionDefinition.init(observation.header, observation.inheritedEventCount)
+    for (const event of observation.events) state = academicResearchProjectionDefinition.apply(state, event)
+    return state
+  }
+
   private approvedPlan(sessionId: string, session: Session) {
     const approved = this.projection(session).latestApprovedPlan
     if (approved === null) throw new Error('请先在当前会话完成研究计划审核。')
@@ -464,13 +498,12 @@ export class AcademicResearchController extends TypertRemoteService {
   @Remote('traceList')
   async traceList(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage> {
     signal.throwIfAborted()
-    const found = await this.ctx.sessionController.resolveAgent(query.sessionId)
-    if ('error' in found) throw found.error
-    const projection = this.projection(found.agent.session)
+    using observation = await this.readObservation(query.sessionId, signal)
+    signal.throwIfAborted()
+    const projection = this.projectionOfObservation(query.sessionId, observation)
     const active = projection.backgroundRunOrder.some(id =>
       projection.backgroundRuns[id]?.retrievalRunId === query.researchRunId
       && this.backgroundRuns.get(query.sessionId, id)?.state === 'running')
-    using observation = await this.ctx.sessionQuery.observeSession(query.sessionId, { signal, projectionMode: 'none' })
     signal.throwIfAborted()
     try { return queryAcademicTrace(observation.events, query, active) }
     catch (cause: unknown) { throw new RemoteError('gateway/bad-request', cause instanceof Error && cause.message === 'invalid_cursor' ? 'invalid_cursor' : 'invalid_query', {}) }

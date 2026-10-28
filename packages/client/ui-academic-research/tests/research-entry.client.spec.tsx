@@ -122,6 +122,18 @@ it('rechecks approval before starting and requires a second click after the plan
     researchBriefId: nextPlan.researchBriefId, synthetic: false }, expect.any(AbortSignal)) })
   expect(plan).toHaveBeenCalledTimes(3)
 })
+it('labels a running task from an earlier plan and blocks a second run', async () => {
+  const f = fixture()
+  f.publish(initialTask())
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId }
+  render(<ResearchEntry {...f.props()} plan={async () => nextPlan} />)
+  await open()
+  await screen.findByText(zh.backgroundConnected)
+  expect(screen.getByText(zh.historicalPlanResult)).toBeTruthy()
+  expect(screen.getByText(zh.previousPlanRunning)).toBeTruthy()
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+})
 it('switching Sessions detaches observation; switching back recovers the original task', async () => {
   const f = fixture(); const other = 'other' as typeof sid
   const originalList = f.listBackgroundRuns.getMockImplementation()!
