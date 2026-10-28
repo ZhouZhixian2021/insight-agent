@@ -19,7 +19,7 @@ Status: implemented
 3. **稳定身份**：新成果获得全新的 `createAcademicWorkId()`；索引把其携带的每个精确键映射到该 id，因此后续共享任一标识符的记录会合并进同一 id。以改变的规则重跑也无法改写索引中已分配的 id。
 4. **合并**把每个版本重新指向已分配的成果身份，合并外部标识符，并调和成果：规范版本所属的记录拥有标题、作者、发表状态与场所；`workVersionIds` 取并集；`firstPublicDate` 取最早可用日期。重复的提供方/记录 id 复用已存版本，不追加提供方新生成的 id，同时保留新核验出的标识符和来源记录。
 5. **规范版本**在非撤回版本中优先 `version_of_record` > `corrected` > `accepted_manuscript` > `preprint`，同类型按更晚发布日期、再按摄取顺序决定；仅当无其他版本时撤回版本才作为候选。
-6. **已核验 Web 溯源**保存在贡献的 `IngestRecord` 上，不进入书目信息字段。混合检索工作流提供发现 URL 和核验其引用的 Academic Provider；重复的提供方记录归为同一版本时，不同的 URL/Provider 对继续关联到该版本。结果将这些溯源信息连同保留的成果和版本 id 一起给出。摄取库不会把未核验的 Web 结果当作学术记录。
+6. **已核验 Web 发现 URL 与 Provider**保存在贡献的 `IngestRecord` 上，不进入书目信息字段。混合检索工作流提供发现 URL 和核验其引用的 Academic Provider；重复的提供方记录归为同一版本时，不同的 URL/Provider 对继续关联到该版本。结果将这些 URL/Provider 对连同保留的成果和版本 id 一起给出。摄取库不会把未核验的 Web 结果当作学术记录。
 
 该库消费 `IngestRecord`（一对 `{ academicWork, workVersion }`，可附带已核验的发现轨迹），它仍与来源 seam 的 `AcademicSourceWork` 结构兼容，因此提供方输出无需依赖 `dsh-academic-source` 即可流入。
 

@@ -16,7 +16,7 @@ Status: implemented
 
 ## Alternatives considered
 
-在界面解析 Session JSONL 会让展示依赖持久化代际并暴露原始内容。按标题或相邻时间戳推断调用会合并无关操作。把完整请求复制到第二份存储会重复保存敏感数据。[Session 谱系与事件追踪](../../implemented/feature/2026-07-13-session-query-tracing.zh.md)继续作为独立的关系查询。
+在界面解析 Session JSONL 会让展示依赖持久化代际并暴露原始内容。按标题或相邻时间戳推断调用会合并无关操作。把完整请求复制到第二份存储会重复保存敏感数据。[Session 谱系与事件追踪](../../../../docs/subsystems/session-query.zh.md)继续作为独立的关系查询。
 
 ## Consequences
 

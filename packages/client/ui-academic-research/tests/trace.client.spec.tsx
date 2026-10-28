@@ -1,23 +1,34 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react'
-import type { AcademicTracePage } from '@deepseek-ai/dsh-academic-model'
+import { academicTraceId, type AcademicTracePage, type RetrievalRunId } from '@deepseek-ai/dsh-academic-model'
 import { TracePanel } from '../src/client/TracePanel.tsx'
 import { zh, type RunKey } from '../src/client/run-locales.ts'
 import type { RunPanelProps } from '../src/client/RunPanel.tsx'
 
 const t: RunPanelProps['t'] = key => zh[key as RunKey]
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
+const runId = 'run-fixture' as RetrievalRunId
+const notFound: AcademicTracePage = {
+  schemaVersion: 1, status: 'not_found', traceId: academicTraceId(runId), snapshotId: 'fixture:empty',
+  producer: { adapterId: 'academic-session', adapterVersion: '1' },
+  items: [], events: [], nextCursor: null,
+  summary: { logicalCalls: 0, attempts: 0, attemptStates: {
+    queued: 0, running: 0, retry_wait: 0, succeeded: 0, partial_success: 0,
+    failed: 0, cancelled: 0, skipped: 0, unknown: 0,
+  }, runTotalMs: { value: null, basis: 'unknown' }, excludedUnlinkedRecords: null },
+  gaps: [],
+}
 
 describe('real Trace query controls', () => {
   it('reads the requested run, explains old data absence, filters and aborts only the viewer', async () => {
     const signals: AbortSignal[] = []
     const traceList = vi.fn(async (_query, signal: AbortSignal) => {
       signals.push(signal)
-      return { status: 'not_found', items: [], events: [], gaps: [] } as unknown as AcademicTracePage
+      return notFound
     })
     const traceDetail = vi.fn()
-    const { unmount } = render(<TracePanel sessionId={'session-fixture' as never} researchRunId={'run-fixture' as never}
+    const { unmount } = render(<TracePanel sessionId={'session-fixture' as never} researchRunId={runId}
       traceList={traceList} traceDetail={traceDetail} t={t} />)
     expect(traceList).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: zh.traceLoad }))

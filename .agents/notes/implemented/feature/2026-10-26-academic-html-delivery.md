@@ -6,7 +6,7 @@ English | [中文](2026-10-26-academic-html-delivery.zh.md)
 
 ## Problem
 
-Academic reports need a readable file outside the live Web application. A second generated narrative could lose citation provenance, and exporting application markup could retain active code or remote resources.
+Academic reports need a readable file outside the live Web application. A second generated narrative could lose citation source links and evidence identifiers, and exporting application markup could retain active code or remote resources.
 
 ## Decision
 

@@ -1,0 +1,61 @@
+diff --git a/package.json b/package.json
+index 226e14d416..a154e351a5 100644
+--- a/package.json
++++ b/package.json
+@@ -3 +3 @@
+-  "version": "0.3.5",
++  "version": "0.3.5+insight.1",
+@@ -44,4 +44,4 @@
+-    "defuddle": "^0.19.3",
+-    "linkedom": "^0.18.13",
+-    "undici": "^6.26.0",
+-    "ws": "^8.18.0"
++    "defuddle": "0.19.6",
++    "linkedom": "0.18.14",
++    "undici": "6.29.1",
++    "ws": "8.22.0"
+@@ -79 +79,7 @@
+-  }
++  },
++  "bundledDependencies": [
++    "defuddle",
++    "linkedom",
++    "undici",
++    "ws"
++  ]
+diff --git a/src/host/index.ts b/src/host/index.ts
+index 265a986159..90aac2a286 100644
+--- a/src/host/index.ts
++++ b/src/host/index.ts
+@@ -44 +44 @@ export const name = "dsh-web-tools";
+-export const inject = ["webServer", "webRuntime", "settings", "credentials", "web", "agents", "commands"];
++export const inject = ["webServer", "settings", "credentials", "web", "agents", "commands"];
+diff --git a/lib/host/index.js b/lib/host/index.js
+index 1aae53502a..65b118989f 100644
+--- a/lib/host/index.js
++++ b/lib/host/index.js
+@@ -24 +24 @@ export const name = "dsh-web-tools";
+-export const inject = ["webServer", "webRuntime", "settings", "credentials", "web", "agents", "commands"];
++export const inject = ["webServer", "settings", "credentials", "web", "agents", "commands"];
+diff --git a/src/host/context-types.ts b/src/host/context-types.ts
+index e80f4e381c..5f0a0ed7f4 100644
+--- a/src/host/context-types.ts
++++ b/src/host/context-types.ts
+@@ -48,4 +47,0 @@ export interface WebToolsWebServer {
+-/** The web runtime face (trusted hosts list for the browser fence). */
+-export interface WebToolsWebRuntime {
+-  trustedHosts: readonly string[];
+-}
+@@ -121 +116,0 @@ export interface WebToolsContext {
+-  webRuntime: WebToolsWebRuntime;
+diff --git a/lib/host/context-types.d.ts b/lib/host/context-types.d.ts
+index c4cacb71f0..e57e2667a6 100644
+--- a/lib/host/context-types.d.ts
++++ b/lib/host/context-types.d.ts
+@@ -42,4 +41,0 @@ export interface WebToolsWebServer {
+-/** The web runtime face (trusted hosts list for the browser fence). */
+-export interface WebToolsWebRuntime {
+-    trustedHosts: readonly string[];
+-}
+@@ -131 +126,0 @@ export interface WebToolsContext {
+-    webRuntime: WebToolsWebRuntime;

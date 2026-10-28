@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-学术工作流调用方可从已批准的 ResearchBrief 生成按渠道区分的查询、检索已核验成果，并将其排入可解释的 P0/P1/P2 队列。结果保留已核验 Web 发现、摄取决定、查询来源，以及每项候选的过滤和评分理由。本库不注册 Cordis 服务，也不启动研究运行。
+学术工作流调用方可从已批准的 ResearchBrief 生成按渠道区分的查询、检索已核验成果，并将其排入可解释的 P0/P1/P2 队列。结果保留已核验 Web 发现、摄取决定、发现查询关联，以及每项候选的过滤和评分理由。本库不注册 Cordis 服务，也不启动研究运行。
 
 ## 目录
 
@@ -33,7 +33,7 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 新评估返回必带 `screening` 的 `DetailedCandidateAssessment`。参与计分的问题、方法、证据类型和贡献信号逐字引用规范标题或学术摘要。完整的词项问题及贡献匹配必须在同一个引用来源中成立。关键词只提供 `surfaceKeywordHits`，不增加这些分项。词项范围判断保持 `unknown`；缺少摘要不能证明偏题。排序器拒绝没有对应引文的详细评分；有原文支持且针对当前 Plan 的 `off_topic` 判断触发硬排除。没有 `screening` 的旧评估保持原有解释。
 
-可选的第六个参数 `reviewedScreenings` 是按成果 ID 索引的外部审核详情，用于替代词项线索。`parseCandidateScreening(text, title, abstract, keywords, questions)` 接受符合 `CandidateScreeningDetails` 的完整 JSON，核对逐字引文与批准问题引用，并拒绝额外字段。审核过的方法和证据标签必须对应批准概念的别名；比例统计不同概念，不累计重复信号。语义审核可把英文摘要关联到批准的中文问题，不改变查询路由。调用方负责审核质量；引文证明来源，不证明解释正确。
+可选的第六个参数 `reviewedScreenings` 是按成果 ID 索引的外部审核详情，用于替代词项线索。`parseCandidateScreening(text, title, abstract, keywords, questions)` 接受符合 `CandidateScreeningDetails` 的完整 JSON，核对逐字引文与批准问题引用，并拒绝额外字段。审核过的方法和证据标签必须对应批准概念的别名；比例统计不同概念，不累计重复信号。语义审核可把英文摘要关联到批准的中文问题，不改变查询路由。调用方负责审核质量；引文指明文字来源，不证明解释正确。
 
 外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion: 1`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
 

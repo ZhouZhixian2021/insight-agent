@@ -1,5 +1,5 @@
 ---
-description: "Generate a traceable Chinese Markdown draft and gate final reports on current evidence and reviews."
+description: "Generate traceable Chinese Markdown reports with automatic delivery checks and explicit content limits."
 kind: "package-library"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Generate a traceable Chinese Markdown draft and gate final reports on current evidence and reviews.
+Generate traceable Chinese Markdown reports with automatic delivery checks and explicit content limits.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Generate a traceable Chinese Markdown draft and gate final reports on current ev
 
 For `writingStyle: evidence_narrative`, B-style reports place coherent cited prose and actual result rows before scope and question checks. Each statement has one body placement; repeated section indexes produce neither repeated paragraphs nor cross-reference placeholders. Conditions and uncertainty remain beside the statement, with full source excerpts and identifiers in the appendix. Existing evidence and final-delivery checks remain in force. Unmarked historical drafts retain their original layout.
 
-Direction-layout drafts implement the preset report hierarchy: opening scope/window/date/policies, executive insight, a direction map, per-direction themes and representative works, mechanisms, results, judgments and audience-specific implications, then cross-direction synthesis and question-linked conclusions. Missing components are omitted and collected as methodology coverage limits. Only supplied metadata enters the bibliography; partial dates keep their precision, missing fields remain explicit, and stable DOI/arXiv or safe source URLs accompany titles, authors, venue, publication status and actual/canonical versions. Each analytical paragraph renders once with its scope, uncertainty and evidence; later placements link to that paragraph without repeating its text. Numerical result tables preserve separate conditions and never manufacture a cross-dataset ranking; unavailable verified figures are disclosed, not drawn. Draft review and final-delivery gates remain unchanged.
+Direction-layout drafts implement the preset report hierarchy: opening scope/window/date/policies, executive insight, a direction map, per-direction themes and representative works, mechanisms, results, judgments and audience-specific implications, then cross-direction synthesis and question-linked conclusions. Missing components are omitted and collected as methodology coverage limits. Only supplied metadata enters the bibliography; partial dates keep their precision, missing fields remain explicit, and stable DOI/arXiv or safe source URLs accompany titles, authors, venue, publication status and actual/canonical versions. Each analytical paragraph renders once with its scope, uncertainty and evidence; later placements link to that paragraph without repeating its text. Numerical result tables preserve separate conditions and never manufacture a cross-dataset ranking; unavailable verified figures are disclosed, not drawn. Delivery checks remain separate from content limitations and independent semantic approval.
 
 Question-driven arguments place cited excerpts, version/locator identities and model-proposed link explanations beside each retained paragraph. References are grouped as support, opposing findings and background; background is never labeled as direct support. A paragraph without opposing links explicitly leaves other findings unknown. Missing uncertainty is not represented as proof of no limitation. Partial or unanswered questions expose their remaining gaps. Each analytical paragraph renders once; later sections use cross-references and numerical tables link to the paragraph. The evidence appendix groups works by title and versions within each work, preserving original evidence identifiers and locators. Rendering does not reassess evidence or change approval status.
 
@@ -37,7 +37,7 @@ With validated `synthesis` and observed `coverage`, `generateReport()` renders a
 
 No invariant companion is published because this library is stateless; automated tests verify output relationships and failure behavior.
 
-Question-driven reports include an approved-question/evidence check table. Optional `ReportInput.questionLinks` comes from extraction; the table separates those associations, immutable abstract/full-text levels, model answer proposals and unreviewed content. Missing associations are disclosed instead of inferred from model question indexes. Empty card sections do not authorize enhanced evidence or final delivery. Zero cited evidence rejects synthesis report generation; partial evidence preserves a visibly limited draft under the approved policy. This renderer does not schedule second-level extraction or provide an independent semantic reviewer.
+Question-driven reports include an approved-question/evidence check table. Optional `ReportInput.questionLinks` comes from extraction; the table separates those associations, immutable abstract/full-text levels, model answer proposals and unreviewed content. Missing associations are disclosed instead of inferred from model question indexes. Empty card sections do not establish enhanced extraction and neither grant nor rule out final delivery. Zero cited evidence rejects synthesis report generation; evidence counts below the approved minimums retain a visibly limited draft under the approved policy. This renderer does not schedule second-level extraction or provide an independent semantic reviewer.
 
 Local fixed-material experiments use `scripts/academic-experiment.ts` to export one completed run and replay current source report/eval code without model calls. Inputs are checksummed, original Sessions are unchanged, reconstructed report parameters are disclosed, and new experiment directories retain comparisons and C source snapshots. This is developer tooling, not a Web export action.
 
@@ -61,7 +61,6 @@ No direct tokens. Consumers own subsequent rendering and request logging.
 This package performs no model cache operations.
 
 ## Known Limitations and Deferred Work
-
 <a id="known-limitations-and-deferred-work"></a>
 
 - Chinese supported Plan sections and numeric citations; no PDF/DOCX or semantic review service. The caller discloses synthetic data honestly. This is not a Session workflow or a publication-approval service.

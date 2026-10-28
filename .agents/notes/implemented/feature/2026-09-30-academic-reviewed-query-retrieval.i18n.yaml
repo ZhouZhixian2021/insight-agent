@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-30-academic-reviewed-query-retrieval.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-30-academic-reviewed-query-retrieval.md
-2026-09-30-academic-reviewed-query-retrieval.md: 96837fa2608188cbdaa9f605e094c9e3da8a73b5
-2026-09-30-academic-reviewed-query-retrieval.zh.md: 133f3dbe1d3259d0a0eeb531a5315fc7814620df
+/agent-note-reviewed-academic-query-retrieval:
+  en: bcdb8f005eb4dec5
+  zh: 4e9d4fe310f07720
+/agent-note-reviewed-academic-query-retrieval/problem:
+  en: 42c7720bb395e9d7
+  zh: 1626a6f30207a79b
+/agent-note-reviewed-academic-query-retrieval/decision:
+  en: 258a014394beda35
+  zh: 0484e93ba92bb56e
+/agent-note-reviewed-academic-query-retrieval/alternatives-considered:
+  en: 8d3bd5f111ba16e1
+  zh: d505d53ad5949294
+/agent-note-reviewed-academic-query-retrieval/consequences:
+  en: bcd5978734ce285e
+  zh: effcf20429719a6f

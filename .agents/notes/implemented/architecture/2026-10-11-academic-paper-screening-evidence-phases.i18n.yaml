@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-11-academic-paper-screening-evidence-phases.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-11-academic-paper-screening-evidence-phases.md
-2026-10-11-academic-paper-screening-evidence-phases.md: 50712ff28ddb34d39cdbe5865da1c3d80becb03b
-2026-10-11-academic-paper-screening-evidence-phases.zh.md: 7f2e9824f71712d57e712a9073a78daf5d00a0ff
+/agent-note-paper-admission-precedes-focused-evidence-extraction:
+  en: 2c817a43f12b188f
+  zh: 1f7822a2e6c6b07e
+/agent-note-paper-admission-precedes-focused-evidence-extraction/problem:
+  en: e2420cbc0e242a37
+  zh: 0e67ddcd3d7d6025
+/agent-note-paper-admission-precedes-focused-evidence-extraction/decision:
+  en: 11ebd95bda5c2656
+  zh: 6af12d1ad1b45b5a
+/agent-note-paper-admission-precedes-focused-evidence-extraction/alternatives-considered:
+  en: c85e5be81cb75977
+  zh: 97bbb78b3bb83743
+/agent-note-paper-admission-precedes-focused-evidence-extraction/consequences:
+  en: d06a35688acedcf1
+  zh: 63c4dd0a616e686e

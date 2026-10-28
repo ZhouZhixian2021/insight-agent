@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
-import type { SessionEvent, Session } from '@deepseek-ai/dsh-session'
+import { SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
+import type { AcademicTraceRecord } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicTraceQuery } from '../src/types.ts'
 import { AcademicTraceRecorder, queryAcademicTrace } from '../src/trace.ts'
 
@@ -14,20 +15,25 @@ const fixture = JSON.parse(readFileSync(new URL('../../../../z-team_docs/interfa
 }
 function saved(index: number) {
   const data = fixture.cases[index]!
-  const records = data.trace.events.map(e => ({ type: 'academic/trace-v1', seq: e.sequence, time: 0,
-    data: { schemaVersion: 1, researchRunId: data.trace.researchRunId, span: e.span } })) as unknown as SessionEvent[]
+  const records: SessionEvent<'academic/trace-v1'>[] = data.trace.events.map(e => ({
+    type: 'academic/trace-v1', seq: SessionSeq(e.sequence), time: 0,
+    data: { schemaVersion: 1, researchRunId: data.trace.researchRunId, span: e.span },
+  }))
   return { data, records, query: { sessionId: data.trace.sessionId, researchRunId: data.trace.researchRunId } }
 }
 
 describe('persisted Academic Trace', () => {
   it('does not present a resumed process interval as total research duration', () => {
     const prior = saved(6)
-    const rows: { span: import('@deepseek-ai/dsh-academic-model').AcademicTraceSpan }[] = []
-    const session = { snapshotEvents: () => prior.records,
-      append: (_type: string, data: { span: import('@deepseek-ai/dsh-academic-model').AcademicTraceSpan }) => { rows.push(data) },
-    } as unknown as Session
-    const recorder = new AcademicTraceRecorder(session, prior.query.researchRunId, true)
+    const rows: AcademicTraceRecord[] = []
+    const session = {
+      append: (_type: 'academic/trace-v1', data: AcademicTraceRecord) => { rows.push(data) },
+    }
+    const previous = prior.records.findLast(event => event.type === 'academic/trace-v1' && event.data.span.kind === 'run')
+    const startedAt = previous?.type === 'academic/trace-v1' ? previous.data.span.startedAt : null
+    const recorder = new AcademicTraceRecorder(session, prior.query.researchRunId, true, startedAt)
     recorder.settle('succeeded')
+    expect(rows[0]?.span.startedAt).toBe(startedAt)
     expect(rows.at(-1)?.span.timing.totalMs).toEqual({ value: null, basis: 'unknown' })
     expect(rows.at(-1)?.span.gaps).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'resume_timing_unavailable' })]))
   })
@@ -42,8 +48,8 @@ describe('persisted Academic Trace', () => {
   it('holds the event watermark across pages and rejects reused cursors from another scope', () => {
     const { records, query } = saved(0)
     const first = queryAcademicTrace(records, { ...query, limit: 3 }, true)
-    const extra = { ...records.at(-1)!, seq: 200, data: { ...(records.at(-1)! as SessionEvent<'academic/trace-v1'>).data,
-      span: { ...first.items[0]!, status: 'failed' } } } as unknown as SessionEvent
+    const extra: SessionEvent<'academic/trace-v1'> = { ...records.at(-1)!, seq: SessionSeq(200),
+      data: { ...records.at(-1)!.data, span: { ...first.items[0]!, status: 'failed' } } }
     const next = queryAcademicTrace([...records, extra], { ...query, cursor: first.nextCursor, limit: 3 }, false)
     expect(next.snapshotId).toBe(first.snapshotId)
     expect(next.summary).toEqual(first.summary)
@@ -63,10 +69,21 @@ describe('persisted Academic Trace', () => {
       .toEqual(expect.arrayContaining([expect.objectContaining({ code: 'interrupted_observation' })]))
   })
 
+  it('keeps a missing resumed start unknown instead of inventing a new start', () => {
+    const rows: AcademicTraceRecord[] = []
+    const session = { append: (_type: 'academic/trace-v1', data: AcademicTraceRecord) => { rows.push(data) } }
+    new AcademicTraceRecorder(session, saved(0).query.researchRunId, true).settle('failed')
+    expect(rows[0]?.span.startedAt).toBeNull()
+    expect(rows.at(-1)?.span.startedAt).toBeNull()
+    expect(rows.at(-1)?.span.timing.totalMs).toEqual({ value: null, basis: 'unknown' })
+  })
+
   it('contains observer storage failures and does not claim a research success', () => {
     const rows: unknown[] = []
     let fail = true
-    const session = { append: (_type: string, data: unknown) => { if (fail) throw new Error('storage'); rows.push(data) } } as unknown as Session
+    const session = { append: (_type: 'academic/trace-v1', data: AcademicTraceRecord) => {
+      if (fail) throw new Error('storage'); rows.push(data)
+    } }
     const recorder = new AcademicTraceRecorder(session, saved(0).query.researchRunId)
     expect(() =>{  recorder.observe(saved(0).data.trace.events[3]!.span) }).not.toThrow()
     fail = false

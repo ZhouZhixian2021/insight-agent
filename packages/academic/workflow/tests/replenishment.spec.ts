@@ -31,7 +31,7 @@ describe('bounded candidate replenishment', () => {
       if (kind === 'failed') generated.mockRejectedValueOnce(new Error('model failed'))
       else generated.mockResolvedValueOnce({ scope: { status: kind === 'excluded' ? 'excluded' : 'included', reason: 'Synthetic scope.' },
         evidence: kind === 'all_rejected' || kind === 'unlinked'
-          ? [{ segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses reranking.',
+          ? [{ segmentIndex: 0, questionIndexes: kind === 'unlinked' ? [input.brief.questions.length] : [0], sourcedStatement: 'Uses reranking.',
             verbatimExcerpt: kind === 'unlinked' ? 'Uses reranking.' : 'Missing excerpt.', cardItems: [] }] : [] })
     }
     const result = await runResearchDraft(input, adapters)

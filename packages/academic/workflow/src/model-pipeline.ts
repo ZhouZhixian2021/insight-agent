@@ -20,7 +20,7 @@ import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } f
  * @param adapters External search, scope selection, acquisition and clock dependencies.
  * @param signal Caller-owned cancellation and elapsed-time budget.
  * @param synthesisConfig Optional separately resolved generation controls for final synthesis.
- * @returns Completed draft or cancelled partial results; no automatic publication or recovery.
+ * @returns Evaluated report with automatic delivery mode, or cancelled partial results; no automatic recovery.
  * @throws Propagates binding, admission, logging and downstream errors from the existing pipeline.
  */
 export function runModelResearchDraft(

@@ -1,5 +1,6 @@
 import type { ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
+import type {} from '@deepseek-ai/dsh-tools/types'
 import { MAX_DRAFT_SEARCH_QUERIES, validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-workflow'
 import type {
   AcademicDirectSearchProvider,
@@ -20,7 +21,8 @@ const RETRIEVAL_CHANNELS = ['academic', 'web_discovery'] as const satisfies read
 const MAXIMUM_WEB_DISCOVERY_RESULTS = 8
 const MAXIMUM_REFERENCE_VERIFICATIONS = 8
 
-interface ApprovedPlan {
+/** An explicitly approved plan captured from durable Session events. */
+export interface ApprovedPlan {
   readonly identity: string
   readonly markdown: string
   readonly reviewedAt: string
@@ -30,7 +32,7 @@ interface ApprovedPlan {
  * Read and validate the Academic Research Brief embedded in the latest approved plan.
  *
  * @param sessionId - Session that owns the plan review.
- * @param events - Durable Session events containing the plan call and successful result.
+ * @param events - Durable native or PTC plan results with explicit approval metadata.
  * @returns An approved version-1 Brief whose identity is stable for that reviewed plan.
  */
 export function researchBriefFromApprovedPlan(
@@ -43,7 +45,7 @@ export function researchBriefFromApprovedPlan(
 /**
  * Recover the Brief and its system-authored searches from the same approved plan.
  * @param sessionId Session that owns the approval.
- * @param events Durable plan calls and review results.
+ * @param events Durable native or PTC plan calls and explicitly approved review results.
  * @returns The approved Brief and optional legacy search handoff, without inventing missing searches.
  */
 export function researchPlanFromApprovedPlan(
@@ -58,6 +60,24 @@ export function researchPlanFromApprovedPlan(
   if (approved === undefined) {
     throw new Error('请先在当前会话完成研究计划审核。')
   }
+  return researchPlanFromApproval(sessionId, approved)
+}
+
+/**
+ * Validate and recover the plan from a previously projected explicit approval.
+ *
+ * @param sessionId - Session that owns the approval.
+ * @param approved - Explicit approval identity, Markdown, and review timestamp.
+ * @returns The validated Brief and optional search handoff from that approval.
+ */
+export function researchPlanFromApproval(
+  sessionId: string,
+  approved: ApprovedPlan,
+): {
+  brief: ResearchBrief
+  searches: readonly AcademicPlannedSearch[] | undefined
+  candidateScreening: AcademicCandidateScreening | undefined
+} {
   const { searchPlan, candidateScreening, ...payload } = parseBriefPayload(approved.markdown)
   validateResearchBriefRequirements(payload)
   return { searches: searchPlan, candidateScreening, brief: {
@@ -76,11 +96,39 @@ export function researchPlanFromApprovedPlan(
 
 /**
  * Reject an incompatible Academic plan before presenting it for user review.
+ * Bilingual screening annotations are rejected here; approved Session reads retain their saved aliases.
  * @param markdown Complete proposed plan, including its structured Brief.
  * @returns Nothing when the plan can be executed; approval remains a separate user action.
  */
 export function validateAcademicPlan(markdown: string): void {
-  validateResearchBriefRequirements(parseBriefPayload(markdown))
+  const payload = parseBriefPayload(markdown)
+  validateResearchBriefRequirements(payload)
+  if (payload.candidateScreening !== undefined) validateProposedScreeningAliases(payload.candidateScreening)
+}
+
+function validateProposedScreeningAliases(screening: AcademicCandidateScreening): void {
+  const groups = [
+    ...screening.questions.map((entry, index) => ({ concepts: entry.concepts,
+      label: `candidateScreening.questions[${index}].concepts` })),
+    { concepts: screening.methods, label: 'candidateScreening.methods' },
+    { concepts: screening.evidence, label: 'candidateScreening.evidence' },
+    ...screening.contributions.map((entry, index) => ({ concepts: entry.concepts,
+      label: `candidateScreening.contributions[${index}].concepts` })),
+  ]
+  for (const { concepts, label } of groups) {
+    concepts.forEach((aliases, conceptIndex) => {
+      aliases.forEach((alias, aliasIndex) => {
+        // Reject translation annotations, not English phrases or embedded technical abbreviations.
+        const term = alias.normalize('NFKC')
+        const spaced = /^(?:[a-z][a-z\d -]*\s+\p{Script=Han}+|\p{Script=Han}+\s+[a-z][a-z\d -]*)$/iu
+        const parenthesized = /^(?:[a-z][a-z\d -]*\s*\(\p{Script=Han}+\)|\p{Script=Han}+\s*\([a-z][a-z\d -]*\))$/iu
+        if (spaced.test(term) || parenthesized.test(term)) {
+          throw new Error(`${label}[${conceptIndex}][${aliasIndex}] 包含拼接的中英文别名 ${JSON.stringify(alias)}。`
+            + '请将同义表达分别写成同组的独立字符串，例如 ["planning", "规划"]；保留 "tool use" 等完整英文短语后重新提交计划。')
+        }
+      })
+    })
+  }
 }
 
 function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | undefined {
@@ -93,27 +141,19 @@ function latestApprovedPlan(events: readonly SessionEvent[]): ApprovedPlan | und
       continue
     }
     if (event.type === 'tool/result') {
-      const result = event.data.message.content[0]
+      const result = event.data.message
       const identity = String(result.toolCallId)
       const plan = nativeCalls.get(identity)
-      if (plan !== undefined && !result.isError) {
+      if (plan !== undefined && !result.isError && isRecord(event.data.meta) && event.data.meta.approved === true) {
         latest = { identity, markdown: plan, reviewedAt: eventTime(event.time) }
       }
       continue
     }
-    const dispatch = event as unknown as {
-      type: string
-      data: {
-        name?: unknown
-        isError?: unknown
-        arguments?: unknown
-        subCallId?: unknown
-      }
-    }
-    if (dispatch.type === 'tool/code-dispatch' && dispatch.data.name === EXIT_PLAN_MODE && dispatch.data.isError === false) {
-      const plan = planFromUnknownArguments(dispatch.data.arguments)
+    if (event.type === 'tool/ptc-dispatch' && event.data.name === EXIT_PLAN_MODE && !event.data.isError
+      && isRecord(event.data.meta) && event.data.meta.approved === true) {
+      const plan = planFromUnknownArguments(event.data.arguments)
       if (plan !== undefined) {
-        latest = { identity: String(dispatch.data.subCallId), markdown: plan, reviewedAt: eventTime(event.time) }
+        latest = { identity: String(event.data.subCallId), markdown: plan, reviewedAt: eventTime(event.time) }
       }
     }
   }

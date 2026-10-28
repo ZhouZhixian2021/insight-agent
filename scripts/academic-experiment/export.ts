@@ -141,7 +141,7 @@ export function exportExperiment(options: ExportOptions): string {
     exportedAt: new Date().toISOString(), sourceFile: resolve(options.sessionFile), sourceSha256: sourceHash,
     exportCodeRevision: code.revision, exportWorktreeDirty: code.worktreeDirty,
     cSourceSha256: code.sourceSha256, originalRunCodeRevision: null,
-    provenance: { analysisInput: 'exact-recorded-request', analysisOutput: 'parsed-from-recorded-response',
+    inputSources: { analysisInput: 'exact-recorded-request', analysisOutput: 'parsed-from-recorded-response',
       reportInput: 'reconstructed; original Claim IDs preserved; links recreated; limitations from final report; retrieval disclosure flattened from original Markdown',
       originalReport: 'exact-recorded-result', rawFulltext: 'not-archived',
       modelCalls: 'academic requests/results during the selected run; no chat headers, credentials or reasoning streams' }, files })

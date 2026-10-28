@@ -11,10 +11,6 @@ English | [中文](README.zh.md)
 
 This package adds PMLR papers to `ctx.academicSource`. It searches configured official volume pages, normalizes matching papers, and returns their canonical PDFs for the shared evidence pipeline.
 
-`verifyReference()` reads one official abstract page by volume/paper ID and checks its citation URL. The page's PDF location is retained in a bounded cache because it can differ from the derived path; verification works without volume catalogs and does not download the PDF.
-
-Verification retains scholarly abstract tags or the official `abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
-
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -27,6 +23,10 @@ Verification retains scholarly abstract tags or the official `abstract` block an
 
 <a id="use-this-package"></a>
 ## Use this package
+
+`verifyReference()` reads one official abstract page by volume/paper ID and checks its citation URL. The page's PDF location is retained in a bounded cache because it can differ from the derived path; verification works without volume catalogs and does not download the PDF.
+
+Verification retains scholarly abstract tags or the official `abstract` block and citation keywords in `metadata`. Catalog-only records without these fields retain explicit unknown states; generic page descriptions and Web snippets are not abstracts.
 
 Mount it after `dsh-academic-source` and list the PMLR volumes this deployment searches.
 

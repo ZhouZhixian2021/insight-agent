@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write z-team_docs/interface-samples/academic-trace-v1/README.md
-README.md: 896cbd7b3aff213c6b6ecde43eb65ea149d8240f
-README.zh.md: 8ea47577f669b9a029331b49170c95c9ab3517e6
+/academic-trace-v1-handoff-fixtures:
+  en: 936e97b91824b68b
+  zh: 08bb1242bc1c6e3f
+/academic-trace-v1-handoff-fixtures/purpose:
+  en: 52626f10cf5f8fc4
+  zh: aa99f57c28c43051
+/academic-trace-v1-handoff-fixtures/files:
+  en: 659bfdbe688c1f45
+  zh: c2bb1f931e46e56d
+/academic-trace-v1-handoff-fixtures/validation:
+  en: edb58c246dd2614d
+  zh: 8437818d1533842a
+/academic-trace-v1-handoff-fixtures/follow-up:
+  en: 57a61e2558b51224
+  zh: 71df2aa28e26eaa5

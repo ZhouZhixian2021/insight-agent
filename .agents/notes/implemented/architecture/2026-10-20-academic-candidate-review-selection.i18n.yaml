@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-20-academic-candidate-review-selection.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-20-academic-candidate-review-selection.md
-2026-10-20-academic-candidate-review-selection.md: b105fd8ee97804f7be0fe6296813966b83bea884
-2026-10-20-academic-candidate-review-selection.zh.md: 63c0a8fd1416d1ed8e7af1397974a677ea6013da
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection:
+  en: 2007fde74422f6b5
+  zh: fc2921693340e6bc
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection/problem:
+  en: 45bdbb4a5a8bbd66
+  zh: e38c5def9a1736ae
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection/decision:
+  en: 34576bca6f74b09f
+  zh: b4b5913009e41e10
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection/alternatives-considered:
+  en: 8b1c4899647c9f7f
+  zh: 51b74067bc73ba33
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection/consequences:
+  en: 6d7c0c5d0451870d
+  zh: b913f68fbe307703
+/agent-note-academic-candidate-semantic-review-parsing-and-review-selection/verification:
+  en: 2f10b99e944e8459
+  zh: 684a0c73885e05c6

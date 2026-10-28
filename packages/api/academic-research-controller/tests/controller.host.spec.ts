@@ -1,9 +1,10 @@
 import { Context } from '@deepseek-ai/cordis'
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createCoverageSummary,
-  createFailureId, createResearchBriefId, createRetrievalRunId,
+  createFailureId, createResearchBriefId, createRetrievalRunId, createSearchQueryId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import { SessionId, SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
+import type { PtcDispatchEventData } from '@deepseek-ai/dsh-tools/types'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
 import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
@@ -19,11 +20,12 @@ vi.mock('@deepseek-ai/dsh-academic-workflow', async load => ({
 }))
 
 import AcademicResearchController from '../src/index.ts'
+import { academicResearchProjectionDefinition } from '../src/academic-research-projection.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 import { researchBriefFromApprovedPlan, researchPlanFromApprovedPlan } from '../src/research-brief-plan.ts'
 import type { AcademicPlannedRetrieval } from '../src/types.ts'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
-import { runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
+import { academicTraceSpan, runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 
 const contexts: Context[] = []
 afterEach(async () => {
@@ -149,15 +151,28 @@ function briefPlan(payload: unknown = briefPayload()): string {
   return `# Retrieval research\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
 }
 
-function nativePlanEvents(plan: string, options: { isError?: boolean; time?: number; argumentsJson?: string } = {}) {
-  const callId = ToolCallId('approved-brief-call')
+function nativePlanEvents(plan: string, options: {
+  isError?: boolean
+  time?: number
+  argumentsJson?: string
+  approved?: boolean
+  callId?: string
+} = {}) {
+  const callId = ToolCallId(options.callId ?? 'approved-brief-call')
   return [
     { type: 'tool/call', seq: 1, time: 1,
       data: { turn: 1, step: 1, callId, name: 'exit_plan_mode',
         arguments: options.argumentsJson ?? JSON.stringify({ plan }) } },
     { type: 'tool/result', seq: 2, time: options.time ?? Date.parse('2026-09-16T00:00:01Z'), surfaceOp: 'append',
-      data: { turn: 1, step: 1, message: createToolResultMessage({ callId, content: [], isError: options.isError ?? false }) } },
+      data: { turn: 1, step: 1, meta: { approved: options.approved ?? true }, message: createToolResultMessage({ callId, content: [{ type: 'text', text: JSON.stringify({ approved: options.approved ?? true }) }], isError: options.isError ?? false }) } },
   ] as never
+}
+
+function ptcPlanEvent(plan: string, data: Partial<PtcDispatchEventData> = {}): SessionEvent<'tool/ptc-dispatch'> {
+  return { type: 'tool/ptc-dispatch', seq: SessionSeq(3), time: Date.parse('2026-09-16T00:00:02Z'), data: {
+    rootCallId: ToolCallId('root'), parentCallId: ToolCallId('parent'), subCallId: ToolCallId('parent:ptc:1'),
+    name: 'exit_plan_mode', arguments: { plan }, isError: false, content: [], meta: { approved: true }, ...data,
+  } }
 }
 
 async function harness(options: {
@@ -226,17 +241,19 @@ async function harness(options: {
   const fallback = options.model === false ? {} : { provider: 'fixture', model: 'fallback', maxTokens: 4000 }
   const selected = options.model === false ? {} : options.missingModel ? { provider: 'fixture' }
     : { provider: 'fixture', model: 'selected', ...options.reasoning ? { reasoningEffort: 'low' } : { maxTokens: 8000 } }
+  const currentEvents = () => {
+    if (options.eventsError === true) throw 'invalid event source'
+    return [...approvedPlanEvents, ...sessionEvents.map(([type, data], index) => ({ type, data,
+      seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as SessionEvent[]
+  }
+  const legacySnapshotRead = vi.fn(() => { throw new Error('deprecated Session snapshot read') })
   const agent = {
     id: sessionId,
     ctx: agentContext,
     options: fallback,
     session: {
       id: sessionId,
-      snapshotEvents: () => {
-        if (options.eventsError === true) throw 'invalid event source'
-        return [...approvedPlanEvents, ...sessionEvents.map(([type, data], index) => ({ type, data,
-          seq: approvedPlanEvents.length + index + 1, time: Date.parse('2026-10-09T00:00:00Z') + index }))] as never
-      },
+      snapshotEvents: legacySnapshotRead,
       requestHeader: () => options.header === false ? undefined : { config: selected },
       append: (...args: unknown[]) => {
         const index = sessionEvents.push(args)
@@ -249,12 +266,32 @@ async function harness(options: {
   }
   const resolution = options.resolveError === true ? { error: new Error('missing Session') } : { agent }
   ctx.provide('sessionController', { resolveAgent: () => Promise.resolve(resolution) } as never)
+  const observationDisposed = vi.fn()
+  const observeSession = vi.fn((_sessionId: unknown, readOptions: { signal?: AbortSignal; projectionMode?: 'none' } = {}) => {
+    readOptions.signal?.throwIfAborted()
+    const events = currentEvents()
+    return Promise.resolve({ events, cursor: events.at(-1)?.seq ?? -1, [Symbol.dispose]: observationDisposed })
+  })
+  ctx.provide('sessionQuery', { observeSession } as never)
   ctx.provide('sessions', { flush: () => Promise.resolve(true) } as never)
   ctx.provide('sessionPersistence', { open: () => Promise.resolve({
-    read: (seq: number) => Promise.resolve((agent.session.snapshotEvents() as Array<{ seq: number }>).filter(
-      event => event.seq === seq)),
+    read: (seq: number) => Promise.resolve({ eventState: 'detached',
+      events: currentEvents().filter(event => event.seq === seq) }),
     [Symbol.asyncDispose]: () => Promise.resolve(),
   }) } as never)
+  let academicProjection: typeof academicResearchProjectionDefinition | undefined
+  ctx.provide('sessionProjections', {
+    register: (definition: typeof academicResearchProjectionDefinition) => { academicProjection = definition; return dispose },
+    stateOf: (session: { id: unknown }, key: string) => {
+      if (key !== 'academicResearch' || academicProjection === undefined) return undefined
+      if (options.eventsError === true) throw 'invalid event source'
+      let state = academicProjection.init({ id: session.id } as never, undefined as never)
+      for (const event of currentEvents()) {
+        state = academicProjection.apply(state, event)
+      }
+      return state
+    },
+  } as never)
   const controller = new AcademicResearchController(ctx, {
     fulltextFetchProvider: 'academic-raw',
     extractionMaxTokens: 16_384,
@@ -267,10 +304,64 @@ async function harness(options: {
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
   })
-  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents }
+  return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents,
+    observeSession, observationDisposed, legacySnapshotRead }
 }
 
 describe('AcademicResearchController', () => {
+  it('reads Trace from one disposable observation without appending or starting research', async () => {
+    const fixture = await harness()
+    const researchRunId = createRetrievalRunId()
+    const span = academicTraceSpan('run', null, 'run', null, 'research')
+    fixture.sessionEvents.push(['academic/trace-v1', { schemaVersion: 1, researchRunId, span }])
+    const before = structuredClone(fixture.sessionEvents)
+    const page = await fixture.controller.traceList({ sessionId: fixture.sessionId, researchRunId }, fixture.signal)
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]?.spanId).toBe(span.spanId)
+    expect(fixture.observeSession).toHaveBeenCalledExactlyOnceWith(fixture.sessionId,
+      { signal: fixture.signal, projectionMode: 'none' })
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    expect(fixture.sessionEvents).toEqual(before)
+    expect(fixture.legacySnapshotRead).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('disposes Trace observations on invalid cursors and rejects detail requests without a span', async () => {
+    const fixture = await harness()
+    const query = { sessionId: fixture.sessionId, researchRunId: createRetrievalRunId() }
+    await expect(fixture.controller.traceList({ ...query, cursor: 'invalid' }, fixture.signal)).rejects.toThrow('invalid_cursor')
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    await expect(fixture.controller.traceDetail(query, fixture.signal)).rejects.toThrow('invalid_query')
+    expect(fixture.observeSession).toHaveBeenCalledOnce()
+  })
+
+  it('does not observe an unauthorized Session or an already-aborted Trace viewer', async () => {
+    const missing = await harness({ resolveError: true })
+    const query = { sessionId: missing.sessionId, researchRunId: createRetrievalRunId() }
+    await expect(missing.controller.traceList(query, missing.signal)).rejects.toThrow('missing Session')
+    expect(missing.observeSession).not.toHaveBeenCalled()
+    const cancelled = await harness()
+    const abort = new AbortController()
+    abort.abort(new Error('viewer stopped'))
+    await expect(cancelled.controller.traceList(query, abort.signal)).rejects.toThrow('viewer stopped')
+    expect(cancelled.observeSession).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
+  it('releases a Trace observation when its viewer aborts during observation', async () => {
+    const fixture = await harness()
+    const abort = new AbortController()
+    fixture.observeSession.mockImplementationOnce(() => {
+      abort.abort(new Error('viewer stopped during read'))
+      return Promise.resolve({ events: [] as SessionEvent[], cursor: -1, [Symbol.dispose]: fixture.observationDisposed })
+    })
+    await expect(fixture.controller.traceList({ sessionId: fixture.sessionId, researchRunId: createRetrievalRunId() }, abort.signal))
+      .rejects.toThrow('viewer stopped during read')
+    expect(fixture.observationDisposed).toHaveBeenCalledOnce()
+    expect(fixture.legacySnapshotRead).not.toHaveBeenCalled()
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+  })
+
   it('enhances only one selected paper after a completed first-tier run and retains the draft', async () => {
     const fixture = await harness({ hybridPlan: true })
     const pipeline = draftFixture(1)
@@ -360,23 +451,25 @@ describe('AcademicResearchController', () => {
       searchPlan: [...searchPlan, { ...searchPlan[0], query: 'second' }] })))).toThrow('1 条查询上限')
   })
 
-  it('recovers reviewed candidate cues from the same approved Session plan', () => {
-    const question = 'Which method works?'
-    const candidateScreening = {
-      questions: [{ question, concepts: [['retrieval faithfulness']] }],
-      methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
-      contributions: [],
-    }
-    const base = briefPayload()
-    const payload = { ...base, schemaVersion: 5, candidateScreening,
-      evidenceRequirements: { ...base.evidenceRequirements, targetIncludedWorks: 2 },
-      searchPlan: [{ query: 'retrieval faithfulness', purpose: '比较方法', questions: [question], retrieval: {
-        channels: ['academic'], academicProviders: ['openalex'], verificationProviders: [],
-        maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0,
-      } }] }
-    expect(researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan(payload))).candidateScreening)
-      .toEqual(candidateScreening)
-  })
+  it.each(['retrieval faithfulness', 'planning 规划'])(
+    'recovers approved candidate cues without rewriting historical aliases: %s', (alias) => {
+      const question = 'Which method works?'
+      const candidateScreening = {
+        questions: [{ question, concepts: [[alias]] }],
+        methods: [['retrieval evaluation']], evidence: [['benchmark comparison']],
+        contributions: [],
+      }
+      const base = briefPayload()
+      const payload = { ...base, schemaVersion: 5, candidateScreening,
+        evidenceRequirements: { ...base.evidenceRequirements, targetIncludedWorks: 2 },
+        searchPlan: [{ query: 'retrieval faithfulness', purpose: '比较方法', questions: [question], retrieval: {
+          channels: ['academic'], academicProviders: ['openalex'], verificationProviders: [],
+          maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0,
+        } }] }
+      expect(researchPlanFromApprovedPlan('s', nativePlanEvents(briefPlan(payload))).candidateScreening)
+        .toEqual(candidateScreening)
+    },
+  )
 
   it('rejects duplicate expressions with different approved retrieval policies', () => {
     const retrieval = {
@@ -391,6 +484,109 @@ describe('AcademicResearchController', () => {
       searchPlan: [search, { ...search, retrieval: { ...retrieval, maximumReferenceVerifications: 4 } }] }))))
       .toThrow('完全相同的检索表达必须使用完全相同的检索策略')
   })
+
+  it('does not recover an approval from a dismissed plan review', () => {
+    expect(() => researchPlanFromApprovedPlan('dismissed', nativePlanEvents(briefPlan(), { approved: false })))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('recovers a PTC approval using its unchanged sub-call identity and review time', () => {
+    const event = ptcPlanEvent(briefPlan())
+    const saved = structuredClone(event)
+    const result = researchPlanFromApprovedPlan('ptc-session', [event])
+    expect(result.brief.researchBriefId).toBe('ptc-session:approved-plan:parent:ptc:1')
+    expect(result.brief.approval).toMatchObject({ status: 'approved', reviewedAt: '2026-09-16T00:00:02.000Z' })
+    expect(result.brief.questions).toEqual(brief().questions)
+    expect(event).toEqual(saved)
+  })
+
+  it.each([
+    { meta: { approved: false } }, { meta: { approved: 'true' } }, { meta: null },
+    { meta: true }, { meta: [] }, { meta: {} },
+  ])('rejects a PTC review without explicit approval: %j', ({ meta }) => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent(briefPlan(), { meta })]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('rejects missing approval metadata for both native and PTC results', () => {
+    const event = ptcPlanEvent(briefPlan())
+    delete event.data.meta
+    expect(() => researchPlanFromApprovedPlan('ptc', [event])).toThrow('请先在当前会话完成研究计划审核。')
+    const events: SessionEvent[] = nativePlanEvents(briefPlan())
+    for (const item of events) if (item.type === 'tool/result') delete item.data.meta
+    expect(() => researchPlanFromApprovedPlan('native', events)).toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it.each<Partial<PtcDispatchEventData>>([
+    { isError: true }, { name: 'another_tool' }, { arguments: null },
+    { arguments: { plan: 42 } }, { arguments: {} },
+  ])('rejects unrelated, failed, or malformed PTC settlements: %j', (data) => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent(briefPlan(), data)]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('validates the structured Brief recovered from a PTC approval', () => {
+    expect(() => researchPlanFromApprovedPlan('ptc', [ptcPlanEvent('# Plan without a Brief')]))
+      .toThrow('must contain exactly one academic-research-brief-json fenced block')
+  })
+
+  it('does not infer approval from a retired code-dispatch record', () => {
+    const retired = { ...ptcPlanEvent(briefPlan()), type: 'tool/code-dispatch' }
+    expect(() => researchPlanFromApprovedPlan('retired', [retired as never]))
+      .toThrow('请先在当前会话完成研究计划审核。')
+  })
+
+  it('keeps the latest explicitly approved identity in mixed native and PTC history', () => {
+    const ptc = ptcPlanEvent(briefPlan({ ...briefPayload(), topic: 'PTC topic' }))
+    const native: SessionEvent[] = nativePlanEvents(briefPlan())
+    const dismissed = ptcPlanEvent(briefPlan(), { subCallId: ToolCallId('parent:ptc:2'), meta: { approved: false } })
+    const failed = ptcPlanEvent(briefPlan(), { subCallId: ToolCallId('parent:ptc:3'), isError: true })
+    const ordered = (events: SessionEvent[]) => events.map((event, index) => ({ ...event, seq: SessionSeq(index), time: index }))
+    const latest = researchPlanFromApprovedPlan('mixed', ordered([...native, ptc, dismissed, failed]))
+    expect(latest.brief).toMatchObject({ topic: 'PTC topic', researchBriefId: 'mixed:approved-plan:parent:ptc:1' })
+    expect(researchPlanFromApprovedPlan('mixed', ordered([ptc, ...native])).brief.researchBriefId)
+      .toBe('mixed:approved-plan:approved-brief-call')
+  })
+
+  it('gives a fresh review its own Brief identity even when the plan text is identical', () => {
+    const markdown = briefPlan()
+    const old: SessionEvent[] = nativePlanEvents(markdown, { callId: 'historical-call' })
+    const fresh: SessionEvent[] = nativePlanEvents(markdown, { callId: 'fresh-review-call' })
+    const events = [...old, ...fresh].map((event, seq) => ({ ...event, seq: SessionSeq(seq), time: seq }))
+    const before = structuredClone(events)
+    expect(researchPlanFromApprovedPlan('session', old).brief.researchBriefId)
+      .toBe('session:approved-plan:historical-call')
+    expect(researchPlanFromApprovedPlan('session', events).brief.researchBriefId)
+      .toBe('session:approved-plan:fresh-review-call')
+    expect(events).toEqual(before)
+  })
+
+  it('keeps identical call identities in different Sessions separate', () => {
+    const events: SessionEvent[] = nativePlanEvents(briefPlan(), { callId: 'historical-call' })
+    expect(researchPlanFromApprovedPlan('first', events).brief.researchBriefId)
+      .not.toBe(researchPlanFromApprovedPlan('second', events).brief.researchBriefId)
+  })
+
+  it.each([{ sameBrief: true, reason: 'candidate_state_missing' }, { sameBrief: false, reason: 'brief_identity_mismatch' }])(
+    'refuses historical continuation without a matching executable checkpoint: %j', async ({ sameBrief, reason }) => {
+      const fixture = await harness()
+      const preview = await fixture.controller.plan(fixture.sessionId)
+      const retrievalRunId = createRetrievalRunId()
+      fixture.sessionEvents.push(['academic/search-plan', { schemaVersion: 1,
+        researchBriefId: sameBrief ? preview.researchBriefId : createResearchBriefId(), researchBriefVersion: 1,
+        maximumSearchRounds: 1, queries: [{ searchQueryId: createSearchQueryId(), kind: 'academic', expression: 'retrieval',
+          purpose: 'historical search', questions: ['Which method works?'], roundIndex: 1, providers: ['arxiv'],
+          maximumResults: null, siteHost: null }] }],
+      ['academic/candidate-batch-decision', { retrievalRunId, batchIndex: null, action: 'stop',
+        workVersionIds: [], searchQuestions: [], reason: 'historical boundary' }])
+      const before = structuredClone(fixture.sessionEvents)
+      await expect(fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId,
+        resumeRetrievalRunId: retrievalRunId, synthetic: false }, fixture.signal)).rejects.toThrow(reason)
+      expect(fixture.sessionEvents).toEqual(before)
+      expect(fixture.search).not.toHaveBeenCalled()
+      expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    },
+  )
 
   it('previews the approved plan without retrieval and refuses a different approval identity', async () => {
     const fixture = await harness()
@@ -716,6 +912,7 @@ describe('AcademicResearchController', () => {
     let settle: ((value: Awaited<ReturnType<RunAcademicResearchDraft>>) => void) | undefined
     runAcademicResearchDraft.mockImplementation(request => new Promise((resolve) => {
       request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 1))
       settle = resolve
     }))
     const caller = new AbortController()
@@ -744,6 +941,97 @@ describe('AcademicResearchController', () => {
       { backgroundRunId: started.backgroundRunId, state: 'completed' },
     ])
     expect(fixture.sessionEvents.map(([type]) => type)).toContain('academic/background-run-state')
+    const progressEvents = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-progress')
+    expect(progressEvents).toHaveLength(1)
+    expect(progressEvents[0]?.[1]).toMatchObject({
+      sessionId: fixture.sessionId, backgroundRunId: started.backgroundRunId,
+      retrievalRunId: observed.retrievalRunId, progress: { sequence: 1 },
+    })
+    expect(progressEvents[0]?.[1]).not.toHaveProperty('q6')
+    expect(progressEvents[0]?.[1]).not.toHaveProperty('result')
+  })
+
+  it('persists new Q6 observations as metadata updates until an actual candidate fact changes', async () => {
+    const fixture = await harness()
+    const approved = await fixture.controller.plan(fixture.sessionId)
+    const observed = { ...retrievalRun(), researchBriefId: approved.researchBriefId }
+    const seed = queryWorkflowObservation(observed.retrievalRunId)
+    const record = draftFixture(1).records[0]
+    if (record === undefined) throw new Error('the controller fixture needs one candidate')
+    const first: AcademicQueryWorkflowObservation = {
+      ...seed, plan: { ...seed.plan, researchBriefId: approved.researchBriefId },
+      works: [record.academicWork], versions: [record.workVersion],
+      assessments: [{ academicWorkId: record.academicWork.academicWorkId,
+        abstract: { status: 'available', value: 'Uses reranking.' },
+        keywords: { status: 'available', value: ['reranking'] }, fulltextAvailability: { status: 'resolvable' },
+        matchedQuestions: approved.questions, contributionSignals: ['core_method'], topicRelevance: 1,
+        evidencePotential: 1, methodMatch: 1, sourceQuality: 1, recency: 1,
+        inclusionRuleMatches: [], exclusionRuleMatches: [], diversityTags: [], reasons: ['Synthetic candidate fact.'] }],
+      ranking: { ...seed.ranking, researchBriefId: approved.researchBriefId,
+        evaluations: [{ schemaVersion: 1, academicWorkId: record.academicWork.academicWorkId,
+          workVersionId: record.workVersion.workVersionId, discoveredBy: [], classification: 'core_method',
+          hardFilter: { status: 'eligible', reasons: [] },
+          score: { topicRelevance: 30, questionMatch: 20, evidencePotential: 15, methodMatch: 10,
+            workTypeFit: 8, sourceQuality: 7, recency: 5, fulltextAvailability: 5, total: 100 },
+          priority: 'p0', matchedQuestions: approved.questions, fulltextAvailability: { status: 'resolvable' },
+          diversityTags: [], decisionReasons: ['Synthetic ranked candidate.'] }],
+        queues: { p0: [record.workVersion.workVersionId], p1: [], p2: [], excluded: [] } },
+    }
+    const second: AcademicQueryWorkflowObservation = { ...structuredClone(first), sequence: 1,
+      observedAt: '2026-10-09T00:00:01.000Z',
+      coverage: { schemaVersion: 1, researchBriefId: approved.researchBriefId, researchBriefVersion: 1,
+        assessedAt: '2026-10-09T00:00:01.000Z', questions: approved.questions.map(question => ({
+          question, status: 'uncovered', supportingWorkIds: [], evidenceIds: [], gaps: ['Evidence is pending.'],
+        })), evidenceRequirementsMet: false, allQuestionsCovered: false },
+      decisions: [{ retrievalRunId: observed.retrievalRunId, batchIndex: 1, action: 'schedule_batch',
+        workVersionIds: [record.workVersion.workVersionId], searchQuestions: [], reason: null }],
+      settlements: [{ retrievalRunId: observed.retrievalRunId, batchIndex: 1, admittedEvidence: 0,
+        completedAt: '2026-10-09T00:00:01.000Z' }],
+    }
+    const changed: AcademicQueryWorkflowObservation = { ...structuredClone(second), sequence: 2,
+      works: second.works.map(work => ({ ...work, title: 'Changed candidate title' })) }
+    const result: Awaited<ReturnType<RunAcademicResearchDraft>> = {
+      synthesis: { status: 'not_run', reasons: [] }, status: 'completed', sessionId: fixture.sessionId,
+      retrievalRun: observed, queryWorkflow: changed, papers: [], failures: [], analysis: null, report: null,
+    }
+    const completion = Promise.withResolvers<Awaited<ReturnType<RunAcademicResearchDraft>>>()
+    let notify: ((observation: AcademicQueryWorkflowObservation) => void) | undefined
+    runAcademicResearchDraft.mockImplementation((request) => {
+      notify = request.adapters.onQueryWorkflow
+      request.adapters.onProgress?.(progressSnapshot(observed.retrievalRunId, 0))
+      notify?.(first)
+      return completion.promise
+    })
+    try {
+      const started = await fixture.controller.startBackgroundRun({ sessionId: fixture.sessionId,
+        researchBriefId: approved.researchBriefId, synthetic: false }, fixture.signal)
+      await vi.waitFor(() => { expect(notify).toBeTypeOf('function') })
+      const completeBefore = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state').length
+      notify?.(second)
+      expect(fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state')).toHaveLength(completeBefore)
+      const updates = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-q6-update')
+      expect(updates).toHaveLength(1)
+      expect(updates[0]?.[1]).toMatchObject({ sessionId: fixture.sessionId, backgroundRunId: started.backgroundRunId,
+        researchBriefId: approved.researchBriefId, retrievalRunId: observed.retrievalRunId,
+        q6: { sequence: 1, coverage: { state: 'available', value: second.coverage },
+          batches: { state: 'available', value: { decisions: second.decisions, settlements: second.settlements } } } })
+      expect(updates[0]?.[1]).not.toHaveProperty('q6.candidates')
+      expect(updates[0]?.[1]).not.toHaveProperty('result')
+      expect((await fixture.controller.getBackgroundRun(started)).q6).toMatchObject({
+        sequence: 1, candidates: { state: 'available', value: { items: [{ work: record.academicWork }] } },
+      })
+      notify?.(changed)
+      const complete = fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-state')
+      expect(complete).toHaveLength(completeBefore + 1)
+      expect(complete.at(-1)?.[1]).toMatchObject({ q6: { sequence: 2,
+        candidates: { state: 'available', value: { items: [{ work: { title: 'Changed candidate title' } }] } } } })
+      expect(fixture.sessionEvents.filter(([type]) => type === 'academic/background-run-q6-update')).toHaveLength(1)
+      completion.resolve(result)
+      await vi.waitFor(async () => {
+        expect((await fixture.controller.getBackgroundRun(started)).state).toBe('completed')
+      })
+      expect(runAcademicResearchDraft).toHaveBeenCalledOnce()
+    } finally { completion.resolve(result) }
   })
 
   it('aborts background work only through an explicit cancellation request', async () => {
@@ -968,12 +1256,12 @@ describe('approved Research Brief plan handoff', () => {
     }
     const events = [
       { type: 'other', seq: 0, time: 0, data: {} },
-      { type: 'tool/code-dispatch', seq: 1, time: 1, data: { name: 'other', isError: false } },
-      { type: 'tool/code-dispatch', seq: 2, time: 2, data: { name: 'exit_plan_mode', isError: true } },
-      { type: 'tool/code-dispatch', seq: 3, time: 3, data: { name: 'exit_plan_mode', isError: false, arguments: null } },
-      { type: 'tool/code-dispatch', seq: 4, time: Date.parse('2026-09-16T01:02:03Z'), data: {
+      { type: 'tool/ptc-dispatch', seq: 1, time: 1, data: { name: 'other', isError: false, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 2, time: 2, data: { name: 'exit_plan_mode', isError: true, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 3, time: 3, data: { name: 'exit_plan_mode', isError: false, arguments: null, meta: { approved: true } } },
+      { type: 'tool/ptc-dispatch', seq: 4, time: Date.parse('2026-09-16T01:02:03Z'), data: {
         rootCallId: 'root', parentCallId: 'root', subCallId: 'root:code:1', name: 'exit_plan_mode',
-        arguments: { plan: briefPlan(payload) }, isError: false, content: [],
+        arguments: { plan: briefPlan(payload) }, isError: false, content: [], meta: { approved: true },
       } },
     ] as never
 

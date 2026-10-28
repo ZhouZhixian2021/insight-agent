@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-12-academic-background-web.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-12-academic-background-web.md
-2026-10-12-academic-background-web.md: 3a2942114cba1ccfe1843da347a85c55a4baf6ad
-2026-10-12-academic-background-web.zh.md: c9f760c5d5f610eb65ec3845c64d6ecd59b79a09
+/agent-note-web-observes-session-owned-academic-background-tasks:
+  en: c5e6f4083a015c8d
+  zh: 3e8e3295511d9d5d
+/agent-note-web-observes-session-owned-academic-background-tasks/problem:
+  en: 1b9cecd19a4b9d16
+  zh: 2688b6bb603d0a7e
+/agent-note-web-observes-session-owned-academic-background-tasks/decision:
+  en: acf7a1bcefcca2de
+  zh: 2bb82442be23cc10
+/agent-note-web-observes-session-owned-academic-background-tasks/alternatives-considered:
+  en: ccf27fa2a2a61229
+  zh: cc33104c762a004b
+/agent-note-web-observes-session-owned-academic-background-tasks/consequences:
+  en: 1dfa0d51114a0a07
+  zh: e127c85e39b41d9c
+/agent-note-web-observes-session-owned-academic-background-tasks/verification:
+  en: 3a99abd049b2fa77
+  zh: 9688afe504c5a3f3

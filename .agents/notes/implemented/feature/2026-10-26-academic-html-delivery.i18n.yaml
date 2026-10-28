@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-26-academic-html-delivery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-26-academic-html-delivery.md
-2026-10-26-academic-html-delivery.md: dbf0dd2e37da8d337558ccb2a13b685f4d95a14a
-2026-10-26-academic-html-delivery.zh.md: b26af2e4fea127358c0c3f03939310510c85220f
+/agent-note-academic-html-delivery:
+  en: 6401d8e525cf05ff
+  zh: d4231c5cf311b18a
+/agent-note-academic-html-delivery/problem:
+  en: f0dfdced1bc3d573
+  zh: 8fc3c441b042b108
+/agent-note-academic-html-delivery/decision:
+  en: 5861691dd40560a0
+  zh: d44e684cf9ecfed0
+/agent-note-academic-html-delivery/alternatives-considered:
+  en: 66e61de02f92c608
+  zh: 25b8165f66df3456
+/agent-note-academic-html-delivery/consequences:
+  en: 1ccaf10bbe31d6f5
+  zh: 31d01af0f52ad25e

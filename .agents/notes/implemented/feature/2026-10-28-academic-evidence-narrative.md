@@ -14,7 +14,7 @@ New synthesis prompts select B-style question-focused prose, section responsibil
 
 The renderer expands a statement once, omits duplicate placements, shows actual result text and conditions in tables, and keeps scope and uncertainty beside arguments. Scope and question checks follow the narrative; full excerpts and identities remain in the appendix. Evidence admission, independent-work checks, synthetic-data restrictions and delivery decisions are unchanged. Historical unmarked drafts retain their layout.
 
-Private fixed-material tooling exports and replays C inputs and records exact provenance. The initial authored examples and two real DeepSeek calls are explicitly distinguished. Both real treatments use the same 40 evidence records, model route and settings; citation choices are outputs. Unknown model references are quarantined without guessed repairs. Private Sessions, raw model outputs and report files remain outside Git.
+Private fixed-material tooling exports and replays C inputs and records exact input sources. The initial authored examples and two real DeepSeek calls are explicitly distinguished. Both real treatments use the same 40 evidence records, model route and settings; citation choices are outputs. Unknown model references are quarantined without guessed repairs. Private Sessions, raw model outputs and report files remain outside Git.
 
 ## Alternatives considered
 

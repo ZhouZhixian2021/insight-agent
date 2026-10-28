@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-26-academic-background-progress.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-26-academic-background-progress.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-26-academic-background-progress:
+  en: 8266214952ffd610
+  zh: 16a8b13970b3f073
+/2026-10-26-academic-background-progress/summary:
+  en: f76fc2243990447a
+  zh: d8d63353da8942e4
+/2026-10-26-academic-background-progress/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-26-academic-background-progress/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-26-academic-background-progress/compatibility:
+  en: d9d3a1f9a66a3305
+  zh: 753db4461e70b65a
+/2026-10-26-academic-background-progress/verification:
+  en: e8aae4bc7ca534f8
+  zh: c3934c078a177c69
+/2026-10-26-academic-background-progress/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

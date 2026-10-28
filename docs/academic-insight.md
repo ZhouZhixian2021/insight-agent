@@ -58,9 +58,9 @@ The bundled `academic-insight-report` skill owns a fixed Research Brief template
 
 | Path | Current responsibility |
 |---|---|
-| `packages/preset/agent-presets/presets/academic/` | Shipped preset metadata and Cordis composition. |
-| `packages/preset/agent-presets/presets/academic/skills/academic-insight-report/` | Research method and report hierarchy derived from the supplied reference report. |
-| `packages/preset/agent-presets/src/display.ts` | Locale-key mapping for the shipped preset id. |
+| `packages/bundle/web-app/presets/academic/` | Shipped preset metadata and Cordis composition. |
+| `packages/bundle/web-app/presets/academic/skills/academic-insight-report/` | Research method and report hierarchy derived from the supplied reference report. |
+| `packages/preset/agent-preset-registry/src/display.ts` | Locale-key mapping for the shipped preset id. |
 | `packages/client/ui-agent-preset/src/client/locales.ts` | English and Chinese picker copy. |
 | `scripts/start-insight-web.ps1` and `pnpm run insight:web` | Windows launcher that binds this checkout to its private `.dsh-runtime`. |
 | `.gitignore` | Excludes runtime sessions, credentials, settings, and installed bundles from commits. |
@@ -99,7 +99,7 @@ Run the focused preset and UI suites, then the documentation and diff checks des
 ## Further Exploration
 
 - [Architecture and delivery plan](academic-insight-plan.md)
-- [Agent preset package](../packages/preset/agent-presets/README.md)
+- [Agent preset package](../packages/preset/agent-preset-registry/README.md)
 - [Architecture](architecture.md)
 - [Testing](testing.md)
 

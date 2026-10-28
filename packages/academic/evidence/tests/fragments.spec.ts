@@ -235,7 +235,7 @@ describe('extractEvidenceInFragments', () => {
     expect(generator).not.toHaveBeenCalled()
   })
 
-  it('rejects empty provenance or content before generation', async () => {
+  it('rejects empty source metadata or content before generation', async () => {
     const input = source()
     for (const invalid of [{ ...input, contentHash: '' }, { ...input, segments: [] }, source(' ')]) {
       await expect(extractEvidenceInFragments(invalid, options())).rejects.toMatchObject({ code: 'EVIDENCE_INVALID_EXTRACTION' })

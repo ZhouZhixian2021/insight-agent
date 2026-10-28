@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-academic-report",
   "description": "Academic research academic-report",
-  "version": "0.1.3-alpha.1",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,16 +26,16 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^",
-    "@deepseek-ai/dsh-academic-eval": "workspace:^",
-    "@deepseek-ai/dsh-academic-analysis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-academic-model": "workspace:*",
+    "@deepseek-ai/dsh-academic-eval": "workspace:*",
+    "@deepseek-ai/dsh-academic-analysis": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-academic-model": "workspace:^",
-    "@deepseek-ai/dsh-academic-eval": "workspace:^",
-    "@deepseek-ai/dsh-academic-analysis": "workspace:^",
-    "@deepseek-ai/dsh-brand": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-academic-model": "workspace:*",
+    "@deepseek-ai/dsh-academic-eval": "workspace:*",
+    "@deepseek-ai/dsh-academic-analysis": "workspace:*",
+    "@deepseek-ai/dsh-brand": "workspace:*"
   }
 }

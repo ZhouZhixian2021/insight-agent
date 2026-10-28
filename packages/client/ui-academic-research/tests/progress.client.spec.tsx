@@ -19,7 +19,7 @@ const snapshot = (index = 0): AcademicResearchProgressView => ({ ...fixture.fram
 const final: AcademicResearchRunFrame = { type: 'result', retrievalRunId: result.retrievalRun.retrievalRunId, value: result }
 const plan: ResearchEntryProps['plan'] = async () => ({ researchBriefId: result.retrievalRun.researchBriefId, topic: 'RAG', questions: [], searches: [] })
 function props(runStream: TestStream): ResearchEntryProps {
-  return { wide: true, t, plan, ...streamRemote(runStream),
+  return { wide: true, t, sessionId: result.sessionId, plan, ...streamRemote(runStream),
     useSessions: ((select: (s: unknown) => unknown) => select({ current: result.sessionId,
       byId: { [result.sessionId]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
 }

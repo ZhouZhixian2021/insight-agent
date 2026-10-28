@@ -21,5 +21,5 @@ export function captureCode(output: string) {
   }
   const sourceSha256 = artifact(output, '代码快照.json', files)
   return { revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
-    worktreeDirty: execFileSync('git', ['status', '--porcelain'], { cwd: repository, encoding: 'utf8' }).trim() !== '', sourceSha256 }
+    worktreeDirty: execFileSync('git', ['status', '--porcelain'], { cwd: repository, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim() !== '', sourceSha256 }
 }

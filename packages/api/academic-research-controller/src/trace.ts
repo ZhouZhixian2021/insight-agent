@@ -5,7 +5,7 @@ import { academicTraceEventId, academicTraceSpanId,
   type RetrievalRunId, type AcademicTraceRecord, type AcademicTraceSpan, type AcademicTraceStatus,
   type AcademicTracePage, type AcademicTraceEvent } from '@deepseek-ai/dsh-academic-model'
 import { academicTraceSpan, type AcademicTraceObserver, type AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
-import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { AcademicTraceQuery } from './types.ts'
 
 declare module '@deepseek-ai/dsh-session/types' {
@@ -24,11 +24,12 @@ export class AcademicTraceRecorder {
   /** @param session Owning Session.
  * @param runId Explicit research identity, including recovery.
  * @param resumed Whether this invocation continues a previous process interval.
+ * @param previousStartedAt Original run start from an owned Session observation, or unknown.
  */
-  constructor(private readonly session: Session, private readonly runId: RetrievalRunId, private readonly resumed = false) {
-    const previous = resumed ? session.snapshotEvents().findLast(event => event.type === 'academic/trace-v1'
-      && event.data.researchRunId === runId && event.data.span.kind === 'run') : undefined
-    const startedAt = resumed ? previous?.type === 'academic/trace-v1' ? previous.data.span.startedAt : null : new Date().toISOString()
+  constructor(private readonly session: { append(type: 'academic/trace-v1', data: AcademicTraceRecord): void },
+    private readonly runId: RetrievalRunId, private readonly resumed = false,
+    previousStartedAt: string | null = null) {
+    const startedAt = resumed ? previousStartedAt : new Date().toISOString()
     this.record({ ...academicTraceSpan('run', null, 'run', null, 'research'), startedAt })
   }
 

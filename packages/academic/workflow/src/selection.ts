@@ -14,7 +14,7 @@ export type PaperCandidateResolver = (
  * Natural-language inclusion and exclusion rules remain for the full-text model review.
  * @param ingested - deduplicated works and versions from the current search pass.
  * @param brief - approved scope and result limits.
- * @param resolve - provider adapter that supplies full-text URLs and provenance.
+ * @param resolve - provider adapter that supplies full-text URLs and source metadata.
  * @returns selected papers in search order and whether another eligible paper exceeded the approved limit.
  */
 export function selectResearchPapers(

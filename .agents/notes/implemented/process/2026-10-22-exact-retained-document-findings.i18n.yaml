@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-22-exact-retained-document-findings.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-10-22-exact-retained-document-findings.md
+/agent-note-exact-retained-document-findings:
+  en: fb777a770f95e8e2
+  zh: e5719433fef7270b
+/agent-note-exact-retained-document-findings/problem:
+  en: 0ce37776a993c77b
+  zh: 8bdfa72e26a0b22f
+/agent-note-exact-retained-document-findings/decision:
+  en: 22094ac12019a37c
+  zh: 4138e5321de8055b
+/agent-note-exact-retained-document-findings/alternatives-considered:
+  en: 3016fb42bec7b981
+  zh: 5a65ea5131fd3500
+/agent-note-exact-retained-document-findings/consequences:
+  en: 8bfcb96202f95173
+  zh: 1ac5716762c41248

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { SessionId } from '@deepseek-ai/dsh-session/types'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
@@ -76,8 +77,10 @@ describe('phase-one lifecycle preview', () => {
     const getBackgroundRun = vi.fn(), watchBackgroundRun = vi.fn(), cancelBackgroundRun = vi.fn()
     const props = (current: string): ResearchEntryProps => {
       const useSessions = (selectState: (s: unknown) => unknown) => selectState({ current, byId: { [current]: { blank: false } } })
-      return { wide: true, t, plan, startBackgroundRun, listBackgroundRuns,
-        getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, useSessions } as ResearchEntryProps
+      return { wide: true, sessionId: SessionId(current), t, plan, startBackgroundRun, listBackgroundRuns,
+        getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, enhanceEvidence: vi.fn(), enhancementHistory: vi.fn(),
+        traceList: vi.fn(), traceDetail: vi.fn(),
+        useSessions } as ResearchEntryProps
     }
     const view = render(<ResearchEntry {...props('one')} />); open()
     view.rerender(<ResearchEntry {...props('two')} />)

@@ -41,7 +41,7 @@ function options(overrides: Partial<EvidenceFragmentOptions> = {}): EvidenceFrag
 }
 
 describe('enhanceEvidenceInFragments', () => {
-  it('adds all six sections beyond the minimal cap while retaining committed identities and provenance', async () => {
+  it('adds all six sections beyond the minimal cap while retaining committed identities, source fields and extraction methods', async () => {
     const input = { ...source(), depth: 'minimal' as const }
     const seed = await initial(input)
     const original = structuredClone(seed)

@@ -153,7 +153,7 @@ function mergeWorkIdentity(
   entries.push({ kind: 'merged_work', academicWorkId: workId, mergedAcademicWorkId: duplicateWorkId })
 }
 
-/** Registers one record's keys and appends its version unless provider provenance repeats one already stored. */
+/** Registers one record's keys and appends its version unless its provider record is already stored. */
 function mergeVersion(
   workId: AcademicWorkId,
   record: IngestRecord,

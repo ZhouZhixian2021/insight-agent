@@ -18,7 +18,7 @@ export class ModelOutputLimitError extends EvidenceError {
   constructor() { super('Model did not complete a text response.', 'EVIDENCE_MODEL_INCOMPLETE') }
 }
 
-/** Operation-owned callbacks keep evidence and synthesis provenance separate. */
+/** Operation-owned callbacks keep evidence and synthesis request-result records separate. */
 export interface LoggedModelRequest<T> {
   readonly trace?: AcademicTraceOperationIdentity
   readonly messages: Message[]
@@ -90,7 +90,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       if (!await flush()) throw new Error('No Session durability listener is active.')
       // A registered flush listener can be a no-op when this Session has no live writer.
       await using reader = await openReader()
-      const [stored] = await reader.read(event.seq, 1)
+      const [stored] = (await reader.read(event.seq, 1)).events
       if (!isDeepStrictEqual(stored, event)) throw new Error('Session storage did not retain the model record.')
       return event
     } catch (cause: unknown) {

@@ -24,7 +24,7 @@ runResearchDraft 串联现有检索、去重、全文、证据、分析和草稿
 
 工作流要求模型只选择直接回答研究问题的证据，每篇最多六条，以一个研究问题为主要依据的证据最多三条；无关细节不纳入，并采用最短的支持性摘录。parseEvidenceDrafts 执行六条上限，在返回任何条目前按 B 的六栏草稿字段检查不可信模型 JSON。它逐项构建带类型的值，不依靠类型断言信任回答；拒绝额外字段及模型生成的失败身份，原文匹配继续由 B 负责。解析失败不会伪装成成功的空抽取。该解析器没有网络或 Session 副作用。[解析测试](../../../../packages/academic/workflow/tests/parse-evidence.spec.ts)覆盖格式错误及数量超限回答，并把合格草稿交给真实 B 抽取器。
 
-B、C 的接口保持不变。A 的 PaperEvidenceGenerator 增加解析来源参数，单参数生成器仍可赋值。createModelEvidenceGenerator 将活动 Session 和显式模型配置绑定到 DSH 的预备调用，发送已记录的不可变请求，使用现有 token 估算及输出预留，并记录无损模型流。超长论文返回 input_too_large，普通论文失败保留其他成果；追加、保存或读回失败抛出 WorkflowLogError 停止整轮，即使同时发生取消。仅用于记录的 academic/evidence-request 和 academic/evidence-result 不进入主模型历史；validated 表示 JSON 校验，不代表语义审核。进程异常退出后的缺失结果不会自动重试。
+B、C 的接口保持不变。A 的 PaperEvidenceGenerator 增加解析来源元数据参数，单参数生成器仍可赋值。createModelEvidenceGenerator 将活动 Session 和显式模型配置绑定到 DSH 的预备调用，发送已记录的不可变请求，使用现有 token 估算及输出预留，并记录无损模型流。超长论文返回 input_too_large，普通论文失败保留其他成果；追加、保存或读回失败抛出 WorkflowLogError 停止整轮，即使同时发生取消。仅用于记录的 academic/evidence-request 和 academic/evidence-result 不进入主模型历史；validated 表示 JSON 校验，不代表语义审核。进程异常退出后的缺失结果不会自动重试。
 
 SessionStore.flush 表示有监听器参与，不证明活动写入器已保存该会话。适配器在刷新后读回每条事件，执行用户确认的保存失败即停止策略。模型容量和输出上限来自显式配置及提供方解析，预算未知时发送前失败。按用户选择，沿用共享估算器并保留其近似性质。完整工作流恢复及长论文分批仍待后续。
 

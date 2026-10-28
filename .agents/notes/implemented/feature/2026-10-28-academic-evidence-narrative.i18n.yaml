@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-28-academic-evidence-narrative.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-28-academic-evidence-narrative.md
-2026-10-28-academic-evidence-narrative.md: 7ce3d1e515d49ecf2b09f2b0f9f5e71647cbce6b
-2026-10-28-academic-evidence-narrative.zh.md: ce7fa09a41765b960b0398e4884420cfe154eef2
+/agent-note-evidence-narrative-report-delivery:
+  en: 2b820e7d5ccb93b4
+  zh: 1ea868ab72d731e3
+/agent-note-evidence-narrative-report-delivery/problem:
+  en: 5f08fe95824a148c
+  zh: b625b7aead3bb940
+/agent-note-evidence-narrative-report-delivery/decision:
+  en: 9ca527bc2181894b
+  zh: 05db046ac50f6015
+/agent-note-evidence-narrative-report-delivery/alternatives-considered:
+  en: 063358d854650db6
+  zh: 56418b408bc263f3
+/agent-note-evidence-narrative-report-delivery/consequences:
+  en: 4ec6ca1da84faa96
+  zh: acd552a34abfee2d

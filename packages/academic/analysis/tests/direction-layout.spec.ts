@@ -24,7 +24,7 @@ const output = () => JSON.parse(readFileSync(new URL('synthesis-partial-output.s
 
 describe('executable direction report layout', () => {
   it('retains the historical preset reference while new requests select evidence narrative writing', () => {
-    const source = readFileSync(new URL('../../../preset/agent-presets/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../../../bundle/web-app/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
     expect(academicReportFormat).toBe(source.replaceAll('\r\n', '\n').trimEnd() + '\n')
     const prompt = synthesisPrompt(input())
     expect(prompt).toContain('writingStyle:"evidence_narrative"')
@@ -65,7 +65,7 @@ describe('executable direction report layout', () => {
     expect(parseSynthesisDraft(JSON.stringify(raw), source).directions![0]!.keyResults.quantitative).toBe(true)
   })
   it('reads an existing question-only output without claiming a direction layout', () => {
-    const raw = JSON.parse(readFileSync(new URL('synthesis-output.sample.json', root), 'utf8')) as unknown
+    const raw: unknown = JSON.parse(readFileSync(new URL('synthesis-output.sample.json', root), 'utf8'))
     expect(parseSynthesisDraft(JSON.stringify(raw), input()).directions).toBeUndefined()
   })
 })

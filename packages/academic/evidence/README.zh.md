@@ -62,13 +62,13 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
   methods: [], datasets: [], metrics: [], findings: [], limitations: [] })
 ```
 
-在 `EvidenceExtractionInput` 中设置 `depth: 'minimal'`，请求三至五条围绕研究问题的事实；来源支持不足时允许少于三条。必须提供已批准的 `focusQuestions`，每条保留草稿必须关联其中至少一个问题。抽取器最多保留五条已核验记录，允许卡片分区为空或属性为 `not_extracted`。缺少或为空的问题关联只拒绝该条草稿。省略深度或设置 `depth: 'complete'` 时，使用六分区抽取指令且不应用此记录上限。两种模式均保留逐字摘录、定位、内容哈希、来源与实际论文版本。
+在 `EvidenceExtractionInput` 中设置 `depth: 'minimal'`，请求三至五条围绕研究问题的事实；来源支持不足时允许少于三条。必须提供已批准的 `focusQuestions`，每条保留草稿必须关联其中至少一个问题。抽取器最多保留五条已核验记录，允许卡片分区为空或属性为 `not_extracted`。缺少或为空的问题关联只拒绝该条草稿。省略深度或设置 `depth: 'complete'` 时，使用六分区抽取指令且不应用此记录上限。两种模式均保留逐字摘录、定位、内容哈希、来源字段、抽取方法与实际论文版本。
 
-使用 `enhanceEvidenceInFragments(source, initialEvidence, options, signal)`，对已提交的一级证据执行完整六分区补充抽取。原文必须与初始论文、版本和内容哈希一致；缺少证据或引用关系不一致时，在模型派发前拒绝。不同的抓取正文须单独抽取。增强保留每条初始记录、定位、问题关联和卡片条目，包括其身份与来源，并沿用初始卡片 ID。定位、陈述和摘录相同的记录复用已有证据 ID；新增问题关联和卡片分类可以引用它们。相同分类只保留一份，不同分类保留为独立条目。
+使用 `enhanceEvidenceInFragments(source, initialEvidence, options, signal)`，对已提交的一级证据执行完整六分区补充抽取。原文必须与初始论文、版本和内容哈希一致；缺少证据或引用关系不一致时，在模型派发前拒绝。不同的抓取正文须单独抽取。增强保留每条初始记录、定位、问题关联和卡片条目，包括其身份、来源字段与抽取方法，并沿用初始卡片 ID。定位、陈述和摘录相同的记录复用已有证据 ID；新增问题关联和卡片分类可以引用它们。相同分类只保留一份，不同分类保留为独立条目。
 
 增强提交回调只接收新增内容和草稿拒绝事实，沿用初始卡片 ID；新增条目可以引用此前已提交的证据，而不重复发送其记录和定位。调用方必须在增强前提交初始证据，并在下一个片段运行前持久化每次补充。返回结果合并初始证据与已提交的补充。已分类失败保留此前证据并标明未完成范围；取消、未分类失败和提交错误会使调用失败，调用方仍持有此前提交。空分区、保留的 `not_extracted` 属性和抽取成功均不证明语义支持、独立审核或正式交付资格。库不激活工作流升级，也不选择模型。
 
-当定位范围无效、记录版本或等级与定位不一致、陈述或来源字段为空、或卡片条目未引用任何证据时，构造会以 `EvidenceError` 清晰地失败。
+当定位范围无效、记录版本或等级与定位不一致、陈述、来源提供方、来源 URL 或获取时间为空、或卡片条目未引用任何证据时，构造会以 `EvidenceError` 清晰地失败。
 
 抽取逐条拒绝模型提供的无效来源引用。`EvidenceExtractionResult.rejectedDrafts` 保存被拒草稿从零开始的 `draftIndex`、`segmentIndex`、稳定的 `code` 与诊断 `reason`；只有合格草稿会生成记录、定位和卡片条目。空引文、无效片段序号、未匹配或有歧义的引文不会丢弃其他合格草稿。逐字核验仍是必需条件，包括 Unicode 和公式痕迹。程序拥有的输入无效、生成器错误和取消仍会使调用失败。模型未提出证据时返回空记录和空拒绝列表；全部被拒时返回空记录与拒绝列表。JSON 结构校验仍由调用方负责。
 
@@ -90,7 +90,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | `SourceLocatorInput` | 六种构造输入，每种定位类型一个。 |
 | `EvidenceRecordInput` / `EvidenceCardInput` | 记录与卡片的构造输入。 |
 | `EvidenceExtractionInput` / `EvidenceExtractionResult` | 可定位论文输入与已验证的单篇论文结果。 |
-| `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | HTML/PDF 准备接受的结构化抓取结果与论文来源信息。 |
+| `AcademicWebFetchResult` / `FetchedAcademicFullTextInput` | HTML/PDF 准备接受的结构化抓取结果与论文来源元数据。 |
 | `EvidenceGenerator` / `EvidenceDraft` / `EvidenceQuestionLink` | 调用方拥有的语义生成器、有类型输出，以及本次运行中已接受的证据—问题关联。 |
 | `EvidenceError` | 携带稳定 `code` 的类型化构造失败。 |
 

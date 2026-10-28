@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-19-web-academic-discovery-sources.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-19-web-academic-discovery-sources.md
-2026-09-19-web-academic-discovery-sources.md: 073a6262a9f71c76bfc00ab653892600e3d8466a
-2026-09-19-web-academic-discovery-sources.zh.md: 2c7cb1eabc3685a6218b5a4302e7048b090f4c9b
+/agent-note-web-academic-discovery-uses-openalex-and-arxiv:
+  en: f9b6aea9f3edd19c
+  zh: 46ebcc585c37a3b9
+/agent-note-web-academic-discovery-uses-openalex-and-arxiv/problem:
+  en: 439a2373e99a6b97
+  zh: 2265eccba90ddfd0
+/agent-note-web-academic-discovery-uses-openalex-and-arxiv/decision:
+  en: 298a208bd3303c29
+  zh: b3b3a6a13e83d502
+/agent-note-web-academic-discovery-uses-openalex-and-arxiv/alternatives-considered:
+  en: a96435b16847ec71
+  zh: 07b23c58c6c6b318
+/agent-note-web-academic-discovery-uses-openalex-and-arxiv/consequences:
+  en: baa76bb192c84c2a
+  zh: d3ada87bcb7f02c9

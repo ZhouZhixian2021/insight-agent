@@ -150,7 +150,7 @@ export interface EvidenceGenerationRequest {
 /** Caller-provided semantic extractor; model adapters validate their output before returning it. */
 export type EvidenceGenerator = (request: EvidenceGenerationRequest) => Promise<readonly EvidenceDraft[]>
 
-/** Paper identity, provenance, and locatable content for one extraction call. */
+/** Paper identity, source metadata, and locatable content for one extraction call. */
 export interface EvidenceExtractionInput {
   /** Minimal extraction requires focus questions and retains at most five records; omission selects complete extraction. */
   readonly depth?: 'minimal' | 'complete'
@@ -176,7 +176,7 @@ export interface AcademicWebFetchResult {
   readonly truncated: boolean
 }
 
-/** Paper identity and provenance attached to one fetched full-text response. */
+/** Paper identity and source metadata attached to one fetched full-text response. */
 export interface FetchedAcademicFullTextInput {
   readonly academicWorkId: AcademicWorkId
   readonly workVersionId: WorkVersionId
@@ -188,7 +188,7 @@ export interface FetchedAcademicFullTextInput {
   readonly fetched: AcademicWebFetchResult
 }
 
-/** Paper provenance plus ordered candidate URLs for full-text acquisition. */
+/** Paper source metadata plus ordered candidate URLs for full-text acquisition. */
 export interface AcademicFullTextFetchInput extends Omit<FetchedAcademicFullTextInput, 'fetched'> {
   /** Candidate URLs in preference order, normally HTML before PDF. */
   readonly urls: readonly string[]

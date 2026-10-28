@@ -169,7 +169,7 @@ describe('scholarly metadata screening', () => {
     expect(assessments[0]?.reasons[0]).toContain('does not confirm evidence or scientific quality')
   })
 
-  it('does not score query provenance as an approved Chinese question content match', () => {
+  it('does not score discovery-query associations as an approved Chinese question content match', () => {
     const localizedQuestion = '检索增强生成如何减少幻觉？'
     const localizedBrief = { ...brief, questions: [localizedQuestion] }
     const localizedPlan = { ...plan, constraints: { ...plan.constraints, requiredTerms: [] },

@@ -1,0 +1,3495 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:academic/background-run-progress",
+      "kind": "event",
+      "event": "academic/background-run-progress",
+      "surface": false,
+      "digest": "9284abbbf19e64169ff34e4ff19520423a0d61e5fa9f02b3c1b7f660f7434b9a",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 97,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 98,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "backgroundRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "progress",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              17
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "activeStages",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "activities",
+                "type": 13,
+                "optional": false
+              },
+              {
+                "name": "counts",
+                "type": 72,
+                "optional": false
+              },
+              {
+                "name": "elapsedMs",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "latestEvent",
+                "type": 73,
+                "optional": false
+              },
+              {
+                "name": "primaryStage",
+                "type": 84,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "sequence",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stages",
+                "type": 86,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 6
+          },
+          {
+            "kind": "union",
+            "types": [
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "retrieval"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext"
+          },
+          {
+            "kind": "array",
+            "element": 14
+          },
+          {
+            "kind": "union",
+            "types": [
+              15,
+              43,
+              47,
+              53,
+              64,
+              66,
+              70
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "attempt",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "batchCount",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 19,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 35,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 41,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              17,
+              18
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "paper"
+          },
+          {
+            "kind": "union",
+            "types": [
+              17,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "network_error"
+          },
+          {
+            "kind": "literal",
+            "value": "not_found"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "parse_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "rate_limited"
+          },
+          {
+            "kind": "literal",
+            "value": "authentication_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_unavailable"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "upstream_error"
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "incomplete_output"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_output"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_request"
+          },
+          {
+            "kind": "union",
+            "types": [
+              36,
+              37,
+              38,
+              39,
+              40
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_extract"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_parse"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_validate"
+          },
+          {
+            "kind": "literal",
+            "value": "waiting_retry"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_fetch"
+          },
+          {
+            "kind": "union",
+            "types": [
+              11,
+              12
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              17
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "attempt",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 44,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              45,
+              46
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evaluation"
+          },
+          {
+            "kind": "literal",
+            "value": "rendering"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "channels",
+                "type": 48,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 52,
+                "optional": false
+              },
+              {
+                "name": "query",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 49
+          },
+          {
+            "kind": "union",
+            "types": [
+              50,
+              51
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic"
+          },
+          {
+            "kind": "literal",
+            "value": "web_discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "query"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "itemCount",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "itemIndex",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 54,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 55,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 59,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "provider"
+          },
+          {
+            "kind": "union",
+            "types": [
+              51,
+              56,
+              57,
+              58
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic_search"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_identification"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_verification"
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              60,
+              61,
+              62,
+              63
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "running"
+          },
+          {
+            "kind": "literal",
+            "value": "success"
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedReviews",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "failedReviews",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 65,
+                "optional": false
+              },
+              {
+                "name": "skippedReviews",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "totalReviews",
+                "type": 18,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_review"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 67,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              68,
+              69
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "eligibility"
+          },
+          {
+            "kind": "literal",
+            "value": "deduplication"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 71,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "questionCount",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "questionIndex",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "question"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "availableFulltextPapers",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "candidateWorks",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "completedPapers",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "completedQueries",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "completedQuestions",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "deduplicatedWorks",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "includedPapers",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "mergedVersionRecords",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "mergedWorkIdentities",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "retainedWorkVersions",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "suspectedDuplicateRecords",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "totalPapers",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "totalQueries",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "totalQuestions",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 18,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "code",
+                "type": 74,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "occurredAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 42,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              75,
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "provider_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "retry_scheduled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_completed"
+          },
+          {
+            "kind": "literal",
+            "value": "run_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_settled"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_updated"
+          },
+          {
+            "kind": "union",
+            "types": [
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              17
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "analysis",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "extraction",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "fulltext",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "report",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "retrieval",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "screening",
+                "type": 87,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "completedItems",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 42,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "totalItems",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "unit",
+                "type": 91,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              60,
+              61,
+              62,
+              63,
+              89,
+              90
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "not_run"
+          },
+          {
+            "kind": "literal",
+            "value": "pending"
+          },
+          {
+            "kind": "union",
+            "types": [
+              8,
+              17,
+              92,
+              93,
+              94,
+              95,
+              96
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "papers"
+          },
+          {
+            "kind": "literal",
+            "value": "queries"
+          },
+          {
+            "kind": "literal",
+            "value": "questions"
+          },
+          {
+            "kind": "literal",
+            "value": "batches"
+          },
+          {
+            "kind": "literal",
+            "value": "works"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "academic/background-run-progress"
+          }
+        ]
+      }
+    },
+    {
+      "key": "event:academic/background-run-q6-update",
+      "kind": "event",
+      "event": "academic/background-run-q6-update",
+      "surface": false,
+      "digest": "a81b174749513e6b65d02ba22aea76dece987e7828503eff76c14537f1315d50",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 183,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 185,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "backgroundRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "progress",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "q6",
+                "type": 97,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              5
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "activeStages",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "activities",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "counts",
+                "type": 72,
+                "optional": false
+              },
+              {
+                "name": "elapsedMs",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "latestEvent",
+                "type": 73,
+                "optional": false
+              },
+              {
+                "name": "primaryStage",
+                "type": 84,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "sequence",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stages",
+                "type": 86,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 7
+          },
+          {
+            "kind": "union",
+            "types": [
+              8,
+              9,
+              10,
+              11,
+              12,
+              13
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext"
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "retrieval"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "array",
+            "element": 15
+          },
+          {
+            "kind": "union",
+            "types": [
+              16,
+              20,
+              23,
+              43,
+              49,
+              59,
+              70
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 13,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 13,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              19
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "deduplication"
+          },
+          {
+            "kind": "literal",
+            "value": "eligibility"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "questionCount",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "questionIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "question"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "attempt",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 40,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              22
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "network_error"
+          },
+          {
+            "kind": "literal",
+            "value": "not_found"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "parse_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "authentication_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "rate_limited"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_unavailable"
+          },
+          {
+            "kind": "literal",
+            "value": "incomplete_output"
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_output"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "upstream_error"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_request"
+          },
+          {
+            "kind": "union",
+            "types": [
+              41,
+              42
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evaluation"
+          },
+          {
+            "kind": "literal",
+            "value": "rendering"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "channels",
+                "type": 44,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 48,
+                "optional": false
+              },
+              {
+                "name": "query",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 12,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 45
+          },
+          {
+            "kind": "union",
+            "types": [
+              46,
+              47
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic"
+          },
+          {
+            "kind": "literal",
+            "value": "web_discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "query"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "attempt",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "batchCount",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 50,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 51,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 57,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "paper"
+          },
+          {
+            "kind": "union",
+            "types": [
+              52,
+              53,
+              54,
+              55,
+              56
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_extract"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_validate"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_fetch"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_parse"
+          },
+          {
+            "kind": "literal",
+            "value": "waiting_retry"
+          },
+          {
+            "kind": "union",
+            "types": [
+              9,
+              10
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              4
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "itemCount",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "itemIndex",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 60,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 61,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 12,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 65,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "provider"
+          },
+          {
+            "kind": "union",
+            "types": [
+              47,
+              62,
+              63,
+              64
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "reference_identification"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_verification"
+          },
+          {
+            "kind": "literal",
+            "value": "academic_search"
+          },
+          {
+            "kind": "union",
+            "types": [
+              34,
+              66,
+              67,
+              68,
+              69
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "running"
+          },
+          {
+            "kind": "literal",
+            "value": "success"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedReviews",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "failedReviews",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 13,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 71,
+                "optional": false
+              },
+              {
+                "name": "skippedReviews",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 13,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "totalReviews",
+                "type": 22,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_review"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "availableFulltextPapers",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "candidateWorks",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "completedPapers",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "completedQueries",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "completedQuestions",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "deduplicatedWorks",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "includedPapers",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "mergedVersionRecords",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "mergedWorkIdentities",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "retainedWorkVersions",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "suspectedDuplicateRecords",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "totalPapers",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "totalQueries",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "totalQuestions",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 22,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "code",
+                "type": 74,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "occurredAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 58,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              75,
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "provider_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "retry_scheduled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_completed"
+          },
+          {
+            "kind": "literal",
+            "value": "run_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_settled"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_updated"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "analysis",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "extraction",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "fulltext",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "report",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "retrieval",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "screening",
+                "type": 87,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "completedItems",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "totalItems",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "unit",
+                "type": 91,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              34,
+              66,
+              67,
+              68,
+              69,
+              89,
+              90
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "not_run"
+          },
+          {
+            "kind": "literal",
+            "value": "pending"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              11,
+              92,
+              93,
+              94,
+              95,
+              96
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "papers"
+          },
+          {
+            "kind": "literal",
+            "value": "queries"
+          },
+          {
+            "kind": "literal",
+            "value": "questions"
+          },
+          {
+            "kind": "literal",
+            "value": "batches"
+          },
+          {
+            "kind": "literal",
+            "value": "works"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "batches",
+                "type": 98,
+                "optional": false
+              },
+              {
+                "name": "coverage",
+                "type": 123,
+                "optional": false
+              },
+              {
+                "name": "limitations",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "plan",
+                "type": 126,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "rounds",
+                "type": 159,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "sequence",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 166,
+                "optional": false
+              },
+              {
+                "name": "stopDecision",
+                "type": 168,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              99,
+              119,
+              121,
+              122
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 101,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "truncated"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "decisions",
+                "type": 102,
+                "optional": false
+              },
+              {
+                "name": "settlements",
+                "type": 109,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 103
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "action",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "searchQuestions",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "workVersionIds",
+                "type": 108,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              105,
+              106,
+              107
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "schedule_batch"
+          },
+          {
+            "kind": "literal",
+            "value": "search_evidence_gap"
+          },
+          {
+            "kind": "literal",
+            "value": "stop"
+          },
+          {
+            "kind": "array",
+            "element": 2
+          },
+          {
+            "kind": "array",
+            "element": 110
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "admittedEvidence",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "completedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "coverage",
+                "type": 111,
+                "optional": true
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "allQuestionsCovered",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "assessedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "evidenceRequirementsMet",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 113,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "boolean"
+          },
+          {
+            "kind": "array",
+            "element": 114
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceIds",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "gaps",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 115,
+                "optional": false
+              },
+              {
+                "name": "supportingWorkIds",
+                "type": 108,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              116,
+              117,
+              118
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "covered"
+          },
+          {
+            "kind": "literal",
+            "value": "partial"
+          },
+          {
+            "kind": "literal",
+            "value": "uncovered"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 120,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 101,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "available"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 90,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "retryable",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 66,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              121,
+              122,
+              124,
+              125
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 111,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 120,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 111,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "citationExpansionSeeds",
+                "type": 127,
+                "optional": false
+              },
+              {
+                "name": "constraints",
+                "type": 139,
+                "optional": false
+              },
+              {
+                "name": "inclusionTargets",
+                "type": 150,
+                "optional": false
+              },
+              {
+                "name": "maximumSearchRounds",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "queries",
+                "type": 151,
+                "optional": false
+              },
+              {
+                "name": "rankingPolicy",
+                "type": 156,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 128
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "direction",
+                "type": 129,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              130,
+              131,
+              132
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "citations"
+          },
+          {
+            "kind": "literal",
+            "value": "references"
+          },
+          {
+            "kind": "literal",
+            "value": "related"
+          },
+          {
+            "kind": "union",
+            "types": [
+              134,
+              135,
+              136,
+              137,
+              138
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "core"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_gap"
+          },
+          {
+            "kind": "literal",
+            "value": "site_restricted"
+          },
+          {
+            "kind": "literal",
+            "value": "synonym_expansion"
+          },
+          {
+            "kind": "literal",
+            "value": "citation_expansion"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "excludedTerms",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "exclusionRules",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "includedWorkTypes",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "inclusionRules",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "publicationWindow",
+                "type": 140,
+                "optional": false
+              },
+              {
+                "name": "requiredTerms",
+                "type": 108,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "dateBasis",
+                "type": 141,
+                "optional": false
+              },
+              {
+                "name": "end",
+                "type": 144,
+                "optional": false
+              },
+              {
+                "name": "start",
+                "type": 144,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              142,
+              143
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "first_public_release"
+          },
+          {
+            "kind": "literal",
+            "value": "published"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              145
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "iso",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "precision",
+                "type": 146,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              147,
+              148,
+              149
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "month"
+          },
+          {
+            "kind": "literal",
+            "value": "day"
+          },
+          {
+            "kind": "literal",
+            "value": "year"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "maximum",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "minimum",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "target",
+                "type": 22,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 152
+          },
+          {
+            "kind": "union",
+            "types": [
+              153,
+              154,
+              155
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 136,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "siteHost",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 47,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 46,
+                "optional": false
+              },
+              {
+                "name": "providers",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "schemaVersion",
+                "type": 85,
+                "optional": false
+              },
+              {
+                "name": "thresholds",
+                "type": 157,
+                "optional": false
+              },
+              {
+                "name": "weights",
+                "type": 158,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "p0",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "p1",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "p2",
+                "type": 22,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidencePotential",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "fulltextAvailability",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "methodMatch",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "questionMatch",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "recency",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sourceQuality",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "topicRelevance",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "workTypeFit",
+                "type": 22,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              121,
+              122,
+              160,
+              165
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 161,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 162
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "searchQueryIds",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 58,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 163,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              34,
+              66,
+              67,
+              68,
+              69,
+              164
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "planned"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 120,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 161,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              34,
+              68,
+              167
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "settled"
+          },
+          {
+            "kind": "union",
+            "types": [
+              121,
+              122,
+              169,
+              184
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 170,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              171,
+              173
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "details",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "shouldStop",
+                "type": 172,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": false
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "details",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 174,
+                "optional": false
+              },
+              {
+                "name": "shouldStop",
+                "type": 183,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              34,
+              175,
+              176,
+              177,
+              178,
+              179,
+              180,
+              181,
+              182
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_elapsed_time"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_included_works"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_search_rounds"
+          },
+          {
+            "kind": "literal",
+            "value": "review_required"
+          },
+          {
+            "kind": "literal",
+            "value": "saturated"
+          },
+          {
+            "kind": "literal",
+            "value": "target_and_coverage_met"
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_exhausted"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_candidate_works"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 120,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 170,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "academic/background-run-q6-update"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

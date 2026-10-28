@@ -5,7 +5,7 @@
   disabled: true
 - id: system-prompt
   config:
-    persona: 'Reply ACADEMIC_DONE after the academic fixture completes.'
+    personaPrefix: 'Reply ACADEMIC_DONE after the academic fixture completes.'
     includeHarnessIdentity: false
     includeRuntimeContext: false
 - insert:

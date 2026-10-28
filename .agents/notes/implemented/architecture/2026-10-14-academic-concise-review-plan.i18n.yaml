@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-14-academic-concise-review-plan.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-14-academic-concise-review-plan.md
-2026-10-14-academic-concise-review-plan.md: 772ee8e628886cc0c0ea93f96834c196aac620d1
-2026-10-14-academic-concise-review-plan.zh.md: 063c1e901c278f0c363da17ede5a0bf2bbb995a4
+/agent-note-concise-academic-review-plan-with-complete-execution-data:
+  en: eb7729f4cd856900
+  zh: 197bddc3f3d818d5
+/agent-note-concise-academic-review-plan-with-complete-execution-data/problem:
+  en: 4fae4c43c31513b4
+  zh: 0070000acc383d97
+/agent-note-concise-academic-review-plan-with-complete-execution-data/decision:
+  en: 73cb30448d613516
+  zh: 2189ad44b4c65db7
+/agent-note-concise-academic-review-plan-with-complete-execution-data/alternatives-considered:
+  en: 386960412a5772c3
+  zh: 028059c6d282b1a7
+/agent-note-concise-academic-review-plan-with-complete-execution-data/consequences:
+  en: f5c8b829d7db56f8
+  zh: a854a1ab3d96b0e0
+/agent-note-concise-academic-review-plan-with-complete-execution-data/verification:
+  en: eadb4ed764224892
+  zh: 071878cacb9e1a79

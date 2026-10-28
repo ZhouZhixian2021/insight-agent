@@ -1,0 +1,5824 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:academic/background-run-state",
+      "kind": "event",
+      "event": "academic/background-run-state",
+      "surface": false,
+      "digest": "4597342e218fd6a219340f0cedc4d3cfba1f8f511ebfba2a7004391e2e11f148",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 311,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 421,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "backgroundRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "cancelReason",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "error",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "progress",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "q6",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "result",
+                "type": 313,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 419,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "literal",
+            "value": "user_requested"
+          },
+          {
+            "kind": "literal",
+            "value": "service_stopped"
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              4
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              9
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "activeStages",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "activities",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "counts",
+                "type": 75,
+                "optional": false
+              },
+              {
+                "name": "elapsedMs",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "latestEvent",
+                "type": 76,
+                "optional": false
+              },
+              {
+                "name": "primaryStage",
+                "type": 87,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "sequence",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stages",
+                "type": 89,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 11
+          },
+          {
+            "kind": "union",
+            "types": [
+              12,
+              13,
+              14,
+              15,
+              16,
+              17
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext"
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "retrieval"
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "array",
+            "element": 19
+          },
+          {
+            "kind": "union",
+            "types": [
+              20,
+              24,
+              27,
+              52,
+              56,
+              62,
+              73
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              22,
+              23
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "deduplication"
+          },
+          {
+            "kind": "literal",
+            "value": "eligibility"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "questionCount",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "questionIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 16,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "question"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "attempt",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "batchCount",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 29,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 30,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 45,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 51,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              26
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "authentication_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "not_found"
+          },
+          {
+            "kind": "literal",
+            "value": "upstream_error"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_unavailable"
+          },
+          {
+            "kind": "literal",
+            "value": "parse_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "incomplete_output"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_output"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_request"
+          },
+          {
+            "kind": "literal",
+            "value": "network_error"
+          },
+          {
+            "kind": "literal",
+            "value": "rate_limited"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "union",
+            "types": [
+              46,
+              47,
+              48,
+              49,
+              50
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "waiting_retry"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_extract"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_validate"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_fetch"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_parse"
+          },
+          {
+            "kind": "union",
+            "types": [
+              12,
+              13
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "attempt",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "lastFailure",
+                "type": 30,
+                "optional": false
+              },
+              {
+                "name": "maximumAttempts",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 53,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              54,
+              55
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evaluation"
+          },
+          {
+            "kind": "literal",
+            "value": "rendering"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "channels",
+                "type": 57,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 61,
+                "optional": false
+              },
+              {
+                "name": "query",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 15,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 58
+          },
+          {
+            "kind": "union",
+            "types": [
+              59,
+              60
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "web_discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "academic"
+          },
+          {
+            "kind": "literal",
+            "value": "query"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 30,
+                "optional": false
+              },
+              {
+                "name": "itemCount",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "itemIndex",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 63,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 64,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "queryCount",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "queryIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 15,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 68,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "provider"
+          },
+          {
+            "kind": "union",
+            "types": [
+              59,
+              65,
+              66,
+              67
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic_search"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_identification"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_verification"
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              69,
+              70,
+              71,
+              72
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "running"
+          },
+          {
+            "kind": "literal",
+            "value": "success"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedReviews",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "failedReviews",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 74,
+                "optional": false
+              },
+              {
+                "name": "skippedReviews",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "totalReviews",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_review"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "availableFulltextPapers",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "candidateWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "completedPapers",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "completedQueries",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "completedQuestions",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "deduplicatedWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "includedPapers",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "mergedVersionRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "mergedWorkIdentities",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "rejectedEvidenceDrafts",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "retainedWorkVersions",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "suspectedDuplicateRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "totalPapers",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "totalQueries",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "totalQuestions",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "validatedEvidenceRecords",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "code",
+                "type": 77,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 30,
+                "optional": false
+              },
+              {
+                "name": "occurredAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              78,
+              79,
+              80,
+              81,
+              82,
+              83,
+              84,
+              85,
+              86
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "provider_updated"
+          },
+          {
+            "kind": "literal",
+            "value": "retry_scheduled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_cancelled"
+          },
+          {
+            "kind": "literal",
+            "value": "run_completed"
+          },
+          {
+            "kind": "literal",
+            "value": "run_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_settled"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_started"
+          },
+          {
+            "kind": "literal",
+            "value": "stage_updated"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "analysis",
+                "type": 90,
+                "optional": false
+              },
+              {
+                "name": "extraction",
+                "type": 90,
+                "optional": false
+              },
+              {
+                "name": "fulltext",
+                "type": 90,
+                "optional": false
+              },
+              {
+                "name": "report",
+                "type": 90,
+                "optional": false
+              },
+              {
+                "name": "retrieval",
+                "type": 90,
+                "optional": false
+              },
+              {
+                "name": "screening",
+                "type": 90,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "completedItems",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 91,
+                "optional": false
+              },
+              {
+                "name": "totalItems",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "unit",
+                "type": 94,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              69,
+              70,
+              71,
+              72,
+              92,
+              93
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "not_run"
+          },
+          {
+            "kind": "literal",
+            "value": "pending"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              14,
+              95,
+              96,
+              97,
+              98,
+              99
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "works"
+          },
+          {
+            "kind": "literal",
+            "value": "papers"
+          },
+          {
+            "kind": "literal",
+            "value": "queries"
+          },
+          {
+            "kind": "literal",
+            "value": "questions"
+          },
+          {
+            "kind": "literal",
+            "value": "batches"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              101
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "batches",
+                "type": 102,
+                "optional": false
+              },
+              {
+                "name": "candidates",
+                "type": 127,
+                "optional": false
+              },
+              {
+                "name": "coverage",
+                "type": 257,
+                "optional": false
+              },
+              {
+                "name": "limitations",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "plan",
+                "type": 260,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "rounds",
+                "type": 287,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "sequence",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 294,
+                "optional": false
+              },
+              {
+                "name": "stopDecision",
+                "type": 296,
+                "optional": false
+              },
+              {
+                "name": "updatedAt",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              103,
+              123,
+              125,
+              126
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 105,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "truncated"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "decisions",
+                "type": 106,
+                "optional": false
+              },
+              {
+                "name": "settlements",
+                "type": 113,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 107
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "action",
+                "type": 108,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "searchQuestions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "workVersionIds",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              109,
+              110,
+              111
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "schedule_batch"
+          },
+          {
+            "kind": "literal",
+            "value": "search_evidence_gap"
+          },
+          {
+            "kind": "literal",
+            "value": "stop"
+          },
+          {
+            "kind": "array",
+            "element": 2
+          },
+          {
+            "kind": "array",
+            "element": 114
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "admittedEvidence",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "batchIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "completedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "coverage",
+                "type": 115,
+                "optional": true
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "allQuestionsCovered",
+                "type": 116,
+                "optional": false
+              },
+              {
+                "name": "assessedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "evidenceRequirementsMet",
+                "type": 116,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 117,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "boolean"
+          },
+          {
+            "kind": "array",
+            "element": 118
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceIds",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "gaps",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 119,
+                "optional": false
+              },
+              {
+                "name": "supportingWorkIds",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              120,
+              121,
+              122
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "uncovered"
+          },
+          {
+            "kind": "literal",
+            "value": "covered"
+          },
+          {
+            "kind": "literal",
+            "value": "partial"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 105,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "available"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 93,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "retryable",
+                "type": 116,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 69,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              125,
+              126,
+              128,
+              256
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 129,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "items",
+                "type": 130,
+                "optional": false
+              },
+              {
+                "name": "ranking",
+                "type": 254,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 131
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "assessment",
+                "type": 132,
+                "optional": false
+              },
+              {
+                "name": "evaluation",
+                "type": 194,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 222,
+                "optional": false
+              },
+              {
+                "name": "work",
+                "type": 248,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "abstract",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "contributionSignals",
+                "type": 141,
+                "optional": false
+              },
+              {
+                "name": "diversityTags",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "evidencePotential",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "exclusionRuleMatches",
+                "type": 149,
+                "optional": false
+              },
+              {
+                "name": "fulltextAvailability",
+                "type": 151,
+                "optional": false
+              },
+              {
+                "name": "inclusionRuleMatches",
+                "type": 149,
+                "optional": false
+              },
+              {
+                "name": "keywords",
+                "type": 156,
+                "optional": false
+              },
+              {
+                "name": "matchedQuestions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "methodMatch",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "reasons",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "recency",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "screening",
+                "type": 158,
+                "optional": true
+              },
+              {
+                "name": "semanticReview",
+                "type": 181,
+                "optional": true
+              },
+              {
+                "name": "sourceQuality",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "topicRelevance",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              134,
+              135,
+              136,
+              138,
+              140
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "failureId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 69,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 32,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 137,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "not_applicable"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 139,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "not_extracted"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 142
+          },
+          {
+            "kind": "union",
+            "types": [
+              143,
+              144,
+              145,
+              146,
+              147,
+              148
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "core_method"
+          },
+          {
+            "kind": "literal",
+            "value": "empirical_evaluation"
+          },
+          {
+            "kind": "literal",
+            "value": "adjacent_technology"
+          },
+          {
+            "kind": "literal",
+            "value": "review"
+          },
+          {
+            "kind": "literal",
+            "value": "application"
+          },
+          {
+            "kind": "literal",
+            "value": "benchmark_or_dataset"
+          },
+          {
+            "kind": "array",
+            "element": 150
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              116
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              135,
+              152,
+              154
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 153,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "unresolved"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 155,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "resolvable"
+          },
+          {
+            "kind": "union",
+            "types": [
+              134,
+              135,
+              136,
+              138,
+              157
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "scope",
+                "type": 159,
+                "optional": false
+              },
+              {
+                "name": "signals",
+                "type": 168,
+                "optional": false
+              },
+              {
+                "name": "surfaceKeywordHits",
+                "type": 177,
+                "optional": false
+              },
+              {
+                "name": "uncertainties",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              135,
+              160,
+              166
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "quote",
+                "type": 161,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 165,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "source",
+                "type": 162,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              163,
+              164
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "abstract"
+          },
+          {
+            "kind": "literal",
+            "value": "title"
+          },
+          {
+            "kind": "literal",
+            "value": "off_topic"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 167,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "potentially_relevant"
+          },
+          {
+            "kind": "array",
+            "element": 169
+          },
+          {
+            "kind": "union",
+            "types": [
+              170,
+              174,
+              175
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 171,
+                "optional": false
+              },
+              {
+                "name": "label",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "quote",
+                "type": 161,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              172,
+              173
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_type"
+          },
+          {
+            "kind": "literal",
+            "value": "method"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 25,
+                "optional": false
+              },
+              {
+                "name": "question",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "quote",
+                "type": 161,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "classification",
+                "type": 142,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 176,
+                "optional": false
+              },
+              {
+                "name": "quote",
+                "type": 161,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "contribution"
+          },
+          {
+            "kind": "array",
+            "element": 178
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "source",
+                "type": 179,
+                "optional": false
+              },
+              {
+                "name": "term",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              163,
+              164,
+              180
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "keywords"
+          },
+          {
+            "kind": "union",
+            "types": [
+              182,
+              189,
+              192,
+              193
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 183,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 188,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              184,
+              185,
+              186,
+              187
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled_before_dispatch"
+          },
+          {
+            "kind": "literal",
+            "value": "not_selected_budget"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_unresolvable"
+          },
+          {
+            "kind": "literal",
+            "value": "hard_excluded"
+          },
+          {
+            "kind": "literal",
+            "value": "not_selected"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "scope",
+                "type": 190,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 191,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              165,
+              167
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "validated"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 32,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 69,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "classification",
+                "type": 195,
+                "optional": false
+              },
+              {
+                "name": "decisionReasons",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "discoveredBy",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "diversityTags",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "fulltextAvailability",
+                "type": 151,
+                "optional": false
+              },
+              {
+                "name": "hardFilter",
+                "type": 198,
+                "optional": false
+              },
+              {
+                "name": "matchedQuestions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "priority",
+                "type": 217,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "score",
+                "type": 221,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              196,
+              197
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "irrelevant"
+          },
+          {
+            "kind": "literal",
+            "value": "background"
+          },
+          {
+            "kind": "union",
+            "types": [
+              199,
+              215
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reasons",
+                "type": 200,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 214,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 201
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 202,
+                "optional": false
+              },
+              {
+                "name": "detail",
+                "type": 2,
+                "optional": true
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              165,
+              203,
+              204,
+              205,
+              206,
+              207,
+              208,
+              209,
+              210,
+              211,
+              212,
+              213
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "version_retracted"
+          },
+          {
+            "kind": "literal",
+            "value": "work_retracted"
+          },
+          {
+            "kind": "literal",
+            "value": "work_type_not_included"
+          },
+          {
+            "kind": "literal",
+            "value": "excluded_term_matched"
+          },
+          {
+            "kind": "literal",
+            "value": "exclusion_rule_matched"
+          },
+          {
+            "kind": "literal",
+            "value": "inclusion_rule_not_met"
+          },
+          {
+            "kind": "literal",
+            "value": "preprint_not_allowed"
+          },
+          {
+            "kind": "literal",
+            "value": "publication_date_unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "after_publication_window"
+          },
+          {
+            "kind": "literal",
+            "value": "required_term_missing"
+          },
+          {
+            "kind": "literal",
+            "value": "before_publication_window"
+          },
+          {
+            "kind": "literal",
+            "value": "eligible"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reasons",
+                "type": 200,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 216,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "excluded"
+          },
+          {
+            "kind": "union",
+            "types": [
+              216,
+              218,
+              219,
+              220
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "p0"
+          },
+          {
+            "kind": "literal",
+            "value": "p1"
+          },
+          {
+            "kind": "literal",
+            "value": "p2"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidencePotential",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "fulltextAvailability",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "methodMatch",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "questionMatch",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "recency",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "sourceQuality",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "topicRelevance",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "total",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "workTypeFit",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "externalIdentifiers",
+                "type": 223,
+                "optional": false
+              },
+              {
+                "name": "releaseDate",
+                "type": 231,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "sourceRecords",
+                "type": 238,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 240,
+                "optional": false
+              },
+              {
+                "name": "supersedesWorkVersionId",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "versionLabel",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "versionType",
+                "type": 244,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 224
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "kind",
+                "type": 225,
+                "optional": false
+              },
+              {
+                "name": "normalizedValue",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "originalValue",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "sourceProvider",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              226,
+              227,
+              228,
+              229,
+              230
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "openalex"
+          },
+          {
+            "kind": "literal",
+            "value": "doi"
+          },
+          {
+            "kind": "literal",
+            "value": "arxiv"
+          },
+          {
+            "kind": "literal",
+            "value": "provider_record"
+          },
+          {
+            "kind": "literal",
+            "value": "pubmed"
+          },
+          {
+            "kind": "union",
+            "types": [
+              134,
+              135,
+              136,
+              138,
+              232
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 233,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "iso",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "precision",
+                "type": 234,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              235,
+              236,
+              237
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "day"
+          },
+          {
+            "kind": "literal",
+            "value": "year"
+          },
+          {
+            "kind": "literal",
+            "value": "month"
+          },
+          {
+            "kind": "array",
+            "element": 239
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "provider",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "recordId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              241,
+              242,
+              243
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "corrected"
+          },
+          {
+            "kind": "literal",
+            "value": "active"
+          },
+          {
+            "kind": "literal",
+            "value": "retracted"
+          },
+          {
+            "kind": "union",
+            "types": [
+              32,
+              241,
+              243,
+              245,
+              246,
+              247
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "accepted_manuscript"
+          },
+          {
+            "kind": "literal",
+            "value": "version_of_record"
+          },
+          {
+            "kind": "literal",
+            "value": "preprint"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "authors",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "canonicalVersionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "externalIdentifiers",
+                "type": 223,
+                "optional": false
+              },
+              {
+                "name": "firstPublicDate",
+                "type": 231,
+                "optional": false
+              },
+              {
+                "name": "publicationStatus",
+                "type": 249,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "venue",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "workVersionIds",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              134,
+              135,
+              136,
+              138,
+              250
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "status",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 251,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              32,
+              241,
+              243,
+              247,
+              252,
+              253
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "accepted"
+          },
+          {
+            "kind": "literal",
+            "value": "published"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "limitations",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "queues",
+                "type": 255,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "excluded",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "p0",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "p1",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "p2",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 129,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              125,
+              126,
+              258,
+              259
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 115,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 115,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "citationExpansionSeeds",
+                "type": 261,
+                "optional": false
+              },
+              {
+                "name": "constraints",
+                "type": 273,
+                "optional": false
+              },
+              {
+                "name": "inclusionTargets",
+                "type": 278,
+                "optional": false
+              },
+              {
+                "name": "maximumSearchRounds",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "queries",
+                "type": 279,
+                "optional": false
+              },
+              {
+                "name": "rankingPolicy",
+                "type": 284,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 262
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "direction",
+                "type": 263,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 267,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              264,
+              265,
+              266
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "citations"
+          },
+          {
+            "kind": "literal",
+            "value": "references"
+          },
+          {
+            "kind": "literal",
+            "value": "related"
+          },
+          {
+            "kind": "union",
+            "types": [
+              268,
+              269,
+              270,
+              271,
+              272
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "citation_expansion"
+          },
+          {
+            "kind": "literal",
+            "value": "core"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_gap"
+          },
+          {
+            "kind": "literal",
+            "value": "site_restricted"
+          },
+          {
+            "kind": "literal",
+            "value": "synonym_expansion"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "excludedTerms",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "exclusionRules",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "includedWorkTypes",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "inclusionRules",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "publicationWindow",
+                "type": 274,
+                "optional": false
+              },
+              {
+                "name": "requiredTerms",
+                "type": 112,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "dateBasis",
+                "type": 275,
+                "optional": false
+              },
+              {
+                "name": "end",
+                "type": 277,
+                "optional": false
+              },
+              {
+                "name": "start",
+                "type": 277,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              253,
+              276
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "first_public_release"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              233
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "maximum",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "minimum",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "target",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 280
+          },
+          {
+            "kind": "union",
+            "types": [
+              281,
+              282,
+              283
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 271,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 267,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "siteHost",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 59,
+                "optional": false
+              },
+              {
+                "name": "maximumResults",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 267,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "expression",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 60,
+                "optional": false
+              },
+              {
+                "name": "providers",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 267,
+                "optional": false
+              },
+              {
+                "name": "questions",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "searchQueryId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "thresholds",
+                "type": 285,
+                "optional": false
+              },
+              {
+                "name": "weights",
+                "type": 286,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "p0",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "p1",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "p2",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidencePotential",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "fulltextAvailability",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "methodMatch",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "questionMatch",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "recency",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "sourceQuality",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "topicRelevance",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "workTypeFit",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              125,
+              126,
+              288,
+              293
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 289,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 290
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "completedAt",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "purpose",
+                "type": 267,
+                "optional": false
+              },
+              {
+                "name": "roundIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "searchQueryIds",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 291,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              69,
+              70,
+              71,
+              72,
+              292
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "planned"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 289,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              71,
+              295
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "settled"
+          },
+          {
+            "kind": "union",
+            "types": [
+              125,
+              126,
+              297,
+              312
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "state",
+                "type": 104,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 298,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              299,
+              301
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "details",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "shouldStop",
+                "type": 300,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": false
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "details",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 302,
+                "optional": false
+              },
+              {
+                "name": "shouldStop",
+                "type": 311,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              303,
+              304,
+              305,
+              306,
+              307,
+              308,
+              309,
+              310
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_exhausted"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_candidate_works"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_elapsed_time"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_included_works"
+          },
+          {
+            "kind": "literal",
+            "value": "maximum_search_rounds"
+          },
+          {
+            "kind": "literal",
+            "value": "review_required"
+          },
+          {
+            "kind": "literal",
+            "value": "saturated"
+          },
+          {
+            "kind": "literal",
+            "value": "target_and_coverage_met"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "state",
+                "type": 124,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 298,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              314
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "failures",
+                "type": 315,
+                "optional": false
+              },
+              {
+                "name": "hybridRetrieval",
+                "type": 317,
+                "optional": true
+              },
+              {
+                "name": "papers",
+                "type": 338,
+                "optional": false
+              },
+              {
+                "name": "q6",
+                "type": 100,
+                "optional": false
+              },
+              {
+                "name": "report",
+                "type": 355,
+                "optional": false
+              },
+              {
+                "name": "retrievalRun",
+                "type": 402,
+                "optional": false
+              },
+              {
+                "name": "sessionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stages",
+                "type": 415,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 416,
+                "optional": false
+              },
+              {
+                "name": "synthesis",
+                "type": 417,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 316
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "stage",
+                "type": 51,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "counts",
+                "type": 318,
+                "optional": false
+              },
+              {
+                "name": "references",
+                "type": 319,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "stages",
+                "type": 330,
+                "optional": false
+              },
+              {
+                "name": "webCandidates",
+                "type": 332,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicDiscoveredRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "attemptedVerifications",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "deduplicatedWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "discardedWebCandidates",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "failedVerifications",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "identifiedReferences",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "mergedDuplicates",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "verifiedReferences",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "webDiscoveredUrls",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 320
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "discoveryUrl",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 321,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "normalizedValue",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "query",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 325,
+                "optional": false
+              },
+              {
+                "name": "verificationProvider",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              227,
+              228,
+              322,
+              323,
+              324
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "acl"
+          },
+          {
+            "kind": "literal",
+            "value": "cvf"
+          },
+          {
+            "kind": "literal",
+            "value": "pmlr"
+          },
+          {
+            "kind": "union",
+            "types": [
+              326,
+              327,
+              328,
+              329
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "verification_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "verified"
+          },
+          {
+            "kind": "literal",
+            "value": "identified"
+          },
+          {
+            "kind": "literal",
+            "value": "merged_duplicate"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicSearch",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "deduplication",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "referenceIdentification",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "referenceVerification",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "webDiscovery",
+                "type": 331,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              69,
+              70,
+              72,
+              92
+            ]
+          },
+          {
+            "kind": "array",
+            "element": 333
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "identifiedReferenceCount",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "query",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 334,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "url",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              335,
+              336,
+              337
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "discarded_non_paper"
+          },
+          {
+            "kind": "literal",
+            "value": "discovered"
+          },
+          {
+            "kind": "literal",
+            "value": "references_identified"
+          },
+          {
+            "kind": "array",
+            "element": 339
+          },
+          {
+            "kind": "union",
+            "types": [
+              340,
+              342,
+              343
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 341,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "paused"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 216,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceCount",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "rejectedDrafts",
+                "type": 344,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 351,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 345
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 346,
+                "optional": false
+              },
+              {
+                "name": "draftIndex",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "segmentIndex",
+                "type": 26,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              347,
+              348,
+              349,
+              350
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "EVIDENCE_EMPTY_EXCERPT"
+          },
+          {
+            "kind": "literal",
+            "value": "EVIDENCE_INVALID_QUESTION_INDEX"
+          },
+          {
+            "kind": "literal",
+            "value": "EVIDENCE_INVALID_SEGMENT_INDEX"
+          },
+          {
+            "kind": "literal",
+            "value": "EVIDENCE_EXCERPT_NOT_FOUND"
+          },
+          {
+            "kind": "union",
+            "types": [
+              352,
+              353,
+              354
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "extracted"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "partially_extracted"
+          },
+          {
+            "kind": "union",
+            "types": [
+              4,
+              356
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "claims",
+                "type": 357,
+                "optional": false
+              },
+              {
+                "name": "evaluation",
+                "type": 377,
+                "optional": false
+              },
+              {
+                "name": "evidence",
+                "type": 394,
+                "optional": false
+              },
+              {
+                "name": "limitations",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "markdown",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "mode",
+                "type": 399,
+                "optional": false
+              },
+              {
+                "name": "retrievalDisclosureIncluded",
+                "type": 311,
+                "optional": true
+              },
+              {
+                "name": "synthetic",
+                "type": 116,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 358
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "category",
+                "type": 359,
+                "optional": false
+              },
+              {
+                "name": "claimId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "confidence",
+                "type": 366,
+                "optional": false
+              },
+              {
+                "name": "confidenceReasons",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "evidenceSnapshot",
+                "type": 371,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "scope",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "uncertainty",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "validity",
+                "type": 374,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              360,
+              361,
+              362,
+              363,
+              364,
+              365
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "comparison"
+          },
+          {
+            "kind": "literal",
+            "value": "consensus"
+          },
+          {
+            "kind": "literal",
+            "value": "disagreement"
+          },
+          {
+            "kind": "literal",
+            "value": "limitation"
+          },
+          {
+            "kind": "literal",
+            "value": "research_gap"
+          },
+          {
+            "kind": "literal",
+            "value": "trend"
+          },
+          {
+            "kind": "union",
+            "types": [
+              367,
+              368,
+              369,
+              370
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "high"
+          },
+          {
+            "kind": "literal",
+            "value": "insufficient"
+          },
+          {
+            "kind": "literal",
+            "value": "low"
+          },
+          {
+            "kind": "literal",
+            "value": "medium"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "createdAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "evidenceItems",
+                "type": 372,
+                "optional": false
+              },
+              {
+                "name": "evidenceSnapshotId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 373
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "evidenceId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              375,
+              376
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "current"
+          },
+          {
+            "kind": "literal",
+            "value": "stale"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "assessments",
+                "type": 378,
+                "optional": false
+              },
+              {
+                "name": "issues",
+                "type": 385,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 390,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 379
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "assessedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "assessedEvidenceIds",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "claimAssessmentId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "claimId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "method",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "methodVersion",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 380,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              368,
+              381,
+              382,
+              383,
+              384
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "unsupported"
+          },
+          {
+            "kind": "literal",
+            "value": "contradicted"
+          },
+          {
+            "kind": "literal",
+            "value": "partially_supported"
+          },
+          {
+            "kind": "literal",
+            "value": "supported"
+          },
+          {
+            "kind": "array",
+            "element": 386
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "category",
+                "type": 387,
+                "optional": true
+              },
+              {
+                "name": "claimId",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              388,
+              389
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "content"
+          },
+          {
+            "kind": "literal",
+            "value": "delivery"
+          },
+          {
+            "kind": "union",
+            "types": [
+              391,
+              392,
+              393
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "blocked"
+          },
+          {
+            "kind": "literal",
+            "value": "needs_review"
+          },
+          {
+            "kind": "literal",
+            "value": "ready"
+          },
+          {
+            "kind": "array",
+            "element": 395
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "evidenceId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "extractionMethod",
+                "type": 396,
+                "optional": false
+              },
+              {
+                "name": "level",
+                "type": 397,
+                "optional": false
+              },
+              {
+                "name": "qualityNotes",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "retrievedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "sourceLocatorId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "sourceProvider",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "sourceUrl",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "sourcedStatement",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "verbatimExcerpt",
+                "type": 133,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "method",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "methodVersion",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              13,
+              163,
+              398
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "metadata"
+          },
+          {
+            "kind": "union",
+            "types": [
+              400,
+              401
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "draft"
+          },
+          {
+            "kind": "literal",
+            "value": "final"
+          },
+          {
+            "kind": "union",
+            "types": [
+              403,
+              411
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkIds",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "completedAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "coverageSummary",
+                "type": 404,
+                "optional": false
+              },
+              {
+                "name": "failures",
+                "type": 405,
+                "optional": false
+              },
+              {
+                "name": "providers",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "queries",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 408,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "abstractOnlyWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "availableFulltextWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "deduplicatedWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "discoveredRecords",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "failedOperations",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "includedWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "limitations",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "metadataOnlyWorks",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "providerBreakdown",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "truncated",
+                "type": 116,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 406
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "affectedWorkVersionId",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "category",
+                "type": 407,
+                "optional": false
+              },
+              {
+                "name": "failureId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "provider",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "retryAfter",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "retryable",
+                "type": 116,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              32,
+              33,
+              34,
+              35,
+              37,
+              38,
+              41,
+              42,
+              43,
+              44
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              71,
+              409,
+              410
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "planning"
+          },
+          {
+            "kind": "literal",
+            "value": "awaiting_approval"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkIds",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "completedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "coverageSummary",
+                "type": 404,
+                "optional": false
+              },
+              {
+                "name": "failures",
+                "type": 405,
+                "optional": false
+              },
+              {
+                "name": "providers",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "queries",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "researchBriefId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "researchBriefVersion",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "retrievalRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 88,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 412,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 414,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              69,
+              413
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "completed"
+          },
+          {
+            "kind": "union",
+            "types": [
+              69,
+              70,
+              72
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "extraction",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "fulltext",
+                "type": 331,
+                "optional": false
+              },
+              {
+                "name": "search",
+                "type": 331,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              413
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reasons",
+                "type": 112,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 418,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              69,
+              70,
+              92,
+              391,
+              413
+            ]
+          },
+          {
+            "kind": "union",
+            "types": [
+              31,
+              69,
+              71,
+              413,
+              420
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "interrupted"
+          },
+          {
+            "kind": "literal",
+            "value": "academic/background-run-state"
+          }
+        ]
+      }
+    },
+    {
+      "key": "event:academic/trace-v1",
+      "kind": "event",
+      "event": "academic/trace-v1",
+      "surface": false,
+      "digest": "7df75da42abf2dcc007dd64d72e5778dafd6eb32dd581753371b4abc39685639",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 68,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 69,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "researchRunId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "span",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "academicWorkId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "attemptIndex",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "businessStatus",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "endedAt",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "failure",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "gaps",
+                "type": 24,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "operation",
+                "type": 32,
+                "optional": false
+              },
+              {
+                "name": "parentSpanId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "providerId",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "spanId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 47,
+                "optional": false
+              },
+              {
+                "name": "startedAt",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 54,
+                "optional": false
+              },
+              {
+                "name": "timing",
+                "type": 63,
+                "optional": false
+              },
+              {
+                "name": "toolName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "workVersionId",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              6
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              8
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              10
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "phase",
+                "type": 20,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "other"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "parse"
+          },
+          {
+            "kind": "literal",
+            "value": "admission"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "literal",
+            "value": "transport"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "validation"
+          },
+          {
+            "kind": "union",
+            "types": [
+              14,
+              15,
+              18,
+              21,
+              22,
+              23
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "prepare"
+          },
+          {
+            "kind": "literal",
+            "value": "after_content"
+          },
+          {
+            "kind": "literal",
+            "value": "before_content"
+          },
+          {
+            "kind": "array",
+            "element": 25
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "code",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "field",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "paper"
+          },
+          {
+            "kind": "literal",
+            "value": "run"
+          },
+          {
+            "kind": "literal",
+            "value": "stage"
+          },
+          {
+            "kind": "literal",
+            "value": "attempt"
+          },
+          {
+            "kind": "literal",
+            "value": "call"
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              29,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "academic_search"
+          },
+          {
+            "kind": "literal",
+            "value": "paper_processing"
+          },
+          {
+            "kind": "literal",
+            "value": "candidate_review"
+          },
+          {
+            "kind": "literal",
+            "value": "reference_verification"
+          },
+          {
+            "kind": "literal",
+            "value": "report_render"
+          },
+          {
+            "kind": "literal",
+            "value": "research"
+          },
+          {
+            "kind": "literal",
+            "value": "scope_review"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_extract"
+          },
+          {
+            "kind": "literal",
+            "value": "synthesis"
+          },
+          {
+            "kind": "literal",
+            "value": "tool_call"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence_validate"
+          },
+          {
+            "kind": "literal",
+            "value": "web_discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_fetch"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext_parse"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "retrieval"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "literal",
+            "value": "fulltext"
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              55,
+              56,
+              57,
+              58,
+              59,
+              60,
+              61,
+              62
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "queued"
+          },
+          {
+            "kind": "literal",
+            "value": "retry_wait"
+          },
+          {
+            "kind": "literal",
+            "value": "running"
+          },
+          {
+            "kind": "literal",
+            "value": "skipped"
+          },
+          {
+            "kind": "literal",
+            "value": "succeeded"
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "executionMs",
+                "type": 64,
+                "optional": false
+              },
+              {
+                "name": "queueMs",
+                "type": 64,
+                "optional": false
+              },
+              {
+                "name": "totalMs",
+                "type": 64,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "basis",
+                "type": 65,
+                "optional": false
+              },
+              {
+                "name": "value",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              18,
+              66,
+              67
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "monotonic"
+          },
+          {
+            "kind": "literal",
+            "value": "wall_clock"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "academic/trace-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

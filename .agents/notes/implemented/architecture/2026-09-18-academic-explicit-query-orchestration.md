@@ -32,7 +32,7 @@ Paper acquisition and extraction use an ordered bounded queue. The Controller re
 
 ## Consequences
 
-Concurrent tests use controlled barriers to verify overlap, stable ordering, bounds, cancellation and quiescent failure. Real Session storage tests verify request-result provenance for overlapping calls; a keyless SDK composition verifies three simultaneous acquisitions. Concurrent provider load can trigger rate limits; no new retry, model setting or evidence relaxation is introduced.
+Concurrent tests use controlled barriers to verify overlap, stable ordering, bounds, cancellation and quiescent failure. Real Session storage tests verify request-result sequence links for overlapping calls; a keyless SDK composition verifies three simultaneous acquisitions. Concurrent provider load can trigger rate limits; no new retry, model setting or evidence relaxation is introduced.
 
 The current Remote input and plan preview are owned by the [approved-plan decision](2026-09-21-academic-approved-plan-search.md). B retains the Provider interface and C retains the result projection.
 

@@ -111,7 +111,7 @@ describe('hybrid terminal projection', () => {
     expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('候选选择器限制了可处理的论文范围。')
   })
 
-  it('retains same-version provenance and merge counts when the per-query cap is one work', async () => {
+  it('retains same-version discovery links and merge counts when the per-query cap is one work', async () => {
     const fixture = draftFixture(1)
     const completed = await search('one', upstream(fixture.records, [arxiv]), 1)
     expect(completed.batch.items).toHaveLength(1)

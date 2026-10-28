@@ -48,7 +48,7 @@ export function compareWriting(bundle: string, variants: readonly [string, strin
   artifact(dest, '实验说明.json', { schemaVersion: 1, researchRunId: manifest.researchRunId,
     analysisInputSha256: digest(source), writingFiles: variants.map(file => ({ file, sha256: digest(readFileSync(file)) })),
     writer: '外部提供的写作文件；本离线命令不核实作者。真实模型比较需要另外提供请求、结果和参数记录。',
-    promptProvenance: '提示文件为两种写法的可复用规范；当前实验稿由对话模型依据相同要求生成，不是这些提示经服务调用返回的日志。',
+    promptOrigin: '提示文件为两种写法的可复用规范；当前实验稿由对话模型依据相同要求生成，不是这些提示经服务调用返回的日志。',
     code: captureCode(dest), networkCallsByScript: 0, semanticApproval: false, productionDelivery: false,
     metrics, note: '比较仅用于写作结构与可读性评估；机械检查通过不能证明语义正确。原始论文缺失不作为本轮优化目标。' })
   return dest
