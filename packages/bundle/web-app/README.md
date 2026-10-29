@@ -145,6 +145,8 @@ Read these pages when you want to go deeper into the shared core, the browser re
 
 -----
 
+The Academic Controller stores disposable paper sources under DSH home's `cache/academic-fulltext` for reuse across research tasks. See the [cache and admission guide](../../../docs/cookbook/academic-fulltext-budget-cache.md) for budgets, invalidation and storage limits.
+
 <a id="model-experience"></a>
 ## Model Experience
 

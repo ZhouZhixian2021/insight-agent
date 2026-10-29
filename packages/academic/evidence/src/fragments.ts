@@ -47,13 +47,14 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
   const failures: EvidenceFragmentFailure[] = []
   const incomplete: EvidenceFragmentRange[] = []
   const seen = new Set<string>()
+  let calls = 0
   let consecutiveTransientFailures = 0
   let shrinkInitialFragments = false
   const packed = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
   const ranges = input.depth === 'minimal' ? prioritizeRanges(input, packed, options.questionTerms) : packed
   for (const [index, initial] of ranges.entries()) {
     signal?.throwIfAborted()
-    if (input.depth === 'minimal' && seen.size === 5) {
+    if ((input.depth === 'minimal' && seen.size === 5) || calls === options.maximumCalls) {
       incomplete.push(...ranges.slice(index))
       break
     }
@@ -64,7 +65,7 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
       signal?.throwIfAborted()
       if (sourceRanges(range).every(part => sourceSegment(input.segments, part.segmentIndex)
         .text.slice(part.characterStart, part.characterEnd).trim() === '')) continue
-      if (attempt === options.policy.maximumAttempts) {
+      if (attempt === options.policy.maximumAttempts || calls === options.maximumCalls) {
         incomplete.push(range, ...queue)
         break
       }
@@ -74,6 +75,7 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
       const source = fragmentSource(input, range)
       let result: EvidenceExtractionResult
       try {
+        calls++
         result = await extractEvidenceFromContent(source, request => options.generator(request, context), signal)
       } catch (error: unknown) {
         signal?.throwIfAborted()
@@ -85,7 +87,7 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
         failures.push(failure)
         observeFailure(options, failure)
         if (input.depth === 'minimal' && category !== 'transport') shrinkInitialFragments = true
-        if (attempt === options.policy.maximumAttempts) {
+        if (attempt === options.policy.maximumAttempts || calls === options.maximumCalls) {
           incomplete.push(range, ...queue)
           break
         }
@@ -146,6 +148,9 @@ function prioritizeRanges(input: EvidenceExtractionInput, ranges: readonly Evide
 }
 
 function validatePolicy(options: EvidenceFragmentOptions): void {
+  if (options.maximumCalls !== undefined && (!Number.isSafeInteger(options.maximumCalls) || options.maximumCalls < 1)) {
+    throw new RangeError('Whole-paper fragment calls must be a positive safe integer.')
+  }
   const p = options.policy
   for (const value of [p.maximumCharacters, p.minimumCharacters, p.maximumAttempts, p.maximumOutputTokens]) {
     if (!Number.isSafeInteger(value) || value < 1) throw new RangeError('Fragment limits must be positive safe integers.')

@@ -180,6 +180,7 @@
     - id: academic-research-controller
       name: '@deepseek-ai/dsh-api-academic-research-controller'
       config:
+        fulltextCacheDirectory: !!js dshHomePath('cache/academic-fulltext')
         fulltextFetchProvider: http
         extractionMaxTokens: 16384
         synthesisMaxTokens: 32768

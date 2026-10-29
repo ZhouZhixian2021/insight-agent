@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for academic-fulltext-budget-cache.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cookbook/academic-fulltext-budget-cache.md
+/bound-full-text-screening-and-reuse-paper-sources:
+  en: d2fc2d2b8be5c856
+  zh: ba5bd2a1e72b0d38
+/bound-full-text-screening-and-reuse-paper-sources/summary:
+  en: 6fb41ec930e76385
+  zh: 2c0f8bdf5f63dfef
+/bound-full-text-screening-and-reuse-paper-sources/table-of-contents:
+  en: d7fc3d4279c4cd7d
+  zh: 88434cd0aa893fce
+/bound-full-text-screening-and-reuse-paper-sources/admission-and-budgets:
+  en: 6a6687466e514f65
+  zh: f0d783f2132b2924
+/bound-full-text-screening-and-reuse-paper-sources/source-reuse:
+  en: 147ec188336546d7
+  zh: a62336ee2b091539
+/bound-full-text-screening-and-reuse-paper-sources/failures-and-recovery:
+  en: f21ab868adfeff15
+  zh: e9af77322dd0fde7
+/bound-full-text-screening-and-reuse-paper-sources/verification:
+  en: 06c89b393b8f3b1d
+  zh: 964c57d1cc8c4893
+/bound-full-text-screening-and-reuse-paper-sources/dev-note:
+  en: 30b3eb7f76c19a93
+  zh: 3587081b619b51f0
