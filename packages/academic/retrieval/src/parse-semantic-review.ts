@@ -1,21 +1,28 @@
 /** Parse the minimal candidate semantic judgment without calling a model or minting identities. */
 import type { Availability, CandidateMetadataQuote, CandidateScopeDecision, CandidateSemanticQuestionMatch,
-  CandidateSemanticReviewV1 } from '@deepseek-ai/dsh-academic-model'
+  CandidateSemanticQuestionMatchV2, CandidateSemanticReview, CandidateSemanticReviewV1,
+  CandidateSemanticReviewV2 } from '@deepseek-ai/dsh-academic-model'
+import { quoteOccursVerbatim } from './metadata-quotes.ts'
+
+const DOWNGRADED_REASON = 'The reported exclusion passage does not occur verbatim in the supplied title or abstract.'
 
 /**
  * Read the minimal model judgment and check its questions and quotations against canonical metadata.
- * Transport, timeout, truncation, and invalid JSON are caller failures; this parser never converts a
- * failure into a model `unknown` decision. The caller owns the approved Plan, model transport, logging,
- * and semantic review quality.
+ * Version 1 records and responses require a verbatim passage on every matched question and on an exclusion;
+ * version 2 requires one only where the reviewer supplied it. An exclusion whose passage is missing or
+ * unverifiable becomes an `unknown` decision that records `downgraded`, so an unverifiable exclusion never
+ * removes a candidate. Transport, timeout, truncation, and invalid JSON are caller failures; this parser never
+ * converts a failure into a model `unknown` decision. The caller owns the approved Plan, model transport,
+ * logging, and semantic review quality.
  * @param text Complete JSON response containing only `schemaVersion`, `scope`, and `matchedQuestions`.
  * @param title Canonical scholarly title supplied to the reviewer.
  * @param abstract Canonical scholarly-provider abstract; unavailable text cannot support quotations.
  * @param approvedQuestions Exact approved Brief questions permitted in matched questions.
- * @returns A reviewed scope decision whose question quotations occur verbatim in the supplied metadata.
- * @throws {RangeError} JSON, fields, question references, or source quotations are invalid.
+ * @returns The reviewed judgment, with verified passages and any exclusion downgrade recorded.
+ * @throws {RangeError} JSON, fields, question references, or supplied quotations are invalid.
  */
 export function parseCandidateSemanticReview(text: string, title: string, abstract: Availability<string>,
-  approvedQuestions: readonly string[]): CandidateSemanticReviewV1 {
+  approvedQuestions: readonly string[]): CandidateSemanticReview {
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -24,29 +31,71 @@ export function parseCandidateSemanticReview(text: string, title: string, abstra
     throw new RangeError('candidate semantic review: requires complete JSON')
   }
   const item = object(value, ['schemaVersion', 'scope', 'matchedQuestions'])
-  if (item.schemaVersion !== 1) invalid('unsupported semantic review schemaVersion')
-  const matchedQuestions = array(item.matchedQuestions).map(readMatch)
-  const seen = new Set<string>()
-  for (const match of matchedQuestions) {
-    if (!approvedQuestions.includes(match.question)) invalid('matched question must be an approved Brief question')
-    if (seen.has(match.question)) invalid('matched questions must be distinct')
-    seen.add(match.question)
-    validateQuote(match.quote, title, abstract)
-  }
-  const scope = readScope(item.scope)
-  if (scope.status === 'off_topic') validateQuote(scope.quote, title, abstract)
-  if (scope.status === 'potentially_relevant') {
+  if (item.schemaVersion === 1) return reviewV1(item, title, abstract, approvedQuestions)
+  if (item.schemaVersion === 2) return reviewV2(item, title, abstract, approvedQuestions)
+  return invalid('unsupported semantic review schemaVersion')
+}
+
+function reviewV1(item: Record<string, unknown>, title: string, abstract: Availability<string>,
+  approvedQuestions: readonly string[]): CandidateSemanticReviewV1 {
+  const matchedQuestions = array(item.matchedQuestions).map(readMatchRequired)
+  checkQuestions(matchedQuestions, approvedQuestions)
+  for (const match of matchedQuestions) validateQuote(match.quote, title, abstract)
+  const scoped = readScopeV1(item.scope)
+  if (scoped.status === 'off_topic') validateQuote(scoped.quote, title, abstract)
+  if (scoped.status === 'potentially_relevant') {
     if (matchedQuestions.length === 0) invalid('potentially relevant review must match at least one approved question')
-    return { schemaVersion: 1, scope,
+    return { schemaVersion: 1, scope: scoped,
       matchedQuestions: matchedQuestions as [CandidateSemanticQuestionMatch, ...CandidateSemanticQuestionMatch[]] }
   }
   if (matchedQuestions.length > 0) invalid('off-topic or unknown review cannot claim matched questions')
-  return { schemaVersion: 1, scope, matchedQuestions: [] }
+  return { schemaVersion: 1, scope: scoped, matchedQuestions: [] }
 }
 
-function readMatch(value: unknown): CandidateSemanticQuestionMatch {
+function reviewV2(item: Record<string, unknown>, title: string, abstract: Availability<string>,
+  approvedQuestions: readonly string[]): CandidateSemanticReviewV2 {
+  const matchedQuestions = array(item.matchedQuestions).map(readMatchOptional)
+  checkQuestions(matchedQuestions, approvedQuestions)
+  for (const match of matchedQuestions) {
+    if (match.quote !== undefined) validateQuote(match.quote, title, abstract)
+  }
+  const scoped = readScopeV2(item.scope)
+  if (scoped.status === 'off_topic') {
+    if (matchedQuestions.length > 0) invalid('off-topic or unknown review cannot claim matched questions')
+    if (scoped.quote !== undefined && quoteOccursVerbatim(scoped.quote, title, abstract)) {
+      return { schemaVersion: 2, scope: { status: 'off_topic', reason: scoped.reason, quote: scoped.quote },
+        matchedQuestions: [] }
+    }
+    return { schemaVersion: 2, scope: { status: 'unknown', reason: DOWNGRADED_REASON },
+      matchedQuestions: [], downgraded: 'unverifiable_exclusion_quote' }
+  }
+  if (scoped.status === 'potentially_relevant') {
+    if (matchedQuestions.length === 0) invalid('potentially relevant review must match at least one approved question')
+    return { schemaVersion: 2, scope: scoped,
+      matchedQuestions: matchedQuestions as [CandidateSemanticQuestionMatchV2, ...CandidateSemanticQuestionMatchV2[]] }
+  }
+  if (matchedQuestions.length > 0) invalid('off-topic or unknown review cannot claim matched questions')
+  return { schemaVersion: 2, scope: scoped, matchedQuestions: [] }
+}
+
+function checkQuestions(matches: readonly { readonly question: string }[], approvedQuestions: readonly string[]): void {
+  const seen = new Set<string>()
+  for (const match of matches) {
+    if (!approvedQuestions.includes(match.question)) invalid('matched question must be an approved Brief question')
+    if (seen.has(match.question)) invalid('matched questions must be distinct')
+    seen.add(match.question)
+  }
+}
+
+function readMatchRequired(value: unknown): CandidateSemanticQuestionMatch {
   const item = object(value, ['question', 'quote'])
   return { question: nonempty(item.question), quote: readQuote(item.quote) }
+}
+
+function readMatchOptional(value: unknown): CandidateSemanticQuestionMatchV2 {
+  const item = object(value, ['question', 'quote'])
+  const question = nonempty(item.question)
+  return item.quote === undefined ? { question } : { question, quote: readQuote(item.quote) }
 }
 
 function readQuote(value: unknown): CandidateMetadataQuote {
@@ -55,11 +104,26 @@ function readQuote(value: unknown): CandidateMetadataQuote {
   return { source: item.source, text: nonempty(item.text) }
 }
 
-function readScope(value: unknown): CandidateScopeDecision {
+/** Scope as the model wrote it, before any passage requirement is applied. */
+type ParsedScope =
+  | { readonly status: 'potentially_relevant'; readonly reason: string }
+  | { readonly status: 'unknown'; readonly reason: string }
+  | { readonly status: 'off_topic'; readonly reason: string; readonly quote?: CandidateMetadataQuote }
+
+function readScopeV1(value: unknown): CandidateScopeDecision {
+  const scoped = readScopeV2(value)
+  if (scoped.status !== 'off_topic') return scoped
+  const quoted = object(value, ['status', 'reason', 'quote'])
+  return { status: 'off_topic', reason: scoped.reason, quote: readQuote(quoted.quote) }
+}
+
+function readScopeV2(value: unknown): ParsedScope {
   const item = object(value, ['status', 'reason', 'quote'])
   const reason = nonempty(item.reason)
   switch (item.status) {
-    case 'off_topic': return { status: 'off_topic', reason, quote: readQuote(item.quote) }
+    case 'off_topic':
+      return item.quote === undefined ? { status: 'off_topic', reason } : { status: 'off_topic', reason,
+        quote: readQuote(item.quote) }
     case 'unknown':
     case 'potentially_relevant':
       object(value, ['status', 'reason'])
@@ -69,8 +133,7 @@ function readScope(value: unknown): CandidateScopeDecision {
 }
 
 function validateQuote(quote: CandidateMetadataQuote, title: string, abstract: Availability<string>): void {
-  const source = quote.source === 'title' ? title : abstract.status === 'available' ? abstract.value : undefined
-  if (quote.text.trim() === '' || source === undefined || !source.includes(quote.text)) {
+  if (!quoteOccursVerbatim(quote, title, abstract)) {
     throw new RangeError('candidate semantic review: quote must occur verbatim in the corresponding title or scholarly abstract')
   }
 }

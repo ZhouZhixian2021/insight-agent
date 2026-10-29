@@ -1,18 +1,22 @@
 /** Parse external semantic reviews without calling a model or minting paper identities. */
 import type { Availability, CandidateMetadataQuote, CandidateMetadataSignal, CandidateScopeDecision,
   CandidateScreeningDetails, CandidateSurfaceKeywordHit } from '@deepseek-ai/dsh-academic-model'
-import { validateScreeningQuotes } from './metadata-quotes.ts'
+import { quoteOccursVerbatim, validateScreeningQuotes } from './metadata-quotes.ts'
+
+const DOWNGRADED_REASON = 'The reported exclusion passage does not occur verbatim in the supplied title or abstract.'
 
 /**
  * Read a complete semantic review and check it against the canonical scholarly metadata.
- * The caller owns the approved Plan, model transport, logging, and semantic review quality.
+ * Version 1 requires a passage on every signal; version 2 accepts unquoted indications and downgrades an
+ * exclusion whose passage is missing or unverifiable to an `unknown` scope. The caller owns the approved Plan,
+ * model transport, logging, and semantic review quality.
  * @param text Complete JSON response containing only CandidateScreeningDetails fields.
  * @param title Canonical scholarly title supplied to the reviewer.
  * @param abstract Canonical scholarly-provider abstract; unavailable text cannot support quotations.
  * @param keywords Canonical scholarly keywords, usable only for surface hits.
  * @param questions Exact approved Brief questions permitted in question signals.
- * @returns Structured indications with exact source quotations, ready for the assessor's reviewedScreenings map.
- * @throws {RangeError} JSON, fields, question references, or source quotations are invalid.
+ * @returns Structured indications with their verified passages, ready for the assessor's reviewedScreenings map.
+ * @throws {RangeError} JSON, fields, question references, or supplied quotations are invalid.
  */
 export function parseCandidateScreening(text: string, title: string, abstract: Availability<string>,
   keywords: Availability<readonly string[]>, questions: readonly string[]): CandidateScreeningDetails {
@@ -24,13 +28,14 @@ export function parseCandidateScreening(text: string, title: string, abstract: A
     throw new RangeError('candidate screening requires complete JSON')
   }
   const item = object(value, ['schemaVersion', 'signals', 'surfaceKeywordHits', 'uncertainties', 'scope'])
-  if (item.schemaVersion !== 1) invalid('unsupported screening schemaVersion')
+  if (item.schemaVersion !== 1 && item.schemaVersion !== 2) invalid('unsupported screening schemaVersion')
+  const version = item.schemaVersion
   const screening: CandidateScreeningDetails = {
-    schemaVersion: 1,
-    signals: array(item.signals).map(readSignal),
+    schemaVersion: version,
+    signals: array(item.signals).map(entry => readSignal(entry, version)),
     surfaceKeywordHits: array(item.surfaceKeywordHits).map(readSurfaceHit),
     uncertainties: array(item.uncertainties).map(nonempty),
-    scope: readScope(item.scope),
+    scope: readScope(item.scope, version, title, abstract),
   }
   validateScreeningQuotes(screening, title, abstract, questions)
   for (const hit of screening.surfaceKeywordHits) {
@@ -47,17 +52,17 @@ export function parseCandidateScreening(text: string, title: string, abstract: A
   return screening
 }
 
-function readSignal(value: unknown): CandidateMetadataSignal {
+function readSignal(value: unknown, version: 1 | 2): CandidateMetadataSignal {
   const item = object(value, ['kind', 'question', 'label', 'classification', 'quote'])
-  const quote = readQuote(item.quote)
+  const quote = readOptionalQuote(item, version)
   switch (item.kind) {
     case 'question':
       object(value, ['kind', 'question', 'quote'])
-      return { kind: 'question', question: nonempty(item.question), quote }
+      return { kind: 'question', question: nonempty(item.question), ...quote }
     case 'method':
     case 'evidence_type':
       object(value, ['kind', 'label', 'quote'])
-      return { kind: item.kind, label: nonempty(item.label), quote }
+      return { kind: item.kind, label: nonempty(item.label), ...quote }
     case 'contribution': {
       object(value, ['kind', 'classification', 'quote'])
       const classification = item.classification
@@ -66,10 +71,16 @@ function readSignal(value: unknown): CandidateMetadataSignal {
         && classification !== 'application' && classification !== 'adjacent_technology') {
         invalid('invalid contribution classification')
       }
-      return { kind: 'contribution', classification, quote }
+      return { kind: 'contribution', classification, ...quote }
     }
     default: return invalid('invalid signal kind')
   }
+}
+
+/** Present field for both versions; version 2 may omit it entirely. */
+function readOptionalQuote(item: Record<string, unknown>, version: 1 | 2): { readonly quote?: CandidateMetadataQuote } {
+  if (version === 1 || item.quote !== undefined) return { quote: readQuote(item.quote) }
+  return {}
 }
 
 function readQuote(value: unknown): CandidateMetadataQuote {
@@ -78,11 +89,19 @@ function readQuote(value: unknown): CandidateMetadataQuote {
   return { source: item.source, text: nonempty(item.text) }
 }
 
-function readScope(value: unknown): CandidateScopeDecision {
+function readScope(value: unknown, version: 1 | 2, title: string,
+  abstract: Availability<string>): CandidateScopeDecision {
   const item = object(value, ['status', 'reason', 'quote'])
   const reason = nonempty(item.reason)
   switch (item.status) {
-    case 'off_topic': return { status: 'off_topic', reason, quote: readQuote(item.quote) }
+    case 'off_topic': {
+      if (version === 1) return { status: 'off_topic', reason, quote: readQuote(item.quote) }
+      if (item.quote === undefined) return { status: 'unknown', reason: DOWNGRADED_REASON }
+      const quote = readQuote(item.quote)
+      return quoteOccursVerbatim(quote, title, abstract)
+        ? { status: 'off_topic', reason, quote }
+        : { status: 'unknown', reason: DOWNGRADED_REASON }
+    }
     case 'unknown':
     case 'potentially_relevant':
       object(value, ['status', 'reason'])

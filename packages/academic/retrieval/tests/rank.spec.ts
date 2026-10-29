@@ -370,7 +370,7 @@ describe('scholarly metadata screening', () => {
     }])).toThrow(/verbatim/u)
     expect(() => rankPlannedCandidates(plan, specializedBrief, input, [{ ...result, screening: {
       ...result.screening, signals: [],
-    } }])).toThrow(/corresponding quoted/u)
+    } }])).toThrow(/corresponding metadata signals/u)
     expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
       new Map([[createAcademicWorkId(), result.screening]]))).toThrow(/verified work/u)
     expect(() => assessPlannedCandidates(plan, specializedBrief, input, criteria, facts,
