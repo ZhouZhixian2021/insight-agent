@@ -1455,7 +1455,8 @@
     "c2da91954b4dae6531dd1e3468e994b883d96f3fb165b850e477647aa941c820": 1,
     "c7aec9d6ea8a843f0793e1f9786747912092bc091a54a124583c4975d4e0fd42": 1,
     "d2c3345795169400442563b4923671c090a724eacaaae7f0c190297b967c1c4d": 1,
-    "dfa30a521aae411e70eee81fc4c0511178589d0656dea01c1c97131bfe097793": 1
+    "dfa30a521aae411e70eee81fc4c0511178589d0656dea01c1c97131bfe097793": 1,
+    "d9db7be9d365518497e4f1014dfed0b17a210e30878e49fa90dee158b91c94bb": 1
   },
   "packages/ptc-runtime/ptc-runtime-node/tests/host-failures.spec.ts": {
     "aa5de2d4958ec64219565d53ec5a9d7f40f1f60037a2d52d1a9c3c65db034d73": 1,
@@ -2094,6 +2095,22 @@
   "packages/workspace/workspace/tests/workspace.spec.ts": {
     "0d0da2a0032b5048b24134b558c094fea2617b57376a1518f9e2c9d662b75913": 1,
     "8196d0655165d1befec721a728296d16bc04c31c9a7227f9cec5bf791d80961b": 1
+  },
+  "scripts/academic-experiment/export.ts": {
+    "a7d8cc8d42e37ad5cc4882241492ac572ed8163c7fb8663180e893c7178e906f": 5
+  },
+  "scripts/academic-experiment/replay.ts": {
+    "53a519c9fa0002d521cffd6d1702a65f61ea000ec077f390a0ea2fc1851e8a81": 2,
+    "c4ae2f1478d929b3178ba22bd1ccf5d5bb41f75eab276b2a89e2ff553daf0883": 1,
+    "74253107e8f4c91cfb786e3b6a9277d0d10e634a8d301cab2af57aafbffcce79": 1
+  },
+  "scripts/academic-experiment/session.ts": {
+    "6fe9024d30e0d4757a348b83d246925b3f5aeaf2e79a0eff4bf12f3c9fb5826b": 1
+  },
+  "scripts/academic-experiment/writing.ts": {
+    "d1329af08985923612e0bbba4ddd27a7b615e7480868a6ceb94f9db7a7a7d9bf": 1,
+    "c4ae2f1478d929b3178ba22bd1ccf5d5bb41f75eab276b2a89e2ff553daf0883": 1,
+    "f198b8df256f091c414cad8ad26ef30493b42d13aff1e460f4a15d2fcd0e4c0f": 1
   },
   "scripts/benchmark-npm-resolution.ts": {
     "f30cc8d63e02fd6608c2c80f9564bfc17f171581770ba2df4b1a62a8869a3105": 1
