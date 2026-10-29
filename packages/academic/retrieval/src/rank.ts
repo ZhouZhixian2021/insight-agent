@@ -57,7 +57,7 @@ export function rankPlannedCandidates(
         || (assessment.evidencePotential > 0 && !signals.some(signal => signal.kind === 'evidence_type'))
         || assessment.contributionSignals.some(classification => !signals.some(signal =>
           signal.kind === 'contribution' && signal.classification === classification))) {
-        throw new RangeError('detailed candidate scores require corresponding quoted metadata signals')
+        throw new RangeError('detailed candidate scores require corresponding metadata signals')
       }
     }
     const exclusions = hardExclusions(work, version, plan, brief, assessment)

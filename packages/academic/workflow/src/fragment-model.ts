@@ -15,8 +15,9 @@ import { evidenceMessages, scopeMessages } from './model-prompt.ts'
 import { parseFocusedEvidence, parseScopeDecision } from './parse-evidence.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
 import { reviewPaperScope } from './model.ts'
+import { reviewPaperScopeInFragments, screeningConditions } from './scope-fragments.ts'
 import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperScopeDecision,
-  PaperEvidenceProgressObserver, PaperVerifiedEvidenceGenerator } from './model-types.ts'
+  PaperEvidenceProgressObserver, PaperVerifiedEvidenceGenerator, ScopeScreeningRecord } from './model-types.ts'
 
 const DEFAULT_FRAGMENT_POLICY: EvidenceFragmentPolicy = {
   maximumCharacters: 4_000, minimumCharacters: 1_000, overlapCharacters: 256,
@@ -57,15 +58,21 @@ export function createModelFragmentEvidenceGenerator(
       instruction: '', focusQuestions: [...(parsed.focusQuestions ?? [])], segments: parsed.segments,
       ...signal === undefined ? {} : { signal },
     }
-    const decision = await reviewPaperScope(baseRequest, policy,
-      messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0),
-      (scopeRequest, complete) => runScope({
+    const review = (screening: ScopeScreeningRecord | undefined) =>
+      (scopeRequest: EvidenceGenerationRequest, complete: boolean) => runScope({
         trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
         messages: scopeMessages(scopeRequest, scope, source, complete),
         ...signal === undefined ? {} : { signal }, parse: parseScopeDecision,
-        appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
+        appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope',
+          ...screening === undefined ? {} : { screening }, ...data }),
         appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
-      }))
+      })
+    const screening = policy.scopeScreening
+    const decision = screening === undefined
+      ? await reviewPaperScope(baseRequest, policy,
+        messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0), review(undefined))
+      : (await reviewPaperScopeInFragments(baseRequest, screeningConditions(scope), screening,
+        (scopeRequest, complete, record) => review(record)(scopeRequest, complete))).decision
     if (decision.status !== 'included') {
       return { scope: decision, evidence: await extractEvidenceFromContent(extractionInput, () => Promise.resolve([]), signal),
         incompleteFragmentCount: 0 }
@@ -121,6 +128,7 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   let validatedRecords = 0, rejectedDrafts = 0
   return {
     policy: { ...fragmentPolicy, maximumOutputTokens: outputCap },
+    ...policy.fragmentMaximumCalls === undefined ? {} : { maximumCalls: policy.fragmentMaximumCalls },
     ...parsed.depth === 'minimal' && policy.questionTerms !== undefined
       ? { questionTerms: policy.questionTerms } : {},
     generator: async (request, fragment) => {

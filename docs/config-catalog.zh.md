@@ -320,11 +320,25 @@ export interface Config {
 ## `@deepseek-ai/dsh-api-academic-research-controller`
 
 - `inject`: `academicSource` · `sessionController` · `sessionProjections` · `sessionQuery` · `typert` · `web`
-- `source`: [`packages/api/academic-research-controller/src/index.ts:63`](../packages/api/academic-research-controller/src/index.ts)
+- `source`: [`packages/api/academic-research-controller/src/index.ts:64`](../packages/api/academic-research-controller/src/index.ts)
 
 ```ts config-catalog
 /** Academic research deployment policy. */
 export interface Config {
+  /** Maximum scheduled full-text papers per run, including failures and cache hits. Defaults to 24. */
+  readonly maximumFulltextWorks?: number
+  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 2. */
+  readonly maximumUncertainFulltextWorks?: number
+  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
+  readonly extractionMaximumCallsPerPaper?: number
+  /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
+  readonly fulltextCacheDirectory?: string
+  /** Freshness bound for cached source bytes. Defaults to 86,400,000 ms. */
+  readonly fulltextCacheMaximumAgeMs?: number
+  /** Total retained cache bytes. Defaults to 268,435,456. */
+  readonly fulltextCacheMaximumBytes?: number
+  /** Maximum serialized cache entry bytes. Defaults to 33,554,432. */
+  readonly fulltextCacheMaximumEntryBytes?: number
   /** Maximum concurrent papers per research run. Defaults to 3. */
   readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
@@ -353,6 +367,14 @@ export interface Config {
   readonly candidateReviewGapReserve?: number
   /** Maximum distinct source batches inspected to resolve one paper's scope. Defaults to 3. */
   readonly scopeReviewMaximumBatches?: number
+  /** Total model dispatches for one paper's fragment scope review, including re-reads and retries. Defaults to 3. */
+  readonly scopeScreeningMaximumDispatches?: number
+  /** Maximum source windows submitted in one scope dispatch. Defaults to 6. */
+  readonly scopeScreeningMaximumFragments?: number
+  /** Maximum characters retained from one scope window. Defaults to 1,500. */
+  readonly scopeScreeningFragmentCharacters?: number
+  /** Characters kept before a term hit in one scope window. Defaults to 200. */
+  readonly scopeScreeningLeadCharacters?: number
   /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
   readonly candidateReviewConcurrency?: number
   /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */

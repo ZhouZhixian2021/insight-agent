@@ -2,6 +2,8 @@
 export { extractPaperEvidence } from './paper.ts'
 export { parseEvidenceDrafts, parsePaperModelResponse, parseScopeDecision, parseFocusedEvidence } from './parse-evidence.ts'
 export { createModelEvidenceGenerator } from './model.ts'
+export { reviewPaperScopeInFragments, screeningConditions } from './scope-fragments.ts'
+export type { ScopeScreeningOutcome } from './scope-fragments.ts'
 export { createLoggedModelRunner } from './model-call.ts'
 export type { LoggedModelRequest } from './model-call.ts'
 export { createModelSynthesisGenerator } from './synthesis-model.ts'
@@ -11,7 +13,8 @@ export { WorkflowLogError } from './model-errors.ts'
 export type { PaperEvidenceGenerator, PaperEvidenceProgressObservation, PaperEvidenceProgressObserver,
   PaperModelResponse, PaperScopeDecision, PaperScopeRules,
   EvidenceModelSource, EvidenceModelRequest, EvidenceModelResult, EvidenceModelPolicy, EvidenceExtractionModelPolicy, AcademicModelPolicies,
-  AcademicTransientFailureCode, AcademicTransientRetryPolicy } from './model-types.ts'
+  AcademicTransientFailureCode, AcademicTransientRetryPolicy,
+  ScopeScreeningDispatch, ScopeScreeningPolicy, ScopeScreeningRecord } from './model-types.ts'
 export type { PaperEvidenceResult, PaperPause, PaperExclusion } from './types.ts'
 export type {
   AcademicWorkflowProgressActivity,
