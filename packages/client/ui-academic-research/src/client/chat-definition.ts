@@ -27,7 +27,7 @@ function submitted(event: Parameters<ConversationNodeDefinition['match']>[0]): A
   if (event.data.name !== 'exit_plan_mode') return null
   let args: unknown = event.data.arguments
   if (typeof args === 'string') {
-    try { args = JSON.parse(args) as unknown }
+    try { args = JSON.parse(args) }
     catch (_error) { return null /* Invalid model JSON is retained by the generic tool view. */ }
   }
   if (!record(args) || typeof args.plan !== 'string' || !args.plan.includes('```academic-research-brief-json')) return null
