@@ -769,7 +769,7 @@ describe('AcademicResearchController', () => {
     const checkpoint = fixture.sessionEvents.find(([name]) => name === 'academic/recovery-checkpoint')?.[1] as
       | { retrievalRunId: RetrievalRun['retrievalRunId'] }
       | undefined
-    expect(checkpoint).toMatchObject({ policy: { fulltext: { maximumWorks: 24, maximumUncertainWorks: 2 } } })
+    expect(checkpoint).toMatchObject({ policy: { fulltext: { maximumWorks: 24, maximumUncertainWorks: 15 } } })
     const searchCallsBeforeResume = fixture.searchProviders.mock.calls.length
     const result = await fixture.controller.run({ ...request,
       resumeRetrievalRunId: checkpoint!.retrievalRunId }, fixture.signal)

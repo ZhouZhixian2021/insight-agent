@@ -22,7 +22,7 @@
 |---|---:|---|
 | `candidateReviewMaximumWorks` | 24 | 所有轮次实际派发的元数据审核，失败也计入。 |
 | `maximumFulltextWorks` | 24 | 本轮调度的不同论文版本，失败和缓存命中也计入。 |
-| `maximumUncertainFulltextWorks` | 2 | 准入探索的未审核、未知或审核失败论文，包含在上述总额内。 |
+| `maximumUncertainFulltextWorks` | 10 | 准入探索的未审核、未知或审核失败论文，包含在上述总额内。 |
 | `scopeReviewMaximumBatches` | 3 | 每篇独立的范围审核批次。 |
 | `extractionMaximumCallsPerPaper` | 8 | 每篇证据片段生成器尝试，包含重试和输入被拒的尝试。 |
 

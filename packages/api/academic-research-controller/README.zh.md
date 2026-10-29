@@ -76,7 +76,7 @@ Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停�
 
 新计划使用元数据分数安排候选顺序，不设低分排除门槛。首批审核使用 `initialCandidateBatchSize`，后续批次使用 `replenishmentCandidateBatchSize`，优先处理未覆盖问题。`candidateReviewGapReserve` 为缺口检索的新候选预留四次调用，第二轮起释放。`scopeReviewMaximumBatches` 默认允许读取三个有序来源批次，仍无法判断范围的论文暂停待审。新运行改为读取定向片段：`scopeScreeningMaximumFragments` 默认 6 段，每段 `scopeScreeningFragmentCharacters`（1,500）字，`scopeScreeningMaximumDispatches`（3）次模型调用由首读、补读与重试共用。发表时间窗口仍要求已核验日期，已有批准别名保持原值。
 
-排序流程先准入已审核相关候选，同时为不确定探索保留名额，使待审论文在存在已审核候选时仍能进入全文。`maximumFulltextWorks` 默认调度 24 篇全文；`maximumUncertainFulltextWorks` 默认为 2，由未审核、判断未知和审核失败的候选共享。失败和缓存命中均占论文名额。候审论文保留排序，在停止或补检之前还可接受更多元数据审核。预算低于获批纳入目标时明确披露，不改变该目标。恢复时沿用保存的调度限制；没有这些字段的历史策略保留原行为。
+排序流程先准入已审核相关候选，同时为不确定探索保留名额，使待审论文在存在已审核候选时仍能进入全文。`maximumFulltextWorks` 默认调度 24 篇全文；`maximumUncertainFulltextWorks` 默认为 15，由未审核、判断未知和审核失败的候选共享。失败和缓存命中均占论文名额。候审论文保留排序，在停止或补检之前还可接受更多元数据审核。预算低于获批纳入目标时明确披露，不改变该目标。恢复时沿用保存的调度限制；没有这些字段的历史策略保留原行为。
 
 `extractionMaximumCallsPerPaper` 默认每篇 8 次片段尝试，包含重试，独立于元数据和范围审核。一级抽取的五条记录上限保持不变。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
 
