@@ -123,7 +123,7 @@ export function parseWritingDraft(text: string): WritingDraft {
     return { text: array(item.text).map(string), evidenceIds: array(item.evidenceIds).map(string) as EvidenceId[],
       qualification: item.qualification === null ? null : string(item.qualification) }
   }
-  const root = object(JSON.parse(text) as unknown)
+  const root = object(JSON.parse(text))
   if (!['task_template', 'open_source_inspired'].includes(string(root.strategy))) throw new Error('Unknown writing strategy.')
   return { strategy: root.strategy as WritingDraft['strategy'], title: string(root.title), limitations: array(root.limitations).map(string),
     sections: array(root.sections).map((value) => {

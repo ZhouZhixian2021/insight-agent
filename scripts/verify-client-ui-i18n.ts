@@ -99,8 +99,9 @@ function compactText(text: string): string {
 function looksLikeNaturalText(text: string): boolean {
   // HTML document templates can contain CSS and tag names without owning UI copy.
   // Inspect rendered text and copy-bearing attributes while ignoring markup.
+  const document = /^\s*<!doctype html>/iu.test(text)
   let candidate = text
-  if (/^\s*<!doctype html>/iu.test(text)) {
+  if (document) {
     const markup = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, '')
     const attributes = [...markup.matchAll(/\s(?:aria-label|aria-description|aria-valuetext|alt|title|placeholder)=(['"])(.*?)\1/giu)]
       .map(match => match[2])
@@ -115,6 +116,9 @@ function looksLikeNaturalText(text: string): boolean {
     candidate = [...attributes, markup.replace(/<[^>]*>/gu, ' ')].join(' ')
   }
   const normalized = candidate.replace(/\s+/g, ' ').trim()
+  // Stripped tags leave boundary spaces, and separator markup is punctuation rather than copy;
+  // one rendered document therefore owns copy only when its text or attribute carries letters.
+  if (document) return /[\p{L}\u3400-\u9fff]/u.test(normalized.replace(/&[a-z]+;|&#\d+;/giu, ' '))
   return /\s|[\u3400-\u9fff]/u.test(normalized) || /^[A-Z]/.test(normalized)
 }
 
