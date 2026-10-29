@@ -52,8 +52,6 @@ export interface EvidenceFragmentFailure extends EvidenceFragmentAttempt {
 
 /** Model and persistence stay caller-owned; unclassified failures stop the operation. */
 export interface EvidenceFragmentOptions {
-  /** Optional whole-paper generator-call cap, including retry attempts. Scope review is separate. */
-  readonly maximumCalls?: number
   readonly policy: EvidenceFragmentPolicy
   /** Optional approved lexical hints per focus question, in the same order; minimal depth uses them only for dispatch priority. */
   readonly questionTerms?: readonly (readonly string[])[]

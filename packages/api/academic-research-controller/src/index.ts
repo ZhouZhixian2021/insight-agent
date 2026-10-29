@@ -21,7 +21,6 @@ import {
 } from '@deepseek-ai/dsh-academic-workflow'
 import { createRetrievalRunId, type AcademicTracePage } from '@deepseek-ai/dsh-academic-model'
 import { AcademicTraceRecorder, queryAcademicTrace } from './trace.ts'
-import { AcademicFulltextCache } from './fulltext-cache.ts'
 import type { AcademicTraceQuery } from './types.ts'
 import type { HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { fetchAcademicFullText } from '@deepseek-ai/dsh-academic-evidence'
@@ -62,20 +61,6 @@ declare module '@deepseek-ai/cordis' {
 
 /** Academic research deployment policy. */
 export interface Config {
-  /** Maximum scheduled full-text papers per run, including failures and cache hits. Defaults to 24. */
-  readonly maximumFulltextWorks?: number
-  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 2. */
-  readonly maximumUncertainFulltextWorks?: number
-  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
-  readonly extractionMaximumCallsPerPaper?: number
-  /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
-  readonly fulltextCacheDirectory?: string
-  /** Freshness bound for cached source bytes. Defaults to 86,400,000 ms. */
-  readonly fulltextCacheMaximumAgeMs?: number
-  /** Total retained cache bytes. Defaults to 268,435,456. */
-  readonly fulltextCacheMaximumBytes?: number
-  /** Maximum serialized cache entry bytes. Defaults to 33,554,432. */
-  readonly fulltextCacheMaximumEntryBytes?: number
   /** Maximum concurrent papers per research run. Defaults to 3. */
   readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
@@ -104,14 +89,6 @@ export interface Config {
   readonly candidateReviewGapReserve?: number
   /** Maximum distinct source batches inspected to resolve one paper's scope. Defaults to 3. */
   readonly scopeReviewMaximumBatches?: number
-  /** Total model dispatches for one paper's fragment scope review, including re-reads and retries. Defaults to 3. */
-  readonly scopeScreeningMaximumDispatches?: number
-  /** Maximum source windows submitted in one scope dispatch. Defaults to 6. */
-  readonly scopeScreeningMaximumFragments?: number
-  /** Maximum characters retained from one scope window. Defaults to 1,500. */
-  readonly scopeScreeningFragmentCharacters?: number
-  /** Characters kept before a term hit in one scope window. Defaults to 200. */
-  readonly scopeScreeningLeadCharacters?: number
   /** Simultaneous candidate model reviews; choose 1 or 2. Defaults to 1. */
   readonly candidateReviewConcurrency?: number
   /** Raw Academic records retained per initial query before eligibility screening. Defaults to 100. */
@@ -145,13 +122,6 @@ export class AcademicResearchController extends TypertRemoteService {
   static inject = ['academicSource', 'sessionController', 'sessionProjections', 'sessionQuery', 'typert', 'web']
 
   static Config: z<Config> = z.object({
-    maximumFulltextWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(24),
-    maximumUncertainFulltextWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(2),
-    extractionMaximumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
-    fulltextCacheDirectory: z.string(),
-    fulltextCacheMaximumAgeMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(86_400_000),
-    fulltextCacheMaximumBytes: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(268_435_456),
-    fulltextCacheMaximumEntryBytes: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(33_554_432),
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     fulltextFetchProvider: z.string().default('http'),
     extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
@@ -166,10 +136,6 @@ export class AcademicResearchController extends TypertRemoteService {
     candidateReviewMaximumWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(24),
     candidateReviewGapReserve: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(4),
     scopeReviewMaximumBatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
-    scopeScreeningMaximumDispatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
-    scopeScreeningMaximumFragments: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(6),
-    scopeScreeningFragmentCharacters: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(1_500),
-    scopeScreeningLeadCharacters: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(200),
     candidateReviewConcurrency: z.number().step(1).min(1).max(2).default(1),
     initialSearchMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(100),
     synthesisMaxAttempts: z.number().step(1).min(1).max(3).default(3),
@@ -186,8 +152,6 @@ export class AcademicResearchController extends TypertRemoteService {
   })
 
   private readonly fulltextFetchProvider: string
-  private readonly fulltextCache?: AcademicFulltextCache
-  private readonly extractionMaximumCallsPerPaper: number
   private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
   private readonly synthesisMaxTokens: number
@@ -201,7 +165,6 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly candidateReviewMaximumWorks: number
   private readonly candidateReviewGapReserve: number
   private readonly scopeReviewMaximumBatches: number
-  private readonly scopeScreening: import('@deepseek-ai/dsh-academic-workflow').ScopeScreeningPolicy
   private readonly candidateReviewConcurrency: number
   private readonly initialSearchMaximumAcademicResultsPerQuery: number
   private readonly synthesisMaxAttempts: number
@@ -219,15 +182,6 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'academicResearchController', { namespace: 'academicResearch' })
-    this.extractionMaximumCallsPerPaper = config.extractionMaximumCallsPerPaper ?? 8
-    if (config.fulltextCacheDirectory !== undefined) {
-      const cache = new AcademicFulltextCache({ directory: config.fulltextCacheDirectory,
-        maximumAgeMs: config.fulltextCacheMaximumAgeMs ?? 86_400_000,
-        maximumBytes: config.fulltextCacheMaximumBytes ?? 268_435_456,
-        maximumEntryBytes: config.fulltextCacheMaximumEntryBytes ?? 33_554_432 }, (message) => { ctx.logger.warn(message) })
-      this.fulltextCache = cache
-      ctx.effect(() => () => cache.close(), 'academicResearchController.fulltextCache')
-    }
     this.paperConcurrency = config.paperConcurrency ?? 3
     this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
     this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
@@ -242,10 +196,6 @@ export class AcademicResearchController extends TypertRemoteService {
     this.candidateReviewMaximumWorks = config.candidateReviewMaximumWorks ?? 24
     this.candidateReviewGapReserve = config.candidateReviewGapReserve ?? 4
     this.scopeReviewMaximumBatches = config.scopeReviewMaximumBatches ?? 3
-    this.scopeScreening = { maximumDispatches: config.scopeScreeningMaximumDispatches ?? 3,
-      maximumFragments: config.scopeScreeningMaximumFragments ?? 6,
-      fragmentCharacters: config.scopeScreeningFragmentCharacters ?? 1_500,
-      leadCharacters: config.scopeScreeningLeadCharacters ?? 200 }
     this.candidateReviewConcurrency = config.candidateReviewConcurrency ?? 1
     this.initialSearchMaximumAcademicResultsPerQuery = config.initialSearchMaximumAcademicResultsPerQuery ?? 100
     this.synthesisMaxAttempts = config.synthesisMaxAttempts ?? 3
@@ -253,10 +203,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.enhancementMaximumElapsedMs = config.enhancementMaximumElapsedMs ?? 180_000
     this.enhancementAttemptTimeoutMs = config.enhancementAttemptTimeoutMs ?? 60_000
     this.enhancementMaxTokens = config.enhancementMaxTokens ?? 8_192
-    const fulltext = { maximumWorks: config.maximumFulltextWorks ?? 24,
-      maximumUncertainWorks: config.maximumUncertainFulltextWorks ?? 2 }
     this.candidateBatchPolicy = {
-      fulltext,
       initialBatchSize: config.initialCandidateBatchSize ?? 8,
       evidenceGapBatchSize: config.evidenceGapCandidateBatchSize ?? 4,
       replenishmentBatchSize: config.replenishmentCandidateBatchSize ?? 4,
@@ -265,9 +212,6 @@ export class AcademicResearchController extends TypertRemoteService {
     this.gapRoundPolicy = {
       maximumQueriesPerRound: config.gapRoundMaximumQueriesPerRound ?? 4,
       maximumAcademicResultsPerQuery: config.gapRoundMaximumAcademicResultsPerQuery ?? 20,
-    }
-    if (fulltext.maximumUncertainWorks > fulltext.maximumWorks) {
-      throw new RangeError('maximumUncertainFulltextWorks cannot exceed maximumFulltextWorks.')
     }
     ctx.sessionProjections.register(academicResearchProjectionDefinition)
     ctx.plugin(academicPlanValidation)
@@ -351,15 +295,11 @@ export class AcademicResearchController extends TypertRemoteService {
       if (this.projection(agent.session).enhancedRunIds.includes(String(request.retrievalRunId))) {
         throw new RemoteError('gateway/bad-request', '本轮已经选择一篇论文进行二级补充。', {})
       }
-      const sourceInput = { academicWorkId: paper.version.academicWorkId,
+      const source = await fetchAcademicFullText({ academicWorkId: paper.version.academicWorkId,
         workVersionId: request.workVersionId, urls: candidate.urls, sourceProvider: candidate.sourceProvider,
         extractionMethod: candidate.extractionMethod, focusQuestions: approved.brief.questions,
-        retrievedAt: new Date().toISOString() }
-      const fetcher = (url: string, fetchSignal?: AbortSignal) =>
-        web.fetch({ url }, fetchSignal, { providerId: this.fulltextFetchProvider })
-      const source = this.fulltextCache === undefined
-        ? await fetchAcademicFullText(sourceInput, fetcher, operationSignal)
-        : await this.fulltextCache.acquire(sourceInput, paper.version, fetcher, operationSignal)
+        retrievedAt: new Date().toISOString() },
+      (url, fetchSignal) => web.fetch({ url }, fetchSignal, { providerId: this.fulltextFetchProvider }), operationSignal)
       if (paper.version.contentHash.status !== 'available' || source.contentHash !== paper.version.contentHash.value) {
         throw new RemoteError('gateway/bad-request', '论文正文与一级证据的内容哈希不一致，未启动二级抽取。', {})
       }
@@ -692,9 +632,8 @@ export class AcademicResearchController extends TypertRemoteService {
       ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
         recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
         candidateScreening,
-        candidateScreening === undefined && searches.every(search => search.retrieval === undefined)
-          ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
-            { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
+        candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
+          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
         this.initialSearchMaximumAcademicResultsPerQuery, this.candidateReviewMaximumWorks,
         { concurrency: this.candidateReviewConcurrency, gapReserve: this.candidateReviewGapReserve,
           recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
@@ -703,7 +642,6 @@ export class AcademicResearchController extends TypertRemoteService {
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
-      ...this.fulltextCache === undefined ? {} : { acquireFulltext: this.fulltextCache.acquire.bind(this.fulltextCache) },
       now: () => new Date().toISOString(),
       onSettlement,
       onRecoveryCheckpoint: checkpoint => agent.session.append('academic/recovery-checkpoint', checkpoint),
@@ -720,9 +658,7 @@ export class AcademicResearchController extends TypertRemoteService {
         synthesisModel,
         modelPolicies: {
           evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
-            fragmentMaximumCalls: this.extractionMaximumCallsPerPaper,
             scopeReviewMaximumBatches: this.scopeReviewMaximumBatches,
-            scopeScreening: this.scopeScreening,
             ...(questionTerms === undefined ? {} : { questionTerms }),
             inputBatchTokenLimit: this.extractionBatchMaxInputTokens,
             inputBatchOverlapCharacters: this.extractionBatchOverlapCharacters,

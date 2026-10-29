@@ -98,51 +98,6 @@ function fixture(): CandidateBatchPlanningInput {
 }
 
 describe('ranked candidate batch scheduling', () => {
-  function admitted() {
-    const input = fixture()
-    return { ...input, policy: { ...input.policy, fulltext: { maximumWorks: 3, maximumUncertainWorks: 1 } },
-      assessments: input.ranking.evaluations.map((item, index) => ({
-        academicWorkId: item.academicWorkId, abstract: { status: 'not_extracted' as const },
-        keywords: { status: 'not_extracted' as const }, fulltextAvailability: item.fulltextAvailability,
-        matchedQuestions: item.matchedQuestions, contributionSignals: [], topicRelevance: 0, evidencePotential: 0,
-        methodMatch: 0, sourceQuality: 0, recency: 0, inclusionRuleMatches: [], exclusionRuleMatches: [],
-        diversityTags: [], reasons: ['fixture'] as const,
-        semanticReview: index === 2 ? { status: 'validated' as const, scope: 'potentially_relevant' as const }
-          : { status: 'unknown' as const },
-      })) }
-  }
-
-  it('reserves exploration while admitting a positively reviewed P1 first', () => {
-    const input = admitted()
-    expect(planCandidateBatch(input).batch?.workVersionIds).toEqual([versions[2], versions[0]])
-  })
-
-  it('charges previous uncertain attempts and preserves a waitlist after exploration is exhausted', () => {
-    const input = admitted()
-    const decision = planCandidateBatch({ ...input, completedBatchCount: 2, completedSearchRounds: 3,
-      scheduledWorkVersionIds: [versions[2]!, versions[0]!] })
-    expect(decision.action).toBe('stop')
-    expect(decision.stop.details.join(' ')).toContain('waitlist')
-    expect(input.ranking.queues.excluded).toEqual([])
-  })
-
-  it('counts scheduled failures toward the total full-text cap', () => {
-    const input = admitted()
-    const decision = planCandidateBatch({ ...input, completedBatchCount: 2,
-      scheduledWorkVersionIds: versions.slice(0, 3) })
-    expect(decision.action).toBe('stop')
-    expect(decision.stop.details.join(' ')).toContain('3/3')
-  })
-
-  it('permits zero uncertain exploration and rejects inconsistent admission policies', () => {
-    const input = admitted()
-    input.assessments = input.assessments.map(item => ({ ...item, semanticReview: { status: 'unknown' } }))
-    const policy = { ...input.policy, fulltext: { maximumWorks: 3, maximumUncertainWorks: 0 } }
-    expect(planCandidateBatch({ ...input, policy, completedSearchRounds: 3 }).action).toBe('stop')
-    expect(() => planCandidateBatch({ ...input, policy: { ...policy,
-      fulltext: { maximumWorks: 1, maximumUncertainWorks: 2 } } })).toThrow('exploration')
-  })
-
   it('uses the authoritative P0 order for the first batch', () => {
     const input = fixture()
     const decision = planCandidateBatch(input)

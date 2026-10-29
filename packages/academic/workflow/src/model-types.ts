@@ -1,6 +1,6 @@
 /** Model extraction configuration and durable request/result payloads. */
 import type { EvidenceExtractionInput, EvidenceExtractionResult, EvidenceFragmentAttempt, EvidenceFragmentPolicy,
-  EvidenceGenerationRequest, EvidenceDraft, ScreeningFragment } from '@deepseek-ai/dsh-academic-evidence'
+  EvidenceGenerationRequest, EvidenceDraft } from '@deepseek-ai/dsh-academic-evidence'
 import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
@@ -106,39 +106,10 @@ export interface EvidenceModelPolicy {
   readonly transientRetry?: AcademicTransientRetryPolicy
 }
 
-/** One paper's fragment scope review bounds; omitted keeps sequential source batches. */
-export interface ScopeScreeningPolicy {
-  /** Total model dispatches, including re-reads and retries. */
-  readonly maximumDispatches: number
-  /** Maximum windows submitted in one dispatch. */
-  readonly maximumFragments: number
-  /** Maximum characters retained from one window. */
-  readonly fragmentCharacters: number
-  /** Characters kept before a term hit to preserve local context. */
-  readonly leadCharacters: number
-}
-
-/** One scope dispatch and the exact source windows it showed. */
-export interface ScopeScreeningDispatch {
-  readonly dispatch: number
-  readonly fragments: readonly ScreeningFragment[]
-}
-
-/** Recorded screening facts that make one paper's scope review replayable. */
-export interface ScopeScreeningRecord {
-  readonly dispatches: readonly ScopeScreeningDispatch[]
-  readonly remainingDispatches: number
-  readonly stopReason: 'decided' | 'budget_exhausted' | 'no_content'
-}
-
 /** Evidence extraction policy with deterministic batching and one bounded local-timeout split when maxAttempts exceeds one. */
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
-  /** Whole-paper extraction dispatch limit, including retries; omitted leaves only per-fragment limits. */
-  readonly fragmentMaximumCalls?: number
   /** Maximum distinct scope-review batches; omitted inspects only the first batch. */
   readonly scopeReviewMaximumBatches?: number
-  /** Condition-targeted fragment review; omitted keeps sequential source batches. */
-  readonly scopeScreening?: ScopeScreeningPolicy
   /** Formal fragment extraction depth; omitted keeps complete extraction for existing callers. */
   readonly depth?: 'minimal' | 'complete'
   /** Approved aliases for each focus question, in Brief order; only prioritizes minimal-depth source ranges. */
@@ -169,8 +140,6 @@ export interface EvidenceModelRequest {
   /** Omitted historical records are combined scope-and-evidence requests. */
   readonly phase?: 'scope' | 'evidence'
   readonly fragment?: EvidenceFragmentAttempt
-  /** Present when this scope request came from condition-targeted fragment review. */
-  readonly screening?: ScopeScreeningRecord
   readonly config: LlmCallConfig
   readonly messages: Message[]
   readonly estimatedInputTokens: number

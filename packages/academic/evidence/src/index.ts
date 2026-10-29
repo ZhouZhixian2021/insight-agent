@@ -11,10 +11,6 @@ export { createEvidenceCard } from './card.ts'
 export { extractEvidenceFromContent } from './extract.ts'
 export { extractEvidenceInFragments } from './fragments.ts'
 export { enhanceEvidenceInFragments } from './enhance.ts'
-export { selectScreeningFragments } from './screening-fragments.ts'
-export type {
-  ScreeningConditionQuery, ScreeningFragment, ScreeningFragmentPolicy, ScreeningFragmentSelection,
-} from './screening-fragments.ts'
 export type {
   EvidenceFragmentPolicy, EvidenceFragmentSourceRange, EvidenceFragmentRange, EvidenceFragmentAttempt,
   EvidenceFragmentFailureCategory, EvidenceFragmentFailure, EvidenceFragmentOptions, EvidenceFragmentResult,

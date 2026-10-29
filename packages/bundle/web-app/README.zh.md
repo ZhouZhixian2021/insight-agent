@@ -145,8 +145,6 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 
 -----
 
-Academic Controller 在 DSH home 的 `cache/academic-fulltext` 下保存可丢弃的论文来源，供研究任务复用。预算、失效与存储限制见[缓存及准入说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
-
 <a id="model-experience"></a>
 ## 模型体验
 

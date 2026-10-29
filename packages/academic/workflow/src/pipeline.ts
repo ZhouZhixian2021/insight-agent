@@ -253,10 +253,6 @@ export async function runResearchDraft(
   }
   const selected = selection.papers
   const candidateScheduling = selection.candidateScheduling
-  if (recovery === undefined && candidateScheduling?.policy.fulltext !== undefined
-    && candidateScheduling.policy.fulltext.maximumWorks < includedWorkTarget) {
-    selectionLimitations.push(`全文处理预算 ${candidateScheduling.policy.fulltext.maximumWorks} 篇低于计划目标 ${includedWorkTarget} 篇；不会自动扩大预算或降低计划目标。`)
-  }
   if (candidateScheduling !== undefined) {
     const completedAt = adapters.now()
     publishQueryWorkflow({
@@ -363,11 +359,8 @@ export async function runResearchDraft(
         stage: 'fulltext', operation: 'fulltext_fetch', academicWorkId: version.academicWorkId,
         workVersionId: version.workVersionId,
       }, adapters.onTrace, () => adapters.fetcher(url, fetchSignal), fetchSignal)
-      const source = { ...paper, academicWorkId: version.academicWorkId,
-        retrievedAt: adapters.now(), focusQuestions: brief.questions }
-      const parsed = adapters.acquireFulltext === undefined
-        ? await fetchAcademicFullText(source, fetcher, paperSignal, observeFulltext)
-        : await adapters.acquireFulltext(source, version, fetcher, paperSignal, observeFulltext)
+      const parsed = await fetchAcademicFullText({ ...paper, academicWorkId: version.academicWorkId,
+        retrievedAt: adapters.now(), focusQuestions: brief.questions }, fetcher, paperSignal, observeFulltext)
       observeAcademicTrace(adapters.onTrace, { ...academicTraceSpan(`paper:fulltext:${version.workVersionId}`,
         academicTraceSpanId('stage:fulltext'), 'paper', 'fulltext', 'paper_processing'),
       academicWorkId: version.academicWorkId, workVersionId: version.workVersionId, status: 'succeeded', endedAt: adapters.now() })
@@ -590,19 +583,6 @@ export async function runResearchDraft(
           pendingBatchIndex,
         })
       }
-      const applyReviewedSelection = (selection: PaperSelectionResult): boolean => {
-        if (selection.candidateScheduling === undefined) throw new Error('Candidate review requires ranked scheduling.')
-        const changed = JSON.stringify(selection.candidateScheduling.assessments) !== JSON.stringify(scheduling.assessments)
-        scheduling = selection.candidateScheduling
-        const appended = reconcileSelectedPapers(selection.papers.filter(paper => !byVersion.has(paper.workVersionId)),
-          versions, selectedWorks, brief)
-        validated = [...validated, ...appended]
-        academicWorkIds = validated.map(item => item.version.academicWorkId)
-        plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
-        for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
-        persistCheckpoint(null)
-        return changed
-      }
       const settleBatch = async (batchIndex: number, workVersionIds: readonly WorkVersionId[]): Promise<void> => {
         const group = workVersionIds.map((workVersionId) => {
           const candidate = byVersion.get(workVersionId)
@@ -633,12 +613,19 @@ export async function runResearchDraft(
         if (recovery === undefined && adapters.reviewCandidates !== undefined && !paperSignal.aborted && fatal === undefined
           && consecutiveBatchesWithoutEvidence < limits.saturationRounds
           && scheduled.length < maxResults
-          && scheduled.length < (scheduling.policy.fulltext?.maximumWorks ?? maxResults)
           && usableWorkIds.length < limits.maximumIncludedWorks
           && (!limits.stopWhenEvidenceRequirementsMet || usableWorkIds.length < includedWorkTarget
             || !settlementCoverage.evidenceRequirementsMet || !settlementCoverage.allQuestionsCovered)) {
           const selection = await adapters.reviewCandidates(scheduling, ingested, settlementCoverage, scheduled, paperSignal)
-          applyReviewedSelection(selection)
+          if (selection.candidateScheduling === undefined) throw new Error('Candidate review requires ranked scheduling.')
+          scheduling = selection.candidateScheduling
+          const appended = reconcileSelectedPapers(selection.papers.filter(paper => !byVersion.has(paper.workVersionId)),
+            versions, selectedWorks, brief)
+          validated = [...validated, ...appended]
+          academicWorkIds = validated.map(item => item.version.academicWorkId)
+          plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+          for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
+          persistCheckpoint(null)
         }
       }
       if (recovery?.pendingBatchIndex !== null && recovery?.pendingBatchIndex !== undefined) {
@@ -661,18 +648,10 @@ export async function runResearchDraft(
         })
         const decision = planCandidateBatch({ brief: { ...brief,
           stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, plan: scheduling.plan,
-        ranking: scheduling.ranking, assessments: scheduling.assessments, coverage, policy: scheduling.policy,
+        ranking: scheduling.ranking, coverage, policy: scheduling.policy,
         scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
         includedWorks: usableWorkIds.length, completedSearchRounds,
         cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
-        if (decision.action !== 'schedule_batch' && decision.stop.reason !== 'target_and_coverage_met'
-          && scheduling.policy.fulltext !== undefined && scheduled.length < scheduling.policy.fulltext.maximumWorks
-          && scheduled.length < maxResults && usableWorkIds.length < limits.maximumIncludedWorks
-          && consecutiveBatchesWithoutEvidence < limits.saturationRounds
-          && recovery === undefined && adapters.reviewCandidates !== undefined) {
-          const reviewed = await adapters.reviewCandidates(scheduling, ingested, coverage, scheduled, paperSignal)
-          if (applyReviewedSelection(reviewed)) continue
-        }
         const decisionEvent: AcademicBatchDecisionEvent = {
           retrievalRunId,
           batchIndex: decision.action === 'schedule_batch' ? decision.batch.batchIndex : null,
