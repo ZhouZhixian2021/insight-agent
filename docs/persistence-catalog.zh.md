@@ -10156,7 +10156,7 @@ SHA-256: `814d9434e1ddf9078612b3b34322f26e9363b469213335007f7e9ba7fee9464e`
 
 SHA-256: `09e7a51a59b89006b8bd5d20b3be57a17bf8a5dbacf8c73fe40092b875857b1b`
 
-来源：[`packages/academic/analysis/src/synthesis-types.ts:57`](../packages/academic/analysis/src/synthesis-types.ts)
+来源：[`packages/academic/analysis/src/synthesis-types.ts:48`](../packages/academic/analysis/src/synthesis-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

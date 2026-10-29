@@ -10154,7 +10154,7 @@ Sources: [`packages/llm/llm/src/types.ts:68`](../packages/llm/llm/src/types.ts)
 
 SHA-256: `09e7a51a59b89006b8bd5d20b3be57a17bf8a5dbacf8c73fe40092b875857b1b`
 
-Sources: [`packages/academic/analysis/src/synthesis-types.ts:57`](../packages/academic/analysis/src/synthesis-types.ts)
+Sources: [`packages/academic/analysis/src/synthesis-types.ts:48`](../packages/academic/analysis/src/synthesis-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|

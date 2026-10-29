@@ -59,7 +59,7 @@ describe('question-driven synthesis admission and model validation', () => {
       targetLength: { unit: 'words', minimum: 999999, maximum: 9999999 } } }
     const before = JSON.stringify(brief)
     expect(() => synthesisSections(brief)).not.toThrow()
-    expect(synthesisPrompt({ ...value, brief })).toContain('Report length is unrestricted.')
+    expect(synthesisPrompt({ ...value, brief })).toContain('There is no fixed report word count or statement count.')
     expect(JSON.stringify(brief)).toBe(before)
   })
   it('names every incompatible requirement and preserves the approved Brief', () => {
@@ -71,19 +71,22 @@ describe('question-driven synthesis admission and model validation', () => {
     expect(() => synthesisSections(brief)).toThrow('requiredSections=["invented"]')
     expect(JSON.stringify(brief)).toBe(before)
   })
-  it('resolves explicit section aliases and describes the exact approved questions and evidence', () => {
+  it('resolves explicit section aliases and describes the exact approved questions and evidence', async () => {
     const value = input()
     const brief = { ...value.brief, reportRequirements: { ...value.brief.reportRequirements, requiredSections: ['research_scope', 'directions'] } }
     expect(synthesisSections(brief)).toContain('technology_overview')
     const prompt = synthesisPrompt(value)
     expect(JSON.parse(prompt.split('INPUT_JSON\n')[1]!)).toEqual(value)
     expect(prompt).toContain('untrusted data')
-    expect(prompt).toContain('Return at most 12 statements total and at most 2 statementIndexes per question.')
-    expect(prompt).toContain('Each statement may cite at most 3 representative evidence records.')
+    expect(prompt).toContain('configured response-token budget still applies to the COMPLETE JSON')
+    expect(prompt).toContain('not fixed item quotas')
+    expect(prompt).toContain('datasets/splits, models, training settings')
+    expect(prompt).not.toContain('Prefer one strongest statement')
     expect(prompt).toContain('Reuse the same statement across questionAnswers and sections')
     expect(prompt).toContain('Do not enumerate evidence, plan quotas or explain your selection process')
     expect(prompt).toContain('statementIndexes and missingReason are mutually exclusive')
     expect(prompt).toContain('Non-empty statementIndexes require\nmissingReason:null')
+    await expect(prompt.split('EVIDENCE_READING_GUIDE_JSON\n')[0]).toMatchFileSnapshot('./expected/expert-synthesis-prompt.txt')
   })
   it('renders a complete repair request with the exact structural diagnostic', () => {
     const value = input()
@@ -107,16 +110,42 @@ describe('question-driven synthesis admission and model validation', () => {
     expect((materials.analysisInput as Record<string, unknown>).evidenceCards).toBeUndefined()
     expect((materials.analysisInput as Record<string, unknown>).sourceLocators).toBeUndefined()
     expect(compact).toContain('output-limit recovery request')
+    expect(compact).toContain('omit optional directions')
+    expect(compact).toContain('never claim full coverage or emit truncated JSON')
   })
-  it('rejects a draft that exceeds the report or per-question statement bounds', () => {
+  it('retains more than twelve supported statements and more than two per question', () => {
     const oversized = output()
-    const statements = oversized.statements as unknown[]
-    oversized.statements = Array.from({ length: 13 }, () => structuredClone(statements[0]))
-    expect(() => parseSynthesisDraft(JSON.stringify(oversized), input())).toThrow('At most 12 statements')
+    const statements = oversized.statements as { text: string }[]
+    oversized.statements = Array.from({ length: 13 }, (_, index) => ({ ...structuredClone(statements[0]),
+      text: `合成测试中的独立分析角度 ${index + 1}` }))
+    const questions = oversized.questionAnswers as { statementIndexes: number[] }[]
+    questions[0]!.statementIndexes = Array.from({ length: 13 }, (_, index) => index)
+    expect(parseSynthesisDraft(JSON.stringify(oversized), input()).statements).toHaveLength(13)
     const crowded = output()
     const answers = crowded.questionAnswers as { statementIndexes: number[] }[]
     answers[0]!.statementIndexes = [0, 1, 2]
-    expect(() => parseSynthesisDraft(JSON.stringify(crowded), input())).toThrow('At most 2 statements')
+    expect(parseSynthesisDraft(JSON.stringify(crowded), input()).questionAnswers[0]?.statementIndexes).toEqual([0, 1, 2])
+  })
+  it('accepts more than three unique evidence links but still rejects duplicates and unknown evidence', () => {
+    const materials = input()
+    const original = materials.analysisInput.evidenceRecords[0]!
+    const extra = ['extra-admitted-evidence-1', 'extra-admitted-evidence-2'].map(id => ({
+      ...original, evidenceId: id as typeof original.evidenceId,
+    }))
+    const expanded = { ...materials, analysisInput: { ...materials.analysisInput,
+      evidenceRecords: [...materials.analysisInput.evidenceRecords, ...extra] } }
+    const value = output()
+    const statements = value.statements as { evidenceLinks: { evidenceId: string; relation: string; rationale: string }[] }[]
+    statements[0]!.evidenceLinks = expanded.analysisInput.evidenceRecords.map(record => ({
+      evidenceId: record.evidenceId, relation: 'supports', rationale: 'Distinct admitted supporting material.',
+    }))
+    expect(statements[0]!.evidenceLinks.length).toBeGreaterThan(3)
+    expect(parseSynthesisDraft(JSON.stringify(value), expanded).rejectedStatements).toEqual([])
+    statements[0]!.evidenceLinks.push(statements[0]!.evidenceLinks[0]!)
+    expect(parseSynthesisDraft(JSON.stringify(value), expanded).rejectedStatements[0]?.reason).toBe('Duplicate evidence links.')
+    statements[0]!.evidenceLinks.pop()
+    statements[0]!.evidenceLinks.push({ evidenceId: 'unknown', relation: 'supports', rationale: 'Not admitted.' })
+    expect(parseSynthesisDraft(JSON.stringify(value), expanded).rejectedStatements[0]?.reason).toContain('outside the admitted request')
   })
   it.each([
     [{ op: 'replace', path: '/questionAnswers/0/questionIndex', value: 1 }],
