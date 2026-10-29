@@ -34,7 +34,7 @@ kind: "package-reference"
 
 研究运行完成后，调用方可通过 `academicResearch.enhanceEvidence({ sessionId, retrievalRunId, workVersionId })` 选择一篇有证据的论文，单独执行二级补充。Controller 重新获取该论文已选的全文候选，并在调用模型前拒绝内容哈希变化，随后持久记录选择。默认整次最多 180 秒、单次模型尝试最多 60 秒、输出上限 8,192 token；这些数值可配置。返回值只说明新增证据数与未完成范围数，原报告和评测保持不变。同一轮第二次选择会被拒绝，包括此前失败或取消的情况；已提交的片段仍保留在 Session 中。
 
-对于第 5 版计划，Controller 先应用已批准的确定性元数据排除规则并检查全文地址，再请求 Session 已选模型审核去重候选的规范学术标题和摘要。已排除或全文地址不可解析的候选保留词项评估、排序记录与原因，不调用模型。纯选择器在跨轮共用的 `candidateReviewMaximumWorks` 额度（默认 24 篇）内先分配问题覆盖名额，再按词项初排补齐；该额度独立于 Plan 候选上限，候选截断在最终排序后执行。审核预算外的合格论文保留词项初筛与明确未审核状态。每个初轮学术查询保留至多 `initialSearchMaximumAcademicResultsPerQuery` 条原始记录（默认 100），有效候选上限更大时使用后者；来源截断仍可能遗漏后续记录。精简提示词只要求范围判断和带引文的问题匹配，B 的解析器核对准确的学术标题或摘要原文及批准问题。发现查询只用于路由。选择、准确请求、结算结果和已验证判断均在参与评分前持久保存。模型、超时与非法输出失败保留该论文的词项初筛；存储失败或取消停止派发并等待在途调用结束。初轮和证据缺口轮共用审核预算，实际派发即占用额度，调用失败也计入。`candidateReviewMaxTokens` 默认 8,192，`candidateReviewAttemptTimeoutMs` 默认 150,000 毫秒，两者均为部署配置。
+对于第 5 版计划，Controller 先应用已批准的确定性元数据排除规则并检查全文地址，再请求 Session 已选模型审核去重候选的规范学术标题和摘要。已排除或全文地址不可解析的候选保留词项评估、排序记录与原因，不调用模型。纯选择器在跨轮共用的 `candidateReviewMaximumWorks` 额度（默认 24 篇）内先分配问题覆盖名额，再按词项初排补齐；该额度独立于 Plan 候选上限，候选截断在最终排序后执行。审核预算外的合格论文保留词项初筛与明确未审核状态。每个初轮学术查询保留至多 `initialSearchMaximumAcademicResultsPerQuery` 条原始记录（默认 100），有效候选上限更大时使用后者；来源截断仍可能遗漏后续记录。精简提示词要求范围判断和问题匹配，只在能原样复制时附带引文；解析器核对每段实际提供的引文是否出现在准确的学术标题或摘要原文中，无法核验的排除保持待审。发现查询只用于路由。选择、准确请求、结算结果和已验证判断均在参与评分前持久保存。模型、超时与非法输出失败保留该论文的词项初筛；存储失败或取消停止派发并等待在途调用结束。初轮和证据缺口轮共用审核预算，实际派发即占用额度，调用失败也计入。`candidateReviewMaxTokens` 默认 8,192，`candidateReviewAttemptTimeoutMs` 默认 150,000 毫秒，两者均为部署配置。
 
 本包导出实时进度接入使用的第 1 版 `AcademicResearchProgressView` 与 `AcademicResearchRunFrame` 浏览器接口。每个进度帧都是完整且序号单调递增的快照，固定包含检索、筛选、全文、证据抽取、洞察分析和报告六个阶段；全文与证据并发时通过 `activeStages` 同时表达。接口只包含观察到的数量、检索操作活动、论文／版本身份和已运行时间，不估算完成百分比。学术 Provider 直接搜索、Web 发现、引用识别和每一条引用核验使用不同操作名；核验事实还携带从一开始的条目位置。工作流生产共用的运行内字段；候选选择期间还报告有上限的审核完成／计划数量、失败和跳过数量；模型适配器尚未报告的分段与重试字段可以缺席或为 `null`。`academicResearch.runStream` 现在通过同一个 Remote 操作传输这些快照和唯一最终结果；原有一元 `academicResearch.run` 在 Web 切换到流之前保留为兼容入口。
 
@@ -74,7 +74,11 @@ Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停�
 
 每轮按核验 Provider 和来源记录身份保留权威核验返回的全文候选。选文复用这些结果，包括明确无全文；仅核验的来源无需开启目录搜索，已失败的地址解析不会再次执行。其他来源记录使用来源运行时解析器。全文地址解析失败保留引用核验成功，在引用说明和 `retrievalRun.failures` 中以 `resolve_fulltext` 披露，并影响 `stages.fulltext`，不计入核验失败数。报告标记 `retrievalDisclosureIncluded: true` 表示已含后端检索附录。
 
-新计划使用元数据分数安排候选顺序，不设低分排除门槛。首批审核使用 `initialCandidateBatchSize`，后续批次使用 `replenishmentCandidateBatchSize`，优先处理未覆盖问题。`candidateReviewGapReserve` 为缺口检索的新候选预留四次调用，第二轮起释放。`scopeReviewMaximumBatches` 默认允许读取三个有序来源批次，仍无法判断范围的论文暂停待审。发表时间窗口仍要求已核验日期，已有批准别名保持原值。
+新计划使用元数据分数安排候选顺序，不设低分排除门槛。首批审核使用 `initialCandidateBatchSize`，后续批次使用 `replenishmentCandidateBatchSize`，优先处理未覆盖问题。`candidateReviewGapReserve` 为缺口检索的新候选预留四次调用，第二轮起释放。`scopeReviewMaximumBatches` 默认允许读取三个有序来源批次，仍无法判断范围的论文暂停待审。新运行改为读取定向片段：`scopeScreeningMaximumFragments` 默认 6 段，每段 `scopeScreeningFragmentCharacters`（1,500）字，`scopeScreeningMaximumDispatches`（3）次模型调用由首读、补读与重试共用。发表时间窗口仍要求已核验日期，已有批准别名保持原值。
+
+排序流程先准入已审核相关候选，同时为不确定探索保留名额，使待审论文在存在已审核候选时仍能进入全文。`maximumFulltextWorks` 默认调度 24 篇全文；`maximumUncertainFulltextWorks` 默认为 2，由未审核、判断未知和审核失败的候选共享。失败和缓存命中均占论文名额。候审论文保留排序，在停止或补检之前还可接受更多元数据审核。预算低于获批纳入目标时明确披露，不改变该目标。恢复时沿用保存的调度限制；没有这些字段的历史策略保留原行为。
+
+`extractionMaximumCallsPerPaper` 默认每篇 8 次片段尝试，包含重试，独立于元数据和范围审核。一级抽取的五条记录上限保持不变。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -83,7 +87,7 @@ Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停�
 
 #### What the model sees
 
-候选审核只发送规范学术标题、明确的摘要可用状态、批准主题、去重后的研究问题及范围规则。模型返回范围判断和带原文引文的问题匹配，词项线索由代码计算。`selectCandidateReviews()` 先分配问题覆盖名额，再按词项初排补齐。`candidateReviewMaximumWorks` 默认在初轮和缺口轮之间共用 24 篇审核额度，独立于 Plan 候选上限；`candidateReviewConcurrency` 允许 1 或 2，默认 1。Controller 在判断参与计分前，以版本化 Session 事件持久保存选择、准确请求、结果和已验证判断。Q6 的 `assessment.semanticReview` 区分有效范围判断、模型未知、失败代码和未送审原因；历史评估可以缺少此字段。逐篇证据请求使用批准的范围规则和同一个 Session 已选模型。
+候选审核只发送规范学术标题、明确的摘要可用状态、批准主题、去重后的研究问题及范围规则。模型返回范围判断和问题匹配，只在排除或能原样复制时附引文，词项线索由代码计算。`selectCandidateReviews()` 先分配问题覆盖名额，再按词项初排补齐。`candidateReviewMaximumWorks` 默认在初轮和缺口轮之间共用 24 篇审核额度，独立于 Plan 候选上限；`candidateReviewConcurrency` 允许 1 或 2，默认 1。Controller 在判断参与计分前，以版本化 Session 事件持久保存选择、准确请求、结果和已验证判断。Q6 的 `assessment.semanticReview` 区分有效范围判断、模型未知、失败代码和未送审原因；历史评估可以缺少此字段。逐篇证据请求使用批准的范围规则和同一个 Session 已选模型。
 
 #### Token effect
 
