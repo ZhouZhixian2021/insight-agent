@@ -38,7 +38,7 @@ describe('external candidate screening JSON', () => {
   })
 
   it.each([
-    { ...valid, schemaVersion: 2 },
+    { ...valid, schemaVersion: 3 },
     { ...valid, score: 100 },
     { ...valid, signals: {} },
     { ...valid, uncertainties: [' '] },
@@ -71,5 +71,37 @@ describe('external candidate screening JSON', () => {
       scope: { status: 'unknown', reason: 'The title is insufficient.' } }
     expect(parseCandidateScreening(JSON.stringify(review), title, { status: 'unknown', reason: 'missing' },
       { status: 'unknown', reason: 'missing' }, [question])).toEqual(review)
+  })
+})
+
+describe('version 2 screening quote tiering', () => {
+  const tiered = { schemaVersion: 2, signals: [{ kind: 'question', question }],
+    surfaceKeywordHits: [], uncertainties: ['Full-text findings remain unverified.'],
+    scope: { status: 'potentially_relevant', reason: 'The abstract evaluates retrieval faithfulness.' } }
+
+  it('accepts an unquoted relevance indication', () => {
+    expect(parse(tiered)).toEqual(tiered)
+  })
+
+  it('still rejects a supplied passage that does not occur verbatim', () => {
+    expect(() => parse({ ...tiered, signals: [{ kind: 'question', question,
+      quote: { source: 'abstract', text: 'fabricated passage' } }] })).toThrow(/verbatim/u)
+  })
+
+  it('downgrades an exclusion without a passage to an undecided scope', () => {
+    expect(parse({ ...tiered, signals: [], scope: { status: 'off_topic', reason: 'Studies vision models.' } }))
+      .toMatchObject({ schemaVersion: 2, scope: { status: 'unknown' } })
+  })
+
+  it('downgrades an exclusion whose passage is not in the metadata', () => {
+    expect(parse({ ...tiered, signals: [], scope: { status: 'off_topic', reason: 'Studies vision models.',
+      quote: { source: 'title', text: 'vision models' } } }))
+      .toMatchObject({ scope: { status: 'unknown' } })
+  })
+
+  it('keeps an exclusion whose passage is verifiable', () => {
+    const review = { ...tiered, signals: [], scope: { status: 'off_topic', reason: 'Studies vision models.',
+      quote: { source: 'title', text: 'Retrieval' } } }
+    expect(parse(review)).toEqual(review)
   })
 })

@@ -185,22 +185,23 @@ export interface CandidateMetadataQuote {
   readonly text: string
 }
 
-/** Metadata-grounded indication, not a verified full-text finding. */
+/** Metadata-grounded indication, not a verified full-text finding.
+ * Schema version 1 screening always carries the passage; version 2 may omit it when the reviewer could not copy one verbatim. */
 export type CandidateMetadataSignal =
   | {
     readonly kind: 'question'
     readonly question: string
-    readonly quote: CandidateMetadataQuote
+    readonly quote?: CandidateMetadataQuote
   }
   | {
     readonly kind: 'method' | 'evidence_type'
     readonly label: string
-    readonly quote: CandidateMetadataQuote
+    readonly quote?: CandidateMetadataQuote
   }
   | {
     readonly kind: 'contribution'
     readonly classification: Exclude<CandidateClassification, 'background' | 'irrelevant'>
-    readonly quote: CandidateMetadataQuote
+    readonly quote?: CandidateMetadataQuote
   }
 
 /** A superficial term occurrence that does not by itself establish research-question relevance. */
@@ -216,9 +217,10 @@ export type CandidateScopeDecision =
   | { readonly status: 'off_topic'; readonly reason: string; readonly quote: CandidateMetadataQuote }
   | { readonly status: 'unknown'; readonly reason: string }
 
-/** Optional versioned detail for new assessments; absence means legacy screening did not supply it. */
+/** Optional versioned detail for new assessments; absence means legacy screening did not supply it.
+ * Version 1 requires a verbatim passage on every signal; version 2 requires one only where the reviewer supplied it. */
 export interface CandidateScreeningDetails {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 1 | 2
   readonly signals: readonly CandidateMetadataSignal[]
   readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[]
   readonly uncertainties: readonly string[]
@@ -246,6 +248,12 @@ export interface CandidateSemanticQuestionMatch {
   readonly quote: CandidateMetadataQuote
 }
 
+/** One approved Brief question whose passage is optional: a relevance admission does not depend on copying text. */
+export interface CandidateSemanticQuestionMatchV2 {
+  readonly question: string
+  readonly quote?: CandidateMetadataQuote
+}
+
 /** Model-only judgment; lexical hits and scoring are added by deterministic code. */
 export type CandidateSemanticReviewV1 = { readonly schemaVersion: 1 } & (
   | {
@@ -257,6 +265,27 @@ export type CandidateSemanticReviewV1 = { readonly schemaVersion: 1 } & (
     readonly matchedQuestions: readonly []
   }
 )
+
+/** Model-only judgment under quote tiering: only an exclusion must carry a verifiable passage. */
+export type CandidateSemanticReviewV2 = { readonly schemaVersion: 2 } & (
+  | {
+    readonly scope: Extract<CandidateScopeDecision, { readonly status: 'potentially_relevant' }>
+    readonly matchedQuestions: readonly [CandidateSemanticQuestionMatchV2, ...CandidateSemanticQuestionMatchV2[]]
+  }
+  | {
+    readonly scope: Extract<CandidateScopeDecision, { readonly status: 'off_topic' }>
+    readonly matchedQuestions: readonly []
+  }
+  | {
+    readonly scope: Extract<CandidateScopeDecision, { readonly status: 'unknown' }>
+    readonly matchedQuestions: readonly []
+    /** The reviewer excluded the paper, but its passage could not be verified; the paper stays undecided. */
+    readonly downgraded?: 'unverifiable_exclusion_quote'
+  }
+)
+
+/** Current review format plus records written before quote tiering. */
+export type CandidateSemanticReview = CandidateSemanticReviewV1 | CandidateSemanticReviewV2
 
 /** One candidate's decision under the shared, round-spanning model-review budget. */
 export interface CandidateReviewSelectionDecisionV1 {

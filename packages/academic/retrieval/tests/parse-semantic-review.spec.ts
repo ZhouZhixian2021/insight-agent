@@ -63,8 +63,42 @@ describe('candidate semantic review JSON', () => {
 
   it('rejects truncated JSON, unsupported versions, and unknown scope statuses', () => {
     expect(() => parseCandidateSemanticReview('{', title, abstract, [question])).toThrow(/complete JSON/u)
-    expect(() => parse({ ...related, schemaVersion: 2 })).toThrow(/schemaVersion/u)
+    expect(() => parse({ ...related, schemaVersion: 3 })).toThrow(/schemaVersion/u)
     expect(() => parse({ ...related, scope: { status: 'included', reason: 'yes' } })).toThrow(/invalid scope status/u)
     expect(() => parse({ ...related, scope: { status: 'unknown', reason: ' ' } })).toThrow(RangeError)
+  })
+})
+
+describe('version 2 quote tiering', () => {
+  const tiered = { schemaVersion: 2,
+    scope: { status: 'potentially_relevant', reason: '直接研究检索对问答事实忠实性的影响' },
+    matchedQuestions: [{ question }] }
+
+  it('accepts a relevance match without a passage', () => {
+    expect(parse(tiered)).toEqual(tiered)
+  })
+
+  it('still rejects a supplied passage that does not occur verbatim', () => {
+    expect(() => parse({ ...tiered, matchedQuestions: [{ question,
+      quote: { source: 'abstract', text: 'fabricated passage' } }] })).toThrow(/verbatim/u)
+  })
+
+  it('turns an exclusion whose passage is missing or unverifiable into an undecided review', () => {
+    const withoutQuote = { schemaVersion: 2, scope: { status: 'off_topic', reason: '研究图像生成' },
+      matchedQuestions: [] }
+    const downgraded = parse(withoutQuote)
+    expect(downgraded).toMatchObject({ schemaVersion: 2, scope: { status: 'unknown' }, matchedQuestions: [],
+      downgraded: 'unverifiable_exclusion_quote' })
+    expect(downgraded.scope.reason).toMatch(/verbatim/u)
+    const fabricated = { schemaVersion: 2, scope: { status: 'off_topic', reason: '研究图像生成',
+      quote: { source: 'title', text: 'image generation' } }, matchedQuestions: [] }
+    expect(parse(fabricated)).toMatchObject({ scope: { status: 'unknown' },
+      downgraded: 'unverifiable_exclusion_quote' })
+  })
+
+  it('keeps an exclusion whose passage occurs verbatim', () => {
+    const verified = { schemaVersion: 2, scope: { status: 'off_topic', reason: '研究图像生成',
+      quote: { source: 'title', text: 'Question Answering' } }, matchedQuestions: [] }
+    expect(parse(verified)).toStrictEqual(verified)
   })
 })
