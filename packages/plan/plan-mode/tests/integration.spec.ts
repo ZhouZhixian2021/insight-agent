@@ -93,6 +93,29 @@ function findEvent<T extends SessionEvent['type']>(
 }
 
 describe('plan mode through the agent loop', () => {
+  it('ends an approved handoff without another model response and records the plan exit', async () => {
+    const adapter = new MockAdapter([
+      toolCallResponse('academic-plan-1', 'exit_plan_mode', { plan: '# First academic plan\n\nResearch with the host.' }),
+      toolCallResponse('academic-plan-2', 'exit_plan_mode', { plan: '# Second academic plan\n\nResearch with the host.' }),
+    ])
+    const ctx = await harness(adapter, { ...PLAN_CONFIG, initialActive: true, reenterOnUserMessage: true,
+      concludeOnApprove: true })
+    const agent = await ctx.agentLoop.create(SessionId('it-plan-handoff'), { provider: 'mock', model: 'mock' })
+    await ctx.plugin(UserQuestionService)
+    ctx.on('user-questions/request', () => Promise.resolve({ answers: [{ id: 'plan-review', selected: ['Approve'] }] }))
+
+    for (const [index, request] of ['research the topic', 'research a follow-up'].entries()) {
+      const idle = waitForIdle(ctx, agent)
+      agent.followup(createUserMessage({ content: [{ type: 'text', text: request }], source: { kind: 'user' } }))
+      await idle
+      expect(adapter.requests).toHaveLength(index + 1)
+      expect(planActive(ctx, agent)).toBe(false)
+    }
+    expect(agent.session.snapshotEvents().filter(event => event.type === 'plan/mode')
+      .map(event => event.data.active)).toEqual([true, false, true, false])
+    expect(findEvent(agent.session.snapshotEvents(), 'turn/end').data.reason.kind).toBe('completed')
+  })
+
   it('reviews successive human requests in one session without replanning approved continuations', async () => {
     const adapter = new MockAdapter([
       toolCallResponse('plan-1', 'exit_plan_mode', { plan: '# First plan\n\nResearch A.' }),

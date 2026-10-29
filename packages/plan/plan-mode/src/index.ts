@@ -78,6 +78,8 @@ export interface PlanModeConfig {
   reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
+  /** End the current agent turn after an approved review; defaults to continuing with the plan. */
+  concludeOnApprove?: boolean
 }
 
 /** The review question's id, echoed in the answer this tool reads. */
@@ -138,13 +140,18 @@ export function resolveConfig(config: PlanModeConfig): Required<PlanModeConfig> 
     throw new Error('PlanModeConfig needs a non-negative safe integer `missingExitRetries` when provided')
   }
   const missingExitRetries = configuredMissingExitRetries ?? 0
+  const configuredConcludeOnApprove = (config as Partial<PlanModeConfig>).concludeOnApprove
+  if (configuredConcludeOnApprove !== undefined && typeof configuredConcludeOnApprove !== 'boolean') {
+    throw new Error('PlanModeConfig needs a boolean `concludeOnApprove` when provided')
+  }
+  const concludeOnApprove = configuredConcludeOnApprove ?? false
   const unknown = Object.keys(config)
     .filter(key => key !== 'section' && key !== 'initialActive'
-      && key !== 'reenterOnUserMessage' && key !== 'missingExitRetries')
+      && key !== 'reenterOnUserMessage' && key !== 'missingExitRetries' && key !== 'concludeOnApprove')
   if (unknown.length > 0) {
-    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section, initialActive?, reenterOnUserMessage?, missingExitRetries? }`)
+    throw new Error(`PlanModeConfig has unknown key(s) ${unknown.join(', ')} — config is { section, initialActive?, reenterOnUserMessage?, missingExitRetries?, concludeOnApprove? }`)
   }
-  return { section, initialActive, reenterOnUserMessage, missingExitRetries }
+  return { section, initialActive, reenterOnUserMessage, missingExitRetries, concludeOnApprove }
 }
 
 const planUnitStateSchema: ZodType<PlanUnitState> = zod.object({
@@ -220,7 +227,8 @@ export class PlanModeController extends Service {
   private readonly missingExitAttempts = new WeakMap<Session, { turn: number; count: number }>()
 
   /**
-   * Latest selection per session awaiting the next accepted in-turn pre-step.
+   * Latest selection per session awaiting the next accepted in-turn pre-step
+   * or the idle transition after a configured approved handoff.
    * `narrate` is true for user selections and false for the exit tool, whose
    * result already narrates the transition.
    */
@@ -239,6 +247,17 @@ export class PlanModeController extends Service {
       ctx.on('agent/inbox/claimed', ({ agent, message }) => {
         if (message.source.kind === 'user') {
           this.pendingIntents.set(agent.session, { active: true, narrate: true })
+        }
+      })
+    }
+    if (resolved.concludeOnApprove) {
+      ctx.on('agent/status', ({ agent, status }) => {
+        if (status === 'idle' && this.pendingIntents.get(agent.session)?.active === false) {
+          try {
+            this.onBoundary(agent.session)
+          } catch (error) {
+            ctx.logger.warn('dsh-plan-mode: failed to record approved plan exit after the turn: %o', error)
+          }
         }
       })
     }
@@ -347,7 +366,9 @@ export class PlanModeController extends Service {
 
     ctx.tools.register(defineTool({
       name: EXIT_PLAN_MODE,
-      description: EXIT_DESCRIPTION,
+      description: resolved.concludeOnApprove
+        ? 'Use only in plan mode. Present your plan for review. Approval ends this turn for the host to continue; feedback returns for revision.'
+        : EXIT_DESCRIPTION,
       parameters: {
         plan: { type: 'string', required: true, description: 'The complete plan, as markdown, starting with a # heading that names it.' },
       },
@@ -362,7 +383,9 @@ export class PlanModeController extends Service {
         render: (_args, { approved }) => [{
           type: 'text',
           text: approved
-            ? 'Plan approved — plan mode exited; carry out the plan starting with your next step.'
+            ? resolved.concludeOnApprove
+              ? 'Plan approved — plan mode exited; this turn is complete.'
+              : 'Plan approved — plan mode exited; carry out the plan starting with your next step.'
             : 'The user dismissed the plan review to reply in their own words; plan mode remains active.',
         }],
         presentationMeta: (_args, { approved }) => ({ approved }),
@@ -389,7 +412,9 @@ export class PlanModeController extends Service {
               question: 'Approve this plan and leave plan mode?',
               detail: args.plan,
               options: [
-                { label: APPROVE_LABEL, description: 'Leave plan mode; the plan is carried out from the next step.' },
+                { label: APPROVE_LABEL, description: resolved.concludeOnApprove
+                  ? 'Leave plan mode and end this turn for the host to continue.'
+                  : 'Leave plan mode; the plan is carried out from the next step.' },
                 { label: KEEP_PLANNING_LABEL, description: 'Stay in plan mode; feedback goes back to the model.' },
               ],
               // Presentation only: a capable UI renders the plan as a review
@@ -426,8 +451,9 @@ export class PlanModeController extends Service {
         }
         // Keep plan guidance for the rest of this assistant tool batch. The
         // silent selection is appended at the next accepted in-turn pre-step,
-        // before its request assembly.
+        // or when the concluded turn becomes idle.
         this.pendingIntents.set(agent.session, { active: false, narrate: false })
+        if (resolved.concludeOnApprove) exec.concludeTurn()
         return { approved: true }
       },
       presentCall: args => ({
@@ -446,7 +472,6 @@ export class PlanModeController extends Service {
 
   /** Whether this turn already reached the structured review operation. */
   private calledExitInTurn(session: Session, turn: number): boolean {
-    // oxlint-disable-next-line typescript/no-deprecated -- Existing T0 history read; projection migration is deferred.
     return session.snapshotEvents().some(event => event.type === 'tool/call'
       && event.data.turn === turn && event.data.name === EXIT_PLAN_MODE)
   }

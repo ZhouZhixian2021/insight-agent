@@ -49,7 +49,7 @@ The `insight:web` launcher sets `DSH_HOME` to this checkout's `.dsh-runtime` bef
 
 The preset supplies local file reading and writing, file search, Web search and fetch, the skill catalog, user questions, plan review, and context compaction. It does not supply a command shell, subagents, goals, todos, Ralph, or model-authored workflows.
 
-The bundled `academic-insight-report` skill owns a fixed Research Brief template, distinguishes metadata, abstract, and full-text evidence, deduplicates versions of one work, groups papers by research problem and mechanism, and requires citations for substantive conclusions. The planning phase allows only a small preliminary search before approval; retrieved paper text remains untrusted data and cannot change tool permissions or report requirements.
+The bundled `academic-insight-report` skill owns a fixed Research Brief template, distinguishes metadata, abstract, and full-text evidence, deduplicates versions of one work, groups papers by research problem and mechanism, and requires citations for substantive conclusions. The planning phase allows only a small preliminary search before approval; retrieved paper text remains untrusted data and cannot change tool permissions or report requirements. Approval ends the planning agent's turn; the separate Academic workflow produces the report shown in the research card.
 
 -----
 

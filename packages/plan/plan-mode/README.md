@@ -35,7 +35,7 @@ Choose plan mode when the agent should explore and design before executing and y
 
 ### Minimal configuration
 
-The guidance text is required. Set `initialActive: true` when every fresh session using this composition should plan its first request automatically. Set `reenterOnUserMessage: true` to plan each new human message in the same session. Set `missingExitRetries` when a deployment should retry a model response that stops without opening plan review; unknown fields fail at load.
+The guidance text is required. Set `initialActive: true` when every fresh session using this composition should plan its first request automatically. Set `reenterOnUserMessage: true` to plan each new human message in the same session. Set `missingExitRetries` when a deployment should retry a model response that stops without opening plan review. Set `concludeOnApprove: true` when another host operation owns execution after review; an approved review then ends the agent turn and records the plan-mode exit when the agent becomes idle. Unknown fields fail at load.
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -53,6 +53,7 @@ The guidance text is required. Set `initialActive: true` when every fresh sessio
 | `initialActive` | `false` | Enter plan mode before a fresh session's first model request |
 | `reenterOnUserMessage` | `false` | Re-enter plan mode when each new human message is claimed, including after session resume |
 | `missingExitRetries` | `0` | Maximum same-turn reminders after the model stops without calling `exit_plan_mode` |
+| `concludeOnApprove` | `false` | End the current turn after approval and commit the plan-mode exit at idle instead of asking the model to execute the plan |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-plan-mode) is the exhaustive source for every accepted field and its JSDoc.
 
@@ -72,6 +73,8 @@ You can attach images and generic files to a `/plan` message, and they are inclu
 When the agent has a finished plan, it calls `exit_plan_mode` with the plan written as markdown and starting with a heading. You review that exact plan and choose `Approve` to leave plan mode, or `Keep planning` to send the agent back with feedback. If `missingExitRetries` is positive and the model stops while plan mode remains active, the package sends at most that many same-turn reminders to submit the plan through the tool.
 
 Choosing `Keep planning` (optionally with free-text feedback) sends the agent back to revise the plan; closing the review to type a message instead ends the agent's turn, and your next message starts the next request. If no interactive review is available, `exit_plan_mode` cannot run and you can still leave plan mode with `/plan off`.
+
+With `concludeOnApprove: true`, approval ends the current turn without another model response. The Academic Insight preset uses this setting so its approved research runs through the separate Academic workflow after the Session becomes idle.
 
 ### Observing plan state
 
@@ -101,7 +104,7 @@ The command child activates only when a commands service is composed. It maps ba
 
 ### The exit tool
 
-`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape. A configured missing-exit reminder is logged with message source kind `plan-mode` and uses `agent/turn-stopping` to continue the same turn; its per-session count resets when the next turn starts.
+`exit_plan_mode` stays registered while plan mode is inactive, so entering or leaving changes only the prompt section, never the request tool catalog. An approved review records a silent pending exit that the next accepted in-turn pre-step appends, keeping plan guidance for the rest of the current tool batch. With `concludeOnApprove`, the approved tool result ends the turn and the idle transition appends that exit. Without a user-questions channel, or after a service reload while the review is pending, the call fails closed and `/plan off` remains the manual escape. A configured missing-exit reminder is logged with message source kind `plan-mode` and uses `agent/turn-stopping` to continue the same turn; its per-session count resets when the next turn starts.
 
 ### Session projection unit
 

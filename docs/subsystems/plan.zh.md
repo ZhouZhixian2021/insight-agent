@@ -12,9 +12,9 @@
 
 ## 待生效选择与 pre-step 追加
 
-由于每个会话事件都位于轮次之内，用户选择会保持待生效状态，直到下一个被接受的轮内 pre-step 在派生请求之前追加该选择，无论该 pre-step 位于哪个轮次。选择不会强制续行，因此在某轮最后一个被接受的 pre-step 之后作出的选择会在之后的轮次追加。`set(agent, active)` 记录待生效选择（目标值与已记录或已在等待的状态相同时不做任何事），`get(agent)` 返回 `{ active: boolean; pending?: boolean }`：用于组装当前步骤的已记录状态，以及等待追加的已选状态。
+由于每个会话事件都位于轮次之内，用户选择会保持待生效状态，直到下一个被接受的轮内 pre-step 在派生请求之前追加该选择，无论该 pre-step 位于哪个轮次。选择不会强制续行，因此在某轮最后一个被接受的 pre-step 之后作出的选择会在之后的轮次追加。配置为批准后结束轮次的退出选择会在 agent 空闲时追加。`set(agent, active)` 记录待生效选择（目标值与已记录或已在等待的状态相同时不做任何事），`get(agent)` 返回 `{ active: boolean; pending?: boolean }`：用于组装当前步骤的已记录状态，以及等待追加的已选状态。
 
-agent 运行时，唯一的追加点是前置（prepend）注册的 `agent/pre-step` 监听器。它会观察每个候选请求步骤，包括第 1 轮第 1 步和请求恢复重试；它先调用下游监听器，只在下游接受该步骤后追加。提示词准入发生在轮次开启之前，无法追加 `plan/mode`，因此在提示词处作出的选择由它开启的轮次内第一个被接受的 pre-step 追加。追加失败不能阻塞轮次，且该选择会继续等待之后被接受的轮内 pre-step。追加用户选择时还会记录一条插件来源的 `user/message` 通知，但仅当最后记录的请求头描述的是另一种状态时才记录，因此模型恰好在上下文变化时收到通知，且绝不重复。在某轮最后一个被接受的 pre-step 之后作出的选择只存在于进程内；如果进程在另一个被接受的轮内 pre-step 之前退出，该选择会丢失（[README 限制](../../packages/plan/plan-mode/README.zh.md#known-limitations-and-deferred-work)）。
+agent 运行时，唯一的追加点是前置（prepend）注册的 `agent/pre-step` 监听器。它会观察每个候选请求步骤，包括第 1 轮第 1 步和请求恢复重试；它先调用下游监听器，只在下游接受该步骤后追加。提示词准入发生在轮次开启之前，无法追加 `plan/mode`，因此在提示词处作出的选择由它开启的轮次内第一个被接受的 pre-step 追加。追加失败不能阻塞轮次，且该选择会继续等待之后被接受的轮内 pre-step。追加用户选择时还会记录一条插件来源的 `user/message` 通知，但仅当最后记录的请求头描述的是另一种状态时才记录，因此模型恰好在上下文变化时收到通知，且绝不重复。在某轮最后一个被接受的 pre-step 之后作出的用户选择只存在于进程内；如果进程在另一个被接受的轮内 pre-step 之前退出，该选择会丢失（[README 限制](../../packages/plan/plan-mode/README.zh.md#known-limitations-and-deferred-work)）。
 
 ## 配置
 
@@ -32,14 +32,16 @@ interface PlanModeConfig {
   reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
+  /** End the current agent turn after an approved review; defaults to continuing with the plan. */
+  concludeOnApprove?: boolean
 }
 ```
 
-`section` 缺失、为空白或不是字符串，`initialActive` 或 `reenterOnUserMessage` 不是布尔值，`missingExitRetries` 无效，以及存在任何未知键，都会在插件加载时失败，而不是被忽略。`initialActive` 默认为 `false`；设为 true 时，提示词组装会为未使用过的会话排队进入计划模式，第一个被接受的 pre-step 会在请求头之前记录该状态。已有计划选择或请求头会阻止初始化。`reenterOnUserMessage` 默认为 `false`；设为 true 时，`agent/inbox/claimed` 为新领取的、来源类型为 `user` 的消息排队进入计划模式，随后组装提示词并在同一个被接受的 pre-step 提交状态。恢复后的会话遵循相同规则；批准后的续步及系统通知不会重新进入。`missingExitRetries` 默认为 `0`，只接受非负安全整数。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
+`section` 缺失、为空白或不是字符串，`initialActive`、`reenterOnUserMessage` 或 `concludeOnApprove` 不是布尔值，`missingExitRetries` 无效，以及存在任何未知键，都会在插件加载时失败，而不是被忽略。`initialActive` 默认为 `false`；设为 true 时，提示词组装会为未使用过的会话排队进入计划模式，第一个被接受的 pre-step 会在请求头之前记录该状态。已有计划选择或请求头会阻止初始化。`reenterOnUserMessage` 默认为 `false`；设为 true 时，`agent/inbox/claimed` 为新领取的、来源类型为 `user` 的消息排队进入计划模式，随后组装提示词并在同一个被接受的 pre-step 提交状态。恢复后的会话遵循相同规则；批准后的续步及系统通知不会重新进入。`missingExitRetries` 默认为 `0`，只接受非负安全整数。`concludeOnApprove` 默认为 `false`；设为 true 时，批准会结束当前轮次，并在空闲时记录退出计划模式。计划模式激活期间，确切的 `section` 文本以 order 50 渲染为 `plan:policy` [系统提示词段落](system-prompt.zh.md)；未激活的计划模式不贡献任何文本。
 
 ## 退出工具与 `/plan` 命令
 
-[`exit_plan_mode`](../tool-catalog.zh.md#deepseek-aidsh-plan-mode) 在计划模式未激活时仍保持注册，因此进入或离开计划模式只改变提示词段落，绝不改变请求的工具目录；在计划模式之外执行会失败。在计划模式中，它要求一份以 `#` 标题开头的完整 markdown 计划，并通过[用户交互 seam](user-questions.zh.md) 呈交评审。批准返回 `{ approved: true }`，并记录一个静默（不叙述）的待生效退出，由下一个被接受的轮内 pre-step 追加。因此，计划指引在 assistant 当前这批工具调用的剩余部分继续生效，而工具结果本身会报告这次转换。「继续规划」则是一次携带用户反馈的失败调用，模型据此修订并再次呈交。放弃评审返回 `{ approved: false }` 并结束当前轮次，计划模式保持激活，直到用户发出下一条消息。评审期间交互通道缺失或服务重载同样使调用失败，而不是静默离开计划模式。
+[`exit_plan_mode`](../tool-catalog.zh.md#deepseek-aidsh-plan-mode) 在计划模式未激活时仍保持注册，因此进入或离开计划模式只改变提示词段落，绝不改变请求的工具目录；在计划模式之外执行会失败。在计划模式中，它要求一份以 `#` 标题开头的完整 markdown 计划，并通过[用户交互 seam](user-questions.zh.md) 呈交评审。批准返回 `{ approved: true }`，并记录一个静默（不叙述）的待生效退出，由下一个被接受的轮内 pre-step 追加；若 `concludeOnApprove` 结束轮次，则在空闲时追加。因此，计划指引在 assistant 当前这批工具调用的剩余部分继续生效，而工具结果本身会报告这次转换。「继续规划」则是一次携带用户反馈的失败调用，模型据此修订并再次呈交。放弃评审返回 `{ approved: false }` 并结束当前轮次，计划模式保持激活，直到用户发出下一条消息。评审期间交互通道缺失或服务重载同样使调用失败，而不是静默离开计划模式。
 
 当 [`ctx.commands`](commands.zh.md) 被组合时，插件注册 `/plan [off|message]`：单独的 `/plan` 选择计划模式；任何其他非空消息先选择计划模式，再通过 `agent.steer()` 提交该文本，使其在计划指引下成为下一步骤的普通已记录用户消息；确切参数 `off` 选择未激活，这还会在待生效条目被追加并对请求可见之前将其取消。
 
