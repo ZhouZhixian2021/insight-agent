@@ -120,17 +120,6 @@ function insideExisting(state: SelectionState, hit: Hit): boolean {
 function admit(state: SelectionState, hit: Hit): boolean {
   const text = state.texts[hit.segmentIndex]
   if (text === undefined) return false
-  const adjacent = state.fragments.findIndex(fragment => fragment.segmentIndex === hit.segmentIndex
-    && hit.index >= fragment.start && hit.index < fragment.end)
-  if (adjacent !== -1) {
-    const existing = state.fragments[adjacent]
-    if (existing === undefined) return false
-    state.fragments[adjacent] = { ...existing,
-      conditionIds: addUnique(existing.conditionIds, hit.conditionId),
-      matchedTerms: addUnique(existing.matchedTerms, hit.term) }
-    state.covered.add(hit.conditionId)
-    return true
-  }
   const { start, end } = window(state, hit)
   if (end <= start) return false
   state.fragments.push({ segmentIndex: hit.segmentIndex, start, end, sectionTitle: text.sectionTitle,
@@ -164,10 +153,6 @@ interface SelectionState {
   readonly policy: ScreeningFragmentPolicy
   readonly fragments: ScreeningFragment[]
   readonly covered: Set<string>
-}
-
-function addUnique(values: readonly string[], value: string): readonly string[] {
-  return values.includes(value) ? values : [...values, value]
 }
 
 function coveredCharacters(fragments: readonly ScreeningFragment[], segmentIndex: number): number {

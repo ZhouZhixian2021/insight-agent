@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import z from 'zod'
 import { fetchAcademicFullText, prepareFetchedAcademicFullText, prepareFetchedAcademicPdf,
   type AcademicFullTextFetchInput, type AcademicFullTextObserver, type AcademicWebFetcher,
-  type AcademicWebFetchResult, type EvidenceExtractionInput } from '@deepseek-ai/dsh-academic-evidence'
+  type EvidenceExtractionInput } from '@deepseek-ai/dsh-academic-evidence'
 import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
 
 const parsedSchema = z.object({
@@ -91,7 +91,7 @@ export class AcademicFulltextCache {
         ? await prepareFetchedAcademicPdf(prepared, parseSignal) : prepareFetchedAcademicFullText(prepared)
       parseSignal?.throwIfAborted()
       if (active !== undefined && prepared.fetched.body.kind !== 'text') {
-        const raw = encode(prepared.fetched)
+        const raw = encode(prepared.fetched.body)
         const preparedCache = parsedSchema.parse({ parser: this.parser, contentHash: parsed.contentHash, segments: parsed.segments })
         await this.store({ schemaVersion: 1, key: active.key, fetchedAt: cached?.fetchedAt ?? input.retrievedAt,
           rawHash: hash(raw.body), url: prepared.fetched.url, ...raw,
@@ -163,8 +163,9 @@ export class AcademicFulltextCache {
 
 function hash(value: string): string { return createHash('sha256').update(value).digest('hex') }
 function isMissing(error: unknown): boolean { return error instanceof Error && 'code' in error && error.code === 'ENOENT' }
-function encode(fetched: AcademicWebFetchResult): { kind: 'html' | 'pdf'; body: string } {
-  if (fetched.body.kind === 'pdf') return { kind: 'pdf', body: Buffer.from(fetched.body.content).toString('base64') }
-  if (fetched.body.kind === 'html') return { kind: 'html', body: fetched.body.content }
-  throw new Error('Only confirmed HTML/PDF full text can enter the cache.')
+function encode(body: { readonly kind: 'html'; readonly content: string }
+| { readonly kind: 'pdf'; readonly content: Uint8Array }): { kind: 'html' | 'pdf'; body: string } {
+  return body.kind === 'pdf'
+    ? { kind: 'pdf', body: Buffer.from(body.content).toString('base64') }
+    : { kind: 'html', body: body.content }
 }
