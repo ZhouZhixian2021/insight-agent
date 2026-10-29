@@ -31,17 +31,17 @@ Academic Controller 或工作流提供已批准的 Brief、经审核的扩展词
 
 ### 元数据初筛
 
-新评估返回必带 `screening` 的 `DetailedCandidateAssessment`。参与计分的问题、方法、证据类型和贡献信号逐字引用规范标题或学术摘要。完整的词项问题及贡献匹配必须在同一个引用来源中成立。关键词只提供 `surfaceKeywordHits`，不增加这些分项。词项范围判断保持 `unknown`；缺少摘要不能证明偏题。排序器拒绝没有对应元数据信号的详细评分；引文可核验且针对当前 Plan 的 `off_topic` 判断触发硬排除。没有 `screening` 的旧评估保持原有解释。
+新评估返回必带 `screening` 的 `DetailedCandidateAssessment`。参与计分的问题、方法、证据类型和贡献信号逐字引用规范标题或学术摘要。完整的词项问题及贡献匹配必须在同一个引用来源中成立。关键词只提供 `surfaceKeywordHits`，不增加这些分项。词项范围判断保持 `unknown`；缺少摘要不能证明偏题。排序器拒绝没有对应引文的详细评分；有原文支持且针对当前 Plan 的 `off_topic` 判断触发硬排除。没有 `screening` 的旧评估保持原有解释。
 
-可选的第六个参数 `reviewedScreenings` 是按成果 ID 索引的外部审核详情，用于替代词项线索。`parseCandidateScreening(text, title, abstract, keywords, questions)` 接受符合 `CandidateScreeningDetails` 的完整 JSON，核对每条实际提供的引文与批准问题引用，并拒绝额外字段。版本 1 要求每条信号都带引文；版本 2 接受不带引文的指示，并把引文缺失或不可核验的排除降级为 `unknown` 范围。审核过的方法和证据标签必须对应批准概念的别名；比例统计不同概念，不累计重复信号。语义审核可把英文摘要关联到批准的中文问题，不改变查询路由。调用方负责审核质量；引文指明文字来源，不证明解释正确。
+可选的第六个参数 `reviewedScreenings` 是按成果 ID 索引的外部审核详情，用于替代词项线索。`parseCandidateScreening(text, title, abstract, keywords, questions)` 接受符合 `CandidateScreeningDetails` 的完整 JSON，核对逐字引文与批准问题引用，并拒绝额外字段。审核过的方法和证据标签必须对应批准概念的别名；比例统计不同概念，不累计重复信号。语义审核可把英文摘要关联到批准的中文问题，不改变查询路由。调用方负责审核质量；引文指明文字来源，不证明解释正确。
 
-外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份；版本 1 的每条信号都要带引文，版本 2 只在能原样复制时才带。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
+外部审核指令必须提供准确的 Plan 问题与范围规则、批准线索、规范标题和学术摘要。区分实际研究目标、词语提及与否定表述，引用原文，并在元数据不足时使用 `unknown`。代码生成、图像生成和安全研究是否相关由当前 Plan 判断，不使用全局黑名单。只输出 `schemaVersion: 1`、`signals`、`surfaceKeywordHits`、`uncertainties` 和 `scope`，不输出分数或论文身份。调用方负责模型传输、token 策略及持久请求／结果记录；本库不调用模型。
 
 P2 下限为零时，元数据分数只决定候选顺序：缺少线索或低分不会排除论文。没有贡献信号且词项范围未知的候选归为背景。已批准英文短语也匹配末尾加 `s` 的规则复数；其他变体仍需明确别名。日期、类型、撤稿、批准规则及附原文的偏题排除继续生效。P2 下限为正的历史策略保持精确短语匹配和评分门槛。
 
 ### 最小语义审核与送审选择
 
-`parseCandidateSemanticReview(text, title, abstract, approvedQuestions)` 接受 `CandidateSemanticReviewRequestV1` 定义的、两个版本都可的最小判断：三态 `scope` 与已批准问题匹配。版本 1 要求每项匹配都带逐字出现在规范标题或学术摘要中的引文；版本 2 接受不带引文的匹配，只校验它实际提供的引文。排除是唯一必须带可核验引文的判断：引文缺失或不能逐字命中时，版本 2 返回标记 `downgraded: 'unverifiable_exclusion_quote'` 的 `unknown` 范围，而不是排除该论文。两个版本都拒绝额外字段、未批准或重复问题、捏造或来源不可用的引文，以及自相矛盾的范围结论与问题列表。传输失败、超时、截断和无效 JSON 仍属调用方失败，不会变成模型的 `unknown`。
+`parseCandidateSemanticReview(text, title, abstract, approvedQuestions)` 接受 `CandidateSemanticReviewRequestV1`／`CandidateSemanticReviewV1` 定义的最小判断：三态 `scope` 以及引文逐字出现在规范标题或学术摘要中的已批准问题匹配。它拒绝额外字段、未批准或重复问题、捏造或来源不可用的引文，以及自相矛盾的范围结论与问题列表。传输失败、超时、截断和无效 JSON 仍属调用方失败，不会变成模型的 `unknown`。
 
 `selectCandidateReviews(brief, plan, ranking, assessments, attemptedWorkIds, maximumModelReviews)` 是确定性的送审前选择器。它先按每篇候选的 `discoveredBy` 路由为已批准问题分配覆盖名额，再按词项初排补足剩余名额，最终以规范论文身份破同分。它为每篇候选给出 `selected`、`not_selected_budget`、`hard_excluded`、`fulltext_unresolvable` 或 `already_attempted`，且查询路由不增加语义匹配分。共享预算跨初轮与缺口轮，独立于 Plan 候选上限和 P0/P1/P2 队列规模。
 

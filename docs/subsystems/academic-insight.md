@@ -29,8 +29,6 @@ Shared record changes land through member A so provider-specific and report-spec
 
 ## Evidence-to-report consumers
 
-The workflow's optional `CandidateBatchPolicy.fulltext` saves independent total and uncertain-exploration limits in recovery checkpoints. The Controller enables it for new ranked runs and owns the reusable raw/parsed source cache; the evidence library owns the optional whole-paper fragment-call bound. Scope, evidence and question coverage are always task-specific. See [full-text budgets and cache development](../cookbook/academic-fulltext-budget-cache.md).
-
 The evidence library also provides opt-in [incremental extraction](../../packages/academic/evidence/README.md#incremental-extraction). Its fragment attempt binds paper/version identities to original source coordinates; a required verified-result sink commits successful fragments before subsequent dispatch. Recoverable failures and incomplete ranges remain separate from accepted evidence. The workflow owns model-stage output caps, durable logging, paper-scope review and temporary concurrency reduction.
 
 The [evidence library](../../packages/academic/evidence/README.md) returns accepted records and `EvidenceExtractionResult.rejectedDrafts`. Each rejection carries zero-based `draftIndex` and `segmentIndex`, a stable `code`, and a diagnostic `reason` without source text. The workflow exposes `extracted`, `partially_extracted`, or `extraction_failed` paper settlements; only the first two supply evidence to analysis. The Academic Remote projects accepted `evidenceCount` and the rejection list for each extraction settlement. A partially extracted paper contributes both retained evidence and one failed extraction operation, while a fully rejected paper contributes no included work.

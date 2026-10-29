@@ -603,7 +603,7 @@
       "path": "packages/bundle/web-app/cordis.patch.yml",
       "category": "wiring",
       "owner": "ZhouZhixian2021",
-      "reason": "组合接入：学术服务挂载与 DSH home 缓存目录必须接入 Web 现有配置条目；业务实现保留在新增学术模块。",
+      "reason": "配置：config:",
       "addedLines": 72,
       "removedLines": 0,
       "upstreamChurn6mo": 161

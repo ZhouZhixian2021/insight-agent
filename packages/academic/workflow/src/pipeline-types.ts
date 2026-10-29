@@ -121,11 +121,6 @@ export interface DraftPipelineAdapters {
     signal?: AbortSignal,
   ) => Promise<ReplenishedCandidates>
   readonly fetcher: AcademicWebFetcher
-  /** Optional reusable source acquisition; every task still performs its own scope and evidence review. */
-  readonly acquireFulltext?: (input: import('@deepseek-ai/dsh-academic-evidence').AcademicFullTextFetchInput,
-    version: import('@deepseek-ai/dsh-academic-model').WorkVersion, fetcher: AcademicWebFetcher,
-    signal?: AbortSignal, observer?: import('@deepseek-ai/dsh-academic-evidence').AcademicFullTextObserver,
-  ) => Promise<import('@deepseek-ai/dsh-academic-evidence').EvidenceExtractionInput>
   readonly generator: PaperEvidenceGenerator
   /** Formal model route may supply incrementally verified and saved fragment evidence. */
   readonly verifiedGenerator?: PaperVerifiedEvidenceGenerator

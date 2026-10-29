@@ -6,12 +6,9 @@ import { targetIncludedWorks,
   type ResearchQuestionCoverageResult,
   type SearchStopDecision,
   type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
-import { admitFulltextCandidates, type FulltextAdmissionPolicy } from './fulltext-admission.ts'
 
 /** Caller-owned batch sizes; deployments may tune them without changing scheduling semantics. */
 export interface CandidateBatchPolicy {
-  /** Omitted on historical runs, which retain their original full-text scheduling behavior. */
-  readonly fulltext?: FulltextAdmissionPolicy
   readonly initialBatchSize: number
   readonly evidenceGapBatchSize: number
   readonly replenishmentBatchSize: number
@@ -21,8 +18,6 @@ export interface CandidateBatchPolicy {
 
 /** Observed state required to replay one scheduling decision. */
 export interface CandidateBatchPlanningInput {
-  /** Required with a full-text admission policy; metadata facts never establish extracted evidence. */
-  readonly assessments?: readonly import('@deepseek-ai/dsh-academic-model').CandidateAssessment[]
   readonly brief: ExecutableResearchBrief
   readonly plan: HybridSearchPlan
   readonly ranking: AcademicCandidateRankingResult
@@ -94,19 +89,8 @@ export function planCandidateBatch(input: CandidateBatchPlanningInput): Candidat
     .filter(workVersionId => evaluations.get(workVersionId)?.fulltextAvailability.status === 'resolvable')
     .slice(0, brief.stopConditions.maximumCandidateWorks)
   const eligible = new Set(eligibleOrder)
-  let remaining = eligibleOrder
+  const remaining = eligibleOrder
     .filter(workVersionId => !scheduled.has(workVersionId))
-  let deferred = 0
-  if (input.policy.fulltext !== undefined) {
-    const admission = admitFulltextCandidates(eligibleOrder, ranking, input.assessments ?? [],
-      input.scheduledWorkVersionIds, input.policy.fulltext)
-    remaining = admission.ready
-    deferred = admission.deferred
-    if (scheduled.size >= input.policy.fulltext.maximumWorks) {
-      return { action: 'stop', batch: null, searchQuestions: [],
-        stop: stopped('maximum_candidate_works', `Full-text work budget exhausted (${scheduled.size}/${input.policy.fulltext.maximumWorks}); ${deferred} candidates remain deferred.`) }
-    }
-  }
   const gapSet = new Set(gaps)
   const questionsByQuery = new Map(input.plan.queries.map(query => [query.searchQueryId, query.questions]))
   const gapCandidates = remaining.filter((workVersionId) => {
@@ -117,10 +101,8 @@ export function planCandidateBatch(input: CandidateBatchPlanningInput): Candidat
   })
 
   if (input.completedBatchCount === 0) {
-    const admitted = new Set(remaining)
-    const initialOrder = input.policy.fulltext === undefined ? ranking.queues.p0 : remaining
-    const initial = initialOrder.filter(workVersionId => eligible.has(workVersionId)
-      && admitted.has(workVersionId) && !scheduled.has(workVersionId))
+    const initial = ranking.queues.p0.filter(workVersionId => eligible.has(workVersionId)
+      && !scheduled.has(workVersionId))
       .slice(0, input.policy.initialBatchSize)
     if (initial.length > 0) return batchDecision(input, 'initial_priority', initial, [])
   }
@@ -140,13 +122,11 @@ export function planCandidateBatch(input: CandidateBatchPlanningInput): Candidat
         searchQuestions: questions as [string, ...string[]], stop: continuing('No ranked candidate can fill the remaining evidence need.') }
     }
   }
-  const exhausted = deferred > 0
-    ? stopped('candidate_exhausted', `${deferred} metadata candidates remain on the full-text waitlist; review or exploration budget is exhausted. Missing review is not an exclusion.`)
-    : input.completedSearchRounds >= input.plan.maximumSearchRounds
-      ? stopped('maximum_search_rounds', 'The approved search-round limit has been reached.')
-      : eligibleOrder.length >= brief.stopConditions.maximumCandidateWorks
-        ? stopped('maximum_candidate_works', 'The approved candidate-work limit has been reached.')
-        : stopped('candidate_exhausted', 'No unscheduled ranked candidate remains.')
+  const exhausted = input.completedSearchRounds >= input.plan.maximumSearchRounds
+    ? stopped('maximum_search_rounds', 'The approved search-round limit has been reached.')
+    : eligibleOrder.length >= brief.stopConditions.maximumCandidateWorks
+      ? stopped('maximum_candidate_works', 'The approved candidate-work limit has been reached.')
+      : stopped('candidate_exhausted', 'No unscheduled ranked candidate remains.')
   return { action: 'stop', batch: null, searchQuestions: [], stop: exhausted }
 }
 
@@ -208,13 +188,8 @@ function validateInput(input: CandidateBatchPlanningInput): void {
     || plan.maximumSearchRounds > brief.stopConditions.maximumSearchRounds) {
     throw new RangeError('The search plan does not preserve the approved ResearchBrief inclusion counts and limits.')
   }
-  for (const [name, value] of Object.entries({ initialBatchSize: policy.initialBatchSize,
-    evidenceGapBatchSize: policy.evidenceGapBatchSize, replenishmentBatchSize: policy.replenishmentBatchSize,
-    minimumQuestionSupportingWorks: policy.minimumQuestionSupportingWorks })) {
+  for (const [name, value] of Object.entries(policy)) {
     if (!Number.isInteger(value) || value <= 0) throw new RangeError(`${name} must be a positive integer.`)
-  }
-  if (policy.fulltext !== undefined && input.assessments === undefined) {
-    throw new RangeError('Full-text admission requires candidate metadata assessments.')
   }
   for (const [name, value] of [
     ['completedBatchCount', input.completedBatchCount],

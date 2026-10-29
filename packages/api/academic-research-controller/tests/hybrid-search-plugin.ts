@@ -9,7 +9,6 @@ import { createBatchResult, type ResearchBrief } from '@deepseek-ai/dsh-academic
 import { runResearchDraft, selectResearchPapers } from '@deepseek-ai/dsh-academic-workflow'
 import { approvedPaperAdapters } from '../src/search.ts'
 import { hybridRetrievalView } from '../src/hybrid-view.ts'
-import { fulltextCacheFixture } from './fulltext-cache-fixture.ts'
 
 export const name = 'academic-hybrid-search-fixture'
 export const inject = ['tools', 'academicSource', 'web']
@@ -83,7 +82,7 @@ export function applyHybridFixture(ctx: Context, includeRankingPolicy = false): 
       const screening = await screeningFixture(sample.brief, signal)
       return JSON.stringify({ calls, titles: pipeline.hybridSearch.returnedRecords.map(item => item.academicWork.title),
         directProviders: pipeline.retrievalRun.providers, hybridRetrieval: view, screening,
-        ...includeRankingPolicy ? { rankingThresholds, fulltextCache: await fulltextCacheFixture(work.workVersion) } : {} })
+        ...includeRankingPolicy ? { rankingThresholds } : {} })
     },
   })))
 }

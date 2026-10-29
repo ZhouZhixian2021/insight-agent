@@ -117,7 +117,7 @@ export function assessPlannedCandidates(plan: HybridSearchPlan, brief: Executabl
       schemaVersion: 1, signals, surfaceKeywordHits, uncertainties: uncertainty,
       scope: { status: 'unknown', reason: 'Lexical indications require a Plan-specific scope review.' },
     } : {
-      schemaVersion: reviewed.schemaVersion,
+      schemaVersion: 1,
       /* Question matches are always the model's semantic conclusion. Reviewed method, evidence-type, and
          contribution indications win when supplied (legacy full review); otherwise the code-computed
          lexical cues fill those dimensions, and a definitive off-topic conclusion credits none. */

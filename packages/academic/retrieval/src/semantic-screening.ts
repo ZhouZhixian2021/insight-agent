@@ -1,30 +1,19 @@
 /** Project a validated minimal semantic review into the screening details the evaluator merges. */
-import type { CandidateScreeningDetails, CandidateScopeDecision, CandidateSemanticReview } from '@deepseek-ai/dsh-academic-model'
+import type { CandidateScreeningDetails, CandidateSemanticReviewV1 } from '@deepseek-ai/dsh-academic-model'
 
 /**
- * Carry only the model's scope and question matches into screening details.
+ * Carry only the model's scope and quoted question matches into screening details.
  * The evaluator merges its code-computed lexical cues and surface keyword hits into this value, so a
- * caller passes the validated model judgment instead of rebuilding lexical indications itself. A version 2
- * judgment may match a question without a passage; that signal then carries no quote.
+ * caller passes the validated model judgment instead of rebuilding lexical indications itself.
  * @param review - Validated minimal model judgment.
- * @returns Screening details with the model scope and question matches and no code-computed cues.
+ * @returns Screening details with the model scope and quoted question matches and no code-computed cues.
  */
-export function screeningFromSemanticReview(review: CandidateSemanticReview): CandidateScreeningDetails {
+export function screeningFromSemanticReview(review: CandidateSemanticReviewV1): CandidateScreeningDetails {
   return {
-    schemaVersion: review.schemaVersion,
-    signals: review.matchedQuestions.map((match) => {
-      const question = { kind: 'question' as const, question: match.question }
-      return match.quote === undefined ? question : { ...question, quote: match.quote }
-    }),
+    schemaVersion: 1,
+    signals: review.matchedQuestions.map(match => ({ kind: 'question', question: match.question, quote: match.quote })),
     surfaceKeywordHits: [],
     uncertainties: [],
-    scope: scoped(review),
+    scope: review.scope,
   }
-}
-
-function scoped(review: CandidateSemanticReview): CandidateScopeDecision {
-  const { reason } = review.scope
-  if (review.scope.status === 'off_topic') return { status: 'off_topic', reason, quote: review.scope.quote }
-  if (review.scope.status === 'potentially_relevant') return { status: 'potentially_relevant', reason }
-  return { status: 'unknown', reason }
 }

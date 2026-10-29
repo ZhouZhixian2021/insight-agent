@@ -11,7 +11,6 @@ import type {
   AcademicFullTextObserver,
   AcademicWebFetcher,
   EvidenceExtractionInput,
-  FetchedAcademicFullTextInput,
 } from './types.ts'
 
 /**
@@ -21,7 +20,6 @@ import type {
  * @param fetcher - caller adapter over its configured web fetch service.
  * @param signal - optional cancellation forwarded through acquisition and parsing.
  * @param onFullText - optional observer of per-candidate started and settled facts.
- * @param prepare - optional source-preparation cache; it must validate complete bodies and retain exact locators.
  * @returns the first confirmed locatable full-text input.
  */
 export async function fetchAcademicFullText(
@@ -29,7 +27,6 @@ export async function fetchAcademicFullText(
   fetcher: AcademicWebFetcher,
   signal?: AbortSignal,
   onFullText?: AcademicFullTextObserver,
-  prepare?: (input: FetchedAcademicFullTextInput, signal?: AbortSignal) => Promise<EvidenceExtractionInput>,
 ): Promise<EvidenceExtractionInput> {
   if (input.urls.length === 0) throw new EvidenceError('at least one full-text URL is required', 'EVIDENCE_FULLTEXT_UNCONFIRMED')
   const { urls, ...sourceMetadata } = input
@@ -41,7 +38,7 @@ export async function fetchAcademicFullText(
     try {
       const fetched = await fetcher(url, signal)
       const prepared = { ...sourceMetadata, fetched }
-      const result = prepare !== undefined ? await prepare(prepared, signal) : fetched.body.kind === 'pdf'
+      const result = fetched.body.kind === 'pdf'
         ? await prepareFetchedAcademicPdf(prepared, signal)
         : prepareFetchedAcademicFullText(prepared)
       reportFullText(onFullText, { ...candidate, phase: 'settled', settlement: 'success',

@@ -4,7 +4,6 @@ import { createIngestIndex, ingestWorks } from '@deepseek-ai/dsh-academic-ingest
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import { describe, expect, it, vi } from 'vitest'
 import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.ts'
-import { runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 import { approvedPaperAdapters, type CandidateReviewer, type CandidateReviewExecution } from '../src/search.ts'
 import type { AcademicCandidateScreening } from '../src/candidate-screening.ts'
 
@@ -42,7 +41,6 @@ function setup(options: {
   readonly reviewExecution?: CandidateReviewExecution
   readonly initialWorkCount?: number
   readonly initialBatchSize?: number
-  readonly fulltext?: { readonly maximumWorks: number; readonly maximumUncertainWorks: number }
   readonly initialAcademicResultsPerQuery?: number
   readonly publicationWindow?: PublicationWindow
   readonly transformWork?: (work: AcademicSourceWork, index: number) => AcademicSourceWork
@@ -88,8 +86,7 @@ function setup(options: {
   const adapters = approvedPaperAdapters(brief, [{ query: 'synthetic', purpose: 'Find evidence', questions,
     retrieval: { channels: ['academic'], academicProviders: ['arxiv'], verificationProviders: ['arxiv'],
       maximumWebDiscoveryResults: 1, maximumReferenceVerifications: 1 } }], academicSource, web,
-  { ...batchPolicy, initialBatchSize: options.initialBatchSize ?? batchPolicy.initialBatchSize,
-    ...options.fulltext === undefined ? {} : { fulltext: options.fulltext } },
+  { ...batchPolicy, initialBatchSize: options.initialBatchSize ?? batchPolicy.initialBatchSize },
   gapPolicy, undefined, options.candidateScreening,
   options.reviewCandidate === undefined ? undefined : (input, signal) => {
     input.onDispatch?.()
@@ -116,25 +113,6 @@ function uncovered(brief: ReturnType<typeof setup>['brief']): ResearchQuestionCo
 }
 
 describe('Q5 evidence-gap replenishment', () => {
-  it('reviews the waitlist before downloading when uncertain exploration is disabled', async () => {
-    const events: string[] = []
-    let reviews = 0
-    const reviewCandidate: CandidateReviewer = async () => {
-      events.push('review')
-      return { status: 'validated', screening: { schemaVersion: 1, signals: [], surfaceKeywordHits: [], uncertainties: [],
-        scope: ++reviews === 3 ? { status: 'potentially_relevant', reason: 'Relevant metadata.' }
-          : { status: 'unknown', reason: 'Insufficient metadata.' } } }
-    }
-    const prepared = setup({ initialWorkCount: 3, initialBatchSize: 1, maximumModelReviews: 3, reviewCandidate,
-      fulltext: { maximumWorks: 3, maximumUncertainWorks: 0 } })
-    const f = draftFixture()
-    const result = await runResearchDraft({ ...f.input, brief: prepared.brief,
-      searches: [{ query: 'synthetic', channels: ['academic'] }] }, { ...f.adapters, ...prepared.adapters,
-      fetcher: async (...args) => { events.push('fetch'); return f.adapters.fetcher(...args) } })
-    expect(events).toEqual(['review', 'review', 'review', 'fetch'])
-    expect(result.queryWorkflow?.ranking?.queues.excluded).toEqual([])
-    expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('waitlist')
-  })
   it('reviews successive batches once and reserves calls for new gap-round candidates', async () => {
     const reviewCandidate = vi.fn<CandidateReviewer>(async () => ({ status: 'failed', code: 'TIMEOUT' }))
     const gapRecord = identified(draftFixture(1).records[0]!, 'gap-only')

@@ -34,14 +34,6 @@ function options(overrides: Partial<EvidenceFragmentOptions> = {}): EvidenceFrag
 }
 
 describe('extractEvidenceInFragments', () => {
-  it('bounds whole-paper calls including transport retries and retains undispatched source ranges', async () => {
-    const generator = vi.fn(async () => { throw new EvidenceError('connection lost', 'TRANSPORT') })
-    const result = await extractEvidenceInFragments(source(), options({ maximumCalls: 2, generator }))
-    expect(generator).toHaveBeenCalledTimes(2)
-    expect(result.failures).toHaveLength(2)
-    expect(result.incompleteFragments.map(range => range.fragmentIndex)).toEqual([1, 2])
-    await expect(extractEvidenceInFragments(source(), options({ maximumCalls: 0 }))).rejects.toThrow('Whole-paper')
-  })
   it('packs adjacent short paragraphs and keeps each quoted paragraph locator', async () => {
     const input = { ...source(), segments: ['alpha', 'bravo', 'charlie'].map((text, index) => ({
       text, locator: { kind: 'paragraph' as const, paragraphNumber: index + 1 },
