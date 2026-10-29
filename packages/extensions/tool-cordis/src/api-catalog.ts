@@ -5463,7 +5463,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CandidateMetadataSignal',
-    declaration: 'export type CandidateMetadataSignal = {\n    readonly kind: \'question\';\n    readonly question: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'method\' | \'evidence_type\';\n    readonly label: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly kind: \'contribution\';\n    readonly classification: Exclude<CandidateClassification, \'background\' | \'irrelevant\'>;\n    readonly quote: CandidateMetadataQuote;\n};',
+    declaration: 'export type CandidateMetadataSignal = {\n    readonly kind: \'question\';\n    readonly question: string;\n    readonly quote?: CandidateMetadataQuote;\n} | {\n    readonly kind: \'method\' | \'evidence_type\';\n    readonly label: string;\n    readonly quote?: CandidateMetadataQuote;\n} | {\n    readonly kind: \'contribution\';\n    readonly classification: Exclude<CandidateClassification, \'background\' | \'irrelevant\'>;\n    readonly quote?: CandidateMetadataQuote;\n};',
   },
   {
     name: 'CandidatePriority',
@@ -5499,7 +5499,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CandidateScreeningDetails',
-    declaration: 'export interface CandidateScreeningDetails {\n    readonly schemaVersion: 1;\n    readonly signals: readonly CandidateMetadataSignal[];\n    readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[];\n    readonly uncertainties: readonly string[];\n    readonly scope: CandidateScopeDecision;\n}',
+    declaration: 'export interface CandidateScreeningDetails {\n    readonly schemaVersion: 1 | 2;\n    readonly signals: readonly CandidateMetadataSignal[];\n    readonly surfaceKeywordHits: readonly CandidateSurfaceKeywordHit[];\n    readonly uncertainties: readonly string[];\n    readonly scope: CandidateScopeDecision;\n}',
   },
   {
     name: 'CandidateSemanticReviewStateV1',
