@@ -60,6 +60,12 @@ describe('Client UI i18n source check', () => {
     const safe = 'function render(title: string): string { return `<!doctype html><html><head><style>body{color:#333}</style></head><body><h1>${title}</h1></body></html>` }'
     expect(messages(safe)).toEqual([])
 
+    const separators = 'function render(label: string): string { return `<!doctype html><html><body><p>${label}&nbsp;&middot;&nbsp;${label}&#58;&nbsp;${label}</p></body></html>` }'
+    expect(messages(separators)).toEqual([])
+
+    const layout = 'function render(label: string): string { return `<!doctype html><html>\n  <body><p>${label}</p></body>\n</html>` }'
+    expect(messages(layout)).toEqual([])
+
     const visible = 'function render(): string { return `<!doctype html><html><body><h1>Hard-coded heading</h1></body></html>` }'
     expect(messages(visible)).toHaveLength(1)
     const attribute = 'function render(): string { return `<!doctype html><html><body><nav aria-label="Contents"></nav></body></html>` }'
