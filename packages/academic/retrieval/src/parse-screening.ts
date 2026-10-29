@@ -2,8 +2,12 @@
 import type { Availability, CandidateMetadataQuote, CandidateMetadataSignal, CandidateScopeDecision,
   CandidateScreeningDetails, CandidateSurfaceKeywordHit } from '@deepseek-ai/dsh-academic-model'
 import { quoteOccursVerbatim, validateScreeningQuotes } from './metadata-quotes.ts'
+import { screeningJsonReaders } from './screening-json.ts'
 
+const json = screeningJsonReaders('candidate screening')
 const DOWNGRADED_REASON = 'The reported exclusion passage does not occur verbatim in the supplied title or abstract.'
+
+function invalid(message: string): never { return json.invalid(message) }
 
 /**
  * Read a complete semantic review and check it against the canonical scholarly metadata.
@@ -27,14 +31,14 @@ export function parseCandidateScreening(text: string, title: string, abstract: A
     // JSON.parse alone can fail here; response content is excluded from the diagnostic.
     throw new RangeError('candidate screening requires complete JSON')
   }
-  const item = object(value, ['schemaVersion', 'signals', 'surfaceKeywordHits', 'uncertainties', 'scope'])
+  const item = json.object(value, ['schemaVersion', 'signals', 'surfaceKeywordHits', 'uncertainties', 'scope'])
   if (item.schemaVersion !== 1 && item.schemaVersion !== 2) invalid('unsupported screening schemaVersion')
   const version = item.schemaVersion
   const screening: CandidateScreeningDetails = {
     schemaVersion: version,
-    signals: array(item.signals).map(entry => readSignal(entry, version)),
-    surfaceKeywordHits: array(item.surfaceKeywordHits).map(readSurfaceHit),
-    uncertainties: array(item.uncertainties).map(nonempty),
+    signals: json.array(item.signals).map(entry => readSignal(entry, version)),
+    surfaceKeywordHits: json.array(item.surfaceKeywordHits).map(readSurfaceHit),
+    uncertainties: json.array(item.uncertainties).map(json.nonempty),
     scope: readScope(item.scope, version, title, abstract),
   }
   validateScreeningQuotes(screening, title, abstract, questions)
@@ -53,18 +57,18 @@ export function parseCandidateScreening(text: string, title: string, abstract: A
 }
 
 function readSignal(value: unknown, version: 1 | 2): CandidateMetadataSignal {
-  const item = object(value, ['kind', 'question', 'label', 'classification', 'quote'])
+  const item = json.object(value, ['kind', 'question', 'label', 'classification', 'quote'])
   const quote = readOptionalQuote(item, version)
   switch (item.kind) {
     case 'question':
-      object(value, ['kind', 'question', 'quote'])
-      return { kind: 'question', question: nonempty(item.question), ...quote }
+      json.object(value, ['kind', 'question', 'quote'])
+      return { kind: 'question', question: json.nonempty(item.question), ...quote }
     case 'method':
     case 'evidence_type':
-      object(value, ['kind', 'label', 'quote'])
-      return { kind: item.kind, label: nonempty(item.label), ...quote }
+      json.object(value, ['kind', 'label', 'quote'])
+      return { kind: item.kind, label: json.nonempty(item.label), ...quote }
     case 'contribution': {
-      object(value, ['kind', 'classification', 'quote'])
+      json.object(value, ['kind', 'classification', 'quote'])
       const classification = item.classification
       if (classification !== 'core_method' && classification !== 'empirical_evaluation'
         && classification !== 'benchmark_or_dataset' && classification !== 'review'
@@ -79,61 +83,35 @@ function readSignal(value: unknown, version: 1 | 2): CandidateMetadataSignal {
 
 /** Present field for both versions; version 2 may omit it entirely. */
 function readOptionalQuote(item: Record<string, unknown>, version: 1 | 2): { readonly quote?: CandidateMetadataQuote } {
-  if (version === 1 || item.quote !== undefined) return { quote: readQuote(item.quote) }
+  if (version === 1 || item.quote !== undefined) return { quote: json.quote(item.quote) }
   return {}
-}
-
-function readQuote(value: unknown): CandidateMetadataQuote {
-  const item = object(value, ['source', 'text'])
-  if (item.source !== 'title' && item.source !== 'abstract') invalid('quote source must be title or abstract')
-  return { source: item.source, text: nonempty(item.text) }
 }
 
 function readScope(value: unknown, version: 1 | 2, title: string,
   abstract: Availability<string>): CandidateScopeDecision {
-  const item = object(value, ['status', 'reason', 'quote'])
-  const reason = nonempty(item.reason)
+  const item = json.object(value, ['status', 'reason', 'quote'])
+  const reason = json.nonempty(item.reason)
   switch (item.status) {
     case 'off_topic': {
-      if (version === 1) return { status: 'off_topic', reason, quote: readQuote(item.quote) }
+      if (version === 1) return { status: 'off_topic', reason, quote: json.quote(item.quote) }
       if (item.quote === undefined) return { status: 'unknown', reason: DOWNGRADED_REASON }
-      const quote = readQuote(item.quote)
+      const quote = json.quote(item.quote)
       return quoteOccursVerbatim(quote, title, abstract)
         ? { status: 'off_topic', reason, quote }
         : { status: 'unknown', reason: DOWNGRADED_REASON }
     }
     case 'unknown':
     case 'potentially_relevant':
-      object(value, ['status', 'reason'])
+      json.object(value, ['status', 'reason'])
       return { status: item.status, reason }
     default: return invalid('invalid scope status')
   }
 }
 
 function readSurfaceHit(value: unknown): CandidateSurfaceKeywordHit {
-  const item = object(value, ['term', 'source', 'text'])
+  const item = json.object(value, ['term', 'source', 'text'])
   if (item.source !== 'title' && item.source !== 'abstract' && item.source !== 'keywords') {
     invalid('invalid surface hit source')
   }
-  return { term: nonempty(item.term), source: item.source, text: nonempty(item.text) }
-}
-
-function object(value: unknown, keys: readonly string[]): Record<string, unknown> {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) invalid('expected object')
-  if (Object.keys(value).some(key => !keys.includes(key))) invalid('unexpected field')
-  return value as Record<string, unknown>
-}
-
-function array(value: unknown): unknown[] {
-  if (!Array.isArray(value)) invalid('expected array')
-  return value
-}
-
-function nonempty(value: unknown): string {
-  if (typeof value !== 'string' || value.trim() === '') invalid('expected non-empty string')
-  return value
-}
-
-function invalid(message: string): never {
-  throw new RangeError(`candidate screening: ${message}`)
+  return { term: json.nonempty(item.term), source: item.source, text: json.nonempty(item.text) }
 }

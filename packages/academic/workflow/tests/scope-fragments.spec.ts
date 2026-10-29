@@ -80,4 +80,10 @@ describe('reviewPaperScopeInFragments', () => {
       [{ conditionId: 'c1', terms: ['alpha'] }], { ...policy, maximumDispatches: 0 },
       async () => ({ status: 'included', reason: 'Decided.' }))).rejects.toThrow(RangeError)
   })
+
+  it('rejects a negative context lead', async () => {
+    await expect(reviewPaperScopeInFragments(request([paragraph('alpha', 'Methods')]),
+      [{ conditionId: 'c1', terms: ['alpha'] }], { ...policy, leadCharacters: -1 },
+      async () => ({ status: 'included', reason: 'Decided.' }))).rejects.toThrow(RangeError)
+  })
 })

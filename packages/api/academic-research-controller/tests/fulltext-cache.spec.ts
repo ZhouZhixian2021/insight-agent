@@ -35,6 +35,17 @@ async function fixture() {
 }
 
 describe('cross-task full-text cache', () => {
+  it('rejects policies that cannot bound the cache', () => {
+    const policies = [
+      { directory: '', maximumAgeMs: 60_000, maximumBytes: 10_000, maximumEntryBytes: 8_000 },
+      { directory: '/cache', maximumAgeMs: 0, maximumBytes: 10_000, maximumEntryBytes: 8_000 },
+      { directory: '/cache', maximumAgeMs: 60_000, maximumBytes: 10_000, maximumEntryBytes: 0 },
+      { directory: '/cache', maximumAgeMs: 60_000, maximumBytes: 10_000, maximumEntryBytes: 20_000 },
+    ]
+    for (const policy of policies) {
+      expect(() => new AcademicFulltextCache(policy, () => {})).toThrow(RangeError)
+    }
+  })
   it('stops cache publication when its owner closes during acquisition', async () => {
     const f = await fixture()
     let release: (() => void) | undefined
