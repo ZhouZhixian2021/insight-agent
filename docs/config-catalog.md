@@ -2649,6 +2649,8 @@ export interface PlanModeConfig {
   reenterOnUserMessage?: boolean
   /** Number of same-turn reminders when the model stops without submitting a plan for review. */
   missingExitRetries?: number
+  /** End the current agent turn after an approved review; defaults to continuing with the plan. */
+  concludeOnApprove?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-plan-mode -->

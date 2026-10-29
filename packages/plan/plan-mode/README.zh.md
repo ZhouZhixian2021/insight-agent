@@ -35,7 +35,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-必须配置 agent 规划期间遵循的引导文本。设置 `initialActive: true` 可让此组合中的每个新会话自动为首条请求制定计划。设置 `reenterOnUserMessage: true` 可在同一会话中为每条新用户消息制定计划。设置 `missingExitRetries` 可在模型未开启计划评审就停止时提醒其重试；未知字段会在加载时失败。
+必须配置 agent 规划期间遵循的引导文本。设置 `initialActive: true` 可让此组合中的每个新会话自动为首条请求制定计划。设置 `reenterOnUserMessage: true` 可在同一会话中为每条新用户消息制定计划。设置 `missingExitRetries` 可在模型未开启计划评审就停止时提醒其重试。若计划批准后由另一个 Host 操作负责执行，设置 `concludeOnApprove: true`；批准会结束当前轮次，并在 agent 空闲时记录退出计划模式。未知字段会在加载时失败。
 
 ```yaml
 - name: '@deepseek-ai/dsh-plan-mode'
@@ -53,6 +53,7 @@ kind: "package-reference"
 | `initialActive` | `false` | 在新会话的首个模型请求前进入计划模式 |
 | `reenterOnUserMessage` | `false` | 每条新用户消息被领取时重新进入计划模式，包括恢复后的会话 |
 | `missingExitRetries` | `0` | 模型未调用 `exit_plan_mode` 就停止后，同一轮次内最多发送的提醒数 |
+| `concludeOnApprove` | `false` | 批准后结束当前轮次，并在空闲时记录退出计划模式，不要求模型自行执行计划 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-plan-mode)完整列出了所有受支持的字段及其 JSDoc。
 
@@ -72,6 +73,8 @@ kind: "package-reference"
 agent 完成计划后，会以 markdown 形式、从标题开头书写计划并调用 `exit_plan_mode`。你评审该计划的原文，选择 `Approve` 离开计划模式，或选择 `Keep planning` 带反馈把 agent 送回去。若 `missingExitRetries` 为正且模型在计划模式仍激活时停止，本包最多发送该配置次数的同轮提醒，要求模型通过工具提交计划。
 
 选择 `Keep planning`（可附自由文本反馈）会让 agent 回去修订计划；关闭评审改为发言，则结束 agent 当前轮次，你的下一条消息开始下一次请求。若没有可用的交互评审，`exit_plan_mode` 无法运行，你仍可用 `/plan off` 离开计划模式。
+
+设置 `concludeOnApprove: true` 后，批准会结束当前轮次，不再请求模型继续回答。学术洞察预设使用此设置，让批准后的研究在 Session 空闲后交给独立的学术工作流。
 
 ### 观察计划状态
 
@@ -101,7 +104,7 @@ agent 完成计划后，会以 markdown 形式、从标题开头书写计划并�
 
 ### 退出工具
 
-`exit_plan_mode` 在计划模式未激活时仍保持注册，因此进入或离开只改变提示词段落，绝不改变请求的工具目录。经批准的评审会记录一个静默的待生效退出，由下一个被接受的轮内 pre-step 追加，当前这批工具调用剩余部分仍保留计划引导。缺少用户交互通道，或评审等待期间服务重载，调用都会以拒绝方式失败，`/plan off` 仍是手动退路。
+`exit_plan_mode` 在计划模式未激活时仍保持注册，因此进入或离开只改变提示词段落，绝不改变请求的工具目录。经批准的评审会记录一个静默的待生效退出，由下一个被接受的轮内 pre-step 追加，当前这批工具调用剩余部分仍保留计划引导。设置 `concludeOnApprove` 后，获批工具结果结束轮次，由空闲状态变更追加退出事件。缺少用户交互通道，或评审等待期间服务重载，调用都会以拒绝方式失败，`/plan off` 仍是手动退路。
 
 ### 会话投影单元
 

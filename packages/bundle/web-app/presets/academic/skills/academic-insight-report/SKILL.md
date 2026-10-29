@@ -1,15 +1,17 @@
 ---
 name: academic-insight-report
-description: Research a technical field's academic frontier and produce an evidence-traceable report from papers and authoritative scholarly sources. Use for literature landscapes, frontier-paper reviews, research trend reports, and comparisons of academic approaches; do not use for general news summaries or unsupported brainstorming.
+description: Plan an academic frontier review with an evidence-traceable report delivered by the Academic workflow. Use for literature landscapes, frontier-paper reviews, research trend reports, and comparisons of academic approaches; do not use for general news summaries or unsupported brainstorming.
 ---
 
 # Academic insight report
 
-Produce a direction-level academic insight report whose conclusions remain traceable to the papers that support them. The report is the deliverable; the paper list is its evidence, not its organizing principle.
+Prepare a direction-level academic insight plan whose approved Research Brief drives the Academic workflow. The workflow produces the evidence-traceable report; the planning agent does not draft a report in the conversation.
 
 ## Plan before research
 
 While plan mode is active, read [references/research-brief.md](references/research-brief.md) and prepare a concise Chinese review plan followed by its complete structured handoff block. A small preliminary search may clarify terminology and feasibility, but do not conduct the full review or draft the final report before approval. Put both parts in the `plan` argument of `exit_plan_mode` without an ordinary-text preamble. After approval, do not repeat the research with generic Web tools: end the turn without starting research so the host can run the approved Academic workflow after the Session becomes idle.
+
+The evidence and report rules below inform the Brief and the Academic workflow. They are not instructions for the planning agent to search the full corpus, draft a report, or answer the approved request through ordinary chat tools.
 
 ## Establish the scope
 
@@ -51,6 +53,6 @@ Stop when the requested questions and direction matrix have evidence coverage an
 
 Read [references/report-format.md](references/report-format.md) before drafting. Preserve its information hierarchy while adapting the number and names of directions to the evidence. Use numbered references consistently and place citations immediately after the supported claim.
 
-Return the report in the conversation unless the user requests a file. When a report artifact is requested without a format, write Markdown to a descriptive path in the user's workspace.
+The Academic research card presents progress and the completed report. Do not return a separately drafted report in the conversation after plan approval.
 
 Before delivery, verify that every referenced work appears in the bibliography, every DOI or URL belongs to the named work, quantitative claims name their source and evidence location, and abstract-only conclusions are identified as such.
