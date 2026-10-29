@@ -64,7 +64,7 @@ declare module '@deepseek-ai/cordis' {
 export interface Config {
   /** Maximum scheduled full-text papers per run, including failures and cache hits. Defaults to 24. */
   readonly maximumFulltextWorks?: number
-  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 2. */
+  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 15. */
   readonly maximumUncertainFulltextWorks?: number
   /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
   readonly extractionMaximumCallsPerPaper?: number
@@ -146,7 +146,7 @@ export class AcademicResearchController extends TypertRemoteService {
 
   static Config: z<Config> = z.object({
     maximumFulltextWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(24),
-    maximumUncertainFulltextWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(2),
+    maximumUncertainFulltextWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(15),
     extractionMaximumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
     fulltextCacheDirectory: z.string(),
     fulltextCacheMaximumAgeMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(86_400_000),
@@ -254,7 +254,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.enhancementAttemptTimeoutMs = config.enhancementAttemptTimeoutMs ?? 60_000
     this.enhancementMaxTokens = config.enhancementMaxTokens ?? 8_192
     const fulltext = { maximumWorks: config.maximumFulltextWorks ?? 24,
-      maximumUncertainWorks: config.maximumUncertainFulltextWorks ?? 2 }
+      maximumUncertainWorks: config.maximumUncertainFulltextWorks ?? 15 }
     this.candidateBatchPolicy = {
       fulltext,
       initialBatchSize: config.initialCandidateBatchSize ?? 8,

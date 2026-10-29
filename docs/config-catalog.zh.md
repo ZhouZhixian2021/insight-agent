@@ -327,7 +327,7 @@ export interface Config {
 export interface Config {
   /** Maximum scheduled full-text papers per run, including failures and cache hits. Defaults to 24. */
   readonly maximumFulltextWorks?: number
-  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 2. */
+  /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 15. */
   readonly maximumUncertainFulltextWorks?: number
   /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
   readonly extractionMaximumCallsPerPaper?: number

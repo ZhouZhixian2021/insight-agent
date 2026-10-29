@@ -22,7 +22,7 @@ The workflow discovers and deduplicates records, applies approved hard constrain
 |---|---:|---|
 | `candidateReviewMaximumWorks` | 24 | Dispatched metadata reviews across all rounds; failures count. |
 | `maximumFulltextWorks` | 24 | Distinct scheduled paper versions across the run; failures and cache hits count. |
-| `maximumUncertainFulltextWorks` | 2 | Unreviewed, unknown or failed-review papers admitted for exploration; part of the total above. |
+| `maximumUncertainFulltextWorks` | 10 | Unreviewed, unknown or failed-review papers admitted for exploration; part of the total above. |
 | `scopeReviewMaximumBatches` | 3 | Separate scope-review batches per paper. |
 | `extractionMaximumCallsPerPaper` | 8 | Evidence-fragment generator attempts per paper, including retries and rejected input attempts. |
 
