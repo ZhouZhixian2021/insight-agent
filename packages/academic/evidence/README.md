@@ -84,6 +84,7 @@ Extraction rejects model source references individually. `EvidenceExtractionResu
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | Validates one raw fetch and prepares paragraph- or page-located content plus a hash. |
 | `extractEvidenceFromContent()` | Runs semantic extraction, verifies exact excerpts, and builds one paper's records and card. |
 | `extractEvidenceInFragments()` / `EvidenceFragmentOptions` | Verifies and commits smaller source ranges independently, with caller-classified local recovery and explicit input/output limits. |
+| `selectScreeningFragments()` / `ScreeningFragmentPolicy` | Deterministic condition-targeted windows for pre-extraction scope review; no model call and no evidence records. |
 | `createSourceLocator()` | Builds one of the six locator variants with a fresh identity. |
 | `createEvidenceRecord()` | Builds a record, validating locator version, level, and non-empty fields. |
 | `createEvidenceCard()` | Builds a card with fresh item identities and per-item validation. |
@@ -113,7 +114,10 @@ Minimal depth applies the five-record cap to the whole paper, after overlap dedu
 
 The library dispatches fragments sequentially within one paper. Failure facts expose consecutive timeout/transport attempts, reset by a verified response, so the workflow can temporarily lower paper concurrency. The caller owns policy calibration, model timeouts, scope decisions, Session events and concurrency scheduling. This API does not activate itself in the Academic Controller; the workflow adapter must select it and map these facts into its existing run records.
 
+
 -----
+
+`EvidenceFragmentOptions.maximumCalls` optionally bounds all generator attempts across one paper, including retries. It does not count scope review or establish sufficiency. Exhaustion leaves undispatched ranges in `incompleteFragments`; committed evidence stays available. The optional fifth `fetchAcademicFullText()` argument prepares fetched sources through a caller-owned cache and must preserve complete-body validation, original text, hashes and locators.
 
 <a id="model-experience"></a>
 ## Model Experience
