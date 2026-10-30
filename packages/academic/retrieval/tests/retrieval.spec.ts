@@ -5,6 +5,7 @@ import {
   createBatchResult,
   createFailureId,
   createResearchBriefId,
+  createSearchQueryId,
   createWorkVersionId,
   type AcademicWork,
   type ExecutableResearchBrief,
@@ -73,6 +74,25 @@ function record(doi: string, provider: string): AcademicSourceWork {
 }
 
 describe('planned Academic retrieval', () => {
+  it('plans gaps from later core directions without searching diagnostic messages', () => {
+    const first = plan()
+    const laterQuestion = 'How does CXL memory tiering affect page migration?'
+    const core = first.queries.find(query => query.kind === 'academic' && query.purpose === 'core')!
+    const reviewed = { ...first, queries: [...first.queries,
+      { ...core, searchQueryId: createSearchQueryId(), expression: 'CXL page migration', questions: [laterQuestion] }] }
+    const coverage: ResearchQuestionCoverageResult = { schemaVersion: 1,
+      researchBriefId: brief.researchBriefId, researchBriefVersion: brief.version,
+      assessedAt: '2026-10-30T00:00:00Z', evidenceRequirementsMet: false, allQuestionsCovered: false,
+      questions: [{ question: laterQuestion, status: 'uncovered', supportingWorkIds: [], evidenceIds: [],
+        gaps: ['No validated evidence directly supports this question.'] }] }
+    const second = extendPlanForEvidenceGaps(reviewed, coverage, 2, { ...options, expansions: [] }).plan
+    expect(second.queries.at(-1)).toMatchObject({ expression: laterQuestion, questions: [laterQuestion], roundIndex: 2 })
+    expect(extendPlanForEvidenceGaps(second, coverage, 3, { ...options, expansions: [] }).plan.queries.at(-1))
+      .toMatchObject({ expression: laterQuestion, roundIndex: 3 })
+    expect(() => extendPlanForEvidenceGaps(reviewed, { ...coverage,
+      questions: [{ ...coverage.questions[0]!, question: 'Unapproved question' }] }, 2, options))
+      .toThrow('coverage contains an unplanned question')
+  })
   it('builds bounded channel queries, reviewed expansions, and gap searches', () => {
     const first = plan()
     expect(first.queries.map(query => query.kind)).toEqual([
@@ -91,9 +111,9 @@ describe('planned Academic retrieval', () => {
       researchBriefId: brief.researchBriefId, researchBriefVersion: brief.version,
       assessedAt: '2026-09-30T00:00:00Z', evidenceRequirementsMet: false, allQuestionsCovered: false,
       questions: [{ question, status: 'partial', supportingWorkIds: [], evidenceIds: [], gaps: ['negative evidence'] }] }
-    const second = extendPlanForEvidenceGaps(first, coverage, 2, options).plan
+    const second = extendPlanForEvidenceGaps(first, coverage, 2, { ...options, expansions: [] }).plan
     expect(second.queries.at(-1)).toMatchObject({ kind: 'academic', purpose: 'evidence_gap',
-      roundIndex: 2, expression: 'retrieval augmented generation negative evidence' })
+      roundIndex: 2, expression: question })
     expect(second.queries.slice(0, first.queries.length)).toEqual(first.queries)
     expect(() => extendPlanForEvidenceGaps(first, { ...coverage, researchBriefVersion: 2 }, 2, options))
       .toThrow(/coverage must match/u)

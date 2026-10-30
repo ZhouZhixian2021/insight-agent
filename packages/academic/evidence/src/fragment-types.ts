@@ -55,7 +55,7 @@ export interface EvidenceFragmentOptions {
   /** Optional whole-paper generator-call cap, including retry attempts. Scope review is separate. */
   readonly maximumCalls?: number
   readonly policy: EvidenceFragmentPolicy
-  /** Optional approved lexical hints per focus question, in the same order; minimal depth uses them only for dispatch priority. */
+  /** Optional approved lexical hints per focus question, in the same order; used only for dispatch priority. */
   readonly questionTerms?: readonly (readonly string[])[]
   /** Make one model attempt, validate its JSON, apply the output cap and log the original source range; do not retry internally. */
   readonly generator: (request: EvidenceGenerationRequest, attempt: EvidenceFragmentAttempt) => Promise<readonly EvidenceDraft[]>

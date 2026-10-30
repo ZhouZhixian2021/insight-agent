@@ -51,7 +51,8 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
   let consecutiveTransientFailures = 0
   let shrinkInitialFragments = false
   const packed = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
-  const ranges = input.depth === 'minimal' ? prioritizeRanges(input, packed, options.questionTerms) : packed
+  const ranges = (input.focusQuestions?.length ?? 0) > 0
+    ? prioritizeRanges(input, packed, options.questionTerms) : packed
   for (const [index, initial] of ranges.entries()) {
     signal?.throwIfAborted()
     if ((input.depth === 'minimal' && seen.size === 5) || calls === options.maximumCalls) {

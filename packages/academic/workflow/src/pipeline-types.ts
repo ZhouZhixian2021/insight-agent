@@ -80,6 +80,9 @@ export const MAX_DRAFT_SEARCH_QUERIES = 3
 
 /** Callers own query planning, source execution, scope selection, model transport and durable request logging. */
 export interface DraftPipelineAdapters {
+  /** Assess every requested part from accepted excerpts; omitted adapters retain partial coverage. */
+  readonly assessQuestionCoverage?: (input: import('./coverage-model.ts').QuestionCoverageInput,
+    signal?: AbortSignal) => Promise<ResearchQuestionCoverageResult>
   /** Optional diagnostic observer, isolated from research outcomes. */
   readonly onTrace?: import('./trace.ts').AcademicTraceObserver
 

@@ -100,7 +100,7 @@ export interface EvidenceModelPolicy {
   readonly attemptTimeoutMs?: number
   /** Whether output-limit exhaustion may consume one recovery attempt. */
   readonly retryOutputLimit?: boolean
-  /** Whether a complete synthesis response rejected by structural validation may consume another attempt. */
+  /** Whether a complete model response rejected by structural validation may consume another attempt. */
   readonly retryInvalidOutput?: boolean
   /** Transient failures eligible for delayed retry; omitted means none. */
   readonly transientRetry?: AcademicTransientRetryPolicy
@@ -141,7 +141,7 @@ export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
   readonly scopeScreening?: ScopeScreeningPolicy
   /** Formal fragment extraction depth; omitted keeps complete extraction for existing callers. */
   readonly depth?: 'minimal' | 'complete'
-  /** Approved aliases for each focus question, in Brief order; only prioritizes minimal-depth source ranges. */
+  /** Approved aliases for each focus question, in Brief order; prioritize source ranges at either depth. */
   readonly questionTerms?: readonly (readonly string[])[]
   /** Maximum estimated input tokens sent in one evidence batch; omitted keeps one request per paper. */
   readonly inputBatchTokenLimit?: number

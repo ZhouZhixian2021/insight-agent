@@ -33,6 +33,8 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `event:academic/candidate-semantic-review-request-v1` | event | `94c0a474782b49d351998215d0c450a41c3fd000f8a1856ba742f2e6e74105c9` | [`{ type: "academic/candidate-semantic-review-request-v1" }`](#persistence-type-sha256-94c0a474782b49d351998215d0c450a41c3fd000f8a1856ba742f2e6e74105c9) |
 | `event:academic/candidate-semantic-review-result-v1` | event | `4daf11cbd360a34b527c2ac927e07a0fc5d3c2a901bcf80cc5a1a4601cded0b6` | [`{ type: "academic/candidate-semantic-review-result-v1" }`](#persistence-type-sha256-4daf11cbd360a34b527c2ac927e07a0fc5d3c2a901bcf80cc5a1a4601cded0b6) |
 | `event:academic/candidate-semantic-review-verified-v1` | event | `3a740349fdb1cc27920159cba34bd31b29f890b73ae98a923b60599bf817ea3e` | [`{ type: "academic/candidate-semantic-review-verified-v1" }`](#persistence-type-sha256-3a740349fdb1cc27920159cba34bd31b29f890b73ae98a923b60599bf817ea3e) |
+| `event:academic/coverage-request-v1` | event | `e47297e49c1814f5b471d81d4039b9fc3df9b0218808ea051455ad17e43fc97e` | [`{ type: "academic/coverage-request-v1" }`](#persistence-type-sha256-e47297e49c1814f5b471d81d4039b9fc3df9b0218808ea051455ad17e43fc97e) |
+| `event:academic/coverage-result-v1` | event | `0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa` | [`{ type: "academic/coverage-result-v1" }`](#persistence-type-sha256-0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa) |
 | `event:academic/evidence-enhancement-selection` | event | `4ef74c5ee6f658ea40f4ea4c20ef75786f322e39444edb11f5646920d8b56be1` | [`{ type: "academic/evidence-enhancement-selection" }`](#persistence-type-sha256-4ef74c5ee6f658ea40f4ea4c20ef75786f322e39444edb11f5646920d8b56be1) |
 | `event:academic/evidence-enhancement-settlement` | event | `debee0c625cbe200eb16a27afccac661c4d7b5f9052eac14714e106a53565e22` | [`{ type: "academic/evidence-enhancement-settlement" }`](#persistence-type-sha256-debee0c625cbe200eb16a27afccac661c4d7b5f9052eac14714e106a53565e22) |
 | `event:academic/evidence-fragment-verified` | event | `a47ae68f141099d966b3cf08323115ddebbb12f7e073dece40583cd49867cb49` | [`{ type: "academic/evidence-fragment-verified" }`](#persistence-type-sha256-a47ae68f141099d966b3cf08323115ddebbb12f7e073dece40583cd49867cb49) |
@@ -308,6 +310,32 @@ Source: [`packages/api/academic-research-controller/src/candidate-review-model.t
 ```
 
 Source: [`packages/api/academic-research-controller/src/candidate-review-model.ts:64`](../packages/api/academic-research-controller/src/candidate-review-model.ts)
+
+<a id="academiccoverage-request-v1--log-only"></a>
+
+#### `academic/coverage-request-v1` — log-only
+
+```ts persistence-catalog
+/** Question coverage input and exact model request.
+ * @param data Accepted evidence and bounded model dispatch.
+ */
+'academic/coverage-request-v1': CoverageModelRequest
+```
+
+Source: [`packages/academic/workflow/src/coverage-model.ts:34`](../packages/academic/workflow/src/coverage-model.ts)
+
+<a id="academiccoverage-result-v1--log-only"></a>
+
+#### `academic/coverage-result-v1` — log-only
+
+```ts persistence-catalog
+/** Question coverage attempt, including rejected output.
+ * @param data Raw response, usage and validation outcome.
+ */
+'academic/coverage-result-v1': CoverageModelResult
+```
+
+Source: [`packages/academic/workflow/src/coverage-model.ts:38`](../packages/academic/workflow/src/coverage-model.ts)
 
 <a id="academicevidence-enhancement-selection--log-only"></a>
 
@@ -1764,6 +1792,22 @@ SHA-256: `822da9691df8d88ea8e01c3ec406f5fa38c126983495b3a9eb4da31682b332f2`
 SHA-256: `e3a8a9780792a0c727155f070fef736e928b86103c0c2c14074faae63d101f0f`
 
 `"academic/candidate-semantic-review-verified-v1"`
+
+<a id="persistence-type-sha256-d9f5047da4d0d4ae1b7d24634f5bc48a3a05faeeac232a42c41095212f6f0b6e"></a>
+
+### `"academic/coverage-request-v1"`
+
+SHA-256: `d9f5047da4d0d4ae1b7d24634f5bc48a3a05faeeac232a42c41095212f6f0b6e`
+
+`"academic/coverage-request-v1"`
+
+<a id="persistence-type-sha256-2cd1ba99ba7b3b126c5c4e748c50db2dfd695c0239dada4a3f7a04262673f8be"></a>
+
+### `"academic/coverage-result-v1"`
+
+SHA-256: `2cd1ba99ba7b3b126c5c4e748c50db2dfd695c0239dada4a3f7a04262673f8be`
+
+`"academic/coverage-result-v1"`
 
 <a id="persistence-type-sha256-f0d24814104cd8bf1166286604058352e8d925e061fcc783787166e4af5c4fe6"></a>
 
@@ -7853,6 +7897,62 @@ Sources: [`packages/subagent/subagent/src/descriptor.ts:72`](../packages/subagen
 | `toolFilter` | optional | [`ToolRestriction`](#persistence-type-sha256-3cfc3a56502da1f8c6153c2c56657bab4b749056968634dd0991d325ec1c919f) |
 | `version` | required | `number` |
 
+<a id="persistence-type-sha256-fcda51227c810346db85e56afe456cf53bd26bc3cef067fd5d912607a5831f7b"></a>
+
+<a id="persistence-type-coveragemodelrequest"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltscoveragemodelrequest"></a>
+
+### `CoverageModelRequest`
+
+SHA-256: `fcda51227c810346db85e56afe456cf53bd26bc3cef067fd5d912607a5831f7b`
+
+Sources: [`packages/academic/workflow/src/coverage-model.ts:20`](../packages/academic/workflow/src/coverage-model.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `attempt` | required | `number` |
+| `config` | required | [`LlmCallConfig`](#persistence-type-sha256-67d5f73ceae82f5265258142ad6cf172de2c1fef93ba551b7f0454e0a93bffe0) |
+| `contextWindow` | required | `number` |
+| `decision` | required | [`union (2 variants)`](#persistence-type-sha256-f0ee57d2366efb5f11df27bfc1ecb29692b1d099c305bc3917333f3c8b0de8f7) |
+| `estimatedInputTokens` | required | `number` |
+| `fragment` | optional | [`EvidenceFragmentAttempt`](#persistence-type-sha256-3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205) |
+| `input` | required | [`QuestionCoverageInput`](#persistence-type-sha256-e093b2b926be978dee92826e61e7759e1596a7d6e5c937d51f26ea7382e65a08) |
+| `maxAttempts` | required | `number` |
+| `messages` | required | [`Message[]`](#persistence-type-sha256-c6be2e71a87d0883d51de998c133f9fd59dcbe95d63523f718930241931c044c) |
+| `outputTokens` | required | `number` |
+| `phase` | optional | [`union (2 variants)`](#persistence-type-sha256-fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882) |
+| `screening` | optional | [`ScopeScreeningRecord`](#persistence-type-sha256-880b2e4c653be528cb11a1d3b7ab45218d8f1c31716c3198083efd3f623ebb65) |
+
+<a id="persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f"></a>
+
+<a id="persistence-type-coveragemodelresult"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltscoveragemodelresult"></a>
+
+### `CoverageModelResult`
+
+SHA-256: `3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f`
+
+Sources: [`packages/academic/workflow/src/coverage-model.ts:25`](../packages/academic/workflow/src/coverage-model.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `attempt` | required | `number` |
+| `elapsedMs` | optional | `number` |
+| `errorCode` | optional | `string` |
+| `failurePhase` | optional | [`union (5 variants)`](#persistence-type-sha256-79cad92b90c1ea760468a124b37c8108d88413706b5f36fbf52c0bb531cdd41d) |
+| `finish` | optional | [`FinishReason`](#persistence-type-sha256-5808e36c95355f0e745201b5db1b6bcec4ebf5adb75d3e82d7d59cc89635ab80) |
+| `firstContentElapsedMs` | optional | `number` |
+| `fragment` | optional | [`EvidenceFragmentAttempt`](#persistence-type-sha256-3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205) |
+| `maxAttempts` | required | `number` |
+| `phase` | optional | [`union (2 variants)`](#persistence-type-sha256-fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882) |
+| `requestSeq` | required | [`OptionalSessionSeq`](#persistence-type-sha256-3bd652ebfa8726b3ce3937a4f1bd2759e02f86b3a08a20f9e41a8513656fbc5f) |
+| `retrievalRunId` | required | `string` |
+| `status` | required | [`union (4 variants)`](#persistence-type-sha256-78551cc82ac8794c578b2dcfb77e329259abdc3b3452138c1ec7edcb40cf34fd) |
+| `stream` | required | [`AssistantStreamRecord[]`](#persistence-type-sha256-84bbfdce7d2eab5b0c53e72ff7406db856c8bfd621b965b72fd86598ba493bf7) |
+| `usage` | optional | [`TokenUsage`](#persistence-type-sha256-fec5442b9ee4122e10514d81d5a43648003fe8bfb7ee2ba50c0cdbdd383ed394) |
+
 <a id="persistence-type-sha256-2dc714646ca37ddc1f0f2b8345a47ef1bc98768413d3857d9dc32d974094ab0b"></a>
 
 <a id="persistence-type-coveragesummary"></a>
@@ -10126,6 +10226,25 @@ Sources: [`packages/academic/model/src/types.ts:72`](../packages/academic/model/
 | `dateBasis` | required | [`PublicationDateBasis`](#persistence-type-sha256-78bc1a57a9de5e8e9d5c6d22f045fee40ce9c72cbfba6b640f12f0570a971fd5) |
 | `end` | required | [`union (2 variants)`](#persistence-type-sha256-d651c19f001b5b5175903ce727fb4a4d497c126683e104226b94059d165c5db2) |
 | `start` | required | [`union (2 variants)`](#persistence-type-sha256-d651c19f001b5b5175903ce727fb4a4d497c126683e104226b94059d165c5db2) |
+
+<a id="persistence-type-sha256-e093b2b926be978dee92826e61e7759e1596a7d6e5c937d51f26ea7382e65a08"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltsquestioncoverageinput"></a>
+
+<a id="persistence-type-questioncoverageinput"></a>
+
+### `QuestionCoverageInput`
+
+SHA-256: `e093b2b926be978dee92826e61e7759e1596a7d6e5c937d51f26ea7382e65a08`
+
+Sources: [`packages/academic/workflow/src/coverage-model.ts:12`](../packages/academic/workflow/src/coverage-model.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `coverage` | required | [`ResearchQuestionCoverageResult`](#persistence-type-sha256-55e33991f01b3ddb0a3ad1aceb6c723d3b6aebf39f20593956b22abcd0a8af77) |
+| `evidence` | required | [`EvidenceRecord[]`](#persistence-type-sha256-2720caf01ae2eb3e4e6ffdb399ff0d17ddc7bc5a3bca0f6edff41485d1872fd4) |
+| `minimumSupportingWorks` | required | `number` |
+| `retrievalRunId` | required | `string` |
 
 <a id="persistence-type-sha256-814d9434e1ddf9078612b3b34322f26e9363b469213335007f7e9ba7fee9464e"></a>
 
@@ -16778,6 +16897,38 @@ SHA-256: `3a740349fdb1cc27920159cba34bd31b29f890b73ae98a923b60599bf817ea3e`
 | `seq` | required | `number` |
 | `time` | required | `number` |
 | `type` | required | `"academic/candidate-semantic-review-verified-v1"` |
+
+<a id="persistence-type-sha256-e47297e49c1814f5b471d81d4039b9fc3df9b0218808ea051455ad17e43fc97e"></a>
+
+<a id="persistence-type-eventacademiccoverage-request-v1"></a>
+
+### `{ type: "academic/coverage-request-v1" }`
+
+SHA-256: `e47297e49c1814f5b471d81d4039b9fc3df9b0218808ea051455ad17e43fc97e`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`CoverageModelRequest`](#persistence-type-sha256-fcda51227c810346db85e56afe456cf53bd26bc3cef067fd5d912607a5831f7b) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"academic/coverage-request-v1"` |
+
+<a id="persistence-type-sha256-0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa"></a>
+
+<a id="persistence-type-eventacademiccoverage-result-v1"></a>
+
+### `{ type: "academic/coverage-result-v1" }`
+
+SHA-256: `0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`CoverageModelResult`](#persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"academic/coverage-result-v1"` |
 
 <a id="persistence-type-sha256-4ef74c5ee6f658ea40f4ea4c20ef75786f322e39444edb11f5646920d8b56be1"></a>
 

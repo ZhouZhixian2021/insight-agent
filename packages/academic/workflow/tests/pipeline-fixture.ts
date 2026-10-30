@@ -33,6 +33,14 @@ export function draftFixture(count = 2) {
       approval: { status: 'approved', reviewedBy: 'fixture', reviewedAt: '2026-09-15T00:00:00Z', approvedBriefVersion: 1, comment: null },
     } }
   const adapters: { -readonly [K in keyof DraftPipelineAdapters]: DraftPipelineAdapters[K] } = {
+    assessQuestionCoverage: async ({ coverage, minimumSupportingWorks }) => {
+      const questions = coverage.questions.map((question) => {
+        const covered = question.supportingWorkIds.length >= minimumSupportingWorks
+        return { ...question, status: covered ? 'covered' as const : question.status,
+          gaps: covered ? [] : question.gaps }
+      })
+      return { ...coverage, questions, allQuestionsCovered: questions.every(question => question.status === 'covered') }
+    },
     search: vi.fn<DraftPipelineAdapters['search']>(async (request) => { events.push('search')
       const works = request.maxResults === undefined ? records : records.slice(0, request.maxResults)
       const truncated = works.length < records.length
