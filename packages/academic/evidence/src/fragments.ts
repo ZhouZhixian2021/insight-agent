@@ -2,6 +2,7 @@
 import { setTimeout as delay } from 'node:timers/promises'
 import { createEvidenceCardId } from '@deepseek-ai/dsh-academic-model'
 import { extractEvidenceFromContent } from './extract.ts'
+import { bodySegmentIndexes } from './section-kinds.ts'
 import { EvidenceError } from './types.ts'
 import type { EvidenceContentSegment, EvidenceExtractionInput, EvidenceExtractionResult } from './types.ts'
 import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragmentOptions,
@@ -206,6 +207,15 @@ function fragmentRange(fragmentIndex: number, parts: readonly EvidenceFragmentSo
     : { fragmentIndex, ...first, sourceRanges: parts }
 }
 
+/**
+ * Pack body segments into source ranges bounded by one dispatch's character budget.
+ * Reference lists and other back matter repeat every sourced term without stating a finding,
+ * so they never consume a dispatch here.
+ * @param segments - Parsed content segments in their original order.
+ * @param maximum - Maximum characters carried by one range.
+ * @param overlap - Characters repeated between consecutive ranges of the same segment.
+ * @returns Ranges in source order, each referring to original segment indexes.
+ */
 function packSourceRanges(segments: readonly EvidenceContentSegment[], maximum: number,
   overlap: number): EvidenceFragmentRange[] {
   const groups: EvidenceFragmentRange[] = []
@@ -216,7 +226,8 @@ function packSourceRanges(segments: readonly EvidenceContentSegment[], maximum: 
     pending = []
     length = 0
   }
-  for (const [segmentIndex, segment] of segments.entries()) {
+  for (const segmentIndex of bodySegmentIndexes(segments)) {
+    const segment = sourceSegment(segments, segmentIndex)
     for (let start = 0; start < segment.text.length;) {
       const end = Math.min(segment.text.length, start + maximum)
       const size = end - start

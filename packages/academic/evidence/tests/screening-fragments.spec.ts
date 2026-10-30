@@ -80,4 +80,45 @@ describe('selectScreeningFragments', () => {
       .toThrow(RangeError)
     expect(() => selectScreeningFragments(segments, [condition('c1')], policy)).toThrow(RangeError)
   })
+
+  it.each(['References', '7 References', 'REFERENCES', 'Bibliography', 'Acknowledgments',
+    'Appendix', 'A. Appendix', 'Supplementary Material', '参考文献', '附录', '致谢'])(
+  'never screens %s for reviewed terms', heading => {
+    const segments = [paragraph('body text without the term', 'Introduction'),
+      paragraph('eBPF kernel policy eBPF kernel policy', heading)]
+    const selection = selectScreeningFragments(segments, [condition('c1', 'ebpf')], policy)
+    expect(selection.fragments.map(fragment => fragment.sectionTitle)).toStrictEqual(['Introduction'])
+    expect(selection.fragments.flatMap(fragment => fragment.matchedTerms)).toStrictEqual([])
+    expect(selection.uncoveredConditionIds).toStrictEqual(['c1'])
+  })
+
+  it('keeps a body heading that mentions a reviewed term', () => {
+    const segments = [paragraph('Our eBPF design', 'Related work and eBPF background')]
+    const selection = selectScreeningFragments(segments, [condition('c1', 'ebpf')], policy)
+    expect(selection.fragments).toHaveLength(1)
+  })
+
+  it('completes the source without reading back matter', () => {
+    const segments = [paragraph('short alpha text', 'Abstract'),
+      paragraph('a long reference list with alpha alpha alpha', 'References')]
+    const selection = selectScreeningFragments(segments, [condition('c1', 'alpha')],
+      { maximumFragments: 1, maximumCharacters: 1500, leadCharacters: 0 })
+    expect(selection.fragments.map(fragment => fragment.segmentIndex)).toStrictEqual([0])
+    expect(selection.sourceComplete).toBe(true)
+  })
+
+  it('spreads fallback windows over body segments only', () => {
+    const segments = [paragraph('body one', 'Introduction'), paragraph('body two', 'Methods'),
+      paragraph('ref one', 'References'), paragraph('ack', 'Acknowledgments')]
+    const selection = selectScreeningFragments(segments, [condition('c1', 'absent')],
+      { maximumFragments: 4, maximumCharacters: 100, leadCharacters: 0 })
+    expect(selection.fragments.map(fragment => fragment.sectionTitle)).toStrictEqual(['Introduction', 'Methods'])
+  })
+
+  it('screens every segment when no heading names body text', () => {
+    const segments = [paragraph('only refs here', 'References')]
+    const selection = selectScreeningFragments(segments, [condition('c1', 'absent')],
+      { maximumFragments: 1, maximumCharacters: 100, leadCharacters: 0 })
+    expect(selection.fragments).toHaveLength(1)
+  })
 })

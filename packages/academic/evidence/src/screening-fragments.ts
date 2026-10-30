@@ -1,4 +1,5 @@
 /** Deterministic, condition-targeted source windows for pre-extraction scope review. */
+import { bodySegmentIndexes, segmentSectionTitle } from './section-kinds.ts'
 import type { EvidenceContentSegment } from './types.ts'
 
 /** One undecided screening condition and the reviewed terms that locate its material. */
@@ -52,8 +53,17 @@ interface Text {
   readonly sectionTitle: string | null
 }
 
+/** One screened segment with the original index its windows refer to. */
+interface Screened {
+  readonly index: number
+  readonly text: Text
+}
+
 /**
  * Select source windows that serve each undecided screening condition, preferring distinct sections.
+ * Back matter (reference lists, acknowledgements, appendices) never supplies a window: those
+ * sections repeat every reviewed term without describing the research object, so a keyword hit
+ * there displaces the body text a rule decision needs.
  * The selection is a pure function of its arguments: no model call, no clock, no randomness.
  * @param segments - Parsed abstract or full-text segments in their original order.
  * @param conditions - Undecided conditions and the reviewed terms approved for locating them.
@@ -66,29 +76,30 @@ export function selectScreeningFragments(segments: readonly EvidenceContentSegme
   validate(conditions, policy)
   const texts = segments.map(segment => ({
     lower: segment.text.toLowerCase(),
-    sectionTitle: 'sectionTitle' in segment.locator ? segment.locator.sectionTitle ?? null : null,
+    sectionTitle: segmentSectionTitle(segment),
   }))
+  const screened = bodySegmentIndexes(segments).map(index => ({ index, text: texts[index] as Text }))
   const state = { texts, policy, fragments: [] as ScreeningFragment[], covered: new Set<string>() }
-  const hits = collectHits(texts, conditions)
+  const hits = collectHits(screened, conditions)
   for (const condition of conditions) {
     const hit = hits.find(item => item.conditionId === condition.conditionId)
     if (hit !== undefined && state.fragments.length < policy.maximumFragments) admit(state, hit)
   }
   fill(state, hits)
-  if (state.fragments.length === 0) spread(state, segments)
+  if (state.fragments.length === 0) spread(state, screened)
   return {
     fragments: state.fragments,
-    sourceComplete: segments.every((segment, index) => coveredCharacters(state.fragments, index) === segment.text.length),
+    sourceComplete: screened.every(item => coveredCharacters(state.fragments, item.index) === item.text.lower.length),
     uncoveredConditionIds: conditions.filter(condition => !state.covered.has(condition.conditionId))
       .map(condition => condition.conditionId),
     truncated: maximumSelectable(hits) > policy.maximumFragments,
   }
 }
 
-function collectHits(texts: readonly Text[], conditions: readonly ScreeningConditionQuery[]): Hit[] {
+function collectHits(screened: readonly Screened[], conditions: readonly ScreeningConditionQuery[]): Hit[] {
   const hits: Hit[] = []
   for (const condition of conditions) {
-    for (const [segmentIndex, text] of texts.entries()) {
+    for (const { index: segmentIndex, text } of screened) {
       for (const term of condition.terms) {
         const index = text.lower.indexOf(term.toLowerCase())
         if (index !== -1) hits.push({ conditionId: condition.conditionId, segmentIndex, index, term })
@@ -136,15 +147,16 @@ function window(state: SelectionState, hit: Hit): { readonly start: number; read
   return { start, end: start + state.policy.maximumCharacters }
 }
 
-function spread(state: SelectionState, segments: readonly EvidenceContentSegment[]): void {
-  const count = Math.min(state.policy.maximumFragments, segments.length)
+function spread(state: SelectionState, screened: readonly Screened[]): void {
+  const count = Math.min(state.policy.maximumFragments, screened.length)
   for (let slot = 0; slot < count; slot++) {
-    const segmentIndex = count === segments.length ? slot
-      : Math.min(segments.length - 1, Math.floor(slot * segments.length / count))
-    const text = state.texts[segmentIndex]
-    if (text === undefined) continue
-    state.fragments.push({ segmentIndex, start: 0, end: Math.min(text.lower.length, state.policy.maximumCharacters),
-      sectionTitle: text.sectionTitle, conditionIds: [], matchedTerms: [] })
+    const position = count === screened.length ? slot
+      : Math.min(screened.length - 1, Math.floor(slot * screened.length / count))
+    const item = screened[position]
+    if (item === undefined) continue
+    state.fragments.push({ segmentIndex: item.index, start: 0,
+      end: Math.min(item.text.lower.length, state.policy.maximumCharacters),
+      sectionTitle: item.text.sectionTitle, conditionIds: [], matchedTerms: [] })
   }
 }
 

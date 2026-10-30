@@ -84,7 +84,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 | `prepareFetchedAcademicFullText()` / `prepareFetchedAcademicPdf()` | 校验一次原始抓取，并准备带段落或页码定位的内容与哈希。 |
 | `extractEvidenceFromContent()` | 执行语义抽取、核验逐字引文，并构造单篇论文的记录与卡片。 |
 | `extractEvidenceInFragments()` / `EvidenceFragmentOptions` | 独立核验并提交更小的原文范围，使用调用方分类的局部恢复与明确输入／输出限制。 |
-| `selectScreeningFragments()` / `ScreeningFragmentPolicy` | 为抽取前的范围审核生成确定性的定向片段；不调用模型，也不生成证据记录。 |
+| `selectScreeningFragments()` / `ScreeningFragmentPolicy` | 为抽取前的范围审核生成确定性的定向片段；参考文献、致谢和附录不参与选窗；不调用模型，也不生成证据记录。 |
 | `createSourceLocator()` | 构造六种定位变体之一，附带全新身份。 |
 | `createEvidenceRecord()` | 构造记录，校验定位版本、等级与非空字段。 |
 | `createEvidenceCard()` | 构造卡片，附带全新条目身份并逐条校验。 |
@@ -100,7 +100,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 <a id="incremental-extraction"></a>
 ## 增量抽取
 
-向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。相邻短段落会打包至 `maximumCharacters` 上限，长段落按重叠额度拆分；每次调用保留各段独立的来源定位和摘要字符偏移。草稿使用本次请求内的局部 `segmentIndex`；生成器还收到各原始来源范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
+向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。相邻短段落会打包至 `maximumCharacters` 上限，长段落按重叠额度拆分；参考文献、致谢与附录既不进入范围审核窗口，也不参与打包，因为它们重复源词项却不陈述结论；整篇均被判为非正文时保留全部片段。每次调用保留各段独立的来源定位和摘要字符偏移。草稿使用本次请求内的局部 `segmentIndex`；生成器还收到各原始来源范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
 
 必需的异步 `onVerified` 保存接口在下一范围发送前收到已核验来源的证据。它负责持久存储；保存失败会停止抽取。已接受记录和卡片条目的身份保留到最终组装结果。重叠的相同证据按来源定位、陈述、逐字引文和问题关联去重。被拒草稿序号保持为回调对应片段中的局部序号。`onFailure` 仅发布信息且隔离异常；返回的失败保留原始错误，包括适配器提供的 Provider 请求 ID。
 
