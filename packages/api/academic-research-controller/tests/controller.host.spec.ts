@@ -882,7 +882,7 @@ describe('AcademicResearchController', () => {
     await fixture.controller.run({ sessionId: fixture.sessionId,
       researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].modelPolicies.evidence)
-      .toMatchObject({ depth: 'minimal', fragmentMaximumCalls: 8,
+      .toMatchObject({ depth: 'complete', fragmentMaximumCalls: 8,
         questionTerms: [['retrieval', 'retrieval method', 'faithfulness']] })
   })
 
