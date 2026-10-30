@@ -190,14 +190,20 @@ it.each(['ended', 'failed'] as const)('reloads the saved terminal result after a
   expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
   expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
 })
-it('does not admit a duplicate run when its start reply was lost after server persistence', async () => {
+it('recovers the persisted run when its start reply was lost without asking for another admission', async () => {
   const f = fixture()
   f.startBackgroundRun.mockImplementationOnce(async () => { f.publish(initialTask()); throw new Error('reply lost') })
   render(<ResearchEntry {...f.props()} />); await open()
   fireEvent.click(await screen.findByRole('button', { name: zh.start }))
-  await screen.findByText('reply lost')
+  await screen.findByText(zh.backgroundConnected)
+  expect(screen.queryByText('reply lost')).toBeNull()
   await waitFor(() => { expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true) })
   expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2)
+  expect(f.getBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  await act(async () => { f.publish({ ...initialTask(), state: 'completed',
+    retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }) })
+  await screen.findByRole('button', { name: zh.download })
 })
 it('ignores late get replies after closing and permits viewing saved results despite a missing current approval', async () => {
   const f = fixture(); let release!: (task: AcademicBackgroundRunView) => void
@@ -212,4 +218,23 @@ it('ignores late get replies after closing and permits viewing saved results des
   f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() })
   await open(); await screen.findByRole('button', { name: zh.download })
   expect(f.startBackgroundRun).not.toHaveBeenCalled()
+})
+
+it('does not reconnect from a late admission rediscovery after the viewer closes', async () => {
+  const f = fixture()
+  let release!: (rows: AcademicBackgroundRunView[]) => void
+  const pending = new Promise<AcademicBackgroundRunView[]>((resolve) => { release = resolve })
+  f.startBackgroundRun.mockRejectedValueOnce(new Error('reply lost'))
+  f.listBackgroundRuns.mockResolvedValueOnce([]).mockReturnValueOnce(pending)
+  const ui = render(<ResearchEntry {...f.props()} />)
+  try {
+    await open()
+    fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+    await waitFor(() => { expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2) })
+    fireEvent.click(screen.getByRole('button', { name: zh.close }))
+    await act(async () => { release([initialTask()]); await pending })
+    expect(f.getBackgroundRun).not.toHaveBeenCalled()
+    expect(f.watchBackgroundRun).not.toHaveBeenCalled()
+    expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  } finally { release([]); ui.unmount() }
 })

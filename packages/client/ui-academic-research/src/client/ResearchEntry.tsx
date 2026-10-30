@@ -173,10 +173,14 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
       if (active.current === operation) {
         setMessage(error instanceof Error ? error.message : t('requestFailed'))
         // An admission response may be lost after the task was persisted; rediscover before allowing another start.
-        active.current = null
         const rows = await listBackgroundRuns(sessionId).catch(() => null)
-        if (operation.signal.aborted) return
-        if (rows !== null) { setRuns(rows); setLoading(false) }
+        if (active.current !== operation || operation.signal.aborted) return
+        active.current = null
+        if (rows !== null) {
+          setRuns(rows); setLoading(false)
+          const admitted = rows.findLast(row => row.researchBriefId === approved.researchBriefId)
+          if (admitted !== undefined) await select(admitted.backgroundRunId)
+        }
       }
     }
   }
@@ -209,7 +213,8 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
     <p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('backgroundNotice')}</p>
     {planError !== null && <p role="alert">{planError}</p>}
     {approved === null && planError === null && <p role="status">{t(expectedBriefId !== undefined && !loading ? 'chatHistorical' : 'loadingPlan')}</p>}
-    {loading && <p>{t('backgroundLoading')}</p>}
+    {loading && <p role="status">{t(autoStart && approved !== null && task === null && !hasCurrentPlanRun
+      && knownTaskId === undefined ? 'chatStarting' : 'backgroundLoading')}</p>}
     {message !== null && <p role="alert">{message}</p>}
     {loading && message !== null && task === null && <button type="button" onClick={() => { setRevision(previous => previous + 1) }}>
       {t('backgroundReconnect')}
