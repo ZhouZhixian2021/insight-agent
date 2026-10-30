@@ -4,6 +4,7 @@ import { MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
 import { layoutReportBody, reportReadingStyles } from './export-layout.ts'
+import { reportLimitations, hasLimitationGroups } from './report-limitations.ts'
 
 type Report = NonNullable<AcademicResearchRunValue['report']>
 const tags = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
@@ -68,7 +69,8 @@ export function exportAcademicHtml(report: Report, t: PropsLocale<'academicRun'>
       return `<li>${index < 0 ? escape(`${t('missingEvidence')}: ${item.evidenceId}`) : `<a href="#evidence-${index + 1}">${escape(item.evidenceId)}</a>`}</li>`
     }).join('')}</ul></section>`).join('')
   const deliveryIssues = report.evaluation.issues.filter(issue => issue.category !== 'content')
-  const limits = [...new Set([...report.limitations, ...report.evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])]
+  const organized = reportLimitations(report)
+  const groupedInBody = report.markdown.includes('\n## 关键限制\n') || report.markdown.includes('\n## 运行诊断（原始记录）\n')
   const contents = headings.filter(heading => heading.level <= 2)
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
@@ -77,7 +79,11 @@ export function exportAcademicHtml(report: Report, t: PropsLocale<'academicRun'>
     <h1>${escape(report.title)}</h1><p class="review-note">${escape(t('reviewNotice'))}</p><p class="review-note">${escape(t('htmlEvidenceKey'))}</p>
     ${report.evidence.length === 0 ? `<p class="notice">${escape(t('noEvidence'))}</p>` : ''}
     ${deliveryIssues.length ? `<aside class="notice"><h2>${escape(t('deliveryIssues'))}</h2>${list(deliveryIssues.map(issue => `${issue.code}: ${issue.message}`))}</aside>` : ''}
-    ${limits.length ? `<details><summary>${escape(t('contentLimits'))} · ${limits.length}</summary>${list(limits)}</details>` : ''}</header>
+    ${groupedInBody ? '' : `${!hasLimitationGroups(report) ? `<aside class="notice">${escape(t('legacyLimits'))}</aside>` : ''}
+    ${organized.keyLimitations.length ? `<aside class="notice"><h2>${escape(t('keyLimits'))}</h2>${list(organized.keyLimitations)}</aside>` : ''}
+    ${organized.questionGaps.length ? `<details><summary>${escape(t('questionGaps'))}</summary>${list(organized.questionGaps)}</details>` : ''}
+    ${organized.processingNotes.length ? `<details><summary>${escape(t('processingNotes'))}</summary>${list(organized.processingNotes)}</details>` : ''}
+    ${organized.diagnostics.length ? `<details><summary>${escape(t('rawDiagnostics'))}</summary>${list(organized.diagnostics)}</details>` : ''}`}</header>
     <div class="reading-layout"><nav aria-label="${escape(t('htmlContents'))}"><h2>${escape(t('htmlContents'))}</h2><ul>${contents.map(h => `<li><a href="#${h.id}">${escape(h.text)}</a></li>`).join('')}
     <li><a href="#claim-records">${escape(t('claims'))}</a></li><li><a href="#evidence-records">${escape(t('evidence'))}</a></li></ul></nav>
     <article class="paper"><main>${body}</main>

@@ -1,4 +1,4 @@
-import { TracePanel, type TraceRemote } from './TracePanel.tsx'
+import type { TraceRemote } from './TracePanel.tsx'
 /** Session-owned background research; browser disposal ends observation only. */
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -210,7 +210,7 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
   const hasRunningTask = runs.some(row => row.state === 'running')
   const hasCurrentPlanRun = approved !== null && runs.some(row => row.researchBriefId === approved.researchBriefId)
   return <>
-    <p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('backgroundNotice')}</p>
+    <details><summary>{t('sessionDetails')}</summary><p>{t('session')}: {sessionId}</p><p className={css.notice}>{t('backgroundNotice')}</p></details>
     {planError !== null && <p role="alert">{planError}</p>}
     {approved === null && planError === null && <p role="status">{t(expectedBriefId !== undefined && !loading ? 'chatHistorical' : 'loadingPlan')}</p>}
     {loading && <p role="status">{t(autoStart && approved !== null && task === null && !hasCurrentPlanRun
@@ -219,7 +219,7 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
     {loading && message !== null && task === null && <button type="button" onClick={() => { setRevision(previous => previous + 1) }}>
       {t('backgroundReconnect')}
     </button>}
-    {approved !== null && <section aria-label={t('currentPlan')}>
+    {approved !== null && <details aria-label={t('currentPlan')} open={task === null || undefined}><summary>{t('currentPlan')}</summary>
       <h3>{t('currentPlan')}: {approved.topic}</h3>
       <ul>{approved.questions.map(question => <li key={question}>{question}</li>)}</ul>
       <h4>{t('searchDirections')}</h4><SearchPolicies searches={approved.searches} t={t} />
@@ -229,7 +229,7 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
       <form className={css.controls} onSubmit={(event) => { event.preventDefault(); void start() }}>
         <button type="submit" disabled={admissionBlocked || loading || hasRunningTask || (expectedBriefId !== undefined && hasCurrentPlanRun)}>{t('start')}</button>
       </form>
-    </section>}
+    </details>}
     {expectedBriefId === undefined && runs.length > 0 && <label>{t('backgroundRecords')}<select aria-label={t('backgroundRecords')} value={task?.backgroundRunId ?? ''}
       onChange={(event) => {
         if (event.target.value === '') setRevision(previous => previous + 1)
@@ -242,20 +242,19 @@ export function ResearchForm({ sessionId, expectedBriefId, knownTaskId, autoStar
     </select></label>}
     {approved !== null && task !== null && task.researchBriefId !== approved.researchBriefId
       && <p role="note">{t('historicalPlanResult')}</p>}
-    {task !== null && <section aria-label={t('backgroundTask')}>
+    {task !== null && <details aria-label={t('backgroundTask')}><summary>{t('backgroundTask')} · {t(`background_${task.state}`)}</summary>
       <p>{t('backgroundTask')}: {task.backgroundRunId} · {t(`background_${task.state}`)}</p>
       <p>{t(connected ? 'backgroundConnected' : task.state === 'running' ? 'backgroundDisconnected' : 'backgroundSnapshot')}</p>
       {task.state === 'interrupted' && <p>{t('backgroundInterrupted')}</p>}
       {task.cancelReason !== null && <p>{t(`backgroundReason_${task.cancelReason}`)}</p>}
       {!connected && <button type="button" onClick={() => { void select(task.backgroundRunId) }}>{t('backgroundReconnect')}</button>}
-    </section>}
-    {task?.retrievalRunId != null && <TracePanel key={`${sessionId}:${task.retrievalRunId}`} sessionId={sessionId}
-      researchRunId={task.retrievalRunId} traceList={traceList} traceDetail={traceDetail} t={t} />}
+    </details>}
     {view !== null && <RunPanel view={view} t={t}
+      trace={task?.retrievalRunId == null ? undefined : { sessionId, researchRunId: task.retrievalRunId, traceList, traceDetail }}
       plannedSearches={task?.researchBriefId === approved?.researchBriefId ? approved?.searches : undefined}
       onCancel={() => { void cancel() }} />}
-    {view?.phase === 'settled' && view.value.report !== null && view.value.status === 'completed' && <EnhancementPanel
+    {view?.phase === 'settled' && view.value.report !== null && view.value.status === 'completed' && <details><summary>{t('enhancementDetails')}</summary><EnhancementPanel
       key={`${sessionId}:${view.value.retrievalRun.retrievalRunId}`} value={view.value}
-      enhanceEvidence={enhanceEvidence} enhancementHistory={enhancementHistory} t={t} />}
+      enhanceEvidence={enhanceEvidence} enhancementHistory={enhancementHistory} t={t} /></details>}
   </>
 }

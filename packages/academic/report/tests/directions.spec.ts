@@ -52,7 +52,7 @@ describe('direction report-format hierarchy', () => {
     expect(report.evaluation.status).toBe('ready')
     expect(report.evaluation.issues.filter(issue => issue.category === 'delivery')).toEqual([])
     expect(report.evaluation.issues.some(issue => issue.category === 'content' && issue.message.includes('缺少 CLOCK'))).toBe(true)
-    expect(report.markdown).toContain('## 内容限制与未回答问题')
+    expect(report.markdown).toContain('## 逐题内容缺口')
     expect(report.markdown).toContain('交付检查通过不代表独立语义审核通过')
     expect(report.markdown).not.toContain('已完成当前证据与语义审核')
   })
