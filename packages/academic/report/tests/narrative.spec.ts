@@ -17,6 +17,30 @@ function fixture() {
 }
 
 describe('production evidence-narrative report', () => {
+  it('keeps original diagnostics but removes routine stop facts and internal fields from key limitations', () => {
+    const { input } = fixture()
+    const stop = 'The desired inclusion target and question coverage are satisfied.'
+    const raw = 'unavailable_field: Field is not_extracted; preserve its original availability.'
+    const gap = '问题 2：未提供同条件实验结果。'
+    const version = input.versions[0]!
+    const failure = `Version ${version.workVersionId} failed during fulltext.`
+    const baseline = generateReport(input)
+    const report = generateReport({ ...input, limitations: [stop, raw, gap, failure, raw] })
+    const keyLimits = report.markdown.split('## 关键限制')[1]!.split('## ')[0]!
+    expect(keyLimits).not.toContain(stop)
+    expect(keyLimits).not.toContain('unavailable_field')
+    expect(keyLimits).not.toContain(version.workVersionId)
+    expect(report.markdown.split('## 运行诊断（原始记录）')[1]).toContain(raw.replaceAll('_', '\\_'))
+    expect(report.markdown).toContain(gap)
+    expect(report.limitations.filter(text => text === raw)).toHaveLength(2)
+    expect(report.mode).toBe(baseline.mode)
+    expect(report.evaluation.status).toBe(baseline.evaluation.status)
+    expect(report.evaluation.issues).toEqual(baseline.evaluation.issues)
+    const assessmentFacts = (value: typeof report) => value.evaluation.assessments
+      .map(({ claimAssessmentId: _generatedId, ...facts }) => facts)
+    expect(assessmentFacts(report)).toEqual(assessmentFacts(baseline))
+    expect(report.evidence).toEqual(baseline.evidence)
+  })
   it('uses B-style section prose once, retains conditions and puts scope and checks after the body', async () => {
     const { input, draft } = fixture(), before = JSON.stringify(input)
     const report = generateReport(input)

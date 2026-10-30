@@ -12,6 +12,29 @@ const t: RunPanelProps['t'] = key => zh[key as RunKey]
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('fixed research result presentation', () => {
+  it('keeps report downloads outside collapsed process details and mounts one Trace across updates', async () => {
+    const value = sampleRun()
+    const trace = { sessionId: value.sessionId, researchRunId: value.retrievalRun.retrievalRunId,
+      traceList: vi.fn(), traceDetail: vi.fn() }
+    const view = { phase: 'settled' as const, value }
+    const ui = render(<RunPanel view={view} trace={trace} onCancel={vi.fn()} t={t} />)
+    expect(screen.getByRole('button', { name: zh.download })).toBeTruthy()
+    expect(screen.getByRole('button', { name: zh.downloadHtml })).toBeTruthy()
+    const process = screen.getByText(zh.processDetails).closest('details')!
+    expect(process.open).toBe(false)
+    expect(screen.getByRole('button', { name: zh.download }).closest('details')).toBeNull()
+    expect(screen.getByRole('button', { name: zh.traceLoad }).closest('details')).toBe(process)
+    await expect(JSON.stringify({
+      downloads: screen.getAllByRole('button').filter(button => button.closest('details') === null).map(button => button.textContent),
+      processOpen: process.open,
+      traceControls: ui.container.querySelectorAll('section[aria-label="研究调用追踪"]').length,
+    }, null, 2) + '\n').toMatchFileSnapshot('./expected/report-delivery-controls.json')
+    fireEvent.click(screen.getByText(zh.processDetails))
+    expect(screen.getByRole('button', { name: zh.traceLoad })).toBeTruthy()
+    ui.rerender(<RunPanel view={{ ...view }} trace={trace} onCancel={vi.fn()} t={t} />)
+    expect(screen.getAllByRole('button', { name: zh.traceLoad })).toHaveLength(1)
+    expect(trace.traceList).not.toHaveBeenCalled()
+  })
   it('keeps the draft download and rejection reasons for partial synthesis without granting approval', () => {
     const value = sampleRun()
     render(<RunPanel view={{ phase: 'settled', value: { ...value,
@@ -25,12 +48,13 @@ describe('fixed research result presentation', () => {
     const value = sampleRun()
     if (value.report === null) throw new Error('report fixture missing')
     render(<RunPanel view={{ phase: 'settled', value: { ...value, report: { ...value.report, limitations: [],
+      markdown: '## 关键限制\n\n- 缺少 CLOCK 比较。\n\n## 逐题内容缺口\n\n## 筛选与处理记录\n\n## 运行诊断（原始记录）\n',
       evaluation: { ...value.report.evaluation, issues: [
         { claimId: null, category: 'delivery', code: 'unmet_plan', message: '正文篇幅不足。' },
         { claimId: null, category: 'content', code: 'content_limitation', message: '缺少 CLOCK 比较。' },
       ] } } } }} onCancel={vi.fn()} t={t} />)
     const blockers = screen.getByRole('heading', { name: '交付未达标原因' }).nextElementSibling!
-    const limits = screen.getByRole('heading', { name: '内容限制与未回答问题' }).nextElementSibling!
+    const limits = screen.getByRole('heading', { name: zh.keyLimits }).nextElementSibling!
     expect(blockers.textContent).toContain('正文篇幅不足')
     expect(blockers.textContent).not.toContain('缺少 CLOCK')
     expect(limits.textContent).toContain('缺少 CLOCK')
@@ -41,7 +65,7 @@ describe('fixed research result presentation', () => {
     render(<RunPanel view={{ phase: 'settled', value: { ...value, report: null,
       synthesis: { status: 'blocked', reasons: ['可用全文证据未达到 Plan 下限。'] } } }} onCancel={vi.fn()} t={t} />)
     expect(screen.getByText('可用全文证据未达到 Plan 下限。')).toBeTruthy()
-    expect(screen.getAllByText('洞察分析')).toHaveLength(2)
+    expect(screen.getAllByText('洞察分析')).toHaveLength(1)
     expect(screen.queryByText('下载 Markdown')).toBeNull()
   })
   it.each(['partially_extracted', 'extraction_failed'] as const)('shows %s with accepted counts and rejected draft reasons', (status) => {

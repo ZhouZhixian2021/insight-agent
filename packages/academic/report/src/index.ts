@@ -7,6 +7,9 @@ import { escapeMarkdown, renderSynthesis } from './synthesis-render.ts'
 import { renderQuestionEvidence } from './question-evidence.ts'
 import { workBibliography, type ReportMetadata } from './bibliography.ts'
 import { appendRetrievalDisclosure, type RetrievalDisclosure } from './retrieval-disclosure.ts'
+import { summarizeReportLimitations } from './limitation-summary.ts'
+export { summarizeReportLimitations } from './limitation-summary.ts'
+export type { ReportLimitationSummary } from './limitation-summary.ts'
 
 const relationLabels: Record<ClaimEvidenceRelation, string> = {
   supports: '支持依据', contradicts: '不同发现／相反证据', background: '背景材料（不直接支持结论）',
@@ -93,6 +96,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   const lines = [`# ${escapeMarkdown(input.brief.topic)}`, '',
     '> 基于本轮证据自动生成；交付检查通过不代表独立语义审核通过。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
+  const openingEnd = lines.length
   if (synthesisInput !== null) {
     const scopeStart = lines.length
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
@@ -140,8 +144,18 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
   }
   const deliveryIssues = evaluation.issues.filter(issue => issue.category !== 'content')
   const contentIssues = [...new Set([...limitations, ...evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])]
+  const versionTitles = new Map(input.versions.flatMap((version) => {
+    const work = byWork.get(version.academicWorkId)
+    return work === undefined ? [] : [[String(version.workVersionId), work.title] as const]
+  }))
+  const organized = summarizeReportLimitations(contentIssues, versionTitles)
+  if (organized.keyLimitations.length > 0) lines.splice(openingEnd, 0, '## 关键限制', '',
+    ...organized.keyLimitations.map(text => `- ${escapeMarkdown(text)}`), '')
   lines.push('## 交付未达标原因', '', ...(deliveryIssues.length === 0 ? ['无；当前已执行的交付检查通过。'] : deliveryIssues.map(issue => `- ${escapeMarkdown(issue.message)}`)), '',
-    '## 内容限制与未回答问题', '', ...(contentIssues.length === 0 ? ['本轮未记录额外内容限制；不代表独立语义审核通过。'] : contentIssues.map(text => `- ${escapeMarkdown(text)}`)), '',
+    '## 逐题内容缺口', '', ...(organized.questionGaps.length === 0 ? ['本轮未记录额外逐题缺口；不代表独立语义审核通过。'] : organized.questionGaps.map(text => `- ${escapeMarkdown(text)}`)), '',
+    '## 筛选与处理记录', '', ...(organized.processingNotes.length === 0 ? ['未记录额外处理说明。'] : organized.processingNotes.map(text => `- ${escapeMarkdown(text)}`)), '',
+    '## 运行诊断（原始记录）', '', '以下保留去重后的生产方原始说明，包含内部字段及批次信息；不是新增的内容结论。', '',
+    ...organized.diagnostics.map(text => `- ${escapeMarkdown(text)}`), '',
     '## 参考文献', '')
   for (const work of input.works.filter(item => references.has(item.academicWorkId))) {
     lines.push(`${references.get(work.academicWorkId)}. ${workBibliography(work, metadata, evidence)}`)

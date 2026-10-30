@@ -1,6 +1,8 @@
 /** Render producer facts without inferring progress, coverage or semantic approval. */
 import { exportAcademicHtml, downloadAcademicHtml } from './export-html.tsx'
 import { useState } from 'react'
+import { reportLimitations, hasLimitationGroups } from './report-limitations.ts'
+import { TracePanel, type TraceRemote } from './TracePanel.tsx'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RunView } from './run-types.ts'
 import type { AcademicPlannedSearch, AcademicResearchRunValue } from '@deepseek-ai/dsh-api-academic-research-controller/types'
@@ -17,6 +19,7 @@ export type RunPanelProps = Copy & {
   readonly view: RunView
   readonly onCancel: () => void
   readonly plannedSearches?: readonly AcademicPlannedSearch[] | undefined
+  readonly trace?: (TraceRemote & { readonly sessionId: AcademicResearchRunValue['sessionId']; readonly researchRunId: AcademicResearchRunValue['retrievalRun']['retrievalRunId'] }) | undefined
 }
 
 /**
@@ -24,14 +27,18 @@ export type RunPanelProps = Copy & {
  * @param props Explicit view, localized copy and caller-owned cancel action.
  * @returns The running, error or settled content.
  */
-export function RunPanel({ view, onCancel, t, plannedSearches }: RunPanelProps) {
+export function RunPanel({ view, onCancel, t, plannedSearches, trace }: RunPanelProps) {
   const q6 = view.q6 ?? (view.phase === 'settled' ? view.value.q6 : null)
   return <>
-    {view.phase !== 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
-    {view.progress !== undefined && <ProgressPanel progress={view.progress} recent={view.recent} t={t} />}
-    {q6 != null && <Q6Live key={q6.retrievalRunId} projection={q6} t={t} />}
-    {view.phase === 'settled' && q6 == null && <p>{t('q6_liveUnavailable')}</p>}
-    {view.phase === 'settled' && <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />}
+    <RunContent view={view} onCancel={onCancel} t={t} plannedSearches={plannedSearches} />
+    <details className={css.card}>
+      <summary>{t('processDetails')}</summary>
+      {view.progress !== undefined && <ProgressPanel progress={view.progress} recent={view.recent} t={t} />}
+      {trace !== undefined && <TracePanel key={`${trace.sessionId}:${trace.researchRunId}`} {...trace} t={t} />}
+      {q6 != null && <Q6Live key={q6.retrievalRunId} projection={q6} t={t} />}
+      {view.phase === 'settled' && q6 == null && <p>{t('q6_liveUnavailable')}</p>}
+      {view.phase === 'settled' && <SettledDiagnostics value={view.value} t={t} plannedSearches={plannedSearches} />}
+    </details>
   </>
 }
 
@@ -49,7 +56,7 @@ function Lines({ values, empty }: { readonly values: readonly string[]; readonly
   return values.length === 0 ? <p>{empty}</p> : <ul>{values.map((value, index) => <li key={index}>{value}</li>)}</ul>
 }
 
-function SettledRun({ value, t, plannedSearches }: Copy & {
+function SettledDiagnostics({ value, t, plannedSearches }: Copy & {
   readonly value: AcademicResearchRunValue
   readonly plannedSearches: readonly AcademicPlannedSearch[] | undefined
 }) {
@@ -70,7 +77,7 @@ function SettledRun({ value, t, plannedSearches }: Copy & {
     </dl>
     <p className={css.notice}>{t('reviewNotice')}</p>
     <HybridRetrieval value={value.hybridRetrieval} t={t} />
-    {value.synthesis.reasons.length > 0 && <section><h3>{t('synthesisStage')}</h3>
+    {report !== null && value.synthesis.reasons.length > 0 && <section><h3>{t('synthesisStage')}</h3>
       <Lines values={value.synthesis.reasons} empty={t('noLimits')} /></section>}
     <section><h3>{t('coverage')}</h3>
       <dl className={css.stats}>{counts.map(key => <div key={key}><dt>{t(key)}</dt><dd>{coverage[key]}</dd></div>)}</dl>
@@ -100,8 +107,18 @@ function SettledRun({ value, t, plannedSearches }: Copy & {
         </>}
       </li>)}</ul>}
     </section>
-    {report === null ? <p>{t('noReport')}</p> : <ReportView report={report} t={t} />}
   </div>
+}
+
+function SettledRun({ value, t, plannedSearches }: Copy & {
+  readonly value: AcademicResearchRunValue
+  readonly plannedSearches: readonly AcademicPlannedSearch[] | undefined
+}) {
+  const report = reportWithRetrieval(value, t, plannedSearches)
+  return report !== null ? <ReportView report={report} t={t} /> : <section>
+    <h3>{t('noReport')}</h3><p>{t(value.synthesis.status)}</p>
+    <Lines values={value.synthesis.reasons} empty={t('noLimits')} />
+  </section>
 }
 
 /**
@@ -120,7 +137,7 @@ export function downloadMarkdown(markdown: string, filename = 'academic-report.m
 
 function ReportView({ report, t }: Copy & { readonly report: NonNullable<AcademicResearchRunValue['report']> }) {
   const deliveryIssues = report.evaluation.issues.filter(issue => issue.category !== 'content')
-  const contentLimits = [...new Set([...report.limitations, ...report.evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])]
+  const organized = reportLimitations(report)
   const [query, setQuery] = useState('')
   const [openedEvidence, setOpenedEvidence] = useState<string | null>(null)
   const matches = (text: string) => text.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
@@ -133,40 +150,45 @@ function ReportView({ report, t }: Copy & { readonly report: NonNullable<Academi
     <button type="button" onClick={() => { downloadMarkdown(report.markdown) }}>{t('download')}</button>
     <button type="button" onClick={() => { downloadAcademicHtml(exportAcademicHtml(report, t)) }}>{t('downloadHtml')}</button>
     <h4>{t('deliveryIssues')}</h4><Lines values={deliveryIssues.map(issue => `${issue.claimId === null ? '' : `${issue.claimId}: `}${issue.code} — ${issue.message}`)} empty={t('noDeliveryIssues')} />
-    <h4>{t('contentLimits')}</h4><Lines values={contentLimits} empty={t('noLimits')} />
-    <h4>{t('assessments')}</h4><p>{t('reviewMethodNotice')}</p>
-    {report.evaluation.assessments.length === 0 ? <p>{t('noAssessments')}</p> : <ul>{report.evaluation.assessments.map(assessment => <li key={assessment.claimAssessmentId}>
-      {assessment.claimId} · {t(assessment.status)}<p>{assessment.reason}</p>
-      <p>{t('method')}: {assessment.method} · {assessment.methodVersion} · {assessment.assessedAt}</p>
-    </li>)}</ul>}
-    <h4>{t('claims')}</h4>
-    <label>{t('search')}<input type="search" value={query} onChange={(event) => { setQuery(event.target.value) }} /></label>
-    {claims.length === 0 && evidence.length === 0 && <p>{t('noMatches')}</p>}
-    {report.claims.length === 0 && <p>{t('noClaims')}</p>}
-    {claims.map(claim => <article key={claim.claimId} className={css.card}>
-      <h5>{claim.text}</h5><p>{t('scope')}: {claim.scope}</p>
-      <p>{t('validity')}: {t(claim.validity)}</p><p>{t('confidence')}: {t(claim.confidence)}</p>
-      <Lines values={claim.confidenceReasons} empty={t('insufficient')} />
-      {claim.uncertainty !== null && <p>{t('uncertainty')}: {claim.uncertainty}</p>}
-      <ul>{claim.evidenceSnapshot.evidenceItems.map((item) => {
-        const found = report.evidence.some(record => record.evidenceId === item.evidenceId)
-        return <li key={item.evidenceId}>{found ? <a href={`#academic-evidence-${item.evidenceId}`} onClick={() => {
-          setQuery('')
-          setOpenedEvidence(item.evidenceId)
-        }}>{t('evidence')}: {item.evidenceId}</a> : <span>{t('missingEvidence')}: {item.evidenceId}</span>}</li>
-      })}</ul>
-    </article>)}
-    <h4>{t('evidence')}</h4>{report.evidence.length === 0 && <p>{t('noEvidence')}</p>}
-    {evidence.map(record => <details key={record.evidenceId} id={`academic-evidence-${record.evidenceId}`} open={openedEvidence === record.evidenceId ? true : undefined} className={css.card}>
-      <summary>{record.evidenceId} · {t(record.level)}</summary><p>{record.sourcedStatement}</p>
-      {record.verbatimExcerpt.status === 'available' ? <blockquote>{record.verbatimExcerpt.value}</blockquote> : <p>{t('excerptUnavailable')}</p>}
-      <p>{t('source')}: {record.sourceProvider} · {/^(https?):\/\//i.test(record.sourceUrl)
-        ? <a href={record.sourceUrl} target="_blank" rel="noopener noreferrer">{record.sourceUrl}</a> : record.sourceUrl}</p>
-      <p>{t('version')}: {record.workVersionId}</p><p>{t('locator')}: {record.sourceLocatorId}</p>
-      <p>{t('retrievedAt')}: {record.retrievedAt}</p>
-      {record.qualityNotes.length > 0 && <><h5>{t('qualityNotes')}</h5><Lines values={record.qualityNotes} empty={t('noIssues')} /></>}
-    </details>)}
-    <h4>{t('reportLimits')}</h4><Lines values={report.limitations} empty={t('noLimits')} />
-    <details><summary>{t('markdown')}</summary><pre className={css.markdown}>{report.markdown}</pre></details>
+    <h4>{t('keyLimits')}</h4><Lines values={organized.keyLimitations}
+      empty={t(!hasLimitationGroups(report) ? 'legacyLimits' : 'noLimits')} />
+    {organized.questionGaps.length > 0 && <details><summary>{t('questionGaps')}</summary><Lines values={organized.questionGaps} empty={t('noLimits')} /></details>}
+    <details><summary>{t('reportDetails')}</summary>
+      {organized.processingNotes.length > 0 && <><h4>{t('processingNotes')}</h4><Lines values={organized.processingNotes} empty={t('noLimits')} /></>}
+      <details><summary>{t('rawDiagnostics')}</summary><Lines values={organized.diagnostics} empty={t('noLimits')} /></details>
+      <h4>{t('assessments')}</h4><p>{t('reviewMethodNotice')}</p>
+      {report.evaluation.assessments.length === 0 ? <p>{t('noAssessments')}</p> : <ul>{report.evaluation.assessments.map(assessment => <li key={assessment.claimAssessmentId}>
+        {assessment.claimId} · {t(assessment.status)}<p>{assessment.reason}</p>
+        <p>{t('method')}: {assessment.method} · {assessment.methodVersion} · {assessment.assessedAt}</p>
+      </li>)}</ul>}
+      <h4>{t('claims')}</h4>
+      <label>{t('search')}<input type="search" value={query} onChange={(event) => { setQuery(event.target.value) }} /></label>
+      {claims.length === 0 && evidence.length === 0 && <p>{t('noMatches')}</p>}
+      {report.claims.length === 0 && <p>{t('noClaims')}</p>}
+      {claims.map(claim => <article key={claim.claimId} className={css.card}>
+        <h5>{claim.text}</h5><p>{t('scope')}: {claim.scope}</p>
+        <p>{t('validity')}: {t(claim.validity)}</p><p>{t('confidence')}: {t(claim.confidence)}</p>
+        <Lines values={claim.confidenceReasons} empty={t('insufficient')} />
+        {claim.uncertainty !== null && <p>{t('uncertainty')}: {claim.uncertainty}</p>}
+        <ul>{claim.evidenceSnapshot.evidenceItems.map((item) => {
+          const found = report.evidence.some(record => record.evidenceId === item.evidenceId)
+          return <li key={item.evidenceId}>{found ? <a href={`#academic-evidence-${item.evidenceId}`} onClick={() => {
+            setQuery('')
+            setOpenedEvidence(item.evidenceId)
+          }}>{t('evidence')}: {item.evidenceId}</a> : <span>{t('missingEvidence')}: {item.evidenceId}</span>}</li>
+        })}</ul>
+      </article>)}
+      <h4>{t('evidence')}</h4>{report.evidence.length === 0 && <p>{t('noEvidence')}</p>}
+      {evidence.map(record => <details key={record.evidenceId} id={`academic-evidence-${record.evidenceId}`} open={openedEvidence === record.evidenceId ? true : undefined} className={css.card}>
+        <summary>{record.evidenceId} · {t(record.level)}</summary><p>{record.sourcedStatement}</p>
+        {record.verbatimExcerpt.status === 'available' ? <blockquote>{record.verbatimExcerpt.value}</blockquote> : <p>{t('excerptUnavailable')}</p>}
+        <p>{t('source')}: {record.sourceProvider} · {/^(https?):\/\//i.test(record.sourceUrl)
+          ? <a href={record.sourceUrl} target="_blank" rel="noopener noreferrer">{record.sourceUrl}</a> : record.sourceUrl}</p>
+        <p>{t('version')}: {record.workVersionId}</p><p>{t('locator')}: {record.sourceLocatorId}</p>
+        <p>{t('retrievedAt')}: {record.retrievedAt}</p>
+        {record.qualityNotes.length > 0 && <><h5>{t('qualityNotes')}</h5><Lines values={record.qualityNotes} empty={t('noIssues')} /></>}
+      </details>)}
+      <details><summary>{t('markdown')}</summary><pre className={css.markdown}>{report.markdown}</pre></details>
+    </details>
   </section>
 }
