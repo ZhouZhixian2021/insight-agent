@@ -68,6 +68,8 @@ export interface Config {
   readonly maximumUncertainFulltextWorks?: number
   /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
   readonly extractionMaximumCallsPerPaper?: number
+  /** Complete extraction retains evidence across the bounded source fragments; minimal stops at five records. Defaults to complete. */
+  readonly extractionDepth?: 'minimal' | 'complete'
   /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
   readonly fulltextCacheDirectory?: string
   /** Freshness bound for cached source bytes. Defaults to 86,400,000 ms. */
@@ -148,6 +150,7 @@ export class AcademicResearchController extends TypertRemoteService {
     maximumFulltextWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(24),
     maximumUncertainFulltextWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(15),
     extractionMaximumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
+    extractionDepth: z.union([z.const('minimal'), z.const('complete')]).default('complete'),
     fulltextCacheDirectory: z.string(),
     fulltextCacheMaximumAgeMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(86_400_000),
     fulltextCacheMaximumBytes: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(268_435_456),
@@ -188,6 +191,7 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly fulltextFetchProvider: string
   private readonly fulltextCache?: AcademicFulltextCache
   private readonly extractionMaximumCallsPerPaper: number
+  private readonly extractionDepth: 'minimal' | 'complete'
   private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
   private readonly synthesisMaxTokens: number
@@ -220,6 +224,7 @@ export class AcademicResearchController extends TypertRemoteService {
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'academicResearchController', { namespace: 'academicResearch' })
     this.extractionMaximumCallsPerPaper = config.extractionMaximumCallsPerPaper ?? 8
+    this.extractionDepth = config.extractionDepth ?? 'complete'
     if (config.fulltextCacheDirectory !== undefined) {
       const cache = new AcademicFulltextCache({ directory: config.fulltextCacheDirectory,
         maximumAgeMs: config.fulltextCacheMaximumAgeMs ?? 86_400_000,
@@ -719,7 +724,7 @@ export class AcademicResearchController extends TypertRemoteService {
         model,
         synthesisModel,
         modelPolicies: {
-          evidence: { depth: 'minimal', maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
+          evidence: { depth: this.extractionDepth, maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
             fragmentMaximumCalls: this.extractionMaximumCallsPerPaper,
             scopeReviewMaximumBatches: this.scopeReviewMaximumBatches,
             scopeScreening: this.scopeScreening,

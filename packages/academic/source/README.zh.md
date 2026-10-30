@@ -46,6 +46,8 @@ kind: "package-reference"
 
 `verifyReference(reference, allowedProviders, signal)` 把已识别 DOI 交给 OpenAlex、arXiv ID 交给 arXiv、ACL/PMLR/CVF 官方记录交给对应 Provider。服务在网络访问前检查允许列表；即使目录搜索不可用，已注册 Provider 仍可核验单篇记录。结果是带全文候选的已核验成果，或一条分类失败。Provider 未注册时明确抛错；调用方取消会中止调用。
 
+Web 引用识别接受 arXiv 官方摘要、PDF 和 HTML 论文地址，包括带版本号的标识。Web 结果仍须经提供方核验，才能提供学术元数据。
+
 ### 提供方选择
 
 每次调用在执行时解析提供方，注册或加载顺序从不影响结果。配置的提供方 id 在已注册且可用时胜出；未配置 id 时，服务运行唯一可用提供方，否则清晰失败：

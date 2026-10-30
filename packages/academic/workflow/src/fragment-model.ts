@@ -129,8 +129,7 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   return {
     policy: { ...fragmentPolicy, maximumOutputTokens: outputCap },
     ...policy.fragmentMaximumCalls === undefined ? {} : { maximumCalls: policy.fragmentMaximumCalls },
-    ...parsed.depth === 'minimal' && policy.questionTerms !== undefined
-      ? { questionTerms: policy.questionTerms } : {},
+    ...policy.questionTerms === undefined ? {} : { questionTerms: policy.questionTerms },
     generator: async (request, fragment) => {
       let settled: LoggedModelAttemptObservation | undefined
       reportPaperEvidenceProgress(onProgress, { operation: 'evidence_extract', batchIndex: fragment.fragmentIndex,

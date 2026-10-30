@@ -31,6 +31,8 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'academic/candidate-semantic-review-request-v1',
   'academic/candidate-semantic-review-result-v1',
   'academic/candidate-semantic-review-verified-v1',
+  'academic/coverage-request-v1',
+  'academic/coverage-result-v1',
   'academic/evidence-enhancement-selection',
   'academic/evidence-enhancement-settlement',
   'academic/evidence-fragment-verified',

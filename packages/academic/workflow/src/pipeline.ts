@@ -603,6 +603,26 @@ export async function runResearchDraft(
         persistCheckpoint(null)
         return changed
       }
+      let assessedCoverage: ResearchQuestionCoverageResult | undefined
+      const assessCoverage = async (): Promise<ResearchQuestionCoverageResult> => {
+        const coverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready', adapters.now())
+        if (admittedEvidence.length === 0 || paperSignal.aborted) return coverage
+        if (adapters.assessQuestionCoverage === undefined) {
+          const limitation = '未提供研究问题完整性评估器；已有证据仅表示部分支持。'
+          if (!selectionLimitations.includes(limitation)) selectionLimitations.push(limitation)
+          return coverage
+        }
+        try {
+          return await adapters.assessQuestionCoverage({ retrievalRunId, coverage, evidence: admittedEvidence,
+            minimumSupportingWorks: scheduling.policy.minimumQuestionSupportingWorks }, paperSignal)
+        } catch (error: unknown) {
+          if (error instanceof WorkflowLogError) throw error
+          if (paperSignal.aborted) return coverage
+          const limitation = '研究问题完整性评估失败；已有证据仅按部分覆盖处理，继续在预算内补充。'
+          if (!selectionLimitations.includes(limitation)) selectionLimitations.push(limitation)
+          return coverage
+        }
+      }
       const settleBatch = async (batchIndex: number, workVersionIds: readonly WorkVersionId[]): Promise<void> => {
         const group = workVersionIds.map((workVersionId) => {
           const candidate = byVersion.get(workVersionId)
@@ -619,8 +639,9 @@ export async function runResearchDraft(
         consecutiveBatchesWithoutEvidence = admittedEvidence.length > evidenceBefore ? 0
           : inspectedWithoutEvidence ? consecutiveBatchesWithoutEvidence + 1
             : consecutiveBatchesWithoutEvidence
-        const settlementCoverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready',
-          scheduling.policy.minimumQuestionSupportingWorks, adapters.now())
+        const settlementCoverage = admittedEvidence.length === evidenceBefore && assessedCoverage !== undefined
+          ? assessedCoverage : await assessCoverage()
+        assessedCoverage = settlementCoverage
         const settlementEvent: AcademicBatchSettlementEvent = {
           retrievalRunId, batchIndex, admittedEvidence: admittedEvidence.length,
           coverage: settlementCoverage,
@@ -648,9 +669,10 @@ export async function runResearchDraft(
         await settleBatch(recovery.pendingBatchIndex, pendingDecision.workVersionIds)
       }
       while (!paperSignal.aborted) {
-        const coverage = rankedCoverage(brief, papers,
-          evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
-          adapters.now())
+        if (assessedCoverage === undefined && papers.length > 0) assessedCoverage = await assessCoverage()
+        if (paperSignal.aborted) break
+        const coverage = assessedCoverage ?? rankedCoverage(brief, papers,
+          evidenceAdmission().status === 'ready', adapters.now())
         updateQueryWorkflow({
           plan: scheduling.plan,
           works: ingested.works,
@@ -711,12 +733,15 @@ export async function runResearchDraft(
             if (error instanceof WorkflowLogError) throw error
             stopped = true
             selectionTruncated = true
-            const limitation = `证据缺口补检第 ${nextRoundIndex} 轮失败，停止选文。`
+            const reason = error instanceof RangeError ? error.message
+              : error instanceof EvidenceError ? error.code : 'unexpected_error'
+            const limitation = `证据缺口补检第 ${nextRoundIndex} 轮失败（${reason}），停止选文。`
             selectionLimitations.push(limitation)
             updateQueryWorkflow({ status: 'settled', rounds: [...(queryWorkflow?.rounds ?? []), {
               roundIndex: nextRoundIndex, purpose: 'evidence_gap', searchQueryIds: [], status: 'failed',
               startedAt: roundStartedAt, completedAt: adapters.now(),
-            }], limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
+            }], stopDecision: { shouldStop: true, reason: 'review_required', details: [limitation] },
+            limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
             break
           }
           scheduling = replenished.scheduling
@@ -993,12 +1018,11 @@ function reconcileSelectedPapers(
   })
 }
 
-/** Build conservative batch-to-batch coverage from validated run-specific evidence-question links. */
+/** Question links establish partial support; only a separate completeness assessment can establish coverage. */
 function rankedCoverage(
   brief: ResearchBrief,
   papers: readonly PaperEvidenceResult[],
   evidenceRequirementsMet: boolean,
-  minimumQuestionSupportingWorks: number,
   assessedAt: string,
 ): ResearchQuestionCoverageResult {
   const evidencePapers = papers.flatMap((paper) => {
@@ -1016,16 +1040,15 @@ function rankedCoverage(
     })
     const supportingWorkIds = unique(supporting.map(item => item.paper.version.academicWorkId))
     const evidenceIds = unique(supporting.flatMap(item => item.evidenceIds))
-    const status = supportingWorkIds.length === 0 ? 'uncovered' as const
-      : supportingWorkIds.length >= minimumQuestionSupportingWorks ? 'covered' as const : 'partial' as const
+    const status = supportingWorkIds.length === 0 ? 'uncovered' as const : 'partial' as const
     return { question, status, supportingWorkIds, evidenceIds,
-      gaps: status === 'covered' ? [] : [status === 'uncovered'
+      gaps: [status === 'uncovered'
         ? 'No validated evidence directly supports this question.'
-        : `Validated evidence directly supports this question from ${supportingWorkIds.length} independent work(s); ${minimumQuestionSupportingWorks} required.`] }
+        : 'Related source-verified evidence is available; completeness of the requested answer has not been established.'] }
   })
   return { schemaVersion: 1, researchBriefId: brief.researchBriefId,
     researchBriefVersion: brief.version, assessedAt, questions, evidenceRequirementsMet,
-    allQuestionsCovered: questions.every(question => question.status === 'covered') }
+    allQuestionsCovered: false }
 }
 
 function progressSettlement(

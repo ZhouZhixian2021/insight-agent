@@ -5,6 +5,7 @@ import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import { createModelEvidenceGenerator } from './model.ts'
 import { createModelFragmentEvidenceGenerator } from './fragment-model.ts'
 import { createModelSynthesisGenerator } from './synthesis-model.ts'
+import { createModelCoverageAssessor } from './coverage-model.ts'
 import { runResearchDraft } from './pipeline.ts'
 import type { AcademicModelPolicies } from './model-types.ts'
 import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult } from './pipeline-types.ts'
@@ -36,6 +37,7 @@ export function runModelResearchDraft(
   return runResearchDraft(input, {
     ...adapters, generator: createModelEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace),
     verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace),
+    assessQuestionCoverage: createModelCoverageAssessor(ctx, session, config, policies.evidence, adapters.onTrace),
     synthesize: createModelSynthesisGenerator(ctx, session, synthesisConfig, policies.synthesis, adapters.onTrace),
   }, signal)
 }

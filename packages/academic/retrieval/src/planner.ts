@@ -109,7 +109,9 @@ export function planHybridSearch(
 }
 
 /**
- * Add one bounded round of queries for observed evidence gaps.
+ * Add bounded queries for incomplete questions across every approved search direction.
+ * Reviewed expansions take precedence; otherwise the exact approved question is searched.
+ * Diagnostic gap messages never enter a query, and later rounds may repeat an expression.
  * @param plan - Reviewed plan whose existing query identities must stay stable.
  * @param coverage - Coverage of the same brief version, produced after evidence extraction.
  * @param roundIndex - New one-based search round within the reviewed maximum.
@@ -132,18 +134,19 @@ export function extendPlanForEvidenceGaps(
     || plan.queries.some(query => query.roundIndex === roundIndex)) {
     throw new RangeError('roundIndex must name an unused round within the approved maximum')
   }
-  const core = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core')
-  if (core === undefined) throw new RangeError('plan requires a core academic query')
-  const approvedQuestions = new Set(core.questions)
+  const coreQueries = plan.queries.filter(query => query.kind === 'academic' && query.purpose === 'core')
+  if (coreQueries.length === 0) throw new RangeError('plan requires a core academic query')
+  const approvedQuestions = new Set(plan.queries.flatMap(query => query.questions))
   const additions: HybridSearchQuery[] = []
   const warnings: string[] = []
   for (const item of coverage.questions) {
     if (!approvedQuestions.has(item.question)) throw new RangeError('coverage contains an unplanned question')
     if (item.status === 'covered') continue
-    for (const gap of item.gaps) {
-      const expression = `${core.expression} ${nonEmpty(gap, 'coverage.gap')}`
-      const candidate = academic(expression, 'evidence_gap', [item.question], roundIndex, options.academicProviders)
-      if (plan.queries.some(query => sameQuery(query, candidate))) continue
+    const expansions = options.expansions.filter(expansion => expansion.questions.includes(item.question))
+    const expressions = expansions.length > 0 ? expansions.map(expansion => expansion.expression) : [item.question]
+    for (const expression of expressions) {
+      const candidate = academic(nonEmpty(expression, 'coverage.question'), 'evidence_gap', [item.question],
+        roundIndex, options.academicProviders)
       if (mergeDuplicate(additions, candidate)) continue
       if (additions.length === options.maximumQueriesPerRound) {
         if (!warnings.includes('Evidence gaps exceeded the query limit.')) {

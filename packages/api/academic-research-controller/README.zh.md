@@ -30,7 +30,7 @@ kind: "package-reference"
 
 `@deepseek-ai/dsh-api-academic-research-controller` 负责 `ctx.remote.academicResearch.run` 与 `runStream`。一次调用解析既有 Session Agent，从计划审批记录重建 ResearchBrief，复用 Session 选择的模型，执行已批准的检索方向，执行确定性的元数据筛选，获取全文，使用模型复核自然语言范围规则，抽取证据并返回已评测报告，由交付检查选择正式报告或草稿。
 
-正式运行在范围审核之后选择一级证据抽取：每篇纳入论文最多保留五条经过来源核验、关联获批问题的记录。第 5 版计划中审核过的问题别名按 Brief 问题顺序传给片段优先排序；旧计划继续使用问题原文。词项只影响处理顺序，不决定范围或构成证据。无故障达到上限不算抽取失败。证据充分性和报告评测检查决定正式报告或草稿交付。一级深度本身既不授予也不排除正式交付资格，Controller 不据此声称独立语义审核通过。
+正式运行在范围审核之后默认选择完整证据抽取；`extractionDepth: minimal` 可恢复每篇最多五条经过来源核验、关联获批问题的记录。第 5 版计划中审核过的问题别名按 Brief 问题顺序传给片段优先排序；旧计划继续使用问题原文。词项只影响处理顺序，不决定范围或构成证据。无故障达到上限不算抽取失败。证据充分性和报告评测检查决定正式报告或草稿交付。一级深度本身既不授予也不排除正式交付资格，Controller 不据此声称独立语义审核通过。
 
 研究运行完成后，调用方可通过 `academicResearch.enhanceEvidence({ sessionId, retrievalRunId, workVersionId })` 选择一篇有证据的论文，单独执行二级补充。Controller 重新获取该论文已选的全文候选，并在调用模型前拒绝内容哈希变化，随后持久记录选择。默认整次最多 180 秒、单次模型尝试最多 60 秒、输出上限 8,192 token；这些数值可配置。返回值只说明新增证据数与未完成范围数，原报告和评测保持不变。同一轮第二次选择会被拒绝，包括此前失败或取消的情况；已提交的片段仍保留在 Session 中。
 
@@ -78,7 +78,7 @@ Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停�
 
 排序流程先准入已审核相关候选，同时为不确定探索保留名额，使待审论文在存在已审核候选时仍能进入全文。`maximumFulltextWorks` 默认调度 24 篇全文；`maximumUncertainFulltextWorks` 默认为 15，由未审核、判断未知和审核失败的候选共享。失败和缓存命中均占论文名额。候审论文保留排序，在停止或补检之前还可接受更多元数据审核。预算低于获批纳入目标时明确披露，不改变该目标。恢复时沿用保存的调度限制；没有这些字段的历史策略保留原行为。
 
-`extractionMaximumCallsPerPaper` 默认每篇 8 次片段尝试，包含重试，独立于元数据和范围审核。一级抽取的五条记录上限保持不变。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
+`extractionMaximumCallsPerPaper` 默认每篇 8 次片段尝试，包含重试，独立于元数据和范围审核。`extractionDepth` 默认为 `complete`，在已派发片段中保留核验证据，不应用五条记录上限；设置为 `minimal` 时保留五条上限。两种模式均优先调度关联问题的原文范围，沿用相同的调用次数和超时预算。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
 
 <a id="model-experience"></a>
 ## Model Experience

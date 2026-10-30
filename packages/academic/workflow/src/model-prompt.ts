@@ -53,7 +53,8 @@ export function scopeMessages(
  */
 export function evidenceMessages(request: EvidenceGenerationRequest, depth: 'minimal' | 'complete' = 'complete'): Message[] {
   return [createUserMessage({ source: { kind: 'academic-workflow' },
-    content: [{ type: 'text', text: `${request.instruction}\n${evidenceInstruction(depth === 'minimal' ? 5 : MAX_EVIDENCE_DRAFTS)}\n${JSON.stringify({
+    content: [{ type: 'text', text: `${request.instruction}\n${evidenceInstruction(depth === 'minimal' ? 5 : MAX_EVIDENCE_DRAFTS)}${depth === 'complete'
+      ? '\nFor requested performance or safety comparisons, extract experimental conditions, hardware, workloads, baselines, absolute measurements and limitations when present, as well as headline findings. Keep conditions linked to their reported measurement; do not invent missing details.' : ''}\n${JSON.stringify({
       focusQuestions: request.focusQuestions,
       segments: request.segments.map((segment, segmentIndex) => ({ segmentIndex, ...segment })),
     })}` }],

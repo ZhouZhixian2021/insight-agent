@@ -329,6 +329,8 @@ export interface Config {
   readonly maximumUncertainFulltextWorks?: number
   /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
   readonly extractionMaximumCallsPerPaper?: number
+  /** Complete extraction retains evidence across the bounded source fragments; minimal stops at five records. Defaults to complete. */
+  readonly extractionDepth?: 'minimal' | 'complete'
   /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
   readonly fulltextCacheDirectory?: string
   /** Freshness bound for cached source bytes. Defaults to 86,400,000 ms. */
