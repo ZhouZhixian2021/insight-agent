@@ -2,7 +2,8 @@ import { experienceZh, experienceEn } from './run-experience-locales.ts'
 import { q6Zh, q6En } from './q6-locales.ts'
 /** Academic sample viewer copy; producer text remains verbatim. */
 export const zh = {
-  chatWaiting: '计划已批准，等待当前对话处理完成后自动开始研究。',
+  chatWaiting: '计划已批准，等待当前对话轮次结束后交接后台研究。',
+  chatStarting: '正在交接后台研究；研究进度和报告将在这张卡片中显示。',
   chatResearch: '本轮学术研究', chatHistorical: '这份计划已不是当前计划；只查看已有研究，不重新执行。',
   chatNext: '可在下方继续输入新的研究问题；下一轮会重新生成并审批计划。',
   traceModel: '模型',
@@ -276,7 +277,8 @@ export type RunKey = keyof typeof zh
 
 /** English copy with the identical key set. */
 export const en: Record<RunKey, string> = {
-  chatWaiting: 'Plan approved. Research will start after the current conversation operation finishes.',
+  chatWaiting: 'Plan approved. Waiting for this conversation turn to end before handing off research.',
+  chatStarting: 'Handing off research to the background. Progress and the report will appear in this card.',
   chatResearch: 'Research for this request', chatHistorical: 'This is a historical plan. View saved research without rerunning it.',
   chatNext: 'Enter another research question below. The next request receives its own plan and approval.',
   traceModel: 'Model',

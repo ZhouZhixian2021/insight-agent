@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { StrictMode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { ConversationNodeAssembler } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { SessionLiveEventEntry } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-api-academic-research-controller/src/background-run.ts'
@@ -18,6 +18,59 @@ import type { AcademicBackgroundRunView, AcademicResearchRunRequest } from '@dee
 
 afterEach(cleanup)
 const markdown = '# 本轮研究\n\n```academic-research-brief-json\n{}\n```'
+it('hands an approved tool-only turn to background research after idle without a chat answer', async () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [academicChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] }, { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const events = [
+    { type: 'turn/start', data: { turn: 1 } }, { type: 'step/start', data: { turn: 1, step: 1 } },
+    { type: 'tool/call', data: { turn: 1, step: 1, name: 'exit_plan_mode', callId: 'handoff', arguments: JSON.stringify({ plan: markdown }) } },
+    { type: 'tool/result', data: { turn: 1, step: 1, message: { toolCallId: 'handoff', isError: false }, meta: { approved: true } } },
+    { type: 'step/end', data: { turn: 1, step: 1 } },
+    { type: 'turn/end', data: { turn: 1, reason: { kind: 'completed' } } },
+  ]
+  assembler.replaceWindow(events.map((event, index) => ({ type: 'event', event: { ...event, seq: index + 1, time: index } })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const snapshot = assembler.snapshot('chat') as ChatSnapshot
+  const node = snapshot.nodes.values().find(node => node.kind === 'academic-research')!
+  const value = sampleRun(), sid = initialTask().sessionId
+  const briefId = `${sid}:approved-plan:handoff` as AcademicResearchRunRequest['researchBriefId']
+  const completed: AcademicBackgroundRunView = { ...initialTask(), researchBriefId: briefId, state: 'completed',
+    retrievalRunId: value.retrievalRun.retrievalRunId,
+    result: { ...value, retrievalRun: { ...value.retrievalRun, researchBriefId: briefId } } }
+  let release!: (task: AcademicBackgroundRunView) => void
+  const response = new Promise<AcademicBackgroundRunView>((resolve) => { release = resolve })
+  const start = vi.fn<ResearchEntryInjected['startBackgroundRun']>(async () => response)
+  let busy = true, saved = false
+  const remote: ResearchEntryInjected = {
+    plan: async () => ({ researchBriefId: briefId, topic: '交接研究', questions: [], searches: [] }),
+    startBackgroundRun: start, listBackgroundRuns: async () => saved ? [completed] : [],
+    getBackgroundRun: async () => completed, watchBackgroundRun: vi.fn(), cancelBackgroundRun: vi.fn(),
+    traceList: vi.fn(), traceDetail: vi.fn(), enhanceEvidence: vi.fn(), enhancementHistory: async () => null,
+  }
+  const card = () => <StrictMode><AcademicChatCard sessionId={sid} node={node as never}
+    useSession={select => select({ running: busy } as never)} useChat={select => select(snapshot)}
+    {...remote} t={((key: RunKey) => zh[key]) as Parameters<typeof ResearchForm>[0]['t']} /></StrictMode>
+  const ui = render(card())
+  try {
+    await screen.findByText(zh.chatWaiting)
+    expect(start).not.toHaveBeenCalled()
+    busy = false; ui.rerender(card())
+    const handoffStatus = await screen.findByText(zh.chatStarting)
+    await expect(handoffStatus.outerHTML + '\n').toMatchFileSnapshot('./expected/chat-handoff-status.html')
+    expect(start).toHaveBeenCalledTimes(1)
+    expect(start.mock.calls[0]?.[0]).toEqual({ sessionId: sid, researchBriefId: briefId, synthetic: false })
+    saved = true
+    await act(async () => { release(completed); await response })
+    await screen.findByRole('button', { name: zh.download })
+    ui.unmount()
+    render(card())
+    await screen.findByRole('button', { name: zh.download })
+    expect(start).toHaveBeenCalledTimes(1)
+    expect(remote.cancelBackgroundRun).not.toHaveBeenCalled()
+    expect(assembler.grouped('chat')!.entries.some(entry => entry.kind === 'node' && entry.key === node.key)).toBe(true)
+  } finally { release(completed); ui.unmount() }
+})
+
 it('keeps approved native and PTC research cards in their own turns and hides rejected or ordinary plans', () => {
   const assembler = new ConversationNodeAssembler({ entries: () => [academicChatDefinition], fallbackEntry: () => undefined },
     { entries: () => [chatViewDefinition] },
