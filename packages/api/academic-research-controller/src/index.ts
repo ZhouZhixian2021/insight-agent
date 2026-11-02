@@ -18,8 +18,9 @@ import {
   type AcademicSettlementObserver,
   type AcademicWorkflowProgressObserver,
   type DraftPipelineAdapters,
+  type CoverageRepairPolicy,
 } from '@deepseek-ai/dsh-academic-workflow'
-import { createRetrievalRunId, type AcademicTracePage } from '@deepseek-ai/dsh-academic-model'
+import { createRetrievalRunId, resolvePublicationDateContext, type AcademicTracePage } from '@deepseek-ai/dsh-academic-model'
 import { AcademicTraceRecorder, queryAcademicTrace } from './trace.ts'
 import { AcademicFulltextCache } from './fulltext-cache.ts'
 import type { AcademicTraceQuery } from './types.ts'
@@ -138,6 +139,24 @@ export interface Config {
   readonly replenishmentCandidateBatchSize?: number
   /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
   readonly minimumQuestionSupportingWorks?: number
+  /** Maximum stop-time coverage reviews per run, including failures. Defaults to 2. */
+  readonly coverageReviewMaximumCalls?: number
+  /** Coverage-review output budget, including model reasoning. Defaults to 16384. */
+  readonly coverageReviewMaxTokens?: number
+  /** Coverage-review dispatch deadline. Defaults to 150000 ms. */
+  readonly coverageReviewAttemptTimeoutMs?: number
+  /** Source excerpt characters retained per evidence item in a review. Defaults to 1200. */
+  readonly coverageReviewExcerptCharacters?: number
+  /** Automatic coverage repair rounds; at most one. Defaults to 1. */
+  readonly coverageRepairMaximumRounds?: number
+  /** Existing included papers eligible for one repair dispatch each. Defaults to 2. */
+  readonly coverageRepairMaximumPapers?: number
+  /** Additional candidate works admitted after the target boundary. Defaults to 4. */
+  readonly coverageRepairMaximumNewWorks?: number
+  /** One targeted source window per repaired paper. Defaults to 4000 characters. */
+  readonly coverageRepairMaximumCharacters?: number
+  /** Gap-driven source, token and elapsed-time bounds; omitted configuration uses validated defaults. */
+  readonly coverageTargeting?: import('@deepseek-ai/dsh-academic-workflow').CoverageTargetingPolicy
   /** Maximum queries generated in one evidence-gap replenishment round. Defaults to 4. */
   readonly gapRoundMaximumQueriesPerRound?: number
   /** Maximum Academic results per gap-round query. Defaults to 20. */
@@ -193,6 +212,33 @@ export class AcademicResearchController extends TypertRemoteService {
     evidenceGapCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
     replenishmentCandidateBatchSize: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
     minimumQuestionSupportingWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(1),
+    coverageReviewMaximumCalls: z.number().step(1).min(1).max(2).default(2),
+    coverageReviewMaxTokens: z.number().step(1).min(1).default(16384),
+    coverageReviewAttemptTimeoutMs: z.number().step(1).min(1).default(150000),
+    coverageReviewExcerptCharacters: z.number().step(1).min(1).default(1200),
+    coverageRepairMaximumRounds: z.number().step(1).min(0).max(1).default(1),
+    coverageRepairMaximumPapers: z.number().step(1).min(0).default(2),
+    coverageRepairMaximumNewWorks: z.number().step(1).min(0).default(4),
+    coverageRepairMaximumCharacters: z.number().step(1).min(1).default(4000),
+    coverageTargeting: z.object({
+      maximumWindowsPerPaper: z.number().step(1).min(1).max(2).default(2),
+      maximumWindowCharacters: z.number().step(1).min(1).default(1500),
+      maximumSourceOptions: z.number().step(1).min(0).default(0),
+      maximumPreviewCharacters: z.number().step(1).min(1).default(360),
+      maximumTotalCharacters: z.number().step(1).min(1).default(6000),
+      contextCharacters: z.number().step(1).min(0).default(240),
+      maximumCandidateReads: z.number().step(1).min(0).max(1).default(1),
+      maximumModelTokens: z.number().step(1).min(1).default(45000),
+      maximumModelCalls: z.number().step(1).min(1).max(6).default(6),
+      maximumElapsedMs: z.number().step(1).min(1).default(220000),
+      repairMaxTokens: z.number().step(1).min(1).default(8192),
+      deltaReviewMaxTokens: z.number().step(1).min(1).default(8192),
+      candidateMaxTokens: z.number().step(1).min(1).default(4096),
+      finalReviewReserveTokens: z.number().step(1).min(1).default(10000),
+    }).default({ maximumWindowsPerPaper: 2, maximumWindowCharacters: 1500, maximumSourceOptions: 0,
+      maximumPreviewCharacters: 360, maximumTotalCharacters: 6000,
+      contextCharacters: 240, maximumCandidateReads: 1, maximumModelTokens: 45000, maximumModelCalls: 6, maximumElapsedMs: 220000,
+      repairMaxTokens: 8192, deltaReviewMaxTokens: 8192, candidateMaxTokens: 4096, finalReviewReserveTokens: 10000 }),
     gapRoundMaximumQueriesPerRound: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
     gapRoundMaximumAcademicResultsPerQuery: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(20),
     enhancementMaximumElapsedMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(180_000),
@@ -231,6 +277,9 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly enhancementMaxTokens: number
   private readonly candidateBatchPolicy: import('@deepseek-ai/dsh-academic-workflow').CandidateBatchPolicy
   private readonly gapRoundPolicy: GapRoundPolicy
+  private readonly coverageRepairPolicy: CoverageRepairPolicy
+  private readonly coverageReviewMaxTokens: number
+  private readonly coverageReviewAttemptTimeoutMs: number
   private readonly backgroundRuns = new AcademicBackgroundRuns()
 
   /**
@@ -280,6 +329,9 @@ export class AcademicResearchController extends TypertRemoteService {
     this.enhancementMaxTokens = config.enhancementMaxTokens ?? 8_192
     const fulltext = { maximumWorks: config.maximumFulltextWorks ?? 24,
       maximumUncertainWorks: config.maximumUncertainFulltextWorks ?? 15 }
+    if (fulltext.maximumUncertainWorks > fulltext.maximumWorks) {
+      throw new RangeError('maximumUncertainFulltextWorks cannot exceed maximumFulltextWorks.')
+    }
     this.candidateBatchPolicy = {
       fulltext,
       initialBatchSize: config.initialCandidateBatchSize ?? 8,
@@ -291,9 +343,16 @@ export class AcademicResearchController extends TypertRemoteService {
       maximumQueriesPerRound: config.gapRoundMaximumQueriesPerRound ?? 4,
       maximumAcademicResultsPerQuery: config.gapRoundMaximumAcademicResultsPerQuery ?? 20,
     }
-    if (fulltext.maximumUncertainWorks > fulltext.maximumWorks) {
-      throw new RangeError('maximumUncertainFulltextWorks cannot exceed maximumFulltextWorks.')
-    }
+    const targeting = AcademicResearchController.Config(config).coverageTargeting
+    if (targeting === undefined) throw new Error('Coverage targeting configuration did not resolve its defaults.')
+    this.coverageRepairPolicy = { minimumSupportingWorks: this.candidateBatchPolicy.minimumQuestionSupportingWorks,
+      targeting,
+      maximumReviews: config.coverageReviewMaximumCalls ?? 2, maximumRepairRounds: config.coverageRepairMaximumRounds ?? 1,
+      maximumRepairPapers: config.coverageRepairMaximumPapers ?? 2, maximumNewCandidateWorks: config.coverageRepairMaximumNewWorks ?? 4,
+      maximumExcerptCharacters: config.coverageReviewExcerptCharacters ?? 1200,
+      maximumRepairCharacters: config.coverageRepairMaximumCharacters ?? 4000 }
+    this.coverageReviewMaxTokens = config.coverageReviewMaxTokens ?? 16384
+    this.coverageReviewAttemptTimeoutMs = config.coverageReviewAttemptTimeoutMs ?? 150000
     ctx.sessionProjections.register(academicResearchProjectionDefinition)
     ctx.plugin(academicPlanValidation)
     ctx.effect(() => async () => { await this.backgroundRuns.dispose() }, 'academicResearchController.backgroundRuns')
@@ -686,6 +745,14 @@ export class AcademicResearchController extends TypertRemoteService {
       }
       recovery = reconstructed.input.checkpoint
     }
+    let publicationDateContext
+    try {
+      publicationDateContext = resolvePublicationDateContext(brief, recovery?.startedAt ?? new Date().toISOString(),
+        recovery?.publicationDateContext)
+    } catch (cause: unknown) {
+      throw new RemoteError('gateway/bad-request', cause instanceof Error ? cause.message : 'invalid publication date policy', {}, { cause })
+    }
+    brief = { ...brief, publicationWindow: publicationDateContext.window }
     const retrievalRunId = recovery?.retrievalRunId ?? createRetrievalRunId()
     const selectedModel = agent.session.requestHeader()?.config ?? agent.options
     if (selectedModel.provider === undefined || selectedModel.model === undefined) {
@@ -717,9 +784,8 @@ export class AcademicResearchController extends TypertRemoteService {
       ...approvedPaperAdapters(brief, searches, academicSource, web, this.candidateBatchPolicy, this.gapRoundPolicy,
         recovery === undefined ? plan => agent.session.append('academic/search-plan', searchPlanEvent(plan)) : undefined,
         candidateScreening,
-        candidateScreening === undefined && searches.every(search => search.retrieval === undefined)
-          ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
-            { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
+        candidateScreening === undefined ? undefined : createModelCandidateReviewer(agent.ctx, agent.session, model,
+          { maxTokens: this.candidateReviewMaxTokens, attemptTimeoutMs: this.candidateReviewAttemptTimeoutMs }, trace.observe),
         this.initialSearchMaximumAcademicResultsPerQuery, this.candidateReviewMaximumWorks,
         { concurrency: this.candidateReviewConcurrency, gapReserve: this.candidateReviewGapReserve,
           recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
@@ -744,6 +810,8 @@ export class AcademicResearchController extends TypertRemoteService {
         model,
         synthesisModel,
         modelPolicies: {
+          ...brief.coverageRequirements === undefined ? {} : { coverage: { maxAttempts: 1,
+            maxTokens: this.coverageReviewMaxTokens, attemptTimeoutMs: this.coverageReviewAttemptTimeoutMs } },
           evidence: { depth: this.extractionDepth, maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
             fragmentMaximumCalls: this.extractionMaximumCallsPerPaper,
             fragmentMinimumCalls: this.extractionMinimumCallsPerPaper,
@@ -760,10 +828,12 @@ export class AcademicResearchController extends TypertRemoteService {
           synthesis: { maxAttempts: this.synthesisMaxAttempts, retryOutputLimit: true, retryInvalidOutput: true,
             transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: this.synthesisRetryInitialDelayMs } },
         },
-        input: { brief, retrievalRunId, paperConcurrency: this.paperConcurrency, searches: searches.map(search => ({ query: search.query,
-          channels: search.retrieval?.channels ?? ['academic'],
-          ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic,
-        ...(recovery === undefined ? {} : { recovery }) },
+        input: { brief, publicationDateContext, retrievalRunId, paperConcurrency: this.paperConcurrency,
+          ...brief.coverageRequirements === undefined ? {} : { coverageRepairPolicy: this.coverageRepairPolicy },
+          searches: searches.map(search => ({ query: search.query,
+            channels: search.retrieval?.channels ?? ['academic'],
+            ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })), synthetic: request.synthetic,
+          ...(recovery === undefined ? {} : { recovery }) },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),
       }))

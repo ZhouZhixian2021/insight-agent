@@ -3,6 +3,7 @@ import type { EvidenceExtractionInput, EvidenceExtractionResult, EvidenceFragmen
   EvidenceGenerationRequest, EvidenceDraft, ScreeningFragment } from '@deepseek-ai/dsh-academic-evidence'
 import type { AssistantStreamRecord, FinishReason, LlmCallConfig, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionSeq } from '@deepseek-ai/dsh-session'
+import type { PublicationDateContext, PublicationDateEvaluation } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicWorkflowProgressFailureCode } from './progress.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
@@ -19,13 +20,17 @@ declare module '@deepseek-ai/dsh-llm' {
 export interface PaperScopeRules {
   readonly inclusionRules: readonly string[]
   readonly exclusionRules: readonly string[]
+  /** Present for explicit policies; only these stable content rule IDs may justify exclusion. */
+  readonly contentRules?: readonly { readonly id: string; readonly kind: 'inclusion' | 'exclusion'; readonly text: string }[]
+  readonly publicationDate?: { readonly context: PublicationDateContext; readonly evaluation: PublicationDateEvaluation }
 }
 
 /** Model decision about whether one fetched paper belongs in the approved scope. */
-export type PaperScopeDecision =
-  | { readonly status: 'included'; readonly reason: string }
-  | { readonly status: 'excluded'; readonly reason: string }
-  | { readonly status: 'needs_more_context'; readonly reason: string }
+export interface PaperScopeDecision {
+  readonly status: 'included' | 'excluded' | 'needs_more_context'
+  readonly reason: string
+  readonly ruleId?: string
+}
 
 /** One validated model response containing scope review and any extracted evidence. */
 export interface PaperModelResponse {
@@ -63,7 +68,8 @@ export interface EvidenceFragmentVerifiedRecord {
   readonly fragment: EvidenceFragmentAttempt
   readonly evidence: EvidenceExtractionResult
   /** Present only for a user-selected, post-draft second-tier addition. */
-  readonly purpose?: 'enhancement'
+  readonly purpose?: 'enhancement' | 'coverage_repair'
+  readonly retrievalRunId?: import('@deepseek-ai/dsh-academic-model').RetrievalRunId
 }
 
 /** Complete paper-local extraction activity observed by A's workflow adapter. */
@@ -165,6 +171,8 @@ export interface AcademicModelPolicies {
   readonly evidence: EvidenceExtractionModelPolicy
   /** One final evidence-to-report synthesis recovery. */
   readonly synthesis: EvidenceModelPolicy
+  /** Stop-time aspect review; required when the approved Brief has coverage requirements. */
+  readonly coverage?: EvidenceModelPolicy & { readonly maxTokens: number }
 }
 
 /** Program-owned identity of the exact parsed content submitted for extraction. */

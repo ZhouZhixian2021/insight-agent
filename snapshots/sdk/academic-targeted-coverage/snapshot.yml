@@ -1,0 +1,8 @@
+version: 1
+scenario: academic-targeted-coverage
+profile: sdk
+composition: sdk-academic-targeted-coverage
+recording: authored
+header:
+  class: academic-targeted-coverage
+  pin: true

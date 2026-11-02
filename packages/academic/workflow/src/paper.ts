@@ -35,12 +35,19 @@ export async function extractPaperEvidence(
   signal?.throwIfAborted()
   const pause = (reason: PaperPause['reason']): PaperEvidenceResult => ({
     status: 'paused',
+    ...scope.publicationDate === undefined ? {} : { publicationDate: scope.publicationDate },
     pause: { academicWorkId: version.academicWorkId, workVersionId: version.workVersionId,
       oldHash: version.contentHash, newHash: parsed.contentHash,
       sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt, reason },
   })
   if (version.academicWorkId !== parsed.academicWorkId || version.workVersionId !== parsed.workVersionId) {
     return pause('identity_mismatch')
+  }
+  if (scope.publicationDate !== undefined && scope.publicationDate.evaluation.verdict !== 'within_window') {
+    return { status: 'excluded', publicationDate: scope.publicationDate,
+      exclusion: { academicWorkId: version.academicWorkId, workVersionId: version.workVersionId,
+        sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
+        reason: `日期筛选：${scope.publicationDate.evaluation.verdict}` } }
   }
   if (parsed.contentHash.trim().length === 0) return pause('empty_hash')
   let current = version
@@ -72,15 +79,22 @@ export async function extractPaperEvidence(
       attempt: null, maximumAttempts: null, lastFailure: null,
       validatedEvidenceRecords: evidence.evidenceRecords.length, rejectedEvidenceDrafts: evidence.rejectedDrafts.length })
     if (decision?.status === 'excluded') {
-      return { status: 'excluded', exclusion: { academicWorkId: current.academicWorkId,
-        workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
-        reason: decision.reason } }
+      const ruleId = decision.ruleId
+      if (scope.contentRules !== undefined && !scope.contentRules.some(rule => rule.id === ruleId)) {
+        return pause('scope_needs_more_context')
+      }
+      return { status: 'excluded', ...scope.publicationDate === undefined ? {} : { publicationDate: scope.publicationDate },
+        exclusion: { academicWorkId: current.academicWorkId,
+          workVersionId: current.workVersionId, sourceUrl: parsed.sourceUrl, retrievedAt: parsed.retrievedAt,
+          reason: decision.reason, ...ruleId === undefined ? {} : { ruleId } } }
     }
     if (decision?.status === 'needs_more_context') return pause('scope_needs_more_context')
     const status = evidence.evidenceRecords.length === 0 ? 'extraction_failed'
       : evidence.rejectedDrafts.length > 0 || incompleteBatchCount > 0 ? 'partially_extracted' : 'extracted'
-    return { status, version: current, evidence }
+    return { status, version: current, evidence,
+      ...scope.publicationDate === undefined ? {} : { publicationDate: scope.publicationDate } }
   } catch (error: unknown) {
+    if (error instanceof EvidenceError && error.code === 'EVIDENCE_SCOPE_RULE_INVALID') return pause('scope_needs_more_context')
     if (error instanceof EvidenceError && error.code === 'EVIDENCE_INPUT_TOO_LARGE') return pause('input_too_large')
     throw error
   }

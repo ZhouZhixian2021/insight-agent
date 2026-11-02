@@ -9,7 +9,11 @@ English | [中文](README.zh.md)
 
 Trace v1 types are also available from the type-only `@deepseek-ai/dsh-academic-model/trace` subpath. Operation and observation identities are branded; unknown timings remain null. These diagnostic records do not change evidence validity or report approval.
 
+`PublicationDatePolicy` separates fixed, run-start and unbounded upper dates and classifies every inclusion/exclusion rule. `resolvePublicationDateContext()` freezes one calendar cutoff and IANA time zone; `evaluatePublicationDate()` compares partial-date intervals using the selected date basis. Bounded windows reject unknown dates. Legacy null upper bounds with unclassified date rules require renewed plan approval. Saved contexts remain authoritative across recovery.
+
 ## Summary
+
+`ResearchBrief.coverageRequirements` optionally records each question's approved aspects as stable `ResearchAspectId` values, labels, approved search terms and `direct` or `quantitative` requirements. `ResearchAspectCoverage` retains reviewed status, admitted evidence IDs and a reason. `ResearchQuestionCoverageResult.basis` distinguishes historical paper-count assessments from reviewed aspects; absence retains historical meaning. These fields record scope and model judgments, not verified truth. See [workflow](../workflow/README.md) for bounded review and repair.
 
 `dsh-academic-model` owns the provider-neutral data vocabulary shared by academic-insight packages. It is a library, not a Cordis service or plugin, and performs no retrieval, evidence extraction, cross-paper analysis, report rendering, or model call.
 
@@ -62,6 +66,7 @@ Academic packages import these types instead of declaring provider-specific subs
 | `EvidenceCard` | Six evidence-backed sections extracted from one immutable work version. |
 | `EvidenceSnapshot` | Immutable set of evidence, work versions, and content hashes used for one brief version. |
 | `HybridSearchPlan` | Provider-neutral, reviewed queries, constraints, inclusion targets, ranking policy, and round limit. |
+| `createHybridSearchConstraints()` | Shared constraints for automatic and approved-query planning, preserving resolved dates and coverage while keeping date rules out of content screening. |
 | `CandidateAssessment` | Reviewed provider metadata, semantic fractions, rule decisions, and full-text resolution state for one verified work. |
 | `AcademicCandidateEvaluation` | Explainable hard-filter, classification, score, priority, and question-match result for one work version. |
 | `AcademicCandidateRankingResult` | Plan-bound evaluations and authoritative ordered P0/P1/P2/excluded queues. |

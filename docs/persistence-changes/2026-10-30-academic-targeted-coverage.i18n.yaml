@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-30-academic-targeted-coverage.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-30-academic-targeted-coverage.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-30-academic-targeted-coverage:
+  en: b52c15851af25572
+  zh: 4d6677cf87bd5e02
+/2026-10-30-academic-targeted-coverage/summary:
+  en: b239625d43e9c24e
+  zh: 2165684076cc5231
+/2026-10-30-academic-targeted-coverage/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-30-academic-targeted-coverage/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-30-academic-targeted-coverage/compatibility:
+  en: 9549ae4dd32e636f
+  zh: f4307da278e59e6d
+/2026-10-30-academic-targeted-coverage/verification:
+  en: 7853ed0df92c9162
+  zh: 44c85e24f7d98430
+/2026-10-30-academic-targeted-coverage/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

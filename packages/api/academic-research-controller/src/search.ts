@@ -90,7 +90,7 @@ export function approvedPaperAdapters(
   initialAcademicResultsPerQuery?: number,
   maximumModelReviews = 24,
   reviewExecution: CandidateReviewExecution = { concurrency: 1 },
-): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'reviewCandidates' | 'replenishCandidates'> {
+): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'reviewCandidates' | 'replenishCandidates' | 'resolveCoverageCandidate'> {
   if (searches.some(search => search.retrieval === undefined)) {
     return legacyPaperAdapters(searches, academicSource, web)
   }
@@ -203,6 +203,11 @@ export function approvedPaperAdapters(
     if (rejected?.status === 'rejected') throw rejected.reason
   }
   return {
+    resolveCoverageCandidate: (version) => {
+      const fullText = resolveFullText(version, resolutions, academicSource, key)
+      return fullText === null ? null : { ...fullText, workVersionId: version.workVersionId,
+        extractionMethod: { method: 'dsh-academic-evidence', methodVersion: '1' }, hasHistoricalEvidence: false }
+    },
     reviewCandidates: async (scheduling, ingested, coverage, scheduled, signal) => {
       const questions = coverage.questions.filter(item => item.status !== 'covered').map(item => item.question)
       const roundIndex = Math.max(...scheduling.plan.queries.map(query => query.roundIndex))

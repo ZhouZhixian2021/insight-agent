@@ -1,4 +1,6 @@
-import type { ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
+import type { PublicationDatePolicy, PublicationWindow, ResearchAspectId, ResearchCoverageRequirement,
+  ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
+import { isValidPublicationDate, publicationDateBounds } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-tools/types'
 import { MAX_DRAFT_SEARCH_QUERIES, validateResearchBriefRequirements } from '@deepseek-ai/dsh-academic-workflow'
@@ -196,14 +198,16 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
   }
   const root = record(value, 'Research Brief')
   if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3
-    && root.schemaVersion !== 4 && root.schemaVersion !== 5) {
-    throw new Error('schemaVersion must be 1, 2, 3, 4, or 5')
+    && root.schemaVersion !== 4 && root.schemaVersion !== 5 && root.schemaVersion !== 6 && root.schemaVersion !== 7) {
+    throw new Error('schemaVersion must be 1, 2, 3, 4, 5, 6, or 7')
   }
   exactKeys(root, [
     'schemaVersion', 'topic', 'aliases', 'questions', 'publicationWindow', 'includedWorkTypes',
     'inclusionRules', 'exclusionRules', 'evidenceRequirements', 'targetAudience', 'reportRequirements',
     'stopConditions', 'assumptions', ...(root.schemaVersion >= 2 || 'searchPlan' in root) ? ['searchPlan'] : [],
     ...root.schemaVersion >= 5 ? ['candidateScreening'] : [],
+    ...root.schemaVersion >= 6 || 'publicationDatePolicy' in root ? ['publicationDatePolicy'] : [],
+    ...root.schemaVersion >= 7 || 'coverageRequirements' in root ? ['coverageRequirements'] : [],
   ], 'Research Brief')
   const questions = nonEmptyStringArray(root.questions, 'questions')
   const limits = stopConditions(root.stopConditions)
@@ -223,7 +227,12 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     topic: nonEmptyString(root.topic, 'topic'),
     aliases: stringArray(root.aliases, 'aliases'),
     questions,
+    ...root.schemaVersion >= 7 || 'coverageRequirements' in root
+      ? { coverageRequirements: coverageRequirements(root.coverageRequirements, questions) } : {},
     publicationWindow: publicationWindow(root.publicationWindow),
+    ...root.schemaVersion >= 6 || 'publicationDatePolicy' in root ? { publicationDatePolicy: publicationDatePolicy(root.publicationDatePolicy,
+      publicationWindow(root.publicationWindow), stringArray(root.inclusionRules, 'inclusionRules').length,
+      stringArray(root.exclusionRules, 'exclusionRules').length) } : {},
     includedWorkTypes: nonEmptyStringArray(root.includedWorkTypes, 'includedWorkTypes'),
     inclusionRules: stringArray(root.inclusionRules, 'inclusionRules'),
     exclusionRules: stringArray(root.exclusionRules, 'exclusionRules'),
@@ -240,6 +249,53 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
       root.schemaVersion >= 3,
     ) } : {},
   }
+}
+
+function coverageRequirements(value: unknown, questions: readonly string[]): readonly ResearchCoverageRequirement[] {
+  if (!Array.isArray(value) || value.length !== questions.length) throw new Error('coverageRequirements must cover every question once')
+  const seenQuestions = new Set<string>(), ids = new Set<string>()
+  return value.map((entry) => {
+    const item = record(entry, 'coverageRequirements')
+    exactKeys(item, ['question', 'aspects'], 'coverageRequirements')
+    const question = nonEmptyString(item.question, 'coverageRequirements.question')
+    if (!questions.includes(question) || seenQuestions.has(question)) throw new Error('coverageRequirements must use every approved question once')
+    seenQuestions.add(question)
+    if (!Array.isArray(item.aspects) || item.aspects.length === 0) throw new Error('coverageRequirements.aspects must not be empty')
+    const aspects = item.aspects.map((entry) => {
+      const aspect = record(entry, 'coverageRequirements.aspects')
+      exactKeys(aspect, ['aspectId', 'label', 'evidenceRequirement', 'searchTerms'], 'coverageRequirements.aspects')
+      const aspectId = nonEmptyString(aspect.aspectId, 'coverageRequirements.aspectId')
+      if (ids.has(aspectId)) throw new Error('coverageRequirements.aspectId must be unique')
+      ids.add(aspectId)
+      return { aspectId: aspectId as ResearchAspectId, label: nonEmptyString(aspect.label, 'coverageRequirements.label'),
+        evidenceRequirement: oneOf(aspect.evidenceRequirement, ['direct', 'quantitative'] as const, 'coverageRequirements.evidenceRequirement'),
+        searchTerms: nonEmptyStringArray(aspect.searchTerms, 'coverageRequirements.searchTerms') }
+    })
+    return { question, aspects }
+  })
+}
+
+function publicationDatePolicy(value: unknown, window: PublicationWindow, inclusionCount: number,
+  exclusionCount: number): PublicationDatePolicy {
+  const item = record(value, 'publicationDatePolicy')
+  exactKeys(item, ['endMode', 'timeZone', 'inclusionRuleKinds', 'exclusionRuleKinds'], 'publicationDatePolicy')
+  const endMode = oneOf(item.endMode, ['fixed', 'run_start', 'unbounded'] as const, 'publicationDatePolicy.endMode')
+  if ((endMode === 'fixed') !== (window.end !== null)) {
+    throw new Error('publicationDatePolicy: fixed requires publicationWindow.end; run_start and unbounded require end: null')
+  }
+  const timeZone = nonEmptyString(item.timeZone, 'publicationDatePolicy.timeZone')
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone }).format(0)
+  } catch {
+    throw new Error('publicationDatePolicy.timeZone must be an IANA time zone')
+  }
+  const kinds = (value: unknown, count: number, label: string): readonly ('content' | 'publication_date')[] => {
+    if (!Array.isArray(value) || value.length !== count) throw new Error(`${label} must classify every rule once`)
+    return value.map(entry => oneOf(entry, ['content', 'publication_date'] as const, label))
+  }
+  return { endMode, timeZone,
+    inclusionRuleKinds: kinds(item.inclusionRuleKinds, inclusionCount, 'publicationDatePolicy.inclusionRuleKinds'),
+    exclusionRuleKinds: kinds(item.exclusionRuleKinds, exclusionCount, 'publicationDatePolicy.exclusionRuleKinds') }
 }
 
 function parseCandidateScreening(value: unknown, questions: readonly string[]): AcademicCandidateScreening {
@@ -370,16 +426,21 @@ function parseRetrieval(value: unknown, searchIndex: number): AcademicPlannedRet
 function publicationWindow(value: unknown): ResearchBrief['publicationWindow'] {
   const item = record(value, 'publicationWindow')
   exactKeys(item, ['start', 'end', 'dateBasis'], 'publicationWindow')
-  return { start: partialDate(item.start, 'publicationWindow.start'), end: partialDate(item.end, 'publicationWindow.end'),
-    dateBasis: oneOf(item.dateBasis, ['published', 'first_public_release'] as const, 'publicationWindow.dateBasis') }
+  const start = partialDate(item.start, 'publicationWindow.start'), end = partialDate(item.end, 'publicationWindow.end')
+  if (start !== null && end !== null && publicationDateBounds(start).start > publicationDateBounds(end).end) {
+    throw new Error('publicationWindow.start must not follow its end')
+  }
+  return { start, end, dateBasis: oneOf(item.dateBasis, ['published', 'first_public_release'] as const, 'publicationWindow.dateBasis') }
 }
 
 function partialDate(value: unknown, label: string): ResearchBrief['publicationWindow']['start'] {
   if (value === null) return null
   const item = record(value, label)
   exactKeys(item, ['iso', 'precision'], label)
-  return { iso: nonEmptyString(item.iso, `${label}.iso`),
+  const date = { iso: nonEmptyString(item.iso, `${label}.iso`),
     precision: oneOf(item.precision, ['year', 'month', 'day'] as const, `${label}.precision`) }
+  if (!isValidPublicationDate(date)) throw new Error(`${label} must be a valid calendar date matching its precision`)
+  return date
 }
 
 function evidenceRequirements(

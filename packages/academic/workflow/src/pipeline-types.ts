@@ -1,7 +1,7 @@
 /** Explicit adapters and results for one bounded research draft pass. */
 import type { AcademicCandidateRankingResult, CandidateAssessment, HybridSearchPlan,
   ResearchBrief, ResearchQuestionCoverageResult, RetrievalRun, RetrievalRunId, WorkVersionId,
-  ExtractionMethod } from '@deepseek-ai/dsh-academic-model'
+  ExtractionMethod, PublicationDateContext } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceProviderObserver, AcademicSourceSearchBatchResult,
   AcademicSourceSearchRequest } from '@deepseek-ai/dsh-academic-source'
 import type { IngestOutcome } from '@deepseek-ai/dsh-academic-ingestion'
@@ -17,6 +17,8 @@ import type { CandidateBatchPolicy } from './candidate-batches.ts'
 import type { AcademicSettlementObserver } from './settlement-events.ts'
 import type { AcademicQueryWorkflowObservation, AcademicQueryWorkflowObserver } from './query-workflow.ts'
 import type { AcademicRecoveryCheckpointObserver, AcademicResearchRecoveryCheckpoint } from './recovery-checkpoint.ts'
+import type { CoverageEvidenceRepairInput, CoverageRepairPolicy, CoverageRepairState,
+  CoverageReview, CoverageReviewInput, CoverageModelBudget } from './coverage-types.ts'
 
 /** Source batch with optional observations from the approved hybrid executor. */
 export interface DraftSearchResult extends AcademicSourceSearchBatchResult {
@@ -130,6 +132,18 @@ export interface DraftPipelineAdapters {
     signal?: AbortSignal, observer?: import('@deepseek-ai/dsh-academic-evidence').AcademicFullTextObserver,
   ) => Promise<import('@deepseek-ai/dsh-academic-evidence').EvidenceExtractionInput>
   readonly generator: PaperEvidenceGenerator
+  readonly reviewCoverage?: (input: CoverageReviewInput, signal?: AbortSignal, budget?: CoverageModelBudget) => Promise<CoverageReview>
+  readonly repairCoverageEvidence?: (input: CoverageEvidenceRepairInput, signal?: AbortSignal, budget?: CoverageModelBudget) =>
+  Promise<import('@deepseek-ai/dsh-academic-evidence').EvidenceExtractionResult>
+  /** Resolve an already-discovered version without rerunning broad retrieval or bypassing scope review. */
+  readonly resolveCoverageCandidate?: (version: import('@deepseek-ai/dsh-academic-model').WorkVersion) => SelectedPaper | null
+  /** Bounded scope and targeted extraction for the one gap-selected additional paper. */
+  readonly extractCoverageCandidate?: (version: import('@deepseek-ai/dsh-academic-model').WorkVersion,
+    source: import('@deepseek-ai/dsh-academic-evidence').EvidenceExtractionInput, scope: import('./model-types.ts').PaperScopeRules,
+    requirements: readonly import('@deepseek-ai/dsh-academic-model').ResearchCoverageRequirement[],
+    budget: CoverageModelBudget, signal?: AbortSignal) => Promise<PaperEvidenceResult>
+  /** Durably reserve budgets before dispatch and retain successful judgments before continuing. */
+  readonly onCoverageRepairState?: (state: CoverageRepairState, retrievalRunId: RetrievalRunId) => Promise<void>
   /** Formal model route may supply incrementally verified and saved fragment evidence. */
   readonly verifiedGenerator?: PaperVerifiedEvidenceGenerator
   /** Current UTC ISO time for run settlement, acquisition, and report evaluation. */
@@ -142,6 +156,8 @@ export interface DraftPipelineAdapters {
   readonly onQueryWorkflow?: AcademicQueryWorkflowObserver
   /** Persist a recovery checkpoint at every scheduled and settled batch boundary. */
   readonly onRecoveryCheckpoint?: AcademicRecoveryCheckpointObserver
+  /** Commit the frozen publication policy before any search or paper review. */
+  readonly onPublicationDateContext?: (context: PublicationDateContext, retrievalRunId: RetrievalRunId) => void
 }
 
 /** Ordered explicit searches followed by one merged paper-processing pass and an evaluated report. */
@@ -152,6 +168,9 @@ export interface DraftPipelineInput {
   /** Maximum concurrent paper acquisitions/extractions; omitted means serial execution. */
   readonly paperConcurrency?: number
   readonly brief: ResearchBrief
+  /** Frozen once by the application before constructing search adapters. */
+  readonly publicationDateContext?: PublicationDateContext
+  readonly coverageRepairPolicy?: CoverageRepairPolicy
   readonly searches: readonly DraftPipelineSearch[]
   readonly synthetic: boolean
   /** A-S3 checkpoint; when present, retrieval and screening are not repeated. */
@@ -166,6 +185,7 @@ export interface PaperProcessingFailure {
 
 /** Completed paper results and observed retrieval facts remain available when the caller cancels the pass. */
 export interface DraftPipelineResult {
+  readonly coverageRepair?: CoverageRepairState
   /** Settled query expressions; older synthetic callers may omit this observation. */
   readonly completedSearchQueries?: readonly string[]
   /** Completed hybrid searches and actual ingestion facts, including on cancellation. Not a wire projection. */

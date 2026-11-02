@@ -6,10 +6,14 @@ import type {
   ExecutableResearchBrief,
   PublicationWindow,
   ResearchBriefId,
+  ResearchBrief,
+  ResearchAspectId,
+  ResearchCoverageRequirement,
   RetrievalRunId,
   SearchQueryId,
   WorkVersionId,
 } from './types.ts'
+import { contentScreeningRules } from './publication-date.ts'
 
 /** Why a bounded search round or query exists. */
 export type SearchRoundPurpose =
@@ -66,6 +70,7 @@ export type HybridSearchQuery = AcademicSearchQuery | WebDiscoveryQuery | SiteRe
 /** ResearchBrief constraints normalized for query generation and hard filtering. */
 export interface HybridSearchConstraints {
   readonly publicationWindow: PublicationWindow
+  readonly coverageRequirements?: readonly ResearchCoverageRequirement[]
   readonly includedWorkTypes: readonly string[]
   readonly inclusionRules: readonly string[]
   readonly exclusionRules: readonly string[]
@@ -214,7 +219,7 @@ export interface CandidateSurfaceKeywordHit {
 /** Plan-specific metadata judgment; unknown must not become a rejection. */
 export type CandidateScopeDecision =
   | { readonly status: 'potentially_relevant'; readonly reason: string }
-  | { readonly status: 'off_topic'; readonly reason: string; readonly quote: CandidateMetadataQuote }
+  | { readonly status: 'off_topic'; readonly reason: string; readonly quote: CandidateMetadataQuote; readonly ruleId?: string }
   | { readonly status: 'unknown'; readonly reason: string }
 
 /** Optional versioned detail for new assessments; absence means legacy screening did not supply it.
@@ -409,6 +414,16 @@ export interface ResearchQuestionCoverage {
   readonly evidenceIds: readonly EvidenceId[]
   /** Specific missing evidence that may justify a later evidence-gap query. */
   readonly gaps: readonly string[]
+  /** Present only after aspect-level review; paper counts alone never populate this field. */
+  readonly aspects?: readonly ResearchAspectCoverage[]
+}
+
+/** Review judgment bound to source-verified evidence, rather than candidate metadata. */
+export interface ResearchAspectCoverage {
+  readonly aspectId: ResearchAspectId
+  readonly status: 'covered' | 'partial' | 'missing' | 'uncertain'
+  readonly evidenceIds: readonly EvidenceId[]
+  readonly reason: string
 }
 
 /** Question-level evidence coverage used to decide whether another batch or search round is justified. */
@@ -420,6 +435,7 @@ export interface ResearchQuestionCoverageResult {
   readonly questions: readonly ResearchQuestionCoverage[]
   readonly evidenceRequirementsMet: boolean
   readonly allQuestionsCovered: boolean
+  readonly basis?: 'paper_count' | 'reviewed_aspects'
 }
 
 /** Inputs owned by A and passed to B's query planner. */
@@ -470,6 +486,7 @@ export type SearchStopReason =
   | 'maximum_elapsed_time'
   | 'cancelled'
   | 'review_required'
+  | 'coverage_repair_exhausted'
 
 /** Explicit continue/stop result; a continuing run cannot carry a terminal reason. */
 export type SearchStopDecision =
@@ -544,6 +561,24 @@ export function createInclusionTargets(input: InclusionTargets): InclusionTarget
     throw new RangeError('inclusion targets must satisfy minimum <= target <= maximum')
   }
   return { ...input }
+}
+
+/**
+ * Preserve approved search bounds and content rules after publication dates have been resolved.
+ * @param brief Approved scope; callers freeze a rolling publication window before planning.
+ * @returns Shared constraints with content-only rules and unchanged optional coverage requirements.
+ */
+export function createHybridSearchConstraints(
+  brief: Pick<ResearchBrief, 'publicationWindow' | 'includedWorkTypes' | 'inclusionRules' | 'exclusionRules'
+    | 'publicationDatePolicy' | 'coverageRequirements'>,
+): HybridSearchConstraints {
+  const rules = contentScreeningRules(brief)
+  return { publicationWindow: brief.publicationWindow,
+    ...brief.coverageRequirements === undefined ? {} : { coverageRequirements: brief.coverageRequirements },
+    includedWorkTypes: [...brief.includedWorkTypes],
+    inclusionRules: rules.filter(rule => rule.kind === 'inclusion').map(rule => rule.text),
+    exclusionRules: rules.filter(rule => rule.kind === 'exclusion').map(rule => rule.text),
+    requiredTerms: [], excludedTerms: [] }
 }
 
 /**

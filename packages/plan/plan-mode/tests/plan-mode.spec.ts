@@ -232,7 +232,9 @@ describe('resolveConfig', () => {
   it('accepts turn conclusion only as a boolean', () => {
     expect(resolveConfig({ ...PLAN_CONFIG, concludeOnApprove: true }).concludeOnApprove).toBe(true)
     for (const value of ['yes', null, 1]) {
-      expect(() => resolveConfig({ ...PLAN_CONFIG, concludeOnApprove: value } as unknown as PlanModeConfig))
+      const config: PlanModeConfig = { ...PLAN_CONFIG }
+      Object.assign(config, { concludeOnApprove: value })
+      expect(() => resolveConfig(config))
         .toThrow('needs a boolean `concludeOnApprove` when provided')
     }
   })
@@ -244,6 +246,33 @@ describe('resolveConfig', () => {
 })
 
 describe('initial activation', () => {
+  it('suppresses missing-review reminders from projected calls without reading synchronous history', async () => {
+    const ctx = await setup({ ...PLAN_CONFIG, missingExitRetries: 1 })
+    const agent = await agentWithSession(ctx, 'projected-review', { active: true })
+    const steer = vi.fn<Agent['steer']>()
+    Object.assign(agent, { steer })
+    openTurn(agent.session, 1)
+    agent.session.append('tool/call', { turn: 1, step: 1, callId: ToolCallId('failed-review'),
+      name: EXIT_PLAN_MODE, arguments: '{}' })
+    expect(ctx.sessionProjections.stateOf(agent.session, 'plan')?.lastExitTurn).toBe(1)
+    const snapshot = vi.spyOn(agent.session, 'snapshotEvents').mockImplementation(() => {
+      throw new Error('Synchronous history must not be read')
+    })
+    try {
+      await ctx.serial('agent/turn-stopping', { agent, turn: 1, signal: new AbortController().signal })
+      expect(steer).not.toHaveBeenCalled()
+      closeTurn(agent.session, 1)
+      openTurn(agent.session, 2)
+      await ctx.serial('agent/turn-stopping', { agent, turn: 2, signal: new AbortController().signal })
+      await ctx.serial('agent/turn-stopping', { agent, turn: 2, signal: new AbortController().signal })
+      expect(steer).toHaveBeenCalledOnce()
+      expect(snapshot).not.toHaveBeenCalled()
+    } finally {
+      snapshot.mockRestore()
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('records configured initial plan mode before the first request without a switch notice', async () => {
     const ctx = await setup(INITIAL_PLAN_CONFIG)
     const agent = await agentWithSession(ctx, 'initial-plan')

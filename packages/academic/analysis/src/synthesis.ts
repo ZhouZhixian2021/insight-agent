@@ -47,7 +47,13 @@ function renderSynthesisPrompt(input: AcademicSynthesisInput, compact: boolean, 
 ${validationError}
 Regenerate the entire JSON object. Do not return a patch or commentary.
 `
-  return `Analyze the supplied evidence to answer EACH approved research question in Chinese (zh-CN).
+  const aspectInstruction = input.aspectCoverage === undefined ? '' : `Use brief.coverageRequirements as the approved completeness criteria.
+Use aspectCoverage as a conservative stop-time assessment; inspect its cited evidence rather than assuming the assessment proves truth.
+Explain unresolved aspects in the matching question answer. Do not label a partial aspect as fully answered by repeating a topic mention.
+Do not require numerical results, independent reproduction or a unified score unless the approved aspect explicitly requires them.
+For direct cost questions, source-backed qualitative cost findings may suffice; distinguish findings from generic open challenges.
+`
+  return `${aspectInstruction}Analyze the supplied evidence to answer EACH approved research question in Chinese (zh-CN).
 Use writingStyle:"evidence_narrative": question-led coherent prose with local citations, section responsibilities and no repeated claims.
 Apply the writing principles of PaperQA (question-focused evidence and local citations), STORM (outline responsibilities and deduplication),
 and GPT Researcher (task-appropriate headings and comparison tables); do not simulate their retrieval or add model calls.
@@ -153,6 +159,7 @@ function compactSynthesisInput(input: AcademicSynthesisInput) {
     },
     comparisonContext: comparisonContext(input),
     coverageSummary: input.coverageSummary,
+    ...input.aspectCoverage === undefined ? {} : { aspectCoverage: input.aspectCoverage },
     sourceFailures: input.sourceFailures.map(failure => ({ provider: failure.provider, operation: failure.operation,
       category: failure.category, retryable: failure.retryable })),
   }

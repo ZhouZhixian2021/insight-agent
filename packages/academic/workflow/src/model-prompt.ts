@@ -2,6 +2,8 @@
 import { createUserMessage, type Message } from '@deepseek-ai/dsh-llm'
 import type { EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
 import { MAX_EVIDENCE_DRAFTS } from './model-limits.ts'
+import type { ResearchCoverageRequirement } from '@deepseek-ai/dsh-academic-model'
+import { coverageRepairInstruction } from './coverage-extraction.ts'
 import type { EvidenceModelSource, PaperScopeRules } from './model-types.ts'
 
 const SCOPE_INSTRUCTION = `Decide whether the paper satisfies every inclusion rule and no exclusion rule.
@@ -36,8 +38,13 @@ export function scopeMessages(
 ): Message[] {
   return [createUserMessage({
     source: { kind: 'academic-workflow' },
-    content: [{ type: 'text', text: `${SCOPE_INSTRUCTION}\n${JSON.stringify({
+    content: [{ type: 'text', text: `${SCOPE_INSTRUCTION}${scope.contentRules === undefined ? '' : `
+Publication dates have already been evaluated by the program. Never calculate a current date or exclude on dates.
+Review only contentRules. For excluded, include ruleId naming an approved content rule that the paper violates.
+Date eligibility does not establish content relevance; use needs_more_context when content cannot be judged.`}\n${JSON.stringify({
       inclusionRules: scope.inclusionRules, exclusionRules: scope.exclusionRules,
+      ...scope.contentRules === undefined ? {} : { contentRules: scope.contentRules },
+      ...scope.publicationDate === undefined ? {} : { programOwnedPublicationDate: scope.publicationDate },
       programOwnedSource: { sourceProvider: source.sourceProvider, sourceUrl: source.sourceUrl },
       sourceComplete,
       segments: request.segments.map((segment, segmentIndex) => ({ segmentIndex, ...segment })),
@@ -49,9 +56,17 @@ export function scopeMessages(
  * Build a focused evidence request without paper admission rules or card field requirements.
  * @param request - ordered source segments and approved focus questions.
  * @param depth - minimal requests five drafts per fragment; complete requests six.
+ * @param requirements Optional approved missing aspects for bounded supplementation.
  * @returns complete model-visible messages.
  */
-export function evidenceMessages(request: EvidenceGenerationRequest, depth: 'minimal' | 'complete' = 'complete'): Message[] {
+export function evidenceMessages(request: EvidenceGenerationRequest, depth: 'minimal' | 'complete' = 'complete',
+  requirements?: readonly ResearchCoverageRequirement[]): Message[] {
+  if (requirements !== undefined) return [createUserMessage({ source: { kind: 'academic-workflow' }, content: [{ type: 'text',
+    text: `${coverageRepairInstruction(requirements)}\n${JSON.stringify({
+      focusQuestions: requirements.map(r => r.question),
+      targetAspects: requirements.flatMap((r, questionIndex) => r.aspects.map(a => ({ ...a, questionIndex }))),
+      segments: request.segments.map((segment, segmentIndex) => ({ segmentIndex, ...segment })),
+    })}` }] })]
   return [createUserMessage({ source: { kind: 'academic-workflow' },
     content: [{ type: 'text', text: `${request.instruction}\n${evidenceInstruction(depth === 'minimal' ? 5 : MAX_EVIDENCE_DRAFTS)}${depth === 'complete'
       ? '\nFor requested performance or safety comparisons, extract experimental conditions, hardware, workloads, baselines, absolute measurements and limitations when present, as well as headline findings. Keep conditions linked to their reported measurement; do not invent missing details.' : ''}\n${JSON.stringify({

@@ -1,5 +1,6 @@
 /** Deterministic queries from an approved research brief and explicit expansion terms. */
 import {
+  createHybridSearchConstraints,
   candidatePriorityForScore,
   createInclusionTargets,
   createSearchQueryId,
@@ -92,14 +93,7 @@ export function planHybridSearch(
     schemaVersion: 1,
     researchBriefId: brief.researchBriefId,
     researchBriefVersion: brief.version,
-    constraints: {
-      publicationWindow: brief.publicationWindow,
-      includedWorkTypes: brief.includedWorkTypes,
-      inclusionRules: brief.inclusionRules,
-      exclusionRules: brief.exclusionRules,
-      requiredTerms: [],
-      excludedTerms: [],
-    },
+    constraints: createHybridSearchConstraints(brief),
     inclusionTargets: input.inclusionTargets,
     rankingPolicy: input.rankingPolicy,
     queries,
@@ -110,8 +104,9 @@ export function planHybridSearch(
 
 /**
  * Add bounded queries for incomplete questions across every approved search direction.
- * Reviewed expansions take precedence; otherwise the exact approved question is searched.
- * Diagnostic gap messages never enter a query, and later rounds may repeat an expression.
+ * Approved aspect terms take precedence; otherwise reviewed expansions or the exact approved question are searched.
+ * Diagnostic gap messages never enter a query. Question-based rounds may repeat an expression;
+ * aspect-based rounds retain the existing duplicate-query limit.
  * @param plan - Reviewed plan whose existing query identities must stay stable.
  * @param coverage - Coverage of the same brief version, produced after evidence extraction.
  * @param roundIndex - New one-based search round within the reviewed maximum.
@@ -134,19 +129,27 @@ export function extendPlanForEvidenceGaps(
     || plan.queries.some(query => query.roundIndex === roundIndex)) {
     throw new RangeError('roundIndex must name an unused round within the approved maximum')
   }
-  const coreQueries = plan.queries.filter(query => query.kind === 'academic' && query.purpose === 'core')
-  if (coreQueries.length === 0) throw new RangeError('plan requires a core academic query')
+  const core = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core')
+  if (core === undefined) throw new RangeError('plan requires a core academic query')
   const approvedQuestions = new Set(plan.queries.flatMap(query => query.questions))
   const additions: HybridSearchQuery[] = []
   const warnings: string[] = []
   for (const item of coverage.questions) {
     if (!approvedQuestions.has(item.question)) throw new RangeError('coverage contains an unplanned question')
     if (item.status === 'covered') continue
+    const questionCore = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core'
+      && query.questions.includes(item.question)) ?? core
+    const requirement = plan.constraints.coverageRequirements?.find(requirement => requirement.question === item.question)
     const expansions = options.expansions.filter(expansion => expansion.questions.includes(item.question))
-    const expressions = expansions.length > 0 ? expansions.map(expansion => expansion.expression) : [item.question]
+    const expressions = requirement === undefined
+      ? expansions.length > 0 ? expansions.map(expansion => expansion.expression) : [item.question]
+      : requirement.aspects
+        .filter(aspect => item.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered')
+        .map(aspect => [questionCore.expression, aspect.label, ...aspect.searchTerms].join(' '))
     for (const expression of expressions) {
       const candidate = academic(nonEmpty(expression, 'coverage.question'), 'evidence_gap', [item.question],
         roundIndex, options.academicProviders)
+      if (requirement !== undefined && plan.queries.some(query => sameQuery(query, candidate))) continue
       if (mergeDuplicate(additions, candidate)) continue
       if (additions.length === options.maximumQueriesPerRound) {
         if (!warnings.includes('Evidence gaps exceeded the query limit.')) {

@@ -21,13 +21,19 @@ export interface ScopeScreeningOutcome {
  */
 export function screeningConditions(scope: PaperScopeRules,
   topicTerms: readonly string[] = []): readonly ScreeningConditionQuery[] {
+  const approved = approvedTopicTerms(topicTerms)
+  const condition = (conditionId: string, rule: string): ScreeningConditionQuery =>
+    ({ conditionId, terms: unique([...ruleTerms(rule), ...approved]) })
+  if (scope.contentRules !== undefined) {
+    return scope.contentRules.map(rule => condition(rule.id, rule.text))
+      .filter(query => query.terms.length > 0)
+  }
   const rules = [
     ...scope.inclusionRules.map((rule, index) => ({ conditionId: `inclusion-${index + 1}`, rule })),
     ...scope.exclusionRules.map((rule, index) => ({ conditionId: `exclusion-${index + 1}`, rule })),
   ]
-  const approved = approvedTopicTerms(topicTerms)
-  return rules.map(({ conditionId, rule }) => ({ conditionId, terms: unique([...ruleTerms(rule), ...approved]) }))
-    .filter(condition => condition.terms.length > 0)
+  return rules.map(({ conditionId, rule }) => condition(conditionId, rule))
+    .filter(query => query.terms.length > 0)
 }
 
 /**

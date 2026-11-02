@@ -14,6 +14,7 @@ import { createLoggedModelRunner, type LoggedModelAttemptObservation } from './m
 import { WorkflowLogError } from './model-errors.ts'
 import { evidenceMessages, scopeMessages } from './model-prompt.ts'
 import { parseFocusedEvidence, parseScopeDecision } from './parse-evidence.ts'
+import { parseCoverageEvidence } from './coverage-extraction.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
 import { reviewPaperScope } from './model.ts'
 import { reviewPaperScopeInFragments, screeningConditions } from './scope-fragments.ts'
@@ -74,7 +75,7 @@ export function createModelFragmentEvidenceGenerator(
       (scopeRequest: EvidenceGenerationRequest, complete: boolean) => runScope({
         trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
         messages: scopeMessages(scopeRequest, scope, source, complete),
-        ...signal === undefined ? {} : { signal }, parse: parseScopeDecision,
+        ...signal === undefined ? {} : { signal }, parse: text => parseScopeDecision(text, scope),
         appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope',
           ...screening === undefined ? {} : { screening }, ...data }),
         appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
@@ -92,7 +93,8 @@ export function createModelFragmentEvidenceGenerator(
     }
 
     const result = await extractEvidenceInFragments(extractionInput,
-      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress, undefined, traceObserver, ledger), signal)
+      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress, undefined, traceObserver,
+        undefined, undefined, ledger), signal)
     ledger?.observe(result.evidence.questionLinks)
     if (result.evidence.evidenceRecords.length === 0 && result.failures.length > 0
       && result.failures.every(failure => failure.error instanceof FragmentModelFailure
@@ -113,18 +115,29 @@ export function createModelFragmentEvidenceGenerator(
  * @param config Selected model route.
  * @param policy Bounded model and fragment controls.
  * @param traceObserver Optional safe diagnostic sink.
+ * @param purpose Explicit user enhancement or bounded automatic coverage repair.
+ * @param retrievalRunId Owning automatic research run, required for durable repair recovery.
+ * @param repairContext Optional approved-gap instructions and shared dispatch budget.
  * @returns A single-paper enhancement operation; it does not start automatically.
  */
 export function createModelFragmentEvidenceEnhancer(
   ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
+  purpose: 'enhancement' | 'coverage_repair' = 'enhancement',
+  retrievalRunId?: import('@deepseek-ai/dsh-academic-model').RetrievalRunId,
+  repairContext?: { readonly requirements: readonly import('@deepseek-ai/dsh-academic-model').ResearchCoverageRequirement[]
+    readonly budget?: import('./coverage-types.ts').CoverageModelBudget },
 ): (source: EvidenceExtractionInput, initial: EvidenceExtractionResult, signal?: AbortSignal) => Promise<EvidenceFragmentResult> {
   return (source, initial, signal) => enhanceEvidenceInFragments(source, initial,
-    fragmentOptions(ctx, session, config, policy, source, undefined, 'enhancement', traceObserver), signal)
+    fragmentOptions(ctx, session, config, policy, source, undefined, purpose, traceObserver, retrievalRunId, repairContext), signal)
 }
 
 function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   policy: EvidenceExtractionModelPolicy, parsed: EvidenceExtractionInput,
-  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement', traceObserver?: AcademicTraceObserver,
+  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement' | 'coverage_repair',
+  traceObserver?: AcademicTraceObserver,
+  retrievalRunId?: import('@deepseek-ai/dsh-academic-model').RetrievalRunId,
+  repairContext?: { readonly requirements: readonly import('@deepseek-ai/dsh-academic-model').ResearchCoverageRequirement[]
+    readonly budget?: import('./coverage-types.ts').CoverageModelBudget },
   ledger?: QuestionEvidenceLedger): EvidenceFragmentOptions {
   const fragmentPolicy = policy.fragmentPolicy ?? DEFAULT_FRAGMENT_POLICY
   const questionWeights = ledger?.weights()
@@ -159,13 +172,17 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
         batchCount: null, attempt: fragment.attempt, maximumAttempts: fragment.maximumAttempts,
         lastFailure: null, validatedEvidenceRecords: validatedRecords, rejectedEvidenceDrafts: rejectedDrafts })
       try {
-        return await runFragment({ trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: evidenceMessages(request, purpose === 'enhancement' ? 'complete' : parsed.depth),
-          ...request.signal === undefined ? {} : { signal: request.signal }, parse: parseFocusedEvidence,
-          appendRequest: data => session.append('academic/evidence-request',
-            { source, phase: 'evidence', fragment, ...data }),
-          appendResult: data => session.append('academic/evidence-result',
-            { source, phase: 'evidence', fragment, ...data }),
-          onAttempt: (observation) => { if (observation.phase === 'settled') settled = observation },
+        return await runFragment({ trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId,
+          workVersionId: source.workVersionId }, messages: evidenceMessages(request,
+          purpose === 'enhancement' ? 'complete' : parsed.depth, repairContext?.requirements),
+        ...repairContext?.budget === undefined ? {} : { dispatchBudget: repairContext.budget },
+        ...request.signal === undefined ? {} : { signal: request.signal }, parse: repairContext === undefined ? parseFocusedEvidence
+          : text => parseCoverageEvidence(text, repairContext.requirements),
+        appendRequest: data => session.append('academic/evidence-request',
+          { source, phase: 'evidence', fragment, ...data }),
+        appendResult: data => session.append('academic/evidence-result',
+          { source, phase: 'evidence', fragment, ...data }),
+        onAttempt: (observation) => { if (observation.phase === 'settled') settled = observation },
         })
       } catch (error: unknown) {
         if (error instanceof WorkflowLogError || request.signal?.aborted) throw error
@@ -181,6 +198,7 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
     onVerified: async (fragment, evidence) => {
       try {
         const event = session.append('academic/evidence-fragment-verified', { source, fragment, evidence,
+          ...retrievalRunId === undefined ? {} : { retrievalRunId },
           ...purpose === undefined ? {} : { purpose } })
         if (!await sessions.flush(session)) throw new Error('No Session durability listener is active.')
         await using reader = await persistence.open(session.id, 'read')

@@ -10,6 +10,25 @@ const otherId = '66666666-6666-4666-8666-666666666666'
 const proseUuid = '77777777-7777-4777-8777-777777777777'
 
 describe('session snapshot identity redaction', () => {
+  it('preserves equality between coverage fingerprints and evidence digests while retaining unrelated hashes', () => {
+    const source = [
+      { type: 'session', id: parentId },
+      { type: 'academic/coverage-repair-state-v1', data: { state: { fingerprint: 'hash-a' } } },
+      { type: 'academic/coverage-repair-state-v1', data: { state: { fingerprint: 'hash-a' } } },
+      { type: 'academic/coverage-repair-state-v1', data: { state: { fingerprint: 'hash-b' } } },
+      { type: 'academic/coverage-repair-state-v1', data: { state: { evidenceDigests: [{ digest: 'support-c' }] } } },
+      { type: 'academic/coverage-repair-state-v1', data: { state: { evidenceDigests: [{ digest: 'support-c' }] } } },
+      { type: 'other', data: { fingerprint: 'untouched', digest: 'untouched-digest' } },
+    ].map(record => JSON.stringify(record)).join('\n')
+    const [output] = redactSessionSnapshotIds([source])
+    expect(output?.match(/"fingerprint":"{{id:1}}"/g)).toHaveLength(2)
+    expect(output).toContain('"fingerprint":"{{id:2}}"')
+    expect(output).toContain('"fingerprint":"untouched"')
+    expect(output?.match(/"digest":"{{id:3}}"/g)).toHaveLength(2)
+    expect(output).toContain('"digest":"untouched-digest"')
+    expect(redactSessionSnapshotIds([output!])).toEqual([output])
+  })
+
   it('preserves feedback versions and target relationships without redacting unrelated prose', () => {
     const source = [
       { type: 'session', id: parentId },

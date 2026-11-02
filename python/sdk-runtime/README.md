@@ -40,6 +40,8 @@ Repository builds also materialize a dev-only `runtime/node/` carrier. It runs `
 
 Both carriers execute the same `dsh` grammar and shipped profiles, including the standalone `sdk-minimal` tree and the full `web` profile with its frontend assets. The private `dsh-python-runtime-closure` manifest defines the packaged dependency closure; there is no Python-specific Node application or checked-in default `cordis.yml`.
 
+Executable staging derives a dedicated deploy lock from the reviewed workspace lock and installs with frozen resolution. Deployment enables workspace injection only for that command, retains the hoisted layout, and leaves the workspace installation unchanged. Office download identities still require the exact installed version and SHA-512 integrity from the workspace lock.
+
 ## Python module API
 
 - `bundled_package_dir() -> Path` returns the installed module-data root and verifies its release metadata.

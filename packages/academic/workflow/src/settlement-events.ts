@@ -53,6 +53,11 @@ export interface AcademicEvidenceEnhancementSettlementEvent extends AcademicEvid
 
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
+    /** Frozen calendar cutoff and time zone for one run, retained independently of model decisions. */
+    'academic/publication-date-context-v1': {
+      readonly retrievalRunId: import('@deepseek-ai/dsh-academic-model').RetrievalRunId
+      readonly context: import('@deepseek-ai/dsh-academic-model').PublicationDateContext
+    }
     /** Log-only approved search plan with stable query identities for cross-restart recovery. */
     'academic/search-plan': AcademicSearchPlanEvent
     /** Log-only Q5 scheduling decision (schedule, gap round, or stop). */

@@ -1,5 +1,5 @@
 /** Adapt completed workflow observations to the report-owned retrieval appendix. */
-import { targetIncludedWorks, type ResearchBrief, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
+import { targetIncludedWorks, type PublicationDateContext, type ResearchBrief, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
 import type { RetrievalDisclosure } from '@deepseek-ai/dsh-academic-report'
 import type { HybridRunObservation } from './hybrid-run.ts'
 import type { HybridSearchStageStatus } from './hybrid-search.ts'
@@ -10,13 +10,16 @@ import type { HybridSearchStageStatus } from './hybrid-search.ts'
  * @param brief Approved research limits.
  * @param hybrid Completed hybrid queries, absent when no hybrid query settled.
  * @param candidateLimit Effective candidate bound after applying the request override.
+ * @param publicationDateContext Frozen policy for current runs; absent historical runs retain their original disclosure.
  * @returns Chinese report disclosure containing no Web snippets, generated answers or candidate bibliography.
  */
 export function researchRetrievalDisclosure(
   run: RetrievalRun, brief: ResearchBrief, hybrid: HybridRunObservation | undefined, candidateLimit: number,
+  publicationDateContext?: PublicationDateContext,
 ): RetrievalDisclosure {
   const coverage = run.coverageSummary
   const observations: { label: string; value: string | number }[] = [
+    ...publicationDateContext === undefined ? [] : [{ label: '日期筛选政策', value: publicationDateDisclosure(publicationDateContext) }],
     { label: '实际直接检索来源', value: run.providers.join(', ') },
     { label: '发现记录', value: coverage.discoveredRecords },
     { label: '去重论文', value: coverage.deduplicatedWorks },
@@ -63,4 +66,17 @@ export function researchRetrievalDisclosure(
     limitations: [coverage.truncated ? '本轮存在截断或覆盖限制。' : '未报告截断，不代表检索覆盖完整。', ...coverage.limitations],
     failures: run.failures.map(failure => `${failure.provider} · ${failure.operation} · ${failure.category}：${failure.message}`),
   }
+}
+
+/**
+ * Explain the exact program-owned date policy without asking synthesis to infer the current date.
+ * @param context Frozen run date facts.
+ * @returns Report disclosure of the cutoff, basis, time zone and precision handling.
+ */
+export function publicationDateDisclosure(context: PublicationDateContext): string {
+  const basis = context.window.dateBasis === 'published' ? '所选版本发表／发布日期' : '论文首次公开日期'
+  const policy = { fixed: '固定截止日期', run_start: '截至本轮研究开始日', unbounded: '不设截止日期' }[context.endMode]
+  return `日期筛选：${context.window.start?.iso ?? '无下限'} 至 ${context.window.end?.iso ?? '无上限'}；`
+    + `口径：${basis}；政策：${policy}；时区 ${context.timeZone}；运行开始 ${context.startedAt}。`
+    + '不完整日期按区间重叠判断；有日期边界时，未知日期不予纳入。'
 }

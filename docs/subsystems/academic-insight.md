@@ -11,7 +11,11 @@ The analysis-local `AnalysisInput` and report-local `ReportInput` accept optiona
 
 Trace v1 shares branded operation/event identifiers through the model's type-only trace subpath. The current Controller adapter persists safe observations and normalizes them for base-independent pagination; the Web panel reads only scoped Remote pages. Report HTML exports use the existing Markdown renderer with an inert allowlist serializer, preserving quality and evidence links without external resources. See the [Controller](../../packages/api/academic-research-controller/README.md) and [viewer](../../packages/client/ui-academic-research/README.md) for query and export details.
 
+Academic Model owns `PublicationDatePolicy`, `PublicationDateContext` and the shared date evaluator. The Controller freezes the run calendar before creating retrieval adapters; Workflow persists it and enforces content-rule references on model exclusions. Retrieval and legacy selection apply the same partial-date overlap and unknown-date rules. See the [model contract](../../packages/academic/model/README.md) for date semantics.
+
 ## Summary
+
+Academic Model owns approved aspect criteria; Workflow owns stop-time mapping, frozen repair reservations and recovery of committed additions. Controller authors version-7 plans with concise visible questions and machine-readable criteria, and supplies review and repair budgets. New criteria do not silently attach to historical plans. Retrieval expands gaps using the matching question's approved core query and aspect terms. Analysis receives the settled assessment; reports retain gaps. See the [workflow contract](../../packages/academic/workflow/README.md).
 
 Academic insight is an optional business subsystem built on harness extension points.
 

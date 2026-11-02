@@ -1,4 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createCoverageSummary,
   createFailureId, createResearchBriefId, createRetrievalRunId, createSearchQueryId,
   createWorkVersionId, type RetrievalRun } from '@deepseek-ai/dsh-academic-model'
@@ -8,7 +11,7 @@ import { SessionQueryError } from '@deepseek-ai/dsh-session-query'
 import type { PtcDispatchEventData } from '@deepseek-ai/dsh-tools/types'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
-import type { AcademicQueryWorkflowObservation, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
+import type { AcademicQueryWorkflowObservation, AcademicResearchRecoveryCheckpoint, AcademicWorkflowProgressSnapshot } from '@deepseek-ai/dsh-academic-workflow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type RunAcademicResearchDraft = typeof import('@deepseek-ai/dsh-academic-workflow')['runAcademicResearchDraft']
@@ -38,10 +41,12 @@ import { draftFixture } from '../../../academic/workflow/tests/pipeline-fixture.
 import { academicTraceSpan, runResearchDraft } from '@deepseek-ai/dsh-academic-workflow'
 
 const contexts: Context[] = []
+const cacheDirectories: string[] = []
 afterEach(async () => {
   runAcademicResearchDraft.mockReset()
   runAcademicEvidenceEnhancement.mockReset()
   await Promise.all(contexts.splice(0).map(ctx => ctx.fiber.dispose()))
+  await Promise.all(cacheDirectories.splice(0).map(directory => rm(directory, { recursive: true, force: true })))
 })
 
 function brief() {
@@ -202,6 +207,8 @@ async function harness(options: {
   hybridPlan?: boolean
   retrieval?: AcademicPlannedRetrieval
   candidateScreening?: AcademicCandidateScreening
+  ambiguousDatePolicy?: boolean
+  config?: ConstructorParameters<typeof AcademicResearchController>[1]
 } = {}) {
   const ctx = new Context()
   contexts.push(ctx)
@@ -231,6 +238,9 @@ async function harness(options: {
   const sessionEvents: unknown[][] = []
   const planQuestions = [...options.questions ?? briefPayload().questions]
   const approvedPlanEvents = options.approvedPlan === false ? [] : nativePlanEvents(briefPlan({ ...briefPayload(), questions: planQuestions,
+    ...options.ambiguousDatePolicy === true ? { inclusionRules: ['版本日期在 1990 年至检索时点之间。'] } : {},
+    ...options.ambiguousDatePolicy === true ? {} : { publicationDatePolicy: { endMode: 'unbounded', timeZone: 'Asia/Shanghai',
+      inclusionRuleKinds: ['content'], exclusionRuleKinds: ['content'] } },
     ...options.saturationRounds === undefined ? {} : { stopConditions: {
       ...briefPayload().stopConditions, saturationRounds: options.saturationRounds,
     } },
@@ -320,12 +330,77 @@ async function harness(options: {
     extractionAttemptTimeoutMs: 150_000,
     synthesisMaxAttempts: 3,
     synthesisRetryInitialDelayMs: 1_000,
+    ...options.config,
   })
   return { controller, search, searchProviders, verifyReference, webSearch, resolveFullText, fetch, sessionId, signal, sessionEvents,
     observeSession, observationDisposed, legacySnapshotRead, resolveAgent }
 }
 
 describe('AcademicResearchController', () => {
+  it('resolves initial-work limits independently of coverage targeting and rejects excessive exploration', async () => {
+    expect(AcademicResearchController.Config({})).toMatchObject({ maximumFulltextWorks: 24,
+      maximumUncertainFulltextWorks: 15, extractionMaximumCallsPerPaper: 12,
+      scopeScreeningMaximumDispatches: 3, scopeScreeningMaximumFragments: 6,
+      scopeScreeningFragmentCharacters: 1500, scopeScreeningLeadCharacters: 200,
+      coverageTargeting: { maximumCandidateReads: 1, maximumModelCalls: 6 } })
+    await expect(harness({ config: { maximumFulltextWorks: 1, maximumUncertainFulltextWorks: 2 } }))
+      .rejects.toThrow('maximumUncertainFulltextWorks cannot exceed maximumFulltextWorks')
+  })
+
+  it('enforces configured full-text limits before the inclusion target without dropping extraction and scope limits', async () => {
+    const fixture = await harness({ hybridPlan: true, config: { maximumFulltextWorks: 1, maximumUncertainFulltextWorks: 1,
+      extractionMaximumCallsPerPaper: 2, scopeScreeningMaximumDispatches: 1, scopeScreeningMaximumFragments: 2,
+      scopeScreeningFragmentCharacters: 200, scopeScreeningLeadCharacters: 50 } })
+    const pipeline = draftFixture(2)
+    const works = pipeline.records.map((record, index) => retrievalWork(record, ['1706.03762', '1810.04805'][index]!))
+    fixture.searchProviders.mockResolvedValue({ works, batch: createBatchResult(works, []), providers: ['arxiv'],
+      discoveredRecords: works.length, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({ ...await runResearchDraft(request.input,
+      { ...request.adapters, generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+    sessionId: request.session.id }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    const result = await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId,
+      synthetic: true }, fixture.signal)
+    expect(fixture.fetch).toHaveBeenCalledOnce()
+    expect(result.retrievalRun.coverageSummary.includedWorks).toBe(1)
+    expect(runAcademicResearchDraft.mock.calls[0]?.[0].modelPolicies.evidence).toMatchObject({
+      fragmentMaximumCalls: 2, scopeScreening: { maximumDispatches: 1, maximumFragments: 2,
+        fragmentCharacters: 200, leadCharacters: 50 } })
+  })
+
+  it('reuses cached source text across research runs while rerunning evidence extraction', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'academic-controller-cache-'))
+    cacheDirectories.push(directory)
+    const fixture = await harness({ hybridPlan: true, config: { fulltextCacheDirectory: directory } })
+    const pipeline = draftFixture(2)
+    const works = pipeline.records.map((record, index) => retrievalWork(record, ['1706.03762', '1810.04805'][index]!))
+    fixture.searchProviders.mockResolvedValue({ works, batch: createBatchResult(works, []), providers: ['arxiv'],
+      discoveredRecords: works.length, limitations: [], truncated: false })
+    fixture.webSearch.mockResolvedValue({ sources: [], content: '', truncated: false })
+    fixture.fetch.mockImplementation(async ({ url }, signal) => pipeline.adapters.fetcher(url, signal))
+    runAcademicResearchDraft.mockImplementation(async request => ({ ...await runResearchDraft(request.input,
+      { ...request.adapters, generator: pipeline.adapters.generator, synthesize: pipeline.adapters.synthesize }, request.signal),
+    sessionId: request.session.id }))
+    const preview = await fixture.controller.plan(fixture.sessionId)
+    for (let index = 0; index < 2; index++) {
+      const result = await fixture.controller.run({ sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId,
+        synthetic: true }, fixture.signal)
+      expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
+    }
+    expect(fixture.fetch).toHaveBeenCalledTimes(2)
+    expect(pipeline.adapters.generator).toHaveBeenCalledTimes(4)
+  })
+
+  it('requires a revised approval before starting a legacy null-bound plan with unclassified rules', async () => {
+    const fixture = await harness({ ambiguousDatePolicy: true })
+    await expect(fixture.controller.run({ sessionId: fixture.sessionId,
+      researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: false }, fixture.signal))
+      .rejects.toThrow('旧计划未明确日期上限及规则归属')
+    expect(runAcademicResearchDraft).not.toHaveBeenCalled()
+    expect(fixture.search).not.toHaveBeenCalled()
+  })
   it('reopens a saved plan and completed run while another Web process owns the Session writer', async () => {
     const fixture = await harness({ writerHeld: true })
     const plan = await fixture.controller.plan(fixture.sessionId)
@@ -767,13 +842,15 @@ describe('AcademicResearchController', () => {
     const request = { sessionId: fixture.sessionId, researchBriefId: preview.researchBriefId, synthetic: true }
     await expect(fixture.controller.run(request, fixture.signal)).rejects.toThrow('simulated process exit')
     const checkpoint = fixture.sessionEvents.find(([name]) => name === 'academic/recovery-checkpoint')?.[1] as
-      | { retrievalRunId: RetrievalRun['retrievalRunId'] }
+      | AcademicResearchRecoveryCheckpoint
       | undefined
-    expect(checkpoint).toMatchObject({ policy: { fulltext: { maximumWorks: 24, maximumUncertainWorks: 15 } } })
+    expect(checkpoint?.publicationDateContext).toEqual(runAcademicResearchDraft.mock.calls[0]?.[0].input.publicationDateContext)
+    expect(checkpoint?.policy.fulltext).toEqual({ maximumWorks: 24, maximumUncertainWorks: 15 })
     const searchCallsBeforeResume = fixture.searchProviders.mock.calls.length
     const result = await fixture.controller.run({ ...request,
       resumeRetrievalRunId: checkpoint!.retrievalRunId }, fixture.signal)
     expect(fixture.searchProviders).toHaveBeenCalledTimes(searchCallsBeforeResume)
+    expect(runAcademicResearchDraft.mock.calls[1]?.[0].input.publicationDateContext).toEqual(checkpoint?.publicationDateContext)
     expect(fixture.webSearch).toHaveBeenCalledOnce()
     expect(result.retrievalRun.retrievalRunId).toBe(checkpoint!.retrievalRunId)
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
@@ -912,7 +989,8 @@ describe('AcademicResearchController', () => {
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
       modelPolicies: {
-        evidence: { maxAttempts: 2, retryOutputLimit: true,
+        evidence: { maxAttempts: 2, retryOutputLimit: true, fragmentMaximumCalls: 12,
+          scopeScreening: { maximumDispatches: 3, maximumFragments: 6, fragmentCharacters: 1500, leadCharacters: 200 },
           inputBatchTokenLimit: 12_000, inputBatchOverlapCharacters: 512, attemptTimeoutMs: 150_000,
           transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 10_000 } },
         synthesis: { maxAttempts: 3, retryOutputLimit: true,
@@ -1353,7 +1431,7 @@ describe('approved Research Brief plan handoff', () => {
     ['object', null, 'must be an object'],
     ['missing field', omitTopic(), 'missing: topic'],
     ['unknown field', { ...briefPayload(), extra: true }, 'unknown: extra'],
-    ['schema version', { ...briefPayload(), schemaVersion: 6 }, 'schemaVersion must be 1, 2, 3, 4, or 5'],
+    ['schema version', { ...briefPayload(), schemaVersion: 8 }, 'schemaVersion must be 1, 2, 3, 4, 5, 6, or 7'],
     ['topic', { ...briefPayload(), topic: '' }, 'topic must be a non-empty string'],
     ['aliases type', { ...briefPayload(), aliases: 'retrieval' }, 'aliases must be an array'],
     ['alias item', { ...briefPayload(), aliases: [''] }, 'aliases[0] must be a non-empty string'],
