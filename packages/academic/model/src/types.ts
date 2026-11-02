@@ -39,6 +39,20 @@ export type RetrievalRunId = Branded<'RetrievalRunId'>
 /** Stable identity of one planned search operation inside a research-brief version. */
 export type SearchQueryId = Branded<'SearchQueryId'>
 
+/** Stable aspect reference scoped to one approved research brief version. */
+export type ResearchAspectId = Branded<'ResearchAspectId'>
+
+/** Approved evidence requirements for the requested parts of one research question. */
+export interface ResearchCoverageRequirement {
+  readonly question: string
+  readonly aspects: readonly {
+    readonly aspectId: ResearchAspectId
+    readonly label: string
+    readonly evidenceRequirement: 'direct' | 'quantitative'
+    readonly searchTerms: readonly string[]
+  }[]
+}
+
 /** Stable identity of one provider or processing failure. */
 export type FailureId = Branded<'FailureId'>
 
@@ -73,6 +87,32 @@ export interface PublicationWindow {
   readonly start: PartialDate | null
   readonly end: PartialDate | null
   readonly dateBasis: PublicationDateBasis
+}
+
+/** Explicit interpretation of the upper bound and ownership of each approved rule. */
+export interface PublicationDatePolicy {
+  readonly endMode: 'fixed' | 'run_start' | 'unbounded'
+  readonly timeZone: string
+  readonly inclusionRuleKinds: readonly ('content' | 'publication_date')[]
+  readonly exclusionRuleKinds: readonly ('content' | 'publication_date')[]
+}
+
+/** Frozen date policy reused by every stage and recovery of a retrieval run. */
+export interface PublicationDateContext {
+  readonly schemaVersion: 1
+  readonly startedAt: string
+  readonly timeZone: string
+  readonly asOfDate: string
+  readonly endMode: PublicationDatePolicy['endMode']
+  readonly window: PublicationWindow
+}
+
+/** Program-owned date verdict; unknown dates cannot pass a bounded window. */
+export interface PublicationDateEvaluation {
+  readonly dateBasis: PublicationDateBasis
+  readonly candidateDate: Availability<PartialDate>
+  readonly window: PublicationWindow
+  readonly verdict: 'within_window' | 'before_publication_window' | 'after_publication_window' | 'publication_date_unknown'
 }
 
 /** Minimum source depth required for substantive academic conclusions. */
@@ -154,7 +194,9 @@ export interface ResearchBrief {
   readonly topic: string
   readonly aliases: readonly string[]
   readonly questions: readonly string[]
+  readonly coverageRequirements?: readonly ResearchCoverageRequirement[]
   readonly publicationWindow: PublicationWindow
+  readonly publicationDatePolicy?: PublicationDatePolicy
   /** Included version states; the executable workflow supports preprint, accepted_manuscript and version_of_record. */
   readonly includedWorkTypes: readonly string[]
   readonly inclusionRules: readonly string[]

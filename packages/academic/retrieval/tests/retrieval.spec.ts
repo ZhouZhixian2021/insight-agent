@@ -5,10 +5,12 @@ import {
   createBatchResult,
   createFailureId,
   createResearchBriefId,
+  createSearchQueryId,
   createWorkVersionId,
   type AcademicWork,
   type ExecutableResearchBrief,
   type ResearchQuestionCoverageResult,
+  type ResearchAspectId,
   type WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 import type { AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
@@ -73,6 +75,25 @@ function record(doi: string, provider: string): AcademicSourceWork {
 }
 
 describe('planned Academic retrieval', () => {
+  it('expands gaps for later core questions using approved aspect terms and the matching core query', () => {
+    const first = plan(), later = 'What are agent evaluation costs?'
+    const aspectId = 'q2.cost' as ResearchAspectId
+    const core = first.queries.find(query => query.kind === 'academic' && query.purpose === 'core')!
+    const updated = { ...first, constraints: { ...first.constraints, coverageRequirements: [{ question: later,
+      aspects: [{ aspectId, label: 'Observed cost', evidenceRequirement: 'direct' as const, searchTerms: ['latency'] }] }] },
+    queries: [...first.queries, { ...core, searchQueryId: createSearchQueryId(), expression: 'agent benchmarking', questions: [later] }] }
+    const coverage: ResearchQuestionCoverageResult = { schemaVersion: 1, researchBriefId: first.researchBriefId,
+      researchBriefVersion: first.researchBriefVersion, assessedAt: 'now', evidenceRequirementsMet: true, allQuestionsCovered: false,
+      questions: [{ question: later, status: 'partial', supportingWorkIds: [], evidenceIds: [], gaps: ['unapproved model instruction'],
+        aspects: [{ aspectId, status: 'missing', evidenceIds: [], reason: 'unapproved model instruction' }] }] }
+    const result = extendPlanForEvidenceGaps(updated, coverage, 2, options).plan
+    const query = result.queries.at(-1)!
+    expect(query.expression).toContain('agent benchmarking')
+    expect(query.expression).toContain('latency')
+    expect(query.expression).not.toContain('unapproved model instruction')
+    expect(query.questions).toEqual([later])
+  })
+
   it('builds bounded channel queries, reviewed expansions, and gap searches', () => {
     const first = plan()
     expect(first.queries.map(query => query.kind)).toEqual([

@@ -11,7 +11,11 @@ kind: "subsystem"
 
 Trace v1 通过模型的仅类型 trace 子路径共享品牌操作与事件身份。当前 Controller 适配器保存安全观察记录，标准化后交给不依赖基座的分页；Web 面板只读取限定范围的 Remote 页面。报告 HTML 导出使用现有 Markdown 渲染器与惰性允许列表序列化，保留质量和证据链接，不引入外部资源。查询与导出细节见 [Controller](../../packages/api/academic-research-controller/README.zh.md)和[查看器](../../packages/client/ui-academic-research/README.zh.md)。
 
+Academic Model 负责 `PublicationDatePolicy`、`PublicationDateContext` 和共享日期裁决函数。Controller 在创建检索适配器前冻结运行日期；Workflow 保存它，并强制模型排除引用内容规则。检索与旧选择器共用不完整日期重叠及未知日期规则。日期语义见[模型契约](../../packages/academic/model/README.zh.md)。
+
 ## 概述
+
+Academic Model 持有获批的分方面要求；Workflow 负责停止时的映射、冻结补强额度及恢复已提交证据。Controller 生成第 7 版计划，保持可见问题简洁，并提供机器可读要求及核查、补强预算。新要求不会自动附加到历史计划。Retrieval 使用对应问题获批的核心查询和方面检索词扩展缺口查询。Analysis 接收最终核查，报告保留缺口。见[工作流约定](../../packages/academic/workflow/README.zh.md)。
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 

@@ -12,6 +12,30 @@ import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
 import { SynthesisError } from '@deepseek-ai/dsh-academic-analysis'
 import { WorkflowLogError } from './model-errors.ts'
 import type { EvidenceModelPolicy, EvidenceModelRequest, EvidenceModelResult } from './model-types.ts'
+import type { CoverageModelBudget } from './coverage-types.ts'
+
+/**
+ * Commit an Academic event and verify the storage listener retained it before dependent work.
+ * @param ctx Session store and persistence services.
+ * @param session Session with an active writer.
+ * @param append Event factory called once.
+ * @returns The durably retained event.
+ * @throws WorkflowLogError when append, flush or read-back fails.
+ */
+export async function persistAcademicEvent<T extends SessionEvent>(ctx: Context, session: Session, append: () => T): Promise<T> {
+  try {
+    const sessions = ctx.get('sessions'), persistence = ctx.get('sessionPersistence')
+    if (!sessions || !persistence) throw new Error('Academic events require Session persistence.')
+    const event = append()
+    if (!await sessions.flush(session)) throw new Error('No Session durability listener is active.')
+    await using reader = await persistence.open(session.id, 'read')
+    const [stored] = (await reader.read(event.seq, 1)).events
+    if (!isDeepStrictEqual(event, stored)) throw new Error('Session storage did not retain the Academic event.')
+    return event
+  } catch (cause: unknown) {
+    throw new WorkflowLogError(cause)
+  }
+}
 
 /** Internal marker preserving the existing durable code while identifying output-limit exhaustion to synthesis. */
 export class ModelOutputLimitError extends EvidenceError {
@@ -20,6 +44,8 @@ export class ModelOutputLimitError extends EvidenceError {
 
 /** Operation-owned callbacks keep evidence and synthesis request-result records separate. */
 export interface LoggedModelRequest<T> {
+  /** Optional run-owned admission; interrupted calls retain their full reservation. */
+  readonly dispatchBudget?: CoverageModelBudget
   readonly trace?: AcademicTraceOperationIdentity
   readonly messages: Message[]
   /** A local attempt deadline may be recovered by the caller with smaller input instead of repeating this request. */
@@ -81,21 +107,8 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
     if (!Number.isSafeInteger(lastDelay)) throw new Error('Academic transient retry delay exceeds the safe integer range.')
   }
   const selectedConfig = structuredClone(config)
-  const flush = () => sessions.flush(session)
-  const openReader = () => persistence.open(session.id, 'read')
-
   async function record<T extends SessionEvent>(append: () => T): Promise<T> {
-    try {
-      const event = append()
-      if (!await flush()) throw new Error('No Session durability listener is active.')
-      // A registered flush listener can be a no-op when this Session has no live writer.
-      await using reader = await openReader()
-      const [stored] = (await reader.read(event.seq, 1)).events
-      if (!isDeepStrictEqual(stored, event)) throw new Error('Session storage did not retain the model record.')
-      return event
-    } catch (cause: unknown) {
-      throw new WorkflowLogError(cause)
-    }
+    return persistAcademicEvent(ctx, session, append)
   }
 
   return async (request: LoggedModelRequest<T>) => {
@@ -141,6 +154,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
       let firstContentElapsedMs: number | undefined
       let stage: 'prepare' | 'admission' | 'stream' | 'parse' = 'prepare'
       let failurePhase: EvidenceModelResult['failurePhase']
+      let budgetReservation: number | undefined
       try {
         const prepared = await llm.prepareCall(selectedConfig, attemptSignal)
         stage = 'admission'
@@ -166,6 +180,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
           status = 'skipped'
           throw new EvidenceError('Paper exceeds the estimated model input budget.', 'EVIDENCE_INPUT_TOO_LARGE')
         }
+        budgetReservation = await request.dispatchBudget?.reserve(estimatedInputTokens, outputTokens)
         stage = 'stream'
         // The Session's immutable event supplies exactly the config and messages dispatched.
         streamStarted = performance.now()
@@ -227,6 +242,7 @@ export function createLoggedModelRunner<T>(ctx: Context, session: Session, confi
         ...failurePhase === undefined ? {} : { failurePhase },
         ...finish === undefined ? {} : { finish }, ...assembler.usage === undefined ? {} : { usage: assembler.usage },
         ...errorCode === undefined ? {} : { errorCode } }))
+      if (budgetReservation !== undefined) await request.dispatchBudget?.settle(budgetReservation, assembler.usage?.totalTokens)
       const observedStatus = resultRecord.type === 'academic/synthesis-result' ? resultRecord.data.status : status
       const spanStatus = observedStatus === 'validated' ? 'succeeded'
         : observedStatus === 'partially_validated' ? 'partial_success' : observedStatus

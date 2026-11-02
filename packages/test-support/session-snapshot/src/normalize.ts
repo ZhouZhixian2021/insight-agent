@@ -396,9 +396,11 @@ export function normalizeSessionLog(
       record.time = 0
     }
     if ((record.type === 'assistant/message' || record.type === 'assistant/attempt'
-      || record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result')
+      || record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result'
+      || record.type === 'academic/coverage-review-result-v1')
       && record.data !== null && typeof record.data === 'object') {
-      if (record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result') {
+      if (record.type === 'academic/evidence-result' || record.type === 'academic/synthesis-result'
+        || record.type === 'academic/coverage-review-result-v1') {
         const data = record.data as Record<string, unknown>
         if (typeof data.elapsedMs === 'number') data.elapsedMs = 0
         if (typeof data.firstContentElapsedMs === 'number') data.firstContentElapsedMs = 0

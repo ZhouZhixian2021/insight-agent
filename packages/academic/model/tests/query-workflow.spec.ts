@@ -6,6 +6,7 @@ import {
   createCandidateRankingResult,
   createCandidateScoreBreakdown,
   createInclusionTargets,
+  createHybridSearchConstraints,
   createSearchQueryId,
   type AcademicCandidateRankingResult,
   type CandidateAssessment,
@@ -14,6 +15,7 @@ import {
   type HybridSearchRound,
   type QueryWorkflowProgressEvent,
   type ResearchQuestionCoverageResult,
+  type ResearchAspectId,
   type SearchStopDecision,
 } from '../src/index.ts'
 
@@ -46,6 +48,27 @@ const highScore = {
 }
 
 describe('Academic query-workflow shared rules', () => {
+  it('builds identical content-only search constraints while preserving approved dates and coverage', () => {
+    const coverageRequirements = [{ question: 'Explain architecture', aspects: [{ aspectId: 'q1.architecture' as ResearchAspectId,
+      label: 'Architecture', searchTerms: ['architecture'], evidenceRequirement: 'direct' as const }] }]
+    const brief = { publicationWindow: sample.plan.constraints.publicationWindow,
+      includedWorkTypes: ['preprint'], inclusionRules: ['Study agent architecture', 'Published within the date window'],
+      exclusionRules: ['Exclude blogs', 'Exclude dates beyond the cutoff'], coverageRequirements,
+      publicationDatePolicy: { endMode: 'fixed' as const, timeZone: 'Asia/Shanghai',
+        inclusionRuleKinds: ['content' as const, 'publication_date' as const],
+        exclusionRuleKinds: ['content' as const, 'publication_date' as const] } }
+    const constraints = createHybridSearchConstraints(brief)
+    expect(constraints).toEqual({ publicationWindow: brief.publicationWindow, includedWorkTypes: ['preprint'],
+      inclusionRules: ['Study agent architecture'], exclusionRules: ['Exclude blogs'], coverageRequirements,
+      requiredTerms: [], excludedTerms: [] })
+    expect(brief.inclusionRules).toHaveLength(2)
+    expect(brief.exclusionRules).toHaveLength(2)
+    const legacy = createHybridSearchConstraints({ publicationWindow: brief.publicationWindow,
+      includedWorkTypes: brief.includedWorkTypes, inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules })
+    expect(legacy.inclusionRules).toEqual(brief.inclusionRules)
+    expect(legacy.exclusionRules).toEqual(brief.exclusionRules)
+  })
+
   it('creates stable query identities independently from expressions', () => {
     expect(createSearchQueryId()).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u,

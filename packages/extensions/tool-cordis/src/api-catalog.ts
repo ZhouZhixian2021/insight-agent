@@ -5483,7 +5483,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CandidateScopeDecision',
-    declaration: 'export type CandidateScopeDecision = {\n    readonly status: \'potentially_relevant\';\n    readonly reason: string;\n} | {\n    readonly status: \'off_topic\';\n    readonly reason: string;\n    readonly quote: CandidateMetadataQuote;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
+    declaration: 'export type CandidateScopeDecision = {\n    readonly status: \'potentially_relevant\';\n    readonly reason: string;\n} | {\n    readonly status: \'off_topic\';\n    readonly reason: string;\n    readonly quote: CandidateMetadataQuote;\n    readonly ruleId?: string;\n} | {\n    readonly status: \'unknown\';\n    readonly reason: string;\n};',
   },
   {
     name: 'CandidateScoreBreakdown',
@@ -6219,7 +6219,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'HybridSearchConstraints',
-    declaration: 'export interface HybridSearchConstraints {\n    readonly publicationWindow: PublicationWindow;\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly requiredTerms: readonly string[];\n    readonly excludedTerms: readonly string[];\n}',
+    declaration: 'export interface HybridSearchConstraints {\n    readonly publicationWindow: PublicationWindow;\n    readonly coverageRequirements?: readonly ResearchCoverageRequirement[];\n    readonly includedWorkTypes: readonly string[];\n    readonly inclusionRules: readonly string[];\n    readonly exclusionRules: readonly string[];\n    readonly requiredTerms: readonly string[];\n    readonly excludedTerms: readonly string[];\n}',
   },
   {
     name: 'HybridSearchPlan',
@@ -7402,16 +7402,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface RequestUserInput {\n    readonly role: \'user\';\n    readonly content: UserMessage[\'content\'];\n    readonly id?: never;\n    readonly source?: never;\n}',
   },
   {
+    name: 'ResearchAspectCoverage',
+    declaration: 'export interface ResearchAspectCoverage {\n    readonly aspectId: ResearchAspectId;\n    readonly status: \'covered\' | \'partial\' | \'missing\' | \'uncertain\';\n    readonly evidenceIds: readonly EvidenceId[];\n    readonly reason: string;\n}',
+  },
+  {
+    name: 'ResearchAspectId',
+    declaration: 'export type ResearchAspectId = Branded<\'ResearchAspectId\'>;',
+  },
+  {
     name: 'ResearchBriefId',
     declaration: 'export type ResearchBriefId = Branded<\'ResearchBriefId\'>;',
   },
   {
+    name: 'ResearchCoverageRequirement',
+    declaration: 'export interface ResearchCoverageRequirement {\n    readonly question: string;\n    readonly aspects: readonly {\n        readonly aspectId: ResearchAspectId;\n        readonly label: string;\n        readonly evidenceRequirement: \'direct\' | \'quantitative\';\n        readonly searchTerms: readonly string[];\n    }[];\n}',
+  },
+  {
     name: 'ResearchQuestionCoverage',
-    declaration: 'export interface ResearchQuestionCoverage {\n    readonly question: string;\n    readonly status: \'uncovered\' | \'partial\' | \'covered\';\n    readonly supportingWorkIds: readonly AcademicWorkId[];\n    readonly evidenceIds: readonly EvidenceId[];\n    readonly gaps: readonly string[];\n}',
+    declaration: 'export interface ResearchQuestionCoverage {\n    readonly question: string;\n    readonly status: \'uncovered\' | \'partial\' | \'covered\';\n    readonly supportingWorkIds: readonly AcademicWorkId[];\n    readonly evidenceIds: readonly EvidenceId[];\n    readonly gaps: readonly string[];\n    readonly aspects?: readonly ResearchAspectCoverage[];\n}',
   },
   {
     name: 'ResearchQuestionCoverageResult',
-    declaration: 'export interface ResearchQuestionCoverageResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly assessedAt: string;\n    readonly questions: readonly ResearchQuestionCoverage[];\n    readonly evidenceRequirementsMet: boolean;\n    readonly allQuestionsCovered: boolean;\n}',
+    declaration: 'export interface ResearchQuestionCoverageResult {\n    readonly schemaVersion: 1;\n    readonly researchBriefId: ResearchBriefId;\n    readonly researchBriefVersion: number;\n    readonly assessedAt: string;\n    readonly questions: readonly ResearchQuestionCoverage[];\n    readonly evidenceRequirementsMet: boolean;\n    readonly allQuestionsCovered: boolean;\n    readonly basis?: \'paper_count\' | \'reviewed_aspects\';\n}',
   },
   {
     name: 'ResolvedAlwaysRetryPolicy',
@@ -7623,7 +7635,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SearchStopReason',
-    declaration: 'export type SearchStopReason = \'target_and_coverage_met\' | \'saturated\' | \'candidate_exhausted\' | \'maximum_search_rounds\' | \'maximum_candidate_works\' | \'maximum_included_works\' | \'maximum_elapsed_time\' | \'cancelled\' | \'review_required\';',
+    declaration: 'export type SearchStopReason = \'target_and_coverage_met\' | \'saturated\' | \'candidate_exhausted\' | \'maximum_search_rounds\' | \'maximum_candidate_works\' | \'maximum_included_works\' | \'maximum_elapsed_time\' | \'cancelled\' | \'review_required\' | \'coverage_repair_exhausted\';',
   },
   {
     name: 'SendTeamMessageRequest',

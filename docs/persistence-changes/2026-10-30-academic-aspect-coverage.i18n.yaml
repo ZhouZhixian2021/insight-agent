@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-30-academic-aspect-coverage.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-30-academic-aspect-coverage.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-30-academic-aspect-coverage:
+  en: b97f7366fefce586
+  zh: 9f2b6b26c6d24f3a
+/2026-10-30-academic-aspect-coverage/summary:
+  en: 08fe6faca2444cc3
+  zh: 0175f0de8fd62d96
+/2026-10-30-academic-aspect-coverage/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-30-academic-aspect-coverage/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-30-academic-aspect-coverage/compatibility:
+  en: 0c0576935d85fdf7
+  zh: 8b65034e000cd0ea
+/2026-10-30-academic-aspect-coverage/verification:
+  en: 596dcfe16db32d0c
+  zh: 568713b55e72e5fc
+/2026-10-30-academic-aspect-coverage/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

@@ -23,6 +23,9 @@ export interface AcademicApprovedPlanProjection {
 }
 
 type RecoveryEvent = SessionEvent<'academic/candidate-batch-decision'>
+  | SessionEvent<'academic/coverage-repair-state-v1'>
+  | SessionEvent<'academic/coverage-repair-paper-v1'>
+  | SessionEvent<'academic/evidence-fragment-verified'>
   | SessionEvent<'academic/candidate-batch-settlement'>
   | SessionEvent<'academic/run-settlement'>
   | SessionEvent<'academic/recovery-checkpoint'>
@@ -109,6 +112,15 @@ export const academicResearchProjectionDefinition: ProjectionDefinition<'academi
         const current = state.recoveryRuns[key] ?? { searchPlan: state.latestSearchPlan, events: [] }
         return { ...state, recoveryRuns: { ...state.recoveryRuns,
           [key]: { ...current, events: [...current.events, event] } } }
+      }
+      case 'academic/coverage-repair-state-v1':
+      case 'academic/coverage-repair-paper-v1':
+      case 'academic/evidence-fragment-verified': {
+        const runId = event.data.retrievalRunId
+        if (runId === undefined || (event.type === 'academic/evidence-fragment-verified' && event.data.purpose !== 'coverage_repair')) return state
+        const key = String(runId)
+        const current = state.recoveryRuns[key] ?? { searchPlan: state.latestSearchPlan, events: [] }
+        return { ...state, recoveryRuns: { ...state.recoveryRuns, [key]: { ...current, events: [...current.events, event] } } }
       }
       case 'academic/evidence-enhancement-selection': {
         const key = String(event.data.retrievalRunId)

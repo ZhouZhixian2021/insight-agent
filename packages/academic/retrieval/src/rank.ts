@@ -1,9 +1,9 @@
 /** Explainable candidate evaluation over verified, deduplicated scholarly works. */
 import { metadataForVersion } from '@deepseek-ai/dsh-academic-ingestion'
-import { candidatePriorityForScore, createCandidateRankingResult, createCandidateScoreBreakdown,
+import { evaluatePublicationDate, candidatePriorityForScore, createCandidateRankingResult, createCandidateScoreBreakdown,
   type AcademicCandidateEvaluation, type AcademicCandidateRankingResult, type AcademicWork,
   type CandidateAssessment, type CandidateClassification, type CandidateHardFilterReason,
-  type ExecutableResearchBrief, type HybridSearchPlan, type PartialDate,
+  type ExecutableResearchBrief, type HybridSearchPlan,
   type WorkVersion,
 } from '@deepseek-ai/dsh-academic-model'
 import type { PlannedSearchRoundResult } from './execute.ts'
@@ -184,20 +184,8 @@ export function preReviewHardExclusions(work: AcademicWork, version: WorkVersion
   if (!plan.constraints.includedWorkTypes.includes(version.versionType)) {
     reasons.push({ code: 'work_type_not_included', detail: version.versionType })
   }
-  const { publicationWindow } = plan.constraints
-  if (publicationWindow.start !== null || publicationWindow.end !== null) {
-    const date = publicationWindow.dateBasis === 'first_public_release' ? work.firstPublicDate : version.releaseDate
-    if (date.status !== 'available') reasons.push({ code: 'publication_date_unknown' })
-    else {
-      const bounds = dateBounds(date.value)
-      if (publicationWindow.start !== null && bounds.end < dateBounds(publicationWindow.start).start) {
-        reasons.push({ code: 'before_publication_window' })
-      }
-      if (publicationWindow.end !== null && bounds.start > dateBounds(publicationWindow.end).end) {
-        reasons.push({ code: 'after_publication_window' })
-      }
-    }
-  }
+  const date = evaluatePublicationDate(work, version, plan.constraints.publicationWindow)
+  if (date.verdict !== 'within_window') reasons.push({ code: date.verdict })
   const abstract = metadata.abstract.status === 'available' ? metadata.abstract.value : ''
   const keywords = metadata.keywords.status === 'available' ? metadata.keywords.value : []
   const text = [work.title, abstract, ...keywords].join(' ').toLowerCase()
@@ -266,15 +254,6 @@ function classify(assessment: CandidateAssessment, minimumScore: number): Candid
 
 function points(weight: number, fraction: number): number {
   return Math.round(weight * fraction * 100) / 100
-}
-
-function dateBounds(date: PartialDate): { readonly start: string; readonly end: string } {
-  switch (date.precision) {
-    case 'year': return { start: `${date.iso}-01-01`, end: `${date.iso}-12-31` }
-    case 'month': return { start: `${date.iso}-01`, end: `${date.iso}-31` }
-    case 'day': return { start: date.iso, end: date.iso }
-    default: return assertNever(date.precision)
-  }
 }
 
 function assertNever(value: never): never {

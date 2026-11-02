@@ -1,5 +1,6 @@
 /** Deterministic queries from an approved research brief and explicit expansion terms. */
 import {
+  createHybridSearchConstraints,
   candidatePriorityForScore,
   createInclusionTargets,
   createSearchQueryId,
@@ -92,14 +93,7 @@ export function planHybridSearch(
     schemaVersion: 1,
     researchBriefId: brief.researchBriefId,
     researchBriefVersion: brief.version,
-    constraints: {
-      publicationWindow: brief.publicationWindow,
-      includedWorkTypes: brief.includedWorkTypes,
-      inclusionRules: brief.inclusionRules,
-      exclusionRules: brief.exclusionRules,
-      requiredTerms: [],
-      excludedTerms: [],
-    },
+    constraints: createHybridSearchConstraints(brief),
     inclusionTargets: input.inclusionTargets,
     rankingPolicy: input.rankingPolicy,
     queries,
@@ -134,14 +128,20 @@ export function extendPlanForEvidenceGaps(
   }
   const core = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core')
   if (core === undefined) throw new RangeError('plan requires a core academic query')
-  const approvedQuestions = new Set(core.questions)
+  const approvedQuestions = new Set(plan.queries.flatMap(query => query.questions))
   const additions: HybridSearchQuery[] = []
   const warnings: string[] = []
   for (const item of coverage.questions) {
     if (!approvedQuestions.has(item.question)) throw new RangeError('coverage contains an unplanned question')
     if (item.status === 'covered') continue
-    for (const gap of item.gaps) {
-      const expression = `${core.expression} ${nonEmpty(gap, 'coverage.gap')}`
+    const questionCore = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core'
+      && query.questions.includes(item.question)) ?? core
+    const requirement = plan.constraints.coverageRequirements?.find(requirement => requirement.question === item.question)
+    const gaps = requirement === undefined ? item.gaps : requirement.aspects
+      .filter(aspect => item.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered')
+      .map(aspect => [aspect.label, ...aspect.searchTerms].join(' '))
+    for (const gap of gaps) {
+      const expression = `${questionCore.expression} ${nonEmpty(gap, 'coverage.gap')}`
       const candidate = academic(expression, 'evidence_gap', [item.question], roundIndex, options.academicProviders)
       if (plan.queries.some(query => sameQuery(query, candidate))) continue
       if (mergeDuplicate(additions, candidate)) continue

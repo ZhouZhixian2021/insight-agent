@@ -23,21 +23,37 @@ export async function enhanceEvidenceInFragments(input: Omit<EvidenceExtractionI
   const result = await runEvidenceFragments({ ...input, depth: 'complete' }, { ...options,
     onVerified: async (attempt, addition) => {
       await options.onVerified(attempt, addition)
-      evidence = { sourceLocators: [...evidence.sourceLocators, ...addition.sourceLocators],
-        evidenceRecords: [...evidence.evidenceRecords, ...addition.evidenceRecords],
-        questionLinks: [...evidence.questionLinks, ...addition.questionLinks],
-        rejectedDrafts: [...evidence.rejectedDrafts, ...addition.rejectedDrafts],
-        evidenceCard: { ...evidence.evidenceCard,
-          researchQuestions: [...evidence.evidenceCard.researchQuestions, ...addition.evidenceCard.researchQuestions],
-          methods: [...evidence.evidenceCard.methods, ...addition.evidenceCard.methods],
-          datasets: [...evidence.evidenceCard.datasets, ...addition.evidenceCard.datasets],
-          metrics: [...evidence.evidenceCard.metrics, ...addition.evidenceCard.metrics],
-          findings: [...evidence.evidenceCard.findings, ...addition.evidenceCard.findings],
-          limitations: [...evidence.evidenceCard.limitations, ...addition.evidenceCard.limitations],
-        } }
+      evidence = appendVerifiedEvidence(evidence, addition)
     },
   }, signal, verified => additions(evidence, verified))
   return { ...result, evidence }
+}
+
+/**
+ * Retain source-verified additions idempotently during execution or durable fragment recovery.
+ * @param initial Previously retained evidence.
+ * @param addition Already deduplicated verified additions, or a complete committed repair result.
+ * @returns Original identities plus new records and question associations.
+ */
+export function appendVerifiedEvidence(initial: EvidenceExtractionResult, addition: EvidenceExtractionResult): EvidenceExtractionResult {
+  const unique = <T>(values: readonly T[], key: (value: T) => string): T[] => {
+    const retained = new Map<string, T>()
+    for (const value of values) if (!retained.has(key(value))) retained.set(key(value), value)
+    return [...retained.values()]
+  }
+  const items = <T extends EvidenceCardItem>(left: readonly T[], right: readonly T[]) =>
+    unique([...left, ...right], item => item.evidenceCardItemId)
+  return { sourceLocators: unique([...initial.sourceLocators, ...addition.sourceLocators], value => value.sourceLocatorId),
+    evidenceRecords: unique([...initial.evidenceRecords, ...addition.evidenceRecords], value => value.evidenceId),
+    questionLinks: unique([...initial.questionLinks, ...addition.questionLinks], value =>
+      JSON.stringify([value.evidenceId, value.question])),
+    rejectedDrafts: [...initial.rejectedDrafts, ...addition.rejectedDrafts], evidenceCard: { ...initial.evidenceCard,
+      researchQuestions: items(initial.evidenceCard.researchQuestions, addition.evidenceCard.researchQuestions),
+      methods: items(initial.evidenceCard.methods, addition.evidenceCard.methods),
+      datasets: items(initial.evidenceCard.datasets, addition.evidenceCard.datasets),
+      metrics: items(initial.evidenceCard.metrics, addition.evidenceCard.metrics),
+      findings: items(initial.evidenceCard.findings, addition.evidenceCard.findings),
+      limitations: items(initial.evidenceCard.limitations, addition.evidenceCard.limitations) } }
 }
 
 function validateInitial(input: Omit<EvidenceExtractionInput, 'depth'>, initial: EvidenceExtractionResult): void {

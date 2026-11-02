@@ -318,7 +318,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-api-academic-research-controller`
 
 - `inject`: `academicSource` · `sessionController` · `sessionProjections` · `sessionQuery` · `typert` · `web`
-- `source`: [`packages/api/academic-research-controller/src/index.ts:64`](../packages/api/academic-research-controller/src/index.ts)
+- `source`: [`packages/api/academic-research-controller/src/index.ts:65`](../packages/api/academic-research-controller/src/index.ts)
 
 ```ts config-catalog
 /** Academic research deployment policy. */
@@ -389,6 +389,24 @@ export interface Config {
   readonly replenishmentCandidateBatchSize?: number
   /** Independent evidence-bearing works required to cover one question. Defaults to 1. */
   readonly minimumQuestionSupportingWorks?: number
+  /** Maximum stop-time coverage reviews per run, including failures. Defaults to 2. */
+  readonly coverageReviewMaximumCalls?: number
+  /** Coverage-review output budget, including model reasoning. Defaults to 16384. */
+  readonly coverageReviewMaxTokens?: number
+  /** Coverage-review dispatch deadline. Defaults to 150000 ms. */
+  readonly coverageReviewAttemptTimeoutMs?: number
+  /** Source excerpt characters retained per evidence item in a review. Defaults to 1200. */
+  readonly coverageReviewExcerptCharacters?: number
+  /** Automatic coverage repair rounds; at most one. Defaults to 1. */
+  readonly coverageRepairMaximumRounds?: number
+  /** Existing included papers eligible for one repair dispatch each. Defaults to 2. */
+  readonly coverageRepairMaximumPapers?: number
+  /** Additional candidate works admitted after the target boundary. Defaults to 4. */
+  readonly coverageRepairMaximumNewWorks?: number
+  /** One targeted source window per repaired paper. Defaults to 4000 characters. */
+  readonly coverageRepairMaximumCharacters?: number
+  /** Gap-driven source, token and elapsed-time bounds; omitted configuration uses validated defaults. */
+  readonly coverageTargeting?: import('@deepseek-ai/dsh-academic-workflow').CoverageTargetingPolicy
   /** Maximum queries generated in one evidence-gap replenishment round. Defaults to 4. */
   readonly gapRoundMaximumQueriesPerRound?: number
   /** Maximum Academic results per gap-round query. Defaults to 20. */

@@ -7,12 +7,14 @@ import type {
   HybridSearchPlan,
   HybridSearchRound,
   ProviderFailure,
+  PublicationDateContext,
   ResearchQuestionCoverageResult,
   RetrievalRunId,
   WorkVersion,
   WorkVersionId,
 } from '@deepseek-ai/dsh-academic-model'
 import type { PaperEvidenceResult } from './types.ts'
+import type { CoverageRepairState } from './coverage-types.ts'
 import type { CandidateBatchPolicy } from './candidate-batches.ts'
 import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent } from './query-workflow.ts'
 
@@ -41,6 +43,8 @@ export interface AcademicResearchRecoveryCheckpoint {
   readonly schemaVersion: 1
   readonly retrievalRunId: RetrievalRunId
   readonly startedAt: string
+  readonly publicationDateContext?: PublicationDateContext
+  readonly coverageRepairState?: CoverageRepairState
   readonly executedQueries: readonly string[]
   readonly search: AcademicRecoverySearchCheckpoint | null
   readonly works: readonly AcademicWork[]

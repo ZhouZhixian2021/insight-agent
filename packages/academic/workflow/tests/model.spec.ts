@@ -427,6 +427,20 @@ describe('durable academic model extraction', () => {
       expect(record.contentHash).toEqual({ status: 'available', value: request?.data.source.contentHash })
     }
   })
+  it('persists the explicit date context before model review and retains it in the report', async () => {
+    const f = await fixture(), draft = draftFixture()
+    draft.input.brief = { ...draft.input.brief, publicationDatePolicy: { endMode: 'unbounded', timeZone: 'Asia/Shanghai',
+      inclusionRuleKinds: [], exclusionRuleKinds: [] } }
+    f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]
+    const result = await runModelResearchDraft(f.ctx, f.session, config, policies, draft.input, draft.adapters)
+    const saved = await f.read()
+    expect(saved[0]).toMatchObject({ type: 'academic/publication-date-context-v1', data: {
+      retrievalRunId: result.retrievalRun.retrievalRunId,
+      context: { startedAt: draft.adapters.now(), timeZone: 'Asia/Shanghai', asOfDate: '2026-09-15', endMode: 'unbounded' },
+    } })
+    expect(result.papers[0]?.publicationDate?.context).toEqual(result.papers[1]?.publicationDate?.context)
+    expect(result.report?.markdown).toContain('Asia/Shanghai')
+  })
   it('offers one formal entry with the model default reasoning and durable Session identity', async () => {
     const f = await fixture(), draft = draftFixture()
     f.adapter.script = [{ type: 'text-delta', index: 0, text: output.replaceAll('Method X', 'reranking') }, script[2]!]

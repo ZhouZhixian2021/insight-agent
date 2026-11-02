@@ -2,7 +2,7 @@
 import { EvidenceError, type EvidenceDraft, type EvidenceCardItemDraft } from '@deepseek-ai/dsh-academic-evidence'
 import type { Availability } from '@deepseek-ai/dsh-academic-model'
 import { MAX_EVIDENCE_DRAFTS } from './model-limits.ts'
-import type { PaperModelResponse, PaperScopeDecision } from './model-types.ts'
+import type { PaperModelResponse, PaperScopeDecision, PaperScopeRules } from './model-types.ts'
 
 type Reader<T> = (value: unknown, path: string) => T
 
@@ -37,10 +37,18 @@ export function parsePaperModelResponse(text: string): PaperModelResponse {
 /**
  * Validate one paper-level admission answer without interpreting source text as instructions.
  * @param text - complete model response.
+ * @param scope - approved content rules when date ownership is explicit; omitted for historical callers.
  * @returns included, excluded, or insufficient-context decision.
+ * @throws EvidenceError for invalid JSON or an exclusion without an approved content rule reference.
  */
-export function parseScopeDecision(text: string): PaperScopeDecision {
-  return scopeDecision(parseJson(text), '$')
+export function parseScopeDecision(text: string, scope?: PaperScopeRules): PaperScopeDecision {
+  const decision = scopeDecision(parseJson(text), '$')
+  if (scope?.contentRules !== undefined && decision.status === 'excluded'
+    && !scope.contentRules.some(rule => rule.id === decision.ruleId)) {
+    throw new EvidenceError('Exclusion must reference an approved content rule; date filtering is program-owned.',
+      'EVIDENCE_SCOPE_RULE_INVALID')
+  }
+  return decision
 }
 
 /**
@@ -90,10 +98,11 @@ function parseJson(text: string): unknown {
 }
 
 function scopeDecision(value: unknown, path: string): PaperScopeDecision {
-  const item = object(value, path, ['status', 'reason'])
+  const item = object(value, path, ['status', 'reason', 'ruleId'])
   const reason = nonempty(item.reason, `${path}.reason`)
+  const ruleId = item.ruleId === undefined ? undefined : nonempty(item.ruleId, `${path}.ruleId`)
   if (item.status === 'included' || item.status === 'excluded' || item.status === 'needs_more_context') {
-    return { status: item.status, reason }
+    return { status: item.status, reason, ...ruleId === undefined ? {} : { ruleId } }
   }
   return invalid(`${path}.status`, 'invalid enum value')
 }

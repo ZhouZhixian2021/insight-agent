@@ -8,7 +8,13 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 用户未特别要求按论文**首次公开日期**界定时间范围时，使用所选论文版本的发表／发布日期（执行块 `publicationWindow.dateBasis: "published"`），并在中文计划中明说这一口径。OpenAlex 的版本发布日期可用于这个口径，却不能证明首次公开日期。只有用户明确要求首次公开时间时才选择 `first_public_release`；若现有学术来源无法核实该日期，先在计划中告知可能导致候选被排除，不得暗中以发表日期代替。已批准计划的时间口径不能在运行时自动改写。
 
+日期政策必须明确：固定截止日期用 `publicationDatePolicy.endMode: "fixed"` 并填写 `publicationWindow.end`；“截至检索时点”用 `run_start` 和 `end: null`；明确不设上限用 `unbounded` 和 `end: null`。使用用户认可的 IANA 时区（中文计划通常为 `Asia/Shanghai`），在可见计划中说明。`run_start` 在研究开始时冻结本地日历日期，恢复和重试沿用原值。不要根据模型记忆填写“今天”。
+
+逐篇日期条件由程序依据结构化窗口执行，不交给内容模型比较日期。`inclusionRuleKinds` 和 `exclusionRuleKinds` 必须与对应规则数组逐项一一对应，取值为 `content` 或 `publication_date`；日期条件与内容条件分成独立条目。新增计划使用执行块版本 7。旧计划的 `end: null` 不能自动解释为“截至今天”，应补充明确政策后重新审核。
+
 提交到 `exit_plan_mode` 的计划由简洁的中文审核正文和完整的系统执行块组成。正文只写会影响研究结果、证据判断或交付的用户决策，目标为 300 至 600 个中文字符；不逐项解释执行字段。保留且仅保留一个 `academic-research-brief-json` 围栏块，字段名和类型保持不变，所有重要选择与正文一致。不要添加标识、版本或批准字段；宿主从审核记录生成这些信息。
+
+保持可见计划简洁：保留原问题数量，每题至多增加一句覆盖范围说明，不展开证据矩阵、方面标识或预算字段。执行块的 `coverageRequirements` 必须逐题列出原问题已包含的必要方面，方面标识全局唯一；`direct` 要求直接证据，只有用户明确要求量化或可核查实验效果时才用 `quantitative`。不要擅自增加统一分数、独立复现实验、多篇来源等要求。`searchTerms` 为该方面的定位／补检术语，不是新的研究范围。停止前核查最多两次，自动补强最多一轮；首次仍使用最小抽取。
 
 ## 研究目标
 
@@ -54,10 +60,15 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 ```academic-research-brief-json
 {
-  "schemaVersion": 5,
+  "schemaVersion": 7,
   "topic": "<中文研究主题>",
   "aliases": ["<系统整理的检索别名>"],
   "questions": ["<中文研究问题>"],
+  "coverageRequirements": [{
+    "question": "<中文研究问题>",
+    "aspects": [{ "aspectId": "q1.a1", "label": "<原问题中的必要回答方面>",
+      "evidenceRequirement": "direct", "searchTerms": ["<用于定位该方面证据的术语>"] }]
+  }],
   "searchPlan": [
     {
       "query": "<系统根据研究问题整理的检索表达>",
@@ -84,6 +95,12 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
     "start": { "iso": "2020", "precision": "year" },
     "end": null,
     "dateBasis": "published"
+  },
+  "publicationDatePolicy": {
+    "endMode": "run_start",
+    "timeZone": "Asia/Shanghai",
+    "inclusionRuleKinds": ["content"],
+    "exclusionRuleKinds": ["content"]
   },
   "includedWorkTypes": ["preprint", "accepted_manuscript", "version_of_record"],
   "inclusionRules": ["<每篇候选论文都必须满足、可由该论文独立判断的中文纳入条件>"],

@@ -18,6 +18,8 @@ export interface ScopeScreeningOutcome {
  * @returns Distinct conditions with their reviewed terms, in rule order.
  */
 export function screeningConditions(scope: PaperScopeRules): readonly ScreeningConditionQuery[] {
+  if (scope.contentRules !== undefined) return scope.contentRules.map(rule =>
+    ({ conditionId: rule.id, terms: ruleTerms(rule.text) })).filter(condition => condition.terms.length > 0)
   const rules = [
     ...scope.inclusionRules.map((rule, index) => ({ conditionId: `inclusion-${index + 1}`, rule })),
     ...scope.exclusionRules.map((rule, index) => ({ conditionId: `exclusion-${index + 1}`, rule })),

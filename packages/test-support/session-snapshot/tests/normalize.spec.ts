@@ -487,7 +487,8 @@ describe('normalizeSessionLog', () => {
     expect(out).not.toContain('212')
   })
 
-  it.each(['assistant/attempt', 'academic/evidence-result', 'academic/synthesis-result'])('normalizes timing inside %s and ignores opaque members', (type) => {
+  it.each(['assistant/attempt', 'academic/evidence-result', 'academic/synthesis-result',
+    'academic/coverage-review-result-v1'])('normalizes timing inside %s and ignores opaque members', (type) => {
     const event = JSON.stringify({
       type,
       seq: 2,

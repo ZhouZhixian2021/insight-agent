@@ -1,7 +1,8 @@
 import { traceAcademicOperation, academicTraceSpan, observeAcademicTrace } from './trace.ts'
 import { academicTraceSpanId } from '@deepseek-ai/dsh-academic-model'
 /** Ordered searches and bounded concurrent paper processing before draft synthesis. */
-import { createRetrievalRunId, isExecutableResearchBrief, targetIncludedWorks, type AcademicWorkId,
+import { resolvePublicationDateContext, evaluatePublicationDate, contentScreeningRules, createRetrievalRunId,
+  isExecutableResearchBrief, targetIncludedWorks, type AcademicWorkId,
   type EvidenceRecord, type HybridSearchRound, type ProviderFailure,
   type ResearchBrief, type ResearchQuestionCoverageResult,
   type WorkVersion, type WorkVersionId } from '@deepseek-ai/dsh-academic-model'
@@ -26,7 +27,12 @@ import type { DraftPipelineAdapters, DraftPipelineInput, DraftPipelineResult, Dr
 import { createAcademicWorkflowProgressPublisher, type AcademicWorkflowProgressFailureCode,
   type AcademicWorkflowProgressStage,
   type AcademicWorkflowProgressStatus } from './progress.ts'
-import { planCandidateBatch } from './candidate-batches.ts'
+import { planCandidateBatch, type CandidateBatchDecision } from './candidate-batches.ts'
+import { admitFulltextCandidates } from './fulltext-admission.ts'
+import { CoverageRepairRuntime } from './coverage-runtime.ts'
+import type { CoverageRepairState, CoverageReviewInput } from './coverage-types.ts'
+import type { EvidenceExtractionInput } from '@deepseek-ai/dsh-academic-evidence'
+import { coverageCandidateScore, coverageWindowSegments, selectCoverageWindows } from './coverage-targeting.ts'
 import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent,
   AcademicQueryWorkflowObservation } from './query-workflow.ts'
 
@@ -44,8 +50,17 @@ export async function runResearchDraft(
   adapters: DraftPipelineAdapters,
   signal?: AbortSignal,
 ): Promise<DraftPipelineResult> {
-  const { brief } = input
+  const startedAt = input.recovery?.startedAt ?? input.publicationDateContext?.startedAt ?? adapters.now()
+  const publicationDateContext = resolvePublicationDateContext(input.brief, startedAt,
+    input.recovery?.publicationDateContext ?? input.publicationDateContext)
+  const brief = { ...input.brief, publicationWindow: publicationDateContext.window }
+  const contentRules = contentScreeningRules(brief)
+  const explicitDatePolicy = brief.publicationDatePolicy !== undefined || input.publicationDateContext !== undefined
+    || input.recovery?.publicationDateContext !== undefined
   const paperConcurrency = input.paperConcurrency ?? 1
+  if (brief.coverageRequirements !== undefined && (input.coverageRepairPolicy === undefined || adapters.reviewCoverage === undefined)) {
+    throw new Error('Approved coverage requirements need an explicit repair policy and reviewer.')
+  }
   if (!Number.isSafeInteger(paperConcurrency) || paperConcurrency < 1) {
     throw new Error('Paper concurrency must be a positive safe integer.')
   }
@@ -68,7 +83,7 @@ export async function runResearchDraft(
     throw new Error('Recovery checkpoint belongs to a different ResearchBrief version.')
   }
   const retrievalRunId = recovery?.retrievalRunId ?? input.retrievalRunId ?? createRetrievalRunId()
-  const startedAt = recovery?.startedAt ?? adapters.now()
+  if (explicitDatePolicy) adapters.onPublicationDateContext?.(publicationDateContext, retrievalRunId)
   const progress = createAcademicWorkflowProgressPublisher(retrievalRunId, startedAt, searches.length,
     brief.questions.length, adapters.now, adapters.onProgress)
   let latestStage: AcademicWorkflowProgressStage = 'retrieval'
@@ -95,6 +110,7 @@ export async function runResearchDraft(
   let usableWorkIds: readonly AcademicWorkId[] = []
   const selectionLimitations: string[] = [...(recovery?.selectionLimitations ?? [])]
   let queryWorkflow: AcademicQueryWorkflowObservation | undefined
+  let coverageRuntime: CoverageRepairRuntime | undefined = undefined
   const publishQueryWorkflow = (
     value: Omit<AcademicQueryWorkflowObservation, 'sequence' | 'observedAt'>,
   ): void => {
@@ -124,6 +140,7 @@ export async function runResearchDraft(
       failures: providerFailures, availableFulltextWorks, selectionTruncated, selectionLimitations, includedWorkIds: usableWorkIds }),
     papers,
     failures,
+    ...coverageRuntime === undefined ? {} : { coverageRepair: coverageRuntime.state },
     analysis: null,
     report: null,
   })
@@ -313,6 +330,226 @@ export async function runResearchDraft(
   }
   const paperAbort = new AbortController()
   const paperSignal = signal === undefined ? paperAbort.signal : AbortSignal.any([signal, paperAbort.signal])
+  const parsedSources = new Map<WorkVersionId, EvidenceExtractionInput>()
+  let coverageRoutingSources: NonNullable<CoverageReviewInput['repairSources']> = []
+  let persistCoverageCheckpoint: ((state: CoverageRepairState) => void) | undefined
+  const coverageInput = (): CoverageReviewInput => {
+    const extracted = papers.flatMap(paper => paper.status === 'extracted' || paper.status === 'partially_extracted' ? [paper] : [])
+    const targeting = coverageRuntime?.state.policy.targeting ?? input.coverageRepairPolicy?.targeting
+    const requirements = brief.coverageRequirements ?? []
+    const weak = requirements.map(r => ({ ...r, aspects: r.aspects.filter(a => a.evidenceRequirement === 'quantitative'
+      || !extracted.flatMap(p => p.evidence.evidenceRecords).filter(record => extracted.some(p =>
+        p.evidence.questionLinks.some(link => link.evidenceId === record.evidenceId && link.question === r.question)))
+        .some(record => a.searchTerms.some(t => record.sourcedStatement.toLowerCase().includes(t.toLowerCase())))) }))
+      .filter(r => r.aspects.length > 0)
+    let remainingOptions = targeting?.maximumSourceOptions ?? 0
+    const repairSources: NonNullable<CoverageReviewInput['repairSources']>[number][] = []
+    if (targeting !== undefined && coverageRuntime?.state.review === null) for (const paper of extracted) {
+      const source = parsedSources.get(paper.version.workVersionId)
+      if (source === undefined || remainingOptions <= 0) continue
+      const windows = weak.flatMap(r => r.aspects.flatMap(a => selectCoverageWindows(source,
+        [{ ...r, aspects: [a] }], paper.evidence, { ...targeting, maximumWindowsPerPaper: 1 },
+        targeting.maximumWindowCharacters, r.question)))
+        .toSorted((a, b) => b.primaryAspectIds.length - a.primaryAspectIds.length || b.score - a.score)
+        .filter((w, index, all) => !all.slice(0, index).some(p => p.segmentIndex === w.segmentIndex && p.start < w.end && w.start < p.end))
+        .slice(0, Math.min(targeting.maximumWindowsPerPaper, remainingOptions))
+      if (windows.length === 0) continue
+      remainingOptions -= windows.length
+      repairSources.push({ workVersionId: paper.version.workVersionId,
+        title: ingested.works.find(w => w.academicWorkId === paper.version.academicWorkId)?.title ?? '',
+        windows: windows.map((w) => {
+          const segment = source.segments[w.segmentIndex]
+          if (segment === undefined) throw new Error('Coverage preview has no original source segment.')
+          return { ...w, preview: segment.text.slice(w.start, Math.min(w.end, w.start + targeting.maximumPreviewCharacters)) }
+        }) })
+    }
+    if (repairSources.length > 0) coverageRoutingSources = repairSources
+    return { retrievalRunId, brief, works: ingested.works, evidence: extracted.flatMap(paper => paper.evidence.evidenceRecords),
+      questionLinks: extracted.flatMap(paper => paper.evidence.questionLinks), ...repairSources.length === 0 ? {} : { repairSources } }
+  }
+  coverageRuntime = brief.coverageRequirements === undefined || input.coverageRepairPolicy === undefined ? undefined
+    : new CoverageRepairRuntime(coverageInput(), recovery?.coverageRepairState?.policy ?? input.coverageRepairPolicy,
+      recovery?.coverageRepairState,
+      async (state) => {
+        await adapters.onCoverageRepairState?.(state, retrievalRunId)
+        persistCoverageCheckpoint?.(state)
+      }, adapters.now)
+  const currentCoverage = (minimum: number) => coverageRuntime === undefined
+    ? rankedCoverage(brief, papers, evidenceAdmission().status === 'ready', minimum, adapters.now())
+    : coverageRuntime.coverage(coverageInput(), evidenceAdmission().status === 'ready', adapters.now())
+  const missingRequirements = () => (brief.coverageRequirements ?? []).map(r => ({ ...r,
+    aspects: r.aspects.filter(a => coverageRuntime?.state.review?.aspects.find(s => s.aspectId === a.aspectId)?.status !== 'covered')
+      .map(a => ({ ...a, searchTerms: [...new Set([...a.searchTerms,
+        ...coverageRuntime?.state.review?.gapTerms?.find(g => g.aspectId === a.aspectId)?.terms ?? []])] })) }))
+    .filter(r => r.aspects.length > 0)
+  const repairExistingPapers = async (): Promise<void> => {
+    if (coverageRuntime === undefined || adapters.repairCoverageEvidence === undefined) return
+    const coverage = currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+    const legacyMissing = (brief.coverageRequirements ?? []).map(requirement => ({ ...requirement,
+      aspects: requirement.aspects.filter(aspect => coverage.questions.find(question => question.question === requirement.question)
+        ?.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered') }))
+      .filter(requirement => requirement.aspects.length > 0)
+    const targeting = coverageRuntime.state.policy.targeting
+    const missing = targeting === undefined ? legacyMissing : missingRequirements()
+    const routingSources = coverageRoutingSources
+    const preferred = new Map<number, string>()
+    const ordered = [...papers.entries()]
+    if (targeting !== undefined) {
+      const selected: typeof ordered = []
+      const questions = [...missing].toSorted((a, b) =>
+        (coverage.questions.find(q => q.question === a.question)?.supportingWorkIds.length ?? 0)
+        - (coverage.questions.find(q => q.question === b.question)?.supportingWorkIds.length ?? 0))
+      for (const requirement of questions) {
+        const ranked = ordered.filter(([index, paper]) => !preferred.has(index)
+          && (paper.status === 'extracted' || paper.status === 'partially_extracted')).map(([index, paper]) => {
+          if (paper.status !== 'extracted' && paper.status !== 'partially_extracted') throw new Error('Expected evidence paper.')
+          const source = parsedSources.get(paper.version.workVersionId)
+          const windows = source === undefined ? [] : selectCoverageWindows(source, [requirement], paper.evidence,
+            targeting, targeting.maximumTotalCharacters, requirement.question)
+          return { index, paper, primary: new Set(windows.flatMap(w => w.primaryAspectIds)).size,
+            score: windows.reduce((n, w) => n + w.score, 0) }
+        }).filter(item => item.score > 0).toSorted((a, b) => b.score - a.score || b.primary - a.primary)
+        const best = ranked[0]
+        if (best !== undefined) { selected.push([best.index, best.paper]); preferred.set(best.index, requirement.question) }
+      }
+      ordered.splice(0, ordered.length, ...selected, ...ordered.filter(([index]) => !preferred.has(index)))
+      ordered.sort(([, a], [, b]) => {
+        const index = (p: PaperEvidenceResult) => p.status === 'extracted' || p.status === 'partially_extracted'
+          ? coverageRuntime.state.review?.preferredRepairs?.findIndex(r => r.workVersionId === p.version.workVersionId) ?? -1 : -1
+        const ia = index(a), ib = index(b)
+        return (ia < 0 ? Number.MAX_SAFE_INTEGER : ia) - (ib < 0 ? Number.MAX_SAFE_INTEGER : ib)
+      })
+    }
+    for (const [index, paper] of ordered) {
+      if (paper.status !== 'extracted' && paper.status !== 'partially_extracted') continue
+      let targets = targeting === undefined ? missing.filter(requirement =>
+        paper.evidence.questionLinks.some(link => link.question === requirement.question)) : missingRequirements()
+      if (targets.length === 0) continue
+      try {
+        const candidate = validated.find(candidate => candidate.paper.workVersionId === paper.version.workVersionId)
+        if (candidate === undefined) throw new Error('Included repair paper has no source handoff.')
+        if (targeting !== undefined && coverageRuntime.state.repairedWorkVersionIds.length
+          >= coverageRuntime.state.policy.maximumRepairPapers) break
+        const reserveAcquisition = targeting !== undefined && !parsedSources.has(paper.version.workVersionId)
+        if (reserveAcquisition && !await coverageRuntime.reservePaper(paper.version.workVersionId)) break
+        const source = parsedSources.get(paper.version.workVersionId) ?? await coverageRuntime.runBounded(scoped =>
+          (adapters.acquireFulltext ?? ((input, _version, fetcher, signal) => fetchAcademicFullText(input, fetcher, signal)))({
+            ...candidate.paper,
+            academicWorkId: paper.version.academicWorkId, retrievedAt: adapters.now(), focusQuestions: brief.questions },
+          paper.version, adapters.fetcher, scoped), paperSignal)
+        parsedSources.set(paper.version.workVersionId, source)
+        const remaining = targeting === undefined ? 0 : Math.max(0,
+          targeting.maximumTotalCharacters - (coverageRuntime.state.targeting?.characters ?? 0)
+          - (targeting.maximumCandidateReads > (coverageRuntime.state.targeting?.candidateReads.length ?? 0)
+            ? targeting.maximumWindowCharacters : 0))
+        if (targeting !== undefined && remaining <= 0) break
+        const routes = coverageRuntime.state.review?.preferredRepairs?.filter(r => r.workVersionId === paper.version.workVersionId)
+        const supplied = routingSources.find(s => s.workVersionId === paper.version.workVersionId)
+        const routed = [...new Set(routes?.flatMap(r => r.windowIndexes) ?? [])]
+          .flatMap(i => supplied?.windows[i] === undefined ? [] : [supplied.windows[i]])
+        const windows = targeting === undefined ? undefined : routed.length > 0
+          ? routed.slice(0, targeting.maximumWindowsPerPaper).map(w => ({ ...w, primaryAspectIds: w.aspectIds, score: 0,
+            end: Math.min(w.end, w.start + Math.floor(remaining / Math.min(routed.length, targeting.maximumWindowsPerPaper))) }))
+          : selectCoverageWindows(source, targets, paper.evidence, targeting, remaining, preferred.get(index))
+        if (windows !== undefined) {
+          const ids = new Set(windows.flatMap(w => w.aspectIds))
+          targets = targets.map(r => ({ ...r, aspects: r.aspects.filter(a => ids.has(a.aspectId)) })).filter(r => r.aspects.length > 0)
+          if (targets.length === 0) continue
+        }
+        if (!reserveAcquisition && !await coverageRuntime.reservePaper(paper.version.workVersionId)) continue
+        const segments = windows === undefined ? undefined : coverageWindowSegments(source, windows)
+        if (segments !== undefined && !await coverageRuntime.reserveCharacters(segments.reduce((n, s) => n + s.text.length, 0))) break
+        const repair = adapters.repairCoverageEvidence
+        const evidence = await coverageRuntime.runBounded(scoped => repair({ retrievalRunId, source,
+          initial: paper.evidence, requirements: targets, ...segments === undefined ? {} : { windows: segments } }, scoped,
+        targeting === undefined ? undefined : coverageRuntime.modelBudget()), paperSignal)
+        papers[index] = { ...paper, evidence }
+        admittedEvidence.splice(0, admittedEvidence.length, ...coverageInput().evidence)
+        await coverageRuntime.settleRepair()
+      } catch (error: unknown) {
+        if (paperSignal.aborted || error instanceof WorkflowLogError || !(error instanceof EvidenceError)) throw error
+        await coverageRuntime.repairFailed()
+      }
+    }
+  }
+  const inspectCoverage = async (): Promise<ReturnType<typeof currentCoverage>> => {
+    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage(1)
+    if (coverageRuntime.state.policy.targeting !== undefined && coverageRuntime.state.repairRounds > 0) {
+      return currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+    }
+    let coverage = await coverageRuntime.review(coverageInput(), evidenceAdmission().status === 'ready', adapters.now(),
+      adapters.reviewCoverage, paperSignal)
+    if (!coverage.allQuestionsCovered && coverageRuntime.state.failure !== 'review_failed'
+      && coverageRuntime.state.reviewCalls < coverageRuntime.state.policy.maximumReviews && await coverageRuntime.beginRepair()) {
+      await repairExistingPapers()
+      if (coverageRuntime.state.policy.targeting === undefined) {
+        coverage = await coverageRuntime.review(coverageInput(), evidenceAdmission().status === 'ready', adapters.now(),
+          adapters.reviewCoverage, paperSignal)
+      }
+    }
+    updateQueryWorkflow({ coverage })
+    return coverage
+  }
+  const finishCoverage = async () => {
+    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage(1)
+    const coverage = await coverageRuntime.review(coverageInput(), evidenceAdmission().status === 'ready', adapters.now(),
+      adapters.reviewCoverage, paperSignal)
+    updateQueryWorkflow({ coverage })
+    return coverage
+  }
+  const resolveGapCandidate = async (scheduling: CandidateScheduling | undefined, scheduled: readonly WorkVersionId[]) => {
+    const runtime = coverageRuntime, targeting = runtime?.state.policy.targeting
+    if (runtime === undefined || targeting === undefined || runtime.state.reviewCalls !== 1 || runtime.state.repairRounds === 0
+      || (runtime.state.targeting?.candidateReads.length ?? 0) >= targeting.maximumCandidateReads
+      || runtime.state.targeting?.exhausted !== null || usableWorkIds.length >= limits.maximumIncludedWorks
+      || scheduled.length >= maxResults || (scheduling?.policy.fulltext !== undefined
+        && scheduled.length >= scheduling.policy.fulltext.maximumWorks)) return undefined
+    const missing = missingRequirements()
+    const orphan = missing.map(r => ({ ...r, aspects: r.aspects.filter(a => ![...parsedSources.values()].some(source =>
+      source.segments.some(s => a.searchTerms.some(t => s.text.toLowerCase().includes(t.toLowerCase()))))) }))
+      .filter(r => r.aspects.length > 0)
+    const targets = orphan.length > 0 ? orphan : missing
+    const ranking = scheduling?.ranking
+    const possible = ingested.versions.flatMap((version) => {
+      const work = ingested.works.find(w => w.academicWorkId === version.academicWorkId)
+      const evaluation = ranking?.evaluations.find(e => e.workVersionId === version.workVersionId)
+      if (work === undefined || scheduled.includes(version.workVersionId) || version.status === 'retracted'
+        || work.publicationStatus.status === 'available' && work.publicationStatus.value === 'retracted'
+        || !brief.includedWorkTypes.includes(version.versionType) || (!brief.evidenceRequirements.allowPreprints && version.versionType === 'preprint')
+        || (ranking !== undefined && evaluation?.hardFilter.status !== 'eligible')
+        || evaluatePublicationDate(work, version, brief.publicationWindow).verdict !== 'within_window') return []
+      const assessment = scheduling?.assessments.find(a => a.academicWorkId === work.academicWorkId)
+      const score = coverageCandidateScore(work, version, targets, {
+        ...assessment === undefined ? {} : { abstract: assessment.abstract },
+        matchedQuestions: assessment?.matchedQuestions ?? evaluation?.matchedQuestions ?? [],
+      })
+      return score <= 0 ? [] : [{ version, score }]
+    }).toSorted((a, b) => b.score - a.score || a.version.workVersionId.localeCompare(b.version.workVersionId))
+    const admitted = scheduling?.policy.fulltext === undefined || ranking === undefined ? null
+      : new Set(admitFulltextCandidates(possible.map(item => item.version.workVersionId), ranking,
+        scheduling.assessments, scheduled, scheduling.policy.fulltext).ready)
+    for (const item of possible) {
+      if (admitted !== null && !admitted.has(item.version.workVersionId)) continue
+      let candidate = validated.find(v => v.version.workVersionId === item.version.workVersionId)
+      if (candidate === undefined) {
+        const paper = adapters.resolveCoverageCandidate?.(item.version)
+        if (paper === undefined || paper === null || paper.urls.length === 0) continue
+        const [addition] = reconcileSelectedPapers([paper], versions, selectedWorks, brief)
+        if (addition === undefined) continue
+        candidate = addition
+        validated.push(candidate)
+        plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
+      }
+      if ((await runtime.reserveCandidates([item.version.workVersionId])).length === 0
+        || !await runtime.reserveCandidateRead(item.version.workVersionId)) return undefined
+      return candidate
+    }
+    return undefined
+  }
+  const coverageStop = (): CandidateBatchDecision => ({ action: 'stop', batch: null, searchQuestions: [],
+    stop: { shouldStop: true, reason: coverageRuntime?.state.failure === 'review_failed' ? 'review_required' : 'coverage_repair_exhausted',
+      details: ['问题覆盖尚未全部满足；有限补强或覆盖核查预算已结束。',
+        ...currentCoverage(coverageRuntime?.state.policy.minimumSupportingWorks ?? 1).questions.flatMap(question => question.gaps)] } })
   const workTitles = new Map(ingested.works.map(work => [work.academicWorkId, work.title]))
   let fatal: WorkflowLogError | undefined
   const resumedAttemptIds = new Set<WorkVersionId>([
@@ -337,6 +574,8 @@ export async function runResearchDraft(
     let stage: PaperProcessingFailure['stage'] = 'fulltext'
     const activityKey = `paper:${paper.workVersionId}`
     const title = workTitles.get(version.academicWorkId) ?? null
+    const work = ingested.works.find(work => work.academicWorkId === version.academicWorkId)
+    if (work === undefined) throw new Error('Selected paper has no scholarly work record.')
     let fulltextAttemptStartedAt = adapters.now()
     latestStage = 'fulltext'
     progress.startStage('fulltext', plannedPapers, 'papers')
@@ -365,9 +604,12 @@ export async function runResearchDraft(
       }, adapters.onTrace, () => adapters.fetcher(url, fetchSignal), fetchSignal)
       const source = { ...paper, academicWorkId: version.academicWorkId,
         retrievedAt: adapters.now(), focusQuestions: brief.questions }
-      const parsed = adapters.acquireFulltext === undefined
-        ? await fetchAcademicFullText(source, fetcher, paperSignal, observeFulltext)
-        : await adapters.acquireFulltext(source, version, fetcher, paperSignal, observeFulltext)
+      const acquire = (operationSignal?: AbortSignal) => adapters.acquireFulltext === undefined
+        ? fetchAcademicFullText(source, fetcher, operationSignal, observeFulltext)
+        : adapters.acquireFulltext(source, version, fetcher, operationSignal, observeFulltext)
+      const parsed = coverageRuntime?.state.targeting?.candidateReads.includes(version.workVersionId)
+        ? await coverageRuntime.runBounded(acquire, paperSignal) : await acquire(paperSignal)
+      parsedSources.set(version.workVersionId, parsed)
       observeAcademicTrace(adapters.onTrace, { ...academicTraceSpan(`paper:fulltext:${version.workVersionId}`,
         academicTraceSpanId('stage:fulltext'), 'paper', 'fulltext', 'paper_processing'),
       academicWorkId: version.academicWorkId, workVersionId: version.workVersionId, status: 'succeeded', endedAt: adapters.now() })
@@ -401,9 +643,36 @@ export async function runResearchDraft(
           validatedEvidenceRecords: observation.validatedEvidenceRecords,
           rejectedEvidenceDrafts: observation.rejectedEvidenceDrafts, startedAt: extractionStartedAt })
       }
-      const result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator,
-        { inclusionRules: brief.inclusionRules, exclusionRules: brief.exclusionRules }, paperSignal, observeEvidence,
-        adapters.verifiedGenerator)
+      const scope = { inclusionRules: contentRules.filter(rule => rule.kind === 'inclusion').map(rule => rule.text),
+        exclusionRules: contentRules.filter(rule => rule.kind === 'exclusion').map(rule => rule.text),
+        ...(brief.publicationDatePolicy === undefined ? {} : { contentRules }),
+        ...explicitDatePolicy ? { publicationDate: { context: publicationDateContext, evaluation: evaluatePublicationDate(
+          work, version, brief.publicationWindow) } } : {} }
+      const targeting = coverageRuntime?.state.policy.targeting
+      const isGapCandidate = targeting !== undefined && coverageRuntime?.state.targeting?.candidateReads.includes(version.workVersionId)
+      let result: PaperEvidenceResult
+      if (isGapCandidate && coverageRuntime !== undefined && adapters.extractCoverageCandidate !== undefined) {
+        const missing = missingRequirements()
+        const remaining = targeting.maximumTotalCharacters - (coverageRuntime.state.targeting?.characters ?? 0)
+        const lead = parsed.segments[0]
+        const leadCharacters = Math.min(lead?.text.length ?? 0, targeting.contextCharacters * 2, remaining)
+        const windows = selectCoverageWindows(parsed, missing, undefined, targeting, remaining - leadCharacters)
+        const targetedIds = new Set(windows.flatMap(w => w.aspectIds))
+        const requirements = missing.map(r => ({ ...r, aspects: r.aspects.filter(a => targetedIds.has(a.aspectId)) }))
+          .filter(r => r.aspects.length > 0)
+        const segments = [...lead === undefined || leadCharacters === 0 ? [] : [{ ...lead, text: lead.text.slice(0, leadCharacters) }],
+          ...coverageWindowSegments(parsed, windows)]
+        if (segments.length === 0 || !await coverageRuntime.reserveCharacters(segments.reduce((n, s) => n + s.text.length, 0))) {
+          throw new EvidenceError('No approved gap window fits the source allowance.', 'ACADEMIC_COVERAGE_CHARACTER_BUDGET')
+        }
+        const reader = adapters.extractCoverageCandidate
+        result = await coverageRuntime.runBounded(scoped => reader(version, {
+          ...parsed, focusQuestions: requirements.map(r => r.question), segments }, scope, requirements,
+        coverageRuntime.modelBudget(), scoped), paperSignal)
+      } else {
+        result = await extractPaperEvidence(version, parsed, paper.hasHistoricalEvidence, adapters.generator, scope,
+          paperSignal, observeEvidence, adapters.verifiedGenerator)
+      }
       observeAcademicTrace(adapters.onTrace, { ...academicTraceSpan(`paper:extraction:${version.workVersionId}`, academicTraceSpanId('stage:extraction'), 'paper', 'extraction', 'paper_processing'),
         academicWorkId: version.academicWorkId, workVersionId: version.workVersionId, businessStatus: result.status,
         status: result.status === 'extracted' ? 'succeeded' : result.status === 'partially_extracted' ? 'partial_success'
@@ -519,13 +788,38 @@ export async function runResearchDraft(
       const pending: { paper: typeof validated[number]['paper']; done: ReturnType<typeof processPaper> }[] = []
       try {
         while (attempted < validated.length || pending.length > 0) {
+          let holdForCoverage = false
           const admission = evidenceAdmission()
+          if (coverageRuntime?.state.policy.targeting !== undefined && pending.length === 0
+            && limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready' && usableWorkIds.length >= includedWorkTarget) {
+            await inspectCoverage()
+            const candidate = await resolveGapCandidate(undefined,
+              papers.map(paperWorkVersionId).concat(failures.map(f => f.workVersionId)))
+            if (candidate !== undefined) {
+              attempted++
+              collect(candidate.paper, await processPaper(candidate))
+            }
+            const coverage = await finishCoverage()
+            stopped = true
+            if (!coverage.allQuestionsCovered) {
+              selectionTruncated = true
+              selectionLimitations.push(...coverageStop().stop.details)
+            }
+          }
           if (!stopped && attempted < validated.length && !paperSignal.aborted) {
             if (limits.stopWhenEvidenceRequirementsMet && admission.status === 'ready'
               && usableWorkIds.length >= includedWorkTarget) {
-              stopped = true
-              selectionTruncated = true
-              selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
+              if (coverageRuntime !== undefined && pending.length > 0) holdForCoverage = true
+              else if (coverageRuntime === undefined || (await inspectCoverage()).allQuestionsCovered) {
+                stopped = true
+                selectionTruncated = true
+                selectionLimitations.push(`证据已达到计划数量要求，停止补选；已${paperConcurrency === 1 ? '处理' : '启动'} ${attempted} 篇候选，剩余 ${validated.length - attempted} 篇未处理。`)
+              } else if (coverageRuntime.state.failure === 'review_failed'
+                || coverageRuntime.state.reviewCalls >= coverageRuntime.state.policy.maximumReviews
+                || coverageRuntime.state.repairCandidateIds.length >= coverageRuntime.state.policy.maximumNewCandidateWorks) {
+                stopped = true
+                selectionLimitations.push(...coverageStop().stop.details)
+              }
             } else if (usableWorkIds.length >= limits.maximumIncludedWorks) {
               stopped = true
               selectionTruncated = true
@@ -533,10 +827,15 @@ export async function runResearchDraft(
             }
           }
           // Every unsettled candidate reserves an inclusion slot; completion order cannot change selection.
-          while (!stopped && !paperSignal.aborted && attempted < validated.length
+          while (!stopped && !holdForCoverage && !paperSignal.aborted && attempted < validated.length
             && pending.length < activePaperLimit && usableWorkIds.length + pending.length < limits.maximumIncludedWorks) {
             const candidate = validated[attempted++]
             if (candidate === undefined) break
+            if (coverageRuntime !== undefined && usableWorkIds.length >= includedWorkTarget
+              && (await coverageRuntime.reserveCandidates([candidate.paper.workVersionId])).length === 0) {
+              stopped = true
+              break
+            }
             pending.push({ paper: candidate.paper, done: processPaper(candidate) })
           }
           const next = pending.shift()
@@ -549,6 +848,13 @@ export async function runResearchDraft(
           await Promise.all(pending.map(item => item.done))
         }
       }
+      if (coverageRuntime?.state.policy.targeting !== undefined && !paperSignal.aborted
+        && evidenceAdmission().status === 'ready' && usableWorkIds.length >= includedWorkTarget) {
+        await inspectCoverage()
+        const candidate = await resolveGapCandidate(undefined, papers.map(paperWorkVersionId).concat(failures.map(f => f.workVersionId)))
+        if (candidate !== undefined) { attempted++; collect(candidate.paper, await processPaper(candidate)) }
+        await finishCoverage()
+      }
     } else {
       let scheduling: CandidateScheduling = candidateScheduling
       const byVersion = new Map(validated.map(candidate => [candidate.paper.workVersionId, candidate]))
@@ -559,11 +865,15 @@ export async function runResearchDraft(
       // completed rounds from the plan, never from the number of executed expressions.
       let completedSearchRounds = recovery?.completedSearchRounds
         ?? Math.max(...scheduling.plan.queries.map(query => query.roundIndex))
-      const persistCheckpoint = (pendingBatchIndex: number | null): void => {
+      let checkpointPendingBatch = recovery?.pendingBatchIndex ?? null
+      const persistCheckpoint = (pendingBatchIndex: number | null, coverageState = coverageRuntime?.state): void => {
+        checkpointPendingBatch = pendingBatchIndex
         adapters.onRecoveryCheckpoint?.({
           schemaVersion: 1,
           retrievalRunId,
           startedAt,
+          ...explicitDatePolicy ? { publicationDateContext } : {},
+          ...coverageState === undefined ? {} : { coverageRepairState: coverageState },
           executedQueries,
           search,
           works: ingested.works,
@@ -590,16 +900,19 @@ export async function runResearchDraft(
           pendingBatchIndex,
         })
       }
-      const applyReviewedSelection = (selection: PaperSelectionResult): boolean => {
-        if (selection.candidateScheduling === undefined) throw new Error('Candidate review requires ranked scheduling.')
-        const changed = JSON.stringify(selection.candidateScheduling.assessments) !== JSON.stringify(scheduling.assessments)
-        scheduling = selection.candidateScheduling
-        const appended = reconcileSelectedPapers(selection.papers.filter(paper => !byVersion.has(paper.workVersionId)),
-          versions, selectedWorks, brief)
+      persistCoverageCheckpoint = (state) => { persistCheckpoint(checkpointPendingBatch, state) }
+      const appendCandidates = (candidates: readonly SelectedPaper[]): void => {
+        const appended = reconcileSelectedPapers(candidates, versions, selectedWorks, brief)
         validated = [...validated, ...appended]
         academicWorkIds = validated.map(item => item.version.academicWorkId)
         plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
         for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
+      }
+      const applyReviewedSelection = (selection: PaperSelectionResult): boolean => {
+        if (selection.candidateScheduling === undefined) throw new Error('Candidate review requires ranked scheduling.')
+        const changed = JSON.stringify(selection.candidateScheduling.assessments) !== JSON.stringify(scheduling.assessments)
+        scheduling = selection.candidateScheduling
+        appendCandidates(selection.papers.filter(paper => !byVersion.has(paper.workVersionId)))
         persistCheckpoint(null)
         return changed
       }
@@ -619,8 +932,7 @@ export async function runResearchDraft(
         consecutiveBatchesWithoutEvidence = admittedEvidence.length > evidenceBefore ? 0
           : inspectedWithoutEvidence ? consecutiveBatchesWithoutEvidence + 1
             : consecutiveBatchesWithoutEvidence
-        const settlementCoverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready',
-          scheduling.policy.minimumQuestionSupportingWorks, adapters.now())
+        const settlementCoverage = currentCoverage(scheduling.policy.minimumQuestionSupportingWorks)
         const settlementEvent: AcademicBatchSettlementEvent = {
           retrievalRunId, batchIndex, admittedEvidence: admittedEvidence.length,
           coverage: settlementCoverage,
@@ -631,6 +943,7 @@ export async function runResearchDraft(
           settlements: [...(queryWorkflow?.settlements ?? []), settlementEvent] })
         persistCheckpoint(null)
         if (recovery === undefined && adapters.reviewCandidates !== undefined && !paperSignal.aborted && fatal === undefined
+          && !(coverageRuntime !== undefined && usableWorkIds.length >= includedWorkTarget)
           && consecutiveBatchesWithoutEvidence < limits.saturationRounds
           && scheduled.length < maxResults
           && scheduled.length < (scheduling.policy.fulltext?.maximumWorks ?? maxResults)
@@ -648,9 +961,18 @@ export async function runResearchDraft(
         await settleBatch(recovery.pendingBatchIndex, pendingDecision.workVersionIds)
       }
       while (!paperSignal.aborted) {
-        const coverage = rankedCoverage(brief, papers,
-          evidenceAdmission().status === 'ready', scheduling.policy.minimumQuestionSupportingWorks,
-          adapters.now())
+        let coverage = currentCoverage(scheduling.policy.minimumQuestionSupportingWorks)
+        const coverageBoundary = coverageRuntime !== undefined && limits.stopWhenEvidenceRequirementsMet
+          && usableWorkIds.length >= includedWorkTarget && evidenceAdmission().status === 'ready'
+        let targetedCandidate: typeof validated[number] | undefined
+        if (coverageBoundary) {
+          coverage = await inspectCoverage()
+          if (coverageRuntime?.state.policy.targeting !== undefined && coverageRuntime.state.repairRounds > 0) {
+            targetedCandidate = await resolveGapCandidate(scheduling, scheduled)
+            if (targetedCandidate === undefined) coverage = await finishCoverage()
+            else byVersion.set(targetedCandidate.paper.workVersionId, targetedCandidate)
+          }
+        }
         updateQueryWorkflow({
           plan: scheduling.plan,
           works: ingested.works,
@@ -659,13 +981,29 @@ export async function runResearchDraft(
           ranking: scheduling.ranking,
           coverage,
         })
-        const decision = planCandidateBatch({ brief: { ...brief,
+        let decision = planCandidateBatch({ brief: { ...brief,
           stopConditions: { ...limits, maximumCandidateWorks: maxResults } }, plan: scheduling.plan,
         ranking: scheduling.ranking, assessments: scheduling.assessments, coverage, policy: scheduling.policy,
         scheduledWorkVersionIds: scheduled, completedBatchCount, consecutiveBatchesWithoutEvidence,
         includedWorks: usableWorkIds.length, completedSearchRounds,
         cancelled: false, elapsedTimeLimitReached: false, reviewRequired: false })
+        if (targetedCandidate !== undefined) {
+          decision = { action: 'schedule_batch', batch: { batchIndex: completedBatchCount + 1, reason: 'evidence_gap',
+            questions: missingRequirements().map(r => r.question), workVersionIds: [targetedCandidate.paper.workVersionId] },
+          searchQuestions: [], stop: { shouldStop: false, reason: null, details: [] } }
+        } else if (coverageBoundary && coverageRuntime !== undefined && !coverage.allQuestionsCovered) {
+          if (coverageRuntime.state.policy.targeting !== undefined || coverageRuntime.state.failure === 'review_failed'
+            || coverageRuntime.state.reviewCalls >= coverageRuntime.state.policy.maximumReviews
+            || coverageRuntime.state.repairCandidateIds.length >= coverageRuntime.state.policy.maximumNewCandidateWorks) {
+            decision = coverageStop()
+          } else if (decision.action === 'schedule_batch') {
+            const admitted = await coverageRuntime.reserveCandidates(decision.batch.workVersionIds)
+            decision = admitted.length === 0 ? coverageStop() : { ...decision,
+              batch: { ...decision.batch, workVersionIds: admitted as [WorkVersionId, ...WorkVersionId[]] } }
+          } else if (decision.action === 'search_evidence_gap' && !await coverageRuntime.reserveSearch()) decision = coverageStop()
+        }
         if (decision.action !== 'schedule_batch' && decision.stop.reason !== 'target_and_coverage_met'
+          && !(coverageBoundary && coverageRuntime !== undefined)
           && scheduling.policy.fulltext !== undefined && scheduled.length < scheduling.policy.fulltext.maximumWorks
           && scheduled.length < maxResults && usableWorkIds.length < limits.maximumIncludedWorks
           && consecutiveBatchesWithoutEvidence < limits.saturationRounds
@@ -737,11 +1075,7 @@ export async function runResearchDraft(
           for (const work of replenished.ingested.works) {
             if (!workTitles.has(work.academicWorkId)) workTitles.set(work.academicWorkId, work.title)
           }
-          const appended = reconcileSelectedPapers(replenished.papers, versions, selectedWorks, brief)
-          validated = [...validated, ...appended]
-          academicWorkIds = validated.map(item => item.version.academicWorkId)
-          plannedPapers = Math.min(validated.length, limits.maximumIncludedWorks)
-          for (const candidate of appended) byVersion.set(candidate.paper.workVersionId, candidate)
+          appendCandidates(replenished.papers)
           continue
         }
         scheduled.push(...decision.batch.workVersionIds)
@@ -750,6 +1084,16 @@ export async function runResearchDraft(
         if (fatal !== undefined) break
       }
     }
+    if (coverageRuntime !== undefined && coverageRuntime.state.reviewCalls === 0 && admittedEvidence.length > 0 && !paperSignal.aborted) {
+      await inspectCoverage()
+    }
+    if (coverageRuntime?.state.policy.targeting !== undefined && admittedEvidence.length > 0 && !paperSignal.aborted) {
+      await finishCoverage()
+    }
+  } catch (error: unknown) {
+    if (error instanceof WorkflowLogError) throw error
+    if (signal?.aborted) return cancel()
+    throw error
   } finally {
     paperAbort.abort()
   }
@@ -791,7 +1135,9 @@ export async function runResearchDraft(
   }
   let draft
   try {
-    draft = await adapters.synthesize({ ...admission.input, coverageSummary: completed.retrievalRun.coverageSummary }, signal)
+    draft = await adapters.synthesize({ ...admission.input, coverageSummary: completed.retrievalRun.coverageSummary,
+      ...coverageRuntime === undefined ? {} : {
+        aspectCoverage: currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks) } }, signal)
   } catch (error: unknown) {
     if (error instanceof WorkflowLogError) {
       progress.settleStage('analysis', 'failed', 0, brief.questions.length, {}, progressFailure(error))
@@ -828,6 +1174,8 @@ export async function runResearchDraft(
   progress.settleStage('analysis', analysisPartial ? 'partial_success' : 'success', brief.questions.length,
     brief.questions.length, { completedQuestions: brief.questions.length })
   const limitations = [...admission.limitations, ...analysis.limitations,
+    ...coverageRuntime === undefined ? [] : currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+      .questions.flatMap(question => question.gaps.map(gap => `${question.question}：${gap}`)),
     'Explicit queries only; no automatic query planning, retries or abstract fallback.',
     ...(search?.limitations ?? []),
     ...(search?.failures ?? []).map(failure => `Provider ${failure.provider} failed during ${failure.operation}.`),
@@ -843,7 +1191,8 @@ export async function runResearchDraft(
   let report
   try {
     report = generateReport({ brief, claims: analysis.claims, links: analysis.links,
-      admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults),
+      admittedEvidence, retrievalDisclosure: researchRetrievalDisclosure(completed.retrievalRun, brief, hybridSearch, maxResults,
+        explicitDatePolicy ? publicationDateContext : undefined),
       evidence: admission.input.analysisInput.evidenceRecords, versions: admission.input.analysisInput.workVersions,
       questionLinks: admission.input.analysisInput.questionLinks,
       sourceLocators: admission.input.analysisInput.sourceLocators,

@@ -158,6 +158,7 @@ function terminalDecision(input: CandidateBatchPlanningInput): Extract<SearchSto
   }
   const { brief, coverage } = input
   if (brief.stopConditions.stopWhenEvidenceRequirementsMet
+    && (brief.coverageRequirements === undefined || coverage.basis === 'reviewed_aspects')
     && input.includedWorks >= rankingTarget(input)
     && coverage.evidenceRequirementsMet && coverage.allQuestionsCovered) {
     return stopped('target_and_coverage_met', 'The desired inclusion target and question coverage are satisfied.')
