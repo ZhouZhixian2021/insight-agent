@@ -10,6 +10,8 @@ English | [中文](README.zh.md)
 
 Version-6 plans require `publicationDatePolicy`: `endMode` is `fixed`, `run_start` or `unbounded`, `timeZone` is an IANA name, and rule-kind arrays classify every approved rule. The Controller resolves the cutoff before building search adapters; recovery reuses the saved context. Fixed mode requires an explicit upper date; the other modes require null. Legacy plans remain readable, but starting an ambiguous null-bound plan requires a revised approval. Historical logs and reports are unchanged.
 
+Version-8 plans require `scopeDecision` with the declared breadth of the request and distinct deep-dive, overview-only, and not-systematically-covered direction lists. Before review, validation checks that the readable plan repeats each direction under its matching heading and that each deep-dive label occurs in an approved query purpose. Domain-wide requests require a nonempty omitted-direction list and a selected-direction title and topic; the listed omissions are examples rather than an exhaustive field map. The guard cannot independently compare a plan with the original user message, so the user reviews the declared breadth. Older approved plans remain readable without this field.
+
 ## Summary
 
 `paperConcurrency` defaults to 3 papers per run and can be set to 1 for serial acquisition/extraction. Searches remain ordered; synthesis starts after paper tasks settle. The approved inclusion cap can reduce effective concurrency. Existing source and Web result interfaces are unchanged. Concurrency may increase upstream rate limiting and does not guarantee proportional speedup.

@@ -15,7 +15,9 @@ Academic Model 负责 `PublicationDatePolicy`、`PublicationDateContext` 和共�
 
 ## 概述
 
-Academic Model 持有获批的分方面要求；Workflow 负责停止时的映射、冻结补强额度及恢复已提交证据。Controller 生成第 7 版计划，保持可见问题简洁，并提供机器可读要求及核查、补强预算。新要求不会自动附加到历史计划。Retrieval 使用对应问题获批的核心查询和方面检索词扩展缺口查询。Analysis 接收最终核查，报告保留缺口。见[工作流约定](../../packages/academic/workflow/README.zh.md)。
+Academic Model 持有获批的分方面要求；Workflow 负责停止时的映射、冻结补强额度及恢复已提交证据。Controller 生成第 8 版计划，保持可见问题简洁，并提供机器可读要求及核查、补强预算。新要求不会自动附加到历史计划。Retrieval 使用对应问题获批的核心查询和方面检索词扩展缺口查询。Analysis 接收最终核查，报告保留缺口。见[工作流约定](../../packages/academic/workflow/README.zh.md)。
+
+新计划还保留已审核的 `ResearchScopeDecision`，记录声明的原请求广度、深入与概览方向，以及不作系统覆盖的已知方向。Controller 在审核前核对可读计划，报告重复这些取舍。该记录用于披露范围，不证明已选方向穷尽整个领域；校验见[Controller](../../packages/api/academic-research-controller/README.zh.md)。
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 

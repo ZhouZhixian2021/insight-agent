@@ -30,6 +30,8 @@ Trace v1 types are also available from the type-only `@deepseek-ai/dsh-academic-
 <a id="use-this-package"></a>
 ## Use this package
 
+Optional `ResearchBrief.scopeDecision` retains the reviewed request-breadth declaration and direction choices. Deep-dive directions receive systematic retrieval; overview directions provide orientation; not-systematically-covered directions are known omissions rather than an exhaustive taxonomy. Historical Briefs without this field keep their existing interpretation.
+
 The executable Academic workflow interprets `ResearchBrief.includedWorkTypes` as version states (`preprint`, `accepted_manuscript`, `version_of_record`), not conference/journal publication categories. `AcademicWork.venue` is a source label and does not establish a publication category; strict category filtering is not represented by this model.
 
 Academic packages import these types instead of declaring provider-specific substitutes. Provider and workflow packages translate their own records into this model at their package boundaries.
