@@ -43,10 +43,10 @@
       "status": "active",
       "source": "session.v4.jsonl",
       "sourceSha256": "65490bc9a63714b3ec7958b67157f16c58a95244c2d591af3142f2a67ebfc07e",
-      "writerSha256": "8f2934008e87cf65042a7e338cd35f15f9a1dbfb2eeec4b151839ad6b1f53d48",
+      "writerSha256": "5ffab18c0f71d9cd8a84137703349eef5ee1dd44486879def98df1519c2a3cc2",
       "promptSha256": "64e64ade71c7e4a1f61ad8b6a1f47e58f0f614c9910278922eb1343e2221a89b",
       "schemasSha256": "f58363003bcc79a4d4f169624f7e93d8cf0853ad6d7b5dad123a8bf37bc14925",
-      "notificationsSha256": "260478245c24214fdbe24e053ada165c91c6fc6b5990dcd19885a971247deaee",
+      "notificationsSha256": "22cb1ecfadc43f1975a9b7dacbfe85ab377acebfffa0f9b8f03da3da4e9055d1",
       "resultSha256": "84e7025abd0aeea0451feb789478efb04ba8b649b47b88cbe28479f106a321fc"
     },
     "academic-evidence-fragments": {
@@ -81,10 +81,10 @@
       "status": "active",
       "source": "session.v4.jsonl",
       "sourceSha256": "510dcabfe4b214b250e4cbfb79b2c544157c3975c21f7022aee99f3086f6cee3",
-      "writerSha256": "720e372792ac3424bfbc206cf6bb25c45a681a556eaf455b864b4481f20c3f54",
+      "writerSha256": "84baf533b0aad0b4981c6fccb48330c8f53dfe7f1df5c316e21b662451dadd5c",
       "promptSha256": "64e64ade71c7e4a1f61ad8b6a1f47e58f0f614c9910278922eb1343e2221a89b",
       "schemasSha256": "f58363003bcc79a4d4f169624f7e93d8cf0853ad6d7b5dad123a8bf37bc14925",
-      "notificationsSha256": "100d6c05d8ea9e04357dd9f4d29b146fdcc8e3d77ba865318c5e57496b55df75",
+      "notificationsSha256": "744b6dfa831221c1b3210389cb279d2239217f43abeccb208d2873ca6cfa07c4",
       "resultSha256": "84e7025abd0aeea0451feb789478efb04ba8b649b47b88cbe28479f106a321fc"
     }
   }
