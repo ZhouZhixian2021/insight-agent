@@ -330,6 +330,7 @@ export async function runResearchDraft(
   }
   const paperAbort = new AbortController()
   const paperSignal = signal === undefined ? paperAbort.signal : AbortSignal.any([signal, paperAbort.signal])
+  const isPaperCancelled = () => paperSignal.aborted
   const parsedSources = new Map<WorkVersionId, EvidenceExtractionInput>()
   let coverageRoutingSources: NonNullable<CoverageReviewInput['repairSources']> = []
   let persistCoverageCheckpoint: ((state: CoverageRepairState) => void) | undefined
@@ -374,8 +375,8 @@ export async function runResearchDraft(
         await adapters.onCoverageRepairState?.(state, retrievalRunId)
         persistCoverageCheckpoint?.(state)
       }, adapters.now)
-  const currentCoverage = (minimum: number) => coverageRuntime === undefined
-    ? rankedCoverage(brief, papers, evidenceAdmission().status === 'ready', minimum, adapters.now())
+  const currentCoverage = () => coverageRuntime === undefined
+    ? rankedCoverage(brief, papers, evidenceAdmission().status === 'ready', adapters.now())
     : coverageRuntime.coverage(coverageInput(), evidenceAdmission().status === 'ready', adapters.now())
   const missingRequirements = () => (brief.coverageRequirements ?? []).map(r => ({ ...r,
     aspects: r.aspects.filter(a => coverageRuntime?.state.review?.aspects.find(s => s.aspectId === a.aspectId)?.status !== 'covered')
@@ -384,7 +385,7 @@ export async function runResearchDraft(
     .filter(r => r.aspects.length > 0)
   const repairExistingPapers = async (): Promise<void> => {
     if (coverageRuntime === undefined || adapters.repairCoverageEvidence === undefined) return
-    const coverage = currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+    const coverage = currentCoverage()
     const legacyMissing = (brief.coverageRequirements ?? []).map(requirement => ({ ...requirement,
       aspects: requirement.aspects.filter(aspect => coverage.questions.find(question => question.question === requirement.question)
         ?.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered') }))
@@ -473,9 +474,9 @@ export async function runResearchDraft(
     }
   }
   const inspectCoverage = async (): Promise<ReturnType<typeof currentCoverage>> => {
-    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage(1)
+    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage()
     if (coverageRuntime.state.policy.targeting !== undefined && coverageRuntime.state.repairRounds > 0) {
-      return currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+      return currentCoverage()
     }
     let coverage = await coverageRuntime.review(coverageInput(), evidenceAdmission().status === 'ready', adapters.now(),
       adapters.reviewCoverage, paperSignal)
@@ -491,7 +492,7 @@ export async function runResearchDraft(
     return coverage
   }
   const finishCoverage = async () => {
-    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage(1)
+    if (coverageRuntime === undefined || adapters.reviewCoverage === undefined) return currentCoverage()
     const coverage = await coverageRuntime.review(coverageInput(), evidenceAdmission().status === 'ready', adapters.now(),
       adapters.reviewCoverage, paperSignal)
     updateQueryWorkflow({ coverage })
@@ -549,7 +550,7 @@ export async function runResearchDraft(
   const coverageStop = (): CandidateBatchDecision => ({ action: 'stop', batch: null, searchQuestions: [],
     stop: { shouldStop: true, reason: coverageRuntime?.state.failure === 'review_failed' ? 'review_required' : 'coverage_repair_exhausted',
       details: ['问题覆盖尚未全部满足；有限补强或覆盖核查预算已结束。',
-        ...currentCoverage(coverageRuntime?.state.policy.minimumSupportingWorks ?? 1).questions.flatMap(question => question.gaps)] } })
+        ...currentCoverage().questions.flatMap(question => question.gaps)] } })
   const workTitles = new Map(ingested.works.map(work => [work.academicWorkId, work.title]))
   let fatal: WorkflowLogError | undefined
   const resumedAttemptIds = new Set<WorkVersionId>([
@@ -916,6 +917,26 @@ export async function runResearchDraft(
         persistCheckpoint(null)
         return changed
       }
+      let assessedCoverage: ResearchQuestionCoverageResult | undefined
+      const assessCoverage = async (): Promise<ResearchQuestionCoverageResult> => {
+        const coverage = rankedCoverage(brief, papers, evidenceAdmission().status === 'ready', adapters.now())
+        if (admittedEvidence.length === 0 || isPaperCancelled()) return coverage
+        if (adapters.assessQuestionCoverage === undefined) {
+          const limitation = '未提供研究问题完整性评估器；已有证据仅表示部分支持。'
+          if (!selectionLimitations.includes(limitation)) selectionLimitations.push(limitation)
+          return coverage
+        }
+        try {
+          return await adapters.assessQuestionCoverage({ retrievalRunId, coverage, evidence: admittedEvidence,
+            minimumSupportingWorks: scheduling.policy.minimumQuestionSupportingWorks }, paperSignal)
+        } catch (error: unknown) {
+          if (error instanceof WorkflowLogError) throw error
+          if (paperSignal.aborted) return coverage
+          const limitation = '研究问题完整性评估失败；已有证据仅按部分覆盖处理，继续在预算内补充。'
+          if (!selectionLimitations.includes(limitation)) selectionLimitations.push(limitation)
+          return coverage
+        }
+      }
       const settleBatch = async (batchIndex: number, workVersionIds: readonly WorkVersionId[]): Promise<void> => {
         const group = workVersionIds.map((workVersionId) => {
           const candidate = byVersion.get(workVersionId)
@@ -932,7 +953,11 @@ export async function runResearchDraft(
         consecutiveBatchesWithoutEvidence = admittedEvidence.length > evidenceBefore ? 0
           : inspectedWithoutEvidence ? consecutiveBatchesWithoutEvidence + 1
             : consecutiveBatchesWithoutEvidence
-        const settlementCoverage = currentCoverage(scheduling.policy.minimumQuestionSupportingWorks)
+        const settlementCoverage = coverageRuntime !== undefined
+          ? currentCoverage()
+          : admittedEvidence.length === evidenceBefore && assessedCoverage !== undefined
+            ? assessedCoverage : await assessCoverage()
+        if (coverageRuntime === undefined) assessedCoverage = settlementCoverage
         const settlementEvent: AcademicBatchSettlementEvent = {
           retrievalRunId, batchIndex, admittedEvidence: admittedEvidence.length,
           coverage: settlementCoverage,
@@ -960,8 +985,13 @@ export async function runResearchDraft(
         if (pendingDecision === undefined) throw new Error('Recovery checkpoint has no matching pending batch decision.')
         await settleBatch(recovery.pendingBatchIndex, pendingDecision.workVersionIds)
       }
-      while (!paperSignal.aborted) {
-        let coverage = currentCoverage(scheduling.policy.minimumQuestionSupportingWorks)
+      while (!isPaperCancelled()) {
+        if (coverageRuntime === undefined && assessedCoverage === undefined && papers.length > 0) {
+          assessedCoverage = await assessCoverage()
+        }
+        if (paperSignal.aborted) break
+        let coverage = coverageRuntime === undefined && assessedCoverage !== undefined
+          ? assessedCoverage : currentCoverage()
         const coverageBoundary = coverageRuntime !== undefined && limits.stopWhenEvidenceRequirementsMet
           && usableWorkIds.length >= includedWorkTarget && evidenceAdmission().status === 'ready'
         let targetedCandidate: typeof validated[number] | undefined
@@ -1049,12 +1079,15 @@ export async function runResearchDraft(
             if (error instanceof WorkflowLogError) throw error
             stopped = true
             selectionTruncated = true
-            const limitation = `证据缺口补检第 ${nextRoundIndex} 轮失败，停止选文。`
+            const reason = error instanceof RangeError ? error.message
+              : error instanceof EvidenceError ? error.code : 'unexpected_error'
+            const limitation = `证据缺口补检第 ${nextRoundIndex} 轮失败（${reason}），停止选文。`
             selectionLimitations.push(limitation)
             updateQueryWorkflow({ status: 'settled', rounds: [...(queryWorkflow?.rounds ?? []), {
               roundIndex: nextRoundIndex, purpose: 'evidence_gap', searchQueryIds: [], status: 'failed',
               startedAt: roundStartedAt, completedAt: adapters.now(),
-            }], limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
+            }], stopDecision: { shouldStop: true, reason: 'review_required', details: [limitation] },
+            limitations: [...(queryWorkflow?.limitations ?? []), limitation] })
             break
           }
           scheduling = replenished.scheduling
@@ -1137,7 +1170,7 @@ export async function runResearchDraft(
   try {
     draft = await adapters.synthesize({ ...admission.input, coverageSummary: completed.retrievalRun.coverageSummary,
       ...coverageRuntime === undefined ? {} : {
-        aspectCoverage: currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks) } }, signal)
+        aspectCoverage: currentCoverage() } }, signal)
   } catch (error: unknown) {
     if (error instanceof WorkflowLogError) {
       progress.settleStage('analysis', 'failed', 0, brief.questions.length, {}, progressFailure(error))
@@ -1174,7 +1207,7 @@ export async function runResearchDraft(
   progress.settleStage('analysis', analysisPartial ? 'partial_success' : 'success', brief.questions.length,
     brief.questions.length, { completedQuestions: brief.questions.length })
   const limitations = [...admission.limitations, ...analysis.limitations,
-    ...coverageRuntime === undefined ? [] : currentCoverage(coverageRuntime.state.policy.minimumSupportingWorks)
+    ...coverageRuntime === undefined ? [] : currentCoverage()
       .questions.flatMap(question => question.gaps.map(gap => `${question.question}：${gap}`)),
     'Explicit queries only; no automatic query planning, retries or abstract fallback.',
     ...(search?.limitations ?? []),
@@ -1342,12 +1375,11 @@ function reconcileSelectedPapers(
   })
 }
 
-/** Build conservative batch-to-batch coverage from validated run-specific evidence-question links. */
+/** Question links establish partial support; only a separate completeness assessment can establish coverage. */
 function rankedCoverage(
   brief: ResearchBrief,
   papers: readonly PaperEvidenceResult[],
   evidenceRequirementsMet: boolean,
-  minimumQuestionSupportingWorks: number,
   assessedAt: string,
 ): ResearchQuestionCoverageResult {
   const evidencePapers = papers.flatMap((paper) => {
@@ -1365,16 +1397,15 @@ function rankedCoverage(
     })
     const supportingWorkIds = unique(supporting.map(item => item.paper.version.academicWorkId))
     const evidenceIds = unique(supporting.flatMap(item => item.evidenceIds))
-    const status = supportingWorkIds.length === 0 ? 'uncovered' as const
-      : supportingWorkIds.length >= minimumQuestionSupportingWorks ? 'covered' as const : 'partial' as const
+    const status = supportingWorkIds.length === 0 ? 'uncovered' as const : 'partial' as const
     return { question, status, supportingWorkIds, evidenceIds,
-      gaps: status === 'covered' ? [] : [status === 'uncovered'
+      gaps: [status === 'uncovered'
         ? 'No validated evidence directly supports this question.'
-        : `Validated evidence directly supports this question from ${supportingWorkIds.length} independent work(s); ${minimumQuestionSupportingWorks} required.`] }
+        : 'Related source-verified evidence is available; completeness of the requested answer has not been established.'] }
   })
   return { schemaVersion: 1, researchBriefId: brief.researchBriefId,
     researchBriefVersion: brief.version, assessedAt, questions, evidenceRequirementsMet,
-    allQuestionsCovered: questions.every(question => question.status === 'covered') }
+    allQuestionsCovered: false }
 }
 
 function progressSettlement(

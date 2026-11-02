@@ -37,6 +37,8 @@
 | `event:academic/candidate-semantic-review-verified-v1` | event | `819b0441c374444a543de8c6063a96acdd559d558e9e8636a459a9399a92de80` | [`{ type: "academic/candidate-semantic-review-verified-v1" }`](#persistence-type-sha256-819b0441c374444a543de8c6063a96acdd559d558e9e8636a459a9399a92de80) |
 | `event:academic/coverage-repair-paper-v1` | event | `30cab2a40d1f80ca3c2b1d56dce863c6a2a3c426d4019889fc767a398b79b91b` | [`{ type: "academic/coverage-repair-paper-v1" }`](#persistence-type-sha256-30cab2a40d1f80ca3c2b1d56dce863c6a2a3c426d4019889fc767a398b79b91b) |
 | `event:academic/coverage-repair-state-v1` | event | `54d1979b7c482ad5bcb68a76a1e5d53f4039758ed1a4fcd1788fbdf4bdb450f8` | [`{ type: "academic/coverage-repair-state-v1" }`](#persistence-type-sha256-54d1979b7c482ad5bcb68a76a1e5d53f4039758ed1a4fcd1788fbdf4bdb450f8) |
+| `event:academic/coverage-request-v1` | event | `12750c1f4f111d7aa11b6003025dd7034925e84ca571ed3b65d05b3dc702cb48` | [`{ type: "academic/coverage-request-v1" }`](#persistence-type-sha256-12750c1f4f111d7aa11b6003025dd7034925e84ca571ed3b65d05b3dc702cb48) |
+| `event:academic/coverage-result-v1` | event | `0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa` | [`{ type: "academic/coverage-result-v1" }`](#persistence-type-sha256-0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa) |
 | `event:academic/coverage-review-request-v1` | event | `1ea19c61c1e06667af1bd112c86d0eeb65e2ba966ec12ffa2a5a192ebf903b75` | [`{ type: "academic/coverage-review-request-v1" }`](#persistence-type-sha256-1ea19c61c1e06667af1bd112c86d0eeb65e2ba966ec12ffa2a5a192ebf903b75) |
 | `event:academic/coverage-review-result-v1` | event | `1942bf12f4f9c081ed442cf6bb966eaafde384f5c8c7a8f58eb4ff9860b9967c` | [`{ type: "academic/coverage-review-result-v1" }`](#persistence-type-sha256-1942bf12f4f9c081ed442cf6bb966eaafde384f5c8c7a8f58eb4ff9860b9967c) |
 | `event:academic/evidence-enhancement-selection` | event | `4ef74c5ee6f658ea40f4ea4c20ef75786f322e39444edb11f5646920d8b56be1` | [`{ type: "academic/evidence-enhancement-selection" }`](#persistence-type-sha256-4ef74c5ee6f658ea40f4ea4c20ef75786f322e39444edb11f5646920d8b56be1) |
@@ -327,7 +329,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
   readonly evidence: import('@deepseek-ai/dsh-academic-evidence').EvidenceExtractionResult }
 ```
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:27`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:28`](../packages/academic/workflow/src/coverage-model.ts)
 
 <a id="academiccoverage-repair-state-v1--log-only"></a>
 
@@ -338,7 +340,33 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/coverage-repair-state-v1': { readonly retrievalRunId: RetrievalRunId; readonly state: CoverageRepairState }
 ```
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:25`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:26`](../packages/academic/workflow/src/coverage-model.ts)
+
+<a id="academiccoverage-request-v1--log-only"></a>
+
+#### `academic/coverage-request-v1` — log-only
+
+```ts persistence-catalog
+/** Question coverage input and exact model request.
+ * @param data Accepted evidence and bounded model dispatch.
+ */
+'academic/coverage-request-v1': CoverageModelRequest
+```
+
+来源：[`packages/academic/workflow/src/coverage-model.ts:208`](../packages/academic/workflow/src/coverage-model.ts)
+
+<a id="academiccoverage-result-v1--log-only"></a>
+
+#### `academic/coverage-result-v1` — log-only
+
+```ts persistence-catalog
+/** Question coverage attempt, including rejected output.
+ * @param data Raw response, usage and validation outcome.
+ */
+'academic/coverage-result-v1': CoverageModelResult
+```
+
+来源：[`packages/academic/workflow/src/coverage-model.ts:212`](../packages/academic/workflow/src/coverage-model.ts)
 
 <a id="academiccoverage-review-request-v1--log-only"></a>
 
@@ -349,7 +377,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/coverage-review-request-v1': Omit<EvidenceModelRequest, 'source'> & { readonly retrievalRunId: RetrievalRunId }
 ```
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:21`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:22`](../packages/academic/workflow/src/coverage-model.ts)
 
 <a id="academiccoverage-review-result-v1--log-only"></a>
 
@@ -360,7 +388,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/coverage-review-result-v1': Omit<EvidenceModelResult, 'source'> & { readonly retrievalRunId: RetrievalRunId }
 ```
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:23`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:24`](../packages/academic/workflow/src/coverage-model.ts)
 
 <a id="academicevidence-enhancement-selection--log-only"></a>
 
@@ -1847,6 +1875,22 @@ SHA-256: `f2153c3814aeca72f11bedfca74ee255258458dd62eabd58212481b0dbdf4a22`
 SHA-256: `ed677e68c55337442f8c442ea7288ed30b2a291ccddcae61309653099bad77dc`
 
 `"academic/coverage-repair-state-v1"`
+
+<a id="persistence-type-sha256-d9f5047da4d0d4ae1b7d24634f5bc48a3a05faeeac232a42c41095212f6f0b6e"></a>
+
+### `"academic/coverage-request-v1"`
+
+SHA-256: `d9f5047da4d0d4ae1b7d24634f5bc48a3a05faeeac232a42c41095212f6f0b6e`
+
+`"academic/coverage-request-v1"`
+
+<a id="persistence-type-sha256-2cd1ba99ba7b3b126c5c4e748c50db2dfd695c0239dada4a3f7a04262673f8be"></a>
+
+### `"academic/coverage-result-v1"`
+
+SHA-256: `2cd1ba99ba7b3b126c5c4e748c50db2dfd695c0239dada4a3f7a04262673f8be`
+
+`"academic/coverage-result-v1"`
 
 <a id="persistence-type-sha256-39e02f3a55d78acf9e4a59de6e19999ce5b0c0c74b5e789e2e6de4d84781a68c"></a>
 
@@ -8115,6 +8159,62 @@ SHA-256: `6487b10ba7542f3c447b1e41a1c6a590b7bfafe0b9b66b49f34028da85bb970f`
 | `toolFilter` | 可选 | [`ToolRestriction`](#persistence-type-sha256-3cfc3a56502da1f8c6153c2c56657bab4b749056968634dd0991d325ec1c919f) |
 | `version` | 必需 | `number` |
 
+<a id="persistence-type-sha256-6bef7ad8e7568b1e41c60ecd110612e1a2fac09b47e0035789c1589d83894bae"></a>
+
+<a id="persistence-type-coveragemodelrequest"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltscoveragemodelrequest"></a>
+
+### `CoverageModelRequest`
+
+SHA-256: `6bef7ad8e7568b1e41c60ecd110612e1a2fac09b47e0035789c1589d83894bae`
+
+来源：[`packages/academic/workflow/src/coverage-model.ts:194`](../packages/academic/workflow/src/coverage-model.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `attempt` | 必需 | `number` |
+| `config` | 必需 | [`LlmCallConfig`](#persistence-type-sha256-67d5f73ceae82f5265258142ad6cf172de2c1fef93ba551b7f0454e0a93bffe0) |
+| `contextWindow` | 必需 | `number` |
+| `decision` | 必需 | [`union (2 variants)`](#persistence-type-sha256-f0ee57d2366efb5f11df27bfc1ecb29692b1d099c305bc3917333f3c8b0de8f7) |
+| `estimatedInputTokens` | 必需 | `number` |
+| `fragment` | 可选 | [`EvidenceFragmentAttempt`](#persistence-type-sha256-3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205) |
+| `input` | 必需 | [`QuestionCoverageInput`](#persistence-type-sha256-db60bd98c6a0bb906d523566667ee9789855ea603764716129503aa73f8af097) |
+| `maxAttempts` | 必需 | `number` |
+| `messages` | 必需 | [`Message[]`](#persistence-type-sha256-c6be2e71a87d0883d51de998c133f9fd59dcbe95d63523f718930241931c044c) |
+| `outputTokens` | 必需 | `number` |
+| `phase` | 可选 | [`union (2 variants)`](#persistence-type-sha256-fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882) |
+| `screening` | 可选 | [`ScopeScreeningRecord`](#persistence-type-sha256-880b2e4c653be528cb11a1d3b7ab45218d8f1c31716c3198083efd3f623ebb65) |
+
+<a id="persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f"></a>
+
+<a id="persistence-type-coveragemodelresult"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltscoveragemodelresult"></a>
+
+### `CoverageModelResult`
+
+SHA-256: `3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f`
+
+来源：[`packages/academic/workflow/src/coverage-model.ts:199`](../packages/academic/workflow/src/coverage-model.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `attempt` | 必需 | `number` |
+| `elapsedMs` | 可选 | `number` |
+| `errorCode` | 可选 | `string` |
+| `failurePhase` | 可选 | [`union (5 variants)`](#persistence-type-sha256-79cad92b90c1ea760468a124b37c8108d88413706b5f36fbf52c0bb531cdd41d) |
+| `finish` | 可选 | [`FinishReason`](#persistence-type-sha256-5808e36c95355f0e745201b5db1b6bcec4ebf5adb75d3e82d7d59cc89635ab80) |
+| `firstContentElapsedMs` | 可选 | `number` |
+| `fragment` | 可选 | [`EvidenceFragmentAttempt`](#persistence-type-sha256-3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205) |
+| `maxAttempts` | 必需 | `number` |
+| `phase` | 可选 | [`union (2 variants)`](#persistence-type-sha256-fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882) |
+| `requestSeq` | 必需 | [`OptionalSessionSeq`](#persistence-type-sha256-3bd652ebfa8726b3ce3937a4f1bd2759e02f86b3a08a20f9e41a8513656fbc5f) |
+| `retrievalRunId` | 必需 | `string` |
+| `status` | 必需 | [`union (4 variants)`](#persistence-type-sha256-78551cc82ac8794c578b2dcfb77e329259abdc3b3452138c1ec7edcb40cf34fd) |
+| `stream` | 必需 | [`AssistantStreamRecord[]`](#persistence-type-sha256-84bbfdce7d2eab5b0c53e72ff7406db856c8bfd621b965b72fd86598ba493bf7) |
+| `usage` | 可选 | [`TokenUsage`](#persistence-type-sha256-fec5442b9ee4122e10514d81d5a43648003fe8bfb7ee2ba50c0cdbdd383ed394) |
+
 <a id="persistence-type-sha256-3fadc46c4dd6786448fef63e55fa916712bf00aaa4bc65c0a118995b3478529d"></a>
 
 <a id="persistence-type-coveragerepairpolicy"></a>
@@ -10572,6 +10672,25 @@ SHA-256: `5aaa327c628d97ad4a4810ebdfef254136557167ad4d0d10202a8d6e48fca6e2`
 | `end` | 必需 | [`union (2 variants)`](#persistence-type-sha256-d651c19f001b5b5175903ce727fb4a4d497c126683e104226b94059d165c5db2) |
 | `start` | 必需 | [`union (2 variants)`](#persistence-type-sha256-d651c19f001b5b5175903ce727fb4a4d497c126683e104226b94059d165c5db2) |
 
+<a id="persistence-type-sha256-db60bd98c6a0bb906d523566667ee9789855ea603764716129503aa73f8af097"></a>
+
+<a id="persistence-type-packagesacademicworkflowsrccoverage-modeltsquestioncoverageinput"></a>
+
+<a id="persistence-type-questioncoverageinput"></a>
+
+### `QuestionCoverageInput`
+
+SHA-256: `db60bd98c6a0bb906d523566667ee9789855ea603764716129503aa73f8af097`
+
+来源：[`packages/academic/workflow/src/coverage-model.ts:186`](../packages/academic/workflow/src/coverage-model.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `coverage` | 必需 | [`ResearchQuestionCoverageResult`](#persistence-type-sha256-f6bbf6595e673dada3b4ef8ece1b6aa4f19bb7f0127c09acc30451463e52be21) |
+| `evidence` | 必需 | [`EvidenceRecord[]`](#persistence-type-sha256-2720caf01ae2eb3e4e6ffdb399ff0d17ddc7bc5a3bca0f6edff41485d1872fd4) |
+| `minimumSupportingWorks` | 必需 | `number` |
+| `retrievalRunId` | 必需 | `string` |
+
 <a id="persistence-type-sha256-814d9434e1ddf9078612b3b34322f26e9363b469213335007f7e9ba7fee9464e"></a>
 
 <a id="persistence-type-packagesllmllmsrctypestsreasoningblock"></a>
@@ -11074,7 +11193,7 @@ SHA-256: `880b2e4c653be528cb11a1d3b7ab45218d8f1c31716c3198083efd3f623ebb65`
 
 SHA-256: `8ab6eca2a2fb3b3ebfafb8b8933015ee3d138620832080476c4d06f3561501e4`
 
-来源：[`packages/academic/evidence/src/screening-fragments.ts:21`](../packages/academic/evidence/src/screening-fragments.ts)
+来源：[`packages/academic/evidence/src/screening-fragments.ts:22`](../packages/academic/evidence/src/screening-fragments.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -14227,29 +14346,6 @@ SHA-256: `037a94a4426394e27b9f68d0720dcc7d643b2e044acb5b1f767741965ebca9d7`
 | `retrievalRunId` | 必需 | `string` |
 | `screening` | 可选 | [`ScopeScreeningRecord`](#persistence-type-sha256-880b2e4c653be528cb11a1d3b7ab45218d8f1c31716c3198083efd3f623ebb65) |
 
-<a id="persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f"></a>
-
-### `{ attempt, elapsedMs?, errorCode?, failurePhase?, … }`
-
-SHA-256: `3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f`
-
-| 属性 | 存在性 | 类型 |
-|---|---|---|
-| `attempt` | 必需 | `number` |
-| `elapsedMs` | 可选 | `number` |
-| `errorCode` | 可选 | `string` |
-| `failurePhase` | 可选 | [`union (5 variants)`](#persistence-type-sha256-79cad92b90c1ea760468a124b37c8108d88413706b5f36fbf52c0bb531cdd41d) |
-| `finish` | 可选 | [`FinishReason`](#persistence-type-sha256-5808e36c95355f0e745201b5db1b6bcec4ebf5adb75d3e82d7d59cc89635ab80) |
-| `firstContentElapsedMs` | 可选 | `number` |
-| `fragment` | 可选 | [`EvidenceFragmentAttempt`](#persistence-type-sha256-3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205) |
-| `maxAttempts` | 必需 | `number` |
-| `phase` | 可选 | [`union (2 variants)`](#persistence-type-sha256-fddc1a1bf188c80b81c9aca98dab45ae20cb17e5fc07cbee00268137ece56882) |
-| `requestSeq` | 必需 | [`OptionalSessionSeq`](#persistence-type-sha256-3bd652ebfa8726b3ce3937a4f1bd2759e02f86b3a08a20f9e41a8513656fbc5f) |
-| `retrievalRunId` | 必需 | `string` |
-| `status` | 必需 | [`union (4 variants)`](#persistence-type-sha256-78551cc82ac8794c578b2dcfb77e329259abdc3b3452138c1ec7edcb40cf34fd) |
-| `stream` | 必需 | [`AssistantStreamRecord[]`](#persistence-type-sha256-84bbfdce7d2eab5b0c53e72ff7406db856c8bfd621b965b72fd86598ba493bf7) |
-| `usage` | 可选 | [`TokenUsage`](#persistence-type-sha256-fec5442b9ee4122e10514d81d5a43648003fe8bfb7ee2ba50c0cdbdd383ed394) |
-
 <a id="persistence-type-sha256-1528539c63db8b23506f0209a99ce77d8ad138adfbfcee3d4769b7382d93756c"></a>
 
 ### `{ callId, files, turn }`
@@ -14913,7 +15009,7 @@ SHA-256: `c4a8adbea2a98f5d230f5bb4495ef769dc8f7846abaed61507a0eda181c3af21`
 
 SHA-256: `eda4f07eca783530485bd46bfa77a0e759558111160b1370984d55c244cac53b`
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:27`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:28`](../packages/academic/workflow/src/coverage-model.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17052,7 +17148,7 @@ SHA-256: `ef093a3d91e967d50b64ae0598f0576bfa8919b3ed2b0c86bafc2f64a592c9b7`
 
 SHA-256: `6f879b126767f304d5ca1ebba83b977381c9dc7629feba511926cb7c315c9dca`
 
-来源：[`packages/academic/workflow/src/coverage-model.ts:25`](../packages/academic/workflow/src/coverage-model.ts)
+来源：[`packages/academic/workflow/src/coverage-model.ts:26`](../packages/academic/workflow/src/coverage-model.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17662,6 +17758,38 @@ SHA-256: `54d1979b7c482ad5bcb68a76a1e5d53f4039758ed1a4fcd1788fbdf4bdb450f8`
 | `time` | 必需 | `number` |
 | `type` | 必需 | `"academic/coverage-repair-state-v1"` |
 
+<a id="persistence-type-sha256-12750c1f4f111d7aa11b6003025dd7034925e84ca571ed3b65d05b3dc702cb48"></a>
+
+<a id="persistence-type-eventacademiccoverage-request-v1"></a>
+
+### `{ type: "academic/coverage-request-v1" }`
+
+SHA-256: `12750c1f4f111d7aa11b6003025dd7034925e84ca571ed3b65d05b3dc702cb48`
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `data` | 必需 | [`CoverageModelRequest`](#persistence-type-sha256-6bef7ad8e7568b1e41c60ecd110612e1a2fac09b47e0035789c1589d83894bae) |
+| `ignorable` | 可选 | `true` |
+| `seq` | 必需 | `number` |
+| `time` | 必需 | `number` |
+| `type` | 必需 | `"academic/coverage-request-v1"` |
+
+<a id="persistence-type-sha256-0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa"></a>
+
+<a id="persistence-type-eventacademiccoverage-result-v1"></a>
+
+### `{ type: "academic/coverage-result-v1" }`
+
+SHA-256: `0f561cf29591915cdcc969c6ce07673cddc3a55e8dd53eeddef76680e251b4aa`
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `data` | 必需 | [`CoverageModelResult`](#persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f) |
+| `ignorable` | 可选 | `true` |
+| `seq` | 必需 | `number` |
+| `time` | 必需 | `number` |
+| `type` | 必需 | `"academic/coverage-result-v1"` |
+
 <a id="persistence-type-sha256-1ea19c61c1e06667af1bd112c86d0eeb65e2ba966ec12ffa2a5a192ebf903b75"></a>
 
 <a id="persistence-type-eventacademiccoverage-review-request-v1"></a>
@@ -17688,7 +17816,7 @@ SHA-256: `1942bf12f4f9c081ed442cf6bb966eaafde384f5c8c7a8f58eb4ff9860b9967c`
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
-| `data` | 必需 | [`{ attempt, elapsedMs?, errorCode?, failurePhase?, … }`](#persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f) |
+| `data` | 必需 | [`CoverageModelResult`](#persistence-type-sha256-3663ae15ca6736be5c01d412f326e837533f543b2e7308723d6fb257040e481f) |
 | `ignorable` | 可选 | `true` |
 | `seq` | 必需 | `number` |
 | `time` | 必需 | `number` |

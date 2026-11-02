@@ -68,4 +68,19 @@ describe('standalone report delivery', () => {
     expect((click.mock.instances[0] as HTMLAnchorElement)?.download).toBe('academic-report.html')
     vi.runAllTimers()
   })
+
+  it('preserves unclassified historical notes without exposing identifiers as key limitations', () => {
+    const report = sampleRun().report
+    const raw = 'Version 2161f03a-ffee-4226-bd4c-7c394ddc7e15 failed during fulltext.'
+    const stop = 'The desired inclusion target and question coverage are satisfied.'
+    const doc = new DOMParser().parseFromString(exportAcademicHtml({ ...report,
+      limitations: [raw, stop, '缺少统一训练条件，不能直接排名。', '<script>unsafe()</script>'] }, t), 'text/html')
+    const header = doc.querySelector('header')!
+    const diagnostics = [...header.querySelectorAll('details')].find(node => node.querySelector('summary')?.textContent === zh.rawDiagnostics)!
+    expect(diagnostics.open).toBe(false)
+    expect(diagnostics.textContent).toContain(raw)
+    expect(diagnostics.textContent).toContain(stop)
+    expect(header.querySelector('aside')?.textContent).not.toContain('2161f03a')
+    expect(doc.querySelector('script')).toBeNull()
+  })
 })

@@ -18,10 +18,11 @@ export function layoutReportBody(html: string): string {
     paragraph.replaceWith(details)
     details.append(summary, list)
   }
-  const supplementary = /^(报告信息与研究范围|研究问题与证据核对|技术总览（补充分析索引）|论文图景（补充分析索引）|关键发现（补充分析索引）|证据附录|检索渠道与覆盖说明)$/u
+  const supplementary = new Set(['报告信息与研究范围', '研究问题与证据核对', '技术总览（补充分析索引）', '论文图景（补充分析索引）',
+    '关键发现（补充分析索引）', '证据附录', '检索渠道与覆盖说明', '内容限制与未回答问题', '逐题内容缺口', '筛选与处理记录', '运行诊断（原始记录）'])
   const deferred: HTMLElement[] = []
   for (const heading of [...root.querySelectorAll('h2')]) {
-    if (!supplementary.test(heading.textContent.trim())) continue
+    if (!supplementary.has(heading.textContent.trim())) continue
     const details = document.createElement('details')
     details.className = 'supplement'
     const summary = document.createElement('summary')

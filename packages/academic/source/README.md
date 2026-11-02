@@ -46,6 +46,8 @@ All search methods return normalized works and enforce the total `request.maxRes
 
 `verifyReference(reference, allowedProviders, signal)` routes one identified DOI to OpenAlex, arXiv ID to arXiv, or official ACL/PMLR/CVF record to its provider. The allowlist is checked before network access; a registered provider can verify one record even when its catalog search is unavailable. The result is one verified work with full-text candidates or one classified failure. Missing provider registration fails explicitly, and caller cancellation aborts the call.
 
+Web reference identification accepts official arXiv abstract, PDF and HTML paper URLs, including versioned identifiers. Identification still requires provider verification before a Web result supplies scholarly metadata.
+
 ### Provider selection
 
 Each call resolves its provider at execution time, and registration or load order never matters. A configured provider id wins when it is registered and usable; without a configured id, the service runs the single usable provider or fails clearly:

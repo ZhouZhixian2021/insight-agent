@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { identifyAcademicReferences } from '@deepseek-ai/dsh-academic-source'
 
 describe('identifyAcademicReferences', () => {
+  it('identifies versioned HTML papers and rejects malformed HTML identifiers', () => {
+    expect(identifyAcademicReferences({ url: 'https://arxiv.org/html/2509.01245v3' })).toMatchObject({
+      status: 'identified', references: [{ kind: 'arxiv', normalizedValue: '2509.01245v3' }],
+    })
+    expect(identifyAcademicReferences({ url: 'https://arxiv.org/html/not-a-paper' })).toMatchObject({
+      status: 'discarded', issues: [{ code: 'invalid_reference' }],
+    })
+  })
   it.each([
     ['DOI', { url: 'https://doi.org/10.1000/SYNTHETIC.1' },
       { kind: 'doi', normalizedValue: '10.1000/synthetic.1', originalValue: '10.1000/SYNTHETIC.1' }],

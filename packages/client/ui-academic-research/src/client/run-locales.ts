@@ -2,6 +2,10 @@ import { experienceZh, experienceEn } from './run-experience-locales.ts'
 import { q6Zh, q6En } from './q6-locales.ts'
 /** Academic sample viewer copy; producer text remains verbatim. */
 export const zh = {
+  processDetails: '研究过程与诊断', reportDetails: '报告正文、结论与证据', sessionDetails: '会话说明',
+  keyLimits: '关键限制', questionGaps: '逐题内容缺口', processingNotes: '筛选与处理记录', rawDiagnostics: '运行诊断（原始记录）',
+  enhancementDetails: '可选：补充查看论文证据',
+  legacyLimits: '此历史报告未保存分类限制；请展开原始诊断查看，不能据此认定没有内容限制。',
   chatWaiting: '计划已批准，等待当前对话轮次结束后交接后台研究。',
   chatStarting: '正在交接后台研究；研究进度和报告将在这张卡片中显示。',
   chatResearch: '本轮学术研究', chatHistorical: '这份计划已不是当前计划；只查看已有研究，不重新执行。',
@@ -277,6 +281,10 @@ export type RunKey = keyof typeof zh
 
 /** English copy with the identical key set. */
 export const en: Record<RunKey, string> = {
+  processDetails: 'Research process and diagnostics', reportDetails: 'Report text, conclusions and evidence', sessionDetails: 'Session information',
+  keyLimits: 'Key limitations', questionGaps: 'Question-specific gaps', processingNotes: 'Screening and processing records', rawDiagnostics: 'Original diagnostic records',
+  enhancementDetails: 'Optional: inspect supplemental paper evidence',
+  legacyLimits: 'This historical report has no grouped limitations. Read the original diagnostics; missing groups do not mean no limitations.',
   chatWaiting: 'Plan approved. Waiting for this conversation turn to end before handing off research.',
   chatStarting: 'Handing off research to the background. Progress and the report will appear in this card.',
   chatResearch: 'Research for this request', chatHistorical: 'This is a historical plan. View saved research without rerunning it.',

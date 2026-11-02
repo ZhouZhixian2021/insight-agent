@@ -103,7 +103,10 @@ export function planHybridSearch(
 }
 
 /**
- * Add one bounded round of queries for observed evidence gaps.
+ * Add bounded queries for incomplete questions across every approved search direction.
+ * Approved aspect terms take precedence; otherwise reviewed expansions or the exact approved question are searched.
+ * Diagnostic gap messages never enter a query. Question-based rounds may repeat an expression;
+ * aspect-based rounds retain the existing duplicate-query limit.
  * @param plan - Reviewed plan whose existing query identities must stay stable.
  * @param coverage - Coverage of the same brief version, produced after evidence extraction.
  * @param roundIndex - New one-based search round within the reviewed maximum.
@@ -137,13 +140,16 @@ export function extendPlanForEvidenceGaps(
     const questionCore = plan.queries.find(query => query.kind === 'academic' && query.purpose === 'core'
       && query.questions.includes(item.question)) ?? core
     const requirement = plan.constraints.coverageRequirements?.find(requirement => requirement.question === item.question)
-    const gaps = requirement === undefined ? item.gaps : requirement.aspects
-      .filter(aspect => item.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered')
-      .map(aspect => [aspect.label, ...aspect.searchTerms].join(' '))
-    for (const gap of gaps) {
-      const expression = `${questionCore.expression} ${nonEmpty(gap, 'coverage.gap')}`
-      const candidate = academic(expression, 'evidence_gap', [item.question], roundIndex, options.academicProviders)
-      if (plan.queries.some(query => sameQuery(query, candidate))) continue
+    const expansions = options.expansions.filter(expansion => expansion.questions.includes(item.question))
+    const expressions = requirement === undefined
+      ? expansions.length > 0 ? expansions.map(expansion => expansion.expression) : [item.question]
+      : requirement.aspects
+        .filter(aspect => item.aspects?.find(review => review.aspectId === aspect.aspectId)?.status !== 'covered')
+        .map(aspect => [questionCore.expression, aspect.label, ...aspect.searchTerms].join(' '))
+    for (const expression of expressions) {
+      const candidate = academic(nonEmpty(expression, 'coverage.question'), 'evidence_gap', [item.question],
+        roundIndex, options.academicProviders)
+      if (requirement !== undefined && plan.queries.some(query => sameQuery(query, candidate))) continue
       if (mergeDuplicate(additions, candidate)) continue
       if (additions.length === options.maximumQueriesPerRound) {
         if (!warnings.includes('Evidence gaps exceeded the query limit.')) {

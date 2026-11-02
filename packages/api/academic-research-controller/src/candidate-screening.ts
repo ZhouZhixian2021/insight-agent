@@ -7,7 +7,7 @@ export type AcademicCandidateScreening = Pick<CandidateScreeningCriteria,
   'questions' | 'methods' | 'evidence' | 'contributions'>
 
 /**
- * Flatten reviewed aliases in the exact order of approved questions for minimal evidence range priority.
+ * Flatten reviewed aliases in the exact order of approved questions for evidence range priority.
  * @param questions Approved Brief questions used by the extractor.
  * @param reviewed Optional same-version plan cues; absent cues retain the extractor's question-text fallback.
  * @returns One alias list per question, or undefined for an older plan without reviewed cues.

@@ -126,6 +126,7 @@ describe('bounded candidate replenishment', () => {
       coverBoth, failedDownloads, failedExtractions, bounded,
     ) => {
       const { input, adapters, records } = fixture()
+      adapters.assessQuestionCoverage = vi.fn(adapters.assessQuestionCoverage)
       if (bounded) input.searches = [{ query: 'bounded', maxResults: 2, channels: ['academic'] }]
       const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
       adapters.onQueryWorkflow = observation => observations.push(observation)
@@ -186,6 +187,7 @@ describe('bounded candidate replenishment', () => {
         return { papers: [], truncated: false, candidateScheduling: scheduling }
       })
       const result = await runResearchDraft(input, adapters)
+      if (!bounded) expect(adapters.assessQuestionCoverage).toHaveBeenCalled()
       expect(adapters.fetcher).toHaveBeenCalledTimes(bounded ? 2 : coverBoth ? failedDownloads || failedExtractions ? 4 : 2 : 5)
       expect(result.retrievalRun.coverageSummary.includedWorks).toBe(bounded ? 0 : coverBoth ? 2 : 5)
       if (failedDownloads || failedExtractions) expect(result.failures).toHaveLength(2)

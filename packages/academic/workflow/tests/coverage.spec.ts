@@ -51,12 +51,16 @@ describe('aspect coverage and bounded repair', () => {
       label: 'Compare methods and results', evidenceRequirement: 'direct', searchTerms: ['reranking'] }] }],
     stopConditions: { ...input.brief.stopConditions, stopWhenEvidenceRequirementsMet: true } }
     input.coverageRepairPolicy = { ...policy, maximumNewCandidateWorks: 0, maximumRepairPapers: 0 }
+    adapters.assessQuestionCoverage = vi.fn<NonNullable<DraftPipelineAdapters['assessQuestionCoverage']>>(async () => {
+      throw new Error('Aspect review must not dispatch a second question assessment.')
+    })
     adapters.reviewCoverage = vi.fn<NonNullable<DraftPipelineAdapters['reviewCoverage']>>(async request => ({ aspects: [{ aspectId,
       status: covered ? 'covered' : 'partial', evidenceIds: [request.evidence[0]!.evidenceId],
       reason: covered ? 'The approved comparison is supported.' : 'Only methods, no results.' }] }))
     const result = await runResearchDraft(input, adapters)
     expect(adapters.generator).toHaveBeenCalledTimes(2)
     expect(adapters.reviewCoverage).toHaveBeenCalledOnce()
+    expect(adapters.assessQuestionCoverage).not.toHaveBeenCalled()
     expect(result.coverageRepair?.coverage?.allQuestionsCovered).toBe(covered)
     if (!covered) expect(result.retrievalRun.coverageSummary.limitations.join(' ')).toContain('有限补强')
   })

@@ -1,6 +1,7 @@
 /** Standalone HTML report artifact; no live Web plugin, backend, or model requests. */
 import type { ResearchReport } from './index.ts'
 import { labels } from './html-preview-locales.ts'
+import { summarizeReportLimitations } from './limitation-summary.ts'
 
 function escapeHtml(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;')
@@ -14,6 +15,9 @@ function escapeHtml(value: string): string {
  */
 export function renderResearchPage(report: ResearchReport, language: keyof typeof labels): string {
   const t = labels[language]
+  const organized = summarizeReportLimitations([...report.limitations,
+    ...report.evaluation.issues.filter(issue => issue.category === 'content').map(issue => issue.message)])
+  const list = (items: readonly string[]) => `<ul>${items.map(text => `<li>${escapeHtml(text)}</li>`).join('')}</ul>`
   const claims = report.claims.map((claim, index) => `<article class="searchable" id="claim-${index}">
     <h3>${index + 1}. ${escapeHtml(claim.category)}</h3><p class="claim-text">${escapeHtml(claim.text)}</p>
     <p>${escapeHtml(claim.scope)}</p><small>${t.confidence}: ${escapeHtml(claim.confidence)}</small>
@@ -41,7 +45,10 @@ export function renderResearchPage(report: ResearchReport, language: keyof typeo
     <div class="toolbar"><input id="search" type="search" aria-label="${t.search}" placeholder="${t.search}"><button id="download">${t.download}</button></div></header>
     <main><section id="claims"><h2>${t.claims}</h2>${claims || `<p>${t.none}</p>`}</section>
     <section id="evidence"><h2>${t.evidence}</h2>${evidence}</section>
-    <section id="quality"><h2>${t.limits}</h2><ul>${report.limitations.map(text => `<li>${escapeHtml(text)}</li>`).join('')}</ul>
+    <section id="quality"><h2>${t.limits}</h2><h3>${t.keyLimits}</h3>${list(organized.keyLimitations)}
+    <details><summary>${t.questionGaps}</summary>${list(organized.questionGaps)}</details>
+    <details><summary>${t.processingNotes}</summary>${list(organized.processingNotes)}</details>
+    <details><summary>${t.rawDiagnostics}</summary>${list(organized.diagnostics)}</details>
     ${report.evaluation.assessments.map(item => `<p>${escapeHtml(item.status)}: ${escapeHtml(item.reason)}</p>`).join('')}</section>
     <details><summary>${t.markdown}</summary><pre>${escapeHtml(report.markdown)}</pre></details></main>
     <script id="report-data" type="application/json">${data}</script><script>

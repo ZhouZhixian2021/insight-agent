@@ -9,7 +9,7 @@ import type {
 const DOI = /(?<![a-z0-9])10\.\d{4,9}\/[-._;()/:a-z0-9]+/giu
 const ARXIV_ID = String.raw`(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[a-z]{2})?/\d{7})(?:v\d+)?`
 const ARXIV_VALUE = new RegExp(`^${ARXIV_ID}$`, 'iu')
-const ARXIV_PATH = new RegExp(`^/(?:abs|pdf)/(${ARXIV_ID})(?:\\.pdf)?/?$`, 'iu')
+const ARXIV_PATH = new RegExp(`^/(?:abs|pdf|html)/(${ARXIV_ID})(?:\\.pdf)?/?$`, 'iu')
 const ARXIV_LABEL = new RegExp(`\\barXiv:\\s*(${ARXIV_ID})(?![a-z0-9])`, 'giu')
 const ACL_ID = /^(?:\d{4}\.[a-z0-9]+-[a-z0-9]+(?:\.[a-z0-9-]+)+|[A-Z]\d{2}-\d{4}(?:v\d+)?)$/u
 const PMLR_PAGE = /^\/(v\d+)\/([a-z0-9][a-z0-9._-]*)\.html$/u
@@ -56,7 +56,7 @@ export function identifyAcademicReferences(candidate: AcademicWebDiscoveryCandid
     if (id !== undefined) add(`arxiv:${id.toLowerCase()}`, {
       kind: 'arxiv', normalizedValue: id, originalValue: id, discoveryUrl,
     })
-    else if (/^\/(?:abs|pdf)\//u.test(url.pathname)) {
+    else if (/^\/(?:abs|pdf|html)\//u.test(url.pathname)) {
       issues.push({ code: 'invalid_reference', message: 'The arXiv URL has an invalid paper identifier.' })
     }
   } else if (url.hostname === 'aclanthology.org') {

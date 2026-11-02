@@ -83,6 +83,33 @@ describe('extractEvidenceInFragments', () => {
       .toEqual([1, 2, 3])
   })
 
+  it('never dispatches back matter fragments', async () => {
+    const input = { ...source(), segments: [
+      { text: 'intro', locator: { kind: 'paragraph' as const, sectionTitle: 'Introduction', paragraphNumber: 1 } },
+      { text: 'refs', locator: { kind: 'paragraph' as const, sectionTitle: 'References', paragraphNumber: 2 } },
+    ] }
+    const seen: string[] = []
+    const result = await extractEvidenceInFragments(input, options({ generator: async (request) => {
+      seen.push(...request.segments.map(segment => segment.text))
+      return request.segments.map((segment, segmentIndex) => ({ ...draft(segment.text), segmentIndex }))
+    } }))
+    expect(seen).toStrictEqual(['intro'])
+    expect(result.evidence.sourceLocators.map(locator => locator.kind === 'paragraph' ? locator.paragraphNumber : null))
+      .toStrictEqual([1])
+  })
+
+  it('dispatches every segment when the whole document reads as back matter', async () => {
+    const input = { ...source(), segments: [
+      { text: 'refs', locator: { kind: 'paragraph' as const, sectionTitle: 'References', paragraphNumber: 1 } },
+    ] }
+    const seen: string[] = []
+    await extractEvidenceInFragments(input, options({ generator: async (request) => {
+      seen.push(...request.segments.map(segment => segment.text))
+      return request.segments.map((segment, segmentIndex) => ({ ...draft(segment.text), segmentIndex }))
+    } }))
+    expect(seen).toStrictEqual(['refs'])
+  })
+
   it('waits for verified-fragment persistence before dispatching the next source range', async () => {
     const input = source()
     let release: (() => void) | undefined
