@@ -1,6 +1,6 @@
 Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the tool results.
 
-# 研究计划编写模板
+# 研究计划编写模板（选定方向专题示例）
 
 以下是给系统的编写要求，不要原样放进用户的计划：将用户的日常表达整理成范围明确、能够执行的研究计划。标题、各级标题、说明和正文统一使用简体中文；论文原名、必要缩写可以保留，并用中文解释。计划以具体的中文一级标题开始，例如“RAG 对大模型幻觉影响的研究计划”。将占位提示替换为具体内容或明确假设，不要求用户填写技术字段。
 
@@ -10,7 +10,7 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 日期政策必须明确：固定截止日期用 `publicationDatePolicy.endMode: "fixed"` 并填写 `publicationWindow.end`；“截至检索时点”用 `run_start` 和 `end: null`；明确不设上限用 `unbounded` 和 `end: null`。使用用户认可的 IANA 时区（中文计划通常为 `Asia/Shanghai`），在可见计划中说明。`run_start` 在研究开始时冻结本地日历日期，恢复和重试沿用原值。不要根据模型记忆填写“今天”。
 
-逐篇日期条件由程序依据结构化窗口执行，不交给内容模型比较日期。`inclusionRuleKinds` 和 `exclusionRuleKinds` 必须与对应规则数组逐项一一对应，取值为 `content` 或 `publication_date`；日期条件与内容条件分成独立条目。新增计划使用执行块版本 7。旧计划的 `end: null` 不能自动解释为“截至今天”，应补充明确政策后重新审核。
+逐篇日期条件由程序依据结构化窗口执行，不交给内容模型比较日期。`inclusionRuleKinds` 和 `exclusionRuleKinds` 必须与对应规则数组逐项一一对应，取值为 `content` 或 `publication_date`；日期条件与内容条件分成独立条目。新增计划使用执行块版本 8。旧计划的 `end: null` 不能自动解释为“截至今天”，应补充明确政策后重新审核。
 
 提交到 `exit_plan_mode` 的计划由简洁的中文审核正文和完整的系统执行块组成。正文只写会影响研究结果、证据判断或交付的用户决策，目标为 300 至 600 个中文字符；不逐项解释执行字段。保留且仅保留一个 `academic-research-brief-json` 围栏块，字段名和类型保持不变，所有重要选择与正文一致。不要添加标识、版本或批准字段；宿主从审核记录生成这些信息。
 
@@ -28,6 +28,20 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 说明时间范围及使用发表日期还是首次公开日期，接受哪些论文版本（预印本、录用稿、正式发表版本），重要的纳入或排除限制，用户资料、所需证据等级和约需分析的论文数量。用户明确指定来源时说明该选择；否则用“学术来源检索，公开网页辅助发现”概括，不列内部来源名称、逐篇字段或数量预算。
 
+领域级请求须写明“原需求为领域级”，并将本轮交付明确命名为“专题”或“选定方向”，不能沿用全领域报告的承诺。先用少量预检索整理可能的方向，再把本轮深入、仅作概览和不作系统覆盖的已知方向逐项写在下面三个小节；后者是示例，不宣称穷尽领域。专题级请求也保留这三个小节，空类别写“无”。执行块 `scopeDecision` 的每个方向必须逐字出现在对应小节。三条初轮查询是执行预算，不代表领域只有三个方向。若用户坚持全领域系统覆盖，应先说明当前预算无法支持，并请其选择分阶段研究，不提交虚称全覆盖的计划。
+
+### 本轮深入研究
+
+<本轮深入的方向>
+
+### 仅作概览
+
+无
+
+### 不作系统覆盖
+
+<本轮不作系统覆盖的已知方向>
+
 ## 执行方式
 
 用四至五个简短步骤概括检索与去重、按范围筛选、阅读与提取可定位证据、围绕问题比较、形成报告。系统在同一次计划中生成检索方向和执行参数，用户无需另填检索词。
@@ -44,7 +58,7 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 这一部分由系统根据上述计划生成，无需用户填写。重要的范围、预计论文数量、证据不足处理和交付要求必须与上面的中文计划一致；内部最低值、上限、来源列表、检索词和枚举不在正文逐项重复。
 
-系统根据批准问题整理 `candidateScreening`：每个问题至少有一组可在论文标题、学术来源摘要或关键词中寻找的中英文同义词；方法和证据各至少有一组线索。线索用于候选优先级，不代表论文满足纳入规则或已有可引用证据。`searchPlan` 的每条查询关联其服务的问题，覆盖全部问题，聚焦一个方向，去重后最多三条且不超过检索轮次上限。查询只用于发现候选，不能替代时间、版本与逐篇纳入判断。以上内部词项和关联保留在执行块，正文只展示相应研究问题和整体检索方式，不增加用户未审核的研究方向。
+系统根据批准问题整理 `candidateScreening`：每个问题至少有一组可在论文标题、学术来源摘要或关键词中寻找的中英文同义词；方法和证据各至少有一组线索。线索用于候选优先级，不代表论文满足纳入规则或已有可引用证据。`searchPlan` 的每条查询关联其服务的问题，覆盖全部问题，聚焦一个方向，去重后最多三条且不超过检索轮次上限；每个深入方向的准确标签须出现在至少一条查询的 `purpose` 中。查询只用于发现候选，不能替代时间、版本与逐篇纳入判断。`scopeDecision` 记录原请求广度与可读计划相同的方向取舍；`domain` 必须列出至少一个不作系统覆盖的已知方向，计划标题和执行主题都需标明“专题”或“选定方向”。上述内部词项和查询关联保留在执行块，不增加用户未审核的研究方向。
 
 `candidateScreening` 的每个内部数组表示同一个概念的备选表达，任一别名命中即可；中英文译名必须分别保存，例如 `["planning", "规划"]`，不得拼成 `"planning 规划"` 或 `"planning（规划）"`。保留 `"tool use"`、`"reinforcement learning"` 等完整英文短语，不按空格拆词。不同概念只有确需在同一标题或摘要中同时出现时才分成多个概念组；例如 `[["agent", "智能体"], ["planning", "规划"]]` 要求智能体与规划同时命中。方法和证据的不同组提供各自线索。不要把多种可选研究方向误写为问题必须同时满足的概念；不要把英文术语与中文注释拼成一个别名。这些词项由系统编写和校验，不要求用户理解或修改。
 
@@ -60,10 +74,16 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
 
 ```academic-research-brief-json
 {
-  "schemaVersion": 7,
-  "topic": "<中文研究主题>",
+  "schemaVersion": 8,
+  "topic": "<中文研究主题：选定方向专题>",
   "aliases": ["<系统整理的检索别名>"],
   "questions": ["<中文研究问题>"],
+  "scopeDecision": {
+    "requestedBreadth": "domain",
+    "deepDiveDirections": ["<本轮深入的方向>"],
+    "overviewDirections": [],
+    "notSystematicallyCovered": ["<本轮不作系统覆盖的已知方向>"]
+  },
   "coverageRequirements": [{
     "question": "<中文研究问题>",
     "aspects": [{ "aspectId": "q1.a1", "label": "<原问题中的必要回答方面>",
@@ -72,7 +92,7 @@ Check the proposed Academic plan before review. Reply PLAN_CHECK_DONE after the 
   "searchPlan": [
     {
       "query": "<系统根据研究问题整理的检索表达>",
-      "purpose": "<该检索方向的中文说明>",
+      "purpose": "<本轮深入的方向>：<该检索方向的中文说明>",
       "questions": ["<中文研究问题>"],
       "retrieval": {
         "channels": ["academic", "web_discovery"],

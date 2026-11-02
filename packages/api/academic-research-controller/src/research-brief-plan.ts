@@ -1,5 +1,5 @@
 import type { PublicationDatePolicy, PublicationWindow, ResearchAspectId, ResearchCoverageRequirement,
-  ResearchBrief, ResearchBriefId } from '@deepseek-ai/dsh-academic-model'
+  ResearchBrief, ResearchBriefId, ResearchScopeDecision } from '@deepseek-ai/dsh-academic-model'
 import { isValidPublicationDate, publicationDateBounds } from '@deepseek-ai/dsh-academic-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-tools/types'
@@ -198,8 +198,9 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
   }
   const root = record(value, 'Research Brief')
   if (root.schemaVersion !== 1 && root.schemaVersion !== 2 && root.schemaVersion !== 3
-    && root.schemaVersion !== 4 && root.schemaVersion !== 5 && root.schemaVersion !== 6 && root.schemaVersion !== 7) {
-    throw new Error('schemaVersion must be 1, 2, 3, 4, 5, 6, or 7')
+    && root.schemaVersion !== 4 && root.schemaVersion !== 5 && root.schemaVersion !== 6 && root.schemaVersion !== 7
+    && root.schemaVersion !== 8) {
+    throw new Error('schemaVersion must be 1, 2, 3, 4, 5, 6, 7, or 8')
   }
   exactKeys(root, [
     'schemaVersion', 'topic', 'aliases', 'questions', 'publicationWindow', 'includedWorkTypes',
@@ -208,11 +209,20 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     ...root.schemaVersion >= 5 ? ['candidateScreening'] : [],
     ...root.schemaVersion >= 6 || 'publicationDatePolicy' in root ? ['publicationDatePolicy'] : [],
     ...root.schemaVersion >= 7 || 'coverageRequirements' in root ? ['coverageRequirements'] : [],
+    ...root.schemaVersion >= 8 || 'scopeDecision' in root ? ['scopeDecision'] : [],
   ], 'Research Brief')
   const questions = nonEmptyStringArray(root.questions, 'questions')
+  const scope = root.schemaVersion >= 8 || 'scopeDecision' in root ? scopeDecision(root.scopeDecision) : undefined
+  if (scope !== undefined) validateReadableScope(markdown.slice(0, matches[0]?.index ?? 0), root.topic, scope)
   const limits = stopConditions(root.stopConditions)
   const requirements = evidenceRequirements(root.evidenceRequirements, root.schemaVersion >= 4,
     limits.maximumIncludedWorks)
+  const searches = 'searchPlan' in root ? parseSearchPlan(root.searchPlan, questions,
+    limits.maximumSearchRounds, root.schemaVersion >= 3) : undefined
+  if (scope !== undefined && searches !== undefined && scope.deepDiveDirections.some(direction =>
+    !searches.some(search => search.purpose.includes(direction)))) {
+    throw new Error('每个本轮深入研究方向须出现在至少一条 searchPlan 查询的 purpose 中。')
+  }
   if (requirements.minimumIncludedWorks > requirements.targetIncludedWorks) {
     throw new Error('evidenceRequirements.minimumIncludedWorks must not exceed targetIncludedWorks')
   }
@@ -227,6 +237,7 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     topic: nonEmptyString(root.topic, 'topic'),
     aliases: stringArray(root.aliases, 'aliases'),
     questions,
+    ...scope === undefined ? {} : { scopeDecision: scope },
     ...root.schemaVersion >= 7 || 'coverageRequirements' in root
       ? { coverageRequirements: coverageRequirements(root.coverageRequirements, questions) } : {},
     publicationWindow: publicationWindow(root.publicationWindow),
@@ -242,12 +253,45 @@ function parseBriefPayload(markdown: string): Omit<ResearchBrief, 'researchBrief
     stopConditions: limits,
     assumptions: stringArray(root.assumptions, 'assumptions'),
     ...root.schemaVersion >= 5 ? { candidateScreening: parseCandidateScreening(root.candidateScreening, questions) } : {},
-    ...'searchPlan' in root ? { searchPlan: parseSearchPlan(
-      root.searchPlan,
-      questions,
-      limits.maximumSearchRounds,
-      root.schemaVersion >= 3,
-    ) } : {},
+    ...searches === undefined ? {} : { searchPlan: searches },
+  }
+}
+
+function scopeDecision(value: unknown): ResearchScopeDecision {
+  const item = record(value, 'scopeDecision')
+  exactKeys(item, ['requestedBreadth', 'deepDiveDirections', 'overviewDirections', 'notSystematicallyCovered'], 'scopeDecision')
+  const requestedBreadth = oneOf(item.requestedBreadth, ['domain', 'focused'] as const, 'scopeDecision.requestedBreadth')
+  const deepDiveDirections = nonEmptyStringArray(item.deepDiveDirections, 'scopeDecision.deepDiveDirections')
+  const overviewDirections = stringArray(item.overviewDirections, 'scopeDecision.overviewDirections')
+  const notSystematicallyCovered = stringArray(item.notSystematicallyCovered, 'scopeDecision.notSystematicallyCovered')
+  const all = [...deepDiveDirections, ...overviewDirections, ...notSystematicallyCovered]
+    .map(direction => direction.trim().replace(/\s+/gu, ''))
+  if (new Set(all).size !== all.length) throw new Error('scopeDecision directions must be distinct across categories')
+  if (requestedBreadth === 'domain' && notSystematicallyCovered.length === 0) {
+    throw new Error('领域级计划必须明确列出不作系统覆盖的方向；当前预算不能承诺全领域综述。')
+  }
+  return { requestedBreadth, deepDiveDirections, overviewDirections, notSystematicallyCovered }
+}
+
+function validateReadableScope(readable: string, topic: unknown, scope: ResearchScopeDecision): void {
+  const normalized = readable.replace(/\s+/gu, '')
+  const matches = (heading: string, directions: readonly string[]) => {
+    const section = readable.match(new RegExp(`(?:^|\\n)#{2,3}[ \\t]*${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n#{2,3}[ \\t]|$)`, 'u'))?.[1]
+    return section !== undefined && directions.every(direction => section.replace(/\s+/gu, '').includes(direction.replace(/\s+/gu, '')))
+  }
+  if (!matches('本轮深入研究', scope.deepDiveDirections)
+    || !matches('仅作概览', scope.overviewDirections)
+    || !matches('不作系统覆盖', scope.notSystematicallyCovered)) {
+    throw new Error('可读计划须分别列出与 scopeDecision 一致的本轮深入研究、仅作概览和不作系统覆盖方向。')
+  }
+  if (scope.requestedBreadth === 'domain') {
+    const title = readable.match(/^#\s+([^\n]+)/u)?.[1] ?? ''
+    if (!/(专题|选定方向|限定方向)/u.test(title) || !/(专题|选定方向|限定方向)/u.test(String(topic))) {
+      throw new Error('领域级需求收窄后，计划标题和执行主题必须明确标为专题或选定方向。')
+    }
+    if (!normalized.includes('原需求为领域级')) {
+      throw new Error('领域级计划必须在可读范围中说明原需求为领域级。')
+    }
   }
 }
 

@@ -15,7 +15,9 @@ Academic Model owns `PublicationDatePolicy`, `PublicationDateContext` and the sh
 
 ## Summary
 
-Academic Model owns approved aspect criteria; Workflow owns stop-time mapping, frozen repair reservations and recovery of committed additions. Controller authors version-7 plans with concise visible questions and machine-readable criteria, and supplies review and repair budgets. New criteria do not silently attach to historical plans. Retrieval expands gaps using the matching question's approved core query and aspect terms. Analysis receives the settled assessment; reports retain gaps. See the [workflow contract](../../packages/academic/workflow/README.md).
+Academic Model owns approved aspect criteria; Workflow owns stop-time mapping, frozen repair reservations and recovery of committed additions. Controller authors version-8 plans with concise visible questions and machine-readable criteria, and supplies review and repair budgets. New criteria do not silently attach to historical plans. Retrieval expands gaps using the matching question's approved core query and aspect terms. Analysis receives the settled assessment; reports retain gaps. See the [workflow contract](../../packages/academic/workflow/README.md).
+
+New plan handoffs also retain a reviewed `ResearchScopeDecision`: declared request breadth, directions for deep research or overview, and known directions outside systematic coverage. The Controller checks its visible plan text before review; the report repeats it. It is a scope disclosure, not evidence that the chosen directions exhaust a field. See the [Controller](../../packages/api/academic-research-controller/README.md) for validation.
 
 Academic insight is an optional business subsystem built on harness extension points.
 

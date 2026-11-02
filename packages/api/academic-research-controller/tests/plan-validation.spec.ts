@@ -5,7 +5,7 @@ import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { describe, expect, it, vi } from 'vitest'
 import * as validation from '../src/plan-validation.ts'
-import { validateAcademicPlan } from '../src/research-brief-plan.ts'
+import { researchPlanFromApproval, validateAcademicPlan } from '../src/research-brief-plan.ts'
 
 const template = readFileSync(new URL('../../../bundle/web-app/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url), 'utf8')
 const pe1Plan = readFileSync(new URL('../../../../z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', import.meta.url), 'utf8')
@@ -16,7 +16,21 @@ function templatePayload(): Record<string, unknown> {
 }
 
 function planWithPayload(payload: unknown): string {
-  return `# 研究计划\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
+  const scope = (payload as Record<string, unknown>).scopeDecision as {
+    requestedBreadth: string
+    deepDiveDirections: string[]
+    overviewDirections: string[]
+    notSystematicallyCovered: string[]
+  } | undefined
+  const readable = scope === undefined ? '# 研究计划' : [
+    '# 选定方向专题研究计划',
+    scope.requestedBreadth === 'domain' ? '原需求为领域级，本轮按选定方向形成专题报告。' : '本轮研究为专题。',
+    '## 研究范围',
+    '### 本轮深入研究', ...scope.deepDiveDirections,
+    '### 仅作概览', ...(scope.overviewDirections.length ? scope.overviewDirections : ['无']),
+    '### 不作系统覆盖', ...(scope.notSystematicallyCovered.length ? scope.notSystematicallyCovered : ['无']),
+  ].join('\n')
+  return `${readable}\n\n\`\`\`academic-research-brief-json\n${JSON.stringify(payload)}\n\`\`\``
 }
 
 function retrievalOf(payload: Record<string, unknown>): Record<string, unknown> {
@@ -88,9 +102,11 @@ describe('Academic plan compatibility before review', () => {
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('missing: searchPlan')
   })
 
-  it('projects the version-7 target, aspect criteria, hybrid policy, and reviewed screening cues', () => {
+  it('projects the version-8 scope, target, aspect criteria, hybrid policy, and reviewed screening cues', () => {
     const payload = templatePayload()
-    expect(payload.schemaVersion).toBe(7)
+    expect(payload.schemaVersion).toBe(8)
+    expect(payload.scopeDecision).toMatchObject({ requestedBreadth: 'domain',
+      deepDiveDirections: ['<本轮深入的方向>'], notSystematicallyCovered: ['<本轮不作系统覆盖的已知方向>'] })
     expect(payload.coverageRequirements).toMatchObject([{ question: '<中文研究问题>', aspects: [{ evidenceRequirement: 'direct' }] }])
     expect((payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks).toBe(6)
     expect(payload.candidateScreening).toMatchObject({
@@ -106,6 +122,56 @@ describe('Academic plan compatibility before review', () => {
       maximumReferenceVerifications: 5,
     })
     expect(() => { validateAcademicPlan(template) }).not.toThrow()
+  })
+
+  it('requires an explicit direction decision in new plans and keeps old plans readable', () => {
+    const payload = templatePayload()
+    delete payload.scopeDecision
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('scopeDecision')
+    payload.schemaVersion = 7
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
+
+  it('rejects a domain plan without disclosed omitted directions', () => {
+    const payload = templatePayload()
+    const scope = payload.scopeDecision as Record<string, unknown>
+    scope.notSystematicallyCovered = []
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('领域级计划必须明确列出')
+  })
+
+  it('rejects direction choices missing from the readable review', () => {
+    const payload = templatePayload()
+    const visible = planWithPayload(payload).replace('<本轮不作系统覆盖的已知方向>', '另一个方向')
+    expect(() => { validateAcademicPlan(visible) }).toThrow('可读计划须分别列出')
+  })
+
+  it('rejects a deep-dive direction without an approved query purpose', () => {
+    const payload = templatePayload()
+    const search = (payload.searchPlan as Record<string, unknown>[])[0]!
+    search.purpose = '其他主题的检索'
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('每个本轮深入研究方向须出现在')
+  })
+
+  it('keeps technical direction names containing a hash mark readable', () => {
+    const payload = templatePayload()
+    const scope = payload.scopeDecision as { deepDiveDirections: string[] }
+    scope.deepDiveDirections = ['C# 运行时系统']
+    const search = (payload.searchPlan as Record<string, unknown>[])[0]!
+    search.purpose = 'C# 运行时系统：检索论文'
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
+
+  it('rejects a domain plan titled as a complete field report', () => {
+    const payload = templatePayload()
+    payload.topic = '操作系统领域研究报告'
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('计划标题和执行主题')
+  })
+
+  it('retains the reviewed scope decision in the executable Brief', () => {
+    const markdown = planWithPayload(templatePayload())
+    const approved = researchPlanFromApproval('session-1', { identity: 'review-1', markdown,
+      reviewedAt: '2026-11-02T00:00:00.000Z' })
+    expect(approved.brief.scopeDecision).toEqual((templatePayload().scopeDecision))
   })
 
   it('requires approved aspect criteria in new plans while retaining version-6 readers', () => {

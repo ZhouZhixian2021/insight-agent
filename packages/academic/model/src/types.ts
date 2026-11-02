@@ -186,6 +186,18 @@ export type ApprovedBriefApproval = Extract<
   { readonly status: 'approved' }
 >
 
+/** Reviewed direction choices for the bounded research pass. */
+export interface ResearchScopeDecision {
+  /** Breadth of the user's request as declared for plan review. */
+  readonly requestedBreadth: 'domain' | 'focused'
+  /** Directions receiving systematic retrieval and evidence analysis. */
+  readonly deepDiveDirections: readonly string[]
+  /** Directions mentioned for orientation without a systematic evidence claim. */
+  readonly overviewDirections: readonly string[]
+  /** Known directions outside systematic coverage; this list is not a complete taxonomy. */
+  readonly notSystematicallyCovered: readonly string[]
+}
+
 /** User-reviewed research scope and delivery constraints for one plan version. */
 export interface ResearchBrief {
   readonly schemaVersion: 1
@@ -194,6 +206,7 @@ export interface ResearchBrief {
   readonly topic: string
   readonly aliases: readonly string[]
   readonly questions: readonly string[]
+  readonly scopeDecision?: ResearchScopeDecision
   readonly coverageRequirements?: readonly ResearchCoverageRequirement[]
   readonly publicationWindow: PublicationWindow
   readonly publicationDatePolicy?: PublicationDatePolicy

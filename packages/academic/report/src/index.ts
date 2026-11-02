@@ -97,9 +97,17 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     '> 基于本轮证据自动生成；交付检查通过不代表独立语义审核通过。',
     input.synthetic ? '> 合成基准样例：论文和结果均为虚构，仅用于验证软件流程。' : '> 来源为调用方提供的研究材料。', '']
   const openingEnd = lines.length
+  const scopeDecision = input.brief.scopeDecision
+  const reviewedScope = scopeDecision === undefined ? [] : [
+    `本轮深入研究：${escapeMarkdown(scopeDecision.deepDiveDirections.join('；'))}`,
+    `仅作概览：${escapeMarkdown(scopeDecision.overviewDirections.join('；') || '无')}`,
+    `不作系统覆盖：${escapeMarkdown(scopeDecision.notSystematicallyCovered.join('；') || '无')}`,
+    '上述未覆盖方向是已知示例，不代表完整领域分类；本报告不据此宣称全领域覆盖。',
+  ]
   if (synthesisInput !== null) {
     const scopeStart = lines.length
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
+      ...reviewedScope,
       `发表时间窗口：${escapeMarkdown(input.brief.publicationWindow.start?.iso ?? '未限定')}—${escapeMarkdown(input.brief.publicationWindow.end?.iso ?? '未限定')}；`
         + `日期口径：${input.brief.publicationWindow.dateBasis === 'published' ? '所选版本发布日期' : '首次公开日期'}`, `报告日期：${escapeMarkdown(metadata.reportDate.slice(0, 10))}`,
       `面向读者：${escapeMarkdown(input.brief.targetAudience)}`,
@@ -126,6 +134,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     lines.push(
       '## 管理层摘要', '', `纳入 ${workIds.length} 项研究，形成 ${input.claims.length} 条对比记录。质量状态：${evaluation.status}。`, '',
       '## 范围与方法', '', escapeMarkdown(input.brief.questions.join('；')),
+      ...reviewedScope,
       '仅整理给定材料，不执行补充搜索；结论范围限于纳入的论文与实验条件。', '', '## 论文对比与证据', '')
     for (const [index, claim] of input.claims.entries()) {
       const assessmentStatus = evaluation.assessments.filter(item => item.claimId === claim.claimId).map(item => item.status).join(', ')

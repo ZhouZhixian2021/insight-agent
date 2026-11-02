@@ -56,6 +56,7 @@ export type {
   RetrievalRunId,
   SearchQueryId,
   ResearchBrief,
+  ResearchScopeDecision,
   ResearchAspectId,
   ResearchCoverageRequirement,
   ResearchQuestionEntry,

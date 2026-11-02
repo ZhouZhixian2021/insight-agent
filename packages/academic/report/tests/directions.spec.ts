@@ -43,6 +43,17 @@ describe('direction report-format hierarchy', () => {
     expect(JSON.stringify(input)).toBe(before)
     await expect(report.markdown).toMatchFileSnapshot('./expected/direction-report.md')
   })
+  it('prints reviewed direction limits before the evidence analysis', () => {
+    const input = fixture()
+    const report = generateReport({ ...input, brief: { ...input.brief, topic: '操作系统选定方向专题',
+      scopeDecision: { requestedBreadth: 'domain', deepDiveDirections: ['内核安全', '内存系统'],
+        overviewDirections: ['文件系统'], notSystematicallyCovered: ['分布式系统'] } } })
+    const scope = report.markdown.split('## 报告信息与研究范围\n')[1]!.split('## ')[0]!
+    expect(scope).toContain('本轮深入研究：内核安全；内存系统')
+    expect(scope).toContain('仅作概览：文件系统')
+    expect(scope).toContain('不作系统覆盖：分布式系统')
+    expect(scope).toContain('本报告不据此宣称全领域覆盖')
+  })
   it('delivers without independent reviews while keeping partial answers as content notices', () => {
     const input = fixture()
     const synthesis = { ...input.synthesis, questionAnswers: input.synthesis.questionAnswers.map(answer => ({ ...answer,
