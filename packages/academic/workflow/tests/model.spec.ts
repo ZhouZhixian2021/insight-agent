@@ -20,6 +20,7 @@ import type { AcademicSynthesisInput, AcademicSynthesisDraft } from '@deepseek-a
 import { draftFixture, synthesisFixture } from './pipeline-fixture.ts'
 import { evidenceMessages, scopeMessages } from '../src/model-prompt.ts'
 import { createModelFragmentEvidenceEnhancer, createModelFragmentEvidenceGenerator } from '../src/fragment-model.ts'
+import { createQuestionEvidenceLedger } from '../src/question-ledger.ts'
 
 const output = JSON.stringify({ scope: { status: 'included', reason: 'The paper answers the approved question.' }, evidence: [
   { segmentIndex: 0, questionIndexes: [0], sourcedStatement: 'Uses Method X.', verbatimExcerpt: 'Uses Method X.',
@@ -233,7 +234,10 @@ describe('durable academic model extraction', () => {
     const saved = await f.read()
     const ranges = saved.flatMap(event => event.type === 'academic/evidence-request' && event.data.fragment
       ? [event.data.fragment] : [])
-    expect(ranges.map(range => range.characterStart)).toEqual([0, 3744, 3744])
+    // Question relevance orders dispatch, so this reads the retried range from the failure rather than from position one.
+    const starts = ranges.map(range => range.characterStart)
+    expect(new Set(starts).size).toBe(2)
+    expect(starts[1]).toBe(starts[2])
     const verified = saved.filter(event => event.type === 'academic/evidence-fragment-verified')
     expect(verified).toHaveLength(2)
     expect(verified[0]?.data.evidence.evidenceRecords).toHaveLength(1)
@@ -285,6 +289,35 @@ describe('durable academic model extraction', () => {
       .rejects.toBeInstanceOf(WorkflowLogError)
     expect(draft.adapters.fetcher).toHaveBeenCalledOnce()
     expect(f.adapter.calls).toHaveLength(1)
+  })
+  it('excludes a parse with no body before spending a scope dispatch', async () => {
+    const f = await fixture()
+    const source = { ...f.source, segments: [
+      { text: 'Anderson, R. Systems that matter. 2020.', locator: { kind: 'paragraph' as const, sectionTitle: 'References',
+        paragraphNumber: 1 } },
+      { text: 'We thank the reviewers.', locator: { kind: 'paragraph' as const, sectionTitle: 'Acknowledgments',
+        paragraphNumber: 1 } },
+    ] }
+    const result = await createModelFragmentEvidenceGenerator(f.ctx, f.session, config, policy)(source, scope)
+    expect(result.scope.status).toBe('excluded')
+    expect(result.evidence.evidenceRecords).toEqual([])
+    expect(f.adapter.scopeCalls).toHaveLength(0)
+    expect(f.adapter.calls).toHaveLength(0)
+    expect((await f.read()).filter(event => event.type === 'academic/evidence-request')).toHaveLength(0)
+  })
+  it('dispatches the question the run still lacks evidence for', async () => {
+    const f = await fixture()
+    const source = { ...f.source, focusQuestions: ['Which method?', 'Which cache?'], segments: [
+      { text: `Uses Method X. ${'a'.repeat(3_900)}`, locator: { kind: 'paragraph' as const, paragraphNumber: 1 } },
+      { text: `Reuses the cache tier. ${'b'.repeat(3_900)}`, locator: { kind: 'paragraph' as const, paragraphNumber: 2 } },
+    ] }
+    const ledger = createQuestionEvidenceLedger(source.focusQuestions)
+    ledger.observe([{ question: 'Which method?' }])
+    await createModelFragmentEvidenceGenerator(f.ctx, f.session, config,
+      { ...policy, questionTerms: [['method'], ['cache']] }, undefined, ledger)(source, scope)
+    const ranges = (await f.read()).flatMap(event => event.type === 'academic/evidence-request'
+      && event.data.phase === 'evidence' && event.data.fragment ? [event.data.fragment] : [])
+    expect(ranges[0]?.segmentIndex).toBe(1)
   })
   it('excludes a paper before evidence extraction and records only the scope request', async () => {
     const f = await fixture()

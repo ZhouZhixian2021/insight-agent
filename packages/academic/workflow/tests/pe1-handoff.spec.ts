@@ -32,7 +32,7 @@ describe('A-PE1 fixed evidence handoff', () => {
     const committed: string[] = []
     const result = await extractEvidenceInFragments(sample.input, {
       policy: { maximumCharacters: 120, minimumCharacters: 30, overlapCharacters: 0,
-        maximumAttempts: 1, maximumOutputTokens: 512, initialRetryDelayMs: 0 },
+        maximumAttempts: 1, maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 },
       generator: async (_request, attempt) => {
         if (attempt.fragmentIndex === 1) return sample.firstFragmentDrafts
         throw new EvidenceError('Synthetic timeout', sample.secondFragmentFailure.code)
@@ -66,7 +66,7 @@ describe('A-PE1 fixed evidence handoff', () => {
   it('has no evidence to hand to a report when both fragments return nothing', async () => {
     const result = await extractEvidenceInFragments(sample.input, {
       policy: { maximumCharacters: 120, minimumCharacters: 30, overlapCharacters: 0,
-        maximumAttempts: 1, maximumOutputTokens: 512, initialRetryDelayMs: 0 },
+        maximumAttempts: 1, maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 },
       generator: async () => [], classifyFailure: () => null, onVerified: async () => {},
     })
     expect(result.evidence.evidenceRecords).toEqual([])

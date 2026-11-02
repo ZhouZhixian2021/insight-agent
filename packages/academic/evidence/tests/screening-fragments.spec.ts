@@ -121,4 +121,29 @@ describe('selectScreeningFragments', () => {
       { maximumFragments: 1, maximumCharacters: 100, leadCharacters: 0 })
     expect(selection.fragments).toHaveLength(1)
   })
+
+  it('adds the paper opening when every hit sits in one late segment', () => {
+    const references = `${'x'.repeat(3000)} 2024 ${'y'.repeat(3000)}`
+    const segments = [paragraph('Kernel design for AI workloads.', 'PDF page 1'),
+      paragraph(references, 'PDF page 13')]
+    const selection = selectScreeningFragments(segments, [condition('c1', '2024')], policy)
+    expect(selection.fragments.map(fragment => fragment.segmentIndex)).toStrictEqual([1, 0])
+    expect(selection.fragments[0]?.matchedTerms).toStrictEqual(['2024'])
+    expect(selection.fragments[1]?.matchedTerms).toStrictEqual([])
+  })
+
+  it('defers hits from the segment the previous dispatch read', () => {
+    const segments = [paragraph('Kernel design opening.', 'PDF page 1'),
+      paragraph(`${'z'.repeat(2000)} 2024 ${'w'.repeat(2000)}`, 'PDF page 13'),
+      paragraph('Body text about scheduling.', 'PDF page 2')]
+    const first = selectScreeningFragments(segments, [condition('c1', '2024')], policy)
+    expect(first.fragments.map(fragment => fragment.segmentIndex)).toStrictEqual([1, 0])
+    const read = segments.map((segment, index) => ({ ...segment,
+      text: first.fragments.filter(fragment => fragment.segmentIndex === index)
+        .reduce((text, fragment) => `${text.slice(0, fragment.start)}${' '.repeat(fragment.end - fragment.start)}`
+          + text.slice(fragment.end), segment.text) }))
+    const second = selectScreeningFragments(read, [condition('c1', '2024')], policy,
+      { avoidSegmentIndex: 1 })
+    expect(second.fragments.map(fragment => fragment.segmentIndex)).toStrictEqual([0, 2])
+  })
 })

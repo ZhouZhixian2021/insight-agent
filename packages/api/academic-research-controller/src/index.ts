@@ -67,8 +67,16 @@ export interface Config {
   readonly maximumFulltextWorks?: number
   /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 15. */
   readonly maximumUncertainFulltextWorks?: number
-  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
+  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 12. */
   readonly extractionMaximumCallsPerPaper?: number
+  /** Extraction calls a paper receives at least, when it packs that many source ranges. Defaults to 4. */
+  readonly extractionMinimumCallsPerPaper?: number
+  /** Share of a paper's packed source ranges the call budget reaches before the per-paper maximum. Defaults to 0.5. */
+  readonly extractionCallBudgetFraction?: number
+  /** Consecutive evidence-free dispatches before the rest of one paper is left unread; zero never stops early. Defaults to 3. */
+  readonly extractionEmptyDispatchStopAfter?: number
+  /** Complete-depth source ranges dispatched at once within one paper; minimal depth stays serial. Defaults to 2. */
+  readonly extractionMaxConcurrentDispatches?: number
   /** Complete extraction retains evidence across the bounded source fragments; minimal stops at five records. Defaults to complete. */
   readonly extractionDepth?: 'minimal' | 'complete'
   /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
@@ -168,7 +176,11 @@ export class AcademicResearchController extends TypertRemoteService {
   static Config: z<Config> = z.object({
     maximumFulltextWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(24),
     maximumUncertainFulltextWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(15),
-    extractionMaximumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8),
+    extractionMaximumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(12),
+    extractionMinimumCallsPerPaper: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(4),
+    extractionCallBudgetFraction: z.number().min(0).max(1).default(0.5),
+    extractionEmptyDispatchStopAfter: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(3),
+    extractionMaxConcurrentDispatches: z.number().step(1).min(1).max(8).default(2),
     extractionDepth: z.union([z.const('minimal'), z.const('complete')]).default('complete'),
     fulltextCacheDirectory: z.string(),
     fulltextCacheMaximumAgeMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(86_400_000),
@@ -187,7 +199,7 @@ export class AcademicResearchController extends TypertRemoteService {
     candidateReviewAttemptTimeoutMs: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(150_000),
     candidateReviewMaximumWorks: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(24),
     candidateReviewGapReserve: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(4),
-    scopeReviewMaximumBatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
+    scopeReviewMaximumBatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(2),
     scopeScreeningMaximumDispatches: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     scopeScreeningMaximumFragments: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(6),
     scopeScreeningFragmentCharacters: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(1_500),
@@ -237,6 +249,10 @@ export class AcademicResearchController extends TypertRemoteService {
   private readonly fulltextFetchProvider: string
   private readonly fulltextCache?: AcademicFulltextCache
   private readonly extractionMaximumCallsPerPaper: number
+  private readonly extractionMinimumCallsPerPaper: number
+  private readonly extractionCallBudgetFraction: number
+  private readonly extractionEmptyDispatchStopAfter: number
+  private readonly extractionMaxConcurrentDispatches: number
   private readonly extractionDepth: 'minimal' | 'complete'
   private readonly paperConcurrency: number
   private readonly extractionMaxTokens: number
@@ -272,7 +288,11 @@ export class AcademicResearchController extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'academicResearchController', { namespace: 'academicResearch' })
-    this.extractionMaximumCallsPerPaper = config.extractionMaximumCallsPerPaper ?? 8
+    this.extractionMaximumCallsPerPaper = config.extractionMaximumCallsPerPaper ?? 12
+    this.extractionMinimumCallsPerPaper = config.extractionMinimumCallsPerPaper ?? 4
+    this.extractionCallBudgetFraction = config.extractionCallBudgetFraction ?? 0.5
+    this.extractionEmptyDispatchStopAfter = config.extractionEmptyDispatchStopAfter ?? 3
+    this.extractionMaxConcurrentDispatches = config.extractionMaxConcurrentDispatches ?? 2
     this.extractionDepth = config.extractionDepth ?? 'complete'
     if (config.fulltextCacheDirectory !== undefined) {
       const cache = new AcademicFulltextCache({ directory: config.fulltextCacheDirectory,
@@ -295,7 +315,7 @@ export class AcademicResearchController extends TypertRemoteService {
     this.candidateReviewAttemptTimeoutMs = config.candidateReviewAttemptTimeoutMs ?? 150_000
     this.candidateReviewMaximumWorks = config.candidateReviewMaximumWorks ?? 24
     this.candidateReviewGapReserve = config.candidateReviewGapReserve ?? 4
-    this.scopeReviewMaximumBatches = config.scopeReviewMaximumBatches ?? 3
+    this.scopeReviewMaximumBatches = config.scopeReviewMaximumBatches ?? 2
     this.scopeScreening = { maximumDispatches: config.scopeScreeningMaximumDispatches ?? 3,
       maximumFragments: config.scopeScreeningMaximumFragments ?? 6,
       fragmentCharacters: config.scopeScreeningFragmentCharacters ?? 1_500,
@@ -752,7 +772,7 @@ export class AcademicResearchController extends TypertRemoteService {
       if (previous?.type === 'academic/trace-v1') previousTraceStartedAt = previous.data.span.startedAt
     }
     const trace = new AcademicTraceRecorder(agent.session, retrievalRunId, recovery !== undefined, previousTraceStartedAt)
-    const questionTerms = approvedEvidenceQuestionTerms(brief.questions, candidateScreening)
+    const questionTerms = approvedEvidenceQuestionTerms(brief.questions, candidateScreening, searches)
     const onSettlement: AcademicSettlementObserver = (fact) => {
       if (fact.kind === 'batch-decision') {
         agent.session.append('academic/candidate-batch-decision', fact.event)
@@ -794,6 +814,10 @@ export class AcademicResearchController extends TypertRemoteService {
             maxTokens: this.coverageReviewMaxTokens, attemptTimeoutMs: this.coverageReviewAttemptTimeoutMs } },
           evidence: { depth: this.extractionDepth, maxAttempts: this.extractionMaxAttempts, retryOutputLimit: true,
             fragmentMaximumCalls: this.extractionMaximumCallsPerPaper,
+            fragmentMinimumCalls: this.extractionMinimumCallsPerPaper,
+            fragmentCallBudgetFraction: this.extractionCallBudgetFraction,
+            fragmentEmptyDispatchStopAfter: this.extractionEmptyDispatchStopAfter,
+            fragmentMaximumConcurrentDispatches: this.extractionMaxConcurrentDispatches,
             scopeReviewMaximumBatches: this.scopeReviewMaximumBatches,
             scopeScreening: this.scopeScreening,
             ...(questionTerms === undefined ? {} : { questionTerms }),

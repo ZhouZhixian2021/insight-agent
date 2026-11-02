@@ -141,6 +141,14 @@ export interface ScopeScreeningRecord {
 export interface EvidenceExtractionModelPolicy extends EvidenceModelPolicy {
   /** Whole-paper extraction dispatch limit, including retries; omitted leaves only per-fragment limits. */
   readonly fragmentMaximumCalls?: number
+  /** Dispatches a paper receives at least when it packs that many ranges; omitted keeps one. */
+  readonly fragmentMinimumCalls?: number
+  /** Share of a paper's packed ranges the dispatch budget reaches before `fragmentMaximumCalls`; omitted spends the cap. */
+  readonly fragmentCallBudgetFraction?: number
+  /** Consecutive evidence-free dispatches before the rest of one paper is left unread; omitted never stops early. */
+  readonly fragmentEmptyDispatchStopAfter?: number
+  /** Source ranges dispatched at once within one complete-depth paper; omitted keeps one range at a time. */
+  readonly fragmentMaximumConcurrentDispatches?: number
   /** Maximum distinct scope-review batches; omitted inspects only the first batch. */
   readonly scopeReviewMaximumBatches?: number
   /** Condition-targeted fragment review; omitted keeps sequential source batches. */

@@ -18,7 +18,7 @@ function draft(text: string): EvidenceDraft {
 
 function options(generator: EvidenceFragmentOptions['generator']): EvidenceFragmentOptions {
   return { policy: { maximumCharacters: 8, minimumCharacters: 2, overlapCharacters: 0,
-    maximumAttempts: 3, maximumOutputTokens: 512, initialRetryDelayMs: 0 }, generator,
+    maximumAttempts: 3, maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 }, generator,
   classifyFailure: error => error instanceof EvidenceError && error.code === 'TIMEOUT' ? 'timeout' : null,
   onVerified: async () => {} }
 }

@@ -339,7 +339,7 @@ async function harness(options: {
 describe('AcademicResearchController', () => {
   it('resolves initial-work limits independently of coverage targeting and rejects excessive exploration', async () => {
     expect(AcademicResearchController.Config({})).toMatchObject({ maximumFulltextWorks: 24,
-      maximumUncertainFulltextWorks: 15, extractionMaximumCallsPerPaper: 8,
+      maximumUncertainFulltextWorks: 15, extractionMaximumCallsPerPaper: 12,
       scopeScreeningMaximumDispatches: 3, scopeScreeningMaximumFragments: 6,
       scopeScreeningFragmentCharacters: 1500, scopeScreeningLeadCharacters: 200,
       coverageTargeting: { maximumCandidateReads: 1, maximumModelCalls: 6 } })
@@ -959,7 +959,8 @@ describe('AcademicResearchController', () => {
     await fixture.controller.run({ sessionId: fixture.sessionId,
       researchBriefId: 'academic-session:approved-plan:approved-brief-call' as never, synthetic: false }, fixture.signal)
     expect(runAcademicResearchDraft.mock.calls[0]?.[0].modelPolicies.evidence)
-      .toMatchObject({ depth: 'complete', fragmentMaximumCalls: 8,
+      .toMatchObject({ depth: 'complete', fragmentMaximumCalls: 12, fragmentMinimumCalls: 4,
+        fragmentCallBudgetFraction: 0.5, fragmentEmptyDispatchStopAfter: 3,
         questionTerms: [['retrieval', 'retrieval method', 'faithfulness']] })
   })
 
@@ -988,7 +989,7 @@ describe('AcademicResearchController', () => {
     if (call === undefined) throw new Error('missing Academic workflow invocation')
     expect(call).toMatchObject({ session: { id: fixture.sessionId }, model: { provider: 'fixture', model: 'selected', maxTokens: 8000 },
       modelPolicies: {
-        evidence: { maxAttempts: 2, retryOutputLimit: true, fragmentMaximumCalls: 8,
+        evidence: { maxAttempts: 2, retryOutputLimit: true, fragmentMaximumCalls: 12,
           scopeScreening: { maximumDispatches: 3, maximumFragments: 6, fragmentCharacters: 1500, leadCharacters: 200 },
           inputBatchTokenLimit: 12_000, inputBatchOverlapCharacters: 512, attemptTimeoutMs: 150_000,
           transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 10_000 } },

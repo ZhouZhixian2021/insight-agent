@@ -2,6 +2,7 @@
 import { setTimeout as delay } from 'node:timers/promises'
 import { createEvidenceCardId } from '@deepseek-ai/dsh-academic-model'
 import { extractEvidenceFromContent } from './extract.ts'
+import { rankRangesByQuestion } from './retrieval.ts'
 import { bodySegmentIndexes } from './section-kinds.ts'
 import { EvidenceError } from './types.ts'
 import type { EvidenceContentSegment, EvidenceExtractionInput, EvidenceExtractionResult } from './types.ts'
@@ -14,7 +15,7 @@ import type { EvidenceFragmentAttempt, EvidenceFragmentFailure, EvidenceFragment
  * @param options Explicit source/output limits, semantic generator, failure classifier and verified-result sink.
  * @param signal Cancellation forwarded to every call and retry delay.
  * Minimal depth retains at most five unique records across the paper, including the verified-result sink.
- * It prioritizes lexical question matches and starts later groups smaller after size-related model failures.
+ * It orders dispatch by question relevance and starts later groups smaller after size-related model failures.
  * @returns Merged verified evidence, all failed attempts, and ranges left incomplete by retries, the minimum size or evidence cap.
  * @throws Cancellation, unclassified generator failures, invalid inputs or failure of the verified-result sink.
  */
@@ -50,16 +51,29 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
   const seen = new Set<string>()
   let calls = 0
   let consecutiveTransientFailures = 0
+  let consecutiveEmptyDispatches = 0
   let shrinkInitialFragments = false
   const packed = packSourceRanges(input.segments, options.policy.maximumCharacters, options.policy.overlapCharacters)
-  const ranges = (input.focusQuestions?.length ?? 0) > 0
-    ? prioritizeRanges(input, packed, options.questionTerms) : packed
-  for (const [index, initial] of ranges.entries()) {
-    signal?.throwIfAborted()
-    if ((input.depth === 'minimal' && seen.size === 5) || calls === options.maximumCalls) {
-      incomplete.push(...ranges.slice(index))
-      break
-    }
+  const budget = dispatchBudget(packed.length, options)
+  const questionTerms = approvedTerms(input, options)
+  const ranges = questionTerms.length > 0
+    ? rankRangesByQuestion(packed, input.segments, questionTerms, Math.min(budget, packed.length), {
+      minimumCharacters: options.policy.minimumCharacters,
+      ...options.questionWeights === undefined ? {} : { weights: options.questionWeights },
+    }) : packed
+  // The sink owns persistence; concurrent ranges must not interleave writes or hide a failed commit behind a model failure.
+  let commitChain: Promise<void> = Promise.resolve()
+  let commitFailure: Error | undefined
+  const commit = async (context: EvidenceFragmentAttempt, accepted: EvidenceExtractionResult): Promise<void> => {
+    if (commitFailure !== undefined) return
+    const pending = commitChain.then(() => options.onVerified(context, accepted))
+    commitChain = pending.catch((error: unknown) => {
+      commitFailure = error instanceof Error ? error : new Error('Evidence commit failed.', { cause: error })
+    })
+    await pending
+    verified.push(accepted)
+  }
+  const dispatchRange = async (initial: EvidenceFragmentRange): Promise<'continue' | 'exhausted'> => {
     const queue: EvidenceFragmentRange[] = shrinkInitialFragments
       ? splitRange(initial, options.policy.minimumCharacters, options.policy.overlapCharacters) ?? [initial] : [initial]
     let attempt = 0
@@ -67,7 +81,7 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
       signal?.throwIfAborted()
       if (sourceRanges(range).every(part => sourceSegment(input.segments, part.segmentIndex)
         .text.slice(part.characterStart, part.characterEnd).trim() === '')) continue
-      if (attempt === options.policy.maximumAttempts || calls === options.maximumCalls) {
+      if (attempt === options.policy.maximumAttempts || calls >= budget) {
         incomplete.push(range, ...queue)
         break
       }
@@ -89,7 +103,7 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
         failures.push(failure)
         observeFailure(options, failure)
         if (input.depth === 'minimal' && category !== 'transport') shrinkInitialFragments = true
-        if (attempt === options.policy.maximumAttempts || calls === options.maximumCalls) {
+        if (attempt === options.policy.maximumAttempts || calls >= budget) {
           incomplete.push(range, ...queue)
           break
         }
@@ -110,43 +124,65 @@ export async function runEvidenceFragments(input: EvidenceExtractionInput, optio
       consecutiveTransientFailures = 0
       const accepted = accept === undefined
         ? uniqueEvidence(result, seen, input.depth === 'minimal' ? 5 - seen.size : Infinity) : accept(result)
-      // The sink owns persistence; a failed commit must stop dispatch rather than resemble a model failure.
-      await options.onVerified(context, accepted)
-      verified.push(accepted)
+      // A failed commit must stop dispatch rather than resemble a model failure.
+      await commit(context, accepted)
       signal?.throwIfAborted()
       if (input.depth === 'minimal' && seen.size === 5) {
         incomplete.push(...queue)
         break
       }
+      if (accepted.evidenceRecords.length === 0 && (options.policy.emptyDispatchStopAfter ?? 0) > 0) {
+        consecutiveEmptyDispatches += 1
+        if (consecutiveEmptyDispatches >= (options.policy.emptyDispatchStopAfter as number)) {
+          // Later ranges of this paper already returned nothing; the remaining budget belongs to other papers.
+          incomplete.push(...queue)
+          return 'exhausted'
+        }
+      } else {
+        consecutiveEmptyDispatches = 0
+      }
+    }
+    return 'continue'
+  }
+  // Minimal depth stops on the fifth record and shrinks later groups from earlier failures, so it stays serial.
+  const width = input.depth === 'minimal' ? 1 : options.policy.maximumConcurrentDispatches
+  for (let index = 0; index < ranges.length; index += width) {
+    signal?.throwIfAborted()
+    if ((input.depth === 'minimal' && seen.size === 5) || calls >= budget) {
+      incomplete.push(...ranges.slice(index))
+      break
+    }
+    const outcomes = await Promise.all(ranges.slice(index, index + width).map(range => dispatchRange(range)))
+    if (commitFailure !== undefined) throw commitFailure
+    if (outcomes.includes('exhausted')) {
+      incomplete.push(...ranges.slice(index + width))
+      break
     }
   }
   return { evidence: mergeEvidence(input, verified), failures, incompleteFragments: incomplete }
 }
 
-function prioritizeRanges(input: EvidenceExtractionInput, ranges: readonly EvidenceFragmentRange[],
-  questionTerms: EvidenceFragmentOptions['questionTerms']): EvidenceFragmentRange[] {
-  const segmenter = new Intl.Segmenter('en', { granularity: 'word' })
-  const words = (text: string) => [...segmenter.segment(text.toLowerCase())]
-    .filter(part => part.isWordLike).map(part => part.segment)
-  const terms = questionTerms === undefined ? (input.focusQuestions as readonly string[]).map(words)
-    : questionTerms.map(question => question.map(term => words(term).join(' ')).filter(term => term !== ''))
-  const texts = ranges.map(range => ` ${words(sourceRanges(range).map(part =>
-    sourceSegment(input.segments, part.segmentIndex).text.slice(part.characterStart, part.characterEnd)).join(' ')).join(' ')} `)
-  const ranked = terms.map(question => ranges.map((range, index) => ({ range,
-    score: new Set(question.filter(term => (texts[index] as string).includes(` ${term} `))).size,
-  })).filter(entry => entry.score > 0).sort((a, b) => b.score - a.score || a.range.fragmentIndex - b.range.fragmentIndex))
-  const remaining = new Set(ranges)
-  const prioritized: EvidenceFragmentRange[] = []
-  while (ranked.some(question => question.length > 0)) {
-    for (const question of ranked) {
-      let next = question.shift()
-      while (next !== undefined && !remaining.has(next.range)) next = question.shift()
-      if (next === undefined) continue
-      prioritized.push(next.range)
-      remaining.delete(next.range)
-    }
-  }
-  return [...prioritized, ...remaining]
+function approvedTerms(input: EvidenceExtractionInput,
+  options: EvidenceFragmentOptions): readonly (readonly string[])[] {
+  if ((input.focusQuestions?.length ?? 0) === 0) return []
+  return options.questionTerms ?? (input.focusQuestions as readonly string[]).map(question => [question])
+}
+
+/**
+ * Dispatch budget for one paper: a share of its packed ranges, floored for short papers and capped by the caller.
+ *
+ * Retries and splits spend calls beyond the ranges they started from, so an uncapped paper stays uncapped here; the
+ * share only decides how much of the caller's cap a paper may reach.
+ * @param rangeCount Ranges this paper packs.
+ * @param options Whole-paper cap plus the policy floor and share.
+ * @returns Dispatches this paper may spend, or infinity when the caller set no cap.
+ */
+function dispatchBudget(rangeCount: number, options: EvidenceFragmentOptions): number {
+  if (options.maximumCalls === undefined) return Number.POSITIVE_INFINITY
+  const floor = options.policy.minimumCalls ?? 1
+  const fraction = options.policy.callBudgetFraction ?? 1
+  const share = Math.max(floor, Math.ceil(rangeCount * fraction))
+  return Math.max(1, Math.min(options.maximumCalls, share))
 }
 
 function validatePolicy(options: EvidenceFragmentOptions): void {
@@ -154,8 +190,20 @@ function validatePolicy(options: EvidenceFragmentOptions): void {
     throw new RangeError('Whole-paper fragment calls must be a positive safe integer.')
   }
   const p = options.policy
-  for (const value of [p.maximumCharacters, p.minimumCharacters, p.maximumAttempts, p.maximumOutputTokens]) {
+  for (const value of [p.maximumCharacters, p.minimumCharacters, p.maximumAttempts, p.maximumOutputTokens,
+    p.maximumConcurrentDispatches]) {
     if (!Number.isSafeInteger(value) || value < 1) throw new RangeError('Fragment limits must be positive safe integers.')
+  }
+  if (p.minimumCalls !== undefined && (!Number.isSafeInteger(p.minimumCalls) || p.minimumCalls < 1)) {
+    throw new RangeError('Fragment minimum calls must be a positive safe integer.')
+  }
+  if (p.callBudgetFraction !== undefined && (!Number.isFinite(p.callBudgetFraction)
+    || p.callBudgetFraction <= 0 || p.callBudgetFraction > 1)) {
+    throw new RangeError('Fragment call budget fraction must be in (0, 1].')
+  }
+  if (p.emptyDispatchStopAfter !== undefined
+    && (!Number.isSafeInteger(p.emptyDispatchStopAfter) || p.emptyDispatchStopAfter < 0)) {
+    throw new RangeError('Fragment empty-dispatch stop must be a non-negative safe integer.')
   }
   if (p.minimumCharacters > p.maximumCharacters || !Number.isSafeInteger(p.overlapCharacters)
     || p.overlapCharacters < 0 || p.overlapCharacters >= p.minimumCharacters) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bodySegmentIndexes, isBackMatterSection, segmentSectionTitle,
+import { bodySegmentIndexes, hasBodySegment, isBackMatterSection, segmentSectionTitle,
   type EvidenceContentSegment } from '../src/index.ts'
 
 function paragraph(text: string, sectionTitle: string): EvidenceContentSegment {
@@ -54,5 +54,19 @@ describe('bodySegmentIndexes', () => {
 
   it('keeps page and figure segments that carry no section heading', () => {
     expect(bodySegmentIndexes([figure()])).toStrictEqual([0])
+  })
+})
+
+describe('hasBodySegment', () => {
+  it('reports a parse that carries a body section', () => {
+    expect(hasBodySegment([paragraph('intro', 'Introduction'), paragraph('refs', 'References')])).toBe(true)
+  })
+
+  it('rejects a parse of headings and references alone', () => {
+    expect(hasBodySegment([paragraph('refs', 'References'), paragraph('thanks', 'Acknowledgments')])).toBe(false)
+  })
+
+  it('rejects an empty parse', () => {
+    expect(hasBodySegment([])).toBe(false)
   })
 })

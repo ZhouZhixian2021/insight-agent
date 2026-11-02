@@ -147,6 +147,7 @@ export function createModelCoverageRepair(ctx: Context, session: Session, config
     const enhance = createModelFragmentEvidenceEnhancer(ctx, session, model, { ...policy,
       fragmentMaximumCalls: 1, fragmentPolicy: { maximumCharacters: Math.max(characters, limits.maximumRepairCharacters),
         minimumCharacters: Math.max(characters, limits.maximumRepairCharacters), overlapCharacters: 0, maximumAttempts: 1,
+        maximumConcurrentDispatches: 1,
         maximumOutputTokens: model.maxTokens ?? limits.maximumRepairCharacters, initialRetryDelayMs: 0 } },
     undefined, 'coverage_repair', input.retrievalRunId, limits.targeting === undefined ? undefined : {
       ...budget === undefined ? {} : { budget }, requirements: input.requirements })

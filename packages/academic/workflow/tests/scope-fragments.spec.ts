@@ -21,10 +21,30 @@ describe('screeningConditions', () => {
     expect(conditions[0]?.terms).toContain('retrieval')
     expect(conditions[1]?.terms).toContain('survey')
   })
+
+  it('adds approved English topic terms to every condition', () => {
+    const conditions = screeningConditions({ inclusionRules: ['论文主题直接涉及操作系统内核'],
+      exclusionRules: ['产品宣传'] }, ['operating systems', 'kernel design', 'operating systems'])
+    expect(conditions[0]?.terms).toContain('operating systems')
+    expect(conditions[1]?.terms).toContain('kernel design')
+    expect(conditions[0]?.terms.filter(term => term === 'operating systems')).toHaveLength(1)
+  })
+
+  it('drops a year that only locates citation lists', () => {
+    const conditions = screeningConditions({ inclusionRules: ['所选版本的发表日期不早于 2024 年 1 月 1 日'],
+      exclusionRules: [] })
+    expect(conditions.flatMap(condition => condition.terms)).not.toContain('2024')
+    expect(conditions.map(condition => condition.conditionId)).toStrictEqual(['inclusion-1'])
+  })
+
+  it('ignores approved terms without a letter', () => {
+    const conditions = screeningConditions({ inclusionRules: ['论文主题'], exclusionRules: [] }, ['2024', '1'])
+    expect(conditions.flatMap(condition => condition.terms)).toStrictEqual(['论文主题'])
+  })
 })
 
 describe('reviewPaperScopeInFragments', () => {
-  it('reads the windows that serve the condition instead of the paper opening', async () => {
+  it('dispatches the matching window together with the paper opening', async () => {
     const segments = [paragraph('Introduction without the reviewed term.', 'Introduction'),
       paragraph('Our results reduce hallucination.', 'Results')]
     const seen: string[] = []
@@ -32,9 +52,23 @@ describe('reviewPaperScopeInFragments', () => {
       [{ conditionId: 'c1', terms: ['hallucination'] }], policy,
       async (scopeRequest) => { seen.push(...scopeRequest.segments.map(segment => segment.text))
         return { status: 'included', reason: 'The result answers the question.' } })
-    expect(seen).toHaveLength(1)
+    expect(seen).toHaveLength(2)
     expect(seen[0]).toContain('hallucination')
-    expect(seen[0]).not.toContain('Introduction')
+    expect(seen[1]).toContain('Introduction')
+  })
+
+  it('reads a second segment before re-reading the one it already read', async () => {
+    const repeated = '2024 '.repeat(600)
+    const segments = [paragraph('A title and abstract about kernels.', 'PDF page 1'),
+      paragraph(repeated, 'PDF page 13')]
+    const seen: (readonly number[])[] = []
+    await reviewPaperScopeInFragments(request(segments), [{ conditionId: 'c1', terms: ['2024'] }],
+      { ...policy, maximumDispatches: 2, maximumFragments: 1 },
+      async (_scopeRequest, _complete, record) => {
+        seen.push(record.dispatches.at(-1)?.fragments.map(fragment => fragment.segmentIndex) ?? [])
+        return { status: 'needs_more_context', reason: 'Still undecided.' } })
+    expect(seen[0]).toStrictEqual([1])
+    expect(seen[1]).toStrictEqual([0])
   })
 
   it('stops as soon as one dispatch settles the paper', async () => {

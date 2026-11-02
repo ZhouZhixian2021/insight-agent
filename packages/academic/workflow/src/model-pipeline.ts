@@ -4,6 +4,7 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import { createModelEvidenceGenerator } from './model.ts'
 import { createModelFragmentEvidenceGenerator } from './fragment-model.ts'
+import { createQuestionEvidenceLedger } from './question-ledger.ts'
 import { createModelSynthesisGenerator } from './synthesis-model.ts'
 import { createModelCoverageAssessor } from './coverage-model.ts'
 import { runResearchDraft } from './pipeline.ts'
@@ -67,7 +68,8 @@ export function runModelResearchDraft(
       session.append('academic/publication-date-context-v1', { retrievalRunId, context })
       adapters.onPublicationDateContext?.(context, retrievalRunId)
     },
-    verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace),
+    verifiedGenerator: createModelFragmentEvidenceGenerator(ctx, session, config, policies.evidence, adapters.onTrace,
+      createQuestionEvidenceLedger(input.brief.questions)),
     assessQuestionCoverage: createModelCoverageAssessor(ctx, session, config, policies.evidence, adapters.onTrace),
     synthesize: createModelSynthesisGenerator(ctx, session, synthesisConfig, policies.synthesis, adapters.onTrace),
     ...coverageAdapters,

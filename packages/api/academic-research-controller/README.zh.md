@@ -86,7 +86,7 @@ Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停�
 
 排序流程先准入已审核相关候选，同时为不确定探索保留名额，使待审论文在存在已审核候选时仍能进入全文。`maximumFulltextWorks` 默认调度 24 篇全文；`maximumUncertainFulltextWorks` 默认为 15，由未审核、判断未知和审核失败的候选共享。失败和缓存命中均占论文名额。候审论文保留排序，在停止或补检之前还可接受更多元数据审核。预算低于获批纳入目标时明确披露，不改变该目标。恢复时沿用保存的调度限制；没有这些字段的历史策略保留原行为。
 
-`extractionMaximumCallsPerPaper` 默认每篇 8 次片段尝试，包含重试，独立于元数据和范围审核。`extractionDepth` 默认为 `complete`，在已派发片段中保留核验证据，不应用五条记录上限；设置为 `minimal` 时保留五条上限。两种模式均优先调度关联问题的原文范围，沿用相同的调用次数和超时预算。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
+`extractionMaximumCallsPerPaper` 默认每篇 12 次片段尝试，包含重试，独立于元数据和范围审核。`extractionMinimumCallsPerPaper` 默认 4，`extractionCallBudgetFraction` 默认 0.5，因此每篇预算随其打包出的原文范围数量在该保底值与上限之间增长，而不是所有论文都停在同一计数上。`extractionEmptyDispatchStopAfter` 默认 3：连续该次数的派发未取回任何记录后，该论文剩余范围不再派发，把预算留给仍能产出证据的论文；设为 0 关闭该停止。`extractionMaxConcurrentDispatches` 默认在同一篇论文的完整抽取中同时派发 2 个原文范围，它与 `paperConcurrency` 相乘，满载默认达到 6 个并发模型调用；`minimal` 深度保持串行，以保证五条记录上限与后续片段收缩精确。`extractionDepth` 默认为 `complete`，在已派发片段中保留核验证据，不应用五条记录上限；设置为 `minimal` 时保留五条上限。两种模式均优先调度关联问题的原文范围，把派发权重偏向整轮仍缺证据的问题，并沿用相同的调用次数和超时预算。`scopeReviewMaximumBatches` 默认 2，只有标题和参考文献的解析结果在任何范围审核派发之前就被排除。随 Web 提供的组合将 `fulltextCacheDirectory` 设置在 DSH home 的 `cache/academic-fulltext` 下。来源文件和解析定位可跨任务复用，范围判断与证据记录重新计算。缓存配置、解析器失效、失败行为和限制见[开发说明](../../../docs/cookbook/academic-fulltext-budget-cache.zh.md)。
 
 <a id="model-experience"></a>
 ## Model Experience

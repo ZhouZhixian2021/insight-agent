@@ -73307,7 +73307,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelRequest"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:175"
+        "packages/academic/workflow/src/model-types.ts:183"
       ]
     },
     {
@@ -73870,7 +73870,7 @@
         "packages/academic/workflow/src/coverage-model.ts#CoverageModelResult"
       ],
       "sources": [
-        "packages/academic/workflow/src/coverage-model.ts:199"
+        "packages/academic/workflow/src/coverage-model.ts:200"
       ]
     },
     {
@@ -74016,7 +74016,7 @@
         "packages/academic/evidence/src/fragment-types.ts#EvidenceFragmentAttempt"
       ],
       "sources": [
-        "packages/academic/evidence/src/fragment-types.ts:33"
+        "packages/academic/evidence/src/fragment-types.ts:56"
       ]
     },
     {
@@ -75211,7 +75211,7 @@
         "packages/academic/evidence/src/fragment-types.ts#EvidenceFragmentSourceRange"
       ],
       "sources": [
-        "packages/academic/evidence/src/fragment-types.ts:18"
+        "packages/academic/evidence/src/fragment-types.ts:41"
       ]
     },
     {
@@ -75829,7 +75829,7 @@
         "packages/academic/workflow/src/coverage-model.ts#CoverageModelRequest"
       ],
       "sources": [
-        "packages/academic/workflow/src/coverage-model.ts:194"
+        "packages/academic/workflow/src/coverage-model.ts:195"
       ]
     },
     {
@@ -76884,7 +76884,7 @@
         "packages/academic/evidence/src/screening-fragments.ts#ScreeningFragment"
       ],
       "sources": [
-        "packages/academic/evidence/src/screening-fragments.ts:22"
+        "packages/academic/evidence/src/screening-fragments.ts:32"
       ]
     },
     {
@@ -78910,7 +78910,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelResult"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:193"
+        "packages/academic/workflow/src/model-types.ts:201"
       ]
     },
     {
@@ -79286,7 +79286,7 @@
         "packages/academic/workflow/src/coverage-model.ts#QuestionCoverageInput"
       ],
       "sources": [
-        "packages/academic/workflow/src/coverage-model.ts:186"
+        "packages/academic/workflow/src/coverage-model.ts:187"
       ]
     },
     {
@@ -80434,7 +80434,7 @@
         "packages/academic/workflow/src/model-types.ts#EvidenceModelSource"
       ],
       "sources": [
-        "packages/academic/workflow/src/model-types.ts:171"
+        "packages/academic/workflow/src/model-types.ts:179"
       ]
     },
     {

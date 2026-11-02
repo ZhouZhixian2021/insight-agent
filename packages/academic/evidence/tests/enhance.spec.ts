@@ -34,7 +34,7 @@ function initial(input: EvidenceExtractionInput): Promise<EvidenceExtractionResu
 
 function options(overrides: Partial<EvidenceFragmentOptions> = {}): EvidenceFragmentOptions {
   return { policy: { maximumCharacters: 8, minimumCharacters: 2, overlapCharacters: 0, maximumAttempts: 1,
-    maximumOutputTokens: 512, initialRetryDelayMs: 0 },
+    maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 },
   generator: async (request, attempt) => [draft(request.segments[0]?.text ?? '', sections.slice(attempt.fragmentIndex - 1, attempt.fragmentIndex))],
   classifyFailure: error => error instanceof EvidenceError && error.code === 'TIMEOUT' ? 'timeout' : null,
   onVerified: async () => {}, ...overrides }

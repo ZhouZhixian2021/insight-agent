@@ -4,7 +4,8 @@ import { isDeepStrictEqual } from 'node:util'
 import type { Context } from '@deepseek-ai/cordis'
 import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
 import type { Session } from '@deepseek-ai/dsh-session'
-import { EvidenceError, enhanceEvidenceInFragments, extractEvidenceFromContent, extractEvidenceInFragments,
+import { EvidenceError, hasBodySegment, enhanceEvidenceInFragments, extractEvidenceFromContent,
+  extractEvidenceInFragments,
   type EvidenceFragmentFailureCategory,
   type EvidenceFragmentOptions, type EvidenceFragmentPolicy, type EvidenceFragmentResult,
   type EvidenceGenerationRequest, type EvidenceDraft, type EvidenceExtractionInput,
@@ -17,12 +18,14 @@ import { parseCoverageEvidence } from './coverage-extraction.ts'
 import { reportPaperEvidenceProgress } from './evidence-progress.ts'
 import { reviewPaperScope } from './model.ts'
 import { reviewPaperScopeInFragments, screeningConditions } from './scope-fragments.ts'
+import type { QuestionEvidenceLedger } from './question-ledger.ts'
 import type { EvidenceExtractionModelPolicy, EvidenceModelSource, PaperScopeDecision,
   PaperEvidenceProgressObserver, PaperVerifiedEvidenceGenerator, ScopeScreeningRecord } from './model-types.ts'
 
 const DEFAULT_FRAGMENT_POLICY: EvidenceFragmentPolicy = {
   maximumCharacters: 4_000, minimumCharacters: 1_000, overlapCharacters: 256,
   maximumAttempts: 3, maximumOutputTokens: 16_384, initialRetryDelayMs: 1_000,
+  maximumConcurrentDispatches: 1,
 }
 
 class FragmentModelFailure extends Error {
@@ -37,10 +40,12 @@ class FragmentModelFailure extends Error {
  * @param config Selected model route and output controls.
  * @param policy Existing scope policy plus optional fragment controls.
  * @param traceObserver Optional safe diagnostic sink.
+ * @param ledger Optional run-wide evidence counts that weight dispatch toward under-covered questions.
  * @returns A scope reviewer and incrementally verified evidence generator.
  */
 export function createModelFragmentEvidenceGenerator(
   ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
+  ledger?: QuestionEvidenceLedger,
 ): PaperVerifiedEvidenceGenerator {
   const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy, traceObserver)
   const meter = ctx.get('tokenMeter')
@@ -59,6 +64,13 @@ export function createModelFragmentEvidenceGenerator(
       instruction: '', focusQuestions: [...(parsed.focusQuestions ?? [])], segments: parsed.segments,
       ...signal === undefined ? {} : { signal },
     }
+    // A parse of headings and references only has no body to read, so spending scope dispatches on it would only
+    // delay the papers behind it.
+    if (!hasBodySegment(parsed.segments)) {
+      return { scope: { status: 'excluded', reason: '全文未包含可抽取的正文段落。' },
+        evidence: await extractEvidenceFromContent(extractionInput, () => Promise.resolve([]), signal),
+        incompleteFragmentCount: 0 }
+    }
     const review = (screening: ScopeScreeningRecord | undefined) =>
       (scopeRequest: EvidenceGenerationRequest, complete: boolean) => runScope({
         trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
@@ -69,10 +81,11 @@ export function createModelFragmentEvidenceGenerator(
         appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
       })
     const screening = policy.scopeScreening
+    const topicTerms = policy.questionTerms?.flat() ?? []
     const decision = screening === undefined
       ? await reviewPaperScope(baseRequest, policy,
         messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0), review(undefined))
-      : (await reviewPaperScopeInFragments(baseRequest, screeningConditions(scope), screening,
+      : (await reviewPaperScopeInFragments(baseRequest, screeningConditions(scope, topicTerms), screening,
         (scopeRequest, complete, record) => review(record)(scopeRequest, complete))).decision
     if (decision.status !== 'included') {
       return { scope: decision, evidence: await extractEvidenceFromContent(extractionInput, () => Promise.resolve([]), signal),
@@ -80,7 +93,9 @@ export function createModelFragmentEvidenceGenerator(
     }
 
     const result = await extractEvidenceInFragments(extractionInput,
-      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress, undefined, traceObserver), signal)
+      fragmentOptions(ctx, session, config, policy, extractionInput, onProgress, undefined, traceObserver,
+        undefined, undefined, ledger), signal)
+    ledger?.observe(result.evidence.questionLinks)
     if (result.evidence.evidenceRecords.length === 0 && result.failures.length > 0
       && result.failures.every(failure => failure.error instanceof FragmentModelFailure
         && failure.error.cause instanceof EvidenceError
@@ -118,11 +133,14 @@ export function createModelFragmentEvidenceEnhancer(
 
 function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   policy: EvidenceExtractionModelPolicy, parsed: EvidenceExtractionInput,
-  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement' | 'coverage_repair', traceObserver?: AcademicTraceObserver,
+  onProgress?: PaperEvidenceProgressObserver, purpose?: 'enhancement' | 'coverage_repair',
+  traceObserver?: AcademicTraceObserver,
   retrievalRunId?: import('@deepseek-ai/dsh-academic-model').RetrievalRunId,
   repairContext?: { readonly requirements: readonly import('@deepseek-ai/dsh-academic-model').ResearchCoverageRequirement[]
-    readonly budget?: import('./coverage-types.ts').CoverageModelBudget }): EvidenceFragmentOptions {
+    readonly budget?: import('./coverage-types.ts').CoverageModelBudget },
+  ledger?: QuestionEvidenceLedger): EvidenceFragmentOptions {
   const fragmentPolicy = policy.fragmentPolicy ?? DEFAULT_FRAGMENT_POLICY
+  const questionWeights = ledger?.weights()
   const outputCap = Math.min(config.maxTokens ?? fragmentPolicy.maximumOutputTokens,
     fragmentPolicy.maximumOutputTokens)
   if (!Number.isSafeInteger(outputCap) || outputCap < 1) throw new RangeError('Academic fragment output cap is invalid.')
@@ -138,9 +156,16 @@ function fragmentOptions(ctx: Context, session: Session, config: LlmCallConfig,
   }
   let validatedRecords = 0, rejectedDrafts = 0
   return {
-    policy: { ...fragmentPolicy, maximumOutputTokens: outputCap },
+    policy: { ...fragmentPolicy, maximumOutputTokens: outputCap,
+      ...policy.fragmentMinimumCalls === undefined ? {} : { minimumCalls: policy.fragmentMinimumCalls },
+      ...policy.fragmentCallBudgetFraction === undefined ? {} : { callBudgetFraction: policy.fragmentCallBudgetFraction },
+      ...policy.fragmentEmptyDispatchStopAfter === undefined
+        ? {} : { emptyDispatchStopAfter: policy.fragmentEmptyDispatchStopAfter },
+      ...policy.fragmentMaximumConcurrentDispatches === undefined ? {}
+        : { maximumConcurrentDispatches: policy.fragmentMaximumConcurrentDispatches } },
     ...policy.fragmentMaximumCalls === undefined ? {} : { maximumCalls: policy.fragmentMaximumCalls },
     ...policy.questionTerms === undefined ? {} : { questionTerms: policy.questionTerms },
+    ...questionWeights === undefined ? {} : { questionWeights },
     generator: async (request, fragment) => {
       let settled: LoggedModelAttemptObservation | undefined
       reportPaperEvidenceProgress(onProgress, { operation: 'evidence_extract', batchIndex: fragment.fragmentIndex,
