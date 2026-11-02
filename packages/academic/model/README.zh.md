@@ -9,7 +9,11 @@ kind: "package-library"
 
 Trace v1 类型也通过仅类型子路径 `@deepseek-ai/dsh-academic-model/trace` 提供。操作与观察身份使用品牌类型，未知计时保持 null。诊断记录不改变证据有效性或报告审核结果。
 
+`PublicationDatePolicy` 区分固定、运行开始时点及无上限三种截止方式，并逐项标记纳入／排除规则归属。`resolvePublicationDateContext()` 冻结日历截止日和 IANA 时区；`evaluatePublicationDate()` 按指定日期口径比较不完整日期区间。有边界时不纳入未知日期。旧计划若上限为空且日期规则未分类，需重新审核；恢复时沿用已保存的日期上下文。
+
 ## 概述
+
+可选的 `ResearchBrief.coverageRequirements` 以稳定的 `ResearchAspectId`、标签、获批检索词和 `direct` 或 `quantitative` 要求记录每个问题获批的必要方面。`ResearchAspectCoverage` 保留核查状态、已纳入证据 ID 和理由。`ResearchQuestionCoverageResult.basis` 区分历史论文计数判断与分方面核查；缺省保留历史含义。这些字段记录范围和模型判断，不代表事实已通过核验。有限核查与补强见[工作流](../workflow/README.zh.md)。
 
 `dsh-academic-model` 负责学术洞察包共用且不依赖提供方的数据语义。它是库，不是 Cordis 服务或插件，也不执行检索、证据抽取、跨论文分析、报告渲染或模型调用。
 
@@ -62,6 +66,7 @@ Trace v1 类型也通过仅类型子路径 `@deepseek-ai/dsh-academic-model/trac
 | `EvidenceCard` | 从一个不可变成果版本提取的六个有证据分区。 |
 | `EvidenceSnapshot` | 一个 Brief 版本实际使用的证据、成果版本和内容哈希不可变集合。 |
 | `HybridSearchPlan` | 不依赖提供方且经过审核的查询、约束、纳入目标、排序策略和轮次上限。 |
+| `createHybridSearchConstraints()` | 自动规划与获批查询共用的约束，保留已解析日期及覆盖要求，不把日期规则交给内容筛选。 |
 | `CandidateAssessment` | 一项已核验成果的可信元数据、语义比例、规则判定和全文解析状态。 |
 | `AcademicCandidateEvaluation` | 一个成果版本可解释的硬过滤、分类、评分、优先级和问题匹配结果。 |
 | `AcademicCandidateRankingResult` | 绑定计划的评估及有权威顺序的 P0/P1/P2/excluded 队列。 |

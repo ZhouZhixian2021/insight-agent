@@ -15,15 +15,15 @@ describe('isBackMatterSection', () => {
     'Acknowledgments', 'Acknowledgement', 'Funding', 'Author Contributions', 'Conflict of Interest',
     'Data Availability', 'Appendix', 'A. Appendix', 'IV Appendix', 'Appendices', 'Supplementary Material',
     'Supplementary Information', 'Supporting Information', 'References and Notes', '参考文献', '引用文献',
-    '致谢', '鸣谢', '附录', '补充材料', 'References:'])('recognizes %s', heading => {
+    '致谢', '鸣谢', '附录', '补充材料', 'References:'])('recognizes %s', (heading) => {
     expect(isBackMatterSection(heading)).toBe(true)
   })
 
   it.each(['Introduction', 'Related Work', 'Background and Motivation', 'Appendix-Driven Design',
     'Methods', 'Empirical Evaluation', 'Conclusion', 'Notes', 'Broader Impact', 'PDF page 12'])(
-  'keeps %s as body', heading => {
-    expect(isBackMatterSection(heading)).toBe(false)
-  })
+    'keeps %s as body', (heading) => {
+      expect(isBackMatterSection(heading)).toBe(false)
+    })
 
   it('treats a missing heading as body', () => {
     expect(isBackMatterSection(null)).toBe(false)

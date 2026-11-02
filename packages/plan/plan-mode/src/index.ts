@@ -163,6 +163,7 @@ const planUnitStateSchema: ZodType<PlanUnitState> = zod.object({
     wanted: zod.boolean(),
   }).strict().nullable(),
   activeAtLastHeader: zod.boolean().nullable(),
+  lastExitTurn: zod.number().int().nonnegative().nullable(),
 }).strict()
 
 /** Wire payload schema of the `plan` projection. */
@@ -174,10 +175,13 @@ const planProjectionSchema: ZodType<PlanProjection> = zod.object({
 /** Projection of logged plan selections and committed mode. */
 export const planProjectionDefinition = {
   key: 'plan',
-  stateVersion: 4,
+  stateVersion: 5,
   stateSchema: planUnitStateSchema,
-  init: () => ({ active: false, hasSelection: false, wanted: null, running: null, activeAtLastHeader: null }),
+  init: () => ({ active: false, hasSelection: false, wanted: null, running: null, activeAtLastHeader: null, lastExitTurn: null }),
   apply: (state, event) => {
+    if (event.type === 'tool/call' && event.data.name === EXIT_PLAN_MODE) {
+      return { ...state, lastExitTurn: event.data.turn }
+    }
     if (event.type === 'command/run' && event.data.name === 'plan') {
       if (event.data.args === undefined) return state
       const wanted = event.data.args.trim() !== 'off'
@@ -472,8 +476,7 @@ export class PlanModeController extends Service {
 
   /** Whether this turn already reached the structured review operation. */
   private calledExitInTurn(session: Session, turn: number): boolean {
-    return session.snapshotEvents().some(event => event.type === 'tool/call'
-      && event.data.turn === turn && event.data.name === EXIT_PLAN_MODE)
+    return this.planState(session).lastExitTurn === turn
   }
 
   private loggedActive(session: Session): boolean {

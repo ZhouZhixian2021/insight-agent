@@ -159,6 +159,12 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
   'academic-plan-validation': { runtimeProfile: 'sdk-minimal', expectedTools: { exit_plan_mode: ['plan'], read_image: ['file_path'], working_directory: [] } },
   'academic-limited-draft': { runtimeProfile: 'sdk-minimal', expectedTools: { read_image: ['file_path'], working_directory: [] } },
   'academic-evidence': { runtimeProfile: 'sdk-minimal', expectedTools: { read_image: ['file_path'], working_directory: [] } },
+  'academic-publication-date': { runtimeProfile: 'sdk-minimal', expectedFinalResponse: 'DATE_POLICY_DONE',
+    expectedTools: { read_image: ['file_path'], working_directory: [] } },
+  'academic-coverage': { runtimeProfile: 'sdk-minimal', expectedFinalResponse: 'COVERAGE_POLICY_DONE',
+    expectedTools: { read_image: ['file_path'], working_directory: [] } },
+  'academic-targeted-coverage': { runtimeProfile: 'sdk-minimal', expectedFinalResponse: 'COVERAGE_POLICY_DONE',
+    expectedTools: { read_image: ['file_path'], working_directory: [] } },
   'minimal-image-compaction': {
     expectedFinalResponse: 'MINIMAL_IMAGE_OK',
     expectedTools: { bash: ['command'], read_image: ['file_path'], working_directory: [] },
@@ -419,7 +425,8 @@ function normalizeNotifications(notifications: readonly HarnessNotification[], c
     .filter(n => n.method === 'session.event')
     .map(n => n.params.event as Record<string, unknown>)
   const typedIdentities = events.some(event => event.type === 'feedback/message-put'
-    || event.type === 'job/registered' || event.type === 'job/settled')
+    || event.type === 'job/registered' || event.type === 'job/settled'
+    || event.type === 'academic/coverage-repair-state-v1')
   const eventLog = events.map(event => JSON.stringify(event)).join('\n') + '\n'
   const typedLog = typedIdentities
     ? redactSessionSnapshotIds([
@@ -1158,7 +1165,8 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         }
       }
       if (assertions.expectedFinalResponse !== undefined) {
-        expect(results.at(-1)?.finalResponse, `${scenario.name}: final response`).toBe(assertions.expectedFinalResponse)
+        expect(results.at(-1)?.finalResponse, `${scenario.name}: final response ${JSON.stringify(results.at(-1)?.events.filter(event => event.type === 'turn/end'))}`)
+          .toBe(assertions.expectedFinalResponse)
         const parent = ordered[0]
         if (parent === undefined) throw new Error(`${scenario.name}: no primary session log`)
         const turnEnds = records(parent.content).filter(record => record.type === 'turn/end')

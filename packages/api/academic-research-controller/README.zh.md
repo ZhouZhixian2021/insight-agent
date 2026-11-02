@@ -8,6 +8,8 @@ kind: "package-reference"
 
 `academicResearch.traceList(query, signal)` 和 `traceDetail(query, signal)` 通过只读 Session 观察读取指定会话及检索运行的安全诊断。适配器保存 `academic/trace-v1` 快照，标准化后交给不依赖基座的分页和统计。可按阶段、状态筛选，详情必须提供 spanId。游标绑定范围、筛选条件和不可变来源水位，单页为 1—100 条（默认 50）；无效游标报错，不混合运行。旧研究没有观察记录时返回 not_found 与明确缺口，未结算操作保留最后状态并提示中断。恢复运行不会把单个进程区间当作整轮耗时，跨进程计时保持未知。查询和当前页导出不包含提示词、响应流、URL 或原始错误。Trace 成功仅表示操作结算，不表示报告通过审核。新增的版本化 Session 事件要求读取程序认识此类型，不覆写已发布日志代际。
 
+版本 6 计划要求 `publicationDatePolicy`：`endMode` 为 `fixed`、`run_start` 或 `unbounded`，`timeZone` 为 IANA 名称，规则类别数组逐项标记已批准规则。Controller 在构建检索适配器前确定截止日，恢复时复用保存的上下文。固定模式必须提供上限，其他模式必须为空。旧计划仍可读取，但启动含歧义空上限的计划需重新审核；历史日志和报告保持原样。
+
 ## 概述
 
 `paperConcurrency` 默认每轮并发 3 篇论文，设为 1 可串行获取和抽取。检索仍按顺序执行，论文任务收尾后才开始洞察分析。批准的纳入上限可能降低实际并发数。来源和 Web 结果接口保持不变。并发可能增加上游限流，不保证按比例提速。
@@ -23,6 +25,10 @@ kind: "package-reference"
 
 <a id="use-this-package"></a>
 ## 使用方式
+
+第 7 版计划还要求每个获批问题都有一条 `coverageRequirements`，包含稳定方面 ID、简短标签、获批检索词和明确的 `direct` 或 `quantitative` 证据要求。用户可见计划保留原问题数量，每题最多增加一句简短覆盖说明，完整要求保存在获批的机器可读计划内。覆盖核查最多两次调用和一轮补强；摘录长度、补抽论文及额外候选由 Controller 配置控制。不会为旧计划自动推断新要求。见[工作流行为](../../academic/workflow/README.zh.md)与[配置目录](../../../docs/config-catalog.zh.md)。
+
+Controller 新运行启用 `coverageTargeting`：按缺口选择论文和段落、定向补抽、一次保留候选补读及一次局部复核。默认共享原文上限为 6,000 字符，覆盖工作最多六次模型调用、45,000 个估算或预留 token、220 秒，并预留最终核查容量。恢复后沿用这些额度，并同时执行下文独立的全文、抽取和范围审核限制。缓存可复用原文；每次任务仍重新进行范围判断和证据抽取。用户可见的获批计划保持简洁。参见[工作流](../../academic/workflow/README.zh.md)。
 
 原生计划结果与 `tool/ptc-dispatch` 结算必须具有明确的 `approved: true` 结果元数据才视为批准。放弃评审不授权研究。缺少该元数据的历史结果需要重新评审，原存储记录保持不变。PTC 批准身份直接使用记录中的 `subCallId`，不作改写。读取器消费标准格式迁移后的当前逻辑事件，不接受已退役的 `tool/code-dispatch` 标签。Web 默认使用原生工具，其既有进程级 `DSH_TOOLS_MODE=ptc` 设置也会作用于学术预设。候选模型请求声明 `academic-candidate-review` 消息来源。
 

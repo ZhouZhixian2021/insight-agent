@@ -83,14 +83,14 @@ describe('selectScreeningFragments', () => {
 
   it.each(['References', '7 References', 'REFERENCES', 'Bibliography', 'Acknowledgments',
     'Appendix', 'A. Appendix', 'Supplementary Material', '参考文献', '附录', '致谢'])(
-  'never screens %s for reviewed terms', heading => {
-    const segments = [paragraph('body text without the term', 'Introduction'),
-      paragraph('eBPF kernel policy eBPF kernel policy', heading)]
-    const selection = selectScreeningFragments(segments, [condition('c1', 'ebpf')], policy)
-    expect(selection.fragments.map(fragment => fragment.sectionTitle)).toStrictEqual(['Introduction'])
-    expect(selection.fragments.flatMap(fragment => fragment.matchedTerms)).toStrictEqual([])
-    expect(selection.uncoveredConditionIds).toStrictEqual(['c1'])
-  })
+    'never screens %s for reviewed terms', (heading) => {
+      const segments = [paragraph('body text without the term', 'Introduction'),
+        paragraph('eBPF kernel policy eBPF kernel policy', heading)]
+      const selection = selectScreeningFragments(segments, [condition('c1', 'ebpf')], policy)
+      expect(selection.fragments.map(fragment => fragment.sectionTitle)).toStrictEqual(['Introduction'])
+      expect(selection.fragments.flatMap(fragment => fragment.matchedTerms)).toStrictEqual([])
+      expect(selection.uncoveredConditionIds).toStrictEqual(['c1'])
+    })
 
   it('keeps a body heading that mentions a reviewed term', () => {
     const segments = [paragraph('Our eBPF design', 'Related work and eBPF background')]

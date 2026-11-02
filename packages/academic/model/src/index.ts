@@ -43,6 +43,9 @@ export type {
   PartialDatePrecision,
   PublicationDateBasis,
   PublicationWindow,
+  PublicationDatePolicy,
+  PublicationDateContext,
+  PublicationDateEvaluation,
   ProviderRecordReference,
   ProviderRecordLocator,
   PublicationStatus,
@@ -53,6 +56,8 @@ export type {
   RetrievalRunId,
   SearchQueryId,
   ResearchBrief,
+  ResearchAspectId,
+  ResearchCoverageRequirement,
   ResearchQuestionEntry,
   ResearchQuestionType,
   SourceLocator,
@@ -96,6 +101,8 @@ export {
   createWorkVersionId,
 } from './ids.ts'
 export { isExecutableResearchBrief, targetIncludedWorks } from './research-brief.ts'
+export { resolvePublicationDateContext, evaluatePublicationDate, publicationDateBounds,
+  contentScreeningRules, isValidPublicationDate, PublicationDatePolicyError } from './publication-date.ts'
 export type {
   AcademicCandidateEvaluation,
   AcademicCandidateRankingResult,
@@ -141,6 +148,7 @@ export type {
   QueryWorkflowProgressEvent,
   QuestionCoverageCounts,
   ResearchQuestionCoverage,
+  ResearchAspectCoverage,
   ResearchQuestionCoverageResult,
   SearchQueryBase,
   SearchRoundPurpose,
@@ -157,4 +165,5 @@ export {
   createCandidateRankingResult,
   createCandidateScoreBreakdown,
   createInclusionTargets,
+  createHybridSearchConstraints,
 } from './query-workflow.ts'

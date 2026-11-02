@@ -9,6 +9,8 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { AcademicSearchPlanEvent } from './settlement-events.ts'
 import type { AcademicBatchDecisionEvent, AcademicBatchSettlementEvent } from './query-workflow.ts'
 import type { AcademicResearchRecoveryCheckpoint } from './recovery-checkpoint.ts'
+import { isDeepStrictEqual } from 'node:util'
+import { recoverCoverageRepairs, validCoverageState } from './recovery-coverage.ts'
 
 /** One batch whose scheduling decision and settlement have both been committed. */
 export interface AcademicCompletedBatchRecoveryState {
@@ -149,10 +151,12 @@ export function reconstructAcademicResearchRecoveryState(
   })
   const pendingCandidates = scheduled.flatMap(({ value }) => settledByBatch.has(value.batchIndex)
     ? [] : value.workVersionIds.map(workVersionId => ({ batchIndex: value.batchIndex, workVersionId })))
-  const checkpoint = checkpoints.at(-1)?.value ?? null
+  let checkpoint = checkpoints.at(-1)?.value ?? null
   if (checkpoint !== null) {
     const checkpointFailure = validateCheckpoint(checkpoint, target, plan, completedBatches, pendingCandidates)
     if (checkpointFailure !== null) return checkpointFailure
+    checkpoint = recoverCoverageRepairs(checkpoint, events.slice((checkpoints.at(-1)?.index ?? -1) + 1))
+    if (checkpoint === null) return failed('candidate_state_missing', 'The committed coverage repair history is inconsistent; start a new run.')
   }
   const input: AcademicResearchRecoveryInput = {
     retrievalRunId: target.retrievalRunId,
@@ -188,6 +192,14 @@ function validateCheckpoint(
   }
   if (checkpoint.plan.researchBriefVersion !== target.researchBriefVersion) {
     return failed('brief_version_mismatch', 'The latest Academic recovery checkpoint belongs to another ResearchBrief version.')
+  }
+  const date = checkpoint.publicationDateContext
+  if (checkpoint.coverageRepairState !== undefined && !validCoverageState(checkpoint.coverageRepairState, checkpoint)) {
+    return failed('candidate_state_missing', 'The checkpoint coverage repair state does not match its frozen approved scope and budgets.')
+  }
+  if (date !== undefined && ((date as { readonly schemaVersion: unknown }).schemaVersion !== 1
+    || date.startedAt !== checkpoint.startedAt || !isDeepStrictEqual(date.window, checkpoint.plan.constraints.publicationWindow))) {
+    return failed('candidate_state_missing', 'The latest checkpoint has inconsistent frozen publication dates; start a new run.')
   }
   const eventQueries = plan.queries.map(query => [query.searchQueryId, query.expression])
   const checkpointQueries = checkpoint.plan.queries.slice(0, plan.queries.length)

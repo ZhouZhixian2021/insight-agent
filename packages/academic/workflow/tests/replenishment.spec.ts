@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatchResult, createSearchQueryId,
+import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, resolvePublicationDateContext, createAcademicWorkId, createBatchResult, createSearchQueryId,
   createWorkVersionId, type AcademicCandidateEvaluation, type AcademicCandidateRankingResult,
   type HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import { runResearchDraft, selectResearchPapers, type DraftPipelineAdapters } from '../src/index.ts'
@@ -126,6 +126,7 @@ describe('bounded candidate replenishment', () => {
       coverBoth, failedDownloads, failedExtractions, bounded,
     ) => {
       const { input, adapters, records } = fixture()
+      adapters.assessQuestionCoverage = vi.fn(adapters.assessQuestionCoverage)
       if (bounded) input.searches = [{ query: 'bounded', maxResults: 2, channels: ['academic'] }]
       const observations: Parameters<NonNullable<DraftPipelineAdapters['onQueryWorkflow']>>[0][] = []
       adapters.onQueryWorkflow = observation => observations.push(observation)
@@ -186,6 +187,7 @@ describe('bounded candidate replenishment', () => {
         return { papers: [], truncated: false, candidateScheduling: scheduling }
       })
       const result = await runResearchDraft(input, adapters)
+      if (!bounded) expect(adapters.assessQuestionCoverage).toHaveBeenCalled()
       expect(adapters.fetcher).toHaveBeenCalledTimes(bounded ? 2 : coverBoth ? failedDownloads || failedExtractions ? 4 : 2 : 5)
       expect(result.retrievalRun.coverageSummary.includedWorks).toBe(bounded ? 0 : coverBoth ? 2 : 5)
       if (failedDownloads || failedExtractions) expect(result.failures).toHaveLength(2)
@@ -215,14 +217,20 @@ describe('bounded candidate replenishment', () => {
       expect(result.queryWorkflow).toEqual(observations.at(-1))
     })
 
-  it('resumes a pending ranked batch without repeating retrieval or screening', async () => {
+  it('resumes a pending ranked batch next day with its original date cutoff and without repeating retrieval or screening', async () => {
     const { input, adapters, records } = fixture()
+    adapters.now = () => '2026-10-30T01:57:32.671Z'
+    input.brief = { ...input.brief, publicationWindow: { start: null, end: null, dateBasis: 'published' },
+      publicationDatePolicy: { endMode: 'run_start', timeZone: 'Asia/Shanghai', inclusionRuleKinds: [], exclusionRuleKinds: [] } }
+    input.publicationDateContext = resolvePublicationDateContext(input.brief, adapters.now())
+    for (const [index, record] of records.entries()) records[index] = { ...record, workVersion: { ...record.workVersion,
+      releaseDate: { status: 'available', value: { iso: '2026-09-01', precision: 'day' } } } }
     input.brief = { ...input.brief, stopConditions: { ...input.brief.stopConditions,
       maximumCandidateWorks: 5, maximumIncludedWorks: 2, stopWhenEvidenceRequirementsMet: true } }
     const queryId = createSearchQueryId()
     const plan: HybridSearchPlan = { schemaVersion: 1, researchBriefId: input.brief.researchBriefId,
       researchBriefVersion: input.brief.version,
-      constraints: { publicationWindow: input.brief.publicationWindow,
+      constraints: { publicationWindow: input.publicationDateContext.window,
         includedWorkTypes: input.brief.includedWorkTypes, inclusionRules: [], exclusionRules: [],
         requiredTerms: [], excludedTerms: [] }, inclusionTargets: { minimum: 2, target: 2, maximum: 2 },
       rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V1,
@@ -253,14 +261,17 @@ describe('bounded candidate replenishment', () => {
     adapters.onRecoveryCheckpoint = (value) => { checkpoint = value; throw new Error('simulated process exit') }
     await expect(runResearchDraft(input, adapters)).rejects.toThrow('simulated process exit')
     expect(checkpoint).toMatchObject({ pendingBatchIndex: 1, completedBatchCount: 0 })
+    expect(checkpoint?.publicationDateContext).toEqual(input.publicationDateContext)
     expect(adapters.fetcher).not.toHaveBeenCalled()
     adapters.onRecoveryCheckpoint = vi.fn()
+    adapters.now = () => '2026-11-01T01:57:32.671Z'
     const result = await runResearchDraft({ ...input, recovery: checkpoint! }, adapters)
     expect(adapters.search).toHaveBeenCalledOnce()
     expect(adapters.selectPapers).toHaveBeenCalledOnce()
     expect(adapters.fetcher).toHaveBeenCalledTimes(2)
     expect(result.retrievalRun.retrievalRunId).toBe(checkpoint!.retrievalRunId)
     expect(result.retrievalRun.coverageSummary.includedWorks).toBe(2)
+    expect(vi.mocked(adapters.generator).mock.calls[0]?.[2].publicationDate?.context.asOfDate).toBe('2026-10-30')
   })
 
   it('drives a gap round instead of stopping when the ranked pool cannot cover a question', async () => {

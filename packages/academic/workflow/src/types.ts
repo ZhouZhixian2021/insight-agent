@@ -1,5 +1,5 @@
-/** Results owned by the paper-level workflow handoff; no durable schema. */
-import type { WorkVersion } from '@deepseek-ai/dsh-academic-model'
+/** Paper-level outcomes retained by workflow recovery and report production. */
+import type { PublicationDateContext, PublicationDateEvaluation, WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { EvidenceExtractionResult } from '@deepseek-ai/dsh-academic-evidence'
 
 /** A paper withheld from extraction; the caller retains this record and continues other papers. */
@@ -22,11 +22,13 @@ export interface PaperExclusion {
   readonly sourceUrl: string
   readonly retrievedAt: string
   readonly reason: string
+  readonly ruleId?: string
 }
 
 /** Fully or partially extracted papers supply accepted evidence to downstream analysis. */
-export type PaperEvidenceResult =
+export type PaperEvidenceResult = (
   | { readonly status: 'paused'; readonly pause: PaperPause }
   | { readonly status: 'excluded'; readonly exclusion: PaperExclusion }
   | (({ readonly status: 'extracted' } | { readonly status: 'partially_extracted' } | { readonly status: 'extraction_failed' })
-    & { readonly version: WorkVersion; readonly evidence: EvidenceExtractionResult })
+    & { readonly version: WorkVersion; readonly evidence: EvidenceExtractionResult }))
+  & { readonly publicationDate?: { readonly context: PublicationDateContext; readonly evaluation: PublicationDateEvaluation } }

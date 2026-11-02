@@ -11,6 +11,7 @@ import { parseCandidateSemanticReview, screeningFromSemanticReview } from '@deep
 import { createLoggedModelRunner, WorkflowLogError,
   type EvidenceModelRequest, type EvidenceModelResult } from '@deepseek-ai/dsh-academic-workflow'
 import type { CandidateReviewer, CandidateReviewInput } from './search.ts'
+import { contentScreeningRules } from '@deepseek-ai/dsh-academic-model'
 
 declare module '@deepseek-ai/dsh-llm' {
   interface MessageSourceMap {
@@ -125,8 +126,13 @@ export function createModelCandidateReviewer(ctx: Context, session: Session,
         inclusionRules: input.plan.constraints.inclusionRules, exclusionRules: input.plan.constraints.exclusionRules },
       paper: { title: input.title, abstract: input.abstract },
     }
+    const contentRules = input.brief.publicationDatePolicy === undefined ? undefined : contentScreeningRules(input.brief)
     const messages = [createUserMessage({ source: { kind: 'academic-candidate-review' },
-      content: [{ type: 'text', text: `${REVIEW_INSTRUCTION}\n${JSON.stringify(request)}` }],
+      content: [{ type: 'text', text: `${REVIEW_INSTRUCTION}${contentRules === undefined ? '' : `
+Publication dates are program-owned and already filtered. Never exclude on dates or infer the current date.
+For off_topic, return ruleId identifying an approved contentRules entry violated by the quoted content.`}\n${JSON.stringify({
+        ...request, ...contentRules === undefined ? {} : { contentRules },
+      })}` }],
     })]
     const requestIdentity: { seq: SessionSeq | null } = { seq: null }
     let dispatch = false
@@ -135,7 +141,8 @@ export function createModelCandidateReviewer(ctx: Context, session: Session,
       const review = await runner({ trace: { stage: 'screening', operation: 'candidate_review', academicWorkId: input.academicWorkId, workVersionId: input.workVersionId }, messages, ...signal === undefined ? {} : { signal },
         parse: (text) => {
           try {
-            return parseCandidateSemanticReview(text, input.title, input.abstract, request.research.questions)
+            return parseCandidateSemanticReview(text, input.title, input.abstract, request.research.questions,
+              contentRules?.map(rule => rule.id))
           } catch (cause: unknown) {
             throw new EvidenceError('Invalid candidate semantic review output.', 'CANDIDATE_REVIEW_INVALID_OUTPUT', { cause })
           }

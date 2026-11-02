@@ -4,14 +4,15 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import AgentRegistry from '@deepseek-ai/dsh-agent'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import SessionStore from '@deepseek-ai/dsh-session'
+import SessionStore, { SessionLogOffset } from '@deepseek-ai/dsh-session'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import type { Session } from '@deepseek-ai/dsh-session'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import UserQuestionService from '@deepseek-ai/dsh-user-questions'
 import { CommandId } from '@deepseek-ai/dsh-commands/brand'
-import PlanModeController from '@deepseek-ai/dsh-plan-mode'
+import PlanModeController, { planProjectionDefinition } from '@deepseek-ai/dsh-plan-mode'
 
 interface Bench {
   ctx: Context
@@ -62,6 +63,32 @@ function commitPlanMode(session: Session, active: boolean, turn: number): void {
 }
 
 describe('plan projection unit', () => {
+  it('rebuilds review attempts from committed calls when a previous projection cache is restored', async () => {
+    const bench = await harness(true)
+    try {
+      bench.session.append('turn/start', { turn: 1 })
+      bench.session.append('tool/call', { turn: 1, step: 1, callId: ToolCallId('other-tool'), name: 'read', arguments: '{}' })
+      expect(bench.ctx.sessionProjections.stateOf(bench.session, 'plan')?.lastExitTurn).toBeNull()
+      const old = bench.ctx.sessionProjections.checkpoint(bench.session)
+      const row = old.plan!
+      old.plan = { ...row, ver: 4, val: { active: false, hasSelection: false, wanted: null,
+        running: null, activeAtLastHeader: null } }
+      bench.session.append('tool/call', { turn: 1, step: 1, callId: ToolCallId('review-tool'),
+        name: 'exit_plan_mode', arguments: '{}' })
+      expect(bench.ctx.sessionProjections.restoreFloor(old)).toBe(0)
+      expect(bench.ctx.sessionProjections.viewCheckpoint(old, ['plan'])).toEqual({})
+      const events = bench.session.snapshotEvents()
+      const restored = bench.ctx.sessionProjections.restore(old, events, SessionLogOffset(0), {
+        version: 4, id: bench.session.id, createdAt: 0, isSeeded: false,
+      }, SessionLogOffset(0))
+      expect(restored.checkpoint.plan?.ver).toBe(planProjectionDefinition.stateVersion)
+      expect(restored.checkpoint.plan?.val).toMatchObject({ lastExitTurn: 1 })
+      expect(restored.snapshot.values.plan).toEqual({ active: false, pending: false })
+    } finally {
+      await bench.ctx.fiber.dispose()
+    }
+  })
+
   it('serves inactive/not-pending for the empty log', async () => {
     const bench = await harness(true)
     expect(bench.values().plan).toEqual({ active: false, pending: false })

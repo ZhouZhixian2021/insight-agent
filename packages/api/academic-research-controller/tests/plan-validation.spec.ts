@@ -33,6 +33,30 @@ function screeningPayload(alias: string): Record<string, unknown> {
 }
 
 describe('Academic plan compatibility before review', () => {
+  it.each([
+    { endMode: 'run_start', timeZone: 'Asia/Shanghai', inclusionRuleKinds: [], exclusionRuleKinds: ['content'] },
+    { endMode: 'fixed', timeZone: 'Asia/Shanghai', inclusionRuleKinds: ['content'], exclusionRuleKinds: ['content'] },
+    { endMode: 'run_start', timeZone: 'invalid/time-zone', inclusionRuleKinds: ['content'], exclusionRuleKinds: ['content'] },
+    { endMode: 'today', timeZone: 'UTC', inclusionRuleKinds: ['content'], exclusionRuleKinds: ['content'] },
+    { endMode: 'run_start', timeZone: 'UTC', inclusionRuleKinds: ['date_or_content'], exclusionRuleKinds: ['content'] },
+  ])('rejects an incomplete or contradictory date policy: %j', (policy) => {
+    const payload = templatePayload()
+    payload.publicationDatePolicy = policy
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow(/publicationDatePolicy/u)
+  })
+
+  it.each(['2026-02-29', '2026-04-31', '2026-13-01', '2026-10-00'])('rejects invalid publication date %s', (iso) => {
+    const payload = templatePayload()
+    payload.publicationWindow = { start: { iso, precision: 'day' }, end: null, dateBasis: 'published' }
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('valid calendar date')
+  })
+
+  it('reads legacy version 5 without inventing a date policy', () => {
+    const payload = templatePayload()
+    payload.schemaVersion = 5
+    delete payload.publicationDatePolicy
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
   it('keeps the fixed A-PE1 review decisions aligned with an executable plan', () => {
     const visible = pe1Plan.slice(0, pe1Plan.indexOf('## 系统执行信息'))
     const match = pe1Plan.match(/```academic-research-brief-json\s*\n([\s\S]*?)\n```/u)
@@ -64,9 +88,10 @@ describe('Academic plan compatibility before review', () => {
     expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('missing: searchPlan')
   })
 
-  it('projects the version-5 target, hybrid policy, and reviewed screening cues', () => {
+  it('projects the version-7 target, aspect criteria, hybrid policy, and reviewed screening cues', () => {
     const payload = templatePayload()
-    expect(payload.schemaVersion).toBe(5)
+    expect(payload.schemaVersion).toBe(7)
+    expect(payload.coverageRequirements).toMatchObject([{ question: '<中文研究问题>', aspects: [{ evidenceRequirement: 'direct' }] }])
     expect((payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks).toBe(6)
     expect(payload.candidateScreening).toMatchObject({
       questions: [{ question: '<中文研究问题>' }],
@@ -81,6 +106,23 @@ describe('Academic plan compatibility before review', () => {
       maximumReferenceVerifications: 5,
     })
     expect(() => { validateAcademicPlan(template) }).not.toThrow()
+  })
+
+  it('requires approved aspect criteria in new plans while retaining version-6 readers', () => {
+    const payload = templatePayload()
+    delete payload.coverageRequirements
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('coverageRequirements')
+    payload.schemaVersion = 6
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+  })
+
+  it.each(['duplicate_id', 'unknown_question', 'empty_aspects'])('rejects invalid approved aspect scope: %s', (scenario) => {
+    const payload = templatePayload()
+    const requirements = payload.coverageRequirements as { question: string; aspects: object[] }[]
+    if (scenario === 'duplicate_id') requirements[0]!.aspects.push(requirements[0]!.aspects[0]!)
+    else if (scenario === 'unknown_question') requirements[0]!.question = 'unapproved question'
+    else requirements[0]!.aspects = []
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('coverageRequirements')
   })
 
   it('keeps per-paper eligibility separate from collection coverage goals in the shipped template', () => {
@@ -98,6 +140,7 @@ describe('Academic plan compatibility before review', () => {
 
   it('continues to read a version-2 approved search plan without inventing a retrieval policy', () => {
     const payload = structuredClone(templatePayload())
+    delete payload.publicationDatePolicy
     payload.schemaVersion = 2
     delete payload.candidateScreening
     delete (payload.evidenceRequirements as Record<string, unknown>).targetIncludedWorks

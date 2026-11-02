@@ -1,6 +1,7 @@
 /** Bridge reviewed Session searches to the provider-neutral Academic retrieval plan. */
 import {
   ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
+  createHybridSearchConstraints,
   createSearchQueryId,
   isExecutableResearchBrief,
   targetIncludedWorks,
@@ -90,14 +91,7 @@ export function approvedHybridSearchHandoff(
       schemaVersion: 1,
       researchBriefId: brief.researchBriefId,
       researchBriefVersion: brief.version,
-      constraints: {
-        publicationWindow: brief.publicationWindow,
-        includedWorkTypes: [...brief.includedWorkTypes],
-        inclusionRules: [...brief.inclusionRules],
-        exclusionRules: [...brief.exclusionRules],
-        requiredTerms: [],
-        excludedTerms: [],
-      },
+      constraints: createHybridSearchConstraints(brief),
       inclusionTargets: { minimum, target, maximum },
       rankingPolicy: ACADEMIC_CANDIDATE_RANKING_POLICY_V2,
       queries,

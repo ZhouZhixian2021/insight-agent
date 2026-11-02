@@ -14,7 +14,9 @@
  * rewrite idempotent because the scoped name's `cordis` is preceded by `/`.
  * Markdown follows the rename inside every fence, and in `docs/` prose too:
  * a tutorial that teaches an unresolvable name is wrong, while prose elsewhere
- * records what was true when it was written.
+ * records what was true when it was written. Recognized preset values, inspect
+ * listeners, and preset lists keep their product identifiers without exempting
+ * other package references in those files.
  *
  * Sites the token rule cannot express (dot-notation access, unquoted object
  * keys, regex literals, the vendored-manifest table) are listed in
@@ -31,6 +33,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const root = resolve(import.meta.dirname, '..')
 
@@ -139,6 +142,36 @@ const GENERIC_SKIPS: readonly GenericSkip[] = [
   { file: 'packages/extensions/ui-cordis/src/client/CordisRunRow.tsx', upstream: ['cordis'] },
   { file: 'packages/extensions/ui-cordis/src/client/locales.ts', upstream: ['cordis'] },
 ]
+
+// These files use the bare name as preset data. Only recognized value
+// expressions are preserved; package specifiers in the same files stay checked.
+const PRESET_VALUE_FILES = new Set([
+  'apps/cli/tests/optional-bundle-transitions.e2e.ts',
+  'apps/web/tests/agent-preset-selection.e2e.ts',
+  'apps/web/tests/developer-tools-settings.e2e.ts',
+  'packages/client/ui-agent-preset/src/client/CreatePluginMenuItem.tsx',
+  'packages/client/ui-agent-preset/tests/components.client.spec.tsx',
+  'packages/client/ui-agent-preset/tests/create-plugin-menu-item.client.spec.tsx',
+  'packages/client/ui-agent-preset/tests/section-store.client.spec.ts',
+])
+
+const INSPECT_EVENT_FILES = new Set([
+  'packages/extensions/cordis-host-runner/tests/inspect-registry.spec.ts',
+  'snapshots/session/cordis-inspect-liveness/client-fixture.mjs',
+  'snapshots/session/cordis-inspect-timeout/client-fixture.mjs',
+])
+
+const PRESET_LIST_FILES = new Set([
+  'docs/subsystems/schedule.md',
+  'docs/subsystems/schedule.zh.md',
+  'docs/upgrade-guide/v0.2.0-rc.2/schedule-bundle-retired/guide.md',
+  'docs/upgrade-guide/v0.2.0-rc.2/schedule-bundle-retired/guide.zh.md',
+  'docs/upgrade-guide/v0.2.1-alpha.1/subagent-preset-composition/guide.md',
+  'docs/upgrade-guide/v0.2.1-alpha.1/subagent-preset-composition/guide.zh.md',
+  'docs/user/guide/schedule.md',
+  'docs/user/guide/schedule.zh.md',
+  'packages/bundle/web-app/cordis.patch.yml',
+])
 
 /** A string that must appear exactly `count` times once the rescope has run. */
 interface PostCondition {
@@ -432,6 +465,7 @@ const VENDORED_LIBRARY = /^@deepseek-ai\\/(cosmokit|schemastery)(\\/|$)/
  */
 export function isRescopeExcluded(file: string): boolean {
   if (file === 'scripts/rescope-vendor.ts') return true // the mapping itself
+  if (file === 'scripts/rescope-vendor.spec.ts') return true // intentional pre-rescope fixtures
   if (file.startsWith('.agents/notes/')) return true // notes record what was true when written
   // Recorded model payloads quote documentation verbatim, so they must mirror the
   // sources on disk — including the notes this rescope leaves alone.
@@ -488,13 +522,116 @@ function rewriteLine(line: string, file: string, all: readonly Pattern[]): strin
   return out
 }
 
+interface IdentifierSpan {
+  readonly start: number
+  readonly end: number
+}
+
+function isPresetValue(node: ts.StringLiteralLike): boolean {
+  const parent = node.parent
+  if (ts.isPropertyAssignment(parent)) return parent.name.getText() === 'id'
+  if (ts.isBinaryExpression(parent)
+    && [ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.EqualsEqualsEqualsToken,
+      ts.SyntaxKind.ExclamationEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken].includes(parent.operatorToken.kind)) {
+    const other = parent.left === node ? parent.right : parent.left
+    return ts.isPropertyAccessExpression(other) && ['id', 'agentPreset'].includes(other.name.text)
+  }
+  if (ts.isArrayLiteralExpression(parent)) {
+    // A list of preset ids, or a row in the preset test table.
+    let array = parent
+    while (ts.isArrayLiteralExpression(array.parent)) array = array.parent
+    if (array.elements.some(element => ts.isStringLiteralLike(element)
+      && ['standard', 'ptc', 'minimal', 'custom'].includes(element.text))) return true
+    if (array.elements.some(element => ts.isArrayLiteralExpression(element)
+      && element.elements.some(value => ts.isStringLiteralLike(value) && value.text === 'standard'))) return true
+    return isPresetAssertion(parent)
+  }
+  if (!ts.isCallExpression(parent) || parent.arguments[0] !== node) return false
+  if (ts.isIdentifier(parent.expression)) return parent.expression.text === 'agent'
+  return ts.isPropertyAccessExpression(parent.expression)
+    && (parent.expression.name.text === 'select' || isPresetAssertion(node))
+}
+
+function isPresetAssertion(node: ts.Node): boolean {
+  const parent = node.parent
+  if (!ts.isCallExpression(parent) || parent.arguments[0] !== node
+    || !ts.isPropertyAccessExpression(parent.expression)
+    || !['toBe', 'toEqual', 'toContain', 'toHaveBeenCalledWith'].includes(parent.expression.name.text)) return false
+  const receiver = parent.expression.expression
+  if (!ts.isCallExpression(receiver)) return false
+  return ts.isIdentifier(receiver.expression) && receiver.expression.text === 'expect'
+    || ts.isPropertyAccessExpression(receiver.expression)
+    && ts.isIdentifier(receiver.expression.expression) && receiver.expression.expression.text === 'expect'
+    && receiver.expression.name.text === 'poll'
+}
+
+function codeIdentifierSpans(text: string, file: string): Map<number, IdentifierSpan[]> {
+  const spans = new Map<number, IdentifierSpan[]>()
+  const presets = PRESET_VALUE_FILES.has(file)
+  const events = INSPECT_EVENT_FILES.has(file)
+  if (!presets && !events) return spans
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  const visit = (node: ts.Node): void => {
+    if (ts.isStringLiteralLike(node)) {
+      const parent = node.parent
+      const preset = presets && node.text === 'cordis' && isPresetValue(node)
+      const event = events && ['cordis/inspect-query', 'cordis/inspect-query-resolved'].includes(node.text)
+        && ts.isCallExpression(parent) && parent.arguments[0] === node
+        && ts.isPropertyAccessExpression(parent.expression) && parent.expression.name.text === 'on'
+      if (preset || event) {
+        const { line, character } = source.getLineAndCharacterOfPosition(node.getStart(source))
+        const row = spans.get(line) ?? []
+        row.push({ start: character, end: character + node.getWidth(source) })
+        spans.set(line, row)
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return spans
+}
+
+function presetListSpans(line: string, file: string): IdentifierSpan[] {
+  if (!PRESET_LIST_FILES.has(file)) return []
+  if (/\.ya?ml$/.test(file) && !line.trimStart().startsWith('#')) return []
+  const spans: IdentifierSpan[] = []
+  const lists = /`(?:standard|cordis|ptc)`(?:[ \t,、]*(?:and|和|与)?[ \t]*`(?:standard|cordis|ptc)`){2}/g
+  for (const match of line.matchAll(lists)) {
+    if (!['`standard`', '`cordis`', '`ptc`'].every(value => match[0].includes(value))) continue
+    const start = match.index + match[0].indexOf('`cordis`')
+    spans.push({ start, end: start + '`cordis`'.length })
+  }
+  return spans
+}
+
+function rewriteOutsideIdentifiers(line: string, file: string, all: readonly Pattern[], spans: readonly IdentifierSpan[]): string {
+  let out = ''
+  let cursor = 0
+  for (const span of spans) {
+    out += rewriteLine(line.slice(cursor, span.start), file, all) + line.slice(span.start, span.end)
+    cursor = span.end
+  }
+  return out + rewriteLine(line.slice(cursor), file, all)
+}
+
+/**
+ * Rewrite package references while preserving recognized preset values and inspect events.
+ * @param text - Complete source text, including its original newline characters.
+ * @param file - Repository-relative path with forward slash separators.
+ * @param reverse - Whether scoped package names should revert to their upstream names.
+ * @returns Rewritten text and the number of changed lines; performs no file writes.
+ */
+export function rewriteRescopeReferences(text: string, file: string, reverse = false): { text: string; lines: number } {
+  return rewrite(text, file, patterns(reverse))
+}
+
 /**
  * Rewrite a file's eligible lines.
  *
  * Markdown splits in two. Every fence is code a reader copies or a
  * configuration they mount, so every fence follows the rename regardless of its
  * info string. Prose follows it only under `docs/`, where a sentence quoting
- * `` `cordis` `` teaches an unresolved package name; elsewhere
+ * `` `cordis` `` teaches an unresolved package name, except recognized preset lists; elsewhere
  * prose is a record of what was true when it was written, and the same spelling
  * can mean something else entirely — the Python SDK's `cordis` option, or the
  * unvendored `@cordisjs/plugin-http`.
@@ -502,9 +639,10 @@ function rewriteLine(line: string, file: string, all: readonly Pattern[]): strin
 function rewrite(text: string, file: string, all: readonly Pattern[]): { text: string; lines: number } {
   const markdown = file.endsWith('.md')
   const prose = markdown && file.startsWith('docs/')
+  const identifiers = codeIdentifierSpans(text, file)
   let insideFence = false
   let lines = 0
-  const out = text.split('\n').map((line) => {
+  const out = text.split('\n').map((line, index) => {
     if (markdown) {
       if (/^\s*```/.test(line)) {
         insideFence = !insideFence
@@ -512,7 +650,8 @@ function rewrite(text: string, file: string, all: readonly Pattern[]): { text: s
       }
       if (!insideFence && !prose) return line
     }
-    const next = rewriteLine(line, file, all)
+    const spans = identifiers.get(index) ?? (insideFence ? [] : presetListSpans(line, file))
+    const next = rewriteOutsideIdentifiers(line, file, all, spans)
     if (next !== line) lines += 1
     return next
   })

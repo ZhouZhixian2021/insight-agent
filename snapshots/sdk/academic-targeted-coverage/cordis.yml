@@ -1,0 +1,15 @@
+# The shipped sdk-minimal profile owns the tree; this test needs no shell tools.
+- id: persistent-bash
+  disabled: true
+- id: persistent-pwsh
+  disabled: true
+- id: system-prompt
+  config:
+    personaPrefix: 'Reply COVERAGE_POLICY_DONE after the coverage fixture completes.'
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+- insert:
+    - id: token-meter
+      name: '@deepseek-ai/dsh-token-meter'
+    - id: academic-targeted-coverage-snapshot
+      name: '../../../packages/academic/workflow/tests/targeted-coverage-snapshot-plugin.ts'

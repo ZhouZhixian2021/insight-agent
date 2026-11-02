@@ -40,6 +40,8 @@ Office 操作技能通过 profile 的 shell 命令调用配置的 Node 和 Kit C
 
 两种载体执行相同的 `dsh` 语法与随附 profile，包括独立的 `sdk-minimal` 配置树，以及包含前端产物的完整 `web` profile。私有 `dsh-python-runtime-closure` manifest（元数据清单）定义打包依赖闭包；不存在 Python 专用 Node 应用或检入的默认 `cordis.yml`。
 
+可执行文件暂存从已审核的工作区锁文件派生专用部署锁，并按冻结解析结果安装。工作区注入仅对该部署命令启用，保留提升后的依赖布局，不改变工作区安装。Office 下载标识仍要求安装版本与工作区锁文件中的版本及 SHA-512 校验值一致。
+
 ## Python 模块 API
 
 - `bundled_package_dir() -> Path` 返回已安装模块数据根目录，并校验发布元数据。

@@ -1,6 +1,6 @@
 /** Question-driven analysis values; shared paper and evidence identities remain model-owned. */
 import type { ClaimCategory, ClaimEvidenceRelation, CoverageSummary, EvidenceId, ProviderFailure,
-  ResearchBrief, ResearchBriefId, RetrievalRunId } from '@deepseek-ai/dsh-academic-model'
+  ResearchBrief, ResearchBriefId, ResearchQuestionCoverageResult, RetrievalRunId } from '@deepseek-ai/dsh-academic-model'
 import type { AnalysisInput } from './types.ts'
 
 /** Exact materials submitted for one approved Brief version. */
@@ -11,6 +11,8 @@ export interface AcademicSynthesisInput {
   readonly retrievalRunId: RetrievalRunId
   readonly analysisInput: AnalysisInput
   readonly coverageSummary: CoverageSummary
+  /** Stop-time aspect assessment; a model judgment, not independent approval of truth. */
+  readonly aspectCoverage?: ResearchQuestionCoverageResult
   readonly sourceFailures: readonly ProviderFailure[]
 }
 

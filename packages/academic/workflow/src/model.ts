@@ -6,6 +6,7 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { EvidenceContentSegment, EvidenceDraft, EvidenceGenerationRequest } from '@deepseek-ai/dsh-academic-evidence'
 import { EvidenceError } from '@deepseek-ai/dsh-academic-evidence'
 import { parseFocusedEvidence, parseScopeDecision } from './parse-evidence.ts'
+import { parseCoverageEvidence } from './coverage-extraction.ts'
 import { evidenceMessages, scopeMessages } from './model-prompt.ts'
 import { createLoggedModelRunner } from './model-call.ts'
 import type { LoggedModelAttemptObservation } from './model-call.ts'
@@ -28,10 +29,14 @@ interface EvidenceSegmentPiece {
  * @param config Explicit model route and generation controls.
  * @param policy Bounded recovery; timed-out evidence batches split once before retrying smaller inputs.
  * @param traceObserver Optional safe diagnostic sink.
+ * @param repairContext Optional targeted instructions, shared dispatch budget and source completeness.
  * @returns A source-aware generator for one paper.
  */
 export function createModelEvidenceGenerator(
   ctx: Context, session: Session, config: LlmCallConfig, policy: EvidenceExtractionModelPolicy, traceObserver?: AcademicTraceObserver,
+  repairContext?: { readonly budget?: import('./coverage-types.ts').CoverageModelBudget
+    readonly requirements: readonly import('@deepseek-ai/dsh-academic-model').ResearchCoverageRequirement[]
+    readonly sourceComplete: boolean },
 ): PaperEvidenceGenerator {
   const runScope = createLoggedModelRunner<PaperScopeDecision>(ctx, session, config, policy, traceObserver)
   const runEvidence = createLoggedModelRunner<readonly EvidenceDraft[]>(ctx, session, config, policy, traceObserver)
@@ -57,9 +62,10 @@ export function createModelEvidenceGenerator(
       messages => messages.reduce((sum, message) => sum + meter.estimateMessage(message), 0),
       (scopeRequest, complete) => runScope({
         trace: { stage: 'extraction', operation: 'scope_review', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId },
-        messages: scopeMessages(scopeRequest, scope, source, complete),
+        messages: scopeMessages(scopeRequest, scope, source, complete && repairContext?.sourceComplete !== false),
+        ...repairContext?.budget === undefined ? {} : { dispatchBudget: repairContext.budget },
         ...request.signal === undefined ? {} : { signal: request.signal },
-        parse: parseScopeDecision,
+        parse: text => parseScopeDecision(text, scope),
         appendRequest: data => session.append('academic/evidence-request', { source, phase: 'scope', ...data }),
         appendResult: data => session.append('academic/evidence-result', { source, phase: 'scope', ...data }),
       }))
@@ -77,10 +83,12 @@ export function createModelEvidenceGenerator(
       const batchRequest = withSegments(request, batch.map(piece => piece.segment))
       try {
         const response = await runEvidence({
-          trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId, workVersionId: source.workVersionId }, messages: evidenceMessages(batchRequest),
+          trace: { stage: 'extraction', operation: 'evidence_extract', academicWorkId: source.academicWorkId,
+            workVersionId: source.workVersionId }, messages: evidenceMessages(batchRequest, 'complete', repairContext?.requirements),
+          ...repairContext?.budget === undefined ? {} : { dispatchBudget: repairContext.budget },
           retryLocalTimeout: false,
           ...request.signal === undefined ? {} : { signal: request.signal },
-          parse: parseFocusedEvidence,
+          parse: repairContext === undefined ? parseFocusedEvidence : text => parseCoverageEvidence(text, repairContext.requirements),
           appendRequest: data => session.append('academic/evidence-request', { source, phase: 'evidence', ...data }),
           appendResult: data => session.append('academic/evidence-result', { source, phase: 'evidence', ...data }),
           onAttempt: (observation) => {

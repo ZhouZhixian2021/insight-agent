@@ -98,6 +98,8 @@ export function redactSessionSnapshotIds(logs: readonly string[]): string[] {
         claim(item, 'workflow')
       } else if (ID_KEY_RE.test(childKey)) {
         claim(item, 'id')
+      } else if ((childKey === 'fingerprint' || childKey === 'digest') && recordType === 'academic/coverage-repair-state-v1') {
+        claim(item, 'id', true)
       }
       collect(item, recordType)
     }

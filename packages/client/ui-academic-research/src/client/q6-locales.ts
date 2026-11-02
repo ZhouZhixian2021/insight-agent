@@ -173,6 +173,7 @@ export const q6Zh = {
   q6_stop_maximum_elapsed_time: '时间预算耗尽',
   q6_stop_cancelled: '已取消',
   q6_stop_review_required: '需要重新审核',
+  q6_stop_coverage_repair_exhausted: '有限补强结束，仍有覆盖缺口',
 }
 
 /** English counterpart of the Q6 preview dictionary. */
@@ -349,4 +350,5 @@ export const q6En = {
   q6_stop_maximum_elapsed_time: 'Time limit',
   q6_stop_cancelled: 'Cancelled',
   q6_stop_review_required: 'Review required',
+  q6_stop_coverage_repair_exhausted: 'Bounded repair ended with coverage gaps',
 }

@@ -108,6 +108,8 @@ agent 完成计划后，会以 markdown 形式、从标题开头书写计划并�
 
 ### 会话投影单元
 
+Host 投影记录最近一次调用 `exit_plan_mode` 的轮次，包含失败或取消的审核尝试。缺失审核提醒直接读取该状态，不扫描 Session 历史，因此上一轮的调用不会抑制下一轮的提醒。投影缓存版本 5 会从日志重建旧版缓存状态；客户端视图保持不变。
+
 组合了 `ctx.sessionProjections` 时，本包通过可选注入注册 `plan` 单元。该单元把已记录的 `/plan` 命令运行转为候选目标，在 `plan/mode` 上提交已记录状态，并为 `view` 推导 `{ active, pending }`，其中 `pending` 仅在未结算或已成功的选择与已记录状态不同时为 true——这是仅凭日志即可恢复的纯回放量。key 由 [`src/types.ts`](src/types.ts) 的声明合并加入 `SessionProjectionMap`；框架负责驱动该单元，卸载插件 fiber 会注销该 key。plan-mode 读取要求该单元与 `turnBoundary` 单元存在；注册表或任一 key 缺失时都会显式失败。
 
 ### 源码地图

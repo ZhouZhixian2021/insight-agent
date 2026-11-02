@@ -28,7 +28,8 @@ Cordis 框架及其基础库以源码形式 vendored 在 [`vendor/`](../vendor/R
 - **`cordis.yml` 配置文件家族**，包括 `*.cordis.yml`、`*.cordis.snapshot.yml`、`cordis.patch.yml`。
 - **名字里带这个词的 harness 包**，例如 `@deepseek-ai/dsh-tool-cordis`。
 - **上游运行时标识符**，例如 Schemastery 的 `Symbol.for('schemastery')` 及其 `vendor:` 元数据字段。
-- **`docs/` 之外的散文。** `vendor/*/README.md`、各包 README 与 Agent Note 保留写作当时的名字；那里的裸 `cordis` 也可能是 Python SDK 的选项名或某个 agent-preset 的 id。`docs/` 之内，散文与所有 Markdown 围栏都跟着改。
+- **已识别的产品标识符。** 在扫描器列出的文件中，预设值表达式保留 `cordis` id，inspect 监听保留 `cordis/inspect-query` 和 `cordis/inspect-query-resolved` 事件名，正文或 YAML 注释保留文档中的三个预设列表。这些例外不会豁免同一文件中的其他包引用。
+- **`docs/` 之外的散文。** `vendor/*/README.md`、各包 README 与 Agent Note 保留写作当时的名字；那里的裸 `cordis` 也可能是 Python SDK 的选项名或某个 agent-preset 的 id。`docs/` 之内，除已识别的产品标识符外，散文仍跟着改；所有 Markdown 围栏仍会检查。
 
 ## 你的代码要改什么
 

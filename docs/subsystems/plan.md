@@ -8,6 +8,8 @@ Source: [`packages/plan/plan-mode/src/index.ts`](../../packages/plan/plan-mode/s
 
 ## Logged state and recovery
 
+The host projection also retains `lastExitTurn` from committed `exit_plan_mode` tool calls. The turn-stopping listener uses that field to suppress redundant review reminders within the matching turn. Cache version 5 invalidates older plan rows and rebuilds them from committed events; no Session event or client-view field is added.
+
 `plan/mode` (`{ active: boolean }`) is a log-only, whole-value-replace [session event](session.md): durable and replayable, never in the model transcript. The optionally registered `plan` unit folds committed mode, command settlement, and the mode recorded at the latest request header. `ctx.planMode` reads that state through `stateOf()`; the first dependent access fails if the registry, `plan` key, or `turnBoundary` key is absent. Clients receive only `{ active, pending }`; resume, fork, and compaction recover both from the log. The complete event declaration is in the [persistence log event catalog](../persistence-catalog.md).
 
 ## Pending selections and the pre-step append

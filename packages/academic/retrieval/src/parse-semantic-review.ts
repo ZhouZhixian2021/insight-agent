@@ -22,11 +22,12 @@ function invalid(message: string): never { return json.invalid(message) }
  * @param title Canonical scholarly title supplied to the reviewer.
  * @param abstract Canonical scholarly-provider abstract; unavailable text cannot support quotations.
  * @param approvedQuestions Exact approved Brief questions permitted in matched questions.
+ * @param contentRuleIds Optional allowed content-rule references; an exclusion must name one when supplied.
  * @returns The reviewed judgment, with verified passages and any exclusion downgrade recorded.
  * @throws {RangeError} JSON, fields, question references, or supplied quotations are invalid.
  */
 export function parseCandidateSemanticReview(text: string, title: string, abstract: Availability<string>,
-  approvedQuestions: readonly string[]): CandidateSemanticReview {
+  approvedQuestions: readonly string[], contentRuleIds?: readonly string[]): CandidateSemanticReview {
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -35,6 +36,12 @@ export function parseCandidateSemanticReview(text: string, title: string, abstra
     throw new RangeError('candidate semantic review: requires complete JSON')
   }
   const item = json.object(value, ['schemaVersion', 'scope', 'matchedQuestions'])
+  if (contentRuleIds !== undefined) {
+    const scope = json.object(item.scope, ['status', 'reason', 'quote', 'ruleId'])
+    if (scope.status === 'off_topic' && (typeof scope.ruleId !== 'string' || !contentRuleIds.includes(scope.ruleId))) {
+      invalid('exclusion must reference an approved content rule; date filtering is program-owned')
+    }
+  }
   if (item.schemaVersion === 1) return reviewV1(item, title, abstract, approvedQuestions)
   if (item.schemaVersion === 2) return reviewV2(item, title, abstract, approvedQuestions)
   return invalid('unsupported semantic review schemaVersion')
@@ -67,8 +74,9 @@ function reviewV2(item: Record<string, unknown>, title: string, abstract: Availa
   if (scoped.status === 'off_topic') {
     if (matchedQuestions.length > 0) invalid('off-topic or unknown review cannot claim matched questions')
     if (scoped.quote !== undefined && quoteOccursVerbatim(scoped.quote, title, abstract)) {
-      return { schemaVersion: 2, scope: { status: 'off_topic', reason: scoped.reason, quote: scoped.quote },
-        matchedQuestions: [] }
+      return { schemaVersion: 2, scope: { status: 'off_topic', reason: scoped.reason, quote: scoped.quote,
+        ...scoped.ruleId === undefined ? {} : { ruleId: scoped.ruleId } },
+      matchedQuestions: [] }
     }
     return { schemaVersion: 2, scope: { status: 'unknown', reason: DOWNGRADED_REASON },
       matchedQuestions: [], downgraded: 'unverifiable_exclusion_quote' }
@@ -106,7 +114,7 @@ function readMatchOptional(value: unknown): CandidateSemanticQuestionMatchV2 {
 type ParsedScope =
   | { readonly status: 'potentially_relevant'; readonly reason: string }
   | { readonly status: 'unknown'; readonly reason: string }
-  | { readonly status: 'off_topic'; readonly reason: string; readonly quote?: CandidateMetadataQuote }
+  | { readonly status: 'off_topic'; readonly reason: string; readonly quote?: CandidateMetadataQuote; readonly ruleId?: string }
 
 function readScopeV1(value: unknown): CandidateScopeDecision {
   const scoped = readScopeV2(value)
@@ -116,12 +124,13 @@ function readScopeV1(value: unknown): CandidateScopeDecision {
 }
 
 function readScopeV2(value: unknown): ParsedScope {
-  const item = json.object(value, ['status', 'reason', 'quote'])
+  const item = json.object(value, ['status', 'reason', 'quote', 'ruleId'])
   const reason = json.nonempty(item.reason)
   switch (item.status) {
     case 'off_topic':
-      return item.quote === undefined ? { status: 'off_topic', reason } : { status: 'off_topic', reason,
-        quote: json.quote(item.quote) }
+      return { status: 'off_topic', reason,
+        ...item.ruleId === undefined ? {} : { ruleId: json.nonempty(item.ruleId) },
+        ...item.quote === undefined ? {} : { quote: json.quote(item.quote) } }
     case 'unknown':
     case 'potentially_relevant':
       json.object(value, ['status', 'reason'])

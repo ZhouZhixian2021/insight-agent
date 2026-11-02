@@ -3,6 +3,21 @@ import { cp, lstat, readFile, readdir, realpath, rm, unlink } from 'node:fs/prom
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { load } from 'js-yaml'
 
+/**
+ * Build arguments for a hoisted Python runtime deployment using a dedicated frozen lock.
+ * @param staging - Empty destination for the runtime dependency closure.
+ * @returns pnpm arguments that consume the reviewed workspace lock without re-resolving ranges.
+ */
+export function pythonRuntimeDeployArguments(staging: string): string[] {
+  return [
+    '--filter', 'dsh-python-runtime-closure', 'deploy', '--prod', '--frozen-lockfile',
+    '--config.inject-workspace-packages=true',
+    '--config.allow-unused-patches=true', '--config.node-linker=hoisted',
+    '--config.auto-install-peers=false', '--config.link-workspace-packages=true',
+    '--config.hoist-workspace-packages=false', staging,
+  ]
+}
+
 function isHoistedLocations(value: unknown): value is Record<string, string[]> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     && Object.values(value).every(paths => Array.isArray(paths)

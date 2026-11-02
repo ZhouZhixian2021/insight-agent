@@ -1,5 +1,12 @@
 /** Academic workflow public entry; implementations do not import this barrel. */
 export { extractPaperEvidence } from './paper.ts'
+export { coverageFingerprint, parseCoverageReview, reviewedCoverage } from './coverage.ts'
+export { createModelCoverageReviewer, createModelCoverageRepair, createModelCoverageCandidateReader, coverageRepairInstruction } from './coverage-model.ts'
+export { selectCoverageWindows, coverageWindowSegments, coverageCandidateScore } from './coverage-targeting.ts'
+export { CoverageRepairRuntime } from './coverage-runtime.ts'
+export type { CoverageTargetingPolicy, CoverageModelBudget, CoverageTargetingState } from './coverage-types.ts'
+export type { CoverageRepairPolicy, CoverageRepairState, CoverageReviewInput, CoverageReview,
+  CoverageEvidenceRepairInput } from './coverage-types.ts'
 export { parseEvidenceDrafts, parsePaperModelResponse, parseScopeDecision, parseFocusedEvidence } from './parse-evidence.ts'
 export { createModelEvidenceGenerator } from './model.ts'
 export { reviewPaperScopeInFragments, screeningConditions } from './scope-fragments.ts'
