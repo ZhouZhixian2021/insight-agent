@@ -44,3 +44,15 @@ export function bodySegmentIndexes(segments: readonly EvidenceContentSegment[]):
   const body = segments.flatMap((segment, index) => isBackMatterSection(segmentSectionTitle(segment)) ? [] : [index])
   return body.length > 0 ? body : segments.map((_, index) => index)
 }
+
+/**
+ * Whether a parse carries any segment outside back matter.
+ *
+ * {@link bodySegmentIndexes} falls back to every segment so extraction never reports nothing for an unrecognized
+ * layout; admission cannot use that fallback, because a parse of headings and references alone has no body to read.
+ * @param segments - Parsed content segments in their original order.
+ * @returns True when at least one segment belongs to the body.
+ */
+export function hasBodySegment(segments: readonly EvidenceContentSegment[]): boolean {
+  return segments.some(segment => !isBackMatterSection(segmentSectionTitle(segment)))
+}

@@ -12,9 +12,10 @@ export { extractEvidenceFromContent } from './extract.ts'
 export { extractEvidenceInFragments } from './fragments.ts'
 export { enhanceEvidenceInFragments } from './enhance.ts'
 export { selectScreeningFragments } from './screening-fragments.ts'
-export { bodySegmentIndexes, isBackMatterSection, segmentSectionTitle } from './section-kinds.ts'
+export { bodySegmentIndexes, hasBodySegment, isBackMatterSection, segmentSectionTitle } from './section-kinds.ts'
 export type {
   ScreeningConditionQuery, ScreeningFragment, ScreeningFragmentPolicy, ScreeningFragmentSelection,
+  ScreeningSelectionOptions,
 } from './screening-fragments.ts'
 export type {
   EvidenceFragmentPolicy, EvidenceFragmentSourceRange, EvidenceFragmentRange, EvidenceFragmentAttempt,

@@ -12,6 +12,29 @@ export interface EvidenceFragmentPolicy {
   readonly maximumOutputTokens: number
   /** Transport-only backoff; doubles per attempt within one initial fragment. */
   readonly initialRetryDelayMs: number
+  /** Complete-depth ranges dispatched at once; one keeps the previous serial order, minimal depth always stays serial. */
+  readonly maximumConcurrentDispatches: number
+  /**
+   * Dispatches a paper receives at least, when it packs that many ranges.
+   *
+   * A short introduction-only source still deserves a look; the whole-paper cap and {@link callBudgetFraction} bound
+   * the upper end.
+   */
+  readonly minimumCalls?: number
+  /**
+   * Share of a paper's packed ranges the dispatch budget may reach before the whole-paper cap applies.
+   *
+   * The budget scales with the paper: a 34-range paper reads further than a 6-range one instead of both stopping at
+   * the same count. An omitted value spends the whole-paper cap.
+   */
+  readonly callBudgetFraction?: number
+  /**
+   * Consecutive dispatches that yield no evidence record before the rest of the paper is left unread.
+   *
+   * A paper whose later sections are tables, captions or reference lists returns nothing while still costing a
+   * model call each; stopping keeps that budget for other papers. Zero disables the stop.
+   */
+  readonly emptyDispatchStopAfter?: number
 }
 
 /** One original parsed-source UTF-16 range inside a model-visible fragment. */
@@ -57,6 +80,14 @@ export interface EvidenceFragmentOptions {
   readonly policy: EvidenceFragmentPolicy
   /** Optional approved lexical hints per focus question, in the same order; used only for dispatch priority. */
   readonly questionTerms?: readonly (readonly string[])[]
+  /**
+   * Relative dispatch priority per focus question, in the same order as `questionTerms`.
+   *
+   * The caller raises a question's weight while it still lacks evidence, so one paper's later dispatches serve a
+   * starved question instead of repeating the question that already filled the run's evidence. Omitted weights split
+   * the budget evenly.
+   */
+  readonly questionWeights?: readonly number[]
   /** Make one model attempt, validate its JSON, apply the output cap and log the original source range; do not retry internally. */
   readonly generator: (request: EvidenceGenerationRequest, attempt: EvidenceFragmentAttempt) => Promise<readonly EvidenceDraft[]>
   /** Map only recoverable model errors; return null for cancellation, logging or programming failures. */

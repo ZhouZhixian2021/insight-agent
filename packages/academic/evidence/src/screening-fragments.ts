@@ -18,6 +18,16 @@ export interface ScreeningFragmentPolicy {
   readonly leadCharacters: number
 }
 
+/** Reading state that spans several selections of one review; the policy stays deployment-owned. */
+export interface ScreeningSelectionOptions {
+  /**
+   * Segment the previous dispatch of the same review already read.
+   * Its hits are ignored here, so a term that repeats in one place cannot hold the review there; a
+   * selection with no remaining hit falls back to the opening and spread windows.
+   */
+  readonly avoidSegmentIndex?: number
+}
+
 /** One contiguous source window and the conditions it was selected for. */
 export interface ScreeningFragment {
   readonly segmentIndex: number
@@ -64,15 +74,20 @@ interface Screened {
  * Back matter (reference lists, acknowledgements, appendices) never supplies a window: those
  * sections repeat every reviewed term without describing the research object, so a keyword hit
  * there displaces the body text a rule decision needs.
+ * Every selection also reserves one window at the earliest unread position, because a hit can land
+ * anywhere the term occurs — a year matched inside a bibliography page, for example — and a review
+ * that only follows hits then decides a paper from its reference list.
  * The selection is a pure function of its arguments: no model call, no clock, no randomness.
  * @param segments - Parsed abstract or full-text segments in their original order.
  * @param conditions - Undecided conditions and the reviewed terms approved for locating them.
  * @param policy - Window count, window length and context lead.
+ * @param options - Per-call reading state such as the segment the previous dispatch already read.
  * @returns Selected windows, coverage facts and the conditions that no term reached.
  * @throws RangeError - A policy value, condition identity or term is invalid.
  */
 export function selectScreeningFragments(segments: readonly EvidenceContentSegment[],
-  conditions: readonly ScreeningConditionQuery[], policy: ScreeningFragmentPolicy): ScreeningFragmentSelection {
+  conditions: readonly ScreeningConditionQuery[], policy: ScreeningFragmentPolicy,
+  options: ScreeningSelectionOptions = {}): ScreeningFragmentSelection {
   validate(conditions, policy)
   const texts = segments.map(segment => ({
     lower: segment.text.toLowerCase(),
@@ -81,18 +96,22 @@ export function selectScreeningFragments(segments: readonly EvidenceContentSegme
   const screened = bodySegmentIndexes(segments).map(index => ({ index, text: texts[index] as Text }))
   const state = { texts, policy, fragments: [] as ScreeningFragment[], covered: new Set<string>() }
   const hits = collectHits(screened, conditions)
+  const avoid = options.avoidSegmentIndex
+  const usable = avoid === undefined ? hits : hits.filter(hit => hit.segmentIndex !== avoid)
+  const spreadable = avoid === undefined ? screened : screened.filter(item => item.index !== avoid)
   for (const condition of conditions) {
-    const hit = hits.find(item => item.conditionId === condition.conditionId)
+    const hit = usable.find(item => item.conditionId === condition.conditionId)
     if (hit !== undefined && state.fragments.length < policy.maximumFragments) admit(state, hit)
   }
-  fill(state, hits)
-  if (state.fragments.length === 0) spread(state, screened)
+  fill(state, usable)
+  if (state.fragments.length === 0) spread(state, spreadable)
+  topUpOpening(state, spreadable)
   return {
     fragments: state.fragments,
     sourceComplete: screened.every(item => coveredCharacters(state.fragments, item.index) === item.text.lower.length),
     uncoveredConditionIds: conditions.filter(condition => !state.covered.has(condition.conditionId))
       .map(condition => condition.conditionId),
-    truncated: maximumSelectable(hits) > policy.maximumFragments,
+    truncated: maximumSelectable(usable) > policy.maximumFragments,
   }
 }
 
@@ -158,6 +177,33 @@ function spread(state: SelectionState, screened: readonly Screened[]): void {
       end: Math.min(item.text.lower.length, state.policy.maximumCharacters),
       sectionTitle: item.text.sectionTitle, conditionIds: [], matchedTerms: [] })
   }
+}
+
+/**
+ * Reserve one window at the earliest unread position of the document.
+ * Masked reads leave blank space, so the first non-blank character is where this review has not yet
+ * looked; a hit-led selection otherwise never reaches the title, abstract or introduction.
+ * @param state - Selection accumulated for this dispatch; one window is appended when a slot remains.
+ * @param screened - Body segments in their original order.
+ */
+function topUpOpening(state: SelectionState, screened: readonly Screened[]): void {
+  if (state.fragments.length >= state.policy.maximumFragments) return
+  for (const { index, text } of screened) {
+    const length = text.lower.length
+    const start = text.lower.search(/\S/u)
+    if (start < 0) continue
+    const end = Math.min(start + state.policy.maximumCharacters, length)
+    if (end <= start || overlaps(state.fragments, index, start, end)) continue
+    state.fragments.push({ segmentIndex: index, start, end, sectionTitle: text.sectionTitle,
+      conditionIds: [], matchedTerms: [] })
+    return
+  }
+}
+
+function overlaps(fragments: readonly ScreeningFragment[], segmentIndex: number,
+  start: number, end: number): boolean {
+  return fragments.some(fragment => fragment.segmentIndex === segmentIndex
+    && start < fragment.end && fragment.start < end)
 }
 
 interface SelectionState {

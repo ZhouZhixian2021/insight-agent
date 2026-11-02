@@ -12,17 +12,21 @@ export interface ScopeScreeningOutcome {
 }
 
 /**
- * Derive one condition query per approved rule, using only the rule text for terms.
- * Approved aliases remain the owner of better terms; these are a deterministic first pass.
+ * Derive one condition query per approved rule, using the rule text plus caller-approved topic terms.
+ * Rule text alone is not a usable locator across languages: a Chinese rule over an English paper yields
+ * no matching term except numerals, so the approved English topic terms are added to every condition.
  * @param scope - Approved inclusion and exclusion rules.
+ * @param topicTerms - Approved English terms for the topic; they locate body text for any rule.
  * @returns Distinct conditions with their reviewed terms, in rule order.
  */
-export function screeningConditions(scope: PaperScopeRules): readonly ScreeningConditionQuery[] {
+export function screeningConditions(scope: PaperScopeRules,
+  topicTerms: readonly string[] = []): readonly ScreeningConditionQuery[] {
   const rules = [
     ...scope.inclusionRules.map((rule, index) => ({ conditionId: `inclusion-${index + 1}`, rule })),
     ...scope.exclusionRules.map((rule, index) => ({ conditionId: `exclusion-${index + 1}`, rule })),
   ]
-  return rules.map(({ conditionId, rule }) => ({ conditionId, terms: ruleTerms(rule) }))
+  const approved = approvedTopicTerms(topicTerms)
+  return rules.map(({ conditionId, rule }) => ({ conditionId, terms: unique([...ruleTerms(rule), ...approved]) }))
     .filter(condition => condition.terms.length > 0)
 }
 
@@ -43,12 +47,14 @@ export async function reviewPaperScopeInFragments(request: EvidenceGenerationReq
   const dispatches: ScopeScreeningDispatch[] = []
   const masked: MutableSegment[] = request.segments.map(segment => ({ text: segment.text, locator: segment.locator }))
   let decision: PaperScopeDecision = { status: 'needs_more_context', reason: 'No screening dispatch was available.' }
+  let previousSegments: readonly number[] = []
   for (let dispatch = 1; dispatch <= policy.maximumDispatches; dispatch++) {
     request.signal?.throwIfAborted()
+    const previous = previousSegments.length === 1 ? previousSegments[0] : undefined
     const selection = selectScreeningFragments(masked, conditions, {
       maximumFragments: policy.maximumFragments, maximumCharacters: policy.fragmentCharacters,
       leadCharacters: policy.leadCharacters,
-    })
+    }, previous === undefined ? {} : { avoidSegmentIndex: previous })
     const fresh = selection.fragments.filter(fragment => cut(masked, fragment).text.trim() !== '')
     if (fresh.length === 0) {
       const record = settle(dispatches, policy, dispatches.length === 0 ? 'no_content' : 'budget_exhausted')
@@ -56,6 +62,7 @@ export async function reviewPaperScopeInFragments(request: EvidenceGenerationReq
         reason: `${decision.reason} No unread window remains for the undecided conditions.` }, record }
     }
     for (const fragment of fresh) mask(masked, fragment)
+    previousSegments = [...new Set(fresh.map(fragment => fragment.segmentIndex))]
     const windows = fresh.map(fragment => cut(request.segments, fragment))
     const record = { dispatches: [...dispatches, { dispatch, fragments: fresh }],
       remainingDispatches: policy.maximumDispatches - dispatch, stopReason: 'budget_exhausted' as const }
@@ -94,8 +101,27 @@ function mask(segments: MutableSegment[], fragment: ScreeningFragment): void {
 
 function ruleTerms(rule: string): readonly string[] {
   const terms = rule.toLowerCase().split(/[^\p{L}\p{N}]+/u)
-    .map(term => term.trim()).filter(term => term.length >= 3)
+    .map(term => term.trim()).filter(term => term.length >= 3 && /\p{L}/u.test(term))
   return [...new Set(terms)].slice(0, 6)
+}
+
+/**
+ * Approved terms that can locate English body text.
+ * Numerals and terms without any letter cannot: a year such as `2024` occurs first in citation lists.
+ */
+function approvedTopicTerms(terms: readonly string[]): readonly string[] {
+  return unique(terms.map(term => term.trim().replace(/\s+/gu, ' '))
+    .filter(term => term.length >= 3 && /\p{L}/u.test(term))).slice(0, 24)
+}
+
+function unique(terms: readonly string[]): readonly string[] {
+  const seen = new Set<string>()
+  return terms.filter((term) => {
+    const key = term.toLowerCase()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 function validatePolicy(policy: ScopeScreeningPolicy): void {

@@ -19,7 +19,7 @@ function draft(text: string, question = 0): EvidenceDraft {
 
 function options(generator: EvidenceFragmentOptions['generator']): EvidenceFragmentOptions {
   return { policy: { maximumCharacters: 8, minimumCharacters: 2, overlapCharacters: 0, maximumAttempts: 3,
-    maximumOutputTokens: 512, initialRetryDelayMs: 0 }, generator,
+    maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 }, generator,
   classifyFailure: error => error instanceof EvidenceError
     ? error.code === 'TIMEOUT' ? 'timeout' : error.code === 'PARSE_FAILED' ? 'parse_failed'
       : error.code === 'INCOMPLETE_OUTPUT' ? 'incomplete_output' : error.code === 'TRANSPORT' ? 'transport' : null : null,

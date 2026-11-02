@@ -66,14 +66,14 @@
   en: aab2a54b0a2bb35a
   zh: afffdda0e25075c4
 /session-persistence-event-catalog/events/academic/academic-evidence-fragment-verified-log-only:
-  en: 3bdd23822da23c1f
-  zh: 465516268092c457
+  en: e8c8d56493205615
+  zh: c77c8b898e0f473a
 /session-persistence-event-catalog/events/academic/academic-evidence-request-log-only:
-  en: dc12592c34d0292b
-  zh: 7a08d296cf4346d4
+  en: bc77348520f7d664
+  zh: 3f57c48ea3c3d558
 /session-persistence-event-catalog/events/academic/academic-evidence-result-log-only:
-  en: fd1d00d4273142f3
-  zh: 40de21d4e0e7d5a8
+  en: 499965f5625f2838
+  zh: f5280cac975e53e7
 /session-persistence-event-catalog/events/academic/academic-recovery-checkpoint-log-only:
   en: c0a570767db15d9d
   zh: 68390fa23fab5808
@@ -2265,11 +2265,11 @@
   en: f0013ac9acb37d44
   zh: b91e23760cb448a9
 /session-persistence-event-catalog/resolved-persistence-types/evidencefragmentattempt:
-  en: ce1860b7c507292e
-  zh: 058f9cf29f825fda
+  en: 8cfccf517aa126fb
+  zh: caaaabcacb70840f
 /session-persistence-event-catalog/resolved-persistence-types/evidencefragmentsourcerange:
-  en: 5857af9d11d6f502
-  zh: 035216733ddd4160
+  en: d94ef2ea7d8d003f
+  zh: bb22b9130fee7c19
 /session-persistence-event-catalog/resolved-persistence-types/evidencefragmentsourcerange~2:
   en: da14ce78e0a8cb10
   zh: 2180352cb0e91b45
@@ -2280,14 +2280,14 @@
   en: 7327b093acfd2b96
   zh: 1dd4f6fd906612b7
 /session-persistence-event-catalog/resolved-persistence-types/evidencemodelrequest:
-  en: 88433a6717b33573
-  zh: 77a989b6e942f14f
+  en: 89c1aefc9ba28931
+  zh: 51e362ad4f3a3704
 /session-persistence-event-catalog/resolved-persistence-types/evidencemodelresult:
-  en: 6218f1fd0e567630
-  zh: 0017ac03e27871f9
+  en: a3c4c23e6fa4b6bb
+  zh: 9c60b1e313acbfd2
 /session-persistence-event-catalog/resolved-persistence-types/evidencemodelsource:
-  en: d9ae351191c578ac
-  zh: 391c47cc452c2c51
+  en: e599e1ec230717c1
+  zh: 816a23ba9af4d3d9
 /session-persistence-event-catalog/resolved-persistence-types/evidencequestionlink:
   en: 9afe0bf9742abd97
   zh: 32b1a459bf79d156
@@ -2667,8 +2667,8 @@
   en: 4a6a5368b829bb9f
   zh: a832210e7bf6e9f5
 /session-persistence-event-catalog/resolved-persistence-types/screeningfragment:
-  en: 6e10b407e0f57a7d
-  zh: 0b166f1a39cdcfcb
+  en: 2cfb3b05cb5cc9ea
+  zh: 46d238082e6b0e17
 /session-persistence-event-catalog/resolved-persistence-types/screeningfragment~2:
   en: ead231d8d102bb8a
   zh: b6dc3c14f91f8096

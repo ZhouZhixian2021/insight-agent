@@ -99,6 +99,26 @@ describe('approved candidate screening criteria', () => {
     expect(() => approvedEvidenceQuestionTerms([question], reviewed)).toThrow(/cover every approved question/u)
   })
 
+  it('falls back to question-linked search expressions when the plan supplies no reviewed aliases', () => {
+    const questions = [question, '哪些条件下失效？']
+    const searches = [
+      { query: 'retrieval augmented generation faithfulness', purpose: '核心', questions: [question] },
+      { query: 'RAG failure case', purpose: '核心', questions: [questions[1]!, question] },
+      { query: 'unrelated', purpose: '背景', questions: [] },
+    ]
+    expect(approvedEvidenceQuestionTerms(questions, undefined, searches)).toEqual([
+      ['retrieval augmented generation faithfulness', 'RAG failure case'],
+      ['RAG failure case'],
+    ])
+    expect(approvedEvidenceQuestionTerms(questions, undefined, undefined)).toBeUndefined()
+  })
+
+  it('prefers reviewed aliases over search expressions', () => {
+    const reviewed = { questions: [{ question, concepts: [['faithfulness']] }], methods: [], evidence: [], contributions: [] }
+    expect(approvedEvidenceQuestionTerms([question], reviewed,
+      [{ query: 'ignored expression', purpose: '核心', questions: [question] }])).toEqual([['faithfulness']])
+  })
+
   it('uses only reviewed topic, aliases, required terms, and question-linked query expressions', () => {
     expect(approvedCandidateScreeningCriteria(brief, planFor())).toEqual({
       topic: [

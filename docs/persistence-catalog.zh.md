@@ -370,7 +370,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:215`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:223`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -381,7 +381,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:211`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:219`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -392,7 +392,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'academic/evidence-result': EvidenceModelResult
 ```
 
-来源：[`packages/academic/workflow/src/model-types.ts:213`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:221`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -8180,7 +8180,7 @@ SHA-256: `5f3bd97ee3476735988102e5b7ac308dad73154d565cf540f702e2aa53fc5186`
 
 SHA-256: `3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205`
 
-来源：[`packages/academic/evidence/src/fragment-types.ts:33`](../packages/academic/evidence/src/fragment-types.ts)
+来源：[`packages/academic/evidence/src/fragment-types.ts:56`](../packages/academic/evidence/src/fragment-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8206,7 +8206,7 @@ SHA-256: `3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205`
 
 SHA-256: `5a49fabd66668b1d4da223623c8d32698679d2e10a0e59108d980d84d1d8cd22`
 
-来源：[`packages/academic/evidence/src/fragment-types.ts:18`](../packages/academic/evidence/src/fragment-types.ts)
+来源：[`packages/academic/evidence/src/fragment-types.ts:41`](../packages/academic/evidence/src/fragment-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8269,7 +8269,7 @@ SHA-256: `91ff1a956e640bdee389667aa2ea2490209844fad7728e57d6fd320794ff3033`
 
 SHA-256: `23b74392bd4bd13a1219b88f147a148f88f122f11093ed7df7faf0ea4d57bba9`
 
-来源：[`packages/academic/workflow/src/model-types.ts:167`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:175`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8296,7 +8296,7 @@ SHA-256: `23b74392bd4bd13a1219b88f147a148f88f122f11093ed7df7faf0ea4d57bba9`
 
 SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
-来源：[`packages/academic/workflow/src/model-types.ts:185`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:193`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8325,7 +8325,7 @@ SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
 SHA-256: `fc3691ea824279dcbc6f2524063a599058c6f1e2b2b15e19baa42f67fd93f7be`
 
-来源：[`packages/academic/workflow/src/model-types.ts:163`](../packages/academic/workflow/src/model-types.ts)
+来源：[`packages/academic/workflow/src/model-types.ts:171`](../packages/academic/workflow/src/model-types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -10694,7 +10694,7 @@ SHA-256: `880b2e4c653be528cb11a1d3b7ab45218d8f1c31716c3198083efd3f623ebb65`
 
 SHA-256: `8ab6eca2a2fb3b3ebfafb8b8933015ee3d138620832080476c4d06f3561501e4`
 
-来源：[`packages/academic/evidence/src/screening-fragments.ts:21`](../packages/academic/evidence/src/screening-fragments.ts)
+来源：[`packages/academic/evidence/src/screening-fragments.ts:32`](../packages/academic/evidence/src/screening-fragments.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

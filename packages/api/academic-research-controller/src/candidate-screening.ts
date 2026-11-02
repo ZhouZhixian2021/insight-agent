@@ -1,6 +1,7 @@
 /** Build conservative metadata-screening inputs from one approved plan. */
 import type { ExecutableResearchBrief, HybridSearchPlan } from '@deepseek-ai/dsh-academic-model'
 import type { CandidateScreeningCriteria } from '@deepseek-ai/dsh-academic-retrieval'
+import type { AcademicPlannedSearch } from './types.ts'
 
 /** Reviewed plan cues passed to the existing scholarly metadata assessor. */
 export type AcademicCandidateScreening = Pick<CandidateScreeningCriteria,
@@ -8,19 +9,34 @@ export type AcademicCandidateScreening = Pick<CandidateScreeningCriteria,
 
 /**
  * Flatten reviewed aliases in the exact order of approved questions for evidence range priority.
+ *
+ * Extraction ranks paper content by these terms, so a plan that supplies no reviewed aliases falls back to
+ * the English query expressions already linked to the same questions; Chinese question text alone matches
+ * nothing in an English paper. Always names the extraction fallback when neither source exists.
  * @param questions Approved Brief questions used by the extractor.
- * @param reviewed Optional same-version plan cues; absent cues retain the extractor's question-text fallback.
- * @returns One alias list per question, or undefined for an older plan without reviewed cues.
+ * @param reviewed Optional same-version plan cues; absent cues fall back to linked query expressions.
+ * @param searches Optional approved search plan whose expressions are linked to those questions.
+ * @returns One term list per question, or undefined when the plan supplies neither source.
  */
 export function approvedEvidenceQuestionTerms(questions: readonly string[],
-  reviewed?: AcademicCandidateScreening): readonly (readonly string[])[] | undefined {
-  if (reviewed === undefined) return undefined
-  const byQuestion = new Map(reviewed.questions.map(entry => [entry.question, entry.concepts]))
-  if (byQuestion.size !== questions.length || reviewed.questions.length !== questions.length
-    || questions.some(question => !byQuestion.has(question))) {
-    throw new RangeError('evidence question terms must cover every approved question once')
+  reviewed?: AcademicCandidateScreening,
+  searches?: readonly AcademicPlannedSearch[]): readonly (readonly string[])[] | undefined {
+  if (reviewed !== undefined) {
+    const byQuestion = new Map(reviewed.questions.map(entry => [entry.question, entry.concepts]))
+    if (byQuestion.size !== questions.length || reviewed.questions.length !== questions.length
+      || questions.some(question => !byQuestion.has(question))) {
+      throw new RangeError('evidence question terms must cover every approved question once')
+    }
+    return questions.map(question => unique((byQuestion.get(question) ?? []).flat()))
   }
-  return questions.map(question => unique((byQuestion.get(question) ?? []).flat()))
+  if (searches === undefined) return undefined
+  const expressions = new Map<string, string[]>()
+  for (const search of searches) {
+    for (const question of search.questions) {
+      expressions.set(question, [...(expressions.get(question) ?? []), search.query])
+    }
+  }
+  return questions.map(question => unique(expressions.get(question) ?? []))
 }
 
 /**

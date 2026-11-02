@@ -368,7 +368,7 @@ Source: [`packages/academic/workflow/src/settlement-events.ts:69`](../packages/a
 'academic/evidence-fragment-verified': EvidenceFragmentVerifiedRecord
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:215`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:223`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-request--log-only"></a>
 
@@ -379,7 +379,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:215`](../packages/academ
 'academic/evidence-request': EvidenceModelRequest
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:211`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:219`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicevidence-result--log-only"></a>
 
@@ -390,7 +390,7 @@ Source: [`packages/academic/workflow/src/model-types.ts:211`](../packages/academ
 'academic/evidence-result': EvidenceModelResult
 ```
 
-Source: [`packages/academic/workflow/src/model-types.ts:213`](../packages/academic/workflow/src/model-types.ts)
+Source: [`packages/academic/workflow/src/model-types.ts:221`](../packages/academic/workflow/src/model-types.ts)
 
 <a id="academicrecovery-checkpoint--log-only"></a>
 
@@ -8178,7 +8178,7 @@ Sources: [`packages/academic/evidence/src/types.ts:253`](../packages/academic/ev
 
 SHA-256: `3a29e130df5181ac0cee63cf7797baf76696c3c85a02c3c235f74e50804fe205`
 
-Sources: [`packages/academic/evidence/src/fragment-types.ts:33`](../packages/academic/evidence/src/fragment-types.ts)
+Sources: [`packages/academic/evidence/src/fragment-types.ts:56`](../packages/academic/evidence/src/fragment-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8204,7 +8204,7 @@ Sources: [`packages/academic/evidence/src/fragment-types.ts:33`](../packages/aca
 
 SHA-256: `5a49fabd66668b1d4da223623c8d32698679d2e10a0e59108d980d84d1d8cd22`
 
-Sources: [`packages/academic/evidence/src/fragment-types.ts:18`](../packages/academic/evidence/src/fragment-types.ts)
+Sources: [`packages/academic/evidence/src/fragment-types.ts:41`](../packages/academic/evidence/src/fragment-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8267,7 +8267,7 @@ One of:
 
 SHA-256: `23b74392bd4bd13a1219b88f147a148f88f122f11093ed7df7faf0ea4d57bba9`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:167`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:175`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8294,7 +8294,7 @@ Sources: [`packages/academic/workflow/src/model-types.ts:167`](../packages/acade
 
 SHA-256: `ccce86296c5654f419a1056313ffd181efcdc615125edb18ed9b1fcd957373c7`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:185`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:193`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8323,7 +8323,7 @@ Sources: [`packages/academic/workflow/src/model-types.ts:185`](../packages/acade
 
 SHA-256: `fc3691ea824279dcbc6f2524063a599058c6f1e2b2b15e19baa42f67fd93f7be`
 
-Sources: [`packages/academic/workflow/src/model-types.ts:163`](../packages/academic/workflow/src/model-types.ts)
+Sources: [`packages/academic/workflow/src/model-types.ts:171`](../packages/academic/workflow/src/model-types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -10692,7 +10692,7 @@ Sources: [`packages/academic/workflow/src/model-types.ts:128`](../packages/acade
 
 SHA-256: `8ab6eca2a2fb3b3ebfafb8b8933015ee3d138620832080476c4d06f3561501e4`
 
-Sources: [`packages/academic/evidence/src/screening-fragments.ts:21`](../packages/academic/evidence/src/screening-fragments.ts)
+Sources: [`packages/academic/evidence/src/screening-fragments.ts:32`](../packages/academic/evidence/src/screening-fragments.ts)
 
 | Property | Presence | Type |
 |---|---|---|

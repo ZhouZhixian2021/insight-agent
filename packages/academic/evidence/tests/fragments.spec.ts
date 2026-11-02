@@ -25,7 +25,7 @@ function draft(text: string): EvidenceDraft {
 
 function options(overrides: Partial<EvidenceFragmentOptions> = {}): EvidenceFragmentOptions {
   return { policy: { maximumCharacters: 8, minimumCharacters: 2, overlapCharacters: 0, maximumAttempts: 3,
-    maximumOutputTokens: 512, initialRetryDelayMs: 0 },
+    maximumOutputTokens: 512, initialRetryDelayMs: 0, maximumConcurrentDispatches: 1 },
   generator: async request => [draft(request.segments[0]?.text ?? '')],
   classifyFailure: error => error instanceof EvidenceError
     ? error.code === 'TIMEOUT' ? 'timeout' : error.code === 'TRANSPORT' ? 'transport'
@@ -262,6 +262,7 @@ describe('extractEvidenceInFragments', () => {
   it.each([
     { maximumCharacters: 0 }, { minimumCharacters: 9 }, { overlapCharacters: 2 }, { maximumAttempts: 0 },
     { maximumOutputTokens: 0 }, { initialRetryDelayMs: -1 }, { initialRetryDelayMs: Number.MAX_SAFE_INTEGER },
+    { maximumConcurrentDispatches: 0 },
   ])('rejects invalid fragment policy before dispatch: %j', async (invalid) => {
     const opts = options()
     const generator = vi.fn(opts.generator)

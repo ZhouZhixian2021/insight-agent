@@ -327,8 +327,16 @@ export interface Config {
   readonly maximumFulltextWorks?: number
   /** Unreviewed, unknown or failed-review papers allowed to enter full text. Defaults to 15. */
   readonly maximumUncertainFulltextWorks?: number
-  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 8. */
+  /** Extraction calls per paper, including retries; scope calls use their separate limit. Defaults to 12. */
   readonly extractionMaximumCallsPerPaper?: number
+  /** Extraction calls a paper receives at least, when it packs that many source ranges. Defaults to 4. */
+  readonly extractionMinimumCallsPerPaper?: number
+  /** Share of a paper's packed source ranges the call budget reaches before the per-paper maximum. Defaults to 0.5. */
+  readonly extractionCallBudgetFraction?: number
+  /** Consecutive evidence-free dispatches before the rest of one paper is left unread; zero never stops early. Defaults to 3. */
+  readonly extractionEmptyDispatchStopAfter?: number
+  /** Complete-depth source ranges dispatched at once within one paper; minimal depth stays serial. Defaults to 2. */
+  readonly extractionMaxConcurrentDispatches?: number
   /** Complete extraction retains evidence across the bounded source fragments; minimal stops at five records. Defaults to complete. */
   readonly extractionDepth?: 'minimal' | 'complete'
   /** Optional source-cache directory; shipped Web profiles select a directory under DSH home. */
