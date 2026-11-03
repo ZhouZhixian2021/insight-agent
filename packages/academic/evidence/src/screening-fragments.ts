@@ -1,5 +1,5 @@
 /** Deterministic, condition-targeted source windows for pre-extraction scope review. */
-import { bodySegmentIndexes, segmentSectionTitle } from './section-kinds.ts'
+import { bodySegmentIndexes, bodyText, segmentSectionTitle } from './section-kinds.ts'
 import type { EvidenceContentSegment } from './types.ts'
 
 /** One undecided screening condition and the reviewed terms that locate its material. */
@@ -90,7 +90,7 @@ export function selectScreeningFragments(segments: readonly EvidenceContentSegme
   options: ScreeningSelectionOptions = {}): ScreeningFragmentSelection {
   validate(conditions, policy)
   const texts = segments.map(segment => ({
-    lower: segment.text.toLowerCase(),
+    lower: bodyText(segment).toLowerCase(),
     sectionTitle: segmentSectionTitle(segment),
   }))
   const screened = bodySegmentIndexes(segments).map(index => ({ index, text: texts[index] as Text }))

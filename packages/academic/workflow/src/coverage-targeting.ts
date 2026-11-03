@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto'
 import type { AcademicWork, CandidateAssessment, ResearchCoverageRequirement, ResearchAspectId, WorkVersion } from '@deepseek-ai/dsh-academic-model'
 import type { EvidenceExtractionInput, EvidenceExtractionResult } from '@deepseek-ai/dsh-academic-evidence'
+import { isBackMatterSegment, referenceHeadingOffset, referenceStartPage } from '@deepseek-ai/dsh-academic-evidence'
 import type { CoverageTargetingPolicy } from './coverage-types.ts'
 
 function discoveryTerms(aspect: ResearchCoverageRequirement['aspects'][number]): readonly string[] {
@@ -59,21 +60,15 @@ export function selectCoverageWindows(source: EvidenceExtractionInput, requireme
   const aspects = requirements.flatMap(r => r.aspects).map(a => ({ ...a, searchTerms: discoveryTerms(a) }))
   const preferred = new Set(requirements.filter(r => r.question === preferredQuestion).flatMap(r => r.aspects.map(a => a.aspectId)))
   const architectural = requirements.some(r => r.aspects.some(a => /架构|承继|architecture|inheritance/iu.test(a.label)))
-  const referenceHeading = /(?:^|\n)\s*(references|bibliography)\b|\bReferences\s*(?=\[?\d|[A-Z])/u
-  const referencePages = source.segments.flatMap(s => s.locator.kind === 'page_section'
-    && referenceHeading.test(s.text) ? [s.locator.pdfPage] : [])
-  const firstReferencePage = referencePages.length > 0 ? Math.min(...referencePages) : undefined
+  const firstReferencePage = referenceStartPage(source.segments)
   const frequency = new Map<string, number>()
   for (const a of aspects) for (const term of a.searchTerms) frequency.set(term.toLowerCase(),
     source.segments.filter(s => s.text.toLowerCase().includes(term.toLowerCase())).length)
   const candidates: CoverageSourceWindow[] = []
   for (const [segmentIndex, segment] of source.segments.entries()) {
-    const heading = 'sectionTitle' in segment.locator ? segment.locator.sectionTitle ?? '' : ''
-    if (/^(?:\d+[.\s]*)?(references|bibliography|参考文献)\b/iu.test(heading)) continue
-    if (firstReferencePage !== undefined && segment.locator.kind === 'page_section'
-      && segment.locator.pdfPage > firstReferencePage && !/(?:^|\n)\s*(appendix|appendices)\b/iu.test(segment.text)) continue
+    if (isBackMatterSegment(segment, firstReferencePage)) continue
     const lower = segment.text.toLowerCase()
-    const referenceStart = segment.text.search(referenceHeading)
+    const referenceStart = referenceHeadingOffset(segment.text)
     for (const aspect of aspects) for (const term of aspect.searchTerms) {
       let offset = lower.indexOf(term.toLowerCase())
       while (offset >= 0) {
