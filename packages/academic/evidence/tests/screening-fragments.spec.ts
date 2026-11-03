@@ -5,6 +5,10 @@ function paragraph(text: string, sectionTitle: string, paragraphNumber = 1): Evi
   return { text, locator: { kind: 'paragraph', sectionTitle, paragraphNumber } }
 }
 
+function page(text: string, pdfPage: number): EvidenceContentSegment {
+  return { text, locator: { kind: 'page_section', sectionTitle: `PDF page ${pdfPage}`, pdfPage } }
+}
+
 function condition(conditionId: string, ...terms: string[]): ScreeningConditionQuery {
   return { conditionId, terms }
 }
@@ -145,5 +149,16 @@ describe('selectScreeningFragments', () => {
     const second = selectScreeningFragments(read, [condition('c1', '2024')], policy,
       { avoidSegmentIndex: 1 })
     expect(second.fragments.map(fragment => fragment.segmentIndex)).toStrictEqual([0, 2])
+  })
+
+  it('ignores a reference list a page opens, so the paper opening leads', () => {
+    const segments = [page('Kernel design for AI workloads.', 1),
+      page(`body paragraph about scheduling ${'x'.repeat(400)}\nReferences\n[1] A. 2024.`, 13),
+      page('[2] B. 2024.', 14)]
+    const selection = selectScreeningFragments(segments, [condition('c1', '2024')], policy)
+    expect(selection.fragments[0]?.segmentIndex).toBe(0)
+    expect(selection.fragments.flatMap(fragment => fragment.matchedTerms)).toStrictEqual([])
+    expect(selection.fragments.map(fragment => fragment.segmentIndex)).not.toContain(2)
+    expect(selection.uncoveredConditionIds).toStrictEqual(['c1'])
   })
 })

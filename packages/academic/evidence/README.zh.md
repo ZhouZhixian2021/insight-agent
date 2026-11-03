@@ -100,7 +100,7 @@ const card = createEvidenceCard({ academicWorkId, workVersionId,
 <a id="incremental-extraction"></a>
 ## 增量抽取
 
-向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。相邻短段落会打包至 `maximumCharacters` 上限，长段落按重叠额度拆分；参考文献、致谢与附录既不进入范围审核窗口，也不参与打包，因为它们重复源词项却不陈述结论；整篇均被判为非正文时保留全部片段。每次调用保留各段独立的来源定位和摘要字符偏移。草稿使用本次请求内的局部 `segmentIndex`；生成器还收到各原始来源范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
+向 `extractEvidenceInFragments()` 提供已核验论文输入，以及 [EvidenceFragmentPolicy](src/fragment-types.ts) 中的明确限制。相邻短段落会打包至 `maximumCharacters` 上限，长段落按重叠额度拆分；参考文献、致谢与附录既不进入范围审核窗口，也不参与打包，因为它们重复源词项却不陈述结论；整篇均被判为非正文时保留全部片段。分页片段本身没有章节标题，因此开启参考文献列表的那一页及其后的每一页同样算作非正文（附录页除外），页面自身正文之后才开始的列表会在查找词项前被置空。每次调用保留各段独立的来源定位和摘要字符偏移。草稿使用本次请求内的局部 `segmentIndex`；生成器还收到各原始来源范围、论文／版本身份、尝试次数、抽取阶段和输出额度。模型适配器必须将 `maximumOutputTokens` 应用于抽取调用并记录准确请求；合成使用独立的输出预算。
 
 必需的异步 `onVerified` 保存接口在下一批范围发送前收到已核验来源的证据。它负责持久存储；保存调用不会重叠，一次保存失败会阻止后续保存并拒绝本次调用，而已经派发在途的范围仍可能完成，其结果被丢弃。已接受记录和卡片条目的身份保留到最终组装结果。重叠的相同证据按来源定位、陈述、逐字引文和问题关联去重。被拒草稿序号保持为回调对应片段中的局部序号。`onFailure` 仅发布信息且隔离异常；返回的失败保留原始错误，包括适配器提供的 Provider 请求 ID。
 
