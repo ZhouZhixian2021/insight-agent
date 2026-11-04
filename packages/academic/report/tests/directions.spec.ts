@@ -4,7 +4,7 @@ import { parseSynthesisDraft, synthesisAnalysis, type AcademicSynthesisInput } f
 import { generateReport } from '../src/index.ts'
 import { scholarlyLink } from '../src/bibliography.ts'
 
-const root = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const root = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 function fixture() {
   const input = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', root), 'utf8')) as AcademicSynthesisInput
   const synthesis = parseSynthesisDraft(readFileSync(new URL('synthesis-partial-output.sample.json', root), 'utf8'), input)
@@ -53,6 +53,41 @@ describe('direction report-format hierarchy', () => {
     expect(scope).toContain('仅作概览：文件系统')
     expect(scope).toContain('不作系统覆盖：分布式系统')
     expect(scope).toContain('本报告不据此宣称全领域覆盖')
+  })
+  it('reports direction-level full-text coverage and survey gaps without inferring metadata support', () => {
+    const input = fixture()
+    const cited = generateReport(input).evidence.find(record => record.level === 'fulltext')
+    if (cited === undefined) throw new Error('fixture needs cited full-text evidence')
+    const question = input.brief.questions[0]!
+    const report = generateReport({ ...input, mode: 'auto', synthetic: false,
+      questionLinks: [{ question, evidenceId: cited.evidenceId }],
+      brief: { ...input.brief, domainResearchPlan: { surveyPlanId: 'survey-1', surveyStatus: 'incomplete',
+        surveyLimitations: ['source failed'], unclassifiedSurveyWorks: 1,
+        directions: [
+          { directionId: 'd1', label: '内核安全', depth: 'deep_dive', question,
+            targetSupportingWorks: 2, maximumQueries: 2 },
+          { directionId: 'd2', label: '文件系统', depth: 'excluded', question: null,
+            targetSupportingWorks: 0, maximumQueries: 0 },
+        ] } } })
+    expect(report.markdown).toContain('## 方向覆盖核对')
+    expect(report.markdown).toContain('| 内核安全 | 深入研究 | 1 | 2 | 证据不足 |')
+    expect(report.markdown).toContain('| 文件系统 | 不覆盖 | 0 | 0 | 未系统覆盖 |')
+    expect(report.markdown).toContain('前置领域勘察不完整')
+    expect(report.limitations).toContain('内核安全：有全文证据的论文 1 篇，未达到计划目标 2 篇。')
+    expect(report.mode).toBe('draft')
+  })
+  it('blocks legacy rendering when an approved deep direction misses its full-text target', () => {
+    const input = fixture()
+    const { synthesis: _synthesis, ...legacy } = input
+    const question = input.brief.questions[0]!
+    const report = generateReport({ ...legacy, mode: 'auto', synthetic: false,
+      brief: { ...input.brief, domainResearchPlan: { surveyPlanId: 'survey-1', directions: [
+        { directionId: 'd1', label: '内核安全', depth: 'deep_dive', question,
+          targetSupportingWorks: 2, maximumQueries: 2 },
+      ] } } })
+    expect(report.evaluation.issues.some(issue => issue.code === 'unmet_plan'
+      && issue.message.includes('内核安全'))).toBe(true)
+    expect(report.mode).toBe('draft')
   })
   it('delivers without independent reviews while keeping partial answers as content notices', () => {
     const input = fixture()

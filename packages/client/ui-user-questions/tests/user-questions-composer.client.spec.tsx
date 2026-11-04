@@ -113,6 +113,7 @@ const inputState: InputState = {
  *  plain stubs per the client testing discipline). */
 const kitBase: Omit<QuestionComposerProps, 'matched' | 'useStore' | 'useQuestionCard' | 'actions'> = {
   renderSlot: () => null,
+  renderSlotChain: (_key, _owner, opts) => opts?.fallback,
   SessionProvider: ({ children }) => children,
   session: undefined,
   sessionId: SID,

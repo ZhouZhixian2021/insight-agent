@@ -22,7 +22,7 @@ tsx 负责 workspace `paths` 映射，不检查导入方是否把每个包声明
 
 node-compat CI 矩阵在不执行 build 的情况下运行 `dsh-source-launch-smoke`（`apps/cli/tests/source-launch.compat.spec.ts`）：无密钥启动断言必需 profile 的诊断，以及不混用 Tools/AgentLoop `src/` 与 `lib/` 实例的 profile 依赖解析。源码与构建入口测试共享普通目录和 npm-link profile 用例；后者通过普通 Node 加载构建后的导出。必跑的 build-backed smoke 还运行 `apps/cli/tests/profiles/headless/tests/source-tool.built.e2e.ts`：在 native addon 和生成的 typert 贡献文件就绪后，通过 tsx 检查真实 headless 工具派发，同时仍要求核心 workspace 模块从源码加载。模块钩子或 TypeScript 处理的后续变化由这些真实入口检查。
 
-构建进程的回放夹具保持自身 TypeScript 可擦除，并通过包入口导入工作流实现。[Academic 补检夹具](../../../../packages/academic/workflow/tests/replenishment-plugin.ts) 导入 `@deepseek-ai/dsh-academic-workflow` 而非源码聚合入口，使 Node strip 模式不会进入工作流的参数属性语法。[Academic Controller](../../../../packages/api/academic-research-controller/package.json) 将摄取包导入声明为运行时 peer 和开发依赖；源码路径映射不能替代完整的已安装依赖图。
+构建进程的回放夹具保持自身 TypeScript 可擦除，并通过包入口导入工作流实现。[Academic 补检夹具](../../../../packages/academic/workflow/tests/replenishment-plugin.ts) 导入 `@deepseek-ai/dsh-academic-workflow` 而非源码聚合入口，使 Node strip 模式不会进入工作流的参数属性语法。[Academic Controller](../../../../packages/academic/research-controller/package.json) 将摄取包导入声明为运行时 peer 和开发依赖；源码路径映射不能替代完整的已安装依赖图。
 
 ## 备选方案
 

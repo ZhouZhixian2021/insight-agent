@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { compactSynthesisPrompt, parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, synthesisPrompt,
   synthesisRepairPrompt, synthesisSections, type AcademicSynthesisInput } from '../src/index.ts'
 
-const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const samples = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 const input = (): AcademicSynthesisInput => JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
 const output = () => JSON.parse(readFileSync(new URL('synthesis-output.sample.json', samples), 'utf8')) as Record<string, unknown>
 interface Patch { op: 'replace' | 'remove'; path: string; value?: unknown }

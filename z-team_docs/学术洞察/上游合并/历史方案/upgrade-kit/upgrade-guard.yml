@@ -1,0 +1,41 @@
+name: Upgrade guard
+
+# This fork rewrites files that also exist upstream. Every such file is
+# registered in scripts/upgrade/upstream-overrides.json with an owner and a
+# reason, and the count may only shrink. This job keeps a new rewrite from
+# landing silently.
+#
+# It is a separate workflow on purpose: .github/workflows/ci.yml is itself one
+# of the registered rewrites, so adding steps there would grow the very surface
+# this guard bounds.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  overrides:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Track upstream
+        run: |
+          git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git
+          git fetch --no-tags --depth=1 upstream master
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Registered upstream overrides
+        run: |
+          node scripts/upgrade/verify-upstream-overrides.mjs \
+            --base upstream/master \
+            --against origin/${{ github.base_ref || 'master' }}

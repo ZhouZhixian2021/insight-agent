@@ -71,7 +71,8 @@ export async function runResearchDraft(
   if (limits.maximumSearchRounds < 1 || limits.maximumCandidateWorks < 1 || limits.maximumIncludedWorks < 1) {
     throw new Error('Research limits do not permit this pass.')
   }
-  const searches = normalizeSearches(input.searches)
+  const searches = normalizeSearches(input.searches,
+    brief.domainResearchPlan === undefined ? MAX_DRAFT_SEARCH_QUERIES : 12)
   if (limits.maximumElapsedMinutes !== null) {
     const deadline = AbortSignal.timeout(limits.maximumElapsedMinutes * 60_000)
     signal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
@@ -1272,7 +1273,7 @@ function roundFromPlan(
 }
 
 /** Normalize caller-owned queries once and enforce the hard per-round query bound. */
-function normalizeSearches(searches: readonly DraftPipelineSearch[]): readonly DraftPipelineSearch[] {
+function normalizeSearches(searches: readonly DraftPipelineSearch[], maximumQueries: number): readonly DraftPipelineSearch[] {
   const normalized: DraftPipelineSearch[] = []
   const queries = new Set<string>()
   for (const request of searches) {
@@ -1286,8 +1287,8 @@ function normalizeSearches(searches: readonly DraftPipelineSearch[]): readonly D
       ...request.maxResults === undefined ? {} : { maxResults: request.maxResults } })
   }
   if (normalized.length === 0) throw new Error('At least one search query is required.')
-  if (normalized.length > MAX_DRAFT_SEARCH_QUERIES) {
-    throw new Error(`Search query count exceeds the approved bound of ${MAX_DRAFT_SEARCH_QUERIES}.`)
+  if (normalized.length > maximumQueries) {
+    throw new Error(`Search query count exceeds the approved bound of ${maximumQueries}.`)
   }
   return normalized
 }

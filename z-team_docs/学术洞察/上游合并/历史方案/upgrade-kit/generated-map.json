@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "note": "生成物 -> 重算命令。升级时按此表重算，不参与人工合并。",
+  "order": [
+    "pnpm install",
+    "pnpm run gen-config-catalog",
+    "pnpm run gen-doc-graphs",
+    "pnpm run gen-module-graph",
+    "pnpm run gen-persistence-catalog",
+    "pnpm run gen-cordis-catalog",
+    "pnpm run gen-client-catalog",
+    "pnpm run gen-plugin-packages",
+    "pnpm run verify-translation-pairing --write <doc>"
+  ],
+  "entries": [
+    {
+      "path": ".agents/notes/implemented/architecture/2026-06-24-web-capability-seam.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md"
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.md"
+    },
+    {
+      "path": ".agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.md"
+    },
+    {
+      "path": ".agents/notes/implemented/testing/2026-06-19-real-api-e2e-ci.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write .agents/notes/implemented/testing/2026-06-19-real-api-e2e-ci.md"
+    },
+    {
+      "path": "docs/capability-seams.i18n.yaml",
+      "command": "pnpm run gen-doc-graphs"
+    },
+    {
+      "path": "docs/capability-seams.md",
+      "command": "pnpm run gen-doc-graphs"
+    },
+    {
+      "path": "docs/capability-seams.zh.md",
+      "command": "pnpm run gen-doc-graphs"
+    },
+    {
+      "path": "docs/config-catalog.md",
+      "command": "pnpm run gen-config-catalog"
+    },
+    {
+      "path": "docs/config-catalog.zh.md",
+      "command": "pnpm run gen-config-catalog"
+    },
+    {
+      "path": "docs/event-producer-consumer.md",
+      "command": "pnpm run gen-doc-graphs"
+    },
+    {
+      "path": "docs/event-producer-consumer.zh.md",
+      "command": "pnpm run gen-doc-graphs"
+    },
+    {
+      "path": "docs/module-graph.md",
+      "command": "pnpm run gen-module-graph"
+    },
+    {
+      "path": "docs/module-graph.zh.md",
+      "command": "pnpm run gen-module-graph"
+    },
+    {
+      "path": "docs/persistence-catalog.i18n.yaml",
+      "command": "pnpm run gen-persistence-catalog"
+    },
+    {
+      "path": "docs/persistence-catalog.md",
+      "command": "pnpm run gen-persistence-catalog"
+    },
+    {
+      "path": "docs/persistence-catalog.zh.md",
+      "command": "pnpm run gen-persistence-catalog"
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/persistence-changes/historical-formats/README.md"
+    },
+    {
+      "path": "docs/persistence-schema.json",
+      "command": "pnpm run gen-persistence-catalog"
+    },
+    {
+      "path": "docs/subsystems/plan.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/subsystems/plan.md"
+    },
+    {
+      "path": "docs/subsystems/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/subsystems/README.md"
+    },
+    {
+      "path": "docs/subsystems/web.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/subsystems/web.md"
+    },
+    {
+      "path": "docs/testing.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/testing.md"
+    },
+    {
+      "path": "packages/api/remotes/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/api/remotes/README.md"
+    },
+    {
+      "path": "packages/bundle/web-app/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/bundle/web-app/README.md"
+    },
+    {
+      "path": "packages/client/ui-user-questions/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/client/ui-user-questions/README.md"
+    },
+    {
+      "path": "packages/core/session/src/known-event-types.ts",
+      "command": "pnpm run gen-persistence-catalog"
+    },
+    {
+      "path": "packages/extensions/cordis-client-runner/src/client/slot-catalog.ts",
+      "command": "pnpm run gen-client-catalog"
+    },
+    {
+      "path": "packages/extensions/tool-cordis/src/api-catalog.ts",
+      "command": "pnpm run gen-cordis-catalog"
+    },
+    {
+      "path": "packages/llm/llm-pi-ai/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/llm/llm-pi-ai/README.md"
+    },
+    {
+      "path": "packages/plan/plan-mode/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/plan/plan-mode/README.md"
+    },
+    {
+      "path": "packages/preset/agent-preset/skills/cordis-composition-reference/references/packages.md",
+      "command": "pnpm run gen-plugin-packages"
+    },
+    {
+      "path": "packages/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/README.md"
+    },
+    {
+      "path": "packages/session/session-format-catalog/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/session/session-format-catalog/README.md"
+    },
+    {
+      "path": "packages/session/session-format-v2-to-v3/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/session/session-format-v2-to-v3/README.md"
+    },
+    {
+      "path": "packages/session/session-format-v3-to-v4/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/session/session-format-v3-to-v4/README.md"
+    },
+    {
+      "path": "packages/test-support/session-snapshot/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/test-support/session-snapshot/README.md"
+    },
+    {
+      "path": "packages/web/tool-web/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/web/tool-web/README.md"
+    },
+    {
+      "path": "packages/web/web-fetch-http/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/web/web-fetch-http/README.md"
+    },
+    {
+      "path": "packages/web/web/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/web/web/README.md"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "command": "pnpm install"
+    }
+  ]
+}

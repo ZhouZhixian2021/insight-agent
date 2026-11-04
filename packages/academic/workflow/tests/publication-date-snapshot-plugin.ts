@@ -72,7 +72,7 @@ export function apply(ctx: Context): void {
     assert.equal(invalid.status, 'paused')
     assert.ok(invalid.status === 'paused' && invalid.pause.reason === 'scope_needs_more_context')
     const sample = JSON.parse(readFileSync(new URL(
-      '../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
+      '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
     const baseWork = sample.analysisInput.academicWorks[0]
     assert.ok(baseWork)
     const scholarlyRecord = { academicWork: { ...baseWork,

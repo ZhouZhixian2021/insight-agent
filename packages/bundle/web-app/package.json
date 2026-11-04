@@ -39,8 +39,6 @@
     "presets/ptc.patch.yml",
     "presets/minimal.patch.yml",
     "presets/cordis.patch.yml",
-    "presets/academic.patch.yml",
-    "presets/academic/skills",
     "lib/public-url-*.js",
     "lib/types/**/*.d.ts"
   ],
@@ -52,8 +50,7 @@
         "./presets/standard.patch.yml",
         "./presets/ptc.patch.yml",
         "./presets/minimal.patch.yml",
-        "./presets/cordis.patch.yml",
-        "./presets/academic.patch.yml"
+        "./presets/cordis.patch.yml"
       ]
     }
   },
@@ -191,16 +188,7 @@
     "@deepseek-ai/dsh-client-product-analytics": "workspace:*",
     "@deepseek-ai/dsh-host-product-telemetry-otel": "workspace:*",
     "@deepseek-ai/dsh-client-ui-settings-session-log": "workspace:*",
-    "@deepseek-ai/dsh-harness-dev-context": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-academic-research": "workspace:*",
-    "@deepseek-ai/dsh-api-academic-research-controller": "workspace:*",
-    "@deepseek-ai/dsh-academic-source": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-acl": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-arxiv": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-browser": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-cvf": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-openalex": "workspace:*",
-    "@deepseek-ai/dsh-academic-source-pmlr": "workspace:*"
+    "@deepseek-ai/dsh-harness-dev-context": "workspace:*"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",

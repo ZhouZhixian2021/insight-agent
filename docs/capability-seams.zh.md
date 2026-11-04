@@ -621,7 +621,7 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | - | - | 通过生成的 academicResearch Remote 命名空间执行依托 Session 的学术研究流程。 |
+| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/academic/research-controller) | - | - | - | 通过生成的 academicResearch Remote 命名空间执行依托 Session 的学术研究流程。 |
 | `ctx.academicSource` | `seam` | [`academic-source`](../packages/academic/source) | [`academic-source-arxiv`](../packages/academic/source-arxiv) | - | - | 注册学术检索提供方，选择一个可用提供方，并限制返回成果数量，同时保留截断信息。 |
 | `ctx.cotTranslation` | `service` | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | - | - | 为展开的思考内容提供有界的 Session 翻译请求，不改变模型可见历史。 |
 | `ctx.translator` | `service` | [`experimental-translator`](../packages/experimental/translator) | - | [`experimental-client-ui-cot-translation`](../packages/experimental/client-ui-cot-translation) | - | 解析 Google 或 Bing 请求，并可选保留统一的实验性 Session 记录。 |
@@ -644,7 +644,7 @@ flowchart LR
 | `ctx.tokenMeter` | `core` | [`token-meter`](../packages/llm/token-meter) | - | [`compaction-basic`](../packages/compaction/compaction-basic) | - | 拥有按会话隔离的回放折叠区；压力消费方共享不可变且带修订版本的测量结果。 |
 | `ctx.toolResultPruner` | `core` | [`compaction-tool-result-pruner`](../packages/compaction/compaction-tool-result-pruner) | - | [`compaction-basic`](../packages/compaction/compaction-basic) | - | 在摘要压缩前，通过可回放的单节点表层替换来改写过大的当前工具结果。 |
 | `ctx.sessions` | `core` | [`session`](../packages/core/session) | - | [`agent-loop`](../packages/core/agent-loop), [`agent`](../packages/core/agent), [`session-persistence`](../packages/session/session-persistence), [`session-query`](../packages/session-query/session-query), [`session-query-sqlite`](../packages/session-query/session-query-sqlite), [`subagent`](../packages/subagent/subagent), [`message-feedback`](../packages/feedback/message-feedback) | - | 拥有仅追加的 Session 实例，并发出持久的会话事件流。 |
-| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/api/academic-research-controller) | - | - | - | 通过生成的 academicResearch Remote 命名空间执行依托 Session 的学术研究流程。 |
+| `ctx.academicResearchController` | `core` | [`api-academic-research-controller`](../packages/academic/research-controller) | - | - | - | 通过生成的 academicResearch Remote 命名空间执行依托 Session 的学术研究流程。 |
 | `ctx.speechController` | `core` | [`experimental-api-speech-to-text`](../packages/experimental/api-speech-to-text) | - | - | - | 在 Provider 调用前校验受限的浏览器音频。 |
 | `ctx.sessionController` | `core` | [`api-session-controller`](../packages/api/session-controller) | - | - | - | 负责 Session 命令、冷读取、持久事件跟随、实时控制状态、模型目录、workspace 打开与 Agent 激活策略。 |
 | `ctx.sessionFileReferences` | `core` | [`api-session-controller`](../packages/api/session-controller) | - | - | - | 通过 Session Controller 的既有 Agent lookup 策略委托文件引用发现。 |

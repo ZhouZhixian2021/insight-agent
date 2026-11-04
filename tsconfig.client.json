@@ -25,8 +25,11 @@
     // Source-subpath test imports can arrive through workspace links whose
     // realpath semantics vary by host. Load package CSS declarations directly.
     "packages/client/*/src/css-modules.d.ts",
+    "packages/academic/ui-research/src/css-modules.d.ts",
     "packages/client/*/tests/**/*.ts",
     "packages/client/*/tests/**/*.tsx",
+    "packages/academic/ui-research/tests/**/*.ts",
+    "packages/academic/ui-research/tests/**/*.tsx",
     "benchmarks/**/*.client.ts",
     "benchmarks/**/*.client.tsx",
     "benchmarks/support/**/*.ts",
@@ -53,7 +56,8 @@
     "packages/client/*/tests/**/*.host.ts"
   ],
   "references": [
-    { "path": "./packages/client/ui-academic-research" },
+    { "path": "./packages/academic/ui-research" },
+    { "path": "./packages/academic/client-remote" },
     { "path": "./packages/experimental/client-ui-cot-translation/tsconfig.client.json" },
     { "path": "./packages/client/product-analytics/tsconfig.client.json" },
     { "path": "./apps/desktop/tsconfig.client.json" },

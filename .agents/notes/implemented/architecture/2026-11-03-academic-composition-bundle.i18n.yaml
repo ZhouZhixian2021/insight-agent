@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-11-03-academic-composition-bundle.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-11-03-academic-composition-bundle.md
+/agent-note-own-academic-composition-in-a-business-bundle:
+  en: 330079fb53802173
+  zh: ba75b1d6f5681e20
+/agent-note-own-academic-composition-in-a-business-bundle/problem:
+  en: 63ca053ceb947613
+  zh: 839eeb1704b58516
+/agent-note-own-academic-composition-in-a-business-bundle/decision:
+  en: a1040bc630934256
+  zh: 7139d3dd725219f9
+/agent-note-own-academic-composition-in-a-business-bundle/alternatives-considered:
+  en: 11549049e1d10a15
+  zh: 889372ca0617c242
+/agent-note-own-academic-composition-in-a-business-bundle/consequences:
+  en: 21c3af81a99e06dd
+  zh: ba49f6d9b3588c66

@@ -186,19 +186,20 @@ describe('package modes', () => {
 })
 
 describe('module requests', () => {
-  it('rejects runtime requests from one client feature package to another dynamic row', () => {
-    const ui = declaration('ui', {
-      external: ['@deepseek-ai/dsh-client-slots/client'],
-      runtimeSourceUses: {
-        '@deepseek-ai/dsh-client-slots': ['packages/client/ui/src/client/index.ts'],
-      },
+  it.each(['packages/client/ui/package.json', 'packages/academic/ui-research/package.json'])(
+    'rejects runtime requests from a Client feature at %s to another dynamic row', (manifest) => {
+      const ui = { ...declaration('ui-example', {
+        external: ['@deepseek-ai/dsh-client-slots/client'],
+        runtimeSourceUses: {
+          '@deepseek-ai/dsh-client-slots': ['packages/client/ui/src/client/index.ts'],
+        },
+      }), manifest }
+      const slots = declaration('slots')
+      expect(collectClientPackageViolations(facts([], { declarations: [ui, slots] }))).toEqual([
+        ui.manifest + ': client feature package requests runtime external '
+        + '"@deepseek-ai/dsh-client-slots/client"; import shared types only or call an injected Cordis service',
+      ])
     })
-    const slots = declaration('slots')
-    expect(collectClientPackageViolations(facts([], { declarations: [ui, slots] }))).toEqual([
-      ui.manifest + ': client feature package requests runtime external '
-      + '"@deepseek-ai/dsh-client-slots/client"; import shared types only or call an injected Cordis service',
-    ])
-  })
 
   it('rejects stale externals and accepts a runtime import outside client feature packages', () => {
     const gateway = {

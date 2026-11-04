@@ -36,4 +36,4 @@ Brief 的 includedWorkTypes 筛选版本状态，不表示会议或期刊类别�
 
 ## 后果
 
-[基线决策](2026-09-14-academic-report-slice.zh.md)继续约束抽取式函数库与独立审核原则。[交接](../../../../z-team_docs/模块分工/academic-synthesis-handoff.md)、解析测试和无密钥 academic-evidence 会话场景验证整份响应结构重生成、混合段落恢复、报告内容保留、拒绝诊断与两个 SDK 的投影。整份响应语义修复和独立语义审核仍需另行推进；结构重生成不会把被拒内容当作有效文本。合成测试不证明真实论文质量。
+[基线决策](2026-09-14-academic-report-slice.zh.md)继续约束抽取式函数库与独立审核原则。[交接](../../../../z-team_docs/学术洞察/模块分工/academic-synthesis-handoff.md)、解析测试和无密钥 academic-evidence 会话场景验证整份响应结构重生成、混合段落恢复、报告内容保留、拒绝诊断与两个 SDK 的投影。整份响应语义修复和独立语义审核仍需另行推进；结构重生成不会把被拒内容当作有效文本。合成测试不证明真实论文质量。

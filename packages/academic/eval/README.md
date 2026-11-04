@@ -63,6 +63,6 @@ This package performs no model cache operations.
 <details>
 <summary>Working context for maintainers</summary>
 
-See the fixed benchmark and verification in the [development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
+See the fixed benchmark and verification in the [development record](../../../z-team_docs/学术洞察/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
 
 </details>

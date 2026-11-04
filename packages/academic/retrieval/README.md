@@ -60,6 +60,8 @@ The [screening tests](tests/rank.spec.ts) provide an executable handoff with rev
 
 ### Entry point
 
+`runDomainSurvey()` executes only the reviewed discovery and omission-check expressions, applies the selected calendar-year and version policy, deduplicates scholarly records, and passes at most 40 titles and abstracts to a mapper. `parseDomainSurveyMap()` requires every candidate to be classified or explicitly unclassified and verifies each supporting quote against its exact title or abstract. The result retains version IDs, provider record IDs, exclusions, source failures, and truncation limits; a direction is provisional metadata, not full-text evidence or an exhaustive taxonomy.
+
 Call `planHybridSearch(input, options)` with an approved `HybridSearchPlanningInput`. A valid result contains separate academic, Web, and requested-site queries with stable IDs. Invalid approval, hostnames, limits, or question links throw `RangeError`; optional expansions beyond the query limit produce a warning. Pass the reviewed plan, a round index, explicit verification limits, adapters, and an optional progress observer to `executePlannedSearchRound()`. The formal version-3 Controller path uses this executor for both approved rounds and bounded evidence-gap rounds; legacy plans without an explicit retrieval policy keep their compatibility adapter. Then pass the result, the same Brief, and exactly one `CandidateAssessment` per verified work to `rankPlannedCandidates()`. The result binds the Brief version, retains one complete evaluation per work, and returns ordered queues of `WorkVersionId` values. A missing Academic provider or cancellation rejects retrieval; incomplete semantic assessments reject ranking.
 
 -----

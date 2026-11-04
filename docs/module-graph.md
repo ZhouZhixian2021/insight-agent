@@ -111,6 +111,8 @@ flowchart TD
   end
   subgraph group_academic["packages/academic"]
     pkg_academic_analysis["academic-analysis"]
+    pkg_academic_bundle["academic-bundle"]
+    pkg_academic_client_remote["academic-client-remote"]
     pkg_academic_eval["academic-eval"]
     pkg_academic_evidence["academic-evidence"]
     pkg_academic_ingestion["academic-ingestion"]
@@ -120,13 +122,15 @@ flowchart TD
     pkg_academic_source["academic-source"]
     pkg_academic_source_acl["academic-source-acl"]
     pkg_academic_source_arxiv["academic-source-arxiv"]
+    pkg_academic_source_browser["academic-source-browser"]
     pkg_academic_source_cvf["academic-source-cvf"]
     pkg_academic_source_openalex["academic-source-openalex"]
     pkg_academic_source_pmlr["academic-source-pmlr"]
     pkg_academic_workflow["academic-workflow"]
+    pkg_api_academic_research_controller["api-academic-research-controller"]
+    pkg_client_ui_academic_research["client-ui-academic-research"]
   end
   subgraph group_api["packages/api"]
-    pkg_api_academic_research_controller["api-academic-research-controller"]
     pkg_api_account_controller["api-account-controller"]
     pkg_api_gateway["api-gateway"]
     pkg_api_job_controller["api-job-controller"]
@@ -171,7 +175,6 @@ flowchart TD
     pkg_client_resources["client-resources"]
     pkg_client_shortcuts["client-shortcuts"]
     pkg_client_store["client-store"]
-    pkg_client_ui_academic_research["client-ui-academic-research"]
     pkg_client_ui_agent_preset["client-ui-agent-preset"]
     pkg_client_ui_approval["client-ui-approval"]
     pkg_client_ui_attachment["client-ui-attachment"]
@@ -913,6 +916,12 @@ flowchart TD
   pkg_plan_mode --> pkg_system_prompt
   pkg_plan_mode --> pkg_tools
   pkg_plan_mode --> pkg_user_questions
+  pkg_academic_source_browser --> pkg_academic_source
+  pkg_academic_source_browser --> pkg_agent
+  pkg_academic_source_browser --> pkg_browser_use
+  pkg_academic_source_browser --> pkg_llm
+  pkg_academic_source_browser --> pkg_tools
+  pkg_academic_source_browser --> pkg_web
   pkg_command_compact --> pkg_commands
   pkg_command_compact --> pkg_compaction
   pkg_compaction_image_offload --> pkg_agent
@@ -1431,6 +1440,7 @@ flowchart TD
   pkg_api_academic_research_controller --> pkg_session
   pkg_api_academic_research_controller --> pkg_session_projection
   pkg_api_academic_research_controller --> pkg_session_query
+  pkg_api_academic_research_controller --> pkg_system_prompt
   pkg_api_academic_research_controller --> pkg_tools
   pkg_api_academic_research_controller --> pkg_typert_protocol
   pkg_api_academic_research_controller --> pkg_web
@@ -1518,6 +1528,9 @@ flowchart TD
 | [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions) | `llm` | — |
 | [`llm`](../packages/llm/llm) | `llm` | — |
 | [`scope`](../packages/core/scope) | `core` | — |
+| [`academic-bundle`](../packages/academic/bundle) | `academic` | — |
+| [`academic-client-remote`](../packages/academic/client-remote) | `academic` | — |
+| [`client-ui-academic-research`](../packages/academic/ui-research) | `academic` | — |
 | [`api-gateway`](../packages/api/gateway) | `api` | — |
 | [`api-job-controller`](../packages/api/job-controller) | `api` | — |
 | [`api-remote-access`](../packages/api/remote-access) | `api` | — |
@@ -1535,7 +1548,6 @@ flowchart TD
 | [`client-resources`](../packages/client/resources) | `client` | — |
 | [`client-shortcuts`](../packages/client/shortcuts) | `client` | — |
 | [`client-store`](../packages/client/store) | `client` | — |
-| [`client-ui-academic-research`](../packages/client/ui-academic-research) | `client` | — |
 | [`client-ui-agent-preset`](../packages/client/ui-agent-preset) | `client` | — |
 | [`client-ui-approval`](../packages/client/ui-approval) | `client` | — |
 | [`client-ui-attachment`](../packages/client/ui-attachment) | `client` | — |
@@ -1766,6 +1778,7 @@ flowchart TD
 | [`tool-web`](../packages/web/tool-web) | `web` | [`llm`](../packages/llm/llm), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`web`](../packages/web/web) |
 | [`tool-todo`](../packages/todo/tool-todo) | `todo` | [`agent`](../packages/core/agent), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`tools`](../packages/core/tools) |
 | [`plan-mode`](../packages/plan/plan-mode) | `plan` | [`agent`](../packages/core/agent), [`commands`](../packages/interaction/commands), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`user-questions`](../packages/interaction/user-questions) |
+| [`academic-source-browser`](../packages/academic/source-browser) | `academic` | [`academic-source`](../packages/academic/source), [`agent`](../packages/core/agent), [`browser-use`](../packages/browser-use/browser-use), [`llm`](../packages/llm/llm), [`tools`](../packages/core/tools), [`web`](../packages/web/web) |
 | [`command-compact`](../packages/compaction/command-compact) | `compaction` | [`commands`](../packages/interaction/commands), [`compaction`](../packages/compaction/compaction) |
 | [`compaction-image-offload`](../packages/compaction/compaction-image-offload) | `compaction` | [`agent`](../packages/core/agent), [`compaction`](../packages/compaction/compaction), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
 | [`agent-instructions`](../packages/context/agent-instructions) | `context` | [`agent`](../packages/core/agent), [`fs`](../packages/fs/fs), [`home-paths`](../packages/util/home-paths), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`tools`](../packages/core/tools), [`working-directory`](../packages/session/working-directory) |
@@ -1847,7 +1860,7 @@ flowchart TD
 | [`tool-ralph`](../packages/experimental/tool-ralph) | `experimental` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`subagent`](../packages/subagent/subagent), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`workflow`](../packages/workflow/workflow) |
 | [`sdk-protocol`](../packages/sdk/protocol) | `sdk` | [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent) |
 | [`workflow-ptc`](../packages/workflow/workflow-ptc) | `workflow` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime), [`sandbox`](../packages/sandbox/sandbox), [`sandbox-policy`](../packages/sandbox/sandbox-policy), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent), [`tools`](../packages/core/tools), [`workflow`](../packages/workflow/workflow), [`working-directory`](../packages/session/working-directory) |
-| [`api-academic-research-controller`](../packages/api/academic-research-controller) | `api` | [`academic-evidence`](../packages/academic/evidence), [`academic-ingestion`](../packages/academic/ingestion), [`academic-model`](../packages/academic/model), [`academic-retrieval`](../packages/academic/retrieval), [`academic-source`](../packages/academic/source), [`academic-workflow`](../packages/academic/workflow), [`agent`](../packages/core/agent), [`api-session-controller`](../packages/api/session-controller), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`session-query`](../packages/session-query/session-query), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol), [`web`](../packages/web/web) |
+| [`api-academic-research-controller`](../packages/academic/research-controller) | `academic` | [`academic-evidence`](../packages/academic/evidence), [`academic-ingestion`](../packages/academic/ingestion), [`academic-model`](../packages/academic/model), [`academic-retrieval`](../packages/academic/retrieval), [`academic-source`](../packages/academic/source), [`academic-workflow`](../packages/academic/workflow), [`agent`](../packages/core/agent), [`api-session-controller`](../packages/api/session-controller), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`session-query`](../packages/session-query/session-query), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol), [`web`](../packages/web/web) |
 | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team) | `experimental` | [`agent`](../packages/core/agent), [`experimental-agent-team`](../packages/experimental/agent-team), [`session`](../packages/core/session), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools) |
 | [`schedule`](../packages/schedule/schedule) | `schedule` | [`agent`](../packages/core/agent), [`api-session-controller`](../packages/api/session-controller), [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`session-projection`](../packages/session/session-projection), [`storage-domain`](../packages/storage/storage-domain), [`subagent`](../packages/subagent/subagent), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol), [`workspace`](../packages/workspace/workspace) |
 | [`sdk-client`](../packages/sdk/client) | `sdk` | [`llm`](../packages/llm/llm), [`sdk-protocol`](../packages/sdk/protocol), [`session`](../packages/core/session) |

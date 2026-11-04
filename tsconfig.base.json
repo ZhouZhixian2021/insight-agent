@@ -121,8 +121,11 @@
       "@deepseek-ai/dsh-api-job-controller/client": ["./packages/api/job-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-api-job-controller/types": ["./packages/api/job-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-session-controller": ["./packages/api/session-controller/src/index.ts"],
-      "@deepseek-ai/dsh-api-academic-research-controller": ["./packages/api/academic-research-controller/src/index.ts"],
-      "@deepseek-ai/dsh-api-academic-research-controller/types": ["./packages/api/academic-research-controller/src/types.ts"],
+      "@deepseek-ai/dsh-api-academic-research-controller": ["./packages/academic/research-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-academic-research-controller/types": ["./packages/academic/research-controller/src/types.ts"],
+      "@deepseek-ai/dsh-client-ui-academic-research/client": ["./packages/academic/ui-research/src/client/index.ts"],
+      "@deepseek-ai/dsh-academic-client-remote": ["./packages/academic/client-remote/src/index.ts"],
+      "@deepseek-ai/dsh-academic-client-remote/client": ["./packages/academic/client-remote/src/client/index.ts"],
       "@deepseek-ai/dsh-api-session-controller/client": ["./packages/api/session-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-api-session-controller/types": ["./packages/api/session-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-session-controller/remote-events": ["./packages/api/session-controller/src/remote-events.ts"],
@@ -362,6 +365,7 @@
       // academic/* packages are intentionally domain-qualified at the npm
       // boundary, so their aliases stay hand-written instead of colliding as
       // dsh-<dir>.
+      "@deepseek-ai/dsh-academic-bundle": ["./packages/academic/bundle/src"],
       "@deepseek-ai/dsh-academic-model": ["./packages/academic/model/src"],
       "@deepseek-ai/dsh-academic-model/trace": ["./packages/academic/model/src/trace.ts"],
       "@deepseek-ai/dsh-academic-workflow": ["./packages/academic/workflow/src"],
@@ -370,7 +374,7 @@
       "@deepseek-ai/dsh-academic-analysis": ["./packages/academic/analysis/src"],
       "@deepseek-ai/dsh-academic-eval": ["./packages/academic/eval/src"],
       "@deepseek-ai/dsh-academic-report": ["./packages/academic/report/src"],
-      "@deepseek-ai/dsh-client-ui-academic-research": ["./packages/client/ui-academic-research/src"],
+      "@deepseek-ai/dsh-client-ui-academic-research": ["./packages/academic/ui-research/src"],
       "@deepseek-ai/dsh-academic-evidence": ["./packages/academic/evidence/src"],
       "@deepseek-ai/dsh-academic-ingestion": ["./packages/academic/ingestion/src"],
       "@deepseek-ai/dsh-academic-retrieval": ["./packages/academic/retrieval/src"],

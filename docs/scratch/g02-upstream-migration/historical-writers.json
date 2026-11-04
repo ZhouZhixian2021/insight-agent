@@ -5,7 +5,7 @@
   "replacedBy": "versioned semantic review writer",
   "files": [
     {
-      "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+      "file": "packages/academic/research-controller/src/candidate-review-model.ts",
       "blob": "765fb38102ab3a912a5cb2b6c9bd2010760128a9",
       "lineEvidence": [
         {

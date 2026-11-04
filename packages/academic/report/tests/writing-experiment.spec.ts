@@ -53,7 +53,7 @@ describe('fixed-material writing experiments', () => {
   })
 
   it('prepares distinct task and open-source-inspired prompts with exactly the same original source input', () => {
-    const input = JSON.parse(readFileSync('z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', 'utf8')) as AcademicSynthesisInput
+    const input = JSON.parse(readFileSync('z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-input.sample.json', 'utf8')) as AcademicSynthesisInput
     const a = writingExperimentPrompt(input, 'task_template', 'comparison')
     const b = writingExperimentPrompt(input, 'open_source_inspired', 'comparison')
     expect(a.split('INPUT_JSON\n')[1]).toBe(JSON.stringify(input))

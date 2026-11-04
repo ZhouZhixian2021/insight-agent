@@ -150,7 +150,8 @@ export function QuestionComposer(props: QuestionComposerProps) {
         actions={props.actions}
       />
     )
-    : <PlanReviewPanel key={question.key} pending={question} review={review} t={props.t} renderSlot={props.renderSlot} />
+    : <PlanReviewPanel key={question.key} pending={question} review={review} t={props.t}
+      renderSlot={props.renderSlot} renderSlotChain={props.renderSlotChain} />
 }
 
 type QuestionFlowProps =

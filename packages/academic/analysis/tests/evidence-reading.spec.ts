@@ -5,7 +5,7 @@ import { comparisonContext, evidenceReadingGuide } from '../src/evidence-reading
 import { batch, paper } from './fixtures.ts'
 
 const fixture = (): AcademicSynthesisInput => JSON.parse(readFileSync(
-  new URL('../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
+  new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
 
 function guide(prompt: string): ReturnType<typeof evidenceReadingGuide> {
   return JSON.parse(prompt.split('EVIDENCE_READING_GUIDE_JSON\n')[1]!.split('\nINPUT_JSON')[0]!) as ReturnType<typeof evidenceReadingGuide>

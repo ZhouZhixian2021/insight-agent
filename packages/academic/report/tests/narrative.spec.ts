@@ -4,7 +4,7 @@ import { parseSynthesisDraft, synthesisAnalysis, type AcademicSynthesisInput } f
 import { generateReport } from '../src/index.ts'
 
 function fixture() {
-  const root = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+  const root = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
   const input = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', root), 'utf8')) as AcademicSynthesisInput
   const value = JSON.parse(readFileSync(new URL('synthesis-output.sample.json', root), 'utf8')) as Record<string, unknown>
   const draft = parseSynthesisDraft(JSON.stringify({ ...value, writingStyle: 'evidence_narrative' }), input)
@@ -64,7 +64,7 @@ describe('production evidence-narrative report', () => {
     const report = generateReport({ ...input, versions: input.versions.map(version => ({ ...version,
       contentHash: { status: 'available' as const, value: 'mismatched' } })) })
     expect(report.evaluation.issues.some(issue => issue.code === 'version_hash_mismatch')).toBe(true)
-    const root = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-output.sample.json', import.meta.url)
+    const root = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-output.sample.json', import.meta.url)
     const value = JSON.parse(readFileSync(root, 'utf8')) as Record<string, unknown>
     expect(() => parseSynthesisDraft(JSON.stringify({ ...value, writingStyle: 'unknown' }), source)).toThrow()
   })

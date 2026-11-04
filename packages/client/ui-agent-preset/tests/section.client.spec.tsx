@@ -7,6 +7,12 @@ import { Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import { AgentPresetSection, type AgentPresetSectionProps } from '../src/client/AgentPresetSection.tsx'
 import type { AgentPresetSectionState } from '../src/client/section-store.ts'
 import { en } from '../src/client/locales.ts'
+import { isBuiltInPreset, presetDisplayText } from '@deepseek-ai/dsh-agent-preset-registry/display'
+const displayProps = {
+  displayPreset: (row: Parameters<typeof presetDisplayText>[0]) => presetDisplayText(row, key => en[key]),
+  isBuiltInPreset,
+  usePresetDisplay: bindSnapshotSelector(createSnapshotStore(0)),
+}
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers() })
 const translations: ReadonlyMap<string, string> = new Map(Object.entries(en))
 function unusedHook(): never {
@@ -19,7 +25,7 @@ function view(partial: Partial<AgentPresetSectionState> = {}, startCreatorDraft?
     view: null, ...partial })
   const actions = { load: vi.fn(async () => {}), view: vi.fn(async () => {}), closeView: vi.fn(), makeDefault: vi.fn(async () => {}),
     close: vi.fn() }
-  const props: AgentPresetSectionProps = { ...actions,
+  const props: AgentPresetSectionProps = { ...actions, ...displayProps,
     ...(startCreatorDraft === undefined ? {} : { startCreatorDraft }),
     usePanelInfo: unusedHook, useSessions: unusedHook, useSessionStatus: unusedHook, useSessionRetainInfo: unusedHook,
     useWorkspaces: unusedHook, useResource: unusedHook,

@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2160" height="2390" viewBox="0 0 2160 2390"><rect width="100%" height="100%" fill="#fff"/><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#708092"/></marker></defs>
+<rect x="60" y="220" width="2040" height="250" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 220 H2093 Q2100 220 2100 227 V260 H60 V227 Q60 220 67 220" fill="#eaf0f6"/><text x="1080" y="247" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">当前缺口：接口已接入，读取与组装仍有重复和耦合</text>
+<rect x="60" y="520" width="1260" height="950" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 520 H1313 Q1320 520 1320 527 V560 H60 V527 Q60 520 67 520" fill="#eaf0f6"/><text x="690" y="547" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">目标 A：统一会话状态读取，向界面提供定界的小视图</text>
+<rect x="1360" y="520" width="740" height="950" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M1367 520 H2093 Q2100 520 2100 527 V560 H1360 V527 Q1360 520 1367 520" fill="#eaf0f6"/><text x="1730" y="547" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">目标 B：同仓库独立启停的 Academic bundle</text>
+<rect x="1380" y="765" width="700" height="480" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M1387 765 H2073 Q2080 765 2080 772 V805 H1380 V772 Q1380 765 1387 765" fill="#eaf0f6"/><text x="1730" y="792" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">P2｜建议新增 @deepseek-ai/dsh-academic</text>
+<rect x="60" y="1520" width="2040" height="440" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 1520 H2093 Q2100 1520 2100 1527 V1560 H60 V1527 Q60 1520 67 1520" fill="#eaf0f6"/><text x="1080" y="1547" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">推进顺序：每阶段独立验收，优先稳定状态读取，再开放组合包独立启停</text>
+<rect x="60" y="2000" width="2040" height="260" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 2000 H2093 Q2100 2000 2100 2007 V2040 H60 V2007 Q60 2000 67 2000" fill="#eaf0f6"/><text x="1080" y="2027" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">验收与边界：功能含义不变，性能收益需要独立测量</text>
+<polyline points="430,645 500,645" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="656,705 656,745 360,745 360,790" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1061.6,705 1061.6,745 1000,745 1000,790" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="360,950 360,995 465,995 465,1040" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1000,950 1000,995 915,995 915,1040" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="555,1170 555,1210 470,1210 470,1255" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="860,1330 950,1330" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1710,1047.5 1730,1047.5" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1730,685 1730,765" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1730,1245 1730,1295" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="380,1740 420,1740" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="720,1740 760,1740" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1060,1740 1100,1740" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1400,1740 1440,1740" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1740,1740 1780,1740" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="74" y="57.7" text-anchor="start" font-family="Microsoft YaHei" font-size="30" font-weight="600" fill="#243342">08 新基座适配与优化目标架构</text>
+<text x="74" y="102.86" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">目标：先收口状态读取，再完成同仓库独立启停；各阶段分别验收。</text>
+<text x="74" y="127" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">基线：2026-11-03，已合入 DSH v0.2.1-rc.2；领域勘察为未提交 WIP，本页优化均为建议。</text>
+<rect x="80" y="153" width="270" height="40" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="215" y="177.64" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">绿色：复用已合入能力</text>
+<rect x="370" y="153" width="320" height="40" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="530" y="177.64" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">蓝色虚线：建议改造／待补</text>
+<rect x="710" y="153" width="250" height="40" rx="7" fill="#fff0ee" stroke="#be8177" />
+<text x="835" y="177.64" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">红色：当前待优化</text>
+<rect x="980" y="153" width="290" height="40" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="1125" y="177.64" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">橙色：未提交改动关联</text>
+<text x="1324" y="177.64" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">本页 P0—P3 是工程改造优先级，与第 02 页业务路线编号分别解释。</text>
+<rect x="80" y="280" width="470" height="165" rx="7" fill="#fff0ee" stroke="#be8177" />
+<text x="315" y="331.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">普通状态查询仍全量重折</text>
+<text x="315" y="355.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">plan／list／get → observeSession</text>
+<text x="315" y="379.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">projectionMode: none → 遍历全部 events</text>
+<text x="315" y="403.64000000000004" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">绕过已注册的增量学术投影</text>
+<rect x="590" y="280" width="470" height="165" rx="7" fill="#fff0ee" stroke="#be8177" />
+<text x="825" y="331.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">证据增强页面仍搬运完整历史</text>
+<text x="825" y="355.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">Client follow + page 拉完记录</text>
+<text x="825" y="379.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">再 projectEnhancement／排序扫描</text>
+<text x="825" y="403.64000000000004" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">局部页面开销随整个会话增长</text>
+<rect x="1100" y="280" width="470" height="165" rx="7" fill="#fff0ee" stroke="#be8177" />
+<text x="1335" y="331.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">读取投影也需要控制体积</text>
+<text x="1335" y="355.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">recoveryRuns 累积事件与检查点</text>
+<text x="1335" y="379.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">Trace 分页前仍扫描、排序</text>
+<text x="1335" y="403.64000000000004" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">WIP 勘察结果按 planId 持续累计</text>
+<rect x="1610" y="280" width="470" height="165" rx="7" fill="#fff0ee" stroke="#be8177" />
+<text x="1845" y="331.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">学术仍嵌入共享 Web 组合</text>
+<text x="1845" y="355.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">Host／UI／preset／Skills 分散接线</text>
+<text x="1845" y="379.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">普通 api-remotes 硬挂学术命名空间</text>
+<text x="1845" y="403.64000000000004" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">显示文案、计划呈现与持久化有接线</text>
+<rect x="80" y="585" width="350" height="120" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="255" y="615.56" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">Session 事件日志</text>
+<text x="255" y="638.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保留批准、身份和证据事实</text>
+<text x="255" y="661" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">旧日志不重写、不静默丢事件</text>
+<text x="255" y="683.7199999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">已完成的轻量进度机制继续保留</text>
+<rect x="500" y="585" width="780" height="120" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="890" y="625.79" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">已注册的 Host 学术投影（现有能力，内部状态不直接进入 wire）</text>
+<text x="890" y="649.93" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">增量派生：获批计划、运行索引、恢复状态、增强结果</text>
+<text x="890" y="674.0699999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">【待优化】最新检查点＋必要校验事实／尾部事件；勘察摘要与明细分开</text>
+<rect x="100" y="790" width="520" height="160" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="360" y="838.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">P1｜活跃会话优先复用 stateOf</text>
+<text x="360" y="862.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">现有基座能力，无需另建全局状态缓存</text>
+<text x="360" y="887" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">【待接入】普通计划、运行查询改走已折状态</text>
+<text x="360" y="911.14" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">同步取得状态与水位；保留归属和审批校验</text>
+<rect x="740" y="790" width="520" height="160" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1000" y="826.65" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">P2｜冷历史按准确水位读取 Host 状态</text>
+<text x="1000" y="850.79" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">【待补接口】服务端按 key 的 exact-cut 读面</text>
+<text x="1000" y="874.93" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">由现有 prepared cache／revision／lease 管理</text>
+<text x="1000" y="899.0699999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">状态版本变化时受控重建，不发送内部全量状态</text>
+<text x="1000" y="923.21" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">旧大日志首次打开仍可能需要完整读取</text>
+<rect x="240" y="1040" width="900" height="130" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="690" y="1084.66" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="400" fill="#243342">统一学术只读入口</text>
+<text x="690" y="1110.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="400" fill="#243342">校验 Session／run／Brief 版本／cursor，同一观察切面保持一致</text>
+<text x="690" y="1135.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="400" fill="#243342">只读不启动研究、不取得写句柄、不把缓存命中当成新的批准</text>
+<rect x="80" y="1255" width="780" height="150" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="470" y="1298.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">给界面的轻量数据与定界查询</text>
+<text x="470" y="1322.8600000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">计划／运行摘要；增强结果按 run＋workVersion 查询</text>
+<text x="470" y="1347" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">明细按需分页；Trace 使用增量索引与稳定游标</text>
+<text x="470" y="1371.14" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">不让浏览器 follow＋page 搬运完整会话日志</text>
+<rect x="950" y="1255" width="330" height="150" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="1115" y="1300.56" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">现有研究卡片与会话资源</text>
+<text x="1115" y="1323.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">【待适配】共享 bootstrap／watch</text>
+<text x="1115" y="1346" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">多卡片不重复读取、关闭可取消读取</text>
+<text x="1115" y="1368.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">断开观察不取消后台研究</text>
+<text x="94" y="1439.35" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">不能只把 projectionMode 改为 all：academicResearch 当前是 Host-only，没有可直接读取的客户端 wire。</text>
+<rect x="1380" y="585" width="700" height="100" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="1730" y="615.79" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">现有公共基座：dsh-base ＋ dsh-web-app</text>
+<text x="1730" y="639.93" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保留通用会话、模型、Web、插件与客户端能力</text>
+<text x="1730" y="664.0699999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">继续通过标准 dsh web profile 启动</text>
+<rect x="1400" y="825" width="310" height="120" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1555" y="855.56" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">预设与方法资源</text>
+<text x="1555" y="878.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">preset id 保持 academic</text>
+<text x="1555" y="901" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">persona／planning／Skills</text>
+<text x="1555" y="923.7199999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">技能根从本组合包定位</text>
+<rect x="1730" y="825" width="330" height="120" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1895" y="855.56" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">Host 研究能力</text>
+<text x="1895" y="878.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">来源及 Provider／Controller</text>
+<text x="1895" y="901" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">学术配置与投影注册</text>
+<text x="1895" y="923.7199999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">生成产物由所属包维护</text>
+<rect x="1400" y="975" width="310" height="145" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1555" y="1018.06" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">Client Remote companion</text>
+<text x="1555" y="1040.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">复用已有 remote.$mount()</text>
+<text x="1555" y="1063.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">自有依赖、挂载与 disposer</text>
+<text x="1555" y="1086.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">移出普通 api-remotes 的硬依赖</text>
+<rect x="1730" y="975" width="330" height="145" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1895" y="1018.06" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">学术 UI 插件</text>
+<text x="1895" y="1040.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">复用现有 Conversation／slot</text>
+<text x="1895" y="1063.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">自有 locale 与研究卡片</text>
+<text x="1895" y="1086.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">依赖 Remote companion 就绪</text>
+<rect x="1400" y="1150" width="660" height="70" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1730" y="1178.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">迁入业务配置与安装依赖，并核对打包后的 Skills／模板路径。</text>
+<text x="1730" y="1201" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">学术全文 HTTP 的特殊额度应明确配置，避免无意改变其他会话。</text>
+<rect x="1380" y="1295" width="700" height="120" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1730" y="1325.56" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保留在宿主构建中的持久化兼容薄层</text>
+<text x="1730" y="1348.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">required 事件登记、当前 codec、V2→V3→V4 历史迁移</text>
+<text x="1730" y="1371" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">不随 bundle 停用删除；不能改为 ignorable 绕过校验</text>
+<text x="1730" y="1393.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">首期不承诺安装到未经修改的任意上游 DSH</text>
+<rect x="80" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="94" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P0｜基线与等价标准</text>
+<text x="94" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="94" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">小／大／旧格式会话</text>
+<text x="94" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">活跃、冷读、重启矩阵</text>
+<text x="94" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">统计扫描、读取量与峰值</text>
+<text x="94" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">协调勘察 WIP 的投影版本</text>
+<text x="94" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="94" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：同一水位结果一致</text>
+<text x="94" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">读取不写日志、不调用模型</text>
+<rect x="420" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="434" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P1｜活跃状态快读</text>
+<text x="434" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="434" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">复用现有 stateOf</text>
+<text x="434" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">普通查询不再全量重折</text>
+<text x="434" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">冷路径暂保正确回放</text>
+<text x="434" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保留身份与明确批准校验</text>
+<text x="434" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="434" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：重复查询不再遍历</text>
+<text x="434" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">整份历史、不接管写句柄</text>
+<rect x="760" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="774" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P1｜界面定界读取</text>
+<text x="774" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="774" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">增强历史由 Host 派生</text>
+<text x="774" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">按 run／论文版本读取</text>
+<text x="774" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">共享 bootstrap 与订阅</text>
+<text x="774" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">传播取消信号、按需加载</text>
+<text x="774" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="774" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：多卡不翻倍查询</text>
+<text x="774" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">关闭观察不终止研究</text>
+<rect x="1100" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1114" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P2｜冷读与精简投影</text>
+<text x="1114" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1114" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">补 Host 准确水位读面</text>
+<text x="1114" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">复用缓存、版本与租约</text>
+<text x="1114" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">收拢检查点与必要事实</text>
+<text x="1114" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">Trace 索引、勘察摘要</text>
+<text x="1114" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">接口与状态变化分小 PR</text>
+<text x="1114" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1114" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：新旧恢复语义等价</text>
+<rect x="1440" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1454" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P2｜独立组合包闭环</text>
+<text x="1454" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1454" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">迁预设／Skills／Host／UI</text>
+<text x="1454" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">同时完成 Remote 自挂载</text>
+<text x="1454" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">校验安装资源与来源配置</text>
+<text x="1454" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保持 academic 与历史 ID</text>
+<text x="1454" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1454" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：普通 Web 可无学术</text>
+<text x="1454" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">On／Off／再启用可恢复</text>
+<rect x="1780" y="1585" width="300" height="310" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1794" y="1653.76" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">P3｜收拢剩余接线</text>
+<text x="1794" y="1676.48" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1794" y="1699.2" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">预设中英文显示贡献</text>
+<text x="1794" y="1721.92" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">计划审核的业务呈现扩展</text>
+<text x="1794" y="1744.6399999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保留持久化兼容与生成链</text>
+<text x="1794" y="1767.36" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">登记必要的上游薄接线</text>
+<text x="1794" y="1790.08" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342"></text>
+<text x="1794" y="1812.8" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">验收：升级接线范围收敛</text>
+<text x="1794" y="1835.52" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">真实研究与历史回归通过</text>
+<text x="94" y="1929.64" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">阶段编号表示优先级与建议依赖，不是工期承诺。组合包搬迁与 Remote 自挂载必须共同达到最小可启停闭环。</text>
+<rect x="80" y="2065" width="965" height="165" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="94" y="2106.7" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">必须保持的事实与恢复规则</text>
+<text x="94" y="2129.4199999999996" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">批准身份、Brief／论文版本、批次配对、终结状态和补证尾部事实保持一致。</text>
+<text x="94" y="2152.14" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">先调整读模型并递增 stateVersion；不为优化重写历史日志。</text>
+<text x="94" y="2174.8599999999997" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">固定材料验证热／冷／重启等价，再验证小规模真实研究与内存成本。</text>
+<text x="94" y="2197.58" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">领域勘察 WIP：新增结果与摘要规则须和本轮投影改造协调。</text>
+<rect x="1085" y="2065" width="995" height="165" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1099" y="2106.7" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">组合包停用顺序与历史可用性</text>
+<text x="1099" y="2129.4199999999996" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">停止接收新 run → 已完成，或明确取消 → await 结算 → 应用 Off／卸载。</text>
+<text x="1099" y="2152.14" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">Off 配置保存与实际生效分开；无热更新时需重启。</text>
+<text x="1099" y="2174.8599999999997" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">保留 Session／缓存／历史身份；丰富学术视图与继续研究需重新启用。</text>
+<text x="1099" y="2197.58" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">preset 旧代保留不能保证被移除的 Host Controller 继续运行。</text>
+<text x="74" y="2315.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">基线提交：8c480a981c；工作区另有领域勘察未提交改动。本页是源码审计后的目标设计，不代表改造或验收已经完成。</text>
+<text x="74" y="2338.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">现有轻量进度、Q6 去重与主 watch 合并继续复用；多模型策略、并行 Agent 和外部纯上游发行另行规划。</text>
+</svg>

@@ -8,8 +8,9 @@
  */
 
 import { globSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import ts from 'typescript'
+import { clientFeatureManifestPaths } from './client-feature-packages.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const MINIMUM_CLIENT_UI_SOURCES = 450
@@ -346,6 +347,9 @@ function sourceFiles(): string[] {
   return [...new Set([
     ...globSync('packages/client/*/src/**/*.tsx', { cwd: root }),
     ...globSync('packages/client/ui-*/src/**/*.{ts,tsx}', { cwd: root }),
+    ...clientFeatureManifestPaths(root)
+      .filter(file => !file.startsWith('packages/client/'))
+      .flatMap(file => globSync(`${dirname(file)}/src/**/*.{ts,tsx}`, { cwd: root })),
     ...[...clientComponentRoots].flatMap(clientRoot =>
       globSync(`${clientRoot}/**/*.{ts,tsx}`, { cwd: root })),
     ...globSync('apps/web/src/**/*.{ts,tsx}', { cwd: root }),

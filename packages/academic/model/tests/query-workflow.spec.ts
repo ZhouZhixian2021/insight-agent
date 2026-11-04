@@ -32,7 +32,7 @@ interface QueryWorkflowSample {
 }
 
 const sample = JSON.parse(readFileSync(new URL(
-  '../../../../z-team_docs/interface-samples/academic-model-v1/academic-query-workflow-v1.sample.json',
+  '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/academic-query-workflow-v1.sample.json',
   import.meta.url,
 ), 'utf8')) as QueryWorkflowSample
 

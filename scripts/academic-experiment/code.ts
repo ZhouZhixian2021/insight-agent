@@ -12,7 +12,7 @@ export function captureCode(output: string) {
   const repository = resolve(import.meta.dirname, '../..')
   const files: Record<string, { sha256: string; text: string }> = {}
   for (const folder of ['packages/academic/analysis/src', 'packages/academic/eval/src', 'packages/academic/report/src',
-    'packages/client/ui-academic-research/src']) {
+    'packages/academic/ui-research/src']) {
     for (const entry of readdirSync(resolve(repository, folder), { recursive: true, withFileTypes: true })) {
       if (!entry.isFile() || !/\.(?:ts|tsx|css)$/u.test(entry.name)) continue
       const file = resolve(entry.parentPath, entry.name), text = readFileSync(file, 'utf8')

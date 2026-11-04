@@ -5,7 +5,7 @@ import { generateReport } from '../src/index.ts'
 import { renderSynthesis } from '../src/synthesis-render.ts'
 
 function fixture() {
-  const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+  const samples = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
   const input: AcademicSynthesisInput = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
   const admission = prepareSynthesisInput(input)
   if (admission.status !== 'ready') throw new Error('fixture rejected')

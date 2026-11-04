@@ -11,7 +11,6 @@
     "src/types.ts"
   ],
   "references": [
-    { "path": "../academic-research-controller" },
     { "path": "../../client/product-analytics/tsconfig.client.json" },
     {
       "path": "../../../vendor/cordis"

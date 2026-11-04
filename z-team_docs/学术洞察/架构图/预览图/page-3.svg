@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="1810" viewBox="0 0 1660 1810"><rect width="100%" height="100%" fill="#fff"/><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#708092"/></marker></defs>
+<rect x="60" y="145" width="500" height="280" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 145 H553 Q560 145 560 152 V185 H60 V152 Q60 145 67 145" fill="#eaf0f6"/><text x="310" y="172" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">成员 A｜共享规则与系统集成</text>
+<rect x="580" y="145" width="500" height="280" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M587 145 H1073 Q1080 145 1080 152 V185 H580 V152 Q580 145 587 145" fill="#eaf0f6"/><text x="830" y="172" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">成员 B｜来源、论文与证据</text>
+<rect x="1100" y="145" width="500" height="280" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M1107 145 H1593 Q1600 145 1600 152 V185 H1100 V152 Q1100 145 1107 145" fill="#eaf0f6"/><text x="1350" y="172" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">成员 C｜分析、报告与用户体验</text>
+<rect x="60" y="460" width="1540" height="395" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 460 H1593 Q1600 460 1600 467 V500 H60 V467 Q60 460 67 460" fill="#eaf0f6"/><text x="830" y="487" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">共同交接对象：现有记录优先复用，新增字段由 A 统一确认</text>
+<rect x="60" y="890" width="1540" height="440" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 890 H1593 Q1600 890 1600 897 V930 H60 V897 Q60 890 67 890" fill="#eaf0f6"/><text x="830" y="917" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">方案与调研存在分歧时的建议取舍：以本项目的固定样本验证</text>
+<rect x="60" y="1360" width="1540" height="360" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 1360 H1593 Q1600 1360 1600 1367 V1400 H60 V1367 Q60 1360 67 1360" fill="#eaf0f6"/><text x="830" y="1387" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">资料依据与状态口径</text>
+<text x="74" y="56.7" text-anchor="start" font-family="Microsoft YaHei" font-size="30" font-weight="600" fill="#243342">03 成员分工、交接与设计取舍</text>
+<text x="74" y="108.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">建议分工沿用 A 集成与共享模型、B 来源与证据、C 分析报告与页面；以共同样例和独立验收汇合，不新增已完成承诺</text>
+<rect x="80" y="205" width="460" height="190" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="94" y="256.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">计划审批、循环轮次、预算与恢复</text>
+<text x="94" y="280.78999999999996" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">共享证据模型、版本与存储接口</text>
+<text x="94" y="304.92999999999995" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">领域勘察和循环补证的整体接入</text>
+<text x="94" y="329.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">上游升级检查、跨模块联调</text>
+<text x="94" y="353.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">交付：接口样例、事件说明、端到端结果</text>
+<rect x="600" y="205" width="460" height="190" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="614" y="256.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">多来源检索、授权材料与全文获取</text>
+<text x="614" y="280.78999999999996" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">按质量缺口定向补检、补读与核验</text>
+<text x="614" y="304.92999999999995" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">来源身份、原文位置、更新与去重</text>
+<text x="614" y="329.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">真实论文召回、误排除与耗时复测</text>
+<text x="614" y="353.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">交付：规范记录、证据样本、失败清单</text>
+<rect x="1120" y="205" width="460" height="190" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1134" y="256.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">领域方向展示、计划和报告交互</text>
+<text x="1134" y="280.78999999999996" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">质量缺口评估、更新论断与重新成文</text>
+<text x="1134" y="304.92999999999995" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">报告版本、图表、导出与差异展示</text>
+<text x="1134" y="329.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">补证前后质量对比和浏览器验收</text>
+<text x="1134" y="353.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">交付：报告样例、评测结果、可用界面</text>
+<rect x="80" y="515" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="94" y="558.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">研究需求与批准</text>
+<text x="94" y="580.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">计划身份／版本／范围／问题／日期政策</text>
+<text x="94" y="603.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">领域勘察结果与第二次批准准确绑定</text>
+<text x="94" y="626.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">计划变化不得继续沿用旧批准</text>
+<rect x="590" y="515" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="604" y="558.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">论文、版本与来源</text>
+<text x="604" y="580.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">论文身份、版本、来源及内容哈希</text>
+<text x="604" y="603.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">原始获取时间、日期口径和可用状态</text>
+<text x="604" y="626.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">未知、失败与未处理必须分别保留</text>
+<rect x="1100" y="515" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1114" y="558.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">证据与支持关系</text>
+<text x="1114" y="580.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">逐字摘录、原文位置与证据等级</text>
+<text x="1114" y="603.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">关联问题／方面、实验条件及反证</text>
+<text x="1114" y="626.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">原文定位有效不等于语义一定支持</text>
+<rect x="80" y="680" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="94" y="723.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">运行、预算与恢复</text>
+<text x="94" y="745.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">运行身份、补证轮次、额度与停止原因</text>
+<text x="94" y="768.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">缺口清单、新增证据和失败分别保存</text>
+<text x="94" y="791.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">恢复不重置预算，也不串用其他研究</text>
+<rect x="590" y="680" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="604" y="723.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">共享证据复用（规划）</text>
+<text x="604" y="745.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">版本化读写接口、适用性与来源权限</text>
+<text x="604" y="768.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">新证据追加，旧结论可追溯和标记过时</text>
+<text x="604" y="791.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">来源缓存与共享证据库分开管理</text>
+<rect x="1100" y="680" width="480" height="145" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="1114" y="723.06" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">分析、报告与审核</text>
+<text x="1114" y="745.78" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">报告引用、方向覆盖和内容限制</text>
+<text x="1114" y="768.5" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">交付状态与独立语义／人工审核分开</text>
+<text x="1114" y="791.2199999999999" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">图表、正文、导出使用同一证据版本</text>
+<rect x="80" y="945" width="480" height="350" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="94" y="1052.51" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">流程与 Agent</text>
+<text x="94" y="1076.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342"></text>
+<text x="94" y="1100.79" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保留现有确定性流程、审批和有界补强。</text>
+<text x="94" y="1124.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">子 Agent 用于隔离阅读上下文，</text>
+<text x="94" y="1149.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">输入自包含、输出结构化、预算可追踪。</text>
+<text x="94" y="1173.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">不重写 dsh 主循环、工具和会话底座。</text>
+<text x="94" y="1197.35" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">“每篇一个 Agent”先与现有并发做对照。</text>
+<rect x="590" y="945" width="480" height="350" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="604" y="1052.51" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">审核与写作</text>
+<text x="604" y="1076.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342"></text>
+<text x="604" y="1100.79" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">继续执行引用、版本与结构检查。</text>
+<text x="604" y="1124.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">增量补充语义、数字核对和人工审阅。</text>
+<text x="604" y="1149.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">独立批判 Agent、逐节审批、分章写作</text>
+<text x="604" y="1173.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">列为可选策略，不默认强制串入主流程。</text>
+<text x="604" y="1197.35" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">避免用固定字数或新增审批代替质量。</text>
+<rect x="1100" y="945" width="480" height="350" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="1114" y="1052.51" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">证据库与检索</text>
+<text x="1114" y="1076.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342"></text>
+<text x="1114" y="1100.79" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">先稳定字段、读写和可查询持久化，</text>
+<text x="1114" y="1124.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">再逐步接入跨研究复用和索引。</text>
+<text x="1114" y="1149.07" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">向量索引须具备服务、预算和对照收益；</text>
+<text x="1114" y="1173.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">不把缓存命中视为研究结论可直接复用。</text>
+<text x="1114" y="1197.35" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">“10分钟”“全领域覆盖”需另行真实验收。</text>
+<rect x="80" y="1420" width="735" height="240" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="94" y="1487.84" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">目标与策略资料（ziliao）</text>
+<text x="94" y="1510.56" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">insight-agent-proposal.md：共享证据与分组业务</text>
+<text x="94" y="1533.28" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">deep-research-plan.md：只开发研究策略层</text>
+<text x="94" y="1556" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">research/strategy-comparison.md：策略对比与取舍</text>
+<text x="94" y="1578.7199999999998" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">research/项目研究（竞品分析）.md：观察与设计线索</text>
+<text x="94" y="1601.4399999999998" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">以上为本地调研资料，不作为外部产品当前能力证明。</text>
+<rect x="835" y="1420" width="745" height="270" rx="7" fill="#f7f8fa" stroke="#abb4bf" />
+<text x="849" y="1495.45" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">实现与验收资料（insight-agent）</text>
+<text x="849" y="1516.75" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">docs/academic-insight-plan.zh.md：M0—M4目标，旧进度不沿用</text>
+<text x="849" y="1538.05" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">docs/subsystems/academic-insight.zh.md：当前模块与接口</text>
+<text x="849" y="1559.3500000000001" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">docs/upgrade-guide/：日期、覆盖、定向补强、后台进度</text>
+<text x="849" y="1580.65" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">docs/persistence-changes/2026-11-02-academic-domain-survey.zh.md</text>
+<text x="849" y="1601.95" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">z-team_docs/开发记录/2026-11-02-yzyhello-抽取派发按问题检索排序.md</text>
+<text x="849" y="1623.25" text-anchor="start" font-family="Microsoft YaHei" font-size="15" font-weight="400" fill="#243342">Git主分支为依据；领域勘察说明中含未提交实现。</text>
+<text x="74" y="1774.64" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">边界：正文依据来源记录；元数据勘察不充当全文证据；没有完整真实验收的功能不标记为“质量已达标”。分工与顺序为本次建议。</text>
+</svg>

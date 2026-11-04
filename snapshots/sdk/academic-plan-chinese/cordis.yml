@@ -10,7 +10,7 @@
     includeRuntimeContext: false
 - insert:
     - id: academic-plan-chinese
-      name: '../../../packages/api/academic-research-controller/src/plan-validation.ts'
+      name: '../../../packages/academic/research-controller/src/plan-validation.ts'
     - id: plan-mode
       name: '@deepseek-ai/dsh-plan-mode'
       config:

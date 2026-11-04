@@ -1,0 +1,986 @@
+<mxfile host="app.diagrams.net" agent="Codex" compressed="false" pages="8">
+  <diagram id="academic-insight" name="01 业务架构与开发状态">
+    <mxGraphModel dx="1753" dy="971" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="1990" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="01 业务架构与开发状态" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="状态基准：2026-11-03｜已合入：已有主分支代码，仍需相应真实验收｜本地开发：未提交｜规划：建议后续建设" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ENTRY" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="业务入口与研究方法" vertex="1">
+          <mxGeometry height="270" width="1540" x="60" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="P" parent="ENTRY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】学术 Preset 与方法论 Skill&#xa;学术研究角色、工具和分析框架&#xa;规定来源、证据和报告要求" vertex="1">
+          <mxGeometry height="170" width="340" x="20" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="H" parent="ENTRY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】计划与用户审批&#xa;明确深入、概览和不覆盖的方向&#xa;范围、日期、证据要求随计划确认" vertex="1">
+          <mxGeometry height="170" width="350" x="380" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="W" parent="ENTRY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】研究流程编排&#xa;按批准计划执行、分批补选与补检&#xa;限制调用、耗时并记录停止原因" vertex="1">
+          <mxGeometry height="170" width="360" x="750" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="SURVEY" parent="ENTRY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="【本地开发 P1】领域勘察&#xa;先批准标题／摘要勘察，形成候选方向&#xa;再批准逐方向深入研究与证据目标&#xa;方向须有出处，不能宣称穷尽领域" vertex="1">
+          <mxGeometry height="170" width="390" x="1130" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="COLLECT" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="一、证据采集层" vertex="1">
+          <mxGeometry height="850" width="480" x="60" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="S" parent="COLLECT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】多源检索与论文筛选&#xa;OpenAlex / arXiv；Web 发现后核验&#xa;ACL / PMLR / CVF 官方记录接入&#xa;论文身份、版本、日期与相关性审核&#xa;【待验收】范围误暂停修复的真实效果" vertex="1">
+          <mxGeometry height="170" width="440" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="E" parent="COLLECT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】全文与证据提取&#xa;HTML / PDF 解析、来源缓存与定位&#xa;按问题选段、同篇并发与动态阅读额度&#xa;保留有效片段，支持单篇深入补充&#xa;【待完善】PDF 非正文识别、片段级重启" vertex="1">
+          <mxGeometry height="170" width="440" x="20" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="SGs0BiPExKxfgzegUEXJ-1" parent="COLLECT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划／对照】独立子 Agent 阅读&#xa;按论文／方向隔离上下文、结构化输出&#xa;主流程统一并发、预算、合并与取消&#xa;与现有并发阅读对照后接入" vertex="1">
+          <mxGeometry height="130" width="440" x="20" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="SOURCE-UPDATES" parent="COLLECT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P4】新论文与来源更新&#xa;按订阅主题发现新增论文和版本&#xa;区分新增、更新、重复与获取失败&#xa;把有效更新交给证据与分析环节" vertex="1">
+          <mxGeometry height="130" width="440" x="20" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="KNOWLEDGE" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="二、知识层：证据是长期积累的核心" vertex="1">
+          <mxGeometry height="850" width="480" x="580" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="RECORD" parent="KNOWLEDGE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】会话内结构化记录&#xa;论文／版本／证据／结论关联&#xa;原文摘录、位置、哈希及批准身份&#xa;来源可缓存；证据和报告持久保存&#xa;已有结论过时检查与固定材料导出" vertex="1">
+          <mxGeometry height="170" width="440" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="STORE" parent="KNOWLEDGE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P3】共享证据库与检索&#xa;统一读写接口、结构与版本索引&#xa;建设可查询的关系型持久存储&#xa;向量检索与现有排序进行对照&#xa;根据检索收益与服务条件决定接入&#xa;每次复用仍核对新任务的适用范围" vertex="1">
+          <mxGeometry height="200" width="440" x="20" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="VERSION-TRACK" parent="KNOWLEDGE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P4】持续更新与影响追踪&#xa;新来源版本与已有证据进行比较&#xa;关联受影响的问题和研究结论&#xa;增量复核、标记过时并保留旧版本&#xa;维护证据与报告版本的对应关系&#xa;把现有单次检查扩展为持续追踪" vertex="1">
+          <mxGeometry height="245" width="440" x="20" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="OUTPUT" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="三、分析、核查与交付层" vertex="1">
+          <mxGeometry height="850" width="500" x="1100" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="A" parent="OUTPUT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】证据驱动分析&#xa;逐题回答、跨论文比较、适用条件&#xa;支持与不同发现分开表达" vertex="1">
+          <mxGeometry height="115" width="460" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="Q" parent="OUTPUT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】覆盖核查与有界补强&#xa;检查问题缺口、引用、版本与交付条件&#xa;补强受批准范围与预算限制&#xa;分析后多轮补证见下方规划与第 04 页" vertex="1">
+          <mxGeometry height="135" width="460" x="20" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="R" parent="OUTPUT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】报告与连续研究体验&#xa;对话研究卡、进度、来源与报告溯源&#xa;Markdown / HTML 下载与固定材料重放&#xa;正式／草稿状态和内容限制分别展示" vertex="1">
+          <mxGeometry height="135" width="460" x="20" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="DELIVER" parent="OUTPUT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P2／P4】分析与交付增强&#xa;缺口→补证→重分析→再检查&#xa;语义／数字核验、冲突说明与人工审阅&#xa;报告版本、增量重评估与差异展示&#xa;图表与 DOCX / PDF 导出&#xa;比较补证前后的质量与成本" vertex="1">
+          <mxGeometry height="220" width="460" x="20" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="SUPPORT" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="公共基座：复用 Harness 能力，维护学术业务封装" vertex="1">
+          <mxGeometry height="270" width="1540" x="60" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="BASE" parent="SUPPORT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】模型／工具接口、后台任务、会话持久化与 Trace&#xa;超时重试、批次恢复、取消、部分成果保留、固定样例和升级检查&#xa;后续补齐真实运行基线；&#xa;并发请求不等于已接入独立子 Agent" vertex="1">
+          <mxGeometry height="190" width="740" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="ROUTE" parent="SUPPORT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划／对照】模型分层与资源策略&#xa;抽取、分析、写作分别选择模型&#xa;按质量目标与成本设置研究深度&#xa;复用统一调用、预算与失败处理&#xa;与单模型方案对照后接入" vertex="1">
+          <mxGeometry height="190" width="360" x="780" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="MON" parent="SUPPORT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P4】持续任务调度&#xa;主题订阅、定时触发研究&#xa;运行预算、重试与通知控制&#xa;调用各业务的增量处理流程&#xa;遵守批准范围与去重规则" vertex="1">
+          <mxGeometry height="190" width="360" x="1160" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="EXTEND" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="平台业务扩展：与学术洞察并列，共享公共基座与证据库" vertex="1">
+          <mxGeometry height="165" width="1540" x="60" y="1690" as="geometry" />
+        </mxCell>
+        <mxCell id="OTHER" parent="EXTEND" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="【规划 P4】会议洞察／产品洞察／新闻洞察&#xa;复用公共基座、证据读写、来源身份与版本；各业务保留独立入口、来源适配和分析方法&#xa;共享材料仍核对批准范围与适用性；这些业务与学术洞察并列，不作为学术研究流程的子模块" vertex="1">
+          <mxGeometry height="95" width="1500" x="20" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="future-note" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="规划能力已归入所属层；绿色为已合入、橙色为本地开发、蓝色虚线为规划。路线、分工和循环补证详图见第 02—04 页。" vertex="1">
+          <mxGeometry height="35" width="1540" x="60" y="1880" as="geometry" />
+        </mxCell>
+        <mxCell id="source-note" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="核对：本地主分支 8c480a981c（含 PR #129—131）；领域勘察仍为工作区修改。旧计划中的日期和深度默认值不直接沿用。" vertex="1">
+          <mxGeometry height="40" width="1540" x="60" y="1925" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="P" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="H" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="H" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="W" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="W" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="S" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="760" />
+              <mxPoint x="300" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="S" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="E" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="E" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="RECORD" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="1200" />
+              <mxPoint x="560" y="930" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="RECORD" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="STORE" value="演进为跨研究复用">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="23" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="RECORD" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="A" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="904.5" />
+              <mxPoint x="1080" y="902.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="A" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="Q" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="Q" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="R" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="STORE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.15;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="A" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1070" y="1145" />
+              <mxPoint x="1070" y="937" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="R" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.6;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="STORE" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1085" y="1276" />
+              <mxPoint x="1085" y="1275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="quality-loop" edge="1" parent="1" source="Q" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.4;exitDx=0;exitDy=0;entryX=1;entryY=0.32235294117647056;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="COLLECT" value="规划：缺口驱动补检／补读">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-10" y="-16" as="offset" />
+            <Array as="points">
+              <mxPoint x="1080" y="1064" />
+              <mxPoint x="540" y="1064" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="BASE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="W" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="445" />
+              <mxPoint x="990" y="445" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="survey-h" edge="1" parent="1" source="SURVEY" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="H" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1385" y="525" />
+              <mxPoint x="615" y="525" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="scheduled-research" edge="1" parent="1" source="MON" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="W" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1400" y="445" />
+              <mxPoint x="1116" y="445" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="isolated-reading" edge="1" parent="1" source="E" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="SGs0BiPExKxfgzegUEXJ-1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="updated-sources" edge="1" parent="1" source="SOURCE-UPDATES" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="S" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="35" y="1545" />
+              <mxPoint x="35" y="930" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="version-impact" edge="1" parent="1" source="STORE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="VERSION-TRACK" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="report-enhancement" edge="1" parent="1" source="R" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="DELIVER" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="incremental-report" edge="1" parent="1" source="VERSION-TRACK" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="DELIVER" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="1487.5" />
+              <mxPoint x="1080" y="1500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-roadmap" name="02 后续路线与验收">
+    <mxGraphModel dx="1017" dy="563" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="1790" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="02 后续路线与验收" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="建议工作顺序与交付门槛，不是工期承诺｜P1 领域勘察与 P2 循环补证优先并行；循环增强不等待 P3 共享证据库" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="P0" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="P0  可靠性与真实验收&#xa;当前推进" vertex="1">
+          <mxGeometry height="100" width="280" x="60" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="P1" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="P1  领域勘察与多方向研究&#xa;当前推进" vertex="1">
+          <mxGeometry height="100" width="280" x="370" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="P2" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P2  循环补证与可信交付&#xa;后续规划" vertex="1">
+          <mxGeometry height="100" width="280" x="680" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="P3" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P3  共享证据与跨研究复用&#xa;后续规划" vertex="1">
+          <mxGeometry height="100" width="280" x="990" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="P4" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P4  持续洞察与业务扩展&#xa;后续规划" vertex="1">
+          <mxGeometry height="100" width="280" x="1300" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="order-note" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="上方表示建议优先级，具体依赖见下表。P2 基于已有有界补强扩展循环；多 Agent、向量检索和模型分层另作独立对照。" vertex="1">
+          <mxGeometry height="45" width="1540" x="60" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="head-0" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="阶段与依赖" vertex="1">
+          <mxGeometry height="45" width="240" x="60" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="head-1" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="具体交付" vertex="1">
+          <mxGeometry height="45" width="510" x="300" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="head-2" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="完成条件／验收材料" vertex="1">
+          <mxGeometry height="45" width="510" x="810" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="head-3" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="建议分工" vertex="1">
+          <mxGeometry height="45" width="280" x="1320" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="P0-label" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="P0&#xa;可靠性与真实验收&#xa;&#xa;当前收尾；基础是已合入&#xa;代码" vertex="1">
+          <mxGeometry height="260" width="240" x="60" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="P0-work" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="同题同计划复测范围误暂停与漏筛&#xa;解释最低篇数、目标篇数及停止原因&#xa;补全文失败分类、限流与恢复场景&#xa;建立补证前后质量、耗时与调用基线" vertex="1">
+          <mxGeometry height="260" width="510" x="300" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="P0-gate" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="每篇未纳入原因可解释且可追溯&#xa;零证据不生成结论，缺口如实展示&#xa;取消／恢复保留已验证材料与已用预算&#xa;记录耗时、调用、覆盖与人工核对结果" vertex="1">
+          <mxGeometry height="260" width="510" x="810" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="P0-owner" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="A：状态、预算、恢复和集成&#xa;B：来源、筛选和真实复测&#xa;C：报告核对与浏览器验收" vertex="1">
+          <mxGeometry height="260" width="280" x="1320" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="P1-label" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="P1&#xa;领域勘察与多方向研究&#xa;&#xa;本地在研；沿用 P0 验收&#xa;基线" vertex="1">
+          <mxGeometry height="260" width="240" x="60" y="645" as="geometry" />
+        </mxCell>
+        <mxCell id="P1-work" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="先审元数据勘察，再审深入研究计划&#xa;保存候选方向、未分类材料与出处&#xa;逐方向分配查询、证据目标和预算&#xa;贯通页面、计划绑定和报告缺口展示" vertex="1">
+          <mxGeometry height="260" width="510" x="300" y="645" as="geometry" />
+        </mxCell>
+        <mxCell id="P1-gate" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="每个候选方向均可回到标题或摘要&#xa;第二次批准准确绑定已保存的勘察&#xa;深研结论使用核验后的实际证据&#xa;两阶段真实运行与刷新恢复检查通过" vertex="1">
+          <mxGeometry height="260" width="510" x="810" y="645" as="geometry" />
+        </mxCell>
+        <mxCell id="P1-owner" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="A：批准绑定、编排和存储事件&#xa;B：方向检索、归类与来源核验&#xa;C：勘察卡、方向选择和报告" vertex="1">
+          <mxGeometry height="260" width="280" x="1320" y="645" as="geometry" />
+        </mxCell>
+        <mxCell id="P2-label" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P2&#xa;循环补证与可信交付&#xa;&#xa;优先增强；依赖 P0，可与&#xa; P1 并行" vertex="1">
+          <mxGeometry height="260" width="240" x="60" y="905" as="geometry" />
+        </mxCell>
+        <mxCell id="P2-work" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="质量检查→缺口清单→补检或补读&#xa;核验新增证据→重分析→再次核查&#xa;记录轮次、预算、支持变化与报告版本&#xa;补充语义／数字复核及可选人工审阅&#xa;图表、导出及模型策略另设对照验收" vertex="1">
+          <mxGeometry height="260" width="510" x="300" y="905" as="geometry" />
+        </mxCell>
+        <mxCell id="P2-gate" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="每轮补证对应具体问题或论断缺口&#xa;新证据必须可定位，失败不清空旧成果&#xa;达到获批要求／预算耗尽／无增益可收尾&#xa;同计划比较完整性、支持度、数字与成本&#xa;未达交付要求保留受限结果及剩余缺口" vertex="1">
+          <mxGeometry height="260" width="510" x="810" y="905" as="geometry" />
+        </mxCell>
+        <mxCell id="P2-owner" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="A：循环调度、预算和恢复&#xa;B：定向补检补读与证据核验&#xa;C：缺口评估、重写和质量对比" vertex="1">
+          <mxGeometry height="260" width="280" x="1320" y="905" as="geometry" />
+        </mxCell>
+        <mxCell id="P3-label" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P3&#xa;共享证据与跨研究复用&#xa;&#xa;依赖 P0 身份、版本与来&#xa;源规则" vertex="1">
+          <mxGeometry height="260" width="240" x="60" y="1165" as="geometry" />
+        </mxCell>
+        <mxCell id="P3-work" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="先稳定结构化记录与统一读写接口&#xa;从现有会话／导出材料建立可查询存储&#xa;维护论文版本、原文位置和内容哈希&#xa;增量接入本地资料、授权来源与报告版本" vertex="1">
+          <mxGeometry height="260" width="510" x="300" y="1165" as="geometry" />
+        </mxCell>
+        <mxCell id="P3-gate" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="跨两次研究可复用同版材料及证据&#xa;新任务仍重新核对相关性和批准范围&#xa;内容变化新增版本，不覆盖旧证据&#xa;可从固定证据重建报告并追踪来源" vertex="1">
+          <mxGeometry height="260" width="510" x="810" y="1165" as="geometry" />
+        </mxCell>
+        <mxCell id="P3-owner" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="A：共享模型、存储接口和迁移&#xa;B：摄取、去重、版本与来源更新&#xa;C：证据检索、复用入口与版本查&#xa;看" vertex="1">
+          <mxGeometry height="260" width="280" x="1320" y="1165" as="geometry" />
+        </mxCell>
+        <mxCell id="P4-label" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="P4&#xa;持续洞察与业务扩展&#xa;&#xa;依赖 P3 共享库与 P2 版&#xa;本／审核记录" vertex="1">
+          <mxGeometry height="260" width="240" x="60" y="1425" as="geometry" />
+        </mxCell>
+        <mxCell id="P4-work" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="订阅主题，定期发现新论文与内容更新&#xa;识别受影响结论，补证后生成版本差异&#xa;接入会议、产品和新闻的场景方法&#xa;保留增量去重、失败恢复与通知控制" vertex="1">
+          <mxGeometry height="260" width="510" x="300" y="1425" as="geometry" />
+        </mxCell>
+        <mxCell id="P4-gate" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="同一增量重复运行不产生重复成果&#xa;更新来源与受影响结论之间可追踪&#xa;跨业务引用仍核对范围和证据等级&#xa;定时失败、恢复与通知经过真实验收" vertex="1">
+          <mxGeometry height="260" width="510" x="810" y="1425" as="geometry" />
+        </mxCell>
+        <mxCell id="P4-owner" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="A：增量调度、版本与权限隔离&#xa;B：监测来源、更新识别及适配&#xa;C：差异报告、订阅与审核界面" vertex="1">
+          <mxGeometry height="260" width="280" x="1320" y="1425" as="geometry" />
+        </mxCell>
+        <mxCell id="roadmap-note" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="每阶段留存：输入材料和计划、代码版本、实际结果、失败原因、人工核对及剩余缺口。验收不以“测试数量”或“关键词命中率”替代报告质量。" vertex="1">
+          <mxGeometry height="55" width="1540" x="60" y="1705" as="geometry" />
+        </mxCell>
+        <mxCell id="priority-0" edge="1" parent="1" source="P0" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="P1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="priority-1" edge="1" parent="1" source="P1" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="P2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="priority-2" edge="1" parent="1" source="P2" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="P3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="priority-3" edge="1" parent="1" source="P3" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="P4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-handoff" name="03 成员分工、交接与设计取舍">
+    <mxGraphModel dx="1660" dy="1810" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="1810" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="03 成员分工、交接与设计取舍" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="24" width="1540" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="建议分工沿用 A 集成与共享模型、B 来源与证据、C 分析报告与页面；以共同样例和独立验收汇合，不新增已完成承诺" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="1540" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-A" value="成员 A｜共享规则与系统集成" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="145" width="500" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-A-body" value="计划审批、循环轮次、预算与恢复&#xa;共享证据模型、版本与存储接口&#xa;领域勘察和循环补证的整体接入&#xa;上游升级检查、跨模块联调&#xa;交付：接口样例、事件说明、端到端结果" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="TEAM-A">
+          <mxGeometry x="20" y="60" width="460" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-B" value="成员 B｜来源、论文与证据" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="580" y="145" width="500" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-B-body" value="多来源检索、授权材料与全文获取&#xa;按质量缺口定向补检、补读与核验&#xa;来源身份、原文位置、更新与去重&#xa;真实论文召回、误排除与耗时复测&#xa;交付：规范记录、证据样本、失败清单" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="TEAM-B">
+          <mxGeometry x="20" y="60" width="460" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-C" value="成员 C｜分析、报告与用户体验" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="145" width="500" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="TEAM-C-body" value="领域方向展示、计划和报告交互&#xa;质量缺口评估、更新论断与重新成文&#xa;报告版本、图表、导出与差异展示&#xa;补证前后质量对比和浏览器验收&#xa;交付：报告样例、评测结果、可用界面" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="TEAM-C">
+          <mxGeometry x="20" y="60" width="460" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="HANDOFF" value="共同交接对象：现有记录优先复用，新增字段由 A 统一确认" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="460" width="1540" height="395" as="geometry" />
+        </mxCell>
+        <mxCell id="I1" value="研究需求与批准&#xa;计划身份／版本／范围／问题／日期政策&#xa;领域勘察结果与第二次批准准确绑定&#xa;计划变化不得继续沿用旧批准" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="20" y="55" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="I2" value="论文、版本与来源&#xa;论文身份、版本、来源及内容哈希&#xa;原始获取时间、日期口径和可用状态&#xa;未知、失败与未处理必须分别保留" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="530" y="55" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="I3" value="证据与支持关系&#xa;逐字摘录、原文位置与证据等级&#xa;关联问题／方面、实验条件及反证&#xa;原文定位有效不等于语义一定支持" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="1040" y="55" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="I4" value="运行、预算与恢复&#xa;运行身份、补证轮次、额度与停止原因&#xa;缺口清单、新增证据和失败分别保存&#xa;恢复不重置预算，也不串用其他研究" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="20" y="220" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="I5" value="共享证据复用（规划）&#xa;版本化读写接口、适用性与来源权限&#xa;新证据追加，旧结论可追溯和标记过时&#xa;来源缓存与共享证据库分开管理" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="530" y="220" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="I6" value="分析、报告与审核&#xa;报告引用、方向覆盖和内容限制&#xa;交付状态与独立语义／人工审核分开&#xa;图表、正文、导出使用同一证据版本" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="HANDOFF">
+          <mxGeometry x="1040" y="220" width="480" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="DECISIONS" value="方案与调研存在分歧时的建议取舍：以本项目的固定样本验证" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="890" width="1540" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="D1" value="流程与 Agent&#xa;&#xa;保留现有确定性流程、审批和有界补强。&#xa;子 Agent 用于隔离阅读上下文，&#xa;输入自包含、输出结构化、预算可追踪。&#xa;不重写 dsh 主循环、工具和会话底座。&#xa;“每篇一个 Agent”先与现有并发做对照。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="DECISIONS">
+          <mxGeometry x="20" y="55" width="480" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" value="审核与写作&#xa;&#xa;继续执行引用、版本与结构检查。&#xa;增量补充语义、数字核对和人工审阅。&#xa;独立批判 Agent、逐节审批、分章写作&#xa;列为可选策略，不默认强制串入主流程。&#xa;避免用固定字数或新增审批代替质量。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="DECISIONS">
+          <mxGeometry x="530" y="55" width="480" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="D3" value="证据库与检索&#xa;&#xa;先稳定字段、读写和可查询持久化，&#xa;再逐步接入跨研究复用和索引。&#xa;向量索引须具备服务、预算和对照收益；&#xa;不把缓存命中视为研究结论可直接复用。&#xa;“10分钟”“全领域覆盖”需另行真实验收。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="DECISIONS">
+          <mxGeometry x="1040" y="55" width="480" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="SOURCES" value="资料依据与状态口径" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1360" width="1540" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="sources-left" value="目标与策略资料（ziliao）&#xa;insight-agent-proposal.md：共享证据与分组业务&#xa;deep-research-plan.md：只开发研究策略层&#xa;research/strategy-comparison.md：策略对比与取舍&#xa;research/项目研究（竞品分析）.md：观察与设计线索&#xa;以上为本地调研资料，不作为外部产品当前能力证明。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="SOURCES">
+          <mxGeometry x="20" y="60" width="735" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="sources-right" value="实现与验收资料（insight-agent）&#xa;docs/academic-insight-plan.zh.md：M0—M4目标，旧进度不沿用&#xa;docs/subsystems/academic-insight.zh.md：当前模块与接口&#xa;docs/upgrade-guide/：日期、覆盖、定向补强、后台进度&#xa;docs/persistence-changes/2026-11-02-academic-domain-survey.zh.md&#xa;z-team_docs/开发记录/2026-11-02-yzyhello-抽取派发按问题检索排序.md&#xa;Git主分支为依据；领域勘察说明中含未提交实现。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="SOURCES">
+          <mxGeometry x="775" y="60" width="745" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="边界：正文依据来源记录；元数据勘察不充当全文证据；没有完整真实验收的功能不标记为“质量已达标”。分工与顺序为本次建议。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1745" width="1540" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-evidence-loop" name="04 循环补证与报告质量提升">
+    <mxGraphModel dx="1225" dy="678" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="1850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="04 循环补证与报告质量提升" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="目的：围绕报告的具体缺口补充有效证据，再更新分析与报告｜已有有界补强作为基础；下方完整多轮反馈为 P2 规划" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="LOOP-BASE" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="已有基础：复用现有流程与记录，不重复建设底座" vertex="1">
+          <mxGeometry height="170" width="1540" x="60" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="EXISTING" parent="LOOP-BASE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="【已合入】计划审批、按问题选段、问题／方面覆盖检查、定向有界补强&#xa;证据与论文版本关联、原文定位核验、运行预算与恢复、单篇深入补充&#xa;【本次规划】把分析后的论断和数据缺口反馈到补检／补读，并支持多轮重分析与报告更新" vertex="1">
+          <mxGeometry height="100" width="1500" x="20" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CYCLE" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="规划闭环：每轮都有具体目标、新增材料记录和质量复核" vertex="1">
+          <mxGeometry height="810" width="1540" x="60" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="REWRITE" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="① 更新分析与报告草稿&#xa;根据当前有效证据回答研究问题&#xa;新增证据只更新受影响的论断&#xa;无有效证据时仅保留问题与缺口" vertex="1">
+          <mxGeometry height="160" width="420" x="30" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="CHECK" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="② 检查报告质量&#xa;哪些问题没答、哪些结论缺少依据&#xa;数字与实验条件是否完整一致&#xa;有无相反发现、范围和引用问题" vertex="1">
+          <mxGeometry height="160" width="440" x="550" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="DECIDE" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="③ 确定是否继续补证&#xa;按缺口的重要性排序&#xa;核对批准范围、预算和新增信息&#xa;允许继续才进入下一轮" vertex="1">
+          <mxGeometry height="160" width="420" x="1090" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GATHER" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="④ 定向补检或补读&#xa;把缺口转成查询和阅读目标&#xa;优先补读已有论文，再按需补检&#xa;补足实验数据、比较条件和反证" vertex="1">
+          <mxGeometry height="160" width="420" x="1090" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="VERIFY" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑤ 核验新增材料&#xa;核对来源、论文版本与原文位置&#xa;判断是否真正支持对应论断&#xa;区分重复、无效、矛盾和有效证据" vertex="1">
+          <mxGeometry height="160" width="440" x="550" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="MERGE" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑥ 合并证据并记录本轮结果&#xa;追加有效证据，保留原有材料&#xa;记录新增、失败、缺口与已用预算&#xa;更新支持关系，再回到分析环节" vertex="1">
+          <mxGeometry height="160" width="420" x="30" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="RESULT" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="收尾与交付&#xa;按批准要求判断正式报告或草稿&#xa;披露剩余缺口、限制及停止原因&#xa;零有效证据不生成研究结论" vertex="1">
+          <mxGeometry height="130" width="420" x="1090" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="QUALITY-AIM" parent="CYCLE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="补证目标是提高依据的充分性、结论的可信度和报告的完整性。&#xa;发现反证时允许修正或撤回旧论断，不把“论文更多”当成质量更好。&#xa;每轮保留证据和报告版本，便于比较改善在哪里、付出了多少额外成本。" vertex="1">
+          <mxGeometry height="130" width="960" x="30" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="STOPS" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="停止条件与交付边界&#xa;&#xa;达到获批的交付要求，或&#xa;达到轮次／调用／耗时／额度上限，或&#xa;满足配置的“无新增有效信息”条件，&#xa;以及用户取消、不可恢复故障。&#xa;&#xa;预算停止不代表质量已经合格；&#xa;未解决问题必须留在交付说明中。" vertex="1">
+          <mxGeometry height="320" width="500" x="60" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="GUARDS" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="范围、失败与恢复&#xa;&#xa;补证围绕已批准的问题和范围执行。&#xa;新增方向或扩大范围需再次批准。&#xa;无效证据不纳入结论；失败不清空&#xa;旧证据和已保存的报告版本。&#xa;&#xa;保存轮次、缺口、操作、预算和版本；&#xa;恢复后继续未完成工作，不重置额度。" vertex="1">
+          <mxGeometry height="320" width="500" x="580" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="OWNERS" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="成员分工与交接&#xa;&#xa;A：循环调度、批准绑定、预算、&#xa;检查点恢复和整体接入。&#xa;B：按缺口补检、补读，核验新证据。&#xa;C：评估缺口、更新分析与报告，&#xa;比较补证前后的质量。&#xa;&#xa;共同交接：缺口清单、有效证据、&#xa;停止原因、报告版本和质量变化。" vertex="1">
+          <mxGeometry height="320" width="500" x="1100" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="LOOP-ACCEPT" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="如何验收：使用相同计划和初始材料，对比关闭与开启循环的结果" vertex="1">
+          <mxGeometry height="220" width="1540" x="60" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="MEASURES" parent="LOOP-ACCEPT" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="人工核对：问题回答完整性、论断支持是否充分、引用是否准确、数字与实验条件是否一致、是否披露冲突。&#xa;同时记录：新增有效证据、已解决／仍未解决的缺口、额外调用、耗时与成本；不只看论文数量和自动评分。&#xa;固定场景覆盖：补证成功、只找到重复材料、检索失败、预算耗尽、取消恢复、出现反证、零有效证据。&#xa;先完成固定材料对照，再验证真实论文与真实模型；如无质量增益，调整补证策略和停止条件。" vertex="1">
+          <mxGeometry height="145" width="1500" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-note" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="注：流程编号是单轮执行顺序。首次分析使用已有有效证据；每次循环均复核实际质量，不保证增加轮数就一定提高质量。" vertex="1">
+          <mxGeometry height="45" width="1540" x="60" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-1" edge="1" parent="1" source="REWRITE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="CHECK" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-2" edge="1" parent="1" source="CHECK" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="DECIDE" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-3" edge="1" parent="1" source="DECIDE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="GATHER" value="有缺口且允许继续">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loop-4" edge="1" parent="1" source="GATHER" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="VERIFY" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-5" edge="1" parent="1" source="VERIFY" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="MERGE" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-6" edge="1" parent="1" source="MERGE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="REWRITE" value="带着新增证据再次分析">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loop-stop" edge="1" parent="1" source="DECIDE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="RESULT" value="达到要求或触发停止条件">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-150" y="91" as="offset" />
+            <Array as="points">
+              <mxPoint x="1620" y="510" />
+              <mxPoint x="1620" y="955" />
+              <mxPoint x="1360" y="955" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-domain-survey" name="05 领域勘察与深入研究架构">
+    <mxGraphModel dx="1753" dy="971" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="1950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="05 领域勘察与深入研究架构" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="核对日期：2026-11-03｜橙色为本地未提交实现，绿色为复用的已合入能力，蓝色虚线为后续规划；真实端到端效果仍待验收" vertex="1">
+          <mxGeometry height="48" width="1540" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-BASE" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="公共基座：沿用现有审批、来源、模型与会话服务" vertex="1">
+          <mxGeometry height="145" width="1540" x="60" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-SHARED" parent="D5-BASE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="Plan 审批与 Session 日志｜学术来源接口｜模型调用与有限重试｜维护任务、超时与事件持久化&#xa;领域勘察复用这些能力；新增计划、方向图谱、绑定校验和页面在本地工作区开发。" vertex="1">
+          <mxGeometry height="75" width="1500" x="20" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-SURVEY" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="阶段一：单独批准元数据勘察，发现有出处的候选方向" vertex="1">
+          <mxGeometry height="550" width="1540" x="60" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-PLAN1" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="① 用户需求 → 勘察计划&#xa;明确主题、范围、年份和论文版本&#xa;列出方向发现与独立遗漏复查查询&#xa;披露候选数量、查询和总耗时上限&#xa;执行块：academic-domain-survey-json" vertex="1">
+          <mxGeometry height="160" width="460" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-APPROVE1" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="② 第一次用户批准&#xa;读取会话中明确批准的计划结果&#xa;校验正文、查询、日期与预算一致&#xa;生成与本次批准绑定的 planId&#xa;未批准或计划标识过期时拒绝执行" vertex="1">
+          <mxGeometry height="160" width="460" x="540" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-SEARCH" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="③ 执行已批准的学术查询&#xa;academicSource.searchAll&#xa;依次执行发现与遗漏复查查询&#xa;记录来源失败、截断等限制&#xa;本阶段不下载全文或生成研究结论" vertex="1">
+          <mxGeometry height="160" width="460" x="1060" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-SELECT" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="④ 整理论文与所选版本&#xa;去重、核对日期和版本条件&#xa;轮流从不同查询中选取候选&#xa;为遗漏复查结果保留进入候选池的机会&#xa;保留标题、摘要、来源与版本身份&#xa;限制候选数量，披露政策排除数" vertex="1">
+          <mxGeometry height="190" width="460" x="1060" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-MAP" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑤ 模型整理候选方向&#xa;只使用所给标题和摘要，按问题归类&#xa;产出名称、定义及逐字摘录支持&#xa;一篇论文可支持多个方向&#xa;无法可靠归类的论文进入未分类清单&#xa;请求、响应和失败写入会话日志" vertex="1">
+          <mxGeometry height="190" width="460" x="540" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-CHECK" parent="D5-SURVEY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑥ 核对图谱与原始元数据&#xa;论文身份必须存在，摘录必须能定位&#xa;方向名称不重复，方向必须有支持材料&#xa;每篇候选均须归类或标记未分类&#xa;原文匹配只是出处核验&#xa;方向归类是否合理仍需质量验收" vertex="1">
+          <mxGeometry height="190" width="460" x="20" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-REVIEW" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="阶段二：审阅图谱与遗漏，重新批准逐方向研究计划" vertex="1">
+          <mxGeometry height="260" width="1540" x="60" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-SAVED" parent="D5-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑦ 保存并展示勘察结果&#xa;保存 mapped / incomplete 状态&#xa;展示方向、出处、未分类论文与限制&#xa;DomainSurveyCard 可读取历史结果&#xa;图谱只表示本次候选材料中的方向&#xa;无方向时先调整勘察计划再审批" vertex="1">
+          <mxGeometry height="175" width="460" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-PLAN2" parent="D5-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑧ 制定逐方向深入研究计划&#xa;每个方向标为深入、概览或不覆盖&#xa;深入方向绑定独立问题与证据目标&#xa;逐方向设查询上限，披露全局预算&#xa;保留证据缺口补检轮次&#xa;同时说明未分类论文与勘察限制" vertex="1">
+          <mxGeometry height="175" width="460" x="540" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-APPROVE2" parent="D5-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑨ 第二次用户批准&#xa;单独批准 Research Brief 版本 9 计划&#xa;绑定准确的 surveyPlanId&#xa;保留图谱中所有方向的身份与名称&#xa;正文、方向分配、查询和预算须一致&#xa;第一次批准不能直接授权深入研究" vertex="1">
+          <mxGeometry height="175" width="460" x="1060" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-DEEP" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="阶段三：把获批方向交给已有全文证据流程，逐方向核对交付" vertex="1">
+          <mxGeometry height="290" width="1540" x="60" y="1250" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-BIND" parent="D5-DEEP" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑩ 启动前核对绑定关系&#xa;勘察结果须存在于当前会话&#xa;方向身份、名称、数量与图谱一致&#xa;核对最新获批的 researchBriefId&#xa;控制器带入真实勘察状态与限制&#xa;拒绝缺失、改名或被悄悄省略的方向" vertex="1">
+          <mxGeometry height="200" width="460" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-EXECUTE" parent="D5-DEEP" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="⑪ 复用已合入的全文证据流程&#xa;按获批查询 → 筛选 → 全文 → 证据&#xa;进行问题关联、分析与有界补强&#xa;【本地接入】按方向安排查询轮次&#xa;概览与不覆盖方向不分配深研查询&#xa;方向图谱不计作全文证据" vertex="1">
+          <mxGeometry height="200" width="460" x="540" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-REPORT" parent="D5-DEEP" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="⑫ 报告逐方向披露结果&#xa;只统计与问题关联且被报告引用的&#xa;全文证据论文，按论文身份去重&#xa;对比批准目标，显示缺口与实际引用&#xa;深入方向未达目标列为交付未达标&#xa;同时披露勘察不完整及未分类材料" vertex="1">
+          <mxGeometry height="200" width="460" x="1060" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-BOUNDARY" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="当前能力边界与下一步完善" vertex="1">
+          <mxGeometry height="260" width="1540" x="60" y="1585" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-CURRENT" parent="D5-BOUNDARY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="当前本地实现&#xa;同一批准可复用已保存图谱，执行中的重复请求共用任务。&#xa;模型连接或输出截断进行有限重试，必要时缩短摘要输入。&#xa;勘察查询中间结果尚无断点；失败后不能承诺逐查询续跑。&#xa;mapped 仅表示没有已记录限制，不等于穷尽整个领域。" vertex="1">
+          <mxGeometry height="180" width="730" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-NEXT" parent="D5-BOUNDARY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="待验收／规划&#xa;优先验证真实来源与模型下的两次审批和逐方向报告。&#xa;核对历史重开、部分来源失败、范围变更及方向质量。&#xa;再评估查询级检查点、进度与专用取消入口。&#xa;报告后的多轮循环补证沿用第 04 页规划，不计作本期完成。" vertex="1">
+          <mxGeometry height="180" width="745" x="775" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="D5-NOTE" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="阅读顺序：①—⑥ 先整理候选方向，⑦—⑨ 由用户决定研究深度，⑩—⑫ 再用全文证据形成报告。数据、状态和验收细节见第 06 页。" vertex="1">
+          <mxGeometry height="55" width="1540" x="60" y="1870" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-1" edge="1" parent="1" source="D5-PLAN1" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-APPROVE1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-2" edge="1" parent="1" source="D5-APPROVE1" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-SEARCH" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-3" edge="1" parent="1" source="D5-SEARCH" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-SELECT" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-4" edge="1" parent="1" source="D5-SELECT" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-MAP" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-5" edge="1" parent="1" source="D5-MAP" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-CHECK" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-6" edge="1" parent="1" source="D5-CHECK" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-SAVED" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-7" edge="1" parent="1" source="D5-SAVED" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-PLAN2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-8" edge="1" parent="1" source="D5-PLAN2" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-APPROVE2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-empty" edge="1" parent="1" source="D5-SELECT" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-SAVED" value="无候选：保存空图谱与限制">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="322.5" as="offset" />
+            <Array as="points">
+              <mxPoint x="1620" y="745" />
+              <mxPoint x="1620" y="915" />
+              <mxPoint x="310" y="915" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d5-replan" edge="1" parent="1" source="D5-SAVED" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-PLAN1" value="无方向：改计划再审批">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="145" y="-100.75" as="offset" />
+            <Array as="points">
+              <mxPoint x="35" y="1087.5" />
+              <mxPoint x="35" y="610" />
+              <mxPoint x="310" y="610" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d5-9" edge="1" parent="1" source="D5-APPROVE2" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-BIND" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1350" y="1225" />
+              <mxPoint x="310" y="1225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d5-10" edge="1" parent="1" source="D5-BIND" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-EXECUTE" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-11" edge="1" parent="1" source="D5-EXECUTE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="D5-REPORT" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-domain-survey-contracts" name="06 领域勘察审批、数据与异常处理">
+    <mxGraphModel dx="1660" dy="2020" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1660" pageHeight="2020" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="06 领域勘察审批、数据与异常处理" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="24" width="1540" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="核对日期：2026-11-03｜依据当前本地代码说明，不把流程阶段当作新增状态枚举；勘察专属实现尚未提交合入" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="1540" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-IDENTITY" value="审批与身份链：每一步都能回到明确批准及已保存结果" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="1540" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-APPROVAL" value="明确批准记录&#xa;exit_plan_mode 成功结果&#xa;meta.approved = true&#xa;绑定对应调用身份与计划正文&#xa;普通聊天表态不是此执行凭据" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-IDENTITY">
+          <mxGeometry x="20" y="55" width="340" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-PLANID" value="勘察身份 planId&#xa;sessionId + approved-survey&#xa;+ 本次批准 identity&#xa;启动请求须匹配最新获批计划&#xa;不同批准不会共用同一身份" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-IDENTITY">
+          <mxGeometry x="390" y="55" width="340" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-SAVED" value="持久化勘察结果&#xa;完成图谱事件写入 Session&#xa;domainSurveys[planId]&#xa;保留主题、条件、查询与结果&#xa;只有已保存图谱才能被绑定" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-IDENTITY">
+          <mxGeometry x="760" y="55" width="340" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-BIND" value="深入研究的第二次批准&#xa;domainResearchPlan.surveyPlanId&#xa;逐项核对 directionId 与 label&#xa;全部方向都有深度分配&#xa;通过后才执行获批研究计划" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-IDENTITY">
+          <mxGeometry x="1130" y="55" width="390" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA" value="关键交接数据：标题摘要图谱、批准计划、全文证据分别保存" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="445" width="1540" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA1" value="ApprovedDomainSurveyPlan｜勘察计划&#xa;planId / topic / scope / reviewedAt&#xa;selection：年份、日期口径、论文版本&#xa;queries：expression / purpose / roundIndex&#xa;limits：候选、每条结果与总耗时上限" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="20" y="55" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA2" value="DomainSurveyPaper｜候选材料&#xa;workId / title / abstract&#xa;workVersionId / versionType / publicationDate&#xa;sourceProviders / sourceRecords&#xa;缺少摘要可用标题；不把元数据升为全文证据" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="540" y="55" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA3" value="DomainSurveyDirection｜候选方向&#xa;directionId / label / definition / supports&#xa;support：workId / field / quote&#xa;身份由规范化名称与支持论文身份生成&#xa;一篇可属多方向，但不能又列为未分类" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="1060" y="55" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA4" value="DomainSurveyResult｜勘察结果&#xa;status：mapped 或 incomplete&#xa;queries / papers / map / limitations&#xa;map 含 directions 与 unclassifiedWorkIds&#xa;excludedByPolicy：日期或版本政策排除数" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="20" y="250" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA5" value="DomainResearchPlan｜深研安排&#xa;surveyPlanId + 每个方向的身份、名称与 depth&#xa;question / targetSupportingWorks&#xa;maximumQueries；scopeDecision 同步分配&#xa;控制器填入真实状态、限制与未分类数量" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="540" y="250" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-DATA6" value="报告核对｜从证据回到方向&#xa;direction.question → questionLinks.evidenceId&#xa;只计报告引用且 level = fulltext 的证据&#xa;academicWorkId 去重后与计划目标比较&#xa;不足、概览、不覆盖与勘察限制分别说明" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-DATA">
+          <mxGeometry x="1060" y="250" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-STATES" value="执行与读取：不完整的可用结果，与没有完成图谱的失败分开处理" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="930" width="1540" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-ADMIT" value="入场校验&#xa;检查批准、计划身份、来源和模型&#xa;缺少或不匹配时直接拒绝&#xa;不把旧批准用于新的勘察计划" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="20" y="55" width="340" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-RUN" value="任务运行&#xa;同批准的并发请求复用活动任务&#xa;接纳后由维护任务与总时限控制&#xa;页面关闭不等于后端任务已取消" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="390" y="55" width="340" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-SETTLED" value="验证后保存结果&#xa;来源失败、截断等可形成受限结果&#xa;模型或图谱校验失败不写完成图谱&#xa;已存在的历史图谱保持可读取" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="760" y="55" width="340" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-READ" value="结果读取与复用&#xa;getDomainSurvey 只读取已保存结果&#xa;同批准再次执行可返回既有结果&#xa;历史结果可读，不替换最新批准" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="1130" y="55" width="390" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-FAIL" value="失败与中断&#xa;模型有限重试后仍失败、总超时或维护任务中止：不写完成图谱。&#xa;已有模型请求／结果日志可追查；查询中间结果尚未持久化。&#xa;当前重新尝试会重新检索，不能承诺从上一条查询继续。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="20" y="230" width="710" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-RESULTS" value="结果状态的含义&#xa;mapped：没有已记录限制；incomplete：来源失败、截断、无方向等。&#xa;incomplete 仍可能保留有效方向，可交由第二次审批评估。&#xa;二者都不是“领域已穷尽”或“全文研究已经完成”的标志。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-STATES">
+          <mxGeometry x="760" y="230" width="760" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-ACCEPT" value="当前约束、验收重点与团队交接" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1365" width="1540" height="390" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-LIMITS" value="当前计划校验上限&#xa;&#xa;勘察：2—12 条查询，最多 4 轮，&#xa;每轮最多 3 条，后续轮次须做遗漏复查。&#xa;候选最多 40 篇，每条结果最多 30 条，&#xa;总耗时最多 60 分钟；实际按批准值执行。&#xa;深研：每个深入方向目标 1—5 篇，&#xa;最多 1—3 条查询；总查询最多 12 条，&#xa;每轮最多 3 条，并预留补检轮次。&#xa;&#xa;以上是允许上限，不是默认值或交付保证。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-ACCEPT">
+          <mxGeometry x="20" y="55" width="480" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-QA" value="优先补齐的验收&#xa;&#xa;真实来源与真实模型跑通两次审批。&#xa;对照核查方向是否合理、是否遗漏重要方向。&#xa;覆盖日期未知、重复版本、来源失败与截断。&#xa;确认伪造摘录、方向缺失或改名被拒绝。&#xa;核对历史重开、同批准复用与计划变更。&#xa;按方向核对报告的全文引用数与缺口。&#xa;&#xa;文档记录已有定向测试与类型构建；&#xa;真实勘察及大规模历史重开仍待验证。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="D6-ACCEPT">
+          <mxGeometry x="530" y="55" width="480" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-TEAM" value="建议分工与共同样例&#xa;&#xa;A：两次审批、身份绑定、控制器、&#xa;持久化事件、运行与整体联调。&#xa;B：查询、去重、日期版本筛选、&#xa;候选平衡、方向出处核验与真实来源复测。&#xa;C：勘察卡、方向和限制展示、&#xa;逐方向报告与实际引用核对。&#xa;&#xa;共同交付：同一勘察计划、候选和图谱、&#xa;第二次获批计划、报告及异常场景记录。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="D6-ACCEPT">
+          <mxGeometry x="1040" y="55" width="480" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-EVENTS" value="持久化事件（本地新增）&#xa;academic/domain-survey-request-v1&#xa;academic/domain-survey-result-v1&#xa;academic/domain-survey-completed-v1&#xa;分别保存模型输入、模型结果与已核验图谱。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1790" width="690" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-SOURCES" value="核对依据（insight-agent 工作区，2026-11-03）&#xa;academic/retrieval/src/domain-survey.ts；academic-research-controller/src/&#xa;domain-survey-plan.ts、domain-survey-model.ts、domain-research-binding.ts&#xa;ui-academic-research/src/client/DomainSurveyCard.tsx；academic/report/src/index.ts&#xa;docs/subsystems/academic-insight.zh.md；领域勘察与深入研究计划模板&#xa;docs/persistence-changes/2026-11-02-academic-domain-survey.zh.md" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="770" y="1790" width="830" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="D6-NOTE" value="边界：模型把标题摘要分成方向，程序核对身份、摘录与账目完整性；科学分类质量与覆盖程度需要真实样本及人工判断。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1960" width="1540" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-id-1" source="D6-APPROVAL" target="D6-PLANID" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-id-2" source="D6-PLANID" target="D6-SAVED" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-id-3" source="D6-SAVED" target="D6-BIND" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-run-1" source="D6-ADMIT" target="D6-RUN" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-run-2" source="D6-RUN" target="D6-SETTLED" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-run-3" source="D6-SETTLED" target="D6-READ" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6-failure" source="D6-RUN" target="D6-FAIL" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="1140" />
+              <mxPoint x="435" y="1140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d6-result-status" source="D6-SETTLED" target="D6-RESULTS" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="1140" />
+              <mxPoint x="1200" y="1140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-domain-evidence-loop" name="07 领域勘察与循环补证一体架构">
+    <mxGraphModel dx="2119" dy="1173" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1960" pageHeight="1690" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="07 领域勘察与循环补证一体架构" vertex="1">
+          <mxGeometry height="48" width="1840" x="60" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="组合目标架构｜绿色：复用已合入能力｜橙色：领域勘察本地实现｜蓝色虚线：规划增强｜核对日期：2026-11-03" vertex="1">
+          <mxGeometry height="48" width="1840" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="U-BASE" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="公共基座：审批、模型与来源接口、运行预算、会话记录和证据溯源" vertex="1">
+          <mxGeometry height="150" width="1840" x="60" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="U-SHARED" parent="U-BASE" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="复用已合入的模型调用、检索、会话存储、超时与部分成果保留能力。&#xa;领域勘察和循环补证共同关联计划、方向、问题、证据与报告；新增多轮调度和恢复记录仍属规划。" vertex="1">
+          <mxGeometry height="75" width="1800" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="U-DISCOVERY" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="一、先勘察领域，再由用户决定深入研究哪些方向" vertex="1">
+          <mxGeometry height="260" width="1540" x="60" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="U-SURVEY-APPROVAL" parent="U-DISCOVERY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="① 批准勘察计划&#xa;主题、范围、年份和版本&#xa;发现与遗漏复查查询&#xa;候选数量、查询与耗时预算&#xa;第一次用户批准" vertex="1">
+          <mxGeometry height="175" width="310" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-SURVEY" parent="U-DISCOVERY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="② 发现候选方向&#xa;检索标题摘要、复查遗漏&#xa;去重并核对日期与论文版本&#xa;模型归类，核验支持摘录&#xa;本阶段不提取全文研究证据" vertex="1">
+          <mxGeometry height="175" width="350" x="360" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-MAP" parent="U-DISCOVERY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="③ 保存候选方向图谱&#xa;方向、出处、未分类论文与限制&#xa;无方向时调整勘察计划再审批&#xa;有可研究方向才拟定深研计划&#xa;标题摘要图谱不作为全文证据" vertex="1">
+          <mxGeometry height="175" width="350" x="740" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-RESEARCH-APPROVAL" parent="U-DISCOVERY" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" value="④ 批准深入研究计划&#xa;全部方向分配：深入／概览／不覆盖&#xa;深入方向配置问题、证据目标和预算&#xa;第二次用户批准，绑定准确的勘察身份&#xa;确定本轮范围与补检额度" vertex="1">
+          <mxGeometry height="175" width="400" x="1120" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-RESEARCH" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="二、在获批范围内深入研究，围绕报告缺口循环补证" vertex="1">
+          <mxGeometry height="730" width="1540" x="60" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="U-EVIDENCE" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="⑤ 证据采集与有效证据集&#xa;初次：检索、全文获取、证据提取&#xa;增量：核验后追加，保留原有材料&#xa;按论文版本、问题和方向关联" vertex="1">
+          <mxGeometry height="150" width="420" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-ANALYZE" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" value="⑥ 分析与报告草稿&#xa;按方向与问题汇总有效依据&#xa;说明结论、引用及适用条件&#xa;【规划】补证后更新论断与报告" vertex="1">
+          <mxGeometry height="150" width="440" x="550" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-CHECK" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑦ 逐方向检查报告质量&#xa;已有基础：证据目标与引用核查&#xa;【规划】检查论断、数字、条件与反证&#xa;形成可以补检或补读的缺口清单" vertex="1">
+          <mxGeometry height="150" width="420" x="1090" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-DECIDE" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑧ 补证决策与范围检查&#xa;缺口是否在已批准研究范围内？&#xa;是否还有预算和新增信息空间？&#xa;决定继续补证、收尾或调整计划" vertex="1">
+          <mxGeometry height="175" width="420" x="1090" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="U-SUPPLEMENT" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑨ 定向补检或补读&#xa;把缺口转成查询与阅读目标&#xa;优先补读已有材料，再按需找新论文&#xa;补齐论断依据、实验条件和相反证据&#xa;不得擅自扩大获批范围" vertex="1">
+          <mxGeometry height="175" width="440" x="550" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="U-VERIFY" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="⑩ 核验并保存补充结果&#xa;核对来源、版本、原文与支持关系&#xa;去重、保留反证，失败保留旧成果&#xa;记录新增证据、未解决缺口及成本&#xa;有效结果追加到证据集，再次分析" vertex="1">
+          <mxGeometry height="175" width="420" x="20" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="U-STOP-RULES" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="停止：达到获批要求，或预算耗尽、无新增有效信息、用户取消等。&#xa;每轮比较问题完整性、论断支持与额外成本，发现反证时允许修正旧结论。&#xa;未达到交付要求时披露限制和剩余缺口；补证失败不清空原有成果。" vertex="1">
+          <mxGeometry height="95" width="970" x="20" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="U-DELIVER" parent="U-RESEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="报告交付与剩余缺口&#xa;按批准要求判断正式报告或草稿&#xa;无有效证据不生成研究结论" vertex="1">
+          <mxGeometry height="95" width="420" x="1090" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="U-REVIEW" parent="1" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" value="范围变化与重新审批" vertex="1">
+          <mxGeometry height="1050" width="260" x="1640" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="U-REAPPROVE" parent="U-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="重新审批后再执行&#xa;已有方向的范围变化&#xa;→ 回到深研审批&#xa;新增图谱之外的方向&#xa;→ 回到勘察审批" vertex="1">
+          <mxGeometry height="175" width="220" x="20" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="U-CLUE" parent="U-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="新方向作为待审线索&#xa;说明来源与变更原因&#xa;不直接加入获批范围&#xa;不直接写成研究结论&#xa;新勘察后重新绑定计划" vertex="1">
+          <mxGeometry height="150" width="220" x="20" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="U-SCOPE-CHANGE" parent="U-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" value="范围／方向改变&#xa;先保留已有成果&#xa;调整研究深度或范围&#xa;再次确认计划与预算&#xa;若新增方向不在图谱&#xa;先批准补充勘察" vertex="1">
+          <mxGeometry height="200" width="220" x="20" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="U-IN-SCOPE" parent="U-REVIEW" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="范围内补证&#xa;沿用已批准的边界&#xa;无需每轮重新审批&#xa;新增方向或扩大范围&#xa;才进入计划调整流程" vertex="1">
+          <mxGeometry height="155" width="220" x="20" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="U-DATA" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="数据贯通与恢复边界&#xa;勘察身份 → 方向 → 批准问题 → 证据 → 论断 → 报告版本&#xa;补证轮次、失败、已用预算和剩余缺口的持续记录属于循环增强规划。&#xa;勘察目前可复用保存结果，查询级中断续跑尚未实现。" vertex="1">
+          <mxGeometry height="145" width="900" x="60" y="1450" as="geometry" />
+        </mxCell>
+        <mxCell id="U-QUALITY" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" value="如何判断报告得到改善&#xa;对照补证前后：问题回答、论断支持、引用与数字准确性。&#xa;同时记录耗时与调用成本；只统计真实、可定位的有效证据。&#xa;以真实材料验收，不能承诺循环次数越多质量越高。" vertex="1">
+          <mxGeometry height="145" width="900" x="1000" y="1450" as="geometry" />
+        </mxCell>
+        <mxCell id="U-NOTE" parent="1" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" value="图中保留现有、本地和规划状态。流程细节见第 04—06 页；完整多轮补证与范围调整调度尚待实现和真实验收。" vertex="1">
+          <mxGeometry height="45" width="1840" x="60" y="1620" as="geometry" />
+        </mxCell>
+        <mxCell id="u-1" edge="1" parent="1" source="U-SURVEY-APPROVAL" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-SURVEY" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-2" edge="1" parent="1" source="U-SURVEY" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-MAP" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-3" edge="1" parent="1" source="U-MAP" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-RESEARCH-APPROVAL" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-4" edge="1" parent="1" source="U-RESEARCH-APPROVAL" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-EVIDENCE" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1380" y="640" />
+              <mxPoint x="290" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-5" edge="1" parent="1" source="U-EVIDENCE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-ANALYZE" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-6" edge="1" parent="1" source="U-ANALYZE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-CHECK" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-7" edge="1" parent="1" source="U-CHECK" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-DECIDE" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-8" edge="1" parent="1" source="U-DECIDE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-SUPPLEMENT" value="范围内">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-20.5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-9" edge="1" parent="1" source="U-SUPPLEMENT" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-VERIFY" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-10" edge="1" parent="1" source="U-VERIFY" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-EVIDENCE" value="追加证据，再次分析">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-finish" edge="1" parent="1" source="U-DECIDE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-DELIVER" value="达标或触发停止条件">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="1.5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-change" edge="1" parent="1" source="U-DECIDE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-SCOPE-CHANGE" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1610" y="1137.5" />
+              <mxPoint x="1610" y="1070" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-request-reapproval" edge="1" parent="1" source="U-SCOPE-CHANGE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-REAPPROVE" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1915" y="990" />
+              <mxPoint x="1915" y="532.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="u-known-direction" edge="1" parent="1" source="U-REAPPROVE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0;exitY=0.65;exitDx=0;exitDy=0;entryX=1;entryY=0.65;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-RESEARCH-APPROVAL" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="u-new-direction" edge="1" parent="1" source="U-REAPPROVE" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" target="U-SURVEY-APPROVAL" value="新增方向：先补充勘察，再审批深研">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="217.5" as="offset" />
+            <Array as="points">
+              <mxPoint x="1770" y="325" />
+              <mxPoint x="235" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="academic-foundation-optimization" name="08 新基座适配与优化目标架构"><mxGraphModel dx="2160" dy="2390" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2160" pageHeight="2390" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+<mxCell id="title" value="08 新基座适配与优化目标架构" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#243342;fontStyle=1;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="60" y="24" width="2040" height="50" as="geometry"/></mxCell>
+<mxCell id="subtitle" value="目标：先收口状态读取，再完成同仓库独立启停；各阶段分别验收。&#xa;基线：2026-11-03，已合入 DSH v0.2.1-rc.2；领域勘察为未提交 WIP，本页优化均为建议。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="60" y="82" width="2040" height="56" as="geometry"/></mxCell>
+<mxCell id="legend-existing" value="绿色：复用已合入能力" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="80" y="153" width="270" height="40" as="geometry"/></mxCell>
+<mxCell id="legend-plan" value="蓝色虚线：建议改造／待补" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="1"><mxGeometry x="370" y="153" width="320" height="40" as="geometry"/></mxCell>
+<mxCell id="legend-risk" value="红色：当前待优化" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff0ee;strokeColor=#be8177;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="710" y="153" width="250" height="40" as="geometry"/></mxCell>
+<mxCell id="legend-wip" value="橙色：未提交改动关联" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="980" y="153" width="290" height="40" as="geometry"/></mxCell>
+<mxCell id="legend-priority" value="本页 P0—P3 是工程改造优先级，与第 02 页业务路线编号分别解释。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="1310" y="153" width="770" height="40" as="geometry"/></mxCell>
+<mxCell id="CURRENT" value="当前缺口：接口已接入，读取与组装仍有重复和耦合" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="60" y="220" width="2040" height="250" as="geometry"/></mxCell>
+<mxCell id="CUR-READ" value="普通状态查询仍全量重折&#xa;plan／list／get → observeSession&#xa;projectionMode: none → 遍历全部 events&#xa;绕过已注册的增量学术投影" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff0ee;strokeColor=#be8177;strokeWidth=1;" vertex="1" parent="CURRENT"><mxGeometry x="20" y="60" width="470" height="165" as="geometry"/></mxCell>
+<mxCell id="CUR-CLIENT" value="证据增强页面仍搬运完整历史&#xa;Client follow + page 拉完记录&#xa;再 projectEnhancement／排序扫描&#xa;局部页面开销随整个会话增长" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff0ee;strokeColor=#be8177;strokeWidth=1;" vertex="1" parent="CURRENT"><mxGeometry x="530" y="60" width="470" height="165" as="geometry"/></mxCell>
+<mxCell id="CUR-STATE" value="读取投影也需要控制体积&#xa;recoveryRuns 累积事件与检查点&#xa;Trace 分页前仍扫描、排序&#xa;WIP 勘察结果按 planId 持续累计" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff0ee;strokeColor=#be8177;strokeWidth=1;" vertex="1" parent="CURRENT"><mxGeometry x="1040" y="60" width="470" height="165" as="geometry"/></mxCell>
+<mxCell id="CUR-BUNDLE" value="学术仍嵌入共享 Web 组合&#xa;Host／UI／preset／Skills 分散接线&#xa;普通 api-remotes 硬挂学术命名空间&#xa;显示文案、计划呈现与持久化有接线" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#fff0ee;strokeColor=#be8177;strokeWidth=1;" vertex="1" parent="CURRENT"><mxGeometry x="1550" y="60" width="470" height="165" as="geometry"/></mxCell>
+<mxCell id="READ-TARGET" value="目标 A：统一会话状态读取，向界面提供定界的小视图" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="60" y="520" width="1260" height="950" as="geometry"/></mxCell>
+<mxCell id="SESSION-FACTS" value="Session 事件日志&#xa;保留批准、身份和证据事实&#xa;旧日志不重写、不静默丢事件&#xa;已完成的轻量进度机制继续保留" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="20" y="65" width="350" height="120" as="geometry"/></mxCell>
+<mxCell id="HOST-PROJECTION" value="已注册的 Host 学术投影（现有能力，内部状态不直接进入 wire）&#xa;增量派生：获批计划、运行索引、恢复状态、增强结果&#xa;【待优化】最新检查点＋必要校验事实／尾部事件；勘察摘要与明细分开" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="440" y="65" width="780" height="120" as="geometry"/></mxCell>
+<mxCell id="LIVE-READ" value="P1｜活跃会话优先复用 stateOf&#xa;现有基座能力，无需另建全局状态缓存&#xa;【待接入】普通计划、运行查询改走已折状态&#xa;同步取得状态与水位；保留归属和审批校验" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="40" y="270" width="520" height="160" as="geometry"/></mxCell>
+<mxCell id="COLD-READ" value="P2｜冷历史按准确水位读取 Host 状态&#xa;【待补接口】服务端按 key 的 exact-cut 读面&#xa;由现有 prepared cache／revision／lease 管理&#xa;状态版本变化时受控重建，不发送内部全量状态&#xa;旧大日志首次打开仍可能需要完整读取" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="680" y="270" width="520" height="160" as="geometry"/></mxCell>
+<mxCell id="READ-SERVICE" value="统一学术只读入口&#xa;校验 Session／run／Brief 版本／cursor，同一观察切面保持一致&#xa;只读不启动研究、不取得写句柄、不把缓存命中当成新的批准" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="180" y="520" width="900" height="130" as="geometry"/></mxCell>
+<mxCell id="SAFE-VIEWS" value="给界面的轻量数据与定界查询&#xa;计划／运行摘要；增强结果按 run＋workVersion 查询&#xa;明细按需分页；Trace 使用增量索引与稳定游标&#xa;不让浏览器 follow＋page 搬运完整会话日志" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="20" y="735" width="780" height="150" as="geometry"/></mxCell>
+<mxCell id="CLIENT-CARDS" value="现有研究卡片与会话资源&#xa;【待适配】共享 bootstrap／watch&#xa;多卡片不重复读取、关闭可取消读取&#xa;断开观察不取消后台研究" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="890" y="735" width="330" height="150" as="geometry"/></mxCell>
+<mxCell id="READ-NOTE" value="不能只把 projectionMode 改为 all：academicResearch 当前是 Host-only，没有可直接读取的客户端 wire。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="READ-TARGET"><mxGeometry x="20" y="900" width="1200" height="30" as="geometry"/></mxCell>
+<mxCell id="BUNDLE-TARGET" value="目标 B：同仓库独立启停的 Academic bundle" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="1360" y="520" width="740" height="950" as="geometry"/></mxCell>
+<mxCell id="SHARED-BASE" value="现有公共基座：dsh-base ＋ dsh-web-app&#xa;保留通用会话、模型、Web、插件与客户端能力&#xa;继续通过标准 dsh web profile 启动" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=17;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#edf7f0;strokeColor=#6d947b;strokeWidth=1;" vertex="1" parent="BUNDLE-TARGET"><mxGeometry x="20" y="65" width="700" height="100" as="geometry"/></mxCell>
+<mxCell id="ACADEMIC-BUNDLE" value="P2｜建议新增 @deepseek-ai/dsh-academic" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="BUNDLE-TARGET"><mxGeometry x="20" y="245" width="700" height="480" as="geometry"/></mxCell>
+<mxCell id="B-PRESET" value="预设与方法资源&#xa;preset id 保持 academic&#xa;persona／planning／Skills&#xa;技能根从本组合包定位" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ACADEMIC-BUNDLE"><mxGeometry x="20" y="60" width="310" height="120" as="geometry"/></mxCell>
+<mxCell id="B-HOST" value="Host 研究能力&#xa;来源及 Provider／Controller&#xa;学术配置与投影注册&#xa;生成产物由所属包维护" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ACADEMIC-BUNDLE"><mxGeometry x="350" y="60" width="330" height="120" as="geometry"/></mxCell>
+<mxCell id="B-REMOTE" value="Client Remote companion&#xa;复用已有 remote.$mount()&#xa;自有依赖、挂载与 disposer&#xa;移出普通 api-remotes 的硬依赖" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ACADEMIC-BUNDLE"><mxGeometry x="20" y="210" width="310" height="145" as="geometry"/></mxCell>
+<mxCell id="B-UI" value="学术 UI 插件&#xa;复用现有 Conversation／slot&#xa;自有 locale 与研究卡片&#xa;依赖 Remote companion 就绪" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ACADEMIC-BUNDLE"><mxGeometry x="350" y="210" width="330" height="145" as="geometry"/></mxCell>
+<mxCell id="B-CONFIG" value="迁入业务配置与安装依赖，并核对打包后的 Skills／模板路径。&#xa;学术全文 HTTP 的特殊额度应明确配置，避免无意改变其他会话。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="ACADEMIC-BUNDLE"><mxGeometry x="20" y="385" width="660" height="70" as="geometry"/></mxCell>
+<mxCell id="COMPATIBILITY" value="保留在宿主构建中的持久化兼容薄层&#xa;required 事件登记、当前 codec、V2→V3→V4 历史迁移&#xa;不随 bundle 停用删除；不能改为 ignorable 绕过校验&#xa;首期不承诺安装到未经修改的任意上游 DSH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=center;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="BUNDLE-TARGET"><mxGeometry x="20" y="775" width="700" height="120" as="geometry"/></mxCell>
+<mxCell id="ROADMAP" value="推进顺序：每阶段独立验收，优先稳定状态读取，再开放组合包独立启停" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="60" y="1520" width="2040" height="440" as="geometry"/></mxCell>
+<mxCell id="P0-BASELINE" value="P0｜基线与等价标准&#xa;&#xa;小／大／旧格式会话&#xa;活跃、冷读、重启矩阵&#xa;统计扫描、读取量与峰值&#xa;协调勘察 WIP 的投影版本&#xa;&#xa;验收：同一水位结果一致&#xa;读取不写日志、不调用模型" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="20" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="P1-LIVE" value="P1｜活跃状态快读&#xa;&#xa;复用现有 stateOf&#xa;普通查询不再全量重折&#xa;冷路径暂保正确回放&#xa;保留身份与明确批准校验&#xa;&#xa;验收：重复查询不再遍历&#xa;整份历史、不接管写句柄" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="360" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="P1-CLIENT" value="P1｜界面定界读取&#xa;&#xa;增强历史由 Host 派生&#xa;按 run／论文版本读取&#xa;共享 bootstrap 与订阅&#xa;传播取消信号、按需加载&#xa;&#xa;验收：多卡不翻倍查询&#xa;关闭观察不终止研究" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="700" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="P2-COLD" value="P2｜冷读与精简投影&#xa;&#xa;补 Host 准确水位读面&#xa;复用缓存、版本与租约&#xa;收拢检查点与必要事实&#xa;Trace 索引、勘察摘要&#xa;接口与状态变化分小 PR&#xa;&#xa;验收：新旧恢复语义等价" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="1040" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="P2-BUNDLE" value="P2｜独立组合包闭环&#xa;&#xa;迁预设／Skills／Host／UI&#xa;同时完成 Remote 自挂载&#xa;校验安装资源与来源配置&#xa;保持 academic 与历史 ID&#xa;&#xa;验收：普通 Web 可无学术&#xa;On／Off／再启用可恢复" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="1380" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="P3-SEAMS" value="P3｜收拢剩余接线&#xa;&#xa;预设中英文显示贡献&#xa;计划审核的业务呈现扩展&#xa;保留持久化兼容与生成链&#xa;登记必要的上游薄接线&#xa;&#xa;验收：升级接线范围收敛&#xa;真实研究与历史回归通过" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f0f4fb;strokeColor=#8c9fbc;strokeWidth=1;dashed=1;" vertex="1" parent="ROADMAP"><mxGeometry x="1720" y="65" width="300" height="310" as="geometry"/></mxCell>
+<mxCell id="ROADMAP-NOTE" value="阶段编号表示优先级与建议依赖，不是工期承诺。组合包搬迁与 Remote 自挂载必须共同达到最小可启停闭环。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="ROADMAP"><mxGeometry x="20" y="390" width="2000" height="30" as="geometry"/></mxCell>
+<mxCell id="GUARDS" value="验收与边界：功能含义不变，性能收益需要独立测量" style="swimlane;horizontal=1;startSize=40;collapsible=0;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#243342;fontStyle=1;align=center;verticalAlign=middle;spacing=12;fillColor=#eaf0f6;strokeColor=#bdc8d3;strokeWidth=1;swimlaneFillColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="60" y="2000" width="2040" height="260" as="geometry"/></mxCell>
+<mxCell id="INVARIANTS" value="必须保持的事实与恢复规则&#xa;批准身份、Brief／论文版本、批次配对、终结状态和补证尾部事实保持一致。&#xa;先调整读模型并递增 stateVersion；不为优化重写历史日志。&#xa;固定材料验证热／冷／重启等价，再验证小规模真实研究与内存成本。&#xa;领域勘察 WIP：新增结果与摘要规则须和本轮投影改造协调。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#fff5e6;strokeColor=#bc9049;strokeWidth=1;" vertex="1" parent="GUARDS"><mxGeometry x="20" y="65" width="965" height="165" as="geometry"/></mxCell>
+<mxCell id="DISABLE" value="组合包停用顺序与历史可用性&#xa;停止接收新 run → 已完成，或明确取消 → await 结算 → 应用 Off／卸载。&#xa;Off 配置保存与实际生效分开；无热更新时需重启。&#xa;保留 Session／缓存／历史身份；丰富学术视图与继续研究需重新启用。&#xa;preset 旧代保留不能保证被移除的 Host Controller 继续运行。" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=#f7f8fa;strokeColor=#abb4bf;strokeWidth=1;" vertex="1" parent="GUARDS"><mxGeometry x="1025" y="65" width="995" height="165" as="geometry"/></mxCell>
+<mxCell id="PAGE-NOTE" value="基线提交：8c480a981c；工作区另有领域勘察未提交改动。本页是源码审计后的目标设计，不代表改造或验收已经完成。&#xa;现有轻量进度、Q6 去重与主 watch 合并继续复用；多模型策略、并行 Agent 和外部纯上游发行另行规划。" style="text;whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#243342;fontStyle=0;align=left;verticalAlign=middle;spacing=12;fillColor=none;strokeColor=none;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="60" y="2290" width="2040" height="65" as="geometry"/></mxCell>
+<mxCell id="facts-projection" source="SESSION-FACTS" target="HOST-PROJECTION" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="projection-live" source="HOST-PROJECTION" target="LIVE-READ" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="656" y="745"/><mxPoint x="360" y="745"/></Array></mxGeometry></mxCell>
+<mxCell id="projection-cold" source="HOST-PROJECTION" target="COLD-READ" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.72;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1061.6" y="745"/><mxPoint x="1000" y="745"/></Array></mxGeometry></mxCell>
+<mxCell id="live-service" source="LIVE-READ" target="READ-SERVICE" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="360" y="995"/><mxPoint x="465" y="995"/></Array></mxGeometry></mxCell>
+<mxCell id="cold-service" source="COLD-READ" target="READ-SERVICE" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1000" y="995"/><mxPoint x="915" y="995"/></Array></mxGeometry></mxCell>
+<mxCell id="service-views" source="READ-SERVICE" target="SAFE-VIEWS" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.35;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="555" y="1210"/><mxPoint x="470" y="1210"/></Array></mxGeometry></mxCell>
+<mxCell id="views-client" source="SAFE-VIEWS" target="CLIENT-CARDS" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="remote-ui" source="B-REMOTE" target="B-UI" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="base-bundle" source="SHARED-BASE" target="ACADEMIC-BUNDLE" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="bundle-compat" source="ACADEMIC-BUNDLE" target="COMPATIBILITY" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="phase-1" source="P0-BASELINE" target="P1-LIVE" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="phase-2" source="P1-LIVE" target="P1-CLIENT" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="phase-3" source="P1-CLIENT" target="P2-COLD" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="phase-4" source="P2-COLD" target="P2-BUNDLE" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+<mxCell id="phase-5" source="P2-BUNDLE" target="P3-SEAMS" value="" style="edgeStyle=none;rounded=0;html=0;endArrow=block;endFill=1;strokeColor=#708092;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Microsoft YaHei;fontSize=15;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"></mxGeometry></mxCell>
+</root></mxGraphModel></diagram>
+</mxfile>

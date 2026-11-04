@@ -48,7 +48,7 @@ academic/trace-v1 是必读事件。不认识该标签的读取器按必读事�
 <a id="verification"></a>
 ## 验证
 
-九文件 Trace／controller／投影／迁移聚焦检查通过 430 项，零跳过，其中包含 [Trace 观察](../../packages/api/academic-research-controller/tests/trace.spec.ts)、[严格 V2 Trace 准入](../../packages/session/session-format-v2-to-v3/tests/academic-trace.spec.ts)和 [V3 到 V4 组合迁移](../../packages/session/session-format-v3-to-v4/tests/academic.spec.ts)。最后的单文件 Trace 迁移检查通过 15 项。四个所属 TypeScript 项目及原生 Host aggregate 类型检查通过，最后的两文件 lint 检查没有诊断。
+九文件 Trace／controller／投影／迁移聚焦检查通过 430 项，零跳过，其中包含 [Trace 观察](../../packages/academic/research-controller/tests/trace.spec.ts)、[严格 V2 Trace 准入](../../packages/session/session-format-v2-to-v3/tests/academic-trace.spec.ts)和 [V3 到 V4 组合迁移](../../packages/session/session-format-v3-to-v4/tests/academic.spec.ts)。最后的单文件 Trace 迁移检查通过 15 项。四个所属 TypeScript 项目及原生 Host aggregate 类型检查通过，最后的两文件 lint 检查没有诊断。
 
 两级迁移所属测试通过 172 项、零跳过，包含八个新增用例，覆盖分类缺失、delivery、content 及未知值拒绝。四文件 lint 检查通过 90 条规则，没有诊断。限定源码类型检查在 30 个根和 360 个加载文件中报告零诊断，没有加载所属包的构建声明；该结果不等同于完整构建。此前的类型发现失败仍保留在证据中。检查还确认 223 份冻结文件、T0 和既有记录的字节哈希不变。本次验证没有执行旧读取器二进制、Web 产品、ACP 或 SDK 回放，也没有改写历史 Session 文件。
 

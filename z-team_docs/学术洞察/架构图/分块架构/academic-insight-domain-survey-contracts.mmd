@@ -1,0 +1,39 @@
+%% 06 领域勘察审批、数据与异常处理｜2026-11-03｜本地实现尚未提交
+flowchart TB
+    subgraph D6-IDENTITY["审批与身份链：每一步都能回到明确批准及已保存结果"]
+        D6-APPROVAL["明确批准记录<br/>exit_plan_mode 成功结果<br/>meta.approved = true<br/>绑定对应调用身份与计划正文<br/>普通聊天表态不是此执行凭据"]
+        D6-PLANID["勘察身份 planId<br/>sessionId + approved-survey<br/>+ 本次批准 identity<br/>启动请求须匹配最新获批计划<br/>不同批准不会共用同一身份"]
+        D6-SAVED["持久化勘察结果<br/>完成图谱事件写入 Session<br/>domainSurveys[planId]<br/>保留主题、条件、查询与结果<br/>只有已保存图谱才能被绑定"]
+        D6-BIND["深入研究的第二次批准<br/>domainResearchPlan.surveyPlanId<br/>逐项核对 directionId 与 label<br/>全部方向都有深度分配<br/>通过后才执行获批研究计划"]
+    end
+    subgraph D6-DATA["关键交接数据：标题摘要图谱、批准计划、全文证据分别保存"]
+        D6-DATA1["ApprovedDomainSurveyPlan｜勘察计划<br/>planId / topic / scope / reviewedAt<br/>selection：年份、日期口径、论文版本<br/>queries：expression / purpose / roundIndex<br/>limits：候选、每条结果与总耗时上限"]
+        D6-DATA2["DomainSurveyPaper｜候选材料<br/>workId / title / abstract<br/>workVersionId / versionType / publicationDate<br/>sourceProviders / sourceRecords<br/>缺少摘要可用标题；不把元数据升为全文证据"]
+        D6-DATA3["DomainSurveyDirection｜候选方向<br/>directionId / label / definition / supports<br/>support：workId / field / quote<br/>身份由规范化名称与支持论文身份生成<br/>一篇可属多方向，但不能又列为未分类"]
+        D6-DATA4["DomainSurveyResult｜勘察结果<br/>status：mapped 或 incomplete<br/>queries / papers / map / limitations<br/>map 含 directions 与 unclassifiedWorkIds<br/>excludedByPolicy：日期或版本政策排除数"]
+        D6-DATA5["DomainResearchPlan｜深研安排<br/>surveyPlanId + 每个方向的身份、名称与 depth<br/>question / targetSupportingWorks<br/>maximumQueries；scopeDecision 同步分配<br/>控制器填入真实状态、限制与未分类数量"]
+        D6-DATA6["报告核对｜从证据回到方向<br/>direction.question → questionLinks.evidenceId<br/>只计报告引用且 level = fulltext 的证据<br/>academicWorkId 去重后与计划目标比较<br/>不足、概览、不覆盖与勘察限制分别说明"]
+    end
+    subgraph D6-STATES["执行与读取：不完整的可用结果，与没有完成图谱的失败分开处理"]
+        D6-ADMIT["入场校验<br/>检查批准、计划身份、来源和模型<br/>缺少或不匹配时直接拒绝<br/>不把旧批准用于新的勘察计划"]
+        D6-RUN["任务运行<br/>同批准的并发请求复用活动任务<br/>接纳后由维护任务与总时限控制<br/>页面关闭不等于后端任务已取消"]
+        D6-SETTLED["验证后保存结果<br/>来源失败、截断等可形成受限结果<br/>模型或图谱校验失败不写完成图谱<br/>已存在的历史图谱保持可读取"]
+        D6-READ["结果读取与复用<br/>getDomainSurvey 只读取已保存结果<br/>同批准再次执行可返回既有结果<br/>历史结果可读，不替换最新批准"]
+        D6-FAIL["失败与中断<br/>模型有限重试后仍失败、总超时或维护任务中止：不写完成图谱。<br/>已有模型请求／结果日志可追查；查询中间结果尚未持久化。<br/>当前重新尝试会重新检索，不能承诺从上一条查询继续。"]
+        D6-RESULTS["结果状态的含义<br/>mapped：没有已记录限制；incomplete：来源失败、截断、无方向等。<br/>incomplete 仍可能保留有效方向，可交由第二次审批评估。<br/>二者都不是“领域已穷尽”或“全文研究已经完成”的标志。"]
+    end
+    subgraph D6-ACCEPT["当前约束、验收重点与团队交接"]
+        D6-LIMITS["当前计划校验上限<br/><br/>勘察：2—12 条查询，最多 4 轮，<br/>每轮最多 3 条，后续轮次须做遗漏复查。<br/>候选最多 40 篇，每条结果最多 30 条，<br/>总耗时最多 60 分钟；实际按批准值执行。<br/>深研：每个深入方向目标 1—5 篇，<br/>最多 1—3 条查询；总查询最多 12 条，<br/>每轮最多 3 条，并预留补检轮次。<br/><br/>以上是允许上限，不是默认值或交付保证。"]
+        D6-QA["优先补齐的验收<br/><br/>真实来源与真实模型跑通两次审批。<br/>对照核查方向是否合理、是否遗漏重要方向。<br/>覆盖日期未知、重复版本、来源失败与截断。<br/>确认伪造摘录、方向缺失或改名被拒绝。<br/>核对历史重开、同批准复用与计划变更。<br/>按方向核对报告的全文引用数与缺口。<br/><br/>文档记录已有定向测试与类型构建；<br/>真实勘察及大规模历史重开仍待验证。"]
+        D6-TEAM["建议分工与共同样例<br/><br/>A：两次审批、身份绑定、控制器、<br/>持久化事件、运行与整体联调。<br/>B：查询、去重、日期版本筛选、<br/>候选平衡、方向出处核验与真实来源复测。<br/>C：勘察卡、方向和限制展示、<br/>逐方向报告与实际引用核对。<br/><br/>共同交付：同一勘察计划、候选和图谱、<br/>第二次获批计划、报告及异常场景记录。"]
+    end
+    D6-EVENTS["持久化事件（本地新增）<br/>academic/domain-survey-request-v1<br/>academic/domain-survey-result-v1<br/>academic/domain-survey-completed-v1<br/>分别保存模型输入、模型结果与已核验图谱。"]
+    D6-SOURCES["核对依据（insight-agent 工作区，2026-11-03）<br/>academic/retrieval/src/domain-survey.ts；academic-research-controller/src/<br/>domain-survey-plan.ts、domain-survey-model.ts、domain-research-binding.ts<br/>ui-academic-research/src/client/DomainSurveyCard.tsx；academic/report/src/index.ts<br/>docs/subsystems/academic-insight.zh.md；领域勘察与深入研究计划模板<br/>docs/persistence-changes/2026-11-02-academic-domain-survey.zh.md"]
+    D6-APPROVAL --> D6-PLANID
+    D6-PLANID --> D6-SAVED
+    D6-SAVED --> D6-BIND
+    D6-ADMIT --> D6-RUN
+    D6-RUN --> D6-SETTLED
+    D6-SETTLED --> D6-READ
+    D6-RUN -.-> D6-FAIL
+    D6-SETTLED --> D6-RESULTS

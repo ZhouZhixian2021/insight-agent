@@ -16,9 +16,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-07-学术洞察MVP.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-07-学术洞察MVP.md",
       "reason": "historical-identity",
-      "fileSha256": "28b53e4f88578cce8404e1bc206a3cd07237669a1c8be4dbd873cdec548a6768",
+      "fileSha256": "fa78764a5aa038b1c68921f7b553905f5983d0df273aa01753e322acd3bec4f6",
       "matches": [
         {
           "kind": "commit-hash",
@@ -29,7 +29,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-09-ykxy11-分析模块接口需求.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-09-ykxy11-分析模块接口需求.md",
       "reason": "historical-identity",
       "fileSha256": "151897da6a11313f5bb05ca61b7a1c5e4d08a9ad8e6365aeebf28e1256655180",
       "matches": [
@@ -42,7 +42,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-09-yzyhello-检索与证据接口需求.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-09-yzyhello-检索与证据接口需求.md",
       "reason": "historical-identity",
       "fileSha256": "a377a5bb5813b4363e2282ec76bf61e26c866262153e3b05fa93b93b9be0bc3c",
       "matches": [
@@ -55,7 +55,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-10-zhouzhixian2021-academic-model-A4.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-10-zhouzhixian2021-academic-model-A4.md",
       "reason": "historical-identity",
       "fileSha256": "4df4a997346f5e5058021f3798357e156f5ff10f8076ce2cef25e2273356cc5e",
       "matches": [
@@ -68,9 +68,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-11-yzyhello-来源到证据纵向切片.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-11-yzyhello-来源到证据纵向切片.md",
       "reason": "historical-identity",
-      "fileSha256": "bcbf366ddbef733521d253d2e52698f36ee5f150ca8b998d3e4e4eb839b4b26a",
+      "fileSha256": "d47479d3624cdceb1dc95a56f136d3393ba9fade9bdb02ad9b8c5073ad0eec16",
       "matches": [
         {
           "kind": "commit-hash",
@@ -81,9 +81,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-14-ykxy11-分析输入准备.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-14-ykxy11-分析输入准备.md",
       "reason": "historical-identity",
-      "fileSha256": "b4153dad0e07c20a45482b077c9d12ab396c26241579554dbae118166a86e465",
+      "fileSha256": "d8f218d02b99f5732376d4b6236ed0c8e223a85aa7799140f11ddc9f7355ac6e",
       "matches": [
         {
           "kind": "commit-hash",
@@ -99,9 +99,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md",
       "reason": "historical-identity",
-      "fileSha256": "bb2ccdc6546df761af672e44e665ecb78a212ef50bac7b628ce8790377e5b8ed",
+      "fileSha256": "5b929faa0e71f170f2d01d1961d680f73c5c55bbe930df7c34c4d959ee630788",
       "matches": [
         {
           "kind": "commit-hash",
@@ -112,9 +112,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-14-yzyhello-9.11缺陷修复与证据提取.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-14-yzyhello-9.11缺陷修复与证据提取.md",
       "reason": "historical-identity",
-      "fileSha256": "c161afdad1e9f0b8b1118baf8b6c61628a7f189e3672c06cca91dee0df0705f9",
+      "fileSha256": "bdabd03f94f1b7e6f030af9584f5ae53ee42c77881cd78f9ef2c0d7eb03d1ca3",
       "matches": [
         {
           "kind": "commit-hash",
@@ -125,9 +125,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-14-yzyhello-arxiv全文获取与解析.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-14-yzyhello-arxiv全文获取与解析.md",
       "reason": "historical-identity",
-      "fileSha256": "2a05b987681142737681415239740e13e57b00ff6e96421a3e57c8cf4995e8e5",
+      "fileSha256": "8cf6bdb3f28d2ea906fdad9645c360ba5016a230a3c8324c0a0dfb6a7094cbb3",
       "matches": [
         {
           "kind": "commit-hash",
@@ -138,20 +138,20 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-15-zhouzhixian2021-全文到证据交接.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-15-zhouzhixian2021-全文到证据交接.md",
       "reason": "historical-identity",
-      "fileSha256": "cbc14946e0128a22b406b06b1b22e674d8d50703d43672e0dcee57b49a020a05",
+      "fileSha256": "0164e8b94bde512914330a585190a3cff69d46eb19e071d20942f90883a9c450",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "daf4b83561cfb845c22fe7bf15b4e594a0eeb9c3f2dd5f4f86cead6434a7997f",
+          "contextSha256": "934c8463acd179eb19fa7d014badc5f76f65808cf0b6c054ef609fa5ff7b9c44",
           "count": 1
         }
       ]
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-16-ykxy11-客户端构建与主分支集成.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-16-ykxy11-客户端构建与主分支集成.md",
       "reason": "historical-identity",
       "fileSha256": "fe511e9d1429029ca3edda957f9119145fd69653f356952003588ec4ef9b1362",
       "matches": [
@@ -169,9 +169,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-ykxy11-固定数据研究运行页面.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-ykxy11-固定数据研究运行页面.md",
       "reason": "historical-identity",
-      "fileSha256": "6c2b10b7eb2ae557199aea3ff8bc80e211ae468b0bf50ac07ba76affd5f94586",
+      "fileSha256": "298a58640a1b46f8cd10bf1620d8e94e138d8ec9ba63f51fd1e2c7ac49493e7e",
       "matches": [
         {
           "kind": "commit-hash",
@@ -182,7 +182,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-ykxy11-真实AcademicRemote接入.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-ykxy11-真实AcademicRemote接入.md",
       "reason": "historical-identity",
       "fileSha256": "76d03724d2b84bfc4f942c057d4c39298248191e2b5829976775cf94b32fbc3d",
       "matches": [
@@ -195,9 +195,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-yzyhello-多学术源全文检索.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-yzyhello-多学术源全文检索.md",
       "reason": "historical-identity",
-      "fileSha256": "dbe8c5df89aa05d35456ac9582009b3bfcd046787b9d459cd6f3449dca96a59b",
+      "fileSha256": "ab6bd71adfedb4dbd9e9c1b2b77ae4c4e9bee6a5a665e4713b386af01a54a6d2",
       "matches": [
         {
           "kind": "commit-hash",
@@ -208,7 +208,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-yzyhello-多来源搜索批次结果.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-yzyhello-多来源搜索批次结果.md",
       "reason": "historical-identity",
       "fileSha256": "1627a201478d711720f8ce5ddaaa0eb2c184415968b68a835618a09471498076",
       "matches": [
@@ -221,7 +221,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-zhouzhixian2021-多来源结果接口梳理.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-zhouzhixian2021-多来源结果接口梳理.md",
       "reason": "historical-identity",
       "fileSha256": "4b06aad67218c00b487b011ba3e42cd5a372eb7f3615bd6f28b2d4ceb857fa9a",
       "matches": [
@@ -234,7 +234,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-17-zhouzhixian2021-检索运行Web投影接入.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-17-zhouzhixian2021-检索运行Web投影接入.md",
       "reason": "historical-identity",
       "fileSha256": "1c92eedf4453bbe516c4a039ddc8c37665df04b0df75362433f39bc5224e357e",
       "matches": [
@@ -247,7 +247,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-18-ykxy11-多行查询与覆盖文案.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-18-ykxy11-多行查询与覆盖文案.md",
       "reason": "historical-identity",
       "fileSha256": "ebda38426f4cb9116e27cdff7371fb2c1152e59a4ee489bbe30fd8d6da875ca1",
       "matches": [
@@ -260,7 +260,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-18-yzyhello-OpenAlex-PR交接.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-18-yzyhello-OpenAlex-PR交接.md",
       "reason": "historical-identity",
       "fileSha256": "253d9cb3e06ff182cb34360d1e4eb9072c5f044fbae897f8015d6ff333d309bb",
       "matches": [
@@ -273,9 +273,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-18-zhouzhixian2021-Academic双查询验收准备.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-18-zhouzhixian2021-Academic双查询验收准备.md",
       "reason": "historical-identity",
-      "fileSha256": "a947c2a66dfa974b1edacf55149e24fe4b9b4904f964e6b035478fe75551fe54",
+      "fileSha256": "d629dfac5d8217fcfbaed94c8808f7430a5cd1c8b09310e9e1ef86adc29cda39",
       "matches": [
         {
           "kind": "commit-hash",
@@ -291,7 +291,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-23-zhouzhixian2021-混合检索双通道执行器.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-23-zhouzhixian2021-混合检索双通道执行器.md",
       "reason": "historical-identity",
       "fileSha256": "b6b9c20bf584c4870d36ec14bacaa23f449aecbf0f0cbd93164cd4f8e8301e05",
       "matches": [
@@ -304,7 +304,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-23-zhouzhixian2021-混合检索计划审核.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-23-zhouzhixian2021-混合检索计划审核.md",
       "reason": "historical-identity",
       "fileSha256": "a0a6ce4cb443de62cfa8ffe1c09729be78361bdcca0591ebc50ec7da3e0fae21",
       "matches": [
@@ -317,7 +317,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-24-ykxy11-混合检索展示与报告保护.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-24-ykxy11-混合检索展示与报告保护.md",
       "reason": "historical-identity",
       "fileSha256": "6df4fbfdc0112d7466e1bd57395e34791ddc48c340650c8b93542742536303e7",
       "matches": [
@@ -330,9 +330,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-24-zhouzhixian2021-混合检索接口收尾.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-24-zhouzhixian2021-混合检索接口收尾.md",
       "reason": "historical-identity",
-      "fileSha256": "b07b9c09bed33f0017669d04acf8da177fa3847b0acda192cc173502e5496d36",
+      "fileSha256": "860ff9d061577049e7fb5f6a37aabeaacd2eeff62af3918513201defd1a67c4c",
       "matches": [
         {
           "kind": "commit-hash",
@@ -343,7 +343,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-24-zhouzhixian2021-混合检索运行统计.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-24-zhouzhixian2021-混合检索运行统计.md",
       "reason": "historical-identity",
       "fileSha256": "ee47a8099945c1b9844749aeb963db6482bdf2c88d62d60b87521ec51f43ed1d",
       "matches": [
@@ -361,9 +361,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-09-28-ykxy11-学术研究实时进度页面.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-09-28-ykxy11-学术研究实时进度页面.md",
       "reason": "historical-identity",
-      "fileSha256": "f4e49391c17d61cd2021739521a7eb765b05cdb2609dbb7733c26c200fb4a5b5",
+      "fileSha256": "39687f16b1a2256c7815eb1427e6e5842733a0a710a5ecaf8eed86358bce082d",
       "matches": [
         {
           "kind": "commit-hash",
@@ -374,7 +374,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-09-ykxy11-Q6前端接口需求.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-09-ykxy11-Q6前端接口需求.md",
       "reason": "historical-identity",
       "fileSha256": "48f23795bc852bbbcbe4df11216b927a5d9f4c8715e8bd10eda4d2d59dcf706b",
       "matches": [
@@ -387,20 +387,20 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-09-ykxy11-Q6固定数据只读页面.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-09-ykxy11-Q6固定数据只读页面.md",
       "reason": "historical-identity",
-      "fileSha256": "995619c43caaa26b5ca6447844e1c426ba6b59e031b9da5227160e52d62d88ce",
+      "fileSha256": "9aee8ce9afb6730fa59fb48db739e40274e4ec68676a5aa4bd271abd2539eda6",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "e891218d32595d0f63327797ec233d91a442d8d4421d744671a38b03724b63e9",
+          "contextSha256": "76211b12ee22bd44e06c4b7c272de09c06a6418686f674a4fd9d7496c89f8c74",
           "count": 1
         }
       ]
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-09-ykxy11-Q6真实投影与逐题覆盖验收.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-09-ykxy11-Q6真实投影与逐题覆盖验收.md",
       "reason": "historical-identity",
       "fileSha256": "a9284dddb0f5b618d03df5a97d0174c4a35c192501d1a6e778f43a05bda3a1af",
       "matches": [
@@ -413,7 +413,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-10-ykxy11-Q7.4后第一阶段页面原型.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-10-ykxy11-Q7.4后第一阶段页面原型.md",
       "reason": "historical-identity",
       "fileSha256": "733f26235dd67435e59052a7ed6fd544229bc0a622d1851829a0f8913250f986",
       "matches": [
@@ -426,7 +426,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-12-ykxy11-后台研究页面第二阶段.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-12-ykxy11-后台研究页面第二阶段.md",
       "reason": "historical-identity",
       "fileSha256": "967c39ce6ac2f2420e7ec166d69ef93aa1d4a1ad5349312b79975e32b5e52d50",
       "matches": [
@@ -439,9 +439,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-12-ykxy11-方向级报告格式正式接入.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-12-ykxy11-方向级报告格式正式接入.md",
       "reason": "historical-identity",
-      "fileSha256": "6686332ee7e0d43632a0118424d5ba8e4af371deba599c6fd8c4a917a4cfb444",
+      "fileSha256": "cad5bc287f7aeb391f9b6b6d50088ef90208c87e669467790c901015c05ea471",
       "matches": [
         {
           "kind": "commit-hash",
@@ -452,9 +452,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-12-ykxy11-问题导向分析与报告优化.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-12-ykxy11-问题导向分析与报告优化.md",
       "reason": "historical-identity",
-      "fileSha256": "1f85f8c1d3135807465737397547ffd4b38515f9d5a7c34e2bf8c89c61becd33",
+      "fileSha256": "df46d71a29d7386643de9c11957406952a5371c1f20c917d8c457fc6535f8142",
       "matches": [
         {
           "kind": "commit-hash",
@@ -465,9 +465,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-14-B-PE2-片段优先级与缩小输入恢复.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-14-B-PE2-片段优先级与缩小输入恢复.md",
       "reason": "historical-identity",
-      "fileSha256": "f2cb22429fead7a936a5284ee1ef8e4ddeb3a58f87f90058aee8c4e4ff9e2ddc",
+      "fileSha256": "4c28c87df9125bbc52661deb383b661fda32c50d0c199e36f7ddc0bf1cef6b44",
       "matches": [
         {
           "kind": "commit-hash",
@@ -478,7 +478,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-15-B-PE3-保留一级证据的二级补充入口.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-15-B-PE3-保留一级证据的二级补充入口.md",
       "reason": "historical-identity",
       "fileSha256": "27f9cb58ae3a21362c353feaae222dd19b74244c24413a3455e5b218d0dd3f45",
       "matches": [
@@ -491,7 +491,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-15-ykxy11-Web所选论文二级增强.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-15-ykxy11-Web所选论文二级增强.md",
       "reason": "historical-identity",
       "fileSha256": "2af36c271599ebcb7338809927248a5ca95e171d572251a397d97d16099b40f6",
       "matches": [
@@ -504,9 +504,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-15-ykxy11-简洁审批与最小证据报告.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-15-ykxy11-简洁审批与最小证据报告.md",
       "reason": "historical-identity",
-      "fileSha256": "ac7afba8916de6880fcac7625c041b07f8a338cfe415505714a224fa26155d54",
+      "fileSha256": "e7a35083bcb9a02f39451e29766fe4bb8f993f0529df655fbb063cfd45129aef",
       "matches": [
         {
           "kind": "commit-hash",
@@ -517,7 +517,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-19-ykxy11-报告去重与证据附录排序.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-19-ykxy11-报告去重与证据附录排序.md",
       "reason": "historical-identity",
       "fileSha256": "db6c95e3bd1c24f6da1a0819018db8737f5314c470af1f54e2f60fd599c0ff8b",
       "matches": [
@@ -530,9 +530,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-20-yzyhello-B-CR1-候选语义审核解析与送审选择.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-20-yzyhello-B-CR1-候选语义审核解析与送审选择.md",
       "reason": "historical-identity",
-      "fileSha256": "8cf0cc3937b65e1be68d15584f326ae0f2cdb110a7632412799eb18154e34a45",
+      "fileSha256": "4e794a84206b59010ebc5aa039dc47e9c885abb274bf189892025d2f5fa4b195",
       "matches": [
         {
           "kind": "commit-hash",
@@ -543,9 +543,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-20-zhouzhixian2021-候选语义审核固定样本复验.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-20-zhouzhixian2021-候选语义审核固定样本复验.md",
       "reason": "historical-identity",
-      "fileSha256": "3a2f04684cd247752c62fd77d8c3c1c933de74474db5bd49d4ddb859bbdcd435",
+      "fileSha256": "ca7293593a44d2f68123d3397ccb3d8a9908da22299a1330c9d824e78075672b",
       "matches": [
         {
           "kind": "commit-hash",
@@ -556,22 +556,22 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-content-version-handoff.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-content-version-handoff.md",
       "reason": "historical-identity",
-      "fileSha256": "1c7075c3e0c483faf75765212c6d0352bba6534617da056b658640f2311f0ecb",
+      "fileSha256": "27b824b577e6a717f297ee6c53407e638f425487369d74c892ae242bcec973fb",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "92faafc00b6a50056bc97187b61de034f0e9ba43330336cb9ad74c3b55455c98",
+          "contextSha256": "20917473e83f88c1c9e91eab7c1ae87f65249dfbe55de88850c493e5392a19ab",
           "count": 1
         }
       ]
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-hybrid-retrieval-team-plan.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-hybrid-retrieval-team-plan.md",
       "reason": "historical-identity",
-      "fileSha256": "bfb115dd3ef7e94c52308f58735b892ef09964628dbe3f1a80e798a092ef3ea3",
+      "fileSha256": "d33da26387e2008422fffe4ea4d6673e1e3f414262662925472c4ef8d968328f",
       "matches": [
         {
           "kind": "commit-hash",
@@ -582,7 +582,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-multi-source-run-handoff.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-multi-source-run-handoff.md",
       "reason": "historical-identity",
       "fileSha256": "ea0b4cb6dc98fb1e7aa1c88ab8250c5464b769e8a1f476f8efcf1868d8d4af2a",
       "matches": [
@@ -595,7 +595,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-q6-ui-interface-requirements.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-q6-ui-interface-requirements.md",
       "reason": "historical-identity",
       "fileSha256": "68f1c2b9a2c74ef3c07aa9d9ed207d340f5532cbb6d45c0ca857523f2f95a473",
       "matches": [
@@ -608,7 +608,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/input.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/input.json",
       "reason": "frozen-sample",
       "fileSha256": "be8e79b0129d63c22351ee4c7f7635b2d79ef05c7849bd94896108dc55f78b85",
       "matches": [
@@ -621,7 +621,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/manifest.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/manifest.json",
       "reason": "frozen-sample",
       "fileSha256": "999f04d73ed5f988eeda6070b63bc572556acfc9da66fb22dbfd011f8fc2f635",
       "matches": [
@@ -699,7 +699,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/api/academic-research-controller/src/search.ts",
+      "file": "packages/academic/research-controller/src/search.ts",
       "reason": "visible-text",
       "matches": [
         {
@@ -711,7 +711,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/api/academic-research-controller/tests/candidate-review-handoff.spec.ts",
+      "file": "packages/academic/research-controller/tests/candidate-review-handoff.spec.ts",
       "reason": "frozen-field-consumer",
       "matches": [
         {
@@ -728,7 +728,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/api/academic-research-controller/tests/search.spec.ts",
+      "file": "packages/academic/research-controller/tests/search.spec.ts",
       "reason": "visible-text",
       "matches": [
         {
@@ -745,7 +745,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/client/ui-academic-research/src/client/q6-locales.ts",
+      "file": "packages/academic/ui-research/src/client/q6-locales.ts",
       "reason": "visible-text",
       "matches": [
         {
@@ -757,7 +757,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/interface-samples/academic-model-v1/README.md",
+      "file": "z-team_docs/学术洞察/interface-samples/academic-model-v1/README.md",
       "reason": "frozen-sample",
       "fileSha256": "c4eb061e627da23edfaf9258dfa4bd90295fa5eafa898165e464c5b99ddb6726",
       "matches": [
@@ -770,9 +770,9 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/README.md",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/README.md",
       "reason": "frozen-sample",
-      "fileSha256": "272181f81517a3d1f1a86831e6924a45c8b26f44e9070c42cfb966882635c6b7",
+      "fileSha256": "f5f119ecd7167efaf5f94c5145ef57c185a70ffdb43e1ec14f756f550fb7d0ad",
       "matches": [
         {
           "kind": "concrete-term",
@@ -803,9 +803,9 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/README.zh.md",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/README.zh.md",
       "reason": "frozen-sample",
-      "fileSha256": "2a0e904d0fa5fb4ffaca08bb875ba5772eee4b10c30c0c402539a569235c2be5",
+      "fileSha256": "d6d8d339c864fc3857e39513fb9aef2fb3cc1c29b6b9e4178de6e6791e229ad4",
       "matches": [
         {
           "kind": "concrete-term",
@@ -816,7 +816,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/flash.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/flash.json",
       "reason": "frozen-sample",
       "fileSha256": "a6a6a0c91828d6020da49268a5130f85e4977194fc7ee8e28b60cac29c63713a",
       "matches": [
@@ -1369,7 +1369,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/scoring-handoff/pro.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/scoring-handoff/pro.json",
       "reason": "frozen-sample",
       "fileSha256": "561100069b9a369628e0c9c75106c417107d8759d45594223c207789430ef5b0",
       "matches": [
@@ -1932,7 +1932,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "packages/api/academic-research-controller/tests/candidate-pool-handoff.spec.ts",
+      "file": "packages/academic/research-controller/tests/candidate-pool-handoff.spec.ts",
       "reason": "frozen-field-consumer",
       "matches": [
         {
@@ -1949,7 +1949,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/audit.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/audit.json",
       "reason": "frozen-sample",
       "fileSha256": "616be33045cac246b7299f4b4509bdaad220d91d75d225ebd1b6eb3746f49910",
       "matches": [
@@ -1962,7 +1962,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/candidates.md",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/candidates.md",
       "reason": "frozen-sample",
       "fileSha256": "dcc4bb1b380d84407274eedc2618ad494af75d190dc1decbfeab9a1a09774e30",
       "matches": [
@@ -1975,7 +1975,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/historical.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/historical.json",
       "reason": "frozen-sample",
       "fileSha256": "db1ab4562ed6e972f5d4bf5853a7295268341afbe0475d0bdfb7212c80832e55",
       "matches": [
@@ -2493,7 +2493,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/input.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/input.json",
       "reason": "frozen-sample",
       "fileSha256": "900e45afec9a69c54a49824f14d9acc1a21abb02db0cc7ab0f78a2b955425bba",
       "matches": [
@@ -2546,9 +2546,9 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.i18n.yaml",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.i18n.yaml",
       "reason": "frozen-sample",
-      "fileSha256": "acc7bab47274fca95a5ebabd8295997e7b0953598ce9a750f4ae9a15a885396c",
+      "fileSha256": "5b33a39d35d03d73401bc73ea3e6460d31834d057736a4364844b35b5ce40c00",
       "matches": [
         {
           "kind": "concrete-term",
@@ -2559,9 +2559,9 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.md",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/README.md",
       "reason": "frozen-sample",
-      "fileSha256": "3237f4c826ad469d183c5da64086c05cd1bc1f2379511b8477338799a8385613",
+      "fileSha256": "db9dfc101ec514393dc8b357a53e78330c404eaef87933852016bff7c49b61e3",
       "matches": [
         {
           "kind": "concrete-term",
@@ -2577,7 +2577,7 @@
     },
     {
       "gate": "concrete-term",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
       "reason": "frozen-sample",
       "fileSha256": "26b7045a68215c1a8d6a35035fafc9c392e435e3e13ca35bbb93e6ccb5258e95",
       "matches": [
@@ -2978,27 +2978,27 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-20-yzyhello-B-CR2-评分与队列核对.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-20-yzyhello-B-CR2-评分与队列核对.md",
       "reason": "historical-identity",
-      "fileSha256": "88f01502bea013f65d1caa86662ffb548333f3dd4825b10bb8bd42af4af14e8e",
+      "fileSha256": "d55d03dc042450510438cb0170a6e049c1e2c6ff04af5f931225c58addcc2c4e",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "171d17c2c349e3954b13a58946de25b1f9749ca4b4f37730dca3989b9d3da95a",
+          "contextSha256": "7b33182e5b0fce8ac993520f4beede34455311c04f404494afc63121d1ed3131",
           "count": 1
         },
         {
           "kind": "commit-hash",
-          "contextSha256": "ef28d32316beb95ac5196fc943e366bd8c7a27f750a8f0a3e0cd1c4b312776c6",
+          "contextSha256": "992eefb3d22454ea200d6ddf8c0aec9fb1308caab3c7b6262d7b8871bba2354e",
           "count": 1
         }
       ]
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-21-ykxy11-Trace接口与固定样例交接.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-21-ykxy11-Trace接口与固定样例交接.md",
       "reason": "historical-identity",
-      "fileSha256": "fc3542d6b99083f08649398d3a3ba8a8b5eaa04b5aaabf403dafcc3492859375",
+      "fileSha256": "40eb875563e2606e28b27b472741fb59bfeec16b06efa8b5286a66e9dcefaf10",
       "matches": [
         {
           "kind": "commit-hash",
@@ -3009,9 +3009,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-21-yzyhello-B-CR3-全池送审与遗漏核对.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-21-yzyhello-B-CR3-全池送审与遗漏核对.md",
       "reason": "historical-identity",
-      "fileSha256": "7feea6c6c2de5a1f73ae36df10ab84c95bf0359f4903d9b4379a046dbcf36549",
+      "fileSha256": "d379c388f21a85fd0a17a16a8907634c6957985f8d2e2c265dd1c5f1cac441c6",
       "matches": [
         {
           "kind": "commit-hash",
@@ -3022,9 +3022,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-21-zhouzhixian2021-完整候选池与送审交接.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-21-zhouzhixian2021-完整候选池与送审交接.md",
       "reason": "historical-identity",
-      "fileSha256": "3bb3a88770fd70cdbfd8e5081869966f5bd178d91dd20e07b09341a092dd6cbb",
+      "fileSha256": "88f8233569f68e5e2404ad50676048db5eca046fd5069826ebeda6a11a162cf8",
       "matches": [
         {
           "kind": "commit-hash",
@@ -3035,9 +3035,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-21-上游升级双路线方案与分支.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-21-上游升级双路线方案与分支.md",
       "reason": "historical-identity",
-      "fileSha256": "fd268f4fe8d9cf8e47f330dbb69011eaa84efab6ba3cc6e5dbb5c48adf57c92a",
+      "fileSha256": "d335a5d2f9e8554ea3acc3f73c776ba2daa66be6ce23982d3c02c6a9f6213881",
       "matches": [
         {
           "kind": "commit-hash",
@@ -3058,7 +3058,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/开发记录/2026-10-26-ykxy11-HTML导出与真实Trace.md",
+      "file": "z-team_docs/学术洞察/开发记录/2026-10-26-ykxy11-HTML导出与真实Trace.md",
       "reason": "historical-identity",
       "fileSha256": "966bc7ff8ca15254614f193fb79451b2619cef03a05a03a881e80365a3626008",
       "matches": [
@@ -3071,7 +3071,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-candidate-semantic-review-optimization-team-plan.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-candidate-semantic-review-optimization-team-plan.md",
       "reason": "historical-identity",
       "fileSha256": "6b54f68062eb1ae59a79da0b0d8875ec6bcc15b0b0654ace950ddc4cc171643a",
       "matches": [
@@ -3084,13 +3084,13 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-trace-v1-interface-handoff.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-trace-v1-interface-handoff.md",
       "reason": "historical-identity",
-      "fileSha256": "f75e1145fc7c5eee4b441cfd44c87e87a74e3bb230884088df4cabc4cca79896",
+      "fileSha256": "043720586a2b1658fca43b3cde11078afd9cada32156ed35d995c77c9d86e649",
       "matches": [
         {
           "kind": "commit-hash",
-          "contextSha256": "0d1cf9ee737efb4afd0f29be1c670944caf9dbc3f041f344b49529316adbb0e1",
+          "contextSha256": "1a4361f5dd182d4c8bc94659b50f4fe0c42f5b84e4de2605c0d7503da58b43fe",
           "count": 1
         },
         {
@@ -3102,9 +3102,9 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/模块分工/academic-upstream-upgrade-dual-route-team-plan.md",
+      "file": "z-team_docs/学术洞察/模块分工/academic-upstream-upgrade-dual-route-team-plan.md",
       "reason": "historical-identity",
-      "fileSha256": "edf3bcb3f85cfd832aec4f5baec83dbd2bcb05db299ddf6746ac93ee5e0652a0",
+      "fileSha256": "4104c85b649b38439dc8ff11c375c6b14db5a654f448f147e19ce20617e778dd",
       "matches": [
         {
           "kind": "commit-hash",
@@ -3120,7 +3120,7 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/manifest.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/manifest.json",
       "reason": "frozen-sample",
       "fileSha256": "927eeda477a636bcb72c037f0158d00ca362ef325436b67381f94f266da2ecaa",
       "matches": [
@@ -3133,13 +3133,119 @@
     },
     {
       "gate": "repository-reference",
-      "file": "z-team_docs/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
+      "file": "z-team_docs/学术洞察/验收数据/2026-10-20-candidate-review/full-pool-handoff/replay.json",
       "reason": "frozen-sample",
       "fileSha256": "26b7045a68215c1a8d6a35035fafc9c392e435e3e13ca35bbb93e6ccb5258e95",
       "matches": [
         {
           "kind": "commit-hash",
           "contextSha256": "c084cecd022fe8c4e2caeb2f8a63c110d0829ed0d25bbd2a1c1c428007af748d",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/上游合并/历史方案/upgrade-strategy-a.md",
+      "reason": "historical-identity",
+      "fileSha256": "b7e30987de0c38aa5846a7413c2cf80328bb017eee935e8c273f506f2b83526b",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "8f1356c2a49184fc69a7ff86974988fd2003bfd0073cbcbbe69c121788ef805d",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "808f806cf1b9b0f861cd1fc033a339a375e248958a4aa7c2313cf4debf4638b7",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/上游合并/历史方案/upgrade-strategy-b.md",
+      "reason": "historical-identity",
+      "fileSha256": "e83b364a05486847939cf7bdf6b40875d545229ccf4bd78f5f74b5df60225540",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "fff63a5d9731cc916e169d71d9832b4a3ad1bdef94c6ebfbc73c0ce71a721525",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/上游合并/验收基线/t0-feature-checklist.md",
+      "reason": "historical-identity",
+      "fileSha256": "480579397c59ed11a42b608a53b113523c2ee9eda602aec2f71c54fe05ac57e4",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "dc002d8769f4e89d6d1cbf13d8663905b6db329d7b79de1bc058862afb436602",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/架构图/整体架构/academic-insight-architecture.drawio",
+      "reason": "historical-identity",
+      "fileSha256": "514196b25b193a2ba64ea08c49bd76eb3b3b04e1b32f7b0b5df77bddd2f1731f",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "e06874f2e24c6182db1a0daf747425c548a5ab2abb8c63932d5db53465d76d3e",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "80997d8fff74bccb4d5ed12fed07c3aa99c0e1074dfea309066eee49b1cdd6d2",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/架构图/预览图/page-1.svg",
+      "reason": "historical-identity",
+      "fileSha256": "bb63e9af171c9174dc416d641eb59e9a7f50e4c099d35928cfde881e2884690c",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "6417d8b7bfe01103b3a932964ec19883163d6aecef773ea635a983a2c154414c",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/架构图/预览图/page-8.svg",
+      "reason": "historical-identity",
+      "fileSha256": "ad955cf45f4739cc457de44137cfa1da305109c3976c100d35a0df6146784229",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "a583a5e6a8a936f4041567a37fb4d188dda946e06037ccc9e90cded46c1122ad",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "gate": "repository-reference",
+      "file": "z-team_docs/学术洞察/上游合并/2026-11-03-登记核对结果.md",
+      "reason": "historical-identity",
+      "fileSha256": "6b48bc84a2a62f5441cbee55b74053a74a8b39a51e251e8d3b52da56fa3c6a00",
+      "matches": [
+        {
+          "kind": "commit-hash",
+          "contextSha256": "fc86734eef27944f7817441e23b87212c28eba822e4360bd0f9dc931bbc82f35",
+          "count": 1
+        },
+        {
+          "kind": "commit-hash",
+          "contextSha256": "78eaff3f4b9f98591e15f2fa4d5502e5a65c7859953c515e325706e2f51ecfb2",
           "count": 1
         }
       ]

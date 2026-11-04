@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="1950" viewBox="0 0 1660 1950"><rect width="100%" height="100%" fill="#fff"/><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#708092"/></marker></defs>
+<rect x="60" y="150" width="1540" height="145" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 150 H1593 Q1600 150 1600 157 V190 H60 V157 Q60 150 67 150" fill="#eaf0f6"/><text x="830" y="177" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">公共基座：沿用现有审批、来源、模型与会话服务</text>
+<rect x="60" y="340" width="1540" height="550" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 340 H1593 Q1600 340 1600 347 V380 H60 V347 Q60 340 67 340" fill="#eaf0f6"/><text x="830" y="367" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">阶段一：单独批准元数据勘察，发现有出处的候选方向</text>
+<rect x="60" y="940" width="1540" height="260" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 940 H1593 Q1600 940 1600 947 V980 H60 V947 Q60 940 67 940" fill="#eaf0f6"/><text x="830" y="967" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">阶段二：审阅图谱与遗漏，重新批准逐方向研究计划</text>
+<rect x="60" y="1250" width="1540" height="290" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 1250 H1593 Q1600 1250 1600 1257 V1290 H60 V1257 Q60 1250 67 1250" fill="#eaf0f6"/><text x="830" y="1277" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">阶段三：把获批方向交给已有全文证据流程，逐方向核对交付</text>
+<rect x="60" y="1585" width="1540" height="260" rx="7" fill="#fff" stroke="#bdc8d3"/><path d="M67 1585 H1593 Q1600 1585 1600 1592 V1625 H60 V1592 Q60 1585 67 1585" fill="#eaf0f6"/><text x="830" y="1612" text-anchor="middle" font-family="Microsoft YaHei" font-size="20" font-weight="600" fill="#243342">当前能力边界与下一步完善</text>
+<polyline points="540,480 600,480" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1060,480 1120,480" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1350,560 1350,650" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1120,745 1060,745" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="600,745 540,745" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="310,840 310,1000" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="540,1087.5 600,1087.5" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1060,1087.5 1120,1087.5" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1580,745 1620,745 1620,915 310,915 310,1000" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="80,1087.5 35,1087.5 35,610 310,610 310,560" fill="none" stroke="#708092" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="1350,1175 1350,1225 310,1225 310,1310" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="540,1410 600,1410" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<polyline points="1060,1410 1120,1410" fill="none" stroke="#708092" stroke-width="1.5"  marker-end="url(#arrow)"/>
+<text x="74" y="56.7" text-anchor="start" font-family="Microsoft YaHei" font-size="30" font-weight="600" fill="#243342">05 领域勘察与深入研究架构</text>
+<text x="74" y="108.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">核对日期：2026-11-03｜橙色为本地未提交实现，绿色为复用的已合入能力，蓝色虚线为后续规划；真实端到端效果仍待验收</text>
+<rect x="80" y="200" width="1500" height="75" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="830" y="229.94" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="400" fill="#243342">Plan 审批与 Session 日志｜学术来源接口｜模型调用与有限重试｜维护任务、超时与事件持久化</text>
+<text x="830" y="255.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="400" fill="#243342">领域勘察复用这些能力；新增计划、方向图谱、绑定校验和页面在本地工作区开发。</text>
+<rect x="80" y="400" width="460" height="160" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="310" y="436.65" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">① 用户需求 → 勘察计划</text>
+<text x="310" y="460.78999999999996" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">明确主题、范围、年份和论文版本</text>
+<text x="310" y="484.92999999999995" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">列出方向发现与独立遗漏复查查询</text>
+<text x="310" y="509.07" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">披露候选数量、查询和总耗时上限</text>
+<text x="310" y="533.21" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">执行块：academic-domain-survey-json</text>
+<rect x="600" y="400" width="460" height="160" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="830" y="436.65" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">② 第一次用户批准</text>
+<text x="830" y="460.78999999999996" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">读取会话中明确批准的计划结果</text>
+<text x="830" y="484.92999999999995" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">校验正文、查询、日期与预算一致</text>
+<text x="830" y="509.07" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">生成与本次批准绑定的 planId</text>
+<text x="830" y="533.21" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">未批准或计划标识过期时拒绝执行</text>
+<rect x="1120" y="400" width="460" height="160" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="1350" y="436.65" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">③ 执行已批准的学术查询</text>
+<text x="1350" y="460.78999999999996" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">academicSource.searchAll</text>
+<text x="1350" y="484.92999999999995" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">依次执行发现与遗漏复查查询</text>
+<text x="1350" y="509.07" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">记录来源失败、截断等限制</text>
+<text x="1350" y="533.21" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">本阶段不下载全文或生成研究结论</text>
+<rect x="1120" y="650" width="460" height="190" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="1350" y="689.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">④ 整理论文与所选版本</text>
+<text x="1350" y="713.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">去重、核对日期和版本条件</text>
+<text x="1350" y="737.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">轮流从不同查询中选取候选</text>
+<text x="1350" y="762" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">为遗漏复查结果保留进入候选池的机会</text>
+<text x="1350" y="786.1400000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保留标题、摘要、来源与版本身份</text>
+<text x="1350" y="810.2800000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">限制候选数量，披露政策排除数</text>
+<rect x="600" y="650" width="460" height="190" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="830" y="689.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑤ 模型整理候选方向</text>
+<text x="830" y="713.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">只使用所给标题和摘要，按问题归类</text>
+<text x="830" y="737.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">产出名称、定义及逐字摘录支持</text>
+<text x="830" y="762" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">一篇论文可支持多个方向</text>
+<text x="830" y="786.1400000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">无法可靠归类的论文进入未分类清单</text>
+<text x="830" y="810.2800000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">请求、响应和失败写入会话日志</text>
+<rect x="80" y="650" width="460" height="190" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="310" y="689.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑥ 核对图谱与原始元数据</text>
+<text x="310" y="713.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">论文身份必须存在，摘录必须能定位</text>
+<text x="310" y="737.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">方向名称不重复，方向必须有支持材料</text>
+<text x="310" y="762" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">每篇候选均须归类或标记未分类</text>
+<text x="310" y="786.1400000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">原文匹配只是出处核验</text>
+<text x="310" y="810.2800000000001" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">方向归类是否合理仍需质量验收</text>
+<rect x="80" y="1000" width="460" height="175" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="310" y="1032.08" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑦ 保存并展示勘察结果</text>
+<text x="310" y="1056.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保存 mapped / incomplete 状态</text>
+<text x="310" y="1080.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">展示方向、出处、未分类论文与限制</text>
+<text x="310" y="1104.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">DomainSurveyCard 可读取历史结果</text>
+<text x="310" y="1128.6399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">图谱只表示本次候选材料中的方向</text>
+<text x="310" y="1152.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">无方向时先调整勘察计划再审批</text>
+<rect x="600" y="1000" width="460" height="175" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="830" y="1032.08" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑧ 制定逐方向深入研究计划</text>
+<text x="830" y="1056.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">每个方向标为深入、概览或不覆盖</text>
+<text x="830" y="1080.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">深入方向绑定独立问题与证据目标</text>
+<text x="830" y="1104.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">逐方向设查询上限，披露全局预算</text>
+<text x="830" y="1128.6399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保留证据缺口补检轮次</text>
+<text x="830" y="1152.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">同时说明未分类论文与勘察限制</text>
+<rect x="1120" y="1000" width="460" height="175" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="1350" y="1032.08" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑨ 第二次用户批准</text>
+<text x="1350" y="1056.22" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">单独批准 Research Brief 版本 9 计划</text>
+<text x="1350" y="1080.36" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">绑定准确的 surveyPlanId</text>
+<text x="1350" y="1104.5" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">保留图谱中所有方向的身份与名称</text>
+<text x="1350" y="1128.6399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">正文、方向分配、查询和预算须一致</text>
+<text x="1350" y="1152.78" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">第一次批准不能直接授权深入研究</text>
+<rect x="80" y="1310" width="460" height="200" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="310" y="1354.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑩ 启动前核对绑定关系</text>
+<text x="310" y="1378.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">勘察结果须存在于当前会话</text>
+<text x="310" y="1402.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">方向身份、名称、数量与图谱一致</text>
+<text x="310" y="1427" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">核对最新获批的 researchBriefId</text>
+<text x="310" y="1451.1399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">控制器带入真实勘察状态与限制</text>
+<text x="310" y="1475.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">拒绝缺失、改名或被悄悄省略的方向</text>
+<rect x="600" y="1310" width="460" height="200" rx="7" fill="#edf7f0" stroke="#6d947b" />
+<text x="830" y="1354.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑪ 复用已合入的全文证据流程</text>
+<text x="830" y="1378.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">按获批查询 → 筛选 → 全文 → 证据</text>
+<text x="830" y="1402.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">进行问题关联、分析与有界补强</text>
+<text x="830" y="1427" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">【本地接入】按方向安排查询轮次</text>
+<text x="830" y="1451.1399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">概览与不覆盖方向不分配深研查询</text>
+<text x="830" y="1475.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">方向图谱不计作全文证据</text>
+<rect x="1120" y="1310" width="460" height="200" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="1350" y="1354.58" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">⑫ 报告逐方向披露结果</text>
+<text x="1350" y="1378.72" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">只统计与问题关联且被报告引用的</text>
+<text x="1350" y="1402.86" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">全文证据论文，按论文身份去重</text>
+<text x="1350" y="1427" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">对比批准目标，显示缺口与实际引用</text>
+<text x="1350" y="1451.1399999999999" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">深入方向未达目标列为交付未达标</text>
+<text x="1350" y="1475.28" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">同时披露勘察不完整及未分类材料</text>
+<rect x="80" y="1640" width="730" height="180" rx="7" fill="#fff5e6" stroke="#bc9049" />
+<text x="94" y="1686.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">当前本地实现</text>
+<text x="94" y="1710.7900000000002" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">同一批准可复用已保存图谱，执行中的重复请求共用任务。</text>
+<text x="94" y="1734.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">模型连接或输出截断进行有限重试，必要时缩短摘要输入。</text>
+<text x="94" y="1759.0700000000002" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">勘察查询中间结果尚无断点；失败后不能承诺逐查询续跑。</text>
+<text x="94" y="1783.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">mapped 仅表示没有已记录限制，不等于穷尽整个领域。</text>
+<rect x="835" y="1640" width="745" height="180" rx="7" fill="#f0f4fb" stroke="#8c9fbc" stroke-dasharray="6 4"/>
+<text x="849" y="1686.65" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">待验收／规划</text>
+<text x="849" y="1710.7900000000002" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">优先验证真实来源与模型下的两次审批和逐方向报告。</text>
+<text x="849" y="1734.93" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">核对历史重开、部分来源失败、范围变更及方向质量。</text>
+<text x="849" y="1759.0700000000002" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">再评估查询级检查点、进度与专用取消入口。</text>
+<text x="849" y="1783.21" text-anchor="start" font-family="Microsoft YaHei" font-size="17" font-weight="400" fill="#243342">报告后的多轮循环补证沿用第 04 页规划，不计作本期完成。</text>
+<text x="74" y="1902.14" text-anchor="start" font-family="Microsoft YaHei" font-size="16" font-weight="400" fill="#243342">阅读顺序：①—⑥ 先整理候选方向，⑦—⑨ 由用户决定研究深度，⑩—⑫ 再用全文证据形成报告。数据、状态和验收细节见第 06 页。</text>
+<rect x="1253" y="897" width="194" height="28" fill="#fff"/><text x="1350" y="917" text-anchor="middle" font-family="Microsoft YaHei" font-size="15" fill="#516171">无候选：保存空图谱与限制</text>
+<rect x="98" y="590" width="164" height="28" fill="#fff"/><text x="180" y="610" text-anchor="middle" font-family="Microsoft YaHei" font-size="15" fill="#516171">无方向：改计划再审批</text>
+</svg>

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-11-04-academic-workspace-group.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-11-04-academic-workspace-group.md
+/agent-note-group-academic-packages-without-collapsing-their-build-roles:
+  en: 6dceee0fafa74912
+  zh: 398c939b8ab3bb10
+/agent-note-group-academic-packages-without-collapsing-their-build-roles/problem:
+  en: 1152763268a4bb64
+  zh: af1cf868fc6ad909
+/agent-note-group-academic-packages-without-collapsing-their-build-roles/decision:
+  en: 22a1c0fc01902f8c
+  zh: 27b5c6ca102bb365
+/agent-note-group-academic-packages-without-collapsing-their-build-roles/alternatives-considered:
+  en: 7af7e7a9941295cb
+  zh: 742950dc5ce843fb
+/agent-note-group-academic-packages-without-collapsing-their-build-roles/consequences:
+  en: d7152e7ed38c6dae
+  zh: 2ece2c612d09130a

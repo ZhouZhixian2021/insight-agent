@@ -160,7 +160,7 @@ describe('SDK plan replay composition without launching the application', () => 
     const entries = materialized.flatMap(path => readPatches(path).flatMap(patch => patch.insert ?? []))
     const plan = entries.find(entry => entry.id === 'academic-plan-chinese')
     if (plan === undefined) throw new Error('materialized academic plan entry is missing')
-    const planPath = join(repoRoot, 'packages/api/academic-research-controller/src/plan-validation.ts')
+    const planPath = join(repoRoot, 'packages/academic/research-controller/src/plan-validation.ts')
     expect(plan.name).toBe(pathToFileURL(planPath).href)
     expect(realpathSync(fileURLToPath(plan.name))).toBe(realpathSync(planPath))
     const composition = compose(materialized)

@@ -1,177 +1,13 @@
 // @vitest-environment jsdom
-import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { allowAllAccess } from '@deepseek-ai/dsh-client-test-runtime'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ToolCallId } from '@deepseek-ai/dsh-llm/brand'
-import {
-  createWaterfallRequest, PendingQuestion, planReviewOf, type QuestionComposerProps, type QuestionWait,
-} from '../src/client/contract/slots.ts'
-import { createQuestionDraftStore } from '../src/client/draft-store.ts'
+import { PendingQuestion, planReviewOf, type QuestionComposerProps } from '../src/client/contract/slots.ts'
 import { QuestionComposer } from '../src/client/QuestionComposer.tsx'
 import { en, zh } from '../src/client/locales.ts'
 import { en as commonEn } from '@deepseek-ai/dsh-client-locale/src/locales/en.ts'
-import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
-
-// Every session-scope fixture carries the resource hook the resources plugin merges into GlobalStandardProps.
-const useResource = (() => ({ status: 'none' as const, value: undefined, failure: undefined, reload: () => {} })) as GlobalStandardProps['useResource']
-const usePanelInfo: GlobalStandardProps['usePanelInfo'] = selector => selector({ activePanelId: null })
-
+import { SID, seatOver, kit, PLAN, questions, wait, decision } from './plan-review.fixture.client.ts'
 afterEach(cleanup)
-
-
-const SID = 's1' as SessionId
-
-const seatOver = (dict: Record<string, string>, common: Record<string, string>): QuestionComposerProps['t'] =>
-  (key => dict[key] ?? common[key] ?? key)
-
-type SessionState = Parameters<Parameters<QuestionComposerProps['useSession']>[0]>[0]
-type ConversationState = Parameters<Parameters<QuestionComposerProps['useConversation']>[0]>[0]
-type ChatState = Parameters<Parameters<QuestionComposerProps['useChat']>[0]>[0]
-type TrajectoryState = Parameters<Parameters<QuestionComposerProps['useTrajectory']>[0]>[0]
-type InputState = Parameters<Parameters<QuestionComposerProps['useInput']>[0]>[0]
-type AttentionState = Parameters<Parameters<QuestionComposerProps['useSessionStatus']>[0]>[0]
-
-const sessionState: SessionState = {
-  sessionId: SID,
-  pendingSubmissions: [],
-  running: false,
-  subagent: null,
-  removed: false,
-  openState: 'open',
-  openError: null,
-  hasMore: false,
-  loadingOlder: false,
-  promptError: null,
-  blank: false,
-  lastAgentError: null,
-  promptAttempted: false,
-  awaitingFirstTurn: false,
-}
-const sessionList = {
-  ids: [SID],
-  byId: { [SID]: { id: SID, displayTitle: 'Session', running: false, retainedBy: {}, blank: false, updatedAt: 0 } },
-  phase: 'ready' as const,
-  projectionsBySession: {},
-}
-const attentionState: AttentionState = new Map()
-const workspaceState = {
-  items: [],
-  archivedSessionIds: [],
-  pinnedSessionIds: [],
-  state: 'idle' as const,
-  phase: 'ready' as const,
-  error: null,
-}
-const conversationState: ConversationState = {
-  views: { get: () => undefined, grouped: () => undefined },
-  activeTargets: new Set(),
-}
-const emptyKeys: readonly string[] = []
-const emptyNodeSource = { getSnapshot: () => undefined, subscribe: () => () => {} }
-const chatState: ChatState = {
-  order: emptyKeys,
-  nodes: {
-    get: () => undefined,
-    source: () => emptyNodeSource,
-    bottomSource: () => ({ getSnapshot: () => false, subscribe: () => () => {} }),
-    turnDataSource: () => { throw new Error('unused') },
-    processSource: () => emptyNodeSource,
-    values: () => [],
-  },
-  locations: { getTurn: () => emptyKeys, getStep: () => emptyKeys },
-  navigation: { items: () => [] },
-  timeline: { turnOrder: [], turns: new Map() },
-  legacy: {
-    nodes: [],
-    turnTimings: new Map(),
-    turnEnds: new Map(),
-    partial: null,
-    runningCalls: [],
-  },
-}
-const trajectoryState: TrajectoryState = {
-  eventNodes: [],
-  eventLocations: new Map(),
-  requests: [],
-  callSchemas: new Map(),
-  partial: null,
-  runningCalls: [],
-}
-const inputState: InputState = {
-  draft: '',
-  attachmentIds: [],
-  draftRev: 0,
-  phase: 'plain',
-  occurrences: [],
-  queue: [],
-}
-
-const questionDraftStore = createQuestionDraftStore().create(SID)
-
-/** Framework standard-kit stubs: the panel consumes only the locale seat. */
-const kit: Omit<QuestionComposerProps, 'matched'> = {
-  useQuestionCard: () => { throw new Error('plan review does not read question card state') },
-  renderSlot: () => null,
-  SessionProvider: ({ children }) => children,
-  sessionId: SID,
-  session: undefined,
-  pendingInteraction: undefined,
-  useSession: selector => selector(sessionState),
-  useSessions: selector => selector(sessionList),
-  usePanelInfo, useResource,
-  useSessionStatus: selector => selector(attentionState),
-  useSessionRetainInfo: () => undefined,
-  useWorkspaces: selector => selector(workspaceState),
-  ...allowAllAccess,
-  useConversation: selector => selector(conversationState),
-  useChat: selector => selector(chatState),
-  useTrajectory: selector => selector(trajectoryState),
-  useProjection: (() => undefined),
-  useInput: selector => selector(inputState),
-  inputActions: {
-    captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
-    insertText: () => false,
-    setDraft: () => { throw new Error('unused') },
-    persistDraft: () => { throw new Error('unused') },
-    addAttachments: () => { throw new Error('unused') },
-    removeAttachment: () => { throw new Error('unused') },
-    pruneAttachments: () => { throw new Error('unused') },
-    submit: () => { throw new Error('unused') },
-  },
-  useStore: selector => selector(questionDraftStore.getSnapshot()),
-  actions: questionDraftStore.actions,
-  t: seatOver(zh, commonZh),
-}
-
-const PLAN = '# Ship the picker\n\n- read the store\n- render the rows\n'
-
-/** The plan-mode request shape: one question, the plan as detail, approve named. */
-const questions = (): QuestionWait['questions'] => [{
-  id: 'plan-review',
-  header: 'Plan review',
-  question: 'Approve this plan and leave plan mode?',
-  detail: PLAN,
-  options: [
-    { label: 'Approve', description: 'Leave plan mode; the plan is carried out from the next step.' },
-    { label: 'Keep planning', description: 'Stay in plan mode; feedback goes back to the model.' },
-  ],
-  intent: { kind: 'plan-review', approve: 'Approve' },
-}]
-
-/** Pending waterfall fixture with observable Client response methods. */
-function wait(items: QuestionWait['questions'] = questions()) {
-  const carrier = new PendingQuestion(SID, items)
-  const request = createWaterfallRequest(undefined, undefined, (channel) => { carrier.detachWaterfall(channel) })
-  carrier.attachWaterfall(request.channel)
-  const answer = vi.spyOn(carrier, 'answer')
-  const cancel = vi.spyOn(carrier, 'dismiss')
-  void request.result.catch(() => {})
-  return { carrier, answer, cancel, result: request.result }
-}
-
-const decision = (label: string) => ({ answers: [{ id: 'plan-review', selected: [label] }] })
 
 describe('planReviewOf', () => {
   it('narrows a plan-review request to its decision, options included', () => {
@@ -226,33 +62,6 @@ describe('planReviewOf', () => {
 })
 
 describe('PlanReviewPanel', () => {
-  it('folds the academic handoff while preserving readable scope and the original approval', () => {
-    const plan = '# RAG 研究计划\n\n## 研究范围\n\n纳入预印本、录用稿、正式发表版本。\n\n```academic-research-brief-json\n{"schemaVersion":1}\n```\n\n证据不足时披露限制。'
-    const items = questions().map(item => ({ ...item, detail: plan }))
-    const { carrier, answer } = wait(items)
-    render(<QuestionComposer matched={carrier} {...kit} />)
-    expect(screen.getByRole('heading', { name: 'RAG 研究计划' })).toBeTruthy()
-    expect(screen.getByText('纳入预印本、录用稿、正式发表版本。')).toBeTruthy()
-    expect(screen.getByText('证据不足时披露限制。')).toBeTruthy()
-    const details = screen.getByText(zh['plan.executionDetails']).closest('details')
-    expect(details?.hasAttribute('open')).toBe(false)
-    expect(details?.textContent).toContain('schemaVersion')
-    expect(planReviewOf(items)?.plan).toBe(plan)
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.approve'] }))
-    expect(answer).toHaveBeenCalledWith(decision('Approve'))
-  })
-
-  it.each([
-    '```json\n{"schemaVersion":1}\n```',
-    '```academic-research-brief-json\n{"schemaVersion":1}',
-    '```academic-research-brief-json\n{}\n```\n```academic-research-brief-json\n{}\n```',
-  ])('keeps ordinary or ambiguous code visible: %s', (code) => {
-    const { carrier } = wait(questions().map(item => ({ ...item, detail: `# 研究计划\n\n${code}` })))
-    render(<QuestionComposer matched={carrier} {...kit} />)
-    expect(document.querySelector('details')).toBeNull()
-    expect(screen.queryByRole('button', { name: zh['plan.revise'] })).toBeNull()
-  })
-
   it('passes distinct pending request identities to the preview action for unlogged reviews', () => {
     const rendered = vi.fn<(key: string, owner: unknown) => void>()
     const renderSlot: QuestionComposerProps['renderSlot'] = (key, owner) => { rendered(key, owner); return null }
@@ -417,49 +226,5 @@ describe('PlanReviewPanel', () => {
     expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Refuse' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Request changes' })).toBeTruthy()
-  })
-})
-
-
-describe('academic natural-language revision', () => {
-  const plan = '研究目标：比较 RAG。核心问题：如何评测？研究范围：近三年、允许预印本。执行方式：检索并比较。交付结果：中文受限草稿。待确认事项：无。\n\n```academic-research-brief-json\n{"schemaVersion":5}\n```'
-
-  it('separates readable decisions and sends revision text without granting approval', async () => {
-    const { carrier, answer, cancel, result } = wait(questions().map(item => ({ ...item, detail: plan })))
-    render(<QuestionComposer matched={carrier} {...kit} />)
-    expect(screen.getByText('核心问题：如何评测？')).toBeTruthy()
-    expect(screen.getByText('交付结果：中文受限草稿。')).toBeTruthy()
-    expect(document.querySelector('details')?.open).toBe(false)
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.revise'] }))
-    expect(screen.getByRole('button', { name: zh['plan.approve'] }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: zh['plan.revisionSend'] }).hasAttribute('disabled')).toBe(true)
-    fireEvent.change(screen.getByRole('textbox', { name: zh['plan.revisionLabel'] }), {
-      target: { value: '时间改为近三年。\n不纳入预印本。' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionSend'] }))
-    const expected = { answers: [{ id: 'plan-review', selected: [], custom: '时间改为近三年。\n不纳入预印本。' }] }
-    expect(answer).toHaveBeenCalledWith(expected)
-    expect(await result).toEqual(expected)
-    expect(cancel).not.toHaveBeenCalled()
-    expect(planReviewOf(carrier.questions)?.plan).toBe(plan)
-  })
-
-  it('retains feedback on failure and renders a fresh review for a revised plan', async () => {
-    const { carrier, answer } = wait(questions().map(item => ({ ...item, detail: plan })))
-    answer.mockRejectedValue(new Error('not sent'))
-    const view = render(<QuestionComposer matched={carrier} {...kit} />)
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.revise'] }))
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: '不纳入预印本。' } })
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionSend'] }))
-    expect(await screen.findByText('not sent')).toBeTruthy()
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('不纳入预印本。')
-    fireEvent.click(screen.getByRole('button', { name: zh['plan.revisionBack'] }))
-    expect(screen.getByRole('button', { name: zh['plan.approve'] }).hasAttribute('disabled')).toBe(false)
-    const next = wait(questions().map(item => ({ ...item, detail: plan.replace('允许预印本', '不纳入预印本') })))
-    view.rerender(<QuestionComposer matched={next.carrier} {...kit} t={seatOver(en, commonEn)} />)
-    expect(screen.queryByRole('textbox')).toBeNull()
-    expect(screen.getByText('研究范围：近三年、不纳入预印本。')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: en['plan.approve'] }))
-    expect(next.answer).toHaveBeenCalledWith(decision('Approve'))
   })
 })

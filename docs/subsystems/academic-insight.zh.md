@@ -9,7 +9,7 @@ kind: "subsystem"
 
 分析本地 `AnalysisInput` 和报告本地 `ReportInput` 通过可选的 `questionLinks` 接收生产方问题与证据关联，不改变 Academic Model 或 Remote 字段。卡片分区为空时仍保留逐条有效的最小证据；未提供问题关联时明确披露而非推断。工作流集成负责人负责转发这些可选关联。
 
-Trace v1 通过模型的仅类型 trace 子路径共享品牌操作与事件身份。当前 Controller 适配器保存安全观察记录，标准化后交给不依赖基座的分页；Web 面板只读取限定范围的 Remote 页面。报告 HTML 导出使用现有 Markdown 渲染器与惰性允许列表序列化，保留质量和证据链接，不引入外部资源。查询与导出细节见 [Controller](../../packages/api/academic-research-controller/README.zh.md)和[查看器](../../packages/client/ui-academic-research/README.zh.md)。
+Trace v1 通过模型的仅类型 trace 子路径共享品牌操作与事件身份。当前 Controller 适配器保存安全观察记录，标准化后交给不依赖基座的分页；Web 面板只读取限定范围的 Remote 页面。报告 HTML 导出使用现有 Markdown 渲染器与惰性允许列表序列化，保留质量和证据链接，不引入外部资源。查询与导出细节见 [Controller](../../packages/academic/research-controller/README.zh.md)和[查看器](../../packages/academic/ui-research/README.zh.md)。
 
 Academic Model 负责 `PublicationDatePolicy`、`PublicationDateContext` 和共享日期裁决函数。Controller 在创建检索适配器前冻结运行日期；Workflow 保存它，并强制模型排除引用内容规则。检索与旧选择器共用不完整日期重叠及未知日期规则。日期语义见[模型契约](../../packages/academic/model/README.zh.md)。
 
@@ -17,7 +17,9 @@ Academic Model 负责 `PublicationDatePolicy`、`PublicationDateContext` 和共�
 
 Academic Model 持有获批的分方面要求；Workflow 负责停止时的映射、冻结补强额度及恢复已提交证据。Controller 生成第 8 版计划，保持可见问题简洁，并提供机器可读要求及核查、补强预算。新要求不会自动附加到历史计划。Retrieval 使用对应问题获批的核心查询和方面检索词扩展缺口查询。Analysis 接收最终核查，报告保留缺口。见[工作流约定](../../packages/academic/workflow/README.zh.md)。
 
-新计划还保留已审核的 `ResearchScopeDecision`，记录声明的原请求广度、深入与概览方向，以及不作系统覆盖的已知方向。Controller 在审核前核对可读计划，报告重复这些取舍。该记录用于披露范围，不证明已选方向穷尽整个领域；校验见[Controller](../../packages/api/academic-research-controller/README.zh.md)。
+新计划还保留已审核的 `ResearchScopeDecision`，记录声明的原请求广度、深入与概览方向，以及不作系统覆盖的已知方向。Controller 在审核前核对可读计划，报告重复这些取舍。该记录用于披露范围，不证明已选方向穷尽整个领域；校验见[Controller](../../packages/academic/research-controller/README.zh.md)。
+
+领域级请求可先执行单独批准的元数据勘察。`DomainSurveyResult` 保存有界的方向发现与遗漏复查查询、所选论文版本及来源记录、经原文核对的标题或摘要摘录、未分类论文和限制。后续 `DomainResearchPlan` 绑定准确的已保存勘察，并为每个已发现方向指定深入、概览或不作系统覆盖，以及逐方向证据与查询目标。既有证据工作流执行已审核轮次，报告逐方向披露已引用的全文证据。勘察图谱仍属候选判断，不证明领域方向已经穷尽。
 
 学术洞察是建立在 Harness 扩展点上的可选业务子系统。共享模型不依赖具体提供方；检索、证据生产、跨论文分析、工作流编排与界面分别由独立消费者负责。
 
@@ -41,7 +43,7 @@ Academic Model 持有获批的分方面要求；Workflow 负责停止时的映�
 
 [证据库](../../packages/academic/evidence/README.zh.md) 返回合格记录与 `EvidenceExtractionResult.rejectedDrafts`。每条拒绝记录包含从零开始的 `draftIndex` 和 `segmentIndex`、稳定的 `code`，以及不含原文的诊断 `reason`。工作流提供 `extracted`、`partially_extracted` 或 `extraction_failed` 论文结果；只有前两类向分析提供证据。Academic Remote 为每份抽取结果投影合格 `evidenceCount` 和拒绝列表。部分抽取成功的论文同时贡献保留证据和一次失败抽取操作，全部被拒的论文不计入实际纳入成果。
 
-分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测核对当前证据与已提供的语义审核；缺少独立审核会披露但不阻止其他检查通过的交付，已提供但无效的审核仍会阻断。报告在最终交付入口执行这些检查。[独立查看器](../../packages/client/ui-academic-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
+分析、评测和报告消费方分别由[分析库](../../packages/academic/analysis/README.zh.md)、[评测库](../../packages/academic/eval/README.zh.md)和[报告库](../../packages/academic/report/README.zh.md)实现。分析使用共享 Claim 记录，评测核对当前证据与已提供的语义审核；缺少独立审核会披露但不阻止其他检查通过的交付，已提供但无效的审核仍会阻断。报告在最终交付入口执行这些检查。[独立查看器](../../packages/academic/ui-research/README.zh.md)提供 HTML 与 Markdown 下载，并通过 Web 侧栏真实 Remote 页面分别展示运行、检索和报告质量状态。整理与交付视图归各自模块所有，论文身份与证据记录仍由共享模型维护。
 
 [摄取库](../../packages/academic/ingestion/README.zh.md)接收可附带已核验 Web 发现 URL 和核验 Provider ID 的 `IngestRecord`。按精确标识符去重后，`IngestOutcome.verifiedDiscoveries` 把这些值关联到分配的 `AcademicWorkId` 和保留的 `WorkVersionId`；不同版本仍可分别寻址。
 
@@ -53,7 +55,7 @@ Academic Model 持有获批的分方面要求；Workflow 负责停止时的映�
 
 [workflow 库](../../packages/academic/workflow/README.zh.md)补齐首次取得的版本哈希，并执行一次有界的明确查询到草稿流程。它在已批准 Brief 轮数限制内按顺序执行最多三条由调用方规划的查询，按轮转顺序合并查询批次，按精确身份去重，再应用一个全局候选上限。它返回包含实际 Provider、实际开始的查询、覆盖、截断及来源或论文操作失败的终态 RetrievalRun；Remote 控制器把该 JSON 安全运行记录提供给 Web 客户端。排序调度还发布完整的查询工作流观察；Controller 把其中的计划、候选、轮次、批次、逐题覆盖和停止决定投影为序号单调递增的 `AcademicQ6Projection` 帧，并在终态结果中重复最后一帧。运行内进度快照分别记录合并的论文身份、合并的版本记录、保留版本和疑似重复；论文活动同时携带论文与版本 ID，共享格式接受 Provider 活动。显式启用的模型适配器接收程序维护的来源元数据，保留证据生成器请求接口。PaperEvidenceGenerator、PaperScopeDecision、EvidenceModelSource、EvidenceModelRequest 和 EvidenceModelResult 定义在[工作流类型](../../packages/academic/workflow/src/model-types.ts)中。模型先用首个证据批次和获批规则判断论文准入；排除论文跳过抽取，材料不足则暂停。纳入论文使用简化的证据回答处理有序且受 token 限制的批次，在逐字来源核验前恢复原始定位序号。每次尝试可设置独立超时和有界瞬时故障重试；一个批次失败时保留其他已校验批次。请求事件包含来源身份、阶段、准确的模型配置/消息、输入估算、上下文/输出上限及准入决定；结果引用请求序号，保留压缩流、状态及可选的结束原因、用量、错误代码和本机耗时诊断。没有阶段字段的历史事件仍可读取。存储失败停止整轮。当前不提供自动查询规划。这些 Session 记录支持模型调用复查，不代表完整工作流恢复或语义审核。
 
-候选选择在有界模型审核前调用 Retrieval 覆盖选择器，部署审核预算独立于 Plan 候选上限。Controller 的[审核策略](../../packages/api/academic-research-controller/README.zh.md#model-experience)限制最多两个并发，以版本化 Session 事件记录最小请求和已验证判断，并通过 Q6 投影明确的 `CandidateAssessment.semanticReview` 结算。筛选进度分别报告审核数量与去重论文总数，跳过的论文保留词项评估。
+候选选择在有界模型审核前调用 Retrieval 覆盖选择器，部署审核预算独立于 Plan 候选上限。Controller 的[审核策略](../../packages/academic/research-controller/README.zh.md#model-experience)限制最多两个并发，以版本化 Session 事件记录最小请求和已验证判断，并通过 Q6 投影明确的 `CandidateAssessment.semanticReview` 结算。筛选进度分别报告审核数量与去重论文总数，跳过的论文保留词项评估。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -76,6 +78,28 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Chinese research intent, search directions, and the approval identity to pass to run.
  */
 @Remote('plan') async plan(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchPlanView>
+
+/**
+ * Preview the latest approved metadata-only domain reconnaissance plan.
+ * @param sessionId Session whose approval owns the exact survey expressions.
+ * @returns Reviewed topic, scope, query rounds and limits without starting work.
+ */
+@Remote('domainSurveyPlan') async domainSurveyPlan(sessionId: AcademicDomainSurveyRequest['sessionId']): Promise<AcademicDomainSurveyPlanView>
+
+/**
+ * Execute reviewed scholarly-metadata queries and save a source-grounded direction map.
+ * @param request Session and approval identity returned by domainSurveyPlan.
+ * @param signal Caller cancellation checked before admission; admitted work uses maintenance and elapsed-time signals.
+ * @returns Durable map; a repeated call for the same approval returns its saved result.
+ */
+@Remote('runDomainSurvey') async runDomainSurvey(request: AcademicDomainSurveyRequest, signal: AbortSignal): Promise<AcademicDomainSurveyView>
+
+/**
+ * Read a saved direction map without running new queries or model calls.
+ * @param request Owning Session and approved survey identity.
+ * @returns Persisted survey result or an explicit absence error.
+ */
+@Remote('getDomainSurvey') async getDomainSurvey(request: AcademicDomainSurveyRequest): Promise<AcademicDomainSurveyView>
 
 /**
  * Run one multi-source research pass while the addressed Agent is idle.
@@ -155,7 +179,7 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 @Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/academic/research-controller/src/index.ts`](../../packages/academic/research-controller/src/index.ts)
 <!-- END GENERATED cordis-surface -->
 
 `AcademicBackgroundRunKey` 把 Host 拥有的任务 ID 绑定到 Session；`AcademicBackgroundRunCancelRequest` 增加明确的 `user_requested` 原因。`AcademicBackgroundRunView` 将最新状态、进度、Q6 投影和终态结果作为一条完整 Session 事件保存。`AcademicBackgroundRunSummary` 是 `listBackgroundRuns` 返回的简短发现行；客户端另行读取选中运行的完整状态。订阅者的 AbortSignal 只结束查看。没有活动 Host 所有者的未结算记录显示为 `interrupted`，保留最后观察到的检索 ID 和进度；检查点恢复是一次显式新运行。

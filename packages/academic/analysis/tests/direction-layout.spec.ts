@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseSynthesisDraft, synthesisPrompt, type AcademicSynthesisInput } from '../src/index.ts'
 import { academicReportFormat } from '../src/report-format.ts'
 
-const root = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const root = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 const input = (): AcademicSynthesisInput => JSON.parse(readFileSync(new URL('synthesis-input.sample.json', root), 'utf8')) as AcademicSynthesisInput
 interface Component { statementIndexes: number[]; missingReason: string | null }
 interface Direction {
@@ -24,7 +24,7 @@ const output = () => JSON.parse(readFileSync(new URL('synthesis-partial-output.s
 
 describe('executable direction report layout', () => {
   it('retains the historical preset reference while new requests select evidence narrative writing', () => {
-    const source = readFileSync(new URL('../../../bundle/web-app/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../../bundle/presets/academic/skills/academic-insight-report/references/report-format.md', import.meta.url), 'utf8')
     expect(academicReportFormat).toBe(source.replaceAll('\r\n', '\n').trimEnd() + '\n')
     const prompt = synthesisPrompt(input())
     expect(prompt).toContain('writingStyle:"evidence_narrative"')

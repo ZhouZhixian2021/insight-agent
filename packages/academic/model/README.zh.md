@@ -30,6 +30,8 @@ Trace v1 类型也通过仅类型子路径 `@deepseek-ai/dsh-academic-model/trac
 <a id="use-this-package"></a>
 ## 使用本包
 
+可选的 `ResearchBrief.domainResearchPlan` 将已批准的领域勘察与每个已发现方向绑定。每项 `DomainResearchDirection` 记录准确的图谱方向身份、处理层次、深入研究问题、已引用全文证据论文目标及查询上限；概览和不覆盖方向的研究预算为零。Controller 在执行前根据已保存图谱核对绑定。方向目标只用于核查和披露，本身不是证据。
+
 可选的 `ResearchBrief.scopeDecision` 保留已审核的原请求广度声明和方向取舍。深入研究方向进行系统检索；仅作概览方向用于交代背景；不作系统覆盖的方向是已知遗漏示例，不构成完整领域分类。缺少该字段的历史 Brief 沿用原有解释。
 
 可执行 Academic 工作流将 `ResearchBrief.includedWorkTypes` 解释为版本状态（`preprint`、`accepted_manuscript`、`version_of_record`），不表示会议／期刊发表类别。`AcademicWork.venue` 是来源提供的名称，不能据此确定发表类别；当前模型不表达严格的发表类别筛选。

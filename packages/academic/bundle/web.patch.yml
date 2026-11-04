@@ -1,0 +1,6 @@
+# Academic browser surface, registered through the existing client plugin loader.
+- insert:
+    - id: academic-client-remote
+      name: '@deepseek-ai/dsh-academic-client-remote'
+    - id: ui-academic-research
+      name: '@deepseek-ai/dsh-client-ui-academic-research'

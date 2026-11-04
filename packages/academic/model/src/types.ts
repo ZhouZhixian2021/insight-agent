@@ -198,6 +198,26 @@ export interface ResearchScopeDecision {
   readonly notSystematicallyCovered: readonly string[]
 }
 
+/** User-reviewed assignment and evidence target for every direction in one saved survey. */
+export interface DomainResearchDirection {
+  readonly directionId: string
+  readonly label: string
+  readonly depth: 'deep_dive' | 'overview' | 'excluded'
+  readonly question: string | null
+  readonly targetSupportingWorks: number
+  readonly maximumQueries: number
+}
+
+/** Exact survey identity and direction assignments for a domain-wide research brief. */
+export interface DomainResearchPlan {
+  readonly surveyPlanId: string
+  readonly directions: readonly DomainResearchDirection[]
+  /** Filled from the saved survey by the Controller after approval, never authored by the model. */
+  readonly surveyStatus?: 'mapped' | 'incomplete'
+  readonly surveyLimitations?: readonly string[]
+  readonly unclassifiedSurveyWorks?: number
+}
+
 /** User-reviewed research scope and delivery constraints for one plan version. */
 export interface ResearchBrief {
   readonly schemaVersion: 1
@@ -207,6 +227,7 @@ export interface ResearchBrief {
   readonly aliases: readonly string[]
   readonly questions: readonly string[]
   readonly scopeDecision?: ResearchScopeDecision
+  readonly domainResearchPlan?: DomainResearchPlan
   readonly coverageRequirements?: readonly ResearchCoverageRequirement[]
   readonly publicationWindow: PublicationWindow
   readonly publicationDatePolicy?: PublicationDatePolicy

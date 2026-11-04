@@ -7,9 +7,9 @@ import { dirname, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
 import { TypeScriptProject } from './ts-project.ts'
+import { clientFeatureManifestPaths, isClientFeaturePackage } from './client-feature-packages.ts'
 
 const GATE = 'verify-client-packages'
-const CLIENT_MANIFEST_GLOB = 'packages/client/*/package.json'
 const MANIFEST_GLOBS = ['packages/*/*/package.json', 'apps/*/package.json', 'vendor/*/package.json']
 const CONFIG_GLOB = 'packages/*/*/tsdown.config.ts'
 const PLATFORM_SOURCE = 'packages/client/web/src/platform.ts'
@@ -30,7 +30,7 @@ export interface ClientDeclaration {
   readonly inject: readonly string[]
 }
 
-/** One package directly under packages/client. */
+/** One Client feature package, including business-owned browser features. */
 export interface ClientPackage extends ClientDeclaration {
   readonly staticLinked: boolean
   readonly sourceUses: Readonly<Record<string, readonly string[]>>
@@ -354,7 +354,7 @@ function collectModuleViolations(facts: ClientPackageFacts): string[] {
       if (supplier === pkg.name) {
         violations.push(pkg.manifest + ': dsh.client.external names its own row ' + JSON.stringify(specifier))
       } else if (supplier !== undefined) {
-        if (pkg.manifest.startsWith('packages/client/')) {
+        if (isClientFeaturePackage(pkg.manifest, pkg.name)) {
           violations.push(
             pkg.manifest + ': client feature package requests runtime external ' + JSON.stringify(specifier)
             + '; import shared types only or call an injected Cordis service',
@@ -597,7 +597,7 @@ async function readFacts(root: string): Promise<ClientPackageFacts> {
   const byManifest = new Map(declarations.map(entry => [entry.manifest, entry]))
   const packages: ClientPackage[] = []
 
-  for (const manifestPath of globSync(CLIENT_MANIFEST_GLOB, { cwd: root }).map(normalizePath).sort()) {
+  for (const manifestPath of clientFeatureManifestPaths(root)) {
     const declaration = byManifest.get(manifestPath)
     if (declaration === undefined) throw new Error(GATE + ': no declaration facts for ' + manifestPath)
     const manifest = JSON.parse(readFileSync(resolve(root, manifestPath), 'utf8')) as Manifest

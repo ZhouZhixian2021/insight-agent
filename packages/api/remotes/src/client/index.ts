@@ -1,7 +1,6 @@
 /** Platform-neutral assembly of generated Host Remote contributions. */
 
 import type { Context } from '@deepseek-ai/cordis'
-import academicResearchRemote from '@deepseek-ai/dsh-api-academic-research-controller/remote'
 import productAnalyticsRemote from '@deepseek-ai/dsh-client-product-analytics/remote'
 export type {} from '@deepseek-ai/dsh-client-product-analytics/remote'
 import agentPresetsRemote from '@deepseek-ai/dsh-agent-preset-registry/remote'
@@ -31,7 +30,6 @@ import terminalRemote from '@deepseek-ai/dsh-api-terminal-controller/remote'
 import workspaceFilesRemote from '@deepseek-ai/dsh-api-workspace-files/remote'
 import type { ClientRemote } from '@deepseek-ai/dsh-api-gateway/client'
 
-export type {} from '@deepseek-ai/dsh-api-academic-research-controller/remote'
 export type { ClientRemote } from '@deepseek-ai/dsh-api-gateway/client'
 export type {
   BundleInfo, BundleRowInfo, ChangeResult, IncompatiblePlugin, InspectOptions, InstallBundleOptions, InstallSpecKind, ManagementError,
@@ -188,7 +186,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposers: Array<() => Promise<void>> = []
   try {
     for (const contribution of [
-      academicResearchRemote, productAnalyticsRemote, agentPresetsRemote, commandsRemote, settingsControllerRemote, accountRemote,
+      productAnalyticsRemote, agentPresetsRemote, commandsRemote, settingsControllerRemote, accountRemote,
       goalsRemote, llmRemote, dynamicRemote, scheduleRemote,
       pluginInventoryRemote, pluginManagerRemote, pluginMarketRemote, pluginRegistryProbeRemote,
       messageFeedbackRemote, sessionFeedbackRemote,
