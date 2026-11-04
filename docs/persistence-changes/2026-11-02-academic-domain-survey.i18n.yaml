@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-02-academic-domain-survey.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-02-academic-domain-survey.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-02-academic-domain-survey:
+  en: ddf1afd1016829ed
+  zh: 16b436e553c2e7bc
+/2026-11-02-academic-domain-survey/summary:
+  en: af32d26bcad9e9ca
+  zh: a7ccfefbd040462f
+/2026-11-02-academic-domain-survey/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-02-academic-domain-survey/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-02-academic-domain-survey/compatibility:
+  en: 582710e4ad4fb321
+  zh: d51a5c47e28879ea
+/2026-11-02-academic-domain-survey/verification:
+  en: 101bd28432ac0c80
+  zh: 648a713902ae208c
+/2026-11-02-academic-domain-survey/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

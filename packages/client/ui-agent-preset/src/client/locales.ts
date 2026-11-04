@@ -4,7 +4,6 @@ import { guideEn, guideZh, type PresetGuideKey } from './guide-locales.ts'
 
 /** Locale keys these surfaces render. */
 export type AgentPresetSettingsKey =
-  | 'presetAcademicName' | 'presetAcademicDescription'
   | PresetGuideKey
   | 'builtInGroup'
   | 'customGroup'
@@ -61,9 +60,6 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   presetCordisDescription:
     'Customize DSH through conversation. Let the agent write plugins that add features or UI, or combine tools and prompts to create your own mode.',
 
-  presetAcademicName: 'Academic insight',
-  presetAcademicDescription:
-    'Research agent for technical frontiers that finds and verifies papers, then produces an evidence-traceable structured report.',
   inUse: 'New task default',
 
   noDescription: 'No description.',
@@ -105,8 +101,6 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetCordisName: '创造模式',
   presetCordisDescription: '用对话定制 DSH：让 Agent 编写插件，添加新功能或界面；也能组合工具和提示词，创建自己的模式。',
 
-  presetAcademicName: '学术洞察',
-  presetAcademicDescription: '面向技术前沿研究的学术 Agent，检索并核验论文证据，形成可追溯的结构化洞察报告。',
   inUse: '新任务默认',
 
   noDescription: '暂无描述。',

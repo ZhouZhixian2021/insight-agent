@@ -11,7 +11,7 @@ import type {} from '@deepseek-ai/dsh-agent'
 
 export const name = 'academic-model-snapshot'
 export const inject = ['llm', 'sessions', 'sessionPersistence', 'tokenMeter']
-const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const samples = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 
 class SnapshotAdapter extends LlmAdapter {
   readonly #invalidSynthesisFirst: boolean

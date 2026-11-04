@@ -14,7 +14,7 @@ import {
 } from '../src/index.ts'
 
 // These repository-owned synthetic fixtures exercise handoff semantics, not untrusted JSON parsing.
-const base = '../../../../z-team_docs/interface-samples/academic-model-v1/'
+const base = '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/'
 const b = JSON.parse(readFileSync(new URL(`${base}b-retrieval-evidence.sample.json`, import.meta.url), 'utf8')) as {
   researchBrief: ResearchBrief
   academicWorks: AcademicWork[]

@@ -67,7 +67,7 @@
       }
     },
     {
-      "file": "packages/api/academic-research-controller/src/background-run.ts",
+      "file": "packages/academic/research-controller/src/background-run.ts",
       "blobs": {
         "T0": "e65bc037191bfee329da7d5a5c0443771e380b8f",
         "U0": null,
@@ -75,7 +75,7 @@
       }
     },
     {
-      "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+      "file": "packages/academic/research-controller/src/candidate-review-model.ts",
       "blobs": {
         "T0": "5ec4382171186327a024d23d6dc778891ab53aa8",
         "U0": null,
@@ -83,7 +83,7 @@
       }
     },
     {
-      "file": "packages/api/academic-research-controller/src/index.ts",
+      "file": "packages/academic/research-controller/src/index.ts",
       "blobs": {
         "T0": "5feea721e07047bee0036aa88d1ed2c0c91d8a4d",
         "U0": null,
@@ -91,7 +91,7 @@
       }
     },
     {
-      "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+      "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
       "blobs": {
         "T0": "4a0206b61a918a7a22f1fb3100f86b790a202618",
         "U0": null,
@@ -251,7 +251,7 @@
       }
     },
     {
-      "file": "packages/api/academic-research-controller/src/types.ts",
+      "file": "packages/academic/research-controller/src/types.ts",
       "blobs": {
         "T0": "6243cb9b8ba627ef1ae036a8644a05938c5c62ba",
         "U0": null,
@@ -440,7 +440,7 @@
       "name": "academic/background-run-state",
       "payloadType": "AcademicBackgroundRunView",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/background-run.ts",
+        "file": "packages/academic/research-controller/src/background-run.ts",
         "T0Line": 9,
         "ALine": 9
       },
@@ -449,91 +449,91 @@
           "name": "schemaVersion",
           "optional": false,
           "type": "1",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 69
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 70
         },
         {
           "name": "state",
           "optional": false,
           "type": "\"failed\" | \"cancelled\" | \"completed\" | \"running\" | \"interrupted\"",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 71
         },
         {
           "name": "startedAt",
           "optional": false,
           "type": "string",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 72
         },
         {
           "name": "updatedAt",
           "optional": false,
           "type": "string",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 73
         },
         {
           "name": "retrievalRunId",
           "optional": false,
           "type": "RetrievalRunId | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 74
         },
         {
           "name": "progress",
           "optional": false,
           "type": "AcademicResearchProgressView | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 75
         },
         {
           "name": "q6",
           "optional": false,
           "type": "AcademicQ6Projection | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 76
         },
         {
           "name": "result",
           "optional": false,
           "type": "AcademicResearchRunValue | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 77
         },
         {
           "name": "error",
           "optional": false,
           "type": "string | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 78
         },
         {
           "name": "cancelReason",
           "optional": false,
           "type": "\"user_requested\" | \"service_stopped\" | null",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 79
         },
         {
           "name": "sessionId",
           "optional": false,
           "type": "SessionId",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 58
         },
         {
           "name": "backgroundRunId",
           "optional": false,
           "type": "string",
-          "file": "packages/api/academic-research-controller/src/types.ts",
+          "file": "packages/academic/research-controller/src/types.ts",
           "line": 59
         }
       ],
@@ -1288,23 +1288,23 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 9
           },
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 181
           },
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 200
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 341
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 414
           },
           {
@@ -1314,23 +1314,23 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 9
           },
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 181
           },
           {
-            "file": "packages/api/academic-research-controller/src/background-run.ts",
+            "file": "packages/academic/research-controller/src/background-run.ts",
             "line": 200
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 346
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 421
           },
           {
@@ -1415,7 +1415,7 @@
             "line": 59
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 509
           },
           {
@@ -1437,7 +1437,7 @@
             "line": 59
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 518
           },
           {
@@ -1527,7 +1527,7 @@
             "line": 61
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 511
           },
           {
@@ -1549,7 +1549,7 @@
             "line": 61
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 520
           },
           {
@@ -1563,7 +1563,7 @@
       "name": "academic/candidate-review-selection-v1",
       "payloadType": "ReviewSelectionEvent",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 46,
         "ALine": 56
       },
@@ -1572,28 +1572,28 @@
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 33
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 34
         },
         {
           "name": "roundIndex",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 35
         },
         {
           "name": "selection",
           "optional": false,
           "type": "CandidateReviewSelectionV1",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 36
         }
       ],
@@ -1632,11 +1632,11 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 46
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 84
           },
           {
@@ -1646,11 +1646,11 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 56
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 94
           },
           {
@@ -1664,7 +1664,7 @@
       "name": "academic/candidate-screening-request",
       "payloadType": "CandidateReviewModelRequest",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 42,
         "ALine": 52
       },
@@ -1673,21 +1673,21 @@
           "name": "academicWorkId",
           "optional": false,
           "type": "AcademicWorkId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 15
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 16
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 17
         },
         {
@@ -1865,7 +1865,7 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 42
           },
           {
@@ -1875,7 +1875,7 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 52
           },
           {
@@ -1889,7 +1889,7 @@
       "name": "academic/candidate-screening-result",
       "payloadType": "CandidateReviewModelResult",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 44,
         "ALine": 54
       },
@@ -1898,21 +1898,21 @@
           "name": "academicWorkId",
           "optional": false,
           "type": "AcademicWorkId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 15
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 16
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 17
         },
         {
@@ -2192,7 +2192,7 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 44
           },
           {
@@ -2202,7 +2202,7 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 54
           },
           {
@@ -2216,7 +2216,7 @@
       "name": "academic/candidate-semantic-review-request-v1",
       "payloadType": "SemanticReviewRequest",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 48,
         "ALine": 58
       },
@@ -2225,42 +2225,42 @@
           "name": "workVersionId",
           "optional": false,
           "type": "WorkVersionId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 22
         },
         {
           "name": "roundIndex",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 23
         },
         {
           "name": "selectionSeq",
           "optional": false,
           "type": "SessionSeq | null",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 24
         },
         {
           "name": "academicWorkId",
           "optional": false,
           "type": "AcademicWorkId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 15
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 16
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 17
         },
         {
@@ -2447,11 +2447,11 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 48
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 129
           },
           {
@@ -2461,11 +2461,11 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 58
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 139
           },
           {
@@ -2479,7 +2479,7 @@
       "name": "academic/candidate-semantic-review-result-v1",
       "payloadType": "SemanticReviewResult",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 50,
         "ALine": 60
       },
@@ -2488,42 +2488,42 @@
           "name": "workVersionId",
           "optional": false,
           "type": "WorkVersionId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 22
         },
         {
           "name": "roundIndex",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 23
         },
         {
           "name": "selectionSeq",
           "optional": false,
           "type": "SessionSeq | null",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 24
         },
         {
           "name": "academicWorkId",
           "optional": false,
           "type": "AcademicWorkId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 15
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 16
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 17
         },
         {
@@ -2811,11 +2811,11 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 50
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 134
           },
           {
@@ -2825,11 +2825,11 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 60
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 144
           },
           {
@@ -2843,7 +2843,7 @@
       "name": "academic/candidate-semantic-review-verified-v1",
       "payloadType": "VerifiedSemanticReview",
       "declaration": {
-        "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+        "file": "packages/academic/research-controller/src/candidate-review-model.ts",
         "T0Line": 52,
         "ALine": 62
       },
@@ -2852,56 +2852,56 @@
           "name": "requestSeq",
           "optional": false,
           "type": "SessionSeq",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 29
         },
         {
           "name": "review",
           "optional": false,
           "type": "CandidateSemanticReviewV1",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 30
         },
         {
           "name": "workVersionId",
           "optional": false,
           "type": "WorkVersionId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 22
         },
         {
           "name": "roundIndex",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 23
         },
         {
           "name": "selectionSeq",
           "optional": false,
           "type": "SessionSeq | null",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 24
         },
         {
           "name": "academicWorkId",
           "optional": false,
           "type": "AcademicWorkId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 15
         },
         {
           "name": "researchBriefId",
           "optional": false,
           "type": "ResearchBriefId",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 16
         },
         {
           "name": "researchBriefVersion",
           "optional": false,
           "type": "number",
-          "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+          "file": "packages/academic/research-controller/src/candidate-review-model.ts",
           "line": 17
         }
       ],
@@ -2933,11 +2933,11 @@
       "sourceOccurrences": {
         "T0": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 52
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 146
           },
           {
@@ -2947,11 +2947,11 @@
         ],
         "A": [
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 62
           },
           {
-            "file": "packages/api/academic-research-controller/src/candidate-review-model.ts",
+            "file": "packages/academic/research-controller/src/candidate-review-model.ts",
             "line": 156
           },
           {
@@ -3014,19 +3014,19 @@
             "line": 67
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 269
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 285
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 44
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 55
           },
           {
@@ -3040,19 +3040,19 @@
             "line": 67
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 273
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 289
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 44
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 55
           },
           {
@@ -3151,11 +3151,11 @@
             "line": 69
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 289
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 51
           },
           {
@@ -3169,11 +3169,11 @@
             "line": 69
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 293
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 51
           },
           {
@@ -3316,7 +3316,7 @@
             "line": 172
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 63
           },
           {
@@ -3334,7 +3334,7 @@
             "line": 182
           },
           {
-            "file": "packages/client/ui-academic-research/src/client/enhancement-history.ts",
+            "file": "packages/academic/ui-research/src/client/enhancement-history.ts",
             "line": 63
           },
           {
@@ -4462,7 +4462,7 @@
             "line": 65
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 530
           },
           {
@@ -4484,7 +4484,7 @@
             "line": 65
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 539
           },
           {
@@ -4547,7 +4547,7 @@
             "line": 63
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 563
           },
           {
@@ -4573,7 +4573,7 @@
             "line": 63
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 572
           },
           {
@@ -4663,7 +4663,7 @@
             "line": 57
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 516
           },
           {
@@ -4681,7 +4681,7 @@
             "line": 57
           },
           {
-            "file": "packages/api/academic-research-controller/src/index.ts",
+            "file": "packages/academic/research-controller/src/index.ts",
             "line": 525
           },
           {

@@ -159,6 +159,14 @@
       "upstreamChurn6mo": 304
     },
     {
+      "path": "apps/cli/package.json",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "安装接入：CLI 声明独立学术组合包依赖，业务配置及提示词由该包管理。",
+      "addedLines": 1,
+      "removedLines": 0
+    },
+    {
       "path": "apps/cli/tests/profiles/acp/tests/acp.e2e.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
@@ -274,6 +282,14 @@
       "addedLines": 54,
       "removedLines": 1,
       "upstreamChurn6mo": 26
+    },
+    {
+      "path": "apps/web/tests/scaffold.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "组合验收：浏览器测试从正式 Web 配置读取已选业务包，避免测试环境遗漏学术接入层。",
+      "addedLines": 8,
+      "removedLines": 6
     },
     {
       "path": "apps/web/tsconfig.json",
@@ -555,67 +571,12 @@
       "upstreamChurn6mo": 353
     },
     {
-      "path": "packages/api/remotes/package.json",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "配置：登记学术包与预设",
-      "addedLines": 2,
-      "removedLines": 1,
-      "upstreamChurn6mo": 96
-    },
-    {
-      "path": "packages/api/remotes/README.i18n.yaml",
-      "category": "generated",
-      "owner": "ZhouZhixian2021",
-      "reason": "配置：en: 268929960cd83e15",
-      "addedLines": 1,
-      "removedLines": 1,
-      "upstreamChurn6mo": 37
-    },
-    {
-      "path": "packages/api/remotes/README.md",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "文档：The Client assembly mounts Academic research, Office conversion,",
-      "addedLines": 1,
-      "removedLines": 1,
-      "upstreamChurn6mo": 33
-    },
-    {
-      "path": "packages/api/remotes/src/client/index.ts",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "源码：import academicResearchRemote from '@deepseek-ai/dsh-api-academi",
-      "addedLines": 3,
-      "removedLines": 1,
-      "upstreamChurn6mo": 57
-    },
-    {
-      "path": "packages/api/remotes/tsconfig.client.json",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "配置：新增 path",
-      "addedLines": 1,
-      "removedLines": 0,
-      "upstreamChurn6mo": 36
-    },
-    {
-      "path": "packages/bundle/web-app/cordis.patch.yml",
+      "path": "packages/boot/app-boot/src/profile.ts",
       "category": "wiring",
       "owner": "ZhouZhixian2021",
-      "reason": "组合接入：学术服务挂载与 DSH home 缓存目录必须接入 Web 现有配置条目；业务实现保留在新增学术模块。",
-      "addedLines": 72,
-      "removedLines": 0,
-      "upstreamChurn6mo": 161
-    },
-    {
-      "path": "packages/bundle/web-app/package.json",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "配置：登记学术包与预设",
-      "addedLines": 13,
-      "removedLines": 2,
-      "upstreamChurn6mo": 151
+      "reason": "组合接入：默认 Web 配置选择独立学术包，并利用现有机制迁移旧默认组合；自定义列表不改写。",
+      "addedLines": 2,
+      "removedLines": 1
     },
     {
       "path": "packages/bundle/web-app/README.i18n.yaml",
@@ -645,13 +606,70 @@
       "upstreamChurn6mo": 73
     },
     {
-      "path": "packages/client/ui-agent-preset/src/client/locales.ts",
+      "path": "packages/client/ui-agent-preset/package.json",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明本地化文案类型依赖"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/README.md",
       "category": "fork",
       "owner": "ZhouZhixian2021",
-      "reason": "源码：接入学术能力",
-      "addedLines": 6,
-      "removedLines": 0,
-      "upstreamChurn6mo": 47
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/src/client/AgentPresetLabel.tsx",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/src/client/AgentPresetSeat.tsx",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/src/client/AgentPresetSection.tsx",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/src/client/index.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "通用能力：模式页面读取按实例管理的文案登记，不包含学术名称或业务判断"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/tests/components.client.spec.tsx",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入验证：为模式展示组件提供新增的文案登记方法与状态钩子"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/tests/section.client.spec.tsx",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入验证：为模式展示组件提供新增的文案登记方法与状态钩子"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/tsconfig.json",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明本地化文案类型依赖"
     },
     {
       "path": "packages/client/ui-theme/tests/expected/radius-exceptions.expected.json",
@@ -666,7 +684,7 @@
       "path": "packages/client/ui-user-questions/README.i18n.yaml",
       "category": "generated",
       "owner": "ZhouZhixian2021",
-      "reason": "配置：en: 029c634137b7051f",
+      "reason": "通用审批正文插槽说明及配对记录，学术呈现说明移至学术页面包",
       "addedLines": 4,
       "removedLines": 4,
       "upstreamChurn6mo": 28
@@ -675,7 +693,7 @@
       "path": "packages/client/ui-user-questions/README.md",
       "category": "fork",
       "owner": "ZhouZhixian2021",
-      "reason": "文档：Academic review bodies containing the six concise Chinese decisi",
+      "reason": "通用审批正文插槽说明及配对记录，学术呈现说明移至学术页面包",
       "addedLines": 4,
       "removedLines": 0,
       "upstreamChurn6mo": 25
@@ -684,10 +702,22 @@
       "path": "packages/client/ui-user-questions/README.zh.md",
       "category": "fork",
       "owner": "ZhouZhixian2021",
-      "reason": "文档：学术审批正文包含六个简洁中文决策标签时，界面将标签分为独立段落，不截断范围或改变待审批计划。审批卡提供本地化修改框；提交非空自然",
+      "reason": "通用审批正文插槽说明及配对记录，学术呈现说明移至学术页面包",
       "addedLines": 4,
       "removedLines": 0,
       "upstreamChurn6mo": 27
+    },
+    {
+      "path": "packages/client/ui-user-questions/src/client/contract/slots.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明并传递通用审批正文插槽，业务展示由贡献方负责"
+    },
+    {
+      "path": "packages/client/ui-user-questions/src/client/index.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明并传递通用审批正文插槽，业务展示由贡献方负责"
     },
     {
       "path": "packages/client/ui-user-questions/src/client/locales.ts",
@@ -711,19 +741,31 @@
       "path": "packages/client/ui-user-questions/src/client/PlanReviewPanel.tsx",
       "category": "fork",
       "owner": "ZhouZhixian2021",
-      "reason": "源码：修改 handoff",
+      "reason": "通用审批正文插槽与修改意见回调；批准提交和忙碌状态仍由公共问答模块负责",
       "addedLines": 55,
       "removedLines": 7,
       "upstreamChurn6mo": 16
     },
     {
+      "path": "packages/client/ui-user-questions/src/client/QuestionComposer.tsx",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明并传递通用审批正文插槽，业务展示由贡献方负责"
+    },
+    {
       "path": "packages/client/ui-user-questions/tests/plan-review-panel.client.spec.tsx",
       "category": "fork",
       "owner": "ZhouZhixian2021",
-      "reason": "测试：folds the academic handoff while preserving readable scope and the original appr",
+      "reason": "公共审批行为回归；共用问答夹具，学术展示测试归入学术目录",
       "addedLines": 73,
       "removedLines": 2,
       "upstreamChurn6mo": 45
+    },
+    {
+      "path": "packages/client/ui-user-questions/tests/user-questions-composer.client.spec.tsx",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：声明并传递通用审批正文插槽，业务展示由贡献方负责"
     },
     {
       "path": "packages/core/session/src/known-event-types.ts",
@@ -877,24 +919,6 @@
       "addedLines": 78,
       "removedLines": 2,
       "upstreamChurn6mo": 60
-    },
-    {
-      "path": "packages/preset/agent-preset-registry/src/display.ts",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "源码：接入学术能力",
-      "addedLines": 2,
-      "removedLines": 0,
-      "upstreamChurn6mo": 1
-    },
-    {
-      "path": "packages/preset/agent-preset-registry/tests/display.spec.ts",
-      "category": "fork",
-      "owner": "ZhouZhixian2021",
-      "reason": "测试：resolves the shipped academic preset through its dictionary keys",
-      "addedLines": 7,
-      "removedLines": 0,
-      "upstreamChurn6mo": 1
     },
     {
       "path": "packages/preset/agent-preset/skills/cordis-composition-reference/references/packages.md",
@@ -1419,6 +1443,12 @@
       "upstreamChurn6mo": 2
     },
     {
+      "path": "scripts/product-package-policy.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入：登记成员新增的可选浏览器学术来源，默认产品不自动启用"
+    },
+    {
       "path": "scripts/project-doc-site.spec.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
@@ -1444,6 +1474,24 @@
       "addedLines": 5,
       "removedLines": 0,
       "upstreamChurn6mo": 296
+    },
+    {
+      "path": "scripts/verify-client-domain-graph.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "目录接入：将页面目录发现接到统一清单，迁移后继续执行相同的包内分层检查。"
+    },
+    {
+      "path": "scripts/verify-client-packages.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证迁移到业务分组的页面仍受原 Client 动态模块约束，防止目录移动造成漏检。"
+    },
+    {
+      "path": "scripts/verify-client-packages.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "目录接入：使用稳定 Client 包身份发现迁移到业务分组的页面，保留原依赖与模块请求约束。"
     },
     {
       "path": "scripts/verify-client-ui-i18n.spec.ts",

@@ -31,7 +31,7 @@ The launcher selects a free port, opens the authenticated URL, and still enters 
 
 On the new-session screen, open the Agent preset picker and choose **Academic insight** before sending the first message. A session fixes its preset after it produces content, so start another session to change this choice later.
 
-Describe the research need directly; `/plan` is not required. Before the first model request, a new Academic insight session enters plan mode and turns the request into a structured Research Brief and execution plan. Review the plan in the Web card: approve it to begin research, or keep planning with corrections. If the model stops without calling the review tool, the Academic preset automatically prompts it once more to submit the complete plan through `exit_plan_mode`. The Agent asks one concise clarification only when a missing user-owned choice materially changes the research.
+Describe the research need directly; `/plan` is not required. Before the first model request, a new Academic insight session enters plan mode. A domain-wide request first reviews a metadata survey plan, then presents source-quoted candidate directions and omissions before a second plan assigns research depth to each direction. A focused question goes directly to a structured Research Brief. Review each plan in the Web card: approval starts that stage, while continued planning accepts corrections. If the model stops without calling the review tool, the Academic preset automatically prompts it once more to submit the complete plan through `exit_plan_mode`. The Agent asks one concise clarification only when a missing user-owned choice materially changes the research.
 
 -----
 
@@ -58,8 +58,8 @@ The bundled `academic-insight-report` skill owns a fixed Research Brief template
 
 | Path | Current responsibility |
 |---|---|
-| `packages/bundle/web-app/presets/academic/` | Shipped preset metadata and Cordis composition. |
-| `packages/bundle/web-app/presets/academic/skills/academic-insight-report/` | Research method and report hierarchy derived from the supplied reference report. |
+| `packages/academic/bundle/presets/academic/` | Shipped preset metadata and Cordis composition. |
+| `packages/academic/bundle/presets/academic/skills/academic-insight-report/` | Research method and report hierarchy derived from the supplied reference report. |
 | `packages/preset/agent-preset-registry/src/display.ts` | Locale-key mapping for the shipped preset id. |
 | `packages/client/ui-agent-preset/src/client/locales.ts` | English and Chinese picker copy. |
 | `scripts/start-insight-web.ps1` and `pnpm run insight:web` | Windows launcher that binds this checkout to its private `.dsh-runtime`. |

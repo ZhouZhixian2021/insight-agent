@@ -382,8 +382,8 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-api-academic-research-controller`
 
-- `inject`: `academicSource` · `agents` · `sessionController` · `sessionProjections` · `sessionQuery` · `typert` · `web`
-- `source`: [`packages/api/academic-research-controller/src/index.ts:65`](../packages/api/academic-research-controller/src/index.ts)
+- `inject`: `academicSource` · `agents` · `sessionController` · `sessionProjections` · `sessionQuery` · `systemPrompt` · `typert` · `web`
+- `source`: [`packages/academic/research-controller/src/index.ts:72`](../packages/academic/research-controller/src/index.ts)
 
 ```ts config-catalog
 /** Academic research deployment policy. */
@@ -4923,6 +4923,7 @@ export interface Config {
 <!-- BEGIN GENERATED config-catalog:no-config -->
 | `package` | `inject` | `source` |
 | --- | --- | --- |
+| `@deepseek-ai/dsh-academic-client-remote` | — | [`packages/academic/client-remote/src/index.ts`](../packages/academic/client-remote/src/index.ts) |
 | `@deepseek-ai/dsh-acp-app` | `cmdlineArgs` | [`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts) |
 | `@deepseek-ai/dsh-agent` | — | [`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts) |
 | `@deepseek-ai/dsh-api-account-controller` | `deepseekAccount` · `agents` | [`packages/api/account-controller/src/index.ts`](../packages/api/account-controller/src/index.ts) |
@@ -4934,7 +4935,7 @@ export interface Config {
 | `@deepseek-ai/dsh-client-locale` | — | [`packages/client/locale/src/index.ts`](../packages/client/locale/src/index.ts) |
 | `@deepseek-ai/dsh-client-modules` | `loader` | [`packages/client/modules/src/index.ts`](../packages/client/modules/src/index.ts) |
 | `@deepseek-ai/dsh-client-resources` | — | [`packages/client/resources/src/index.ts`](../packages/client/resources/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-academic-research` | — | [`packages/client/ui-academic-research/src/index.ts`](../packages/client/ui-academic-research/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-academic-research` | — | [`packages/academic/ui-research/src/index.ts`](../packages/academic/ui-research/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-agent-preset` | — | [`packages/client/ui-agent-preset/src/index.ts`](../packages/client/ui-agent-preset/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
@@ -5066,6 +5067,7 @@ export interface Config {
 | `package` | `inject` | `source` |
 | --- | --- | --- |
 | `@deepseek-ai/dsh-academic-analysis` | — | [`packages/academic/analysis/src/index.ts`](../packages/academic/analysis/src/index.ts) |
+| `@deepseek-ai/dsh-academic-bundle` | — | [`packages/academic/bundle/src/index.ts`](../packages/academic/bundle/src/index.ts) |
 | `@deepseek-ai/dsh-academic-eval` | — | [`packages/academic/eval/src/index.ts`](../packages/academic/eval/src/index.ts) |
 | `@deepseek-ai/dsh-academic-evidence` | — | [`packages/academic/evidence/src/index.ts`](../packages/academic/evidence/src/index.ts) |
 | `@deepseek-ai/dsh-academic-ingestion` | — | [`packages/academic/ingestion/src/index.ts`](../packages/academic/ingestion/src/index.ts) |

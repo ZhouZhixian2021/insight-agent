@@ -60,6 +60,8 @@ const ranking = rankPlannedCandidates(plan, brief, round, assessments)
 
 ### 入口
 
+`runDomainSurvey()` 只执行已审核的方向发现与遗漏复查查询，按日历年份和论文版本规则筛选、去重，并把最多 40 篇论文的标题与摘要交给方向归类器。`parseDomainSurveyMap()` 要求每篇候选被归类或明确列为未归类，并逐字核对方向依据是否出现在对应标题或摘要中。结果保留论文版本、来源记录、排除数量、来源故障和截断限制；候选方向只是元数据判断，不是全文证据或穷尽领域的分类。
+
 向 `planHybridSearch(input, options)` 传入已批准的 `HybridSearchPlanningInput`。有效结果分别包含学术源、Web 和指定站点查询及稳定 ID。批准状态、主机名、上限或问题引用无效时抛出 `RangeError`；可选扩展超过查询上限时返回警告。将审核后的计划、轮次、明确的核验上限、适配器和可选进度观察器交给 `executePlannedSearchRound()`。正式的第 3 版 Controller 路径在已批准轮次和有界证据缺口轮次中都使用该执行器；没有明确检索策略的旧计划继续使用兼容适配器。随后把结果、同一 Brief 和每项已核验成果恰好一份 `CandidateAssessment` 交给 `rankPlannedCandidates()`。结果绑定 Brief 版本，为每项成果保留一份完整评估，并以 `WorkVersionId` 返回有序队列。学术源提供方缺失或取消会使检索拒绝；语义判断不完整会使排序拒绝。
 
 -----

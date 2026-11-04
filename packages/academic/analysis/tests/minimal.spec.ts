@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { parseSynthesisDraft, prepareSynthesisInput, synthesisPrompt, type AcademicSynthesisInput } from '../src/index.ts'
 
-const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const samples = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 function input(): AcademicSynthesisInput {
   const value = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
   return { ...value, analysisInput: { ...value.analysisInput,

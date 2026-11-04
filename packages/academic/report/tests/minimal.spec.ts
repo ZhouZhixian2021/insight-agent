@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseSynthesisDraft, prepareSynthesisInput, synthesisAnalysis, type AcademicSynthesisInput } from '@deepseek-ai/dsh-academic-analysis'
 import { generateReport } from '../src/index.ts'
 
-const samples = new URL('../../../../z-team_docs/interface-samples/academic-model-v1/', import.meta.url)
+const samples = new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/', import.meta.url)
 function fixture() {
   const value = JSON.parse(readFileSync(new URL('synthesis-input.sample.json', samples), 'utf8')) as AcademicSynthesisInput
   const record = value.analysisInput.evidenceRecords[0]!

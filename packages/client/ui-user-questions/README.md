@@ -25,8 +25,6 @@ The Web client shows an agent's question beside the chat input. Users choose opt
 <a id="use-this-package"></a>
 ## Use this package
 
-Academic review bodies containing the six concise Chinese decision labels render those labels as separate paragraphs without truncating scope or changing the pending plan. The card offers a localized revision field; submitting non-empty natural-language feedback sends the existing custom-only question answer, never consent. Approval is disabled while the revision field is open, failed submission retains the text, and a new request renders a fresh review. The Agent regenerates the readable plan and execution data; the client neither rewrites JSON nor certifies their semantic agreement.
-
 When the agent asks a question, the attached card temporarily occupies the composer seat: answer each question, navigate with the pager, or skip it. A first choice marked “Recommended” starts selected, but remains an unsubmitted draft and does not pause a timed countdown. Clicking a single-select choice advances immediately. Enter on a focused option attempts to submit the batch without selecting that option; missing answers return to the first incomplete question. Enter in a text answer continues the flow, while Shift+Enter breaks a line instead (during IME composition Enter only confirms the input candidate without advancing).
 
 ### Answering
@@ -43,7 +41,7 @@ A question that already settled opens as a read-only card: the same pager over t
 
 A `plan-review` intent — set by `dsh-plan-mode` on the `exit_plan_mode` review — renders a compact approval card: a `Plan review` strip with a `View full plan` link, the plan title and a two-line plain-text summary, and `Request changes` / `Approve` actions. The strip uses the shared warning dot and changes it to the ongoing loader while either action settles. The complete plan opens in the sidebar through the link or its permanent Chat card. Approve answers with the asker's approval label; `Request changes` rejects the wait as `ASK_CANCELLED`, returning the composer for the user's feedback without submitting an approval. The card has no separate refusal button.
 
-For Academic plans, the single `academic-research-brief-json` fenced handoff is collapsed under localized system execution details. Readable Markdown before and after it remains visible. Ordinary code blocks and ambiguous or unfinished handoffs stay in the full view. This is presentation only: the pending request, persisted plan, and approval response are unchanged.
+Business plugins can contribute the plan body through `conversation.plan-review.content`, a chain slot receiving the exact review, busy/editing state and revision callbacks. If no entry selects the plan, the title and plain summary remain. The question owner settles every response and disables approval during editing; custom-only feedback never grants approval.
 
 ### Failure and recovery
 

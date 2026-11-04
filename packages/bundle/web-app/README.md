@@ -29,7 +29,7 @@ Run `dsh --profile web` for browser chat, model and settings management, and ses
 <a id="use-this-package"></a>
 ## Use this package
 
-The Academic preset is a declarative `dsh-agent-preset` row in `presets/academic.patch.yml`. Its research skill and references ship in `presets/academic/skills`; the patch resolves them from the installed `dsh-web-app` package. The current working directory reaches the model through required runtime context rather than persona template variables.
+Academic research is assembled by the separate [Academic bundle](../../academic/bundle/README.md), selected after this layer by the shipped Web profile.
 
 Start the GUI, open your browser, and start talking to the agent. The flags fine-tune the invocation.
 

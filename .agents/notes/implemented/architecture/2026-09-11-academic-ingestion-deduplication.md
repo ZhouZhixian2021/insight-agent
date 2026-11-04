@@ -8,7 +8,7 @@ English | [中文](2026-09-11-academic-ingestion-deduplication.zh.md)
 
 A provider normalizes each captured record into a fresh `AcademicWork`/`WorkVersion` pair, so one research work that appears as a preprint and a published version, or across OpenAlex, Crossref, and arXiv, arrives as several unrelated identities. Downstream evidence and analysis must refer to a single work per paper, with each concrete version addressable, or version deduplication will be repeated by every consumer.
 
-The shared model deliberately stops at the deduplication-key primitive (`externalIdentifierDedupKey`) and records no durable mapping ([model README](../../../../packages/academic/model/README.md)). The dedup rules are B's responsibility ([interface requirements](../../../../z-team_docs/模块分工/academic-retrieval-evidence-interface-requirements.md)): explicit external identifiers merge automatically, title/author/year similarity only marks a suspected duplicate, and a work's identity must not change when dedup rules later change.
+The shared model deliberately stops at the deduplication-key primitive (`externalIdentifierDedupKey`) and records no durable mapping ([model README](../../../../packages/academic/model/README.md)). The dedup rules are B's responsibility ([interface requirements](../../../../z-team_docs/学术洞察/模块分工/academic-retrieval-evidence-interface-requirements.md)): explicit external identifiers merge automatically, title/author/year similarity only marks a suspected duplicate, and a work's identity must not change when dedup rules later change.
 
 ## Decision
 

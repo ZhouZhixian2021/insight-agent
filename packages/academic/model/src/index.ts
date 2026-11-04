@@ -57,6 +57,8 @@ export type {
   SearchQueryId,
   ResearchBrief,
   ResearchScopeDecision,
+  DomainResearchDirection,
+  DomainResearchPlan,
   ResearchAspectId,
   ResearchCoverageRequirement,
   ResearchQuestionEntry,

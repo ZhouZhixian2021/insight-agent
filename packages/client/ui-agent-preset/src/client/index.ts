@@ -33,6 +33,16 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import { AgentPresetDisplayRegistry } from './preset-display.ts'
+export type { AgentPresetDisplayRegistry, PresetDisplayCopy, PresetDisplayMethods } from './preset-display.ts'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    /** Optional business-owned labels for the shared preset views. */
+    agentPresetDisplay: AgentPresetDisplayRegistry
+  }
+}
+
 import { AgentPresetLabel } from './AgentPresetLabel.tsx'
 import { CreatePluginMenuItem } from './CreatePluginMenuItem.tsx'
 import type { AgentPresetLabelInjected } from './AgentPresetLabel.tsx'
@@ -70,6 +80,12 @@ export const inject = [
  * @param ctx - the browser plugin context.
  */
 export function apply(ctx: ClientContext): void {
+  const display = new AgentPresetDisplayRegistry(text => ctx.locale.resolveText(text), ctx.locale.bind('settings.agentPreset'))
+  ctx.provide('agentPresetDisplay', display)
+  const displayMethods = {
+    displayPreset: (preset: Parameters<AgentPresetDisplayRegistry['display']>[0]) => display.display(preset),
+    isBuiltInPreset: (preset: Parameters<AgentPresetDisplayRegistry['isBuiltIn']>[0]) => display.isBuiltIn(preset),
+  }
   const toolsSettings = ctx.configForms.get<{ enabled: boolean }>('ui-settings')
   const presetSettings = ctx.configForms.get(AGENT_PRESET_SETTINGS_NS)
   let active = true
@@ -184,7 +200,8 @@ export function apply(ctx: ClientContext): void {
       const binding = sessionId === undefined ? undefined : ctx.sessions.binding(sessionId)
       const seat = binding === undefined ? unboundSeat : seatFor(binding)
       return {
-        hooks: { agentPresetSeat: seat.store, developerTools: ctx.configForms.developerTools.enabled },
+        ...displayMethods,
+        hooks: { presetDisplay: display.store, agentPresetSeat: seat.store, developerTools: ctx.configForms.developerTools.enabled },
         load: () => seat.load(),
         select: (id: string) => seat.select(id),
         dismissRefusal: (error) => { seat.dismissRefusal(error) },
@@ -193,7 +210,8 @@ export function apply(ctx: ClientContext): void {
     }
 
     const labelInjected = (): AgentPresetLabelInjected => ({
-      hooks: { agentPresets: controller.store },
+      ...displayMethods,
+      hooks: { presetDisplay: display.store, agentPresets: controller.store },
       load: () => controller.load(),
     })
 
@@ -253,7 +271,8 @@ export function apply(ctx: ClientContext): void {
   }
 
   const sectionInjected = (): AgentPresetSectionInjected => ({
-    hooks: { agentPresetSection: section.store, developerTools: ctx.configForms.developerTools.enabled },
+    ...displayMethods,
+    hooks: { presetDisplay: display.store, agentPresetSection: section.store, developerTools: ctx.configForms.developerTools.enabled },
     load: () => section.load(),
     view: (id: string) => section.view(id),
     closeView: () => { section.closeView() },

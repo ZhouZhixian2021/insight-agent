@@ -254,6 +254,9 @@ importers:
       '@deepseek-ai/cordis-plugin-timer':
         specifier: workspace:~
         version: link:../../vendor/timer
+      '@deepseek-ai/dsh-academic-bundle':
+        specifier: workspace:*
+        version: link:../../packages/academic/bundle
       '@deepseek-ai/dsh-acp-app':
         specifier: workspace:*
         version: link:../../packages/bundle/acp-app
@@ -1167,6 +1170,94 @@ importers:
         specifier: workspace:*
         version: link:../../util/brand
 
+  packages/academic/bundle:
+    dependencies:
+      '@deepseek-ai/dsh-academic-client-remote':
+        specifier: workspace:*
+        version: link:../client-remote
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:*
+        version: link:../source
+      '@deepseek-ai/dsh-academic-source-acl':
+        specifier: workspace:*
+        version: link:../source-acl
+      '@deepseek-ai/dsh-academic-source-arxiv':
+        specifier: workspace:*
+        version: link:../source-arxiv
+      '@deepseek-ai/dsh-academic-source-browser':
+        specifier: workspace:*
+        version: link:../source-browser
+      '@deepseek-ai/dsh-academic-source-cvf':
+        specifier: workspace:*
+        version: link:../source-cvf
+      '@deepseek-ai/dsh-academic-source-openalex':
+        specifier: workspace:*
+        version: link:../source-openalex
+      '@deepseek-ai/dsh-academic-source-pmlr':
+        specifier: workspace:*
+        version: link:../source-pmlr
+      '@deepseek-ai/dsh-agent-instructions':
+        specifier: workspace:*
+        version: link:../../context/agent-instructions
+      '@deepseek-ai/dsh-agent-preset':
+        specifier: workspace:*
+        version: link:../../preset/agent-preset
+      '@deepseek-ai/dsh-api-academic-research-controller':
+        specifier: workspace:*
+        version: link:../research-controller
+      '@deepseek-ai/dsh-client-ui-academic-research':
+        specifier: workspace:*
+        version: link:../ui-research
+      '@deepseek-ai/dsh-command-compact':
+        specifier: workspace:*
+        version: link:../../compaction/command-compact
+      '@deepseek-ai/dsh-compaction-basic':
+        specifier: workspace:*
+        version: link:../../compaction/compaction-basic
+      '@deepseek-ai/dsh-compaction-tool-result-pruner':
+        specifier: workspace:*
+        version: link:../../compaction/compaction-tool-result-pruner
+      '@deepseek-ai/dsh-persona':
+        specifier: workspace:*
+        version: link:../../preset/persona
+      '@deepseek-ai/dsh-plan-mode':
+        specifier: workspace:*
+        version: link:../../plan/plan-mode
+      '@deepseek-ai/dsh-skill-filesystem':
+        specifier: workspace:*
+        version: link:../../skill/skill-filesystem
+      '@deepseek-ai/dsh-tool-ask-user':
+        specifier: workspace:*
+        version: link:../../interaction/tool-ask-user
+      '@deepseek-ai/dsh-tool-fs':
+        specifier: workspace:*
+        version: link:../../fs/tool-fs
+      '@deepseek-ai/dsh-tool-fs-search':
+        specifier: workspace:*
+        version: link:../../fs/tool-fs-search
+      '@deepseek-ai/dsh-tool-skill':
+        specifier: workspace:*
+        version: link:../../skill/tool-skill
+      '@deepseek-ai/dsh-tool-web':
+        specifier: workspace:*
+        version: link:../../web/tool-web
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/academic/client-remote:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-academic-research-controller':
+        specifier: workspace:*
+        version: link:../research-controller
+      '@deepseek-ai/dsh-api-gateway':
+        specifier: workspace:*
+        version: link:../../api/gateway
+
   packages/academic/eval:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -1227,6 +1318,67 @@ importers:
       '@deepseek-ai/dsh-brand':
         specifier: workspace:*
         version: link:../../util/brand
+
+  packages/academic/research-controller:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-evidence':
+        specifier: workspace:*
+        version: link:../evidence
+      '@deepseek-ai/dsh-academic-ingestion':
+        specifier: workspace:*
+        version: link:../ingestion
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:*
+        version: link:../model
+      '@deepseek-ai/dsh-academic-retrieval':
+        specifier: workspace:*
+        version: link:../retrieval
+      '@deepseek-ai/dsh-academic-source':
+        specifier: workspace:*
+        version: link:../source
+      '@deepseek-ai/dsh-academic-workflow':
+        specifier: workspace:*
+        version: link:../workflow
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-session-query':
+        specifier: workspace:*
+        version: link:../../session-query/session-query
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../../web/web
 
   packages/academic/retrieval:
     devDependencies:
@@ -1376,6 +1528,75 @@ importers:
         specifier: workspace:*
         version: link:../source
 
+  packages/academic/ui-research:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-academic-client-remote':
+        specifier: workspace:*
+        version: link:../client-remote
+      '@deepseek-ai/dsh-academic-model':
+        specifier: workspace:*
+        version: link:../model
+      '@deepseek-ai/dsh-academic-report':
+        specifier: workspace:*
+        version: link:../report
+      '@deepseek-ai/dsh-api-academic-research-controller':
+        specifier: workspace:*
+        version: link:../research-controller
+      '@deepseek-ai/dsh-api-gateway':
+        specifier: workspace:*
+        version: link:../../api/gateway
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../../client/locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-agent-preset':
+        specifier: workspace:*
+        version: link:../../client/ui-agent-preset
+      '@deepseek-ai/dsh-client-ui-chat':
+        specifier: workspace:*
+        version: link:../../client/ui-chat
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../../client/ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../../client/ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../../client/ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../../client/ui-session
+      '@deepseek-ai/dsh-client-ui-sidebar':
+        specifier: workspace:*
+        version: link:../../client/ui-sidebar
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../../client/ui-slots
+      '@deepseek-ai/dsh-client-ui-user-questions':
+        specifier: workspace:*
+        version: link:../../client/ui-user-questions
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+
   packages/academic/workflow:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -1484,64 +1705,6 @@ importers:
       '@deepseek-ai/dsh-user-approval':
         specifier: workspace:*
         version: link:../../interaction/user-approval
-
-  packages/api/academic-research-controller:
-    dependencies:
-      '@deepseek-ai/schemastery':
-        specifier: link:../../../vendor/schemastery
-        version: link:../../../vendor/schemastery
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@deepseek-ai/cordis':
-        specifier: workspace:~
-        version: link:../../../vendor/cordis
-      '@deepseek-ai/dsh-academic-evidence':
-        specifier: workspace:*
-        version: link:../../academic/evidence
-      '@deepseek-ai/dsh-academic-ingestion':
-        specifier: workspace:*
-        version: link:../../academic/ingestion
-      '@deepseek-ai/dsh-academic-model':
-        specifier: workspace:*
-        version: link:../../academic/model
-      '@deepseek-ai/dsh-academic-retrieval':
-        specifier: workspace:*
-        version: link:../../academic/retrieval
-      '@deepseek-ai/dsh-academic-source':
-        specifier: workspace:*
-        version: link:../../academic/source
-      '@deepseek-ai/dsh-academic-workflow':
-        specifier: workspace:*
-        version: link:../../academic/workflow
-      '@deepseek-ai/dsh-agent':
-        specifier: workspace:*
-        version: link:../../core/agent
-      '@deepseek-ai/dsh-api-session-controller':
-        specifier: workspace:*
-        version: link:../session-controller
-      '@deepseek-ai/dsh-llm':
-        specifier: workspace:*
-        version: link:../../llm/llm
-      '@deepseek-ai/dsh-session':
-        specifier: workspace:*
-        version: link:../../core/session
-      '@deepseek-ai/dsh-session-projection':
-        specifier: workspace:*
-        version: link:../../session/session-projection
-      '@deepseek-ai/dsh-session-query':
-        specifier: workspace:*
-        version: link:../../session-query/session-query
-      '@deepseek-ai/dsh-tools':
-        specifier: workspace:*
-        version: link:../../core/tools
-      '@deepseek-ai/dsh-typert-protocol':
-        specifier: workspace:*
-        version: link:../../typert/protocol
-      '@deepseek-ai/dsh-web':
-        specifier: workspace:*
-        version: link:../../web/web
 
   packages/api/account-controller:
     dependencies:
@@ -1703,9 +1866,6 @@ importers:
       '@deepseek-ai/dsh-agent-preset-registry':
         specifier: workspace:*
         version: link:../../preset/agent-preset-registry
-      '@deepseek-ai/dsh-api-academic-research-controller':
-        specifier: workspace:*
-        version: link:../academic-research-controller
       '@deepseek-ai/dsh-api-account-controller':
         specifier: workspace:*
         version: link:../account-controller
@@ -3021,27 +3181,6 @@ importers:
 
   packages/bundle/web-app:
     dependencies:
-      '@deepseek-ai/dsh-academic-source':
-        specifier: workspace:*
-        version: link:../../academic/source
-      '@deepseek-ai/dsh-academic-source-acl':
-        specifier: workspace:*
-        version: link:../../academic/source-acl
-      '@deepseek-ai/dsh-academic-source-arxiv':
-        specifier: workspace:*
-        version: link:../../academic/source-arxiv
-      '@deepseek-ai/dsh-academic-source-browser':
-        specifier: workspace:*
-        version: link:../../academic/source-browser
-      '@deepseek-ai/dsh-academic-source-cvf':
-        specifier: workspace:*
-        version: link:../../academic/source-cvf
-      '@deepseek-ai/dsh-academic-source-openalex':
-        specifier: workspace:*
-        version: link:../../academic/source-openalex
-      '@deepseek-ai/dsh-academic-source-pmlr':
-        specifier: workspace:*
-        version: link:../../academic/source-pmlr
       '@deepseek-ai/dsh-agent-instructions':
         specifier: workspace:*
         version: link:../../context/agent-instructions
@@ -3054,9 +3193,6 @@ importers:
       '@deepseek-ai/dsh-agent-tool-presentation':
         specifier: workspace:*
         version: link:../../core/agent-tool-presentation
-      '@deepseek-ai/dsh-api-academic-research-controller':
-        specifier: workspace:*
-        version: link:../../api/academic-research-controller
       '@deepseek-ai/dsh-api-account-controller':
         specifier: workspace:*
         version: link:../../api/account-controller
@@ -3108,9 +3244,6 @@ importers:
       '@deepseek-ai/dsh-client-shortcuts':
         specifier: workspace:*
         version: link:../../client/shortcuts
-      '@deepseek-ai/dsh-client-ui-academic-research':
-        specifier: workspace:*
-        version: link:../../client/ui-academic-research
       '@deepseek-ai/dsh-client-ui-agent-preset':
         specifier: workspace:*
         version: link:../../client/ui-agent-preset
@@ -3764,66 +3897,6 @@ importers:
         specifier: ~4.5.7
         version: 4.5.7(@types/react@18.3.31)(immer@10.2.0)(react@18.3.1)
 
-  packages/client/ui-academic-research:
-    devDependencies:
-      '@deepseek-ai/cordis':
-        specifier: workspace:~
-        version: link:../../../vendor/cordis
-      '@deepseek-ai/dsh-academic-model':
-        specifier: workspace:*
-        version: link:../../academic/model
-      '@deepseek-ai/dsh-academic-report':
-        specifier: workspace:*
-        version: link:../../academic/report
-      '@deepseek-ai/dsh-api-academic-research-controller':
-        specifier: workspace:*
-        version: link:../../api/academic-research-controller
-      '@deepseek-ai/dsh-api-gateway':
-        specifier: workspace:*
-        version: link:../../api/gateway
-      '@deepseek-ai/dsh-api-remotes':
-        specifier: workspace:*
-        version: link:../../api/remotes
-      '@deepseek-ai/dsh-client-locale':
-        specifier: workspace:*
-        version: link:../locale
-      '@deepseek-ai/dsh-client-test-runtime':
-        specifier: workspace:*
-        version: link:../../test-support/client-runtime
-      '@deepseek-ai/dsh-client-ui-chat':
-        specifier: workspace:*
-        version: link:../ui-chat
-      '@deepseek-ai/dsh-client-ui-conversation':
-        specifier: workspace:*
-        version: link:../ui-conversation
-      '@deepseek-ai/dsh-client-ui-primitives':
-        specifier: workspace:*
-        version: link:../ui-primitives
-      '@deepseek-ai/dsh-client-ui-renderer':
-        specifier: workspace:*
-        version: link:../ui-renderer
-      '@deepseek-ai/dsh-client-ui-session':
-        specifier: workspace:*
-        version: link:../ui-session
-      '@deepseek-ai/dsh-client-ui-sidebar':
-        specifier: workspace:*
-        version: link:../ui-sidebar
-      '@deepseek-ai/dsh-client-ui-slots':
-        specifier: workspace:*
-        version: link:../ui-slots
-      '@deepseek-ai/dsh-session':
-        specifier: workspace:*
-        version: link:../../core/session
-      '@deepseek-ai/dsh-tools':
-        specifier: workspace:*
-        version: link:../../core/tools
-      react:
-        specifier: ^18.2.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
-
   packages/client/ui-agent-preset:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -3874,6 +3947,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-workspace':
         specifier: workspace:*
         version: link:../ui-workspace
+      '@deepseek-ai/dsh-package-manifest':
+        specifier: workspace:*
+        version: link:../../util/package-manifest
       '@deepseek-ai/dsh-session':
         specifier: workspace:*
         version: link:../../core/session

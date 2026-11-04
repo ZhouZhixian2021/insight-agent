@@ -40,7 +40,7 @@ changes:
 <a id="verification"></a>
 ## 验证
 
-pnpm exec vitest run packages/api/academic-research-controller/tests/plan-validation.spec.ts packages/academic/report/tests/directions.spec.ts：79 个测试通过。pnpm run build 通过。
+pnpm exec vitest run packages/academic/research-controller/tests/plan-validation.spec.ts packages/academic/report/tests/directions.spec.ts：79 个测试通过。pnpm run build 通过。
 
 <a id="dev-note"></a>
 ## 开发备注

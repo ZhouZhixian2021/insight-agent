@@ -22,7 +22,7 @@ interface Pe1EvidenceSample {
 }
 
 const sample = JSON.parse(readFileSync(new URL(
-  '../../../../z-team_docs/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json', import.meta.url,
+  '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json', import.meta.url,
 ), 'utf8')) as Pe1EvidenceSample
 
 describe('A-PE1 fixed evidence handoff', () => {

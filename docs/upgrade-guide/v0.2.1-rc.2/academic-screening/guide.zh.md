@@ -22,5 +22,5 @@ Controller 新计划使用 `ACADEMIC_CANDIDATE_RANKING_POLICY_V2`：低于 50 �
 1. 检查 `cordis.yml` 中 Academic Research Controller 的配置。设置 `candidateReviewMaximumWorks: 8` 保留原审核总额，设置 `candidateReviewGapReserve: 0` 不预留缺口额度，设置 `scopeReviewMaximumBatches: 1` 保留单批范围输入。
 2. 需要原词项排除门槛的库调用方仍可传入 `ACADEMIC_CANDIDATE_RANKING_POLICY_V1`。恢复已有运行时读取已保存策略，不要重写 Session 记录。
 3. 默认值无法满足研究规模时，设置 `maximumFulltextWorks`、`maximumUncertainFulltextWorks` 和 `extractionMaximumCallsPerPaper`。将探索设为 0 可要求元数据先审核相关。其他组合通过 `fulltextCacheDirectory` 开启复用，详见[缓存限制](../../../cookbook/academic-fulltext-budget-cache.zh.md)。
-4. 查看新研究运行的候选排序、审核选择和批次结算。确认低分合格论文进入 P2、实际审核调用不超过配置总额、明确排除继续生效。详见 [Controller 配置](../../../../packages/api/academic-research-controller/README.zh.md)。
+4. 查看新研究运行的候选排序、审核选择和批次结算。确认低分合格论文进入 P2、实际审核调用不超过配置总额、明确排除继续生效。详见 [Controller 配置](../../../../packages/academic/research-controller/README.zh.md)。
 5. 检查任何固定旧候选审核提示词、测试夹具或看板的外部实现。模型判为偏题但给不出可核验原文的论文现在显示为待审，仍可能占用全文名额。

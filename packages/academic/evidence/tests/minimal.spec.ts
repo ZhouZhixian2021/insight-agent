@@ -59,7 +59,7 @@ describe('minimal evidence extraction', () => {
 
   it('preserves the fixed A-PE1 evidence and uncovered questions after a later fragment timeout', async () => {
     const sample = JSON.parse(readFileSync(new URL(
-      '../../../../z-team_docs/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json', import.meta.url,
+      '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/academic-pe1-evidence.sample.json', import.meta.url,
     ), 'utf8')) as { input: EvidenceExtractionInput; firstFragmentDrafts: readonly EvidenceDraft[] }
     const onVerified = vi.fn<EvidenceFragmentOptions['onVerified']>(async () => {})
     const opts = options(async (_request, attempt) => {

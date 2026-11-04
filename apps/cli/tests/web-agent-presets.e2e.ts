@@ -12,6 +12,7 @@ import {
   loadOverlayPatches,
   loadProfile,
   PluginPackages,
+  PROFILE_TEMPLATES,
   type Profile,
 } from '@deepseek-ai/dsh-app-boot'
 import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
@@ -36,8 +37,7 @@ import type {} from '@deepseek-ai/dsh-token-meter'
 
 const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
 const { boot } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/boot/app-boot/lib/index.js')) as typeof import('@deepseek-ai/dsh-app-boot')
-/** The shipped Web surface: the dsh-base and dsh-web-app bundle patches over an empty profile. */
-const BASE_PATCH = join(REPO_ROOT, 'packages/bundle/base/cordis.patch.yml')
+/** Web-owned preset patches; full test boots read the selected profile's bundle list. */
 const WEB_BUNDLE = join(REPO_ROOT, 'packages/bundle/web-app')
 const WEB_PATCHES = bundlePatchPaths(WEB_BUNDLE, (JSON.parse(readFileSync(join(WEB_BUNDLE, 'package.json'), 'utf8')) as { dsh: { bundle: { patch: string[] } } }).dsh.bundle)
 const webPatches = (label: string): PatchOptions[] => WEB_PATCHES.flatMap(file => loadOverlayPatches(label, file))
@@ -64,7 +64,7 @@ class MinimalCompactionAdapter extends LlmAdapter {
   }
 }
 
-/** Each human request proposes a plan; its approved continuation completes. */
+/** Each human request proposes a plan; approval concludes the turn for host execution. */
 class AcademicPlanAdapter extends MinimalCompactionAdapter {
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     if (options.purpose !== undefined) {
@@ -73,13 +73,12 @@ class AcademicPlanAdapter extends MinimalCompactionAdapter {
     }
     const ordinal = this.requests.filter(request => request.purpose === undefined).length + 1
     this.requests.push(options)
-    const planning = ordinal % 2 === 1
-    yield { type: 'block-start', index: 0, blockType: planning ? 'tool-call' : 'text' }
-    yield { type: 'block-end', index: 0, block: planning
-      ? { type: 'tool-call', id: ToolCallId(`academic-plan-${ordinal}`), name: 'exit_plan_mode',
-        arguments: JSON.stringify({ plan: `# 研究计划 ${ordinal}\n\n按用户本次要求研究。` }) }
-      : { type: 'text', text: 'Plan approved.' } }
-    yield { type: 'finish', reason: { kind: planning ? 'tool-calls' : 'stop' } }
+    yield { type: 'block-start', index: 0, blockType: 'tool-call' }
+    yield { type: 'block-end', index: 0, block: {
+      type: 'tool-call', id: ToolCallId(`academic-plan-${ordinal}`), name: 'exit_plan_mode',
+      arguments: JSON.stringify({ plan: `# 研究计划 ${ordinal}\n\n按用户本次要求研究。` }),
+    } }
+    yield { type: 'finish', reason: { kind: 'tool-calls' } }
   }
 }
 /** Emits one image read, then retains the request carrying its settled result. */
@@ -188,7 +187,7 @@ async function bootWeb(
   const profileDir = join(home, 'profiles', surface)
   await mkdir(profileDir, { recursive: true })
   if (surface === 'desktop') createPluginProfile(profileDir)
-  else if (profileBundles === undefined) initProfile(profileDir, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+  else if (profileBundles === undefined) initProfile(profileDir, PROFILE_TEMPLATES.web!.bundles)
   // Product Bundles are installed into the Profile, not the dsh app. Model
   // pnpm's package link for only the selected products; their own production
   // dependencies resolve from the linked workspace packages, while shared
@@ -199,26 +198,15 @@ async function bootWeb(
     await mkdir(dirname(link), { recursive: true })
     await symlink(packageDir, link, 'junction')
   }
-  let profile: Profile = { skippedBundles: [],
-    name: surface,
-    dir: profileDir,
-    layers: [],
-    patchPath: join(profileDir, 'cordis.patch.yml'),
-    patches: [],
-  }
-  let bundlePatches: PatchOptions[] = [
-    ...loadOverlayPatches('dsh-test', BASE_PATCH),
-    ...webPatches('dsh-test'),
-  ]
   if (profileBundles !== undefined) {
     await writeFile(join(profileDir, 'package.json'), JSON.stringify({
       private: true,
       dependencies: Object.fromEntries(profileBundles.map(name => [name, 'workspace:*'])),
       dsh: { profile: { bundles: profileBundles } },
     }, null, 2) + '\n')
-    profile = loadProfile('dsh-test', surface, INSTALL_ANCHOR, home, { userLayer: false })
-    bundlePatches = profile.layers.flatMap(layer => layer.patches)
   }
+  const profile: Profile = loadProfile('dsh-test', surface, INSTALL_ANCHOR, home, { userLayer: false })
+  const bundlePatches = profile.layers.flatMap(layer => layer.patches)
   // Deployment defaults live in a bundle beneath the profile patch, so Settings writes are not shadowed by overlays.
   const fixtureName = 'dsh-web-presets-defaults'
   const fixtureDir = join(profileDir, 'node_modules', fixtureName)
@@ -234,7 +222,7 @@ async function bootWeb(
   return await boot('dsh-test', rootConfig, [...bundlePatches, ...overrides], async (bootCtx) => {
     bootCtx.provide('profileContext', { name: surface, dir: profileDir, patchPath: profile.patchPath,
       installAnchor: INSTALL_ANCHOR, home, cwd: home,
-      startedBundles: profileBundles ?? ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
+      startedBundles: profile.layers.map(layer => layer.packageName),
       overlays: [], telemetryDisabledEnv: '1' })
     await bootCtx.plugin(PluginPackages, { resolution })
     bootCtx.provide('connection', {
@@ -306,7 +294,7 @@ describe('the shipped Web composition', () => {
 
   it('composes the full agent from `standard`', async () => {
     const handle = await ctx.agents.create({
-      sessionId: SessionId('preset-standard'),
+      sessionId: SessionId(`preset-standard-${randomUUID()}`),
       setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'standard').then(() => undefined),
     })
     try {
@@ -316,13 +304,13 @@ describe('the shipped Web composition', () => {
       // excluded for the reason the TUI composition e2e excludes them — they
       // depend on ripgrep being present on the machine.
       expect(toolNames(ctx, handle.agent).filter(name => name !== 'glob' && name !== 'grep')).toEqual([
-        'ask_user_question', 'bash', 'create_goal', 'edit', 'exit_plan_mode',
+        'ask_user_question', process.platform === 'win32' ? 'pwsh' : 'bash', 'create_goal', 'edit', 'exit_plan_mode',
         'get_goal', 'interrupt_agent', 'job_kill', 'job_list', 'job_output', 'list_agents', 'present', 'read', 'read_image',
         'schedule_create', 'schedule_delete', 'schedule_list', 'schedule_update',
         'send_message', 'skill',
         'subagent', 'subagent_fork', 'todo_write', 'update_goal', 'web_fetch', 'web_search',
         'workflow', 'working_directory', 'write',
-      ])
+      ].sort())
       expect(ctx.commands.find(handle.agent, 'goal')).toBeDefined()
     } finally {
       await handle.dispose()
@@ -381,12 +369,11 @@ describe('the shipped Web composition', () => {
         await handle.agent.whenIdle()
         const requests = adapter.requests.filter(request => request.purpose === undefined)
         expect(requests.length, JSON.stringify(handle.agent.session.snapshotEvents()
-          .filter(event => event.type === 'turn/end').map(event => event.data.reason))).toBe(before + 2)
+          .filter(event => event.type === 'turn/end').map(event => event.data.reason))).toBe(before + 1)
         const hasPlanPolicy = (request: GenerateOptions) => request.messages
           .filter(message => message.role === 'system').flatMap(message => message.content)
           .some(block => block.type === 'text' && block.text.includes('You are planning an academic insight research task.'))
         expect(hasPlanPolicy(requests[before]!)).toBe(true)
-        expect(hasPlanPolicy(requests[before + 1]!)).toBe(false)
         expect(requests.at(-1)?.messages.flatMap(message => message.content)
           .some(block => block.type === 'text' && block.text === prompt)).toBe(true)
       }

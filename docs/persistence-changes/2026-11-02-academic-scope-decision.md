@@ -40,7 +40,7 @@ Existing synthesis-request events omit the field and retain their previous meani
 <a id="verification"></a>
 ## Verification
 
-pnpm exec vitest run packages/api/academic-research-controller/tests/plan-validation.spec.ts packages/academic/report/tests/directions.spec.ts: 79 tests passed. pnpm run build passed.
+pnpm exec vitest run packages/academic/research-controller/tests/plan-validation.spec.ts packages/academic/report/tests/directions.spec.ts: 79 tests passed. pnpm run build passed.
 
 <a id="dev-note"></a>
 ## Dev Note

@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/academic/client-remote/README.md
+/:
+  en: 23a12ccc43568d9f
+  zh: 3fce356c5611628a
+/deepseek-ai-dsh-academic-client-remote:
+  en: 8c20bf8f4d1b1ad1
+  zh: f38e29dce10a3f86
+/deepseek-ai-dsh-academic-client-remote/summary:
+  en: 009279982104b407
+  zh: 5896d35dac9a8eeb
+/deepseek-ai-dsh-academic-client-remote/table-of-contents:
+  en: cbfb676bb9a7a2de
+  zh: 9b0cf9cc7802f661
+/deepseek-ai-dsh-academic-client-remote/use-this-package:
+  en: f1c1d6c2e2ac9b42
+  zh: a1b4766433e9819b
+/deepseek-ai-dsh-academic-client-remote/understand-the-implementation:
+  en: e0c3166bd5739245
+  zh: 50f39f7a544694b1
+/deepseek-ai-dsh-academic-client-remote/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-academic-client-remote/model-experience/browser-method-registration:
+  en: de0503ba7c5de5ae
+  zh: 7644a833ade121ee
+/deepseek-ai-dsh-academic-client-remote/model-experience/browser-method-registration/what-the-model-sees:
+  en: f85d55ce573bfc77
+  zh: 5ef9627686f00f82
+/deepseek-ai-dsh-academic-client-remote/model-experience/browser-method-registration/token-effect:
+  en: c971aa41465b48e9
+  zh: 84b9253efa6f8060
+/deepseek-ai-dsh-academic-client-remote/model-experience/browser-method-registration/kv-cache-effect:
+  en: 37308942634a4024
+  zh: d4e4a60998896bbf
+/deepseek-ai-dsh-academic-client-remote/known-limitations-and-deferred-work:
+  en: a7144472211988d9
+  zh: 831839e60e01daf9
+/deepseek-ai-dsh-academic-client-remote/known-limitations-and-deferred-work/dev-note:
+  en: fb1911c94a875321
+  zh: 36980671aefc31e9

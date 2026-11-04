@@ -876,7 +876,7 @@
         "55:95 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/academic-research-projection.ts": {
+    "packages/academic/research-controller/src/academic-research-projection.ts": {
       "sourceSha256": "83f3ffda0f3f0b5d8c145ceb9c95dfecc9fce642eae00c492c23d10a556297b4",
       "uncovered": [
         "153:28 uncovered statement",
@@ -897,7 +897,7 @@
         "97:9 uncovered branch (if, path 1/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/background-run.ts": {
+    "packages/academic/research-controller/src/background-run.ts": {
       "sourceSha256": "7d66d9f4852ff80666abf5494a237818417c6cd2175f37f2c9ada1e60cf084f6",
       "uncovered": [
         "256:46 uncovered statement",
@@ -954,7 +954,7 @@
         "491:3 uncovered statement"
       ]
     },
-    "packages/api/academic-research-controller/src/candidate-review-model.ts": {
+    "packages/academic/research-controller/src/candidate-review-model.ts": {
       "sourceSha256": "12a927e2df7fde2ba27712a2cddfdf32efe4059fe7d9eaf4109fb3caa17f0256",
       "uncovered": [
         "117:73 uncovered branch (binary-expr, path 2/2)",
@@ -967,7 +967,7 @@
         "175:5 uncovered branch (if, path 1/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/candidate-screening.ts": {
+    "packages/academic/research-controller/src/candidate-screening.ts": {
       "sourceSha256": "a0203a6051e303f332542c38a0fa6c8e423d23b6c5f6b5158d8b7bf15a3d3db5",
       "uncovered": [
         "23:72 uncovered branch (binary-expr, path 2/2)",
@@ -977,7 +977,7 @@
         "70:34 uncovered statement"
       ]
     },
-    "packages/api/academic-research-controller/src/index.ts": {
+    "packages/academic/research-controller/src/index.ts": {
       "sourceSha256": "0c383bcadb0d260acbd32400364ab29a09b3556284136afd12e55b42bcf7961a",
       "uncovered": [
         "177:66 uncovered branch (binary-expr, path 2/2)",
@@ -1055,13 +1055,13 @@
         "684:52 uncovered branch (cond-expr, path 1/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/plan-validation.ts": {
+    "packages/academic/research-controller/src/plan-validation.ts": {
       "sourceSha256": "993bce9f6c4c55448096a18b7f518a44a578f075ddd79fc88cf3bcf19e9eaa65",
       "uncovered": [
         "17:5 uncovered branch (if, path 2/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/planned-retrieval.ts": {
+    "packages/academic/research-controller/src/planned-retrieval.ts": {
       "sourceSha256": "ac9fe1e346c6e908b63fe070b25be6811a4b2b8d5d3235643cf474d23ce99957",
       "uncovered": [
         "130:29 uncovered statement",
@@ -1073,7 +1073,7 @@
         "70:5 uncovered branch (if, path 2/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/research-brief-plan.ts": {
+    "packages/academic/research-controller/src/research-brief-plan.ts": {
       "sourceSha256": "866c29f78db4adea358b8282164ad448fe315ce204e66757820a7219d3b8cd87",
       "uncovered": [
         "248:3 uncovered branch (if, path 1/2)",
@@ -1088,14 +1088,14 @@
         "481:30 uncovered statement"
       ]
     },
-    "packages/api/academic-research-controller/src/run-stream.ts": {
+    "packages/academic/research-controller/src/run-stream.ts": {
       "sourceSha256": "5f8ed7de7b92bbf7014600decb88d3d2e7168ec017344e7564c5e6ce8d0329b9",
       "uncovered": [
         "35:22 uncovered statement",
         "35:5 uncovered branch (if, path 1/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/search.ts": {
+    "packages/academic/research-controller/src/search.ts": {
       "sourceSha256": "f2abd6f040713dd4a4fb1f795348d92cda620c6cb912bcc203d86a9cf0bbbefe",
       "uncovered": [
         "103:3 uncovered branch (if, path 1/2)",
@@ -1145,7 +1145,7 @@
         "585:5 uncovered statement"
       ]
     },
-    "packages/api/academic-research-controller/src/trace-query.ts": {
+    "packages/academic/research-controller/src/trace-query.ts": {
       "sourceSha256": "f6a2a39b2fc5ebb84181ae3b57b2962ab972e2450cdbfa447de176ed07a0e0db",
       "uncovered": [
         "17:3 uncovered branch (if, path 1/2)",
@@ -1158,7 +1158,7 @@
         "59:3 uncovered branch (if, path 1/2)"
       ]
     },
-    "packages/api/academic-research-controller/src/trace.ts": {
+    "packages/academic/research-controller/src/trace.ts": {
       "sourceSha256": "b34977b5c9adef3030ee4a1db18ac18991eb8a318c77cbb579141ce961aa4da7",
       "uncovered": [
         "101:21 uncovered statement",
@@ -1174,7 +1174,7 @@
         "99:5 uncovered branch (switch, path 4/7)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/EnhancementPanel.tsx": {
+    "packages/academic/ui-research/src/client/EnhancementPanel.tsx": {
       "sourceSha256": "7bccf42b7c140c6fda51bff49a4df2ba887f8cfa55f96e8edbd39e1f34da12e7",
       "uncovered": [
         "110:114 uncovered branch (cond-expr, path 1/2)",
@@ -1209,7 +1209,7 @@
         "99:29 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/HybridRetrieval.tsx": {
+    "packages/academic/ui-research/src/client/HybridRetrieval.tsx": {
       "sourceSha256": "251a2b68ed6ebacc0245706b2bf30b09784f0ab4e1b3b01904386ca134ecaa03",
       "uncovered": [
         "22:99 uncovered branch (binary-expr, path 2/2)",
@@ -1218,7 +1218,7 @@
         "55:38 uncovered branch (cond-expr, path 1/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/ProgressPanel.tsx": {
+    "packages/academic/ui-research/src/client/ProgressPanel.tsx": {
       "sourceSha256": "7605bedc12dd413843af4e65b5c36ec4a679b9dc5611465bccb7419a3e068822",
       "uncovered": [
         "20:64 uncovered branch (cond-expr, path 1/2)",
@@ -1234,7 +1234,7 @@
         "76:52 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/Q6Candidates.tsx": {
+    "packages/academic/ui-research/src/client/Q6Candidates.tsx": {
       "sourceSha256": "428bb42ee63ef43f55612a0726401c594f717e00b7b80abcf1d19fdffedb7c3e",
       "uncovered": [
         "52:44 uncovered branch (cond-expr, path 2/2)",
@@ -1247,7 +1247,7 @@
         "71:176 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/Q6Coverage.tsx": {
+    "packages/academic/ui-research/src/client/Q6Coverage.tsx": {
       "sourceSha256": "d10a5cb3c61dceb58ff02cf6daffc02aff7d840e9b9c3a4f3dc20b3c8c23007c",
       "uncovered": [
         "25:50 uncovered branch (binary-expr, path 2/2)",
@@ -1256,7 +1256,7 @@
         "55:72 uncovered branch (cond-expr, path 1/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/Q6Live.tsx": {
+    "packages/academic/ui-research/src/client/Q6Live.tsx": {
       "sourceSha256": "f2ca3e0f3d5090942cf55ec5404d64a0da860c3a5f15985a507d57ef3d50d04a",
       "uncovered": [
         "35:24 uncovered branch (binary-expr, path 2/2)",
@@ -1277,7 +1277,7 @@
         "67:99 uncovered statement (to 67:127)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/Q6Page.tsx": {
+    "packages/academic/ui-research/src/client/Q6Page.tsx": {
       "sourceSha256": "f402cb4efe2ebd94043c510e1af94c1ae6dbdfb98c4679ed224d0b51910a4525",
       "uncovered": [
         "23:110 uncovered branch (binary-expr, path 2/2)",
@@ -1287,7 +1287,7 @@
         "54:28 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/Q6Plan.tsx": {
+    "packages/academic/ui-research/src/client/Q6Plan.tsx": {
       "sourceSha256": "c71cb387d4efff2cf0f37b017fa81daab43b321757ecab4012810f4163e63c7f",
       "uncovered": [
         "15:64 uncovered branch (cond-expr, path 2/2)",
@@ -1298,7 +1298,7 @@
         "27:64 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/ResearchEntry.tsx": {
+    "packages/academic/ui-research/src/client/ResearchEntry.tsx": {
       "sourceSha256": "1de1113d59a3a6676101e95c60c81b43118f128d38d7a74bc5dedc968c487684",
       "uncovered": [
         "106:7 uncovered branch (if, path 1/2)",
@@ -1365,7 +1365,7 @@
         "88:7 uncovered branch (if, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/RunExperience.tsx": {
+    "packages/academic/ui-research/src/client/RunExperience.tsx": {
       "sourceSha256": "6107502a0503adbdde67d74e4c4c032c569b1b6fab47f7681309f6db8c475d3a",
       "uncovered": [
         "17:26 uncovered statement",
@@ -1377,13 +1377,13 @@
         "67:86 uncovered branch (binary-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/RunPanel.tsx": {
+    "packages/academic/ui-research/src/client/RunPanel.tsx": {
       "sourceSha256": "8c312b4dcbb7006d6095ea9fe0ed0e42cb3ebd918365bd7a0b174234320ffa42",
       "uncovered": [
         "43:98 uncovered branch (cond-expr, path 1/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/TracePanel.tsx": {
+    "packages/academic/ui-research/src/client/TracePanel.tsx": {
       "sourceSha256": "462994b4368ed43aa5748922419c2ca9d422f5bdae84da7d8bd8098c124b7c9b",
       "uncovered": [
         "32:5 uncovered branch (if, path 2/2)",
@@ -1459,7 +1459,7 @@
         "87:9 uncovered function (anonymous_17)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/background-view.ts": {
+    "packages/academic/ui-research/src/client/background-view.ts": {
       "sourceSha256": "d0ca8127402b394df9413afa00d542d5aa0f23b23f7f0f2bc120474c122e4ac8",
       "uncovered": [
         "29:3 uncovered branch (if, path 1/2)",
@@ -1469,7 +1469,7 @@
         "40:115 uncovered branch (cond-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/enhancement-history.ts": {
+    "packages/academic/ui-research/src/client/enhancement-history.ts": {
       "sourceSha256": "cacb02915b1b25d822c86de756a12d5b54a4f3cf241206255e9f3c4540bc6cf7",
       "uncovered": [
         "25:3 uncovered branch (if, path 1/2)",
@@ -1490,7 +1490,7 @@
         "74:73 uncovered branch (cond-expr, path 2/2)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/export-html.tsx": {
+    "packages/academic/ui-research/src/client/export-html.tsx": {
       "sourceSha256": "967e826816c3585ce7cbb1eade2f0308cbc0625652551c517d16e741c279e9cb",
       "uncovered": [
         "26:41 uncovered branch (binary-expr, path 2/2)",
@@ -1527,7 +1527,7 @@
         "67:173 uncovered statement (to 67:186)"
       ]
     },
-    "packages/client/ui-academic-research/src/client/index.ts": {
+    "packages/academic/ui-research/src/client/index.ts": {
       "sourceSha256": "009b159d7ba3380786e88292c23ee04413ab1e0aa8ede8cad23c2f0e78898e5c",
       "uncovered": [
         "53:11 uncovered branch (if, path 1/2)",
@@ -1550,7 +1550,7 @@
         "88:13 uncovered statement"
       ]
     },
-    "packages/client/ui-academic-research/src/client/retrieval-report.ts": {
+    "packages/academic/ui-research/src/client/retrieval-report.ts": {
       "sourceSha256": "dbbb7b6c16b40f9e16daeb23200d6f7e2b395356b846a7c5cabe7c9fcef073b9",
       "uncovered": [
         "26:131 uncovered branch (cond-expr, path 1/2)",

@@ -31,4 +31,4 @@ The structured plan schema and runtime filtering semantics remain unchanged. The
 
 ## Testing
 
-`packages/api/academic-research-controller/tests/plan-validation.spec.ts` verifies the per-paper placeholders and collection-goal guidance while retaining compatibility validation. The `academic-plan-chinese` recorded-session snapshot fixes the complete assembled model prompt without requiring a model key.
+`packages/academic/research-controller/tests/plan-validation.spec.ts` verifies the per-paper placeholders and collection-goal guidance while retaining compatibility validation. The `academic-plan-chinese` recorded-session snapshot fixes the complete assembled model prompt without requiring a model key.

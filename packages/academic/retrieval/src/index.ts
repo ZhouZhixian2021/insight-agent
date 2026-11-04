@@ -12,3 +12,7 @@ export { screeningFromSemanticReview } from './semantic-screening.ts'
 export { selectCandidateReviews } from './select-reviews.ts'
 export type { CandidateScreeningCriteria, CandidateTermConcepts } from './assess.ts'
 export type { CandidateAssessment, CandidateReviewSelectionV1 } from '@deepseek-ai/dsh-academic-model'
+export { parseDomainSurveyMap, runDomainSurvey } from './domain-survey.ts'
+export type { DomainSurveyPaper, DomainDirectionSupport, DomainSurveyDirection, DomainSurveyMap,
+  DomainSurveyQuery, DomainSurveyLimits, DomainSurveySelectionPolicy, DomainSurveyResult,
+  DomainSurveyProposal } from './domain-survey.ts'

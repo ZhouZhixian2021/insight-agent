@@ -15,7 +15,7 @@ export function apply(ctx: Context, config: { paperConcurrency?: number } = {}):
     name: 'run_replenishment_fixture', description: 'Run a synthetic bounded candidate replenishment without network access.',
     parameters: {}, output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
     execute: async () => {
-      const sample = JSON.parse(readFileSync(new URL('../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
+      const sample = JSON.parse(readFileSync(new URL('../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
       const concurrency = config.paperConcurrency ?? 1
       const included = concurrency === 3 ? 3 : 2
       const brief = { ...sample.brief, topic: 'Synthetic replenishment', questions: ['Compare the observed methods.'],

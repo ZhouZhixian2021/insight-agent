@@ -63,6 +63,6 @@ kind: "package-library"
 <details>
 <summary>维护者工作上下文</summary>
 
-固定基准与检查结果见 [中文开发记录](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
+固定基准与检查结果见 [中文开发记录](../../../z-team_docs/学术洞察/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
 
 </details>

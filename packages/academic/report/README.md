@@ -29,6 +29,8 @@ Direction-layout drafts implement the preset report hierarchy: opening scope/win
 
 When the approved Brief carries `scopeDecision`, the opening scope repeats its deep-dive, overview-only, and not-systematically-covered directions and states that the omitted examples do not prove field-wide coverage. Historical Briefs render without invented direction choices.
 
+For a survey-bound domain plan, the report includes a direction coverage table with the count and numbered references of cited full-text supporting works beside each approved target. Overview and excluded directions remain explicit. An unmet deep-direction target creates an `unmet_plan` delivery issue, so the evidence-bearing report remains a draft. An incomplete survey and unclassified survey works appear as limitations; the map does not establish an exhaustive field taxonomy.
+
 Question-driven arguments place cited excerpts, version/locator identities and model-proposed link explanations beside each retained paragraph. References are grouped as support, opposing findings and background; background is never labeled as direct support. A paragraph without opposing links explicitly leaves other findings unknown. Missing uncertainty is not represented as proof of no limitation. Partial or unanswered questions expose their remaining gaps. Each analytical paragraph renders once; later sections use cross-references and numerical tables link to the paragraph. The evidence appendix groups works by title and versions within each work, preserving original evidence identifiers and locators. Rendering does not reassess evidence or change approval status.
 
 `appendRetrievalDisclosure()` appends escaped, localized observations, limitations and failures while preserving the original Markdown body. `generateReport()` accepts the same optional `retrievalDisclosure`; it does not turn discovery URLs into references or change review eligibility. The workflow supplies completed query observations, approved budgets and failures for both Web and SDK reports. A report with this appendix returns `retrievalDisclosureIncluded: true`, allowing clients to preserve the Markdown without appending duplicate disclosure. Presentation observations are not an authoritative verification ledger or proof of complete coverage.
@@ -45,7 +47,7 @@ Question-driven reports include an approved-question/evidence check table. Optio
 
 Local fixed-material experiments use `scripts/academic-experiment.ts` to export one completed run and replay current source report/eval code without model calls. Inputs are checksummed, original Sessions are unchanged, reconstructed report parameters are disclosed, and new experiment directories retain comparisons and C source snapshots. This is developer tooling, not a Web export action.
 
-Internal `writing-experiment.ts` renders explicitly authored experimental prose and comparison rows with evidence checks and numbered references. It quarantines unknown evidence references without guessing repairs, retains evidence records, labels outputs as drafts, and does not replace production delivery or claim semantic approval. The fixed-material comparison command is documented in the [C experiment guide](../../../z-team_docs/模块分工/member-c-fixed-experiment-guide.md).
+Internal `writing-experiment.ts` renders explicitly authored experimental prose and comparison rows with evidence checks and numbered references. It quarantines unknown evidence references without guessing repairs, retains evidence records, labels outputs as drafts, and does not replace production delivery or claim semantic approval. The fixed-material comparison command is documented in the [C experiment guide](../../../z-team_docs/学术洞察/模块分工/member-c-fixed-experiment-guide.md).
 
 <a id="model-experience"></a>
 ## Model Experience
@@ -75,6 +77,6 @@ This package performs no model cache operations.
 <details>
 <summary>Working context for maintainers</summary>
 
-See the fixed benchmark and verification in the [development record](../../../z-team_docs/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
+See the fixed benchmark and verification in the [development record](../../../z-team_docs/学术洞察/开发记录/2026-09-14-ykxy11-学术报告最小闭环.md)。
 
 </details>

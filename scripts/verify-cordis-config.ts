@@ -12,6 +12,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, globSync, lstatSync, readFileSync, realpathSync } from 'node:fs'
+import { clientFeatureManifestPaths } from './client-feature-packages.ts'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { Script } from 'node:vm'
 import ts from 'typescript'
@@ -156,17 +157,17 @@ function cordisConfigReader(repoRoot: string): (file: string) => unknown {
  *
  * The browser roster is discovered by scanning composed packages for a
  * `dsh.client` block, and the node half of a surface plugin is an empty
- * `apply`. A `packages/client` package that exports `./client` without that
+ * `apply`. A Client feature package that exports `./client` without that
  * block therefore composes, activates, and contributes nothing — its bundle is
  * never served and no error is raised anywhere. The mismatch is invisible in
  * the composition file, so it is checked against the manifests instead. Only
- * this group is checked: a Host package's `./client` export is the typed wire
+ * Client features are checked: a Host package's `./client` export is the typed wire
  * face its browser consumers import, not a plugin the roster serves.
  * @returns one violation per client package whose `./client` export and
  * `dsh.client` declaration disagree.
  */
 function validateClientHalvesDeclared(repoRoot: string): string[] {
-  return globSync('packages/client/*/package.json', { cwd: repoRoot }).flatMap((manifestPath) => {
+  return clientFeatureManifestPaths(repoRoot).flatMap((manifestPath) => {
     const manifest = readManifest(manifestPath, repoRoot) as PackageManifest & {
       exports?: Record<string, unknown>
       dsh?: { client?: unknown }
@@ -297,7 +298,7 @@ function validateAppResolution(repoRoot: string, pluginReferences: readonly Plug
     // Runtime resolution includes every in-box bundle's own dependencies.
     // Optional Profile bundles stay outside the app installation until that
     // Profile installs them.
-    ...Object.fromEntries(globSync('packages/bundle/*/package.json', { cwd: repoRoot })
+    ...Object.fromEntries(bundleManifests
       .flatMap(file => Object.entries(readManifest(file, repoRoot).dependencies ?? {}))),
   }
   const shipped = new Set(globSync('*.cordis.yml', { cwd: resolve(repoRoot, 'apps/cli/config') })

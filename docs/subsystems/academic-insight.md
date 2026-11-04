@@ -9,7 +9,7 @@ English | [中文](academic-insight.zh.md)
 
 The analysis-local `AnalysisInput` and report-local `ReportInput` accept optional producer question/evidence associations as `questionLinks`; they do not change Academic Model or Remote fields. Empty card sections retain individually valid minimal evidence, and absent question associations remain disclosed rather than inferred. The workflow integrator owns forwarding these optional associations.
 
-Trace v1 shares branded operation/event identifiers through the model's type-only trace subpath. The current Controller adapter persists safe observations and normalizes them for base-independent pagination; the Web panel reads only scoped Remote pages. Report HTML exports use the existing Markdown renderer with an inert allowlist serializer, preserving quality and evidence links without external resources. See the [Controller](../../packages/api/academic-research-controller/README.md) and [viewer](../../packages/client/ui-academic-research/README.md) for query and export details.
+Trace v1 shares branded operation/event identifiers through the model's type-only trace subpath. The current Controller adapter persists safe observations and normalizes them for base-independent pagination; the Web panel reads only scoped Remote pages. Report HTML exports use the existing Markdown renderer with an inert allowlist serializer, preserving quality and evidence links without external resources. See the [Controller](../../packages/academic/research-controller/README.md) and [viewer](../../packages/academic/ui-research/README.md) for query and export details.
 
 Academic Model owns `PublicationDatePolicy`, `PublicationDateContext` and the shared date evaluator. The Controller freezes the run calendar before creating retrieval adapters; Workflow persists it and enforces content-rule references on model exclusions. Retrieval and legacy selection apply the same partial-date overlap and unknown-date rules. See the [model contract](../../packages/academic/model/README.md) for date semantics.
 
@@ -17,7 +17,9 @@ Academic Model owns `PublicationDatePolicy`, `PublicationDateContext` and the sh
 
 Academic Model owns approved aspect criteria; Workflow owns stop-time mapping, frozen repair reservations and recovery of committed additions. Controller authors version-8 plans with concise visible questions and machine-readable criteria, and supplies review and repair budgets. New criteria do not silently attach to historical plans. Retrieval expands gaps using the matching question's approved core query and aspect terms. Analysis receives the settled assessment; reports retain gaps. See the [workflow contract](../../packages/academic/workflow/README.md).
 
-New plan handoffs also retain a reviewed `ResearchScopeDecision`: declared request breadth, directions for deep research or overview, and known directions outside systematic coverage. The Controller checks its visible plan text before review; the report repeats it. It is a scope disclosure, not evidence that the chosen directions exhaust a field. See the [Controller](../../packages/api/academic-research-controller/README.md) for validation.
+New plan handoffs also retain a reviewed `ResearchScopeDecision`: declared request breadth, directions for deep research or overview, and known directions outside systematic coverage. The Controller checks its visible plan text before review; the report repeats it. It is a scope disclosure, not evidence that the chosen directions exhaust a field. See the [Controller](../../packages/academic/research-controller/README.md) for validation.
+
+Domain-wide requests can first use a separately approved metadata survey. `DomainSurveyResult` records bounded discovery and omission-check queries, selected paper versions and provider records, source-verified title or abstract quotations, unclassified works, and limits. A later `DomainResearchPlan` binds the exact saved survey and assigns every discovered direction to deep research, overview, or excluded coverage with per-direction evidence and query targets. The existing evidence workflow executes the reviewed rounds and report generation discloses cited full-text support per direction. The survey map remains provisional and does not prove the field has been exhaustively discovered.
 
 Academic insight is an optional business subsystem built on harness extension points.
 
@@ -41,7 +43,7 @@ The evidence library also provides opt-in [incremental extraction](../../package
 
 The [evidence library](../../packages/academic/evidence/README.md) returns accepted records and `EvidenceExtractionResult.rejectedDrafts`. Each rejection carries zero-based `draftIndex` and `segmentIndex`, a stable `code`, and a diagnostic `reason` without source text. The workflow exposes `extracted`, `partially_extracted`, or `extraction_failed` paper settlements; only the first two supply evidence to analysis. The Academic Remote projects accepted `evidenceCount` and the rejection list for each extraction settlement. A partially extracted paper contributes both retained evidence and one failed extraction operation, while a fully rejected paper contributes no included work.
 
-The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) checks current evidence and any supplied semantic reviews; missing independent reviews are disclosed without blocking otherwise valid delivery, while invalid supplied reviews still block it. The [report library](../../packages/academic/report/README.md) executes those checks at final delivery. The [standalone viewer](../../packages/client/ui-academic-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
+The [analysis library](../../packages/academic/analysis/README.md) returns attributed comparisons using shared Claim records. The [evaluation library](../../packages/academic/eval/README.md) checks current evidence and any supplied semantic reviews; missing independent reviews are disclosed without blocking otherwise valid delivery, while invalid supplied reviews still block it. The [report library](../../packages/academic/report/README.md) executes those checks at final delivery. The [standalone viewer](../../packages/academic/ui-research/README.md) renders portable HTML and exposes a Session-backed Remote Web sidebar viewer with independent run, retrieval and quality states. Preparation and delivery views belong to their respective libraries; scholarly identities and evidence records remain owned by the shared model.
 
 The [ingestion library](../../packages/academic/ingestion/README.md) accepts an `IngestRecord` with optional verified Web discovery URLs and verification Provider IDs. `IngestOutcome.verifiedDiscoveries` links those values to the assigned `AcademicWorkId` and retained `WorkVersionId` after exact-identifier deduplication; separate versions remain addressable.
 
@@ -53,7 +55,7 @@ The model defines opaque ids, five-state `Availability<T>`, academic works, immu
 
 The [workflow library](../../packages/academic/workflow/README.md) fills a first observed version hash and runs one bounded explicit-query-to-draft pass. It executes at most three caller-planned queries sequentially within the approved Brief round limit, merges query batches round-robin, deduplicates exact identities, and applies one global candidate bound. It returns a terminal RetrievalRun containing observed providers, actually started queries, coverage, truncation, and source or paper-operation failures; the Remote controller exposes that JSON-safe run to Web clients. Ranked scheduling also publishes complete query-workflow observations; the Controller projects their plan, candidates, rounds, batches, question coverage and stop decision into monotonic `AcademicQ6Projection` frames and repeats the latest frame in the terminal result. Its run-local progress snapshots distinguish merged work identities, merged version records, retained versions, and suspected duplicates; paper activities carry both work and version IDs, and the shared format accepts Provider activities. Its opt-in model adapter preserves the evidence generator request interface while accepting program-owned source metadata. PaperEvidenceGenerator, PaperScopeDecision, EvidenceModelSource, EvidenceModelRequest and EvidenceModelResult are defined in the [workflow types](../../packages/academic/workflow/src/model-types.ts). The model first decides admission from the first evidence batch and approved rules; an excluded paper skips extraction, while insufficient context pauses it. Included papers use compact evidence-only responses over ordered token-bounded batches, with original locator indexes restored before exact-source verification. Each attempt can have an operation-local timeout and bounded transient retry; validated sibling batches survive one batch failure. The request event contains source identity, phase, exact model config/messages, estimated input tokens, context/output limits and admission decision; the result references its request sequence and retains the compact stream, status, optional finish, usage, error code and local timing diagnostics. Historical events without a phase remain readable. Storage failures stop the pass. Automatic query planning is not provided. These Session records support model-call inspection, not complete workflow recovery or semantic approval.
 
-Candidate selection uses the Retrieval coverage selector before bounded model review; the deployment review budget is independent of the Plan candidate ceiling. The Controller [review policy](../../packages/api/academic-research-controller/README.md#model-experience) limits concurrency to two, logs minimal requests and verified judgments under versioned Session events, and projects explicit `CandidateAssessment.semanticReview` settlements through Q6. Screening progress reports review counts separately from deduplicated-work totals; skipped works retain lexical assessments.
+Candidate selection uses the Retrieval coverage selector before bounded model review; the deployment review budget is independent of the Plan candidate ceiling. The Controller [review policy](../../packages/academic/research-controller/README.md#model-experience) limits concurrency to two, logs minimal requests and verified judgments under versioned Session events, and projects explicit `CandidateAssessment.semanticReview` settlements through Q6. Screening progress reports review counts separately from deduplicated-work totals; skipped works retain lexical assessments.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -76,6 +78,28 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
  * @returns Chinese research intent, search directions, and the approval identity to pass to run.
  */
 @Remote('plan') async plan(sessionId: AcademicResearchRunRequest['sessionId']): Promise<AcademicResearchPlanView>
+
+/**
+ * Preview the latest approved metadata-only domain reconnaissance plan.
+ * @param sessionId Session whose approval owns the exact survey expressions.
+ * @returns Reviewed topic, scope, query rounds and limits without starting work.
+ */
+@Remote('domainSurveyPlan') async domainSurveyPlan(sessionId: AcademicDomainSurveyRequest['sessionId']): Promise<AcademicDomainSurveyPlanView>
+
+/**
+ * Execute reviewed scholarly-metadata queries and save a source-grounded direction map.
+ * @param request Session and approval identity returned by domainSurveyPlan.
+ * @param signal Caller cancellation checked before admission; admitted work uses maintenance and elapsed-time signals.
+ * @returns Durable map; a repeated call for the same approval returns its saved result.
+ */
+@Remote('runDomainSurvey') async runDomainSurvey(request: AcademicDomainSurveyRequest, signal: AbortSignal): Promise<AcademicDomainSurveyView>
+
+/**
+ * Read a saved direction map without running new queries or model calls.
+ * @param request Owning Session and approved survey identity.
+ * @returns Persisted survey result or an explicit absence error.
+ */
+@Remote('getDomainSurvey') async getDomainSurvey(request: AcademicDomainSurveyRequest): Promise<AcademicDomainSurveyView>
 
 /**
  * Run one multi-source research pass while the addressed Agent is idle.
@@ -155,7 +179,7 @@ Host service backing the generated `ctx.remote.academicResearch` namespace.
 @Remote('traceDetail') async traceDetail(query: AcademicTraceQuery, signal: AbortSignal): Promise<AcademicTracePage>
 ```
 
-Source: [`packages/api/academic-research-controller/src/index.ts`](../../packages/api/academic-research-controller/src/index.ts)
+Source: [`packages/academic/research-controller/src/index.ts`](../../packages/academic/research-controller/src/index.ts)
 <!-- END GENERATED cordis-surface -->
 
 `AcademicBackgroundRunKey` binds a host-owned task ID to its Session; `AcademicBackgroundRunCancelRequest` adds the explicit `user_requested` reason. `AcademicBackgroundRunView` stores the latest state, progress, Q6 projection and terminal result as one Session event. `AcademicBackgroundRunSummary` is the smaller discovery row returned by `listBackgroundRuns`; clients fetch a selected complete view separately. A subscriber's AbortSignal ends only viewing. An unfinished saved task without a live host owner appears as `interrupted`, with its last observed retrieval ID and progress; checkpoint recovery is an explicit new run.

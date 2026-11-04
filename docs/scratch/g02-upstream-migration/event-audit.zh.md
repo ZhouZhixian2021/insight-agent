@@ -28,27 +28,27 @@ promotion-target: "经核对的迁移规范与包文档"
 
 | 事件 | 载荷 | 写入器 | 消费或关系 | 录制次数 |
 | --- | --- | --- | --- | ---: |
-| `academic/background-run-state` | `AcademicBackgroundRunView` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 后台重放保留每个运行的最后视图 | 0 |
-| `academic/candidate-batch-decision` | `AcademicBatchDecisionEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
-| `academic/candidate-batch-settlement` | `AcademicBatchSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
-| `academic/candidate-review-selection-v1` | `ReviewSelectionEvent` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
+| `academic/background-run-state` | `AcademicBackgroundRunView` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 后台重放保留每个运行的最后视图 | 0 |
+| `academic/candidate-batch-decision` | `AcademicBatchDecisionEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
+| `academic/candidate-batch-settlement` | `AcademicBatchSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
+| `academic/candidate-review-selection-v1` | `ReviewSelectionEvent` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
 | `academic/candidate-screening-request` | `CandidateReviewModelRequest` | [历史写入器](historical-writers.json) | 已退役写入器；通用历史保留两类事件 | 0 |
 | `academic/candidate-screening-result` | `CandidateReviewModelResult` | [历史写入器](historical-writers.json) | 已退役写入器；通用历史保留两类事件 | 0 |
-| `academic/candidate-semantic-review-request-v1` | `SemanticReviewRequest` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
-| `academic/candidate-semantic-review-result-v1` | `SemanticReviewResult` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
-| `academic/candidate-semantic-review-verified-v1` | `VerifiedSemanticReview` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
-| `academic/evidence-enhancement-selection` | `AcademicEvidenceEnhancementSelectionEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Controller 选择限制及 UI 增强区间 | 0 |
-| `academic/evidence-enhancement-settlement` | `AcademicEvidenceEnhancementSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Controller 选择限制及 UI 增强区间 | 0 |
+| `academic/candidate-semantic-review-request-v1` | `SemanticReviewRequest` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
+| `academic/candidate-semantic-review-result-v1` | `SemanticReviewResult` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
+| `academic/candidate-semantic-review-verified-v1` | `VerifiedSemanticReview` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | 选择与请求身份绑定后续日志记录 | 0 |
+| `academic/evidence-enhancement-selection` | `AcademicEvidenceEnhancementSelectionEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Controller 选择限制及 UI 增强区间 | 0 |
+| `academic/evidence-enhancement-settlement` | `AcademicEvidenceEnhancementSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Controller 选择限制及 UI 增强区间 | 0 |
 | `academic/evidence-fragment-verified` | `EvidenceFragmentVerifiedRecord` | [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | 已验证片段；增强历史读取选定区间 | 0 |
 | `academic/evidence-request` | `EvidenceModelRequest` | [model.ts](../../../packages/academic/workflow/src/model.ts) / [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | 已记录请求及模型尝试结算 | 4 |
 | `academic/evidence-result` | `EvidenceModelResult` | [model.ts](../../../packages/academic/workflow/src/model.ts) / [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | 已记录请求及模型尝试结算 | 4 |
-| `academic/recovery-checkpoint` | `AcademicResearchRecoveryCheckpoint` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
-| `academic/run-settlement` | `AcademicRunSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
-| `academic/search-plan` | `AcademicSearchPlanEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
+| `academic/recovery-checkpoint` | `AcademicResearchRecoveryCheckpoint` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
+| `academic/run-settlement` | `AcademicRunSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
+| `academic/search-plan` | `AcademicSearchPlanEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | 恢复计划、批次、检查点或终态事实 | 0 |
 | `academic/synthesis-request` | `SynthesisModelRequest` | [synthesis-model.ts](../../../packages/academic/workflow/src/synthesis-model.ts) | 已记录请求及模型尝试结算 | 4 |
 | `academic/synthesis-result` | `SynthesisModelResult` | [synthesis-model.ts](../../../packages/academic/workflow/src/synthesis-model.ts) | 已记录请求及模型尝试结算 | 4 |
 
-恢复消费位于 [recovery.ts](../../../packages/academic/workflow/src/recovery.ts)，后台重放位于 [background-run.ts](../../../packages/api/academic-research-controller/src/background-run.ts)，增强投影位于 [enhancement-history.ts](../../../packages/client/ui-academic-research/src/client/enhancement-history.ts)。search-plan 通过时间顺序关联：相关运行首个事件之前的最后一个计划。迁移不得给该事件补造 retrievalRunId。
+恢复消费位于 [recovery.ts](../../../packages/academic/workflow/src/recovery.ts)，后台重放位于 [background-run.ts](../../../packages/academic/research-controller/src/background-run.ts)，增强投影位于 [enhancement-history.ts](../../../packages/academic/ui-research/src/client/enhancement-history.ts)。search-plan 通过时间顺序关联：相关运行首个事件之前的最后一个计划。迁移不得给该事件补造 retrievalRunId。
 
 ## 录制覆盖
 <a id="recording-coverage"></a>

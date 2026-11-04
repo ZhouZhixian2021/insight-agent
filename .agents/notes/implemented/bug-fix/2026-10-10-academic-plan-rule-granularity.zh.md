@@ -31,4 +31,4 @@ Academic 计划提示把 `inclusionRules` 和 `exclusionRules` 定义为逐篇�
 
 ## Testing
 
-`packages/api/academic-research-controller/tests/plan-validation.spec.ts` 在保留兼容性验证的同时，检查逐篇占位值和组合目标指导。`academic-plan-chinese` 录制 Session 快照固定完整组装后的模型提示，不需要模型密钥。
+`packages/academic/research-controller/tests/plan-validation.spec.ts` 在保留兼容性验证的同时，检查逐篇占位值和组合目标指导。`academic-plan-chinese` 录制 Session 快照固定完整组装后的模型提示，不需要模型密钥。

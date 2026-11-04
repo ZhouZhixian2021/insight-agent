@@ -17,4 +17,4 @@
       config:
         searchProvider: academic-hybrid-fixture
     - id: academic-hybrid-fixture
-      name: '../../../packages/api/academic-research-controller/tests/hybrid-search-plugin.ts'
+      name: '../../../packages/academic/research-controller/tests/hybrid-search-plugin.ts'

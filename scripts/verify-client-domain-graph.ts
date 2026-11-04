@@ -1,5 +1,5 @@
 /**
- * Enforce intra-package domain layering inside `packages/client/*\/src/client/`.
+ * Enforce intra-package domain layering inside Client feature packages.
  * verify-module-graph covers package-level edges; this gate covers the
  * directory level: domain directories may import `contract/` and never each
  * other, and only the assembly point (`apply.ts` / `index.ts`) may import
@@ -14,11 +14,11 @@
  *   pnpm exec tsx scripts/verify-client-domain-graph.ts
  */
 
-import { globSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, posix, resolve, sep } from 'node:path'
+import { globSync, readFileSync, statSync } from 'node:fs'
+import { dirname, join, posix, resolve, sep } from 'node:path'
+import { clientFeatureManifestPaths } from './client-feature-packages.ts'
 
 const root = resolve(import.meta.dirname, '..')
-const CLIENT_DIR = join(root, 'packages/client')
 
 /** Directory names treated as the shared contract layer (importable by all). */
 const CONTRACT_DIRS = new Set(['contract'])
@@ -81,8 +81,9 @@ function checkPackage(pkgName: string, clientDir: string): Violation[] {
 
 function main(): void {
   const violations: Violation[] = []
-  for (const pkg of readdirSync(CLIENT_DIR)) {
-    const clientDir = join(CLIENT_DIR, pkg, 'src/client')
+  for (const manifest of clientFeatureManifestPaths(root)) {
+    const pkg = dirname(manifest)
+    const clientDir = join(root, pkg, 'src/client')
     try {
       if (!statSync(clientDir).isDirectory()) continue
     } catch {

@@ -19,6 +19,6 @@ Existing logs are not rewritten or compacted. This change removes content-equal 
 
 ## Migration
 
-1. Upgrade every application or custom reader before writing new background updates. Readers must handle both required lightweight tags, restore Q6 metadata against the matching complete base, and inherit its candidates; see the [controller contract](../../../../packages/api/academic-research-controller/README.md).
+1. Upgrade every application or custom reader before writing new background updates. Readers must handle both required lightweight tags, restore Q6 metadata against the matching complete base, and inherit its candidates; see the [controller contract](../../../../packages/academic/research-controller/README.md).
 2. Preserve existing Session files. Legacy `academic/background-run-state` records retain their original meaning and remain readable; no historical rewrite is required. Do not delete the new events, mark them ignorable or alter the Session header to force an older reader to accept them. Keep a pre-upgrade copy if rollback to an older reader is required.
 3. Confirm legacy-only and mixed histories restore the latest progress, Q6, cancellation intent and terminal result. Check slow live watchers against the latest-view delivery contract, rather than expecting every intermediate frame. Remote full-view types, model parameters and user-facing wording do not require migration.

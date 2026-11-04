@@ -102,8 +102,47 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     `本轮深入研究：${escapeMarkdown(scopeDecision.deepDiveDirections.join('；'))}`,
     `仅作概览：${escapeMarkdown(scopeDecision.overviewDirections.join('；') || '无')}`,
     `不作系统覆盖：${escapeMarkdown(scopeDecision.notSystematicallyCovered.join('；') || '无')}`,
-    '上述未覆盖方向是已知示例，不代表完整领域分类；本报告不据此宣称全领域覆盖。',
+    input.brief.domainResearchPlan === undefined
+      ? '上述未覆盖方向是已知示例，不代表完整领域分类；本报告不据此宣称全领域覆盖。'
+      : '上述方向对应已审核的候选图谱；图谱之外仍可能有未发现的方向。',
   ]
+  const domainPlan = input.brief.domainResearchPlan
+  const directionLines: string[] = []
+  const directionDeliveryFailures: string[] = []
+  if (domainPlan !== undefined) {
+    directionLines.push('## 方向覆盖核对', '',
+      '方向来自已审核的题名、摘要勘察；本表只统计本报告引用的全文证据，不能据此宣称覆盖了图谱以外的整个领域。', '',
+      '| 方向 | 研究层次 | 有全文证据的论文 | 目标 | 结果 | 论文引用 |', '| --- | --- | ---: | ---: | --- | --- |')
+    for (const direction of domainPlan.directions) {
+      const linkedIds = new Set(input.questionLinks?.filter(link => link.question === direction.question)
+        .map(link => link.evidenceId) ?? [])
+      const supportedWorks = new Set(evidence.filter(record => linkedIds.has(record.evidenceId)
+        && record.level === 'fulltext').map(record => record.academicWorkId))
+      const status = direction.depth === 'deep_dive'
+        ? supportedWorks.size >= direction.targetSupportingWorks ? '达到目标' : '证据不足'
+        : direction.depth === 'overview' ? '仅作概览' : '未系统覆盖'
+      const citations = [...supportedWorks].map(id => references.get(id)).filter(number => number !== undefined)
+        .map(number => `[${number}]`).join('、') || '无'
+      directionLines.push(`| ${escapeMarkdown(direction.label)} | ${direction.depth === 'deep_dive' ? '深入研究' : direction.depth === 'overview' ? '概览' : '不覆盖'} | ${supportedWorks.size} | ${direction.targetSupportingWorks} | ${status} | ${citations} |`)
+      if (direction.depth === 'deep_dive' && supportedWorks.size < direction.targetSupportingWorks) {
+        const gap = `${direction.label}：有全文证据的论文 ${supportedWorks.size} 篇，未达到计划目标 ${direction.targetSupportingWorks} 篇。`
+        limitations.push(gap)
+        directionDeliveryFailures.push(gap)
+      }
+    }
+    directionLines.push('')
+    if (domainPlan.surveyStatus === 'incomplete') {
+      limitations.push(`前置领域勘察不完整；${domainPlan.surveyLimitations?.join('；') || '覆盖限制未记录'}。`)
+    }
+    if ((domainPlan.unclassifiedSurveyWorks ?? 0) > 0) {
+      limitations.push(`前置领域勘察有 ${domainPlan.unclassifiedSurveyWorks} 篇候选论文未能归入方向。`)
+    }
+  }
+  if (synthesisInput === null && directionDeliveryFailures.length > 0) {
+    evaluation = { ...evaluation, status: 'blocked', issues: [...evaluation.issues,
+      ...directionDeliveryFailures.map(message => ({ claimId: null, category: 'delivery' as const,
+        code: 'unmet_plan' as const, message }))] }
+  }
   if (synthesisInput !== null) {
     const scopeStart = lines.length
     lines.push('## 报告信息与研究范围', '', `技术范围：${escapeMarkdown(input.brief.topic)}`,
@@ -117,7 +156,8 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
       `发表版本政策：${escapeMarkdown(input.brief.includedWorkTypes.join(', '))}；允许预印本：${input.brief.evidenceRequirements.allowPreprints ? '是' : '否'}`,
       '证据范围限于本轮已核验材料；未满足的方向与实验条件在方法补充及局限中披露。',
       input.retrievalDisclosure === undefined ? '未提供实际检索渠道明细，不能据此宣称来源覆盖完整。'
-        : '实际检索渠道、来源失败及数量上限见本次检索披露；引用证据来源不代表全部检索来源。', '')
+        : '实际检索渠道、来源失败及数量上限见本次检索披露；引用证据来源不代表全部检索来源。', '',
+      ...directionLines)
     const rendered = renderSynthesis(input.brief, synthesisInput.draft, evidence, references, synthesisInput.coverage, metadata)
     const questions = renderQuestionEvidence(input.brief, synthesisInput.draft, evidence, input.questionLinks)
     if (synthesisInput.draft.writingStyle === 'evidence_narrative') {
@@ -125,7 +165,8 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
       lines.push(...rendered.lines, ...scope, ...questions.lines)
     } else lines.push(...questions.lines, ...rendered.lines)
     limitations.push(...questions.limitations, ...rendered.unmet)
-    const deliveryIssues = rendered.deliveryFailures.map(message => ({ claimId: null, category: 'delivery' as const, code: 'unmet_plan', message }))
+    const deliveryIssues = [...rendered.deliveryFailures, ...directionDeliveryFailures]
+      .map(message => ({ claimId: null, category: 'delivery' as const, code: 'unmet_plan', message }))
     const contentIssues = [...new Set([...questions.limitations, ...rendered.unmet])]
       .map(message => ({ claimId: null, category: 'content' as const, code: 'content_limitation', message }))
     evaluation = { ...evaluation, status: evaluation.status === 'blocked' || deliveryIssues.length > 0 ? 'blocked' : 'ready',
@@ -134,7 +175,7 @@ export function generateReport(input: ReportInput, onOperation?: ReportGeneratio
     lines.push(
       '## 管理层摘要', '', `纳入 ${workIds.length} 项研究，形成 ${input.claims.length} 条对比记录。质量状态：${evaluation.status}。`, '',
       '## 范围与方法', '', escapeMarkdown(input.brief.questions.join('；')),
-      ...reviewedScope,
+      ...reviewedScope, ...directionLines,
       '仅整理给定材料，不执行补充搜索；结论范围限于纳入的论文与实验条件。', '', '## 论文对比与证据', '')
     for (const [index, claim] of input.claims.entries()) {
       const assessmentStatus = evaluation.assessments.filter(item => item.claimId === claim.claimId).map(item => item.status).join(', ')

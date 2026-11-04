@@ -14,7 +14,7 @@ const owned: string[] = []
 afterEach(() => { for (const path of owned.splice(0)) rmSync(path, { recursive: true, force: true }) })
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'academic-c-experiment-')); owned.push(root)
-  const sample = resolve('z-team_docs/interface-samples/academic-model-v1')
+  const sample = resolve('z-team_docs/学术洞察/interface-samples/academic-model-v1')
   const input = JSON.parse(readFileSync(join(sample, 'synthesis-input.sample.json'), 'utf8')) as AcademicSynthesisInput
   const raw = readFileSync(join(sample, 'synthesis-partial-output.sample.json'), 'utf8')
   const draft = parseSynthesisDraft(raw, input), analysis = synthesisAnalysis(input, draft, '2026-10-26T00:00:00Z')

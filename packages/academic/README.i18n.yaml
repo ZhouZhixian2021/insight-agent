@@ -3,23 +3,23 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/academic/README.md
 /:
-  en: 5d0c72297da1b06d
-  zh: 21bf3c2f824b8c87
+  en: d275d05faead904c
+  zh: 82a98e7e3f3d39d1
 /packages-academic:
   en: b1015e8cff9ed344
   zh: adeb43e60340b0f2
 /packages-academic/summary:
-  en: 9fa85d9743de5a1c
-  zh: 464984121696428a
+  en: 1bd7c834b8584100
+  zh: aaa5f3f29233ee06
 /packages-academic/table-of-contents:
   en: 1eb35b015a6c423f
   zh: a8a3dceee2c9e943
 /packages-academic/packages:
-  en: 7d5d18cedf61b615
-  zh: 3203051bc465a362
+  en: d5a2c4ee697ab894
+  zh: 472e34bc0470fc26
 /packages-academic/related-documentation:
-  en: 6325159d88251a0c
-  zh: 789a8854dfb612d2
+  en: 21c3004b4b6f5449
+  zh: 6dd064a20de11f85
 /packages-academic/dev-note:
-  en: 5de1d6304e00c58f
-  zh: 8d8225361cfa29e5
+  en: 0626cb00d7034c13
+  zh: 2fbdff33460c29e5

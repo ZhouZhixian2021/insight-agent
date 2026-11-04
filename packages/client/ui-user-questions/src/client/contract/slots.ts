@@ -17,6 +17,18 @@ declare module '@deepseek-ai/dsh-client-ui-session/client' {
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
+    /** Optional business presentation for a plan; the owner retains answer settlement. */
+    'conversation.plan-review.content': {
+      kind: 'chain'
+      scope: 'session'
+      owner: {
+        review: PlanReview
+        busy: boolean
+        editing: boolean
+        setEditing: (editing: boolean) => void
+        revise: (feedback: string) => void
+      }
+    }
     /** Actions for the exact plan under review; approval remains with the question composer. */
     'conversation.plan-review.actions': { kind: 'list'; scope: 'session'; owner: { review: PlanReview; requestKey: PendingQuestion['key'] } }
   }
@@ -568,7 +580,7 @@ export type QuestionWait = PendingQuestion
 export type QuestionComposerProps =
   PropsRuntime<'conversation.composer'>
   & PropsStore<ReturnType<typeof createQuestionDraftStore>>
-  & PropsRenderSlots<'conversation.plan-review.actions'>
+  & PropsRenderSlots<'conversation.plan-review.actions' | 'conversation.plan-review.content'>
   & InjectFace<{ keyedHooks: { questionCard: (key: string) => PendingQuestion | undefined } }>
   & { matched: QuestionWait }
   & PropsLocale<'question'>

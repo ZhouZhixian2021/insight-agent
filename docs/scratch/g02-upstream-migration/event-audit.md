@@ -28,27 +28,27 @@ These are required log events. Located producers use ordinary Session append cal
 
 | Event | Payload | Writer | Consumer or relationship | Recorded count |
 | --- | --- | --- | --- | ---: |
-| `academic/background-run-state` | `AcademicBackgroundRunView` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Background replay retains the latest view per run | 0 |
-| `academic/candidate-batch-decision` | `AcademicBatchDecisionEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
-| `academic/candidate-batch-settlement` | `AcademicBatchSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
-| `academic/candidate-review-selection-v1` | `ReviewSelectionEvent` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
+| `academic/background-run-state` | `AcademicBackgroundRunView` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Background replay retains the latest view per run | 0 |
+| `academic/candidate-batch-decision` | `AcademicBatchDecisionEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
+| `academic/candidate-batch-settlement` | `AcademicBatchSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
+| `academic/candidate-review-selection-v1` | `ReviewSelectionEvent` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
 | `academic/candidate-screening-request` | `CandidateReviewModelRequest` | [historical writer](historical-writers.json) | Retired writer; generic history retains both events | 0 |
 | `academic/candidate-screening-result` | `CandidateReviewModelResult` | [historical writer](historical-writers.json) | Retired writer; generic history retains both events | 0 |
-| `academic/candidate-semantic-review-request-v1` | `SemanticReviewRequest` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
-| `academic/candidate-semantic-review-result-v1` | `SemanticReviewResult` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
-| `academic/candidate-semantic-review-verified-v1` | `VerifiedSemanticReview` | [candidate-review-model.ts](../../../packages/api/academic-research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
-| `academic/evidence-enhancement-selection` | `AcademicEvidenceEnhancementSelectionEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Controller selection limit and UI enhancement interval | 0 |
-| `academic/evidence-enhancement-settlement` | `AcademicEvidenceEnhancementSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Controller selection limit and UI enhancement interval | 0 |
+| `academic/candidate-semantic-review-request-v1` | `SemanticReviewRequest` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
+| `academic/candidate-semantic-review-result-v1` | `SemanticReviewResult` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
+| `academic/candidate-semantic-review-verified-v1` | `VerifiedSemanticReview` | [candidate-review-model.ts](../../../packages/academic/research-controller/src/candidate-review-model.ts) | Selection/request identities bind subsequent log records | 0 |
+| `academic/evidence-enhancement-selection` | `AcademicEvidenceEnhancementSelectionEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Controller selection limit and UI enhancement interval | 0 |
+| `academic/evidence-enhancement-settlement` | `AcademicEvidenceEnhancementSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Controller selection limit and UI enhancement interval | 0 |
 | `academic/evidence-fragment-verified` | `EvidenceFragmentVerifiedRecord` | [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | Verified fragment; enhancement history reads selected intervals | 0 |
 | `academic/evidence-request` | `EvidenceModelRequest` | [model.ts](../../../packages/academic/workflow/src/model.ts) / [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | Logged request and settled model attempt | 4 |
 | `academic/evidence-result` | `EvidenceModelResult` | [model.ts](../../../packages/academic/workflow/src/model.ts) / [fragment-model.ts](../../../packages/academic/workflow/src/fragment-model.ts) | Logged request and settled model attempt | 4 |
-| `academic/recovery-checkpoint` | `AcademicResearchRecoveryCheckpoint` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
-| `academic/run-settlement` | `AcademicRunSettlementEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
-| `academic/search-plan` | `AcademicSearchPlanEvent` | [index.ts](../../../packages/api/academic-research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
+| `academic/recovery-checkpoint` | `AcademicResearchRecoveryCheckpoint` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
+| `academic/run-settlement` | `AcademicRunSettlementEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
+| `academic/search-plan` | `AcademicSearchPlanEvent` | [index.ts](../../../packages/academic/research-controller/src/index.ts) | Recovery plan, batch, checkpoint, or terminal facts | 0 |
 | `academic/synthesis-request` | `SynthesisModelRequest` | [synthesis-model.ts](../../../packages/academic/workflow/src/synthesis-model.ts) | Logged request and settled model attempt | 4 |
 | `academic/synthesis-result` | `SynthesisModelResult` | [synthesis-model.ts](../../../packages/academic/workflow/src/synthesis-model.ts) | Logged request and settled model attempt | 4 |
 
-Recovery consumes [recovery.ts](../../../packages/academic/workflow/src/recovery.ts); background replay consumes [background-run.ts](../../../packages/api/academic-research-controller/src/background-run.ts); enhancement projection consumes [enhancement-history.ts](../../../packages/client/ui-academic-research/src/client/enhancement-history.ts). Search-plan association depends on chronology: the last plan before the first relevant run event. Migration must not invent a retrievalRunId on that event.
+Recovery consumes [recovery.ts](../../../packages/academic/workflow/src/recovery.ts); background replay consumes [background-run.ts](../../../packages/academic/research-controller/src/background-run.ts); enhancement projection consumes [enhancement-history.ts](../../../packages/academic/ui-research/src/client/enhancement-history.ts). Search-plan association depends on chronology: the last plan before the first relevant run event. Migration must not invent a retrievalRunId on that event.
 
 ## Recording coverage
 <a id="recording-coverage"></a>

@@ -30,6 +30,8 @@ Trace v1 types are also available from the type-only `@deepseek-ai/dsh-academic-
 <a id="use-this-package"></a>
 ## Use this package
 
+`ResearchBrief.domainResearchPlan` optionally binds an approved domain survey to every discovered direction. Each `DomainResearchDirection` records the exact survey identity, treatment depth, one deep-research question, a cited full-text supporting-work target, and a query cap; overview and excluded directions have zero research budgets. The Controller verifies the binding against the saved map before execution. A direction target is a requirement to check and disclose, not evidence by itself.
+
 Optional `ResearchBrief.scopeDecision` retains the reviewed request-breadth declaration and direction choices. Deep-dive directions receive systematic retrieval; overview directions provide orientation; not-systematically-covered directions are known omissions rather than an exhaustive taxonomy. Historical Briefs without this field keep their existing interpretation.
 
 The executable Academic workflow interprets `ResearchBrief.includedWorkTypes` as version states (`preprint`, `accepted_manuscript`, `version_of_record`), not conference/journal publication categories. `AcademicWork.venue` is a source label and does not establish a publication category; strict category filtering is not represented by this model.

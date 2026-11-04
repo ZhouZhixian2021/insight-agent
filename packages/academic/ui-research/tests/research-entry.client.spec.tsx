@@ -1,0 +1,240 @@
+// @vitest-environment jsdom
+import { afterEach, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { AcademicBackgroundRunView, AcademicResearchRunRequest, AcademicBackgroundRunKey, AcademicBackgroundRunCancelRequest } from '@deepseek-ai/dsh-api-academic-research-controller/types'
+import { ResearchEntry, type ResearchEntryProps } from '../src/client/ResearchEntry.tsx'
+import { zh, type RunKey } from '../src/client/run-locales.ts'
+import { sampleRun } from './run-sample.ts'
+import { initialTask, unusedDomainSurvey } from './background.fixture.client.ts'
+
+const sid = initialTask().sessionId
+const planned = { researchBriefId: initialTask().researchBriefId, topic: 'RAG', questions: [], searches: [] }
+function fixture() {
+  let saved: AcademicBackgroundRunView | null = null
+  const observers = new Set<(task: AcademicBackgroundRunView) => void>()
+  const signals: AbortSignal[] = []
+  const publish = (task: AcademicBackgroundRunView) => { saved = task; for (const update of observers) update(task) }
+  const startBackgroundRun = vi.fn(async (_request: AcademicResearchRunRequest, _signal: AbortSignal) => {
+    saved = initialTask(); return saved
+  })
+  const listBackgroundRuns = vi.fn(async (_sessionId: typeof sid) => saved === null ? [] : [saved])
+  const getBackgroundRun = vi.fn(async (_key: AcademicBackgroundRunKey) => saved!)
+  const cancelBackgroundRun = vi.fn(async (_request: AcademicBackgroundRunCancelRequest) => { const task = { ...saved!, state: 'cancelled' as const, cancelReason: 'user_requested' as const }; publish(task); return task })
+  const watchBackgroundRun = vi.fn(async function* (_key: AcademicBackgroundRunKey, signal: AbortSignal) {
+    signals.push(signal)
+    const queue: AcademicBackgroundRunView[] = []
+    let wake: (() => void) | undefined
+    const update = (task: AcademicBackgroundRunView) => { queue.push(task); wake?.() }
+    observers.add(update)
+    const abort = () => { wake?.() }
+    signal.addEventListener('abort', abort, { once: true })
+    try {
+      yield saved!
+      while (!signal.aborted) {
+        const next = queue.shift()
+        if (next !== undefined) { yield next; if (next.state !== 'running') return }
+        else await new Promise<void>((resolve) => { wake = resolve })
+      }
+    } finally { observers.delete(update); signal.removeEventListener('abort', abort) }
+  })
+  function props(current = sid): ResearchEntryProps {
+    return { ...unusedDomainSurvey, wide: true, sessionId: current, t: key => zh[key as RunKey], plan: async () => planned,
+      startBackgroundRun, listBackgroundRuns, getBackgroundRun, watchBackgroundRun, cancelBackgroundRun,
+      traceList: vi.fn(), traceDetail: vi.fn(), enhanceEvidence: vi.fn(), enhancementHistory: vi.fn().mockResolvedValue(null),
+      useSessions: ((select: (s: unknown) => unknown) => select({ current, byId: { [current]: { blank: false } } })) as ResearchEntryProps['useSessions'] } as ResearchEntryProps
+  }
+  return { props, publish, signals, startBackgroundRun, listBackgroundRuns,
+    getBackgroundRun, watchBackgroundRun, cancelBackgroundRun, observers }
+}
+async function open() {
+  fireEvent.click(screen.getByRole('button', { name: zh.entry }))
+  await waitFor(() => { expect(screen.queryByText(zh.backgroundLoading)).toBeNull() })
+}
+async function start() {
+  const button = await screen.findByRole<HTMLButtonElement>('button', { name: zh.start })
+  await waitFor(() => { expect(button.disabled).toBe(false) })
+  fireEvent.click(button)
+  await screen.findByText(zh.backgroundConnected)
+}
+afterEach(cleanup)
+it('starts once with the selected Session and approved Brief; closing only disconnects and reopening reads the same task', async () => {
+  const f = fixture(); render(<ResearchEntry {...f.props()} />)
+  await open(); await start()
+  expect(screen.getByText(zh.disclosure).textContent).toContain('只停止监听')
+  expect(f.startBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, researchBriefId: planned.researchBriefId,
+    synthetic: false }, expect.any(AbortSignal))
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: zh.close }))
+  expect(f.signals[0]!.aborted).toBe(true)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  await open(); await screen.findByText(zh.backgroundConnected)
+  expect(f.getBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background' })
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it('recovers the server result after remount without execution or report-quality promotion', async () => {
+  const f = fixture(); const first = render(<ResearchEntry {...f.props()} />)
+  await open(); await start(); first.unmount()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() })
+  render(<ResearchEntry {...f.props()} />); await open()
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.getAllByText('待审核').length).toBeGreaterThan(0)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+})
+it('shows the latest approved plan without treating a completed historical report as its result', async () => {
+  const f = fixture()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId,
+    result: sampleRun() })
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId,
+    topic: 'Next topic', questions: ['New question'] }
+  render(<ResearchEntry {...f.props()} plan={async () => nextPlan} />)
+  await open()
+  expect(screen.getByRole('heading', { name: `${zh.currentPlan}: ${nextPlan.topic}` })).toBeTruthy()
+  expect(screen.getByText(zh.planNotStarted)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+  expect(f.getBackgroundRun).not.toHaveBeenCalled()
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+
+  fireEvent.change(screen.getByRole('combobox', { name: zh.backgroundRecords }),
+    { target: { value: initialTask().backgroundRunId } })
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.getByText(zh.historicalPlanResult)).toBeTruthy()
+  fireEvent.change(screen.getByRole('combobox', { name: zh.backgroundRecords }), { target: { value: '' } })
+  await waitFor(() => { expect(screen.queryByRole('button', { name: zh.download })).toBeNull() })
+  expect(screen.getByText(zh.planNotStarted)).toBeTruthy()
+})
+it('rechecks approval before starting and requires a second click after the plan changes', async () => {
+  const f = fixture()
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId,
+    topic: 'Next topic' }
+  let latest = planned
+  const plan = vi.fn(async () => latest)
+  f.startBackgroundRun.mockImplementationOnce(async () => ({ ...initialTask(), researchBriefId: nextPlan.researchBriefId }))
+  render(<ResearchEntry {...f.props()} plan={plan} />)
+  await open()
+  latest = nextPlan
+  fireEvent.click(screen.getByRole('button', { name: zh.start }))
+  await screen.findByText(zh.planUpdated)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+  expect(screen.getByRole('heading', { name: `${zh.currentPlan}: ${nextPlan.topic}` })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: zh.start }))
+  await waitFor(() => { expect(f.startBackgroundRun).toHaveBeenCalledWith({ sessionId: sid,
+    researchBriefId: nextPlan.researchBriefId, synthetic: false }, expect.any(AbortSignal)) })
+  expect(plan).toHaveBeenCalledTimes(3)
+})
+it('labels a running task from an earlier plan and blocks a second run', async () => {
+  const f = fixture()
+  f.publish(initialTask())
+  const nextPlan = { ...planned, researchBriefId: `${planned.researchBriefId}:next` as typeof planned.researchBriefId }
+  render(<ResearchEntry {...f.props()} plan={async () => nextPlan} />)
+  await open()
+  await screen.findByText(zh.backgroundConnected)
+  expect(screen.getByText(zh.historicalPlanResult)).toBeTruthy()
+  expect(screen.getByText(zh.previousPlanRunning)).toBeTruthy()
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+})
+it('switching Sessions detaches observation; switching back recovers the original task', async () => {
+  const f = fixture(); const other = 'other' as typeof sid
+  const originalList = f.listBackgroundRuns.getMockImplementation()!
+  f.listBackgroundRuns.mockImplementation(async sessionId => sessionId === other ? [] : originalList(sid))
+  const ui = render(<ResearchEntry {...f.props()} />); await open(); await start()
+  ui.rerender(<ResearchEntry {...f.props(other)} />)
+  await waitFor(() => { expect(f.signals[0]!.aborted).toBe(true) })
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  ui.rerender(<ResearchEntry {...f.props()} />)
+  await screen.findByText(zh.backgroundConnected)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it('cancels through the explicit command while retaining the subscription until server settlement', async () => {
+  const f = fixture(); render(<ResearchEntry {...f.props()} />); await open(); await start()
+  fireEvent.click(screen.getByRole('button', { name: zh.cancel }))
+  await waitFor(() => { expect(f.cancelBackgroundRun).toHaveBeenCalledWith({ sessionId: sid, backgroundRunId: 'test-background', reason: 'user_requested' }) })
+  expect(f.signals[0]!.aborted).toBe(false)
+  await screen.findByText(zh.backgroundReason_user_requested)
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+})
+it('shows service interruption and never resumes or starts automatically', async () => {
+  const f = fixture(); f.publish({ ...initialTask(), state: 'interrupted', cancelReason: 'service_stopped' })
+  render(<ResearchEntry {...f.props()} />); await open()
+  expect(screen.getAllByText(zh.backgroundInterrupted).length).toBeGreaterThan(0)
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+  expect(f.watchBackgroundRun).not.toHaveBeenCalled()
+})
+it('preserves the running task on watch failure and explicitly reconnects without a new start', async () => {
+  const f = fixture(); f.watchBackgroundRun.mockImplementationOnce(async function* () { throw new Error('offline') })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  expect((await screen.findByRole('alert')).textContent).toContain('offline')
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: zh.backgroundReconnect }))
+  await screen.findByText(zh.backgroundConnected)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+})
+it.each(['ended', 'failed'] as const)('reloads the saved terminal result after an observation %s without starting or watching again', async (kind) => {
+  const f = fixture()
+  f.watchBackgroundRun.mockImplementationOnce(async function* () {
+    yield initialTask()
+    if (kind === 'failed') throw new Error('offline')
+  })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  expect((await screen.findByRole('alert')).textContent).toContain(zh.streamDisconnected)
+  await act(async () => { f.publish({ ...initialTask(), state: 'completed',
+    retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }) })
+  fireEvent.click(screen.getByRole('button', { name: zh.backgroundReconnect }))
+  await screen.findByRole('button', { name: zh.download })
+  expect(screen.queryByRole('alert')).toBeNull()
+  expect(screen.getByText(zh.backgroundSnapshot)).toBeTruthy()
+  expect(f.watchBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+})
+it('recovers the persisted run when its start reply was lost without asking for another admission', async () => {
+  const f = fixture()
+  f.startBackgroundRun.mockImplementationOnce(async () => { f.publish(initialTask()); throw new Error('reply lost') })
+  render(<ResearchEntry {...f.props()} />); await open()
+  fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+  await screen.findByText(zh.backgroundConnected)
+  expect(screen.queryByText('reply lost')).toBeNull()
+  await waitFor(() => { expect(screen.getByRole<HTMLButtonElement>('button', { name: zh.start }).disabled).toBe(true) })
+  expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2)
+  expect(f.getBackgroundRun).toHaveBeenCalledTimes(1)
+  expect(f.startBackgroundRun).toHaveBeenCalledTimes(1)
+  await act(async () => { f.publish({ ...initialTask(), state: 'completed',
+    retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }) })
+  await screen.findByRole('button', { name: zh.download })
+})
+it('ignores late get replies after closing and permits viewing saved results despite a missing current approval', async () => {
+  const f = fixture(); let release!: (task: AcademicBackgroundRunView) => void
+  const pending = new Promise<AcademicBackgroundRunView>((resolve) => { release = resolve })
+  f.publish(initialTask()); f.getBackgroundRun.mockReturnValueOnce(pending)
+  render(<ResearchEntry {...f.props()} plan={async () => { throw new Error('No current approval') }} />)
+  fireEvent.click(screen.getByRole('button', { name: zh.entry }))
+  await screen.findByText('No current approval')
+  fireEvent.click(screen.getByRole('button', { name: zh.close }))
+  await act(async () => { release({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() }); await pending })
+  expect(screen.queryByRole('button', { name: zh.download })).toBeNull()
+  f.publish({ ...initialTask(), state: 'completed', retrievalRunId: sampleRun().retrievalRun.retrievalRunId, result: sampleRun() })
+  await open(); await screen.findByRole('button', { name: zh.download })
+  expect(f.startBackgroundRun).not.toHaveBeenCalled()
+})
+
+it('does not reconnect from a late admission rediscovery after the viewer closes', async () => {
+  const f = fixture()
+  let release!: (rows: AcademicBackgroundRunView[]) => void
+  const pending = new Promise<AcademicBackgroundRunView[]>((resolve) => { release = resolve })
+  f.startBackgroundRun.mockRejectedValueOnce(new Error('reply lost'))
+  f.listBackgroundRuns.mockResolvedValueOnce([]).mockReturnValueOnce(pending)
+  const ui = render(<ResearchEntry {...f.props()} />)
+  try {
+    await open()
+    fireEvent.click(await screen.findByRole('button', { name: zh.start }))
+    await waitFor(() => { expect(f.listBackgroundRuns).toHaveBeenCalledTimes(2) })
+    fireEvent.click(screen.getByRole('button', { name: zh.close }))
+    await act(async () => { release([initialTask()]); await pending })
+    expect(f.getBackgroundRun).not.toHaveBeenCalled()
+    expect(f.watchBackgroundRun).not.toHaveBeenCalled()
+    expect(f.cancelBackgroundRun).not.toHaveBeenCalled()
+  } finally { release([]); ui.unmount() }
+})

@@ -8,7 +8,7 @@ Status: implemented
 
 提供方把每条捕获的记录规范化为全新的 `AcademicWork`/`WorkVersion` 对，因此同一研究工作若以预印本与正式出版版出现，或同时出现在 OpenAlex、Crossref 与 arXiv 中，就会变成若干互不相关的身份。下游的证据与分析必须为每篇论文指向同一成果，同时每个具体版本仍可寻址，否则版本去重会被每个消费方重复实现。
 
-共享模型有意停在去重键原语（`externalIdentifierDedupKey`）处，不记录持久映射（[模型 README](../../../../packages/academic/model/README.zh.md)）。去重规则属于 B 的职责（[接口需求](../../../../z-team_docs/模块分工/academic-retrieval-evidence-interface-requirements.md)）：显式的外部标识符自动合并，仅靠标题/作者/年份的相似只能标记为疑似重复，且去重规则后续变化不得改变成果身份。
+共享模型有意停在去重键原语（`externalIdentifierDedupKey`）处，不记录持久映射（[模型 README](../../../../packages/academic/model/README.zh.md)）。去重规则属于 B 的职责（[接口需求](../../../../z-team_docs/学术洞察/模块分工/academic-retrieval-evidence-interface-requirements.md)）：显式的外部标识符自动合并，仅靠标题/作者/年份的相似只能标记为疑似重复，且去重规则后续变化不得改变成果身份。
 
 ## 决策
 

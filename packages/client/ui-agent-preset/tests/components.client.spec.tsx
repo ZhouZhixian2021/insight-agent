@@ -19,6 +19,12 @@ import type { AgentPresetSeatProps } from '../src/client/AgentPresetSeat.tsx'
 import type { AgentPresetSettingsState } from '../src/client/settings-store.ts'
 import type { AgentPresetSeatState } from '../src/client/seat-store.ts'
 import { en } from '../src/client/locales.ts'
+import { isBuiltInPreset, presetDisplayText } from '@deepseek-ai/dsh-agent-preset-registry/display'
+const displayProps = {
+  displayPreset: (row: Parameters<typeof presetDisplayText>[0]) => presetDisplayText(row, key => en[key]),
+  isBuiltInPreset,
+  usePresetDisplay: bindSnapshotSelector(createSnapshotStore(0)),
+}
 
 afterEach(cleanup)
 
@@ -66,7 +72,7 @@ function renderSeat(
     }),
   }
   const props = {
-    ...actions,
+    ...actions, ...displayProps,
     sessionId: session === undefined ? undefined : SessionId(session.id),
     useDeveloperTools: bindSnapshotSelector(developerTools),
     useAgentPresetSeat: bindSnapshotSelector(store),
@@ -90,7 +96,7 @@ function renderLabel(
   const sessions = createSnapshotStore({ byId: summary === undefined ? {} : { s1: summary } })
   const load = vi.fn(() => Promise.resolve())
   const view = render(<AgentPresetLabel {...({
-    load,
+    load, ...displayProps,
     sessionId: 's1',
     useSessions: bindSnapshotSelector(sessions),
     useAgentPresets: bindSnapshotSelector(store),

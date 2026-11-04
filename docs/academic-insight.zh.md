@@ -31,7 +31,7 @@ pnpm run insight:web
 
 在新会话页面打开 Agent 预设选择器，并在发送第一条消息前选择 **学术洞察**。会话产生内容后就会固定其预设；如需更换，请新建会话。
 
-直接说明研究需求即可，无需输入 `/plan`。新建的学术洞察会话会在首个模型请求前进入计划模式，把需求整理为结构化 Research Brief 和执行计划。请在 Web 卡片中审核计划：批准后开始研究，也可以选择继续规划并给出修改意见。如果模型没有调用评审工具就停止，学术预设会自动再提醒一次，要求它通过 `exit_plan_mode` 提交完整计划。只有缺少由用户决定且会实质改变研究结果的选项时，Agent 才会提出一次简短澄清。
+直接说明研究需求即可，无需输入 `/plan`。新建的学术洞察会话会在首个模型请求前进入计划模式。领域级需求先审核元数据勘察计划，运行后查看有来源摘录的候选方向和遗漏限制，再审核各方向的深入研究计划；具体问题则直接审核结构化 Research Brief。请在 Web 卡片中审核每份计划：批准后执行当前阶段，也可以继续规划并给出修改意见。如果模型没有调用评审工具就停止，学术预设会自动再提醒一次，要求它通过 `exit_plan_mode` 提交完整计划。只有缺少由用户决定且会实质改变研究结果的选项时，Agent 才会提出一次简短澄清。
 
 -----
 
@@ -58,8 +58,8 @@ pnpm run insight:web
 
 | 路径 | 当前职责 |
 |---|---|
-| `packages/bundle/web-app/presets/academic/` | 内置预设元数据与 Cordis 组装。 |
-| `packages/bundle/web-app/presets/academic/skills/academic-insight-report/` | 从用户提供的参考报告提炼的研究方法和报告层级。 |
+| `packages/academic/bundle/presets/academic/` | 内置预设元数据与 Cordis 组装。 |
+| `packages/academic/bundle/presets/academic/skills/academic-insight-report/` | 从用户提供的参考报告提炼的研究方法和报告层级。 |
 | `packages/preset/agent-preset-registry/src/display.ts` | 内置预设标识符到本地化键的映射。 |
 | `packages/client/ui-agent-preset/src/client/locales.ts` | 选择器的中英文文案。 |
 | `scripts/start-insight-web.ps1` 与 `pnpm run insight:web` | 将当前检出绑定到私有 `.dsh-runtime` 的 Windows 启动入口。 |

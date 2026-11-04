@@ -93,6 +93,24 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'Chinese research intent, search directions, and the approval identity to pass to run.',
       },
       {
+        signature: '@Remote(\'domainSurveyPlan\') async domainSurveyPlan(sessionId: AcademicDomainSurveyRequest[\'sessionId\']): Promise<AcademicDomainSurveyPlanView>',
+        description: 'Preview the latest approved metadata-only domain reconnaissance plan.',
+        parameters: [{ name: 'sessionId', description: 'Session whose approval owns the exact survey expressions.' }],
+        returns: 'Reviewed topic, scope, query rounds and limits without starting work.',
+      },
+      {
+        signature: '@Remote(\'runDomainSurvey\') async runDomainSurvey(request: AcademicDomainSurveyRequest, signal: AbortSignal): Promise<AcademicDomainSurveyView>',
+        description: 'Execute reviewed scholarly-metadata queries and save a source-grounded direction map.',
+        parameters: [{ name: 'request', description: 'Session and approval identity returned by domainSurveyPlan.' }, { name: 'signal', description: 'Caller cancellation checked before admission; admitted work uses maintenance and elapsed-time signals.' }],
+        returns: 'Durable map; a repeated call for the same approval returns its saved result.',
+      },
+      {
+        signature: '@Remote(\'getDomainSurvey\') async getDomainSurvey(request: AcademicDomainSurveyRequest): Promise<AcademicDomainSurveyView>',
+        description: 'Read a saved direction map without running new queries or model calls.',
+        parameters: [{ name: 'request', description: 'Owning Session and approved survey identity.' }],
+        returns: 'Persisted survey result or an explicit absence error.',
+      },
+      {
         signature: '@Remote(\'run\') async run(request: AcademicResearchRunRequest, signal: AbortSignal): Promise<AcademicResearchRunValue>',
         description: 'Run one multi-source research pass while the addressed Agent is idle.',
         parameters: [{ name: 'request', description: 'previewed approval identity, disclosure, and the Session containing the plan.' }, { name: 'signal', description: 'Remote caller lifetime; disconnect or cancellation aborts the pass.' }],
@@ -4814,6 +4832,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AcademicDirectSearchProvider = \'openalex\' | \'arxiv\' | \'browser\';',
   },
   {
+    name: 'AcademicDomainSurveyPlanView',
+    declaration: 'export interface AcademicDomainSurveyPlanView {\n    readonly planId: string;\n    readonly topic: string;\n    readonly scope: string;\n    readonly selection: DomainSurveySelectionPolicy;\n    readonly queries: readonly {\n        readonly expression: string;\n        readonly purpose: \'discovery\' | \'omission_check\';\n        readonly roundIndex: number;\n    }[];\n    readonly limits: {\n        readonly maximumCandidates: number;\n        readonly maximumResultsPerQuery: number;\n        readonly maximumElapsedMinutes: number;\n    };\n}',
+  },
+  {
+    name: 'AcademicDomainSurveyRequest',
+    declaration: 'export interface AcademicDomainSurveyRequest {\n    readonly sessionId: SessionId;\n    readonly planId: string;\n}',
+  },
+  {
+    name: 'AcademicDomainSurveyView',
+    declaration: 'export interface AcademicDomainSurveyView extends AcademicDomainSurveyRequest {\n    readonly schemaVersion: 1;\n    readonly completedAt: string;\n    readonly topic: string;\n    readonly scope: string;\n    readonly selection: DomainSurveySelectionPolicy;\n    readonly limits: AcademicDomainSurveyPlanView[\'limits\'];\n    readonly result: DomainSurveyResult;\n}',
+  },
+  {
     name: 'AcademicEvaluationView',
     declaration: 'export interface AcademicEvaluationView {\n    readonly status: \'ready\' | \'needs_review\' | \'blocked\';\n    readonly assessments: readonly AcademicClaimAssessmentView[];\n    readonly issues: readonly {\n        readonly claimId: ClaimId | null;\n        readonly category?: \'delivery\' | \'content\';\n        readonly code: string;\n        readonly message: string;\n    }[];\n}',
   },
@@ -4855,7 +4885,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicPlannedSearch',
-    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
+    declaration: 'export interface AcademicPlannedSearch {\n    readonly query: string;\n    readonly purpose: string;\n    readonly questions: readonly string[];\n    readonly directionId?: string;\n    readonly roundIndex?: number;\n    readonly retrieval?: AcademicPlannedRetrieval;\n}',
   },
   {
     name: 'AcademicQ6CandidateAssessmentView',
@@ -4907,7 +4937,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicResearchPlanView',
-    declaration: 'export interface AcademicResearchPlanView {\n    readonly researchBriefId: ResearchBriefId;\n    readonly topic: string;\n    readonly questions: readonly string[];\n    readonly searches: readonly AcademicPlannedSearch[];\n}',
+    declaration: 'export interface AcademicResearchPlanView {\n    readonly researchBriefId: ResearchBriefId;\n    readonly topic: string;\n    readonly questions: readonly string[];\n    readonly searches: readonly AcademicPlannedSearch[];\n    readonly domainResearchPlan?: DomainResearchPlan;\n}',
   },
   {
     name: 'AcademicResearchProgressView',
@@ -5926,6 +5956,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface DomainChangedPut extends DomainChangedBase {\n    readonly operation: \'put\';\n    readonly value: unknown;\n}',
   },
   {
+    name: 'DomainDirectionSupport',
+    declaration: 'export interface DomainDirectionSupport {\n    readonly workId: string;\n    readonly field: \'title\' | \'abstract\';\n    readonly quote: string;\n}',
+  },
+  {
     name: 'DomainGlobal',
     declaration: 'export interface DomainGlobal<G> {\n    get(): G;\n    set(value: G): Promise<void>;\n}',
   },
@@ -5942,8 +5976,40 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export class DomainImpl {\n    readonly name: string;\n    constructor(private readonly ctx: Context, spec: DomainSpec, private readonly unit: KvUnit, records: Map<string, Map<string, unknown>>, globalValue: unknown, private readonly onClosed: () => void);\n    get global(): DomainGlobal<unknown>;\n    table(name: string): KvTable<string, unknown>;\n    close(): Promise<void>;\n}',
   },
   {
+    name: 'DomainResearchDirection',
+    declaration: 'export interface DomainResearchDirection {\n    readonly directionId: string;\n    readonly label: string;\n    readonly depth: \'deep_dive\' | \'overview\' | \'excluded\';\n    readonly question: string | null;\n    readonly targetSupportingWorks: number;\n    readonly maximumQueries: number;\n}',
+  },
+  {
+    name: 'DomainResearchPlan',
+    declaration: 'export interface DomainResearchPlan {\n    readonly surveyPlanId: string;\n    readonly directions: readonly DomainResearchDirection[];\n    readonly surveyStatus?: \'mapped\' | \'incomplete\';\n    readonly surveyLimitations?: readonly string[];\n    readonly unclassifiedSurveyWorks?: number;\n}',
+  },
+  {
     name: 'DomainSpec',
     declaration: 'export interface DomainSpec {\n    readonly name: string;\n    readonly version: number;\n    readonly layout?: \'single\' | \'per-record\';\n    readonly compatibleVersions?: readonly number[];\n    readonly invalidRecords?: \'backup-and-skip\';\n    readonly global?: DomainGlobalSpec<unknown>;\n    readonly tables: Record<string, DomainTableSpec>;\n}',
+  },
+  {
+    name: 'DomainSurveyDirection',
+    declaration: 'export interface DomainSurveyDirection {\n    readonly directionId: string;\n    readonly label: string;\n    readonly definition: string;\n    readonly supports: readonly DomainDirectionSupport[];\n    readonly sourceProviders: readonly string[];\n}',
+  },
+  {
+    name: 'DomainSurveyMap',
+    declaration: 'export interface DomainSurveyMap {\n    readonly schemaVersion: 1;\n    readonly directions: readonly DomainSurveyDirection[];\n    readonly unclassifiedWorkIds: readonly string[];\n}',
+  },
+  {
+    name: 'DomainSurveyPaper',
+    declaration: 'export interface DomainSurveyPaper {\n    readonly workId: string;\n    readonly title: string;\n    readonly abstract: string | null;\n    readonly sourceProviders: readonly string[];\n    readonly workVersionId?: string;\n    readonly versionType?: WorkVersionType;\n    readonly publicationDate?: string | null;\n    readonly sourceRecords?: readonly {\n        readonly provider: string;\n        readonly recordId: string;\n    }[];\n}',
+  },
+  {
+    name: 'DomainSurveyQuery',
+    declaration: 'export interface DomainSurveyQuery {\n    readonly expression: string;\n    readonly purpose: \'discovery\' | \'omission_check\';\n    readonly roundIndex: number;\n}',
+  },
+  {
+    name: 'DomainSurveyResult',
+    declaration: 'export interface DomainSurveyResult {\n    readonly schemaVersion: 1;\n    readonly status: \'mapped\' | \'incomplete\';\n    readonly queries: readonly DomainSurveyQuery[];\n    readonly papers: readonly DomainSurveyPaper[];\n    readonly map: DomainSurveyMap;\n    readonly limitations: readonly string[];\n    readonly excludedByPolicy?: number;\n}',
+  },
+  {
+    name: 'DomainSurveySelectionPolicy',
+    declaration: 'export interface DomainSurveySelectionPolicy {\n    readonly startYear: number;\n    readonly endYear: number;\n    readonly dateBasis: PublicationDateBasis;\n    readonly includedVersionTypes: readonly WorkVersionType[];\n}',
   },
   {
     name: 'DomainTableSpec',

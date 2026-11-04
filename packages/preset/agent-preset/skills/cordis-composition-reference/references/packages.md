@@ -8,6 +8,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
+| `@deepseek-ai/dsh-academic-client-remote` | no | Academic browser Remote namespace registration |
 | `@deepseek-ai/dsh-academic-source` | yes | Abstract scholarly-source access capability seam (ctx.academicSource) for the DeepSeek Harness — provider registry, registration-order-independent selection, request/result vocabulary, and the AcademicSourceError taxonomy |
 | `@deepseek-ai/dsh-academic-source-acl` | yes | ACL Anthology catalog provider for academic search and full-text PDF acquisition |
 | `@deepseek-ai/dsh-academic-source-arxiv` | yes | arXiv scholarly-source provider (ctx.academicSource) that searches the public Atom /api/query endpoint and normalizes each entry into the shared academic model |
@@ -15,6 +16,8 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-academic-source-cvf` | yes | CVF Open Access catalog provider for academic search and full-text PDF acquisition |
 | `@deepseek-ai/dsh-academic-source-openalex` | yes | OpenAlex single-query discovery and version-aware full-text candidates |
 | `@deepseek-ai/dsh-academic-source-pmlr` | yes | PMLR volume catalog provider for academic search and full-text PDF acquisition |
+| `@deepseek-ai/dsh-api-academic-research-controller` | yes | Session-backed Academic research Remote controller |
+| `@deepseek-ai/dsh-client-ui-academic-research` | no | Web-client surface for the academic research report |
 
 ## acp
 
@@ -26,7 +29,6 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
-| `@deepseek-ai/dsh-api-academic-research-controller` | yes | Session-backed Academic research Remote controller |
 | `@deepseek-ai/dsh-api-account-controller` | no | Expose safe account operations over authenticated Remote |
 | `@deepseek-ai/dsh-api-gateway` | yes | Typert Remote Host dispatcher and Client API endpoint |
 | `@deepseek-ai/dsh-api-job-controller` | yes | Job Remote observation stream and the reference-counted client job-output service |
@@ -80,7 +82,6 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-product-analytics` | yes | Desktop product event collection and authenticated Host reporting |
 | `@deepseek-ai/dsh-client-resources` | no | Unified client resource model: protocol-registered providers turn URL addresses into live values, consumed through the useResource global standard hook |
 | `@deepseek-ai/dsh-client-shortcuts` | yes | Application keyboard command registry and physical-key routing |
-| `@deepseek-ai/dsh-client-ui-academic-research` | no | Web-client surface for the academic research report |
 | `@deepseek-ai/dsh-client-ui-agent-preset` | no | Agent-preset surfaces: the default for later sessions, this session's seat, and the composition editor |
 | `@deepseek-ai/dsh-client-ui-approval` | no | Approval composer takeover over the scoped Remote Event waterfall |
 | `@deepseek-ai/dsh-client-ui-attachment` | no | Dynamic attachment presentation plugin for conversation input, message-image, and trajectory image slots |

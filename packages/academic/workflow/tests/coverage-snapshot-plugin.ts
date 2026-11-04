@@ -50,7 +50,7 @@ export function apply(ctx: Context): void {
   ctx.on('agent/pre-step', async ({ agent }, next) => {
     if (agent.session.snapshotEvents().some(event => event.type === 'academic/coverage-review-result-v1')) return next()
     const sample = JSON.parse(readFileSync(new URL(
-      '../../../../z-team_docs/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
+      '../../../../z-team_docs/学术洞察/interface-samples/academic-model-v1/synthesis-input.sample.json', import.meta.url), 'utf8')) as AcademicSynthesisInput
     const work = sample.analysisInput.academicWorks[0], version = sample.analysisInput.workVersions[0]
     assert.ok(work && version)
     const question = 'What method and observed result are reported?'

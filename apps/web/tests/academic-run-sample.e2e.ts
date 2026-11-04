@@ -1,4 +1,4 @@
-import { AcademicTraceRecorder } from '../../../packages/api/academic-research-controller/src/trace.ts'
+import { AcademicTraceRecorder } from '../../../packages/academic/research-controller/src/trace.ts'
 import { academicTraceSpan } from '@deepseek-ai/dsh-academic-workflow'
 import { academicTraceSpanId } from '@deepseek-ai/dsh-academic-model'
 /** Real Loader, Session, Controller and browser preview using an approved synthetic plan. */
@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import { launchWebScaffold, seedSession } from './scaffold.ts'
-import { sampleRun } from '../../../packages/client/ui-academic-research/tests/run-sample.ts'
+import { sampleRun } from '../../../packages/academic/ui-research/tests/run-sample.ts'
 import { newEnglishPage } from './support.ts'
 
 describe('hybrid plan browser preview', () => {
