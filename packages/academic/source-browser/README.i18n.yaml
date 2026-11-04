@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/academic/source-browser/README.md
+/:
+  en: 25a3e19ebaf4e390
+  zh: 48e84a9eef60203a
+/deepseek-ai-dsh-academic-source-browser:
+  en: 8faac17bb7a1872a
+  zh: 546a10660032baaf
+/deepseek-ai-dsh-academic-source-browser/summary:
+  en: d005cd0207025769
+  zh: d6aced3cd0a6d04d
+/deepseek-ai-dsh-academic-source-browser/table-of-contents:
+  en: df363b0766a19598
+  zh: 434cf3c1f5db33cd
+/deepseek-ai-dsh-academic-source-browser/use-this-package:
+  en: 7d0738e95ae30509
+  zh: a1a45055e73974f7
+/deepseek-ai-dsh-academic-source-browser/understand-the-implementation:
+  en: 2d3574b7896b3505
+  zh: 8f154ce0b2041a15
+/deepseek-ai-dsh-academic-source-browser/model-experience:
+  en: a739a76b4f1049dc
+  zh: b00ed12aec076937
+/deepseek-ai-dsh-academic-source-browser/model-experience/kv-cache-effect:
+  en: 6c7e26556d0a3286
+  zh: 930b7b3380df1fe6
+/deepseek-ai-dsh-academic-source-browser/known-limitations-and-deferred-work:
+  en: 03ecb8268891c0b7
+  zh: 57815fa5148d7540
+/deepseek-ai-dsh-academic-source-browser/known-limitations-and-deferred-work/dev-note:
+  en: b793828d0b5108b4
+  zh: 851bf03c58bbd41a

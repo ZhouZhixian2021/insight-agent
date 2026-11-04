@@ -61,6 +61,12 @@ export interface WebRuntimeConfig {
   readonly fetchProvider: Volatile<string | undefined>
 }
 
+/** Call-scoped search provider selection without changing the deployment default. */
+export interface WebSearchExecutionOptions {
+  /** Provider id for this search only; omitted uses the configured search selection. */
+  readonly providerId?: string
+}
+
 /** Call-scoped fetch provider selection without changing the deployment default. */
 export interface WebFetchExecutionOptions {
   /** Provider id for this fetch only; omitted uses the configured fetch selection. */
@@ -143,10 +149,11 @@ export class WebRuntime extends Service {
    * if the provider over-returns, `sources[]` is truncated and `truncated` set.
    * @param request - the query and optional result limit.
    * @param signal - optional cancellation signal forwarded to the provider.
+   * @param options - optional call-scoped provider selection.
    * @returns the provider's results, capped to `request.maxResults`.
    */
-  async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
-    const configuredId = this.config.searchProvider.get() ?? this.searchProviderEnv
+  async search(request: WebSearchRequest, signal?: AbortSignal, options: WebSearchExecutionOptions = {}): Promise<WebSearchResult> {
+    const configuredId = options.providerId ?? this.config.searchProvider.get() ?? this.searchProviderEnv
     const provider = resolveProvider({
       providers: this.searchProviders,
       ...configuredId !== undefined ? { configuredId } : {},

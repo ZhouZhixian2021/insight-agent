@@ -1,0 +1,45 @@
+[
+  {
+    "url": "https://aclanthology.org/",
+    "scope": "ACL Anthology site search; only its first results page is read.",
+    "inputSelector": "input[aria-controls=acl-navbar-search-results-desktop]",
+    "mode": "submit",
+    "readySelector": ".gsc-results .gsc-webResult, .gsc-results .gs-no-results-result",
+    "resultSelector": ".gsc-webResult a.gs-title",
+    "paperUrlPattern": "^https://aclanthology\\.org/(?:[A-Z][0-9]{2}-[0-9]{4}|[0-9]{4}\\.[a-z0-9]+-[a-z0-9]+\\.[0-9]+)/?$",
+    "pdfOrigins": [
+      "https://aclanthology.org"
+    ],
+    "nextSelector": ".gsc-cursor-page:not(.gsc-cursor-current-page)",
+    "resultUrlRewrite": {
+      "pattern": "^https://aclanthology\\.org/([0-9]{4}\\.[a-z0-9]+-[a-z0-9]+\\.[0-9]+|[A-Z][0-9]{2}-[0-9]{4})\\.pdf$",
+      "replacement": "https://aclanthology.org/$1/"
+    }
+  },
+  {
+    "url": "https://proceedings.mlr.press/v267/",
+    "scope": "PMLR title filter in volume 267 only; this is not a site-wide paper search.",
+    "inputSelector": "#search-titles",
+    "mode": "filter",
+    "readySelector": "#search-titles",
+    "resultSelector": ".paper a[href$='.html']",
+    "paperUrlPattern": "^https://proceedings\\.mlr\\.press/v267/[a-z0-9-]+\\.html$",
+    "pdfOrigins": [
+      "https://proceedings.mlr.press",
+      "https://raw.githubusercontent.com"
+    ]
+  },
+  {
+    "url": "https://openaccess.thecvf.com/CVPR2026",
+    "scope": "CVF search in CVPR 2026 only; other conferences require their own configured search pages.",
+    "inputSelector": "input[name=query]",
+    "submitSelector": "input[type=submit][value=Search]",
+    "mode": "submit",
+    "readySelector": "input[name=query]",
+    "resultSelector": "dt.ptitle a",
+    "paperUrlPattern": "^https://openaccess\\.thecvf\\.com/content/CVPR2026/html/[^/]+_paper\\.html$",
+    "pdfOrigins": [
+      "https://openaccess.thecvf.com"
+    ]
+  }
+]

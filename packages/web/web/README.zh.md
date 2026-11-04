@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-需要 web 访问的组合会加载 `dsh-web` 服务并挂载至少一个后端——搜索提供方和／或抓取提供方——插件或工具作者随后直接调用 `ctx.web.search()` 与 `ctx.web.fetch()`。服务会为每次调用解析后端。大多数调用方使用部署默认值；抓取契约不同的消费者可以为单次调用提供 Provider id，而不改变该默认值。
+需要 web 访问的组合会加载 `dsh-web` 服务并挂载至少一个后端——搜索提供方和／或抓取提供方——插件或工具作者随后直接调用 `ctx.web.search()` 与 `ctx.web.fetch()`。服务会为每次调用解析后端。大多数调用方使用部署默认值；搜索或抓取要求不同的消费者可以为单次调用提供 Provider id，而不改变该默认值。
 
 ### 何时选择
 
@@ -59,6 +59,9 @@ const result = await ctx.web.search({ query: 'deepseek harness', maxResults: 8 }
 // Fetch one URL; a non-2xx response is a result, not an error:
 const page = await ctx.web.fetch({ url: 'https://example.com' })
 
+// Search through one named provider without changing other callers:
+const papers = await ctx.web.search({ query: 'attention' }, signal, { providerId: 'browser' })
+
 // Fetch through one named provider without changing the deployment default:
 const rawPage = await ctx.web.fetch({ url: 'https://example.com' }, signal, { providerId: 'http' })
 ```
@@ -67,11 +70,11 @@ const rawPage = await ctx.web.fetch({ url: 'https://example.com' }, signal, { pr
 
 ### 提供方选择
 
-每次调用都在执行时解析 Provider，注册或加载顺序从不影响结果。抓取调用的 `providerId` 只对该次调用优先；否则已配置的 Provider id 在已注册且可用时优先。两者都未提供时，服务运行唯一可用的 Provider，或在情况不明时明确失败：
+每次调用都在执行时解析 Provider，注册或加载顺序从不影响结果。搜索或抓取调用的 `providerId` 只对该次调用优先；否则已配置的 Provider id 在已注册且可用时优先。两者都未提供时，服务运行唯一可用的 Provider，或在情况不明时明确失败：
 
 | 情况 | 结果 |
 |---|---|
-| 抓取调用提供了已注册且可用的 `providerId` | 仅本次调用使用它；部署默认值不变 |
+| 搜索或抓取调用提供了已注册且可用的 `providerId` | 仅本次调用使用它；部署默认值不变 |
 | 已配置 id 已注册且可用 | 运行该提供方 |
 | 已配置 id 未注册 | `WEB_PROVIDER_CONFIGURED_MISSING` |
 | 已配置 id 已注册但不可用 | `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` |

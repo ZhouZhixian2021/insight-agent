@@ -376,6 +376,7 @@
       "@deepseek-ai/dsh-academic-retrieval": ["./packages/academic/retrieval/src"],
       "@deepseek-ai/dsh-academic-source": ["./packages/academic/source/src"],
       "@deepseek-ai/dsh-academic-source-acl": ["./packages/academic/source-acl/src"],
+      "@deepseek-ai/dsh-academic-source-browser": ["./packages/academic/source-browser/src"],
       "@deepseek-ai/dsh-academic-source-arxiv": ["./packages/academic/source-arxiv/src"],
       "@deepseek-ai/dsh-academic-source-cvf": ["./packages/academic/source-cvf/src"],
       "@deepseek-ai/dsh-academic-source-openalex": ["./packages/academic/source-openalex/src"],

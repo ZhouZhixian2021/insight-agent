@@ -15,6 +15,14 @@ Web 访问 seam 是一个[能力 seam](../../.agents/notes/implemented/architect
 每个 seam 请求只携带一个 `query`。消费方 `dsh-tool-web` 接受必填的 `queries` 数组，并把它扇出为多个独立 seam 请求；单元素数组执行一次搜索。`maxResults` 是消费方自有的上限（`dsh-tool-web` 的 `searchMaxResults` 配置，默认 `8`），通过 seam 传递并在返回时强制执行——如果提供方返回超量，seam 截断 `sources[]` 并设置 `truncated`。
 
 ```ts type-equiv
+/** Call-scoped search provider selection without changing the deployment default. */
+interface WebSearchExecutionOptions {
+  /** Provider id for this search only; omitted uses the configured search selection. */
+  readonly providerId?: string
+}
+```
+
+```ts type-equiv
 /**
  * What one search-capable backend is asked to search. Each request carries one
  * query; a consumer may issue several requests. `maxResults` is a
@@ -131,7 +139,7 @@ type WebFetchBody =
 
 提供方的 `available(): boolean` 是一个廉价的本地检查（凭证是否存在、配置是否可解析），**禁止发起网络调用**。它是执行时选择提供方的输入，而不是健康检查系统：`search()`／`fetch()` 会读取它来选择可用的提供方。选择失败时，调用方会收到可据以分支处理的结构化 `WebError`；其错误代码和消息会说明缺失的 id 或存在歧义的候选集。
 
-选择从不依赖注册顺序、配置顺序或 HMR（热模块替换）顺序：抓取调用可以提供单次调用范围的 Provider id；否则一项能力要么有显式的部署 Provider id（配置 `searchProvider`／`fetchProvider`，或填充同一字段的对应环境变量），要么在恰好只有一个可用 Provider 注册时自动选择。单次调用选择不会修改部署默认值；如果存在多个可用 Provider 却没有适用的 id，则抛出 `WEB_PROVIDER_AMBIGUOUS`，而不会选用最先注册的 Provider。
+选择从不依赖注册顺序、配置顺序或 HMR（热模块替换）顺序：搜索或抓取调用可以提供单次调用范围的 Provider id；否则一项能力要么有显式的部署 Provider id（配置 `searchProvider`／`fetchProvider`，或填充同一字段的对应环境变量），要么在恰好只有一个可用 Provider 注册时自动选择。单次调用选择不会修改部署默认值；如果存在多个可用 Provider 却没有适用的 id，则抛出 `WEB_PROVIDER_AMBIGUOUS`，而不会选用最先注册的 Provider。
 
 每次调用读取当前 Provider 配置，已保存的设置变更应用于下一次检索或抓取，无需重新挂载服务。
 
@@ -198,9 +206,10 @@ registerFetchProvider(provider: WebFetchProvider): () => void
  * if the provider over-returns, `sources[]` is truncated and `truncated` set.
  * @param request - the query and optional result limit.
  * @param signal - optional cancellation signal forwarded to the provider.
+ * @param options - optional call-scoped provider selection.
  * @returns the provider's results, capped to `request.maxResults`.
  */
-async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>
+async search(request: WebSearchRequest, signal?: AbortSignal, options: WebSearchExecutionOptions = {}): Promise<WebSearchResult>
 
 /**
  * Retrieve one URL through the selected provider. Resolves the provider at

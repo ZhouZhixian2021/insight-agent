@@ -88,7 +88,7 @@ export type AcademicBackgroundRunSummary = Pick<AcademicBackgroundRunView,
 export type AcademicRetrievalChannel = 'academic' | 'web_discovery'
 
 /** Providers supported for direct scholarly discovery in the first hybrid-plan version. */
-export type AcademicDirectSearchProvider = 'openalex' | 'arxiv'
+export type AcademicDirectSearchProvider = 'openalex' | 'arxiv' | 'browser'
 
 /** Providers with a first-version Web-reference verification contract. */
 export type AcademicReferenceVerificationProvider = 'openalex' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'

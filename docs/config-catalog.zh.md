@@ -76,6 +76,69 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-arxiv -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-browser -->
+<a id="deepseek-aidsh-academic-source-browser"></a>
+
+## `@deepseek-ai/dsh-academic-source-browser`
+
+- `inject`: `academicSource` · `agents` · `tools` · `browserUse` · `web`
+- `source`: [`packages/academic/source-browser/src/index.ts:21`](../packages/academic/source-browser/src/index.ts)
+
+```ts config-catalog
+/** Explicit search scopes and bounded browser operations. */
+export interface Config extends BrowserAcademicOptions {}
+
+/** Resolved deployment limits for the browser provider. */
+export interface BrowserAcademicOptions {
+  /** Search forms and their declared conference, volume, or site coverage. */
+  readonly sites: BrowserAcademicSite[]
+  /** Maximum papers retained across all configured sites per query. */
+  readonly maximumResults: number
+  /** Maximum paper PDF locations retained without eviction. */
+  readonly maximumCachedRecords: number
+  /** Deadline in milliseconds for each navigation or readiness operation. */
+  readonly operationTimeoutMs: number
+  /** Maximum citation HTML characters accepted from each paper page. */
+  readonly maximumMetadataCharacters: number
+  /** Maximum PDF bytes accepted after a browser download completes. */
+  readonly maximumPdfBytes: number
+  /** Fetch provider used for URLs not observed by this browser source. */
+  readonly otherFetchProvider: string
+}
+
+/** Configuration for browser-owned scholarly form submissions. */
+export interface BrowserAcademicSite {
+  /** Search page; volume and conference scopes must be explicit. */
+  readonly url: string
+  /** Human-readable coverage limit included with search results. */
+  readonly scope: string
+  /** Unique search input accepted by Playwright's locator API. */
+  readonly inputSelector: string
+  /** Omitted submits Enter in the search input. */
+  readonly submitSelector?: string
+  /** Submit navigates; filter updates the current document. */
+  readonly mode: 'submit' | 'filter'
+  /** Visible result container or explicit no-results marker. */
+  readonly readySelector: string
+  /** CSS selector for visible paper links in the current results. */
+  readonly resultSelector: string
+  /** Published result-to-landing URL mapping, applied before paper URL validation. */
+  readonly resultUrlRewrite?: {
+    /** Anchored expression for a known publisher result URL, such as its PDF route. */
+    readonly pattern: string
+    /** Publisher landing route using the expression's capture groups. */
+    readonly replacement: string
+  } | undefined
+  /** Anchored expression matching official paper landing URLs. */
+  readonly paperUrlPattern: string
+  /** Origins allowed for page-published PDF links. */
+  readonly pdfOrigins: string[]
+  /** Optional visible next-page control marks incomplete coverage. */
+  readonly nextSelector?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-academic-source-browser -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-academic-source-cvf -->
 <a id="deepseek-aidsh-academic-source-cvf"></a>
 
@@ -319,7 +382,7 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-api-academic-research-controller`
 
-- `inject`: `academicSource` · `sessionController` · `sessionProjections` · `sessionQuery` · `typert` · `web`
+- `inject`: `academicSource` · `agents` · `sessionController` · `sessionProjections` · `sessionQuery` · `typert` · `web`
 - `source`: [`packages/api/academic-research-controller/src/index.ts:65`](../packages/api/academic-research-controller/src/index.ts)
 
 ```ts config-catalog
@@ -353,6 +416,8 @@ export interface Config {
   readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
   readonly fulltextFetchProvider?: string
+  /** Web search provider for formal paper discovery; omitted uses the shared Web selection. */
+  readonly webDiscoverySearchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
   /** Final synthesis output-token reserve when the Session omits one. Defaults to 32,768. */

@@ -8,6 +8,7 @@ import { ACADEMIC_CANDIDATE_RANKING_POLICY_V1, createAcademicWorkId, createBatch
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { SessionId, SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session'
 import { SessionQueryError } from '@deepseek-ai/dsh-session-query'
+import AgentRegistry from '@deepseek-ai/dsh-agent'
 import type { PtcDispatchEventData } from '@deepseek-ai/dsh-tools/types'
 import type { AcademicSourceRuntime, AcademicSourceWork } from '@deepseek-ai/dsh-academic-source'
 import type { WebRuntime } from '@deepseek-ai/dsh-web'
@@ -231,6 +232,7 @@ async function harness(options: {
     serviceCtx.provide('web', { fetch, search: webSearch } as never)
   })
   let agentContext: Context | undefined
+  await ctx.plugin(AgentRegistry)
   await ctx.plugin((agentCtx: Context) => { agentContext = agentCtx })
   if (agentContext === undefined) throw new Error('missing Agent context fixture')
   const sessionId = SessionId('academic-session')
@@ -724,8 +726,9 @@ describe('AcademicResearchController', () => {
     expect(runAcademicResearchDraft).not.toHaveBeenCalled()
   })
 
-  it('executes the reviewed hybrid policy and hands verified works to the real paper pipeline', async () => {
-    const fixture = await harness({ hybridPlan: true })
+  it.each([undefined, 'browser'])('uses %s for paper Web discovery while retaining approved direct providers', async (webDiscoverySearchProvider) => {
+    const fixture = await harness({ hybridPlan: true,
+      config: webDiscoverySearchProvider === undefined ? {} : { webDiscoverySearchProvider } })
     const pipeline = draftFixture(1)
     const work = retrievalWork(pipeline.records[0]!, '1706.03762')
     fixture.searchProviders.mockResolvedValue({ works: [], batch: createBatchResult([], []),
@@ -756,7 +759,8 @@ describe('AcademicResearchController', () => {
     expect(fixture.search).not.toHaveBeenCalled()
     expect(fixture.searchProviders).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 100 },
       ['openalex', 'arxiv'], expect.any(AbortSignal), expect.any(Function))
-    expect(fixture.webSearch).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 8 }, expect.any(AbortSignal))
+    expect(fixture.webSearch).toHaveBeenCalledWith({ query: 'retrieval', maxResults: 8 }, expect.any(AbortSignal),
+      webDiscoverySearchProvider === undefined ? {} : { providerId: webDiscoverySearchProvider })
     expect(fixture.verifyReference).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: 'arxiv',
       normalizedValue: '1706.03762' }), ['arxiv'], expect.any(AbortSignal))
     expect(result.retrievalRun.coverageSummary).toMatchObject({ discoveredRecords: 1, deduplicatedWorks: 1,

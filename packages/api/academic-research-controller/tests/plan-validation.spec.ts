@@ -47,6 +47,13 @@ function screeningPayload(alias: string): Record<string, unknown> {
 }
 
 describe('Academic plan compatibility before review', () => {
+  it('accepts browser as a direct provider without adding it to reference verification', () => {
+    const payload = templatePayload()
+    retrievalOf(payload).academicProviders = ['browser']
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).not.toThrow()
+    retrievalOf(payload).verificationProviders = ['browser']
+    expect(() => { validateAcademicPlan(planWithPayload(payload)) }).toThrow('verificationProviders[0] must be one of')
+  })
   it.each([
     { endMode: 'run_start', timeZone: 'Asia/Shanghai', inclusionRuleKinds: [], exclusionRuleKinds: ['content'] },
     { endMode: 'fixed', timeZone: 'Asia/Shanghai', inclusionRuleKinds: ['content'], exclusionRuleKinds: ['content'] },

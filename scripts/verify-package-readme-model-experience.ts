@@ -51,6 +51,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/academic/retrieval': { kind: 'indirect', reason: 'The library plans caller-owned queries and returns verified candidates; the workflow consumer owns model-visible rendering and logging.' },
   'packages/academic/source': { kind: 'indirect', reason: 'The scholarly-source service delegates model rendering to a future workflow or retrieval consumer; it registers no prompt or schema of its own.' },
   'packages/academic/source-acl': { kind: 'indirect', reason: 'The provider delegates model rendering to the Academic workflow; it registers no prompt or schema of its own.' },
+  'packages/academic/source-browser': { kind: 'indirect', reason: 'The provider returns normalized Academic metadata; the workflow owns model rendering and no prompt or schema is registered.' },
   'packages/academic/source-arxiv': { kind: 'indirect', reason: 'The provider backend delegates model rendering to the future retrieval or workflow consumer; it registers no prompt or schema of its own.' },
   'packages/academic/source-cvf': { kind: 'indirect', reason: 'The provider delegates model rendering to the Academic workflow; it registers no prompt or schema of its own.' },
   'packages/academic/source-pmlr': { kind: 'indirect', reason: 'The provider delegates model rendering to the Academic workflow; it registers no prompt or schema of its own.' },

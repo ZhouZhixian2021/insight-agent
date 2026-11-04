@@ -33,6 +33,7 @@ academic 分组负责可复用的学术洞察领域类型与能力。产品界�
 | [`source-arxiv`](source-arxiv/README.zh.md) | arXiv 学术来源提供方，搜索 `/api/query` 并规范化进共享模型 | 注入 `academicSource` |
 | [`source-cvf`](source-cvf/README.zh.md) | CVF Open Access 目录与 PDF Provider | 注入 `academicSource` |
 | [`source-acl`](source-acl/README.zh.md) | ACL Anthology 目录与 PDF Provider | 注入 `academicSource` |
+| [`source-browser`](source-browser/README.zh.md) | 通过 DSH Playwright 搜索已配置网站的可选 Provider | 注入 `academicSource` |
 | [`source-pmlr`](source-pmlr/README.zh.md) | PMLR 目录与 PDF Provider | 注入 `academicSource` |
 | [`ingestion`](ingestion/README.zh.md) | 对提供方规范化后的记录进行去重与版本合并 | 无服务键 |
 | [`retrieval`](retrieval/README.zh.md) | 经审核的查询、已核验候选与可解释排序 | 无服务键 |

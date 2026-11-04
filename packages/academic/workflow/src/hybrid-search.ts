@@ -13,10 +13,10 @@ import type {
 } from '@deepseek-ai/dsh-academic-source'
 
 /** Direct scholarly providers supported by the first hybrid-search plan. */
-export type HybridDirectSearchProvider = 'openalex' | 'arxiv'
+export type HybridDirectSearchProvider = 'openalex' | 'arxiv' | 'browser'
 
 /** Providers that may verify a Web-discovered reference in the first hybrid-search plan. */
-export type HybridReferenceVerificationProvider = HybridDirectSearchProvider | 'acl' | 'pmlr' | 'cvf'
+export type HybridReferenceVerificationProvider = 'openalex' | 'arxiv' | 'acl' | 'pmlr' | 'cvf'
 
 /** Approved execution policy for one search expression. */
 export interface HybridRetrievalPolicy {

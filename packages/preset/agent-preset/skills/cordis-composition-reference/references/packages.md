@@ -11,6 +11,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-academic-source` | yes | Abstract scholarly-source access capability seam (ctx.academicSource) for the DeepSeek Harness — provider registry, registration-order-independent selection, request/result vocabulary, and the AcademicSourceError taxonomy |
 | `@deepseek-ai/dsh-academic-source-acl` | yes | ACL Anthology catalog provider for academic search and full-text PDF acquisition |
 | `@deepseek-ai/dsh-academic-source-arxiv` | yes | arXiv scholarly-source provider (ctx.academicSource) that searches the public Atom /api/query endpoint and normalizes each entry into the shared academic model |
+| `@deepseek-ai/dsh-academic-source-browser` | yes | Optional scholarly website search through existing DSH Playwright browser tools |
 | `@deepseek-ai/dsh-academic-source-cvf` | yes | CVF Open Access catalog provider for academic search and full-text PDF acquisition |
 | `@deepseek-ai/dsh-academic-source-openalex` | yes | OpenAlex single-query discovery and version-aware full-text candidates |
 | `@deepseek-ai/dsh-academic-source-pmlr` | yes | PMLR volume catalog provider for academic search and full-text PDF acquisition |

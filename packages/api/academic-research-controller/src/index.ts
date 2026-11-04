@@ -91,6 +91,8 @@ export interface Config {
   readonly paperConcurrency?: number
   /** Web fetch provider used for raw Academic full text. Defaults to `http`. */
   readonly fulltextFetchProvider?: string
+  /** Web search provider for formal paper discovery; omitted uses the shared Web selection. */
+  readonly webDiscoverySearchProvider?: string
   /** Output-token reserve used when the Session model selection omits one. Defaults to 16,384. */
   readonly extractionMaxTokens?: number
   /** Final synthesis output-token reserve when the Session omits one. Defaults to 32,768. */
@@ -171,7 +173,7 @@ export interface Config {
 
 /** Host service backing the generated `ctx.remote.academicResearch` namespace. */
 export class AcademicResearchController extends TypertRemoteService {
-  static inject = ['academicSource', 'sessionController', 'sessionProjections', 'sessionQuery', 'typert', 'web']
+  static inject = ['academicSource', 'agents', 'sessionController', 'sessionProjections', 'sessionQuery', 'typert', 'web']
 
   static Config: z<Config> = z.object({
     maximumFulltextWorks: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(24),
@@ -188,6 +190,7 @@ export class AcademicResearchController extends TypertRemoteService {
     fulltextCacheMaximumEntryBytes: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(33_554_432),
     paperConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(3),
     fulltextFetchProvider: z.string().default('http'),
+    webDiscoverySearchProvider: z.string().pattern(/\S/u),
     extractionMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(16_384),
     synthesisMaxTokens: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(32_768),
     extractionMaxAttempts: z.number().step(1).min(1).max(2).default(2),
@@ -247,6 +250,7 @@ export class AcademicResearchController extends TypertRemoteService {
   })
 
   private readonly fulltextFetchProvider: string
+  private readonly webDiscoverySearchProvider: string | undefined
   private readonly fulltextCache?: AcademicFulltextCache
   private readonly extractionMaximumCallsPerPaper: number
   private readonly extractionMinimumCallsPerPaper: number
@@ -304,6 +308,7 @@ export class AcademicResearchController extends TypertRemoteService {
     }
     this.paperConcurrency = config.paperConcurrency ?? 3
     this.fulltextFetchProvider = config.fulltextFetchProvider ?? 'http'
+    this.webDiscoverySearchProvider = config.webDiscoverySearchProvider
     this.extractionMaxTokens = config.extractionMaxTokens ?? 16_384
     this.synthesisMaxTokens = config.synthesisMaxTokens ?? 32_768
     this.extractionMaxAttempts = config.extractionMaxAttempts ?? 2
@@ -429,7 +434,9 @@ export class AcademicResearchController extends TypertRemoteService {
     const model: LlmCallConfig = { provider: selectedModel.provider, model: selectedModel.model,
       ...selectedModel.reasoningEffort === undefined ? {} : { reasoningEffort: selectedModel.reasoningEffort },
       maxTokens: Math.min(selectedModel.maxTokens ?? this.enhancementMaxTokens, this.enhancementMaxTokens) }
-    return agent.runMaintenance(async (agentSignal) => {
+    const agents = agent.ctx.get('agents')
+    if (agents === undefined) throw new Error('Academic research requires the Agent registry.')
+    return agent.runMaintenance(agentSignal => agents.withInitiator(agent, async (): Promise<AcademicEvidenceEnhancementView> => {
       const operationSignal = AbortSignal.any([signal, agentSignal,
         AbortSignal.timeout(this.enhancementMaximumElapsedMs)])
       if (this.projection(agent.session).enhancedRunIds.includes(String(request.retrievalRunId))) {
@@ -472,7 +479,7 @@ export class AcademicResearchController extends TypertRemoteService {
         await settle(operationSignal.aborted ? 'cancelled' : 'failed', 0, 0)
         throw cause
       }
-    })
+    }))
   }
 
   /**
@@ -790,7 +797,7 @@ export class AcademicResearchController extends TypertRemoteService {
         { concurrency: this.candidateReviewConcurrency, gapReserve: this.candidateReviewGapReserve,
           recordSelection: (selection, roundIndex) => recordCandidateReviewSelection(agent.ctx, agent.session, {
             researchBriefId: brief.researchBriefId, researchBriefVersion: brief.version, roundIndex, selection,
-          }) }),
+          }) }, this.webDiscoverySearchProvider),
       fetcher: (url, operationSignal) => web.fetch(
         { url }, operationSignal, { providerId: this.fulltextFetchProvider },
       ),
@@ -803,8 +810,10 @@ export class AcademicResearchController extends TypertRemoteService {
       ...(onQueryWorkflow === undefined ? {} : { onQueryWorkflow }),
     }
     let maintenance: Promise<AcademicResearchDraftResult>
+    const agents = agent.ctx.get('agents')
+    if (agents === undefined) throw new Error('Academic research requires the Agent registry.')
     try {
-      maintenance = agent.runMaintenance(agentSignal => runAcademicResearchDraft({
+      maintenance = agent.runMaintenance(agentSignal => agents.withInitiator(agent, () => runAcademicResearchDraft({
         ctx: agent.ctx,
         session: agent.session,
         model,
@@ -836,7 +845,7 @@ export class AcademicResearchController extends TypertRemoteService {
           ...(recovery === undefined ? {} : { recovery }) },
         adapters,
         signal: AbortSignal.any([signal, agentSignal]),
-      }))
+      })))
     } catch (cause: unknown) {
       trace.settle('skipped')
       throw new RemoteError('session/agent-busy', `session "${request.sessionId}" already has active work`,

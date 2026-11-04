@@ -15,6 +15,14 @@ Search and fetch share no request schema and no business logic, but they are del
 Each seam request carries exactly one `query`. The `dsh-tool-web` consumer accepts a required `queries` array and fans it out into separate seam requests; a one-item array performs one search. `maxResults` is a consumer-owned bound (`dsh-tool-web`'s `searchMaxResults` config, default `8`) passed through the seam and enforced on the way back — if a provider over-returns, the seam truncates `sources[]` and sets `truncated`.
 
 ```ts type-equiv
+/** Call-scoped search provider selection without changing the deployment default. */
+interface WebSearchExecutionOptions {
+  /** Provider id for this search only; omitted uses the configured search selection. */
+  readonly providerId?: string
+}
+```
+
+```ts type-equiv
 /**
  * What one search-capable backend is asked to search. Each request carries one
  * query; a consumer may issue several requests. `maxResults` is a
@@ -131,7 +139,7 @@ type WebFetchBody =
 
 A provider's `available(): boolean` is a cheap LOCAL check (credential presence, parseable config) and **must not make network calls**. It is an input to execution-time selection, not a health system: `search()`/`fetch()` read it to pick a usable provider, and a selection failure surfaces as the structured `WebError` the caller routes on — which carries the branchable detail (the missing id or ambiguous candidate set) in its code and message.
 
-Selection never depends on registration, config, or HMR order: a fetch call may supply a call-scoped provider id, otherwise a capability has an explicit deployment provider id (config `searchProvider`/`fetchProvider`, or the matching env var feeding the same field), or auto-selects when exactly one usable provider is registered. A call-scoped selection does not mutate the deployment default; multiple usable providers with no applicable id is `WEB_PROVIDER_AMBIGUOUS`, not first-wins.
+Selection never depends on registration, config, or HMR order: a search or fetch call may supply a call-scoped provider id, otherwise a capability has an explicit deployment provider id (config `searchProvider`/`fetchProvider`, or the matching env var feeding the same field), or auto-selects when exactly one usable provider is registered. A call-scoped selection does not mutate the deployment default; multiple usable providers with no applicable id is `WEB_PROVIDER_AMBIGUOUS`, not first-wins.
 
 Each operation reads the current deployment selection; a saved settings change applies to the next search or fetch without remounting the service.
 
@@ -198,9 +206,10 @@ registerFetchProvider(provider: WebFetchProvider): () => void
  * if the provider over-returns, `sources[]` is truncated and `truncated` set.
  * @param request - the query and optional result limit.
  * @param signal - optional cancellation signal forwarded to the provider.
+ * @param options - optional call-scoped provider selection.
  * @returns the provider's results, capped to `request.maxResults`.
  */
-async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>
+async search(request: WebSearchRequest, signal?: AbortSignal, options: WebSearchExecutionOptions = {}): Promise<WebSearchResult>
 
 /**
  * Retrieve one URL through the selected provider. Resolves the provider at
