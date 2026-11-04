@@ -717,6 +717,12 @@
       "upstreamChurn6mo": 6
     },
     {
+      "path": "packages/client/ui-theme/tests/radius-styles.client.spec.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入验证：共享半径规则覆盖迁移到 academic 分组的学术界面样式。"
+    },
+    {
       "path": "packages/client/ui-user-questions/README.i18n.yaml",
       "category": "generated",
       "owner": "ZhouZhixian2021",
@@ -1158,6 +1164,12 @@
       "reason": "按组合包补丁构造客户端测试清单。"
     },
     {
+      "path": "packages/test-support/client-runtime/src/assembly/index.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "测试接入：导出 Web 组合包清单，供迁移后的学术界面组装测试复用。"
+    },
+    {
       "path": "packages/test-support/session-snapshot/README.i18n.yaml",
       "category": "generated",
       "owner": "ZhouZhixian2021",
@@ -1462,6 +1474,12 @@
       "addedLines": 2,
       "removedLines": 0,
       "upstreamChurn6mo": 7
+    },
+    {
+      "path": "scripts/client-tsconfig.spec.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入验证：客户端类型聚合包含迁移到 academic 分组的 CSS 声明。"
     },
     {
       "path": "scripts/cordis-config-files.spec.ts",
