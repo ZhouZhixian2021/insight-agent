@@ -185,6 +185,12 @@
       "removedLines": 0
     },
     {
+      "path": "apps/cli/tests/built-bin.e2e.ts",
+      "category": "wiring",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入验证：默认 Web profile 新增学术组合包后，构建版 CLI 的清单断言同步。"
+    },
+    {
       "path": "apps/cli/tests/profiles/acp/tests/acp.e2e.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
