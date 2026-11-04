@@ -15,7 +15,7 @@ import type { AcademicCandidateScreening } from './candidate-screening.ts'
 
 const EXIT_PLAN_MODE = 'exit_plan_mode'
 const BRIEF_FENCE = 'academic-research-brief-json'
-const DIRECT_SEARCH_PROVIDERS = ['openalex', 'arxiv'] as const satisfies readonly AcademicDirectSearchProvider[]
+const DIRECT_SEARCH_PROVIDERS = ['openalex', 'arxiv', 'browser'] as const satisfies readonly AcademicDirectSearchProvider[]
 const REFERENCE_VERIFICATION_PROVIDERS = [
   'openalex', 'arxiv', 'acl', 'pmlr', 'cvf',
 ] as const satisfies readonly AcademicReferenceVerificationProvider[]

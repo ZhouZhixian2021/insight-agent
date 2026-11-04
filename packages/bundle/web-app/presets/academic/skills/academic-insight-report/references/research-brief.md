@@ -60,7 +60,7 @@
 
 `candidateScreening` 的每个内部数组表示同一个概念的备选表达，任一别名命中即可；中英文译名必须分别保存，例如 `["planning", "规划"]`，不得拼成 `"planning 规划"` 或 `"planning（规划）"`。保留 `"tool use"`、`"reinforcement learning"` 等完整英文短语，不按空格拆词。不同概念只有确需在同一标题或摘要中同时出现时才分成多个概念组；例如 `[["agent", "智能体"], ["planning", "规划"]]` 要求智能体与规划同时命中。方法和证据的不同组提供各自线索。不要把多种可选研究方向误写为问题必须同时满足的概念；不要把英文术语与中文注释拼成一个别名。这些词项由系统编写和校验，不要求用户理解或修改。
 
-直接学术检索只允许 OpenAlex 与 arXiv；Web 发现引用可由 OpenAlex、arXiv、ACL Anthology、PMLR 与 CVF 核验。通用 Web 搜索只发现候选，Web 标题、摘要和生成式答案不属于学术证据。启用 `web_discovery` 时，每条查询的 Web 结果上限不得超过 8，引用核验上限不得超过 8；结合用户范围选择更小预算。没有启用 Web 发现时，两项上限填 0，核验 Provider 填空数组。没有启用直接学术检索时，直接检索 Provider 填空数组。
+直接学术检索默认使用 OpenAlex 和 arXiv，计划预检使用普通 `web_search`。正式论文检索可同时启用 `academic` 与 `web_discovery`；部署可单独将后者配置为浏览器学术站内搜索，不因此替换直接学术来源或限制计划预检。无需让用户选择 Provider 或填写网站地址。浏览器站点的会议、卷和分页范围应在中文计划中如实披露。Web 发现引用可由 OpenAlex、arXiv、ACL Anthology、PMLR 与 CVF 核验，`browser` 不属于核验 Provider。Web 标题、摘要和生成式答案不属于学术证据。启用 `web_discovery` 时，每条查询的 Web 结果上限和引用核验上限均不得超过 8；结合用户范围选择更小预算。没有启用 Web 发现时，两项上限填 0，核验 Provider 填空数组。没有启用直接学术检索时，直接检索 Provider 填空数组。
 
 以下约束仅供系统填写执行块，不要复制进用户计划正文：`includedWorkTypes` 只允许 `preprint`、`accepted_manuscript`、`version_of_record`，分别对应预印本、录用稿、正式发表版本，不表示会议或期刊分类。`allowPreprints: false` 优先排除预印本。`minimumIncludedWorks` 不得超过 `targetIncludedWorks`，目标不得超过候选数量和最终纳入数量上限。不得承诺系统没有可靠字段支持的严格会议／期刊筛选，不得悄悄修改已经批准的范围。
 

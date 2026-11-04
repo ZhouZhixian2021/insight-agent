@@ -75,6 +75,7 @@ export interface CandidateReviewExecution {
  * @param initialAcademicResultsPerQuery Independent bound for raw Academic records before candidate screening.
  * @param maximumModelReviews Upper bound for semantic model calls across initial and gap rounds.
  * @param reviewExecution Candidate concurrency and durable selection recorder.
+ * @param webDiscoverySearchProvider Optional Web provider for paper discovery only.
  * @returns Search and selection operations sharing only this run's verified resolution results.
  */
 export function approvedPaperAdapters(
@@ -90,9 +91,10 @@ export function approvedPaperAdapters(
   initialAcademicResultsPerQuery?: number,
   maximumModelReviews = 24,
   reviewExecution: CandidateReviewExecution = { concurrency: 1 },
+  webDiscoverySearchProvider?: string,
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers' | 'reviewCandidates' | 'replenishCandidates' | 'resolveCoverageCandidate'> {
   if (searches.some(search => search.retrieval === undefined)) {
-    return legacyPaperAdapters(searches, academicSource, web)
+    return legacyPaperAdapters(searches, academicSource, web, webDiscoverySearchProvider)
   }
   if (!isExecutableResearchBrief(brief)) throw new Error('Ranked candidate scheduling requires an approved ResearchBrief.')
   const approvedBrief: ExecutableResearchBrief = brief
@@ -225,7 +227,7 @@ export function approvedPaperAdapters(
       const result = await executeApprovedSearchDirection(handoff, directionIndex,
         Math.max(initialAcademicResultsPerQuery ?? 0,
           request.maxResults ?? approvedBrief.stopConditions.maximumCandidateWorks),
-        plannedSearchAdapters(academicSource, web, onProvider), signal, onHybrid)
+        plannedSearchAdapters(academicSource, web, onProvider, webDiscoverySearchProvider), signal, onHybrid)
       const projected = plannedRoundDraftResult(handoff.plan, approvedSearch, result)
       const verificationOutcomes = projected.hybridObservation?.verificationOutcomes ?? []
       for (const outcome of verificationOutcomes) {
@@ -256,8 +258,9 @@ export function approvedPaperAdapters(
 
 function legacyPaperAdapters(
   searches: readonly AcademicPlannedSearch[], academicSource: AcademicSourceRuntime, web: WebRuntime,
+  webDiscoverySearchProvider?: string,
 ): Pick<DraftPipelineAdapters, 'search' | 'selectPapers'> {
-  const search = approvedSearchAdapter(searches, academicSource, web)
+  const search = approvedSearchAdapter(searches, academicSource, web, webDiscoverySearchProvider)
   return {
     search,
     selectPapers: (ingested, brief) => selectResearchPapers(ingested, brief, (_work, version) => {
@@ -444,12 +447,14 @@ function hybridSearchAdapters(
   academicSource: AcademicSourceRuntime,
   web: WebRuntime,
   onProvider?: AcademicSourceProviderObserver,
+  webDiscoverySearchProvider?: string,
 ): HybridSearchAdapters {
   return {
     searchAcademic: (request, providers, signal) =>
       academicSource.searchProviders(request, providers, signal, onProvider),
     searchWeb: async (request, signal) => {
-      const result = await web.search(request, signal)
+      const result = await web.search(request, signal,
+        webDiscoverySearchProvider === undefined ? {} : { providerId: webDiscoverySearchProvider })
       return { candidates: result.sources, truncated: result.truncated }
     },
     identifyReferences: identifyAcademicReferences,
@@ -462,13 +467,15 @@ function plannedSearchAdapters(
   academicSource: AcademicSourceRuntime,
   web: WebRuntime,
   onProvider?: AcademicSourceProviderObserver,
+  webDiscoverySearchProvider?: string,
 ): PlannedSearchAdapters {
   return {
     searchAcademic: (query, providers, maximumResults, signal) =>
       academicSource.searchProviders({ query, maxResults: maximumResults },
         directSearchProviders(providers), signal, onProvider),
     searchWeb: async (query, maximumResults, signal) => {
-      const result = await web.search({ query, maxResults: maximumResults }, signal)
+      const result = await web.search({ query, maxResults: maximumResults }, signal,
+        webDiscoverySearchProvider === undefined ? {} : { providerId: webDiscoverySearchProvider })
       return { candidates: result.sources, truncated: result.truncated }
     },
     identifyReferences: identifyAcademicReferences,
@@ -570,7 +577,7 @@ function verificationStatus(verified: number, failed: number): HybridSearchStage
 /** Narrow reviewed plan providers to the direct-search set; other providers fail loud. */
 function directSearchProviders(providers: readonly string[]): readonly HybridDirectSearchProvider[] {
   for (const provider of providers) {
-    if (provider !== 'openalex' && provider !== 'arxiv') {
+    if (provider !== 'openalex' && provider !== 'arxiv' && provider !== 'browser') {
       throw new Error(`Evidence-gap search requires an approved direct provider, received "${provider}".`)
     }
   }
@@ -600,12 +607,14 @@ function resolveFullText(
  * @param searches - reviewed expressions and optional version-3 policies.
  * @param academicSource - Session-owned scholarly search and verification service.
  * @param web - Session-owned Web discovery service; generated answers are discarded.
+ * @param webDiscoverySearchProvider - Optional Web provider for paper discovery only.
  * @returns a pipeline search operation forwarding its candidate bound and cancellation signal.
  */
 export function approvedSearchAdapter(
   searches: readonly AcademicPlannedSearch[],
   academicSource: AcademicSourceRuntime,
   web: WebRuntime,
+  webDiscoverySearchProvider?: string,
 ): DraftPipelineAdapters['search'] {
   const approvedSearches = new Map(searches.map(search => [search.query, search]))
   return async (search, operationSignal, onProvider, onHybrid) => {
@@ -613,7 +622,7 @@ export function approvedSearchAdapter(
     if (approved === undefined) throw new Error('Search expression is not in the approved plan.')
     if (approved.retrieval === undefined) return academicSource.searchAll(search, operationSignal, onProvider)
     const result = await executeHybridSearch(search, approved.retrieval,
-      hybridSearchAdapters(academicSource, web, onProvider), operationSignal, onHybrid)
+      hybridSearchAdapters(academicSource, web, onProvider, webDiscoverySearchProvider), operationSignal, onHybrid)
     return { ...result.search, hybridObservation: result.observation }
   }
 }

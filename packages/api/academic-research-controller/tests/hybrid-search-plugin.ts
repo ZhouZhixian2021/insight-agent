@@ -24,6 +24,12 @@ export function apply(ctx: Context): void {
  */
 export function applyHybridFixture(ctx: Context, includeRankingPolicy = false): void {
   const calls: string[] = []
+  const browserCalls: string[] = []
+  const browserWork = normalizeAcademicCatalogRecord('browser', { recordId: 'https://papers.example/paper/1',
+    title: 'Browser fixture paper', authors: ['Fixture author'], year: '2024', venue: 'Fixture', doi: null })
+  ctx.effect(() => ctx.academicSource.registerSearchProvider({ id: 'browser', available: () => true,
+    search: async () => { browserCalls.push('browser'); return { works: [browserWork], truncated: false } },
+    fullTextUrls: () => ['https://papers.example/observed.pdf'] }))
   const work = normalizeAcademicCatalogRecord('acl', { recordId: '2024.acl-long.1', title: 'Verified fixture paper',
     authors: ['Fixture author'], year: '2024', venue: 'ACL', doi: null })
   ctx.effect(() => ctx.academicSource.registerSearchProvider({ id: 'arxiv', available: () => true,
@@ -81,6 +87,16 @@ export function applyHybridFixture(ctx: Context, includeRankingPolicy = false): 
       assert.deepEqual(pipeline.retrievalRun.providers, ['arxiv'])
       assert.equal(JSON.stringify(view).includes('Unverified generated answer'), false)
       const screening = await screeningFixture(sample.brief, signal)
+      const browserAdapters = approvedPaperAdapters(sample.brief, [{ query: 'browser fixture', purpose: '浏览器直接检索',
+        questions: ['论文是否可核验？'], retrieval: { channels: ['academic'], academicProviders: ['browser'],
+          verificationProviders: [], maximumWebDiscoveryResults: 0, maximumReferenceVerifications: 0 } }],
+      ctx.academicSource, ctx.web,
+      { initialBatchSize: 2, evidenceGapBatchSize: 2, replenishmentBatchSize: 2, minimumQuestionSupportingWorks: 1 },
+      { maximumQueriesPerRound: 4, maximumAcademicResultsPerQuery: 20 })
+      const browserResult = await browserAdapters.search({ query: 'browser fixture', maxResults: 1 }, signal)
+      assert.deepEqual(browserCalls, ['browser'])
+      assert.equal(browserResult.works[0]?.academicWork.title, 'Browser fixture paper')
+      assert.deepEqual(calls, ['academic:arxiv', 'web', 'verify:acl'])
       return JSON.stringify({ calls, titles: pipeline.hybridSearch.returnedRecords.map(item => item.academicWork.title),
         directProviders: pipeline.retrievalRun.providers, hybridRetrieval: view, screening,
         ...includeRankingPolicy ? { rankingThresholds, fulltextCache: await fulltextCacheFixture(work.workVersion) } : {} })

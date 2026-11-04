@@ -1661,6 +1661,11 @@
       "symbol": "WebFetchExecutionOptions",
       "source": "packages/web/web/src/index.ts"
     },
+  {
+    "doc": "docs/subsystems/web.md",
+    "symbol": "WebSearchExecutionOptions",
+    "source": "packages/web/web/src/index.ts"
+  },
     {
       "doc": "docs/subsystems/web.md",
       "symbol": "WebFetchResult",

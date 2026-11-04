@@ -306,6 +306,7 @@
     { "path": "./packages/academic/retrieval" },
     { "path": "./packages/academic/source" },
     { "path": "./packages/academic/source-acl" },
+    { "path": "./packages/academic/source-browser" },
     { "path": "./packages/academic/source-arxiv" },
     { "path": "./packages/academic/source-cvf" },
     { "path": "./packages/academic/source-openalex" },

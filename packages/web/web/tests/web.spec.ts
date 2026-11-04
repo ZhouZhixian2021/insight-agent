@@ -41,6 +41,20 @@ async function mountWeb(config: { searchProvider?: string; fetchProvider?: strin
 }
 
 describe('WebRuntime registration', () => {
+  it('selects a search provider for one call without changing the shared default', async () => {
+    const { ctx, web } = await mountWeb({ searchProvider: 'general' })
+    try {
+      web.registerSearchProvider(makeSearchProvider('general', true, async () => searchResult('general')))
+      web.registerSearchProvider(makeSearchProvider('academic', true, async () => searchResult('academic')))
+      await expect(web.search({ query: 'paper' }, undefined, { providerId: 'academic' }))
+        .resolves.toMatchObject({ content: 'academic' })
+      await expect(web.search({ query: 'news' })).resolves.toMatchObject({ content: 'general' })
+      await expect(web.search({ query: 'paper' }, undefined, { providerId: 'missing' }))
+        .rejects.toMatchObject({ code: 'WEB_PROVIDER_CONFIGURED_MISSING' })
+      await expect(web.search({ query: 'news' })).resolves.toMatchObject({ content: 'general' })
+    } finally { await ctx.fiber.dispose() }
+  })
+
   it('registers a search provider and unregisters it via the returned disposer', async () => {
     const { web } = await mountWeb()
 

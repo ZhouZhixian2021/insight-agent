@@ -3746,9 +3746,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the disposer that unregisters the provider.',
       },
       {
-        signature: 'async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>',
+        signature: 'async search(request: WebSearchRequest, signal?: AbortSignal, options: WebSearchExecutionOptions = {}): Promise<WebSearchResult>',
         description: 'Run one search through the selected provider. Resolves the provider at call time with the selection rules above; throws WebError when the capability cannot run. The seam enforces `request.maxResults` on the result: if the provider over-returns, `sources[]` is truncated and `truncated` set.',
-        parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
+        parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }, { name: 'options', description: 'optional call-scoped provider selection.' }],
         returns: 'the provider\'s results, capped to `request.maxResults`.',
       },
       {
@@ -4811,7 +4811,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AcademicDirectSearchProvider',
-    declaration: 'export type AcademicDirectSearchProvider = \'openalex\' | \'arxiv\';',
+    declaration: 'export type AcademicDirectSearchProvider = \'openalex\' | \'arxiv\' | \'browser\';',
   },
   {
     name: 'AcademicEvaluationView',
@@ -9316,6 +9316,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WebRouteKind',
     declaration: 'export type WebRouteKind = \'exact\' | \'prefix\';',
+  },
+  {
+    name: 'WebSearchExecutionOptions',
+    declaration: 'export interface WebSearchExecutionOptions {\n    readonly providerId?: string;\n}',
   },
   {
     name: 'WebSearchProvider',

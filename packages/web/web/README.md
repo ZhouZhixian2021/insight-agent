@@ -25,7 +25,7 @@ Use `dsh-web` to search the web or fetch a URL without tying callers to a specif
 <a id="use-this-package"></a>
 ## Use this package
 
-A composition that needs web access loads the `dsh-web` service and mounts at least one backend — a search provider and/or a fetch provider — and plugin or tool authors then call `ctx.web.search()` and `ctx.web.fetch()` directly. The service resolves the backend for each call. Most callers use the deployment default; a consumer with a distinct fetch contract can supply a call-scoped provider id without changing that default.
+A composition that needs web access loads the `dsh-web` service and mounts at least one backend — a search provider and/or a fetch provider — and plugin or tool authors then call `ctx.web.search()` and `ctx.web.fetch()` directly. The service resolves the backend for each call. Most callers use the deployment default; a consumer with distinct search or fetch requirements can supply a call-scoped provider id without changing that default.
 
 ### When to choose it
 
@@ -59,6 +59,9 @@ const result = await ctx.web.search({ query: 'deepseek harness', maxResults: 8 }
 // Fetch one URL; a non-2xx response is a result, not an error:
 const page = await ctx.web.fetch({ url: 'https://example.com' })
 
+// Search through one named provider without changing other callers:
+const papers = await ctx.web.search({ query: 'attention' }, signal, { providerId: 'browser' })
+
 // Fetch through one named provider without changing the deployment default:
 const rawPage = await ctx.web.fetch({ url: 'https://example.com' }, signal, { providerId: 'http' })
 ```
@@ -67,7 +70,7 @@ Both calls accept an optional `AbortSignal` that is forwarded to the provider fo
 
 ### Provider selection
 
-Each call resolves its provider at execution time, and registration or load order never matters. A fetch call's `providerId` wins only for that call; otherwise a configured provider id wins when it is registered and usable. Without either selection, the service runs the single usable provider or fails clearly:
+Each call resolves its provider at execution time, and registration or load order never matters. A search or fetch call's `providerId` wins only for that call; otherwise a configured provider id wins when it is registered and usable. Without either selection, the service runs the single usable provider or fails clearly:
 
 | Situation | Outcome |
 |---|---|

@@ -804,6 +804,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   UserQuestionProvider: 'user-questions.md',
   WebFetchProvider: 'web.md',
   WebFetchExecutionOptions: 'web.md',
+  WebSearchExecutionOptions: 'web.md',
   WebFetchRequest: 'web.md',
   WebFetchResult: 'web.md',
   WebSearchProvider: 'web.md',

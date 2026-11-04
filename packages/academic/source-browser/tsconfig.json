@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../source" },
+    { "path": "../../core/agent" },
+    { "path": "../../browser-use/browser-use" },
+    { "path": "../../llm/llm" },
+    { "path": "../../core/tools" },
+    { "path": "../../web/web" }
+  ]
+}

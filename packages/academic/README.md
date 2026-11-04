@@ -33,6 +33,7 @@ The academic group owns reusable academic-insight domain types and capabilities.
 | [`source-arxiv`](source-arxiv/README.md) | arXiv scholarly-source provider searching `/api/query` and normalizing into the shared model | injects `academicSource` |
 | [`source-cvf`](source-cvf/README.md) | CVF Open Access catalog and PDF provider | injects `academicSource` |
 | [`source-acl`](source-acl/README.md) | ACL Anthology catalog and PDF provider | injects `academicSource` |
+| [`source-browser`](source-browser/README.md) | Optional configured website search through DSH Playwright | injects `academicSource` |
 | [`source-pmlr`](source-pmlr/README.md) | PMLR catalog and PDF provider | injects `academicSource` |
 | [`ingestion`](ingestion/README.md) | Deduplication and version merging over provider-normalized records | no service key |
 | [`retrieval`](retrieval/README.md) | Reviewed queries, verified candidates, and explainable ranking | no service key |
