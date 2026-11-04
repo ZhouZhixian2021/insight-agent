@@ -1,5 +1,5 @@
 {
-  "ui-academic-research/src/client/RunPanel.module.css": [
+  "academic/ui-research/src/client/RunPanel.module.css": [
     ".entry, .body button, .body select: border-radius: 6px",
     ".controls textarea: border-radius: 6px",
     ".chat button, .chat select: border-radius: 6px"

@@ -13,7 +13,7 @@ export function pythonRuntimeDeployArguments(staging: string): string[] {
     '--filter', 'dsh-python-runtime-closure', 'deploy', '--prod', '--frozen-lockfile',
     '--config.inject-workspace-packages=true',
     '--config.allow-unused-patches=true', '--config.node-linker=hoisted',
-    '--config.auto-install-peers=false', '--config.link-workspace-packages=true',
+    '--config.link-workspace-packages=true',
     '--config.hoist-workspace-packages=false', staging,
   ]
 }

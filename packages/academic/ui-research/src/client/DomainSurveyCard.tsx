@@ -26,24 +26,24 @@ export function DomainSurveyCard({ sessionId, expectedPlanId, autoStart, domainS
   const attempt = useRef(false)
   const operation = useRef<AbortController | null>(null)
   useEffect(() => {
-    let current = true
+    const lifecycle = { current: true }
+    const isCurrent = () => lifecycle.current
     setBusy(true); setError(null)
     void (async () => {
-      let saved: AcademicDomainSurveyView | null = null
-      try { saved = await getDomainSurvey({ sessionId, planId: expectedPlanId }) }
-      catch { /* A reviewed plan may not have been executed yet. */ }
-      if (!current) return
+      const saved = await getDomainSurvey({ sessionId, planId: expectedPlanId })
+        .catch((): null => null) // A reviewed plan may not have been executed yet.
+      if (!isCurrent()) return
       if (saved !== null) setView(saved)
       try {
         const latest = await domainSurveyPlan(sessionId)
-        if (!current) return
+        if (!isCurrent()) return
         if (latest.planId === expectedPlanId) setPlan(latest)
         else if (saved === null) setError(t('surveyHistorical'))
       } catch (cause: unknown) {
-        if (current && saved === null) setError(cause instanceof Error ? cause.message : t('planFailed'))
+        if (isCurrent() && saved === null) setError(cause instanceof Error ? cause.message : t('planFailed'))
       }
-    })().finally(() => { if (current) setBusy(false) })
-    return () => { current = false; operation.current?.abort() }
+    })().finally(() => { if (isCurrent()) setBusy(false) })
+    return () => { lifecycle.current = false; operation.current?.abort() }
   }, [sessionId, expectedPlanId, domainSurveyPlan, getDomainSurvey, t])
 
   const start = async () => {

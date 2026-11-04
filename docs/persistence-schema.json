@@ -77484,7 +77484,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicPaperResultView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:245"
+        "packages/academic/research-controller/src/types.ts:251"
       ]
     },
     {
@@ -77498,7 +77498,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:365"
+        "packages/academic/research-controller/src/types.ts:371"
       ]
     },
     {
@@ -77541,7 +77541,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicClaimAssessmentView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:211"
+        "packages/academic/research-controller/src/types.ts:217"
       ]
     },
     {
@@ -77559,7 +77559,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicResearchStageResults"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:266"
+        "packages/academic/research-controller/src/types.ts:272"
       ]
     },
     {
@@ -78603,7 +78603,7 @@
       "digest": "2433ac6299d9191709edf043363b37e1b2d6742eaac9f5a3d0a7f4796e6fec93",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:368"
+        "packages/academic/research-controller/src/types.ts:374"
       ]
     },
     {
@@ -78829,7 +78829,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicReferenceViewKind"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:309"
+        "packages/academic/research-controller/src/types.ts:315"
       ]
     },
     {
@@ -79061,7 +79061,7 @@
       "digest": "346faf91a6ab92bc8a82d8c5bf4bcc1cf32851e73ef6592438dfbc5b1f833c40",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:368"
+        "packages/academic/research-controller/src/types.ts:374"
       ]
     },
     {
@@ -79493,7 +79493,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicResearchStageStatus"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:263"
+        "packages/academic/research-controller/src/types.ts:269"
       ]
     },
     {
@@ -79524,7 +79524,7 @@
       "digest": "4276604f2151584c193f6a91c07efef303d0a1f212805d4996dba7d576071ead",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:246"
+        "packages/academic/research-controller/src/types.ts:252"
       ]
     },
     {
@@ -79706,7 +79706,7 @@
       "digest": "488e7930a8704d9f69937786e651250b581b8086f5a7912981dd0841ee49ca63",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:227"
+        "packages/academic/research-controller/src/types.ts:233"
       ]
     },
     {
@@ -79742,7 +79742,7 @@
       "digest": "49438e4af23aa2177b245eaf60d7b071b53c41d30474898515fcd87a10d95b3b",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:368"
+        "packages/academic/research-controller/src/types.ts:374"
       ]
     },
     {
@@ -79787,7 +79787,7 @@
       "digest": "4a0ef96f36cd52886ec7b0bb2e54cb70f1b59b9187d1d806b5c71b8a56437d1b",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:367"
+        "packages/academic/research-controller/src/types.ts:373"
       ]
     },
     {
@@ -79962,7 +79962,7 @@
         "packages/academic/model/src/types.ts:43",
         "packages/academic/model/src/types.ts:57",
         "packages/academic/model/src/types.ts:7",
-        "packages/academic/research-controller/src/types.ts:84",
+        "packages/academic/research-controller/src/types.ts:90",
         "packages/api/session-controller/src/types.ts:409",
         "packages/attachment/attachment/src/brand.ts:6",
         "packages/compaction/compaction/src/brand.ts:4",
@@ -79995,7 +79995,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6CandidateEvaluationView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:393"
+        "packages/academic/research-controller/src/types.ts:399"
       ]
     },
     {
@@ -80011,7 +80011,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicResearchReportView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:231"
+        "packages/academic/research-controller/src/types.ts:237"
       ]
     },
     {
@@ -80027,7 +80027,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicDomainSurveyView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:46"
+        "packages/academic/research-controller/src/types.ts:52"
       ]
     },
     {
@@ -80320,7 +80320,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicBackgroundRunView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:98"
+        "packages/academic/research-controller/src/types.ts:104"
       ]
     },
     {
@@ -80383,7 +80383,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:365"
+        "packages/academic/research-controller/src/types.ts:371"
       ]
     },
     {
@@ -80508,7 +80508,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:365"
+        "packages/academic/research-controller/src/types.ts:371"
       ]
     },
     {
@@ -80625,7 +80625,7 @@
       "digest": "5c0cb191b0eec9024f0ac0414d8898c37a42852943e87c3f4d8dc29fa8375d25",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:259"
+        "packages/academic/research-controller/src/types.ts:265"
       ]
     },
     {
@@ -80980,7 +80980,7 @@
       "digest": "67729a6681c9ba9d4750df6924d9df8b5ba80f24169ad948f53758f054601f60",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:367"
+        "packages/academic/research-controller/src/types.ts:373"
       ]
     },
     {
@@ -81167,7 +81167,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6CandidateAssessmentView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:372"
+        "packages/academic/research-controller/src/types.ts:378"
       ]
     },
     {
@@ -81404,7 +81404,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicResearchProgressView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:360"
+        "packages/academic/research-controller/src/types.ts:366"
       ]
     },
     {
@@ -81574,7 +81574,7 @@
       "digest": "7953bd7774457f0b9b8264507ac516363aa06e72751c7aba7e1d4d77b36d1a98",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:367"
+        "packages/academic/research-controller/src/types.ts:373"
       ]
     },
     {
@@ -81769,7 +81769,7 @@
       "digest": "7e5d620e439bcb5da37d263c9b4c6e6368133df41e22f53cc7e6db56aeba78c0",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:475",
+        "packages/academic/research-controller/src/types.ts:481",
         "packages/academic/workflow/src/recovery-checkpoint.ts:62"
       ]
     },
@@ -81801,7 +81801,7 @@
       "digest": "7f6605d77f6a6146a7261c29ca9fedcc41674209793cd00caa08597b74fddead",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:401"
+        "packages/academic/research-controller/src/types.ts:407"
       ]
     },
     {
@@ -81888,7 +81888,7 @@
       ],
       "sources": [
         "packages/academic/evidence/src/types.ts:235",
-        "packages/academic/research-controller/src/types.ts:251"
+        "packages/academic/research-controller/src/types.ts:257"
       ]
     },
     {
@@ -82067,7 +82067,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicEvidenceSnapshotView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:169"
+        "packages/academic/research-controller/src/types.ts:175"
       ]
     },
     {
@@ -82184,7 +82184,7 @@
       "names": [],
       "sources": [
         "packages/academic/model/src/query-workflow.ts:366",
-        "packages/academic/research-controller/src/types.ts:400"
+        "packages/academic/research-controller/src/types.ts:406"
       ]
     },
     {
@@ -82504,7 +82504,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicWebDiscoveryCandidateView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:297"
+        "packages/academic/research-controller/src/types.ts:303"
       ]
     },
     {
@@ -82551,7 +82551,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Projection"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:428"
+        "packages/academic/research-controller/src/types.ts:434"
       ]
     },
     {
@@ -82565,7 +82565,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicHybridRetrievalView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:324"
+        "packages/academic/research-controller/src/types.ts:330"
       ]
     },
     {
@@ -82605,7 +82605,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicResearchRunValue"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:460"
+        "packages/academic/research-controller/src/types.ts:466"
       ]
     },
     {
@@ -82689,7 +82689,7 @@
       "digest": "97567ae98b40b4ebfd734e07febe577e8e0e24e5e66a7b0132b70a3f716ef4f4",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:439"
+        "packages/academic/research-controller/src/types.ts:445"
       ]
     },
     {
@@ -83458,7 +83458,7 @@
       "digest": "aeb94830c90a3b21896606634d8aa76463d3d32b81f01577631dd44baa789da9",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:260"
+        "packages/academic/research-controller/src/types.ts:266"
       ]
     },
     {
@@ -83504,7 +83504,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicReferenceView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:312"
+        "packages/academic/research-controller/src/types.ts:318"
       ]
     },
     {
@@ -83546,7 +83546,7 @@
       "digest": "b06de5a4de420af42b5f15b1b9c15f3e3e92f60d0c56cb1dd0cf5585391e70a5",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:368"
+        "packages/academic/research-controller/src/types.ts:374"
       ]
     },
     {
@@ -83618,7 +83618,7 @@
       "digest": "b27d53c691456543265c4350e66409c49e052391a798772ea9ba55b9a706f925",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:369"
+        "packages/academic/research-controller/src/types.ts:375"
       ]
     },
     {
@@ -83635,7 +83635,7 @@
       "digest": "b2c29e77b797fa9c5b9a90a20c26fbc2e37d347c169204f949afb87e6b66a548",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:444"
+        "packages/academic/research-controller/src/types.ts:450"
       ]
     },
     {
@@ -83885,7 +83885,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicEvidenceSnapshotItemView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:161"
+        "packages/academic/research-controller/src/types.ts:167"
       ]
     },
     {
@@ -84160,7 +84160,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6RankingView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:419"
+        "packages/academic/research-controller/src/types.ts:425"
       ]
     },
     {
@@ -84358,7 +84358,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicHybridRetrievalCounts"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:282"
+        "packages/academic/research-controller/src/types.ts:288"
       ]
     },
     {
@@ -84433,7 +84433,7 @@
       "digest": "d156dc8d68b7cd46e0e22abd9859fbc82b7f18f49318e58fcb7d24ff2b92f050",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:367"
+        "packages/academic/research-controller/src/types.ts:373"
       ]
     },
     {
@@ -84836,7 +84836,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicHybridRetrievalStageResults"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:273"
+        "packages/academic/research-controller/src/types.ts:279"
       ]
     },
     {
@@ -84953,7 +84953,7 @@
       ],
       "sources": [
         "packages/academic/model/src/types.ts:337",
-        "packages/academic/research-controller/src/types.ts:193"
+        "packages/academic/research-controller/src/types.ts:199"
       ]
     },
     {
@@ -85016,7 +85016,7 @@
       "digest": "e3f4d1e5589d76eef1034aa681d8cecdef9f0e241ac0dce47f424a49b06619ed",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:366"
+        "packages/academic/research-controller/src/types.ts:372"
       ]
     },
     {
@@ -85088,7 +85088,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:365"
+        "packages/academic/research-controller/src/types.ts:371"
       ]
     },
     {
@@ -85202,7 +85202,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicClaimView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:179"
+        "packages/academic/research-controller/src/types.ts:185"
       ]
     },
     {
@@ -85216,7 +85216,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6CandidateView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:411"
+        "packages/academic/research-controller/src/types.ts:417"
       ]
     },
     {
@@ -85279,7 +85279,7 @@
       "digest": "ec4bbb60c552152b3082b3d500c011d85776ef9a5ba9fd194c54d8d4e5570339",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:35"
+        "packages/academic/research-controller/src/types.ts:38"
       ]
     },
     {
@@ -85399,7 +85399,7 @@
       "digest": "ef093a3d91e967d50b64ae0598f0576bfa8919b3ed2b0c86bafc2f64a592c9b7",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:462"
+        "packages/academic/research-controller/src/types.ts:468"
       ]
     },
     {
@@ -85447,7 +85447,7 @@
       "digest": "efd4f3ec92ab4bb0fe5e71cf0187e91af5c78534c15c86c5baeb9e393702d980",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:367"
+        "packages/academic/research-controller/src/types.ts:373"
       ]
     },
     {
@@ -85655,7 +85655,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:365"
+        "packages/academic/research-controller/src/types.ts:371"
       ]
     },
     {
@@ -85811,7 +85811,7 @@
         "packages/academic/research-controller/src/types.ts#AcademicEvaluationView"
       ],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:224"
+        "packages/academic/research-controller/src/types.ts:230"
       ]
     },
     {
@@ -86057,7 +86057,7 @@
       "digest": "ff3dd8ae5f372a4574fb043834f394a5337af592fed8dac6e90f940a39b74c37",
       "names": [],
       "sources": [
-        "packages/academic/research-controller/src/types.ts:368"
+        "packages/academic/research-controller/src/types.ts:374"
       ]
     },
     {

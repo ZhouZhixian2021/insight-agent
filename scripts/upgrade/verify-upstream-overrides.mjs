@@ -100,13 +100,14 @@ function fileExistsAt(repo, ref, path) {
  * Paths that differ from the merge base of `base` and `HEAD`.
  *
  * @param {string} repo @param {string} base
+ * @param {string} [head]
  */
-function changedPaths(repo, base) {
-  const mergeBase = git(repo, ['merge-base', base, 'HEAD']).trim()
+function changedPaths(repo, base, head = 'HEAD') {
+  const mergeBase = git(repo, ['merge-base', base, head]).trim()
   if (!mergeBase) {
     throw new Error(`no merge base with ${base}; fetch its full history (--filter=blob:none), not a --depth=1 clone`)
   }
-  const raw = git(repo, ['diff', '--name-status', '-M', mergeBase, 'HEAD'])
+  const raw = git(repo, ['diff', '--name-status', '-M', mergeBase, head])
   const modified = new Set()
   const added = new Set()
   for (const line of raw.split('\n')) {
@@ -214,8 +215,13 @@ function main() {
         throw new Error(`${options.against} carries an unreadable ledger`)
       }
       const previousFork = new Set(previous.entries.filter(entry => entry.category === 'fork').map(entry => entry.path))
+      // A merged fork edit may predate its registration. Registering it now
+      // does not grow the fork surface relative to the protected base branch.
+      const previousModified = changedPaths(repo, options.base, options.against).modified
       for (const path of forkPaths) {
-        if (!previousFork.has(path)) violations.push({ kind: 'new-fork-requires-review', path })
+        if (!previousFork.has(path) && !previousModified.has(path)) {
+          violations.push({ kind: 'new-fork-requires-review', path })
+        }
       }
     }
   }

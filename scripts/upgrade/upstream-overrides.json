@@ -3,16 +3,16 @@
   "upstream": {
     "remote": "https://github.com/deepseek-ai/deepseek-harness.git",
     "baseline": "dsh-v0.2.1-rc.2",
-    "recordedAt": "2026-10-28"
+    "recordedAt": "2026-11-04"
   },
   "budget": {
-    "maxForkFiles": 129
+    "maxForkFiles": 145
   },
   "generatedExemptions": [
     "pnpm-lock.yaml",
     "docs/persistence-schema.json"
   ],
-  "note": "有意改写上游文件的登记表。owner/reason 必填；fork 数量只降不升；generated 条目不参与预算。",
+  "note": "有意改写上游文件的登记表。owner/reason 必填；2026-11-04 追认已合并的 17 个手写改动后上限为 145，后续只降不升；generated 条目不参与预算。",
   "entries": [
     {
       "path": ".agents/notes/implemented/architecture/2026-06-24-web-capability-seam.i18n.yaml",
@@ -40,6 +40,24 @@
       "addedLines": 4,
       "removedLines": 4,
       "upstreamChurn6mo": 20
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "单文件 SDK 运行时说明随锁定部署流程更新。"
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "单文件 SDK 运行时说明随锁定部署流程更新。"
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "单文件 SDK 运行时说明随锁定部署流程更新。"
     },
     {
       "path": ".agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.i18n.yaml",
@@ -452,6 +470,24 @@
       "addedLines": 53101,
       "removedLines": 12962,
       "upstreamChurn6mo": 89
+    },
+    {
+      "path": "docs/rescope.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "记录 vendored 包重组后的路径与约束。"
+    },
+    {
+      "path": "docs/rescope.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "记录 vendored 包重组后的路径与约束。"
+    },
+    {
+      "path": "docs/rescope.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "记录 vendored 包重组后的路径与约束。"
     },
     {
       "path": "docs/subsystems/plan.i18n.yaml",
@@ -921,6 +957,12 @@
       "upstreamChurn6mo": 60
     },
     {
+      "path": "packages/plan/plan-mode/tests/projection.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "适配学术计划投影与审批测试。"
+    },
+    {
       "path": "packages/preset/agent-preset/skills/cordis-composition-reference/references/packages.md",
       "category": "generated",
       "owner": "ZhouZhixian2021",
@@ -1110,6 +1152,12 @@
       "upstreamChurn6mo": 30
     },
     {
+      "path": "packages/test-support/client-runtime/src/assembly/bundle-roster.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "按组合包补丁构造客户端测试清单。"
+    },
+    {
       "path": "packages/test-support/session-snapshot/README.i18n.yaml",
       "category": "generated",
       "owner": "ZhouZhixian2021",
@@ -1137,6 +1185,12 @@
       "upstreamChurn6mo": 49
     },
     {
+      "path": "packages/test-support/session-snapshot/src/identity.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "保留迁移后的学术会话快照身份。"
+    },
+    {
       "path": "packages/test-support/session-snapshot/src/index.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
@@ -1162,6 +1216,12 @@
       "addedLines": 154,
       "removedLines": 59,
       "upstreamChurn6mo": 23
+    },
+    {
+      "path": "packages/test-support/session-snapshot/tests/identity.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证迁移后的学术会话快照身份。"
     },
     {
       "path": "packages/test-support/session-snapshot/tests/normalize.spec.ts",
@@ -1335,6 +1395,48 @@
       "upstreamChurn6mo": 1303
     },
     {
+      "path": "python/sdk-runtime/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "说明 Python 运行时锁定部署和打包方式。"
+    },
+    {
+      "path": "python/sdk-runtime/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "说明 Python 运行时锁定部署和打包方式。"
+    },
+    {
+      "path": "python/sdk-runtime/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "说明 Python 运行时锁定部署和打包方式。"
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk-staging.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证 Python 运行时冻结部署与依赖去重。"
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk-staging.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "构造 Python 运行时冻结部署与依赖去重。"
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证 Python SDK 单文件打包及部署命令。"
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "维护 Python SDK 单文件打包及部署命令。"
+    },
+    {
       "path": "scripts/check-workspace-constraints.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
@@ -1458,6 +1560,18 @@
       "upstreamChurn6mo": 47
     },
     {
+      "path": "scripts/rescope-vendor.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证 vendored 包重组后的迁移工具。"
+    },
+    {
+      "path": "scripts/rescope-vendor.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "维护 vendored 包重组后的迁移工具。"
+    },
+    {
       "path": "scripts/session-snapshot-corpus.corpus.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
@@ -1555,6 +1669,12 @@
       "addedLines": 9,
       "removedLines": 0,
       "upstreamChurn6mo": 240
+    },
+    {
+      "path": "scripts/verify-public-repository-links.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "校验仓库重组后的公开链接。"
     },
     {
       "path": "scripts/verify-repository-references.spec.ts",

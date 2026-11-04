@@ -100,7 +100,6 @@ export async function runDomainSurvey(queries: readonly DomainSurveyQuery[], lim
     || queries.length < 2 || queries.length > limits.maximumQueries
     || !queries.some(query => query.purpose === 'discovery')
     || !queries.some(query => query.purpose === 'omission_check')
-    || queries.some(query => query.purpose !== 'discovery' && query.purpose !== 'omission_check')
     || queries.some(query => query.expression.trim() === '')
     || queries.some(query => !Number.isSafeInteger(query.roundIndex) || query.roundIndex < 1)
     || queries.some((query, index) => index > 0 && query.roundIndex < (queries[index - 1]?.roundIndex ?? 0))
