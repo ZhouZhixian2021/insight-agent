@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bindSnapshotSelector } from '@deepseek-ai/dsh-client-test-runtime'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { SessionRetainInfo } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import { AgentPresetLabel } from '../src/client/AgentPresetLabel.tsx'
 import type { AgentPresetLabelProps } from '../src/client/AgentPresetLabel.tsx'
@@ -93,15 +94,30 @@ function renderLabel(
   const store = createSnapshotStore<AgentPresetSettingsState>({
     ...ROSTER_READY, options: SEAT_READY.options, ...roster,
   })
-  const sessions = createSnapshotStore({ byId: summary === undefined ? {} : { s1: summary } })
+  const sessionId = SessionId('s1')
+  const byId: SessionListState['byId'] = {}
+  if (summary !== undefined) {
+    byId[sessionId] = {
+      id: sessionId, displayTitle: 's1', running: false, retainedBy: {},
+      blank: summary.blank, updatedAt: 0,
+      ...(summary.projectionValues === undefined ? {} : { projectionValues: summary.projectionValues }),
+    }
+  }
+  const sessions = createSnapshotStore<SessionListState>({
+    ids: summary === undefined ? [] : [sessionId],
+    byId,
+    phase: 'ready',
+    projectionsBySession: {},
+  })
   const load = vi.fn(() => Promise.resolve())
-  const view = render(<AgentPresetLabel {...({
+  const props = {
     load, ...displayProps,
-    sessionId: 's1',
+    sessionId,
     useSessions: bindSnapshotSelector(sessions),
     useAgentPresets: bindSnapshotSelector(store),
     t: (key: keyof typeof en) => en[key],
-  } as unknown as AgentPresetLabelProps)} />)
+  } as AgentPresetLabelProps
+  const view = render(<AgentPresetLabel {...props} />)
   return { load, view }
 }
 

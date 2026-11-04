@@ -112,6 +112,12 @@
   "benchmarks/conversation-fold/conversation-fold.worker.client.ts": {
     "1bce926682b8c613226bdbcf2bc75b369dcb9b9e94172f1e1a5a48f72736095a": 1
   },
+  "packages/academic/ui-research/tests/fixtures.client.ts": {
+    "bc3a76686561255fe908a11b72a2facc070f3e5b478be8f13bbca0599b1f5707": 1
+  },
+  "packages/academic/ui-research/tests/run-sample.ts": {
+    "81d1d05364a476ea25c5015a7fd643f70e25d6118adeffeb08b3df03ef6f9cbc": 1
+  },
   "packages/acp/acp/src/index.ts": {
     "04bc8a44533574365dfedf563e2356458bcf95f990a00906938c977c1d683356": 1
   },
@@ -427,21 +433,12 @@
     "c4f0b7f87a16d26a1e4e7ef7a07991e789f0bbcfdbe2240a97fcd879668b5b3f": 1,
     "f549d88ac2b1db67fb33f18a024c116051ff83d3f8ad0433ba4ceedc679e9044": 2
   },
-  "packages/academic/ui-research/tests/fixtures.client.ts": {
-    "bc3a76686561255fe908a11b72a2facc070f3e5b478be8f13bbca0599b1f5707": 1
-  },
-  "packages/academic/ui-research/tests/run-sample.ts": {
-    "81d1d05364a476ea25c5015a7fd643f70e25d6118adeffeb08b3df03ef6f9cbc": 1
-  },
   "packages/client/ui-agent-preset/tests/apply.client.spec.ts": {
     "5c8c41ba658c0576bea6c34b1226c27e7b0328c03c9eea0d6c920f940c9d8f5b": 1,
     "b2fb53c6878d75d54e2d39be30f77cd5e08810261e513fe15f3d687e2313fbd7": 1,
     "c2369bc12a9476816900a58b06dd52c2f53bc92658559a076cdd70ae3d15f30b": 9,
     "c595e4648d474f3a9538ab1e2140c25255bb4675c6e7bae8043adf9158915b69": 10,
     "ddca8a18cd7755688ea48674c48c3c8a6107186815ea91f516424bbed0e1c518": 1
-  },
-  "packages/client/ui-agent-preset/tests/components.client.spec.tsx": {
-    "6c63f71c0aeb1a9a97ec28a3242f77eef021ecfcee48238f17592eb2f1040c09": 1
   },
   "packages/client/ui-approval/tests/ui-approval.client.spec.tsx": {
     "3e392ff0165a51a6ac716515b99af35ec152f89607cff72080cb9afbcff63f46": 1

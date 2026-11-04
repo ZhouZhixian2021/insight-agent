@@ -70,6 +70,11 @@ const standardReleaseMemberDirectory = new RegExp(
 /** Installable application assembled by electron-builder rather than published to npm. */
 const desktopApplicationDirectory = 'apps/desktop'
 const localArtifactDirs = new Set(['node_modules'])
+// Product Insight has only planned module homes. Keep the exact empty placeholders
+// outside the workspace until each module has a real package manifest.
+const plannedProductInsightDirs = new Set([
+  'bundle', 'controller', 'model', 'report', 'source', 'ui-research', 'workflow',
+])
 const appPackageFiles: Readonly<Record<string, readonly string[]>> = {
   '@deepseek-ai/dsh': ['lib/*.js', 'lib/types/*.d.ts'],
   '@deepseek-ai/dsh-desktop-host': [
@@ -564,6 +569,10 @@ function checkHierarchyShape(): string[] {
       if (localArtifactDirs.has(pkg.name)) continue
       const pkgRel = join(groupRel, pkg.name)
       if (!existsSync(join(packagesRoot, group.name, pkg.name, 'package.json'))) {
+        if (group.name === 'product-insight' && plannedProductInsightDirs.has(pkg.name)) {
+          const contents = readdirSync(join(packagesRoot, group.name, pkg.name))
+          if (contents.length === 1 && contents[0] === '.gitkeep') continue
+        }
         errors.push(`${pkgRel}: expected a package here (no package.json found) — the hierarchy is exactly packages/<group>/<pkg>, no deeper nesting`)
       }
     }

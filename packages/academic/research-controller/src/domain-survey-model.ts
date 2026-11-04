@@ -70,8 +70,9 @@ export function createDomainSurveyProposer(ctx: Context, session: Session, confi
   { maxAttempts: 3, attemptTimeoutMs: 150_000, retryOutputLimit: true,
     transientRetry: { failureCodes: ['TRANSPORT', 'TIMEOUT'], initialDelayMs: 1_000 } })
   return async (papers, signal) => {
-    let usedCompactInput = false
-    let lastFailure: 'output_limit' | 'transport' | null = null
+    const attemptState: { usedCompactInput: boolean; lastFailure: 'output_limit' | 'transport' | null } = {
+      usedCompactInput: false, lastFailure: null,
+    }
     let text: string
     try { text = await runner({
       messages: [surveyMessage(papers, topic, scope, 1_000)],
@@ -79,9 +80,9 @@ export function createDomainSurveyProposer(ctx: Context, session: Session, confi
       ...signal === undefined ? {} : { signal },
       parse: (text) => { parseDomainSurveyMap(text, papers); return text },
       onAttempt: (attempt) => {
-        if (attempt.phase === 'retry_scheduled' && attempt.finish?.kind === 'max-tokens') usedCompactInput = true
+        if (attempt.phase === 'retry_scheduled' && attempt.finish?.kind === 'max-tokens') attemptState.usedCompactInput = true
         if (attempt.phase === 'settled') {
-          lastFailure = attempt.finish?.kind === 'max-tokens' ? 'output_limit'
+          attemptState.lastFailure = attempt.finish?.kind === 'max-tokens' ? 'output_limit'
             : attempt.finish?.kind === 'error' && (attempt.finish.failure.code === 'TRANSPORT'
             || attempt.finish.failure.code === 'TIMEOUT') ? 'transport' : null
         }
@@ -90,15 +91,15 @@ export function createDomainSurveyProposer(ctx: Context, session: Session, confi
       appendResult: data => session.append('academic/domain-survey-result-v1', { planId, ...data }),
     }) } catch (cause: unknown) {
       if (signal?.aborted) throw cause
-      if (lastFailure === 'output_limit') {
+      if (attemptState.lastFailure === 'output_limit') {
         throw new Error('领域勘察的方向整理超过模型输出上限；请换用输出容量更大的模型后重试。', { cause })
       }
-      if (lastFailure === 'transport') {
+      if (attemptState.lastFailure === 'transport') {
         throw new Error('领域勘察的模型连接失败，已完成有限重试；请检查模型服务后重试。', { cause })
       }
       throw cause
     }
-    return { text, limitations: usedCompactInput
+    return { text, limitations: attemptState.usedCompactInput
       ? ['Direction mapping used only the first 400 characters of each abstract after an output-limit retry.'] : [] }
   }
 }

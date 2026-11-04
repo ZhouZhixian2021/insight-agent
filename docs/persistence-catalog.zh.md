@@ -6048,7 +6048,7 @@ SHA-256: `e704a1295586c8a432d1753a4e05ec47885b9144b2ec827cdbf51de6bcaffd23`
 
 SHA-256: `56130a4c344303c470cbbfbea09fedfb871ddbf3b94b7cb07e71bdc397f28f64`
 
-来源：[`packages/academic/research-controller/src/types.ts:98`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:104`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6189,7 +6189,7 @@ SHA-256: `fc914d39e902eba8ea86d3812d09f22b7d5b63a45243f6e248409d9ecb21a5e7`
 
 SHA-256: `0484ae0f63f6438f48baf3c1920af3080a7c6991c49d59886b035ad73cd57d4d`
 
-来源：[`packages/academic/research-controller/src/types.ts:211`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:217`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6221,7 +6221,7 @@ SHA-256: `3770bbba35f4e98473be97c8d09529babb3eba082f35d37e91c664350abd24dc`
 
 SHA-256: `e92cc141ba06ac83380f56c88c2fdff099c44bf54dc7189e0c039a790eee0f67`
 
-来源：[`packages/academic/research-controller/src/types.ts:179`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:185`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6254,7 +6254,7 @@ SHA-256: `4f66c06aa1d8385d47b7e49d07b94be366385a5865e0ed1667ad2afbcd176a72`
 
 SHA-256: `4d786906877ec3afeb3b296e7418b0aba92499af1cb46406602e544372fc0849`
 
-来源：[`packages/academic/research-controller/src/types.ts:46`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:52`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6278,7 +6278,7 @@ SHA-256: `4d786906877ec3afeb3b296e7418b0aba92499af1cb46406602e544372fc0849`
 
 SHA-256: `f96a9a89f7f7e9303fdd44799fa24bc1d11ec60848b5611fd57f3b30ef36f0cf`
 
-来源：[`packages/academic/research-controller/src/types.ts:224`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:230`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6338,7 +6338,7 @@ SHA-256: `5f81648ae67320c1f20ee8e8146266f5460b1061182071165364beef5d640214`
 
 SHA-256: `b9b17ba699653274cb345500dd0f716a89ebf5880e9f20177fa1f0c11a6d4827`
 
-来源：[`packages/academic/research-controller/src/types.ts:161`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:167`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6365,7 +6365,7 @@ SHA-256: `dbf7d6ede69d9230ff8313c33707dfff6887510b28b256d33bbda51c9b4f4239`
 
 SHA-256: `858860f45411a7b8782b0a945378b6b8d6284f420f45cd5ab1d129cc8970368f`
 
-来源：[`packages/academic/research-controller/src/types.ts:169`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:175`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6386,7 +6386,7 @@ SHA-256: `858860f45411a7b8782b0a945378b6b8d6284f420f45cd5ab1d129cc8970368f`
 
 SHA-256: `ce279bb57310d7af4ae34b3ba0f398f0dcfaa97045cecf0b624a9f8e6bc551a7`
 
-来源：[`packages/academic/research-controller/src/types.ts:282`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:288`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6410,7 +6410,7 @@ SHA-256: `ce279bb57310d7af4ae34b3ba0f398f0dcfaa97045cecf0b624a9f8e6bc551a7`
 
 SHA-256: `dec9466a1d1f26af17eb9b4772c3dd2743862a88b10e31a223b4259b24688497`
 
-来源：[`packages/academic/research-controller/src/types.ts:273`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:279`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6430,7 +6430,7 @@ SHA-256: `dec9466a1d1f26af17eb9b4772c3dd2743862a88b10e31a223b4259b24688497`
 
 SHA-256: `938fc5c15582dc8230349e5b8800b6786a5edb78e0aab4f6ba3d1fa3d654268f`
 
-来源：[`packages/academic/research-controller/src/types.ts:324`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:330`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6450,7 +6450,7 @@ SHA-256: `938fc5c15582dc8230349e5b8800b6786a5edb78e0aab4f6ba3d1fa3d654268f`
 
 SHA-256: `02dcc7b2e4d34f0365ea076d065b97ecaec0cdf60eebf98a8f889c94da9a9be3`
 
-来源：[`packages/academic/research-controller/src/types.ts:245`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:251`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -6476,7 +6476,7 @@ SHA-256: `a4d21138b99957fe21a11536d529c5288b75a325ef360a930f29ff3f82e54333`
 
 SHA-256: `6c8e625089487dc770902e023ae42901281b772cf5c092159a1e4314f2b54ec9`
 
-来源：[`packages/academic/research-controller/src/types.ts:372`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:378`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6508,7 +6508,7 @@ SHA-256: `6c8e625089487dc770902e023ae42901281b772cf5c092159a1e4314f2b54ec9`
 
 SHA-256: `4d0e1932b6f4342adff3402154781e2f176dacbdf3797b18978156ef4dd39928`
 
-来源：[`packages/academic/research-controller/src/types.ts:393`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:399`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6535,7 +6535,7 @@ SHA-256: `4d0e1932b6f4342adff3402154781e2f176dacbdf3797b18978156ef4dd39928`
 
 SHA-256: `e9c4c8bb6455abbed46c7746399682557a97ac47997273739668e1f10e2e110b`
 
-来源：[`packages/academic/research-controller/src/types.ts:411`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:417`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6562,7 +6562,7 @@ SHA-256: `5548b6ed4de7a31eb8607a2e601162ec14f851fbd9930992420c7b7fae849cb5`
 
 SHA-256: `93688fc997f535297db26512882a23619b841472085c9f0b97643a6cbe5fb499`
 
-来源：[`packages/academic/research-controller/src/types.ts:428`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:434`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6592,7 +6592,7 @@ SHA-256: `93688fc997f535297db26512882a23619b841472085c9f0b97643a6cbe5fb499`
 
 SHA-256: `c51d4af28733f2a0eb47e689fccfbc8c4b9958a5be9d16d3b4ca8266e3107d4e`
 
-来源：[`packages/academic/research-controller/src/types.ts:419`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:425`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6662,7 +6662,7 @@ SHA-256: `5c04bb925acacad803a67275b86059fdc77e9636f6f3feea8904b485e70f5c9d`
 
 SHA-256: `b001fc312a70f1fb6bff5fe2c40e2416d09016e51df2910099720b2777039c60`
 
-来源：[`packages/academic/research-controller/src/types.ts:312`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:318`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6684,7 +6684,7 @@ SHA-256: `b001fc312a70f1fb6bff5fe2c40e2416d09016e51df2910099720b2777039c60`
 
 SHA-256: `2af267feb7743c637642e8de84b9c5e8c0d9402c908640f6f47d4da9d38333e8`
 
-来源：[`packages/academic/research-controller/src/types.ts:309`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:315`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -6712,7 +6712,7 @@ SHA-256: `82174880dd2148162b6ec86c009796e95637e97dff54c1bd8a053af792d7878a`
 
 SHA-256: `72e886aa9e0fa62b2065e8aacb66923a091f1f3ab91215eb7196852ecc74a583`
 
-来源：[`packages/academic/research-controller/src/types.ts:360`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:366`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6784,7 +6784,7 @@ SHA-256: `49138b6e2f72178e8c34968e86ef971908cefe29db739b7490304a64053c4a56`
 
 SHA-256: `4d1fb9786ac251b421ae275d8e6a0003ee19165c0f447f2a7216a4f7d8aaeb44`
 
-来源：[`packages/academic/research-controller/src/types.ts:231`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:237`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6808,7 +6808,7 @@ SHA-256: `4d1fb9786ac251b421ae275d8e6a0003ee19165c0f447f2a7216a4f7d8aaeb44`
 
 SHA-256: `93dcd58a6460d160abcb52c8575c9f40e491600f9fa035dc0e5940d06dcf9c0b`
 
-来源：[`packages/academic/research-controller/src/types.ts:460`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:466`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6833,7 +6833,7 @@ SHA-256: `93dcd58a6460d160abcb52c8575c9f40e491600f9fa035dc0e5940d06dcf9c0b`
 
 SHA-256: `05288f463e51003817e46b6509e29a3e048931c1e3219b564fb20fd830c409c8`
 
-来源：[`packages/academic/research-controller/src/types.ts:266`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:272`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -6851,7 +6851,7 @@ SHA-256: `05288f463e51003817e46b6509e29a3e048931c1e3219b564fb20fd830c409c8`
 
 SHA-256: `41164dd2c9d892188104e007f8ec69b0036503855e44d3e4a1eb3fdc0e89f478`
 
-来源：[`packages/academic/research-controller/src/types.ts:263`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:269`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -7152,7 +7152,7 @@ SHA-256: `6406a6639852813a40d46e21c1ce4bc32f680f73268f2b135c9ddd2f8050ec98`
 
 SHA-256: `91249bb9f263504f09b3ef9a45346b5a394d05a1d6dd6d8da41ebe3ee162afd5`
 
-来源：[`packages/academic/research-controller/src/types.ts:297`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:303`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8889,7 +8889,7 @@ SHA-256: `9f37faa679dfd7f634d21ff8592e6fe4fd4d0b8c2b4d9fcf20f53ec5c6e6a687`
 
 SHA-256: `80d9b9dd2fc088ee7a3155496e6b1357d2ff4851b5d1987117258f7dd7aa4865`
 
-来源：[`packages/academic/evidence/src/types.ts:235`](../packages/academic/evidence/src/types.ts) · [`packages/academic/research-controller/src/types.ts:251`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/evidence/src/types.ts:235`](../packages/academic/evidence/src/types.ts) · [`packages/academic/research-controller/src/types.ts:257`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -9133,7 +9133,7 @@ SHA-256: `d9872cd095878671f6f779ea06d08fbc88524120a68cf78a04f79f9d8d88b422`
 
 SHA-256: `e23bea9093f8f6d1cf08239c11645aa3f219216af22fc22d5a9a1e06af3842ab`
 
-来源：[`packages/academic/model/src/types.ts:337`](../packages/academic/model/src/types.ts) · [`packages/academic/research-controller/src/types.ts:193`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/model/src/types.ts:337`](../packages/academic/model/src/types.ts) · [`packages/academic/research-controller/src/types.ts:199`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -13091,7 +13091,7 @@ SHA-256: `5d03ba38734809bcbd2a55221bd938b3b3fc34b49bb686c6113e9e4931e3aa78`
 
 SHA-256: `4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b`
 
-来源：[`packages/academic/model/src/trace.ts:25`](../packages/academic/model/src/trace.ts) · [`packages/academic/model/src/types.ts:10`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:13`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:16`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:19`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:22`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:25`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:31`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:34`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:37`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:4`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:40`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:43`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:57`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:7`](../packages/academic/model/src/types.ts) · [`packages/academic/research-controller/src/types.ts:84`](../packages/academic/research-controller/src/types.ts) · [`packages/api/session-controller/src/types.ts:409`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:21`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:21`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:33`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:9`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/webhook/src/brand.ts:12`](../packages/experimental/webhook/src/brand.ts) · [`packages/experimental/webhook/src/brand.ts:6`](../packages/experimental/webhook/src/brand.ts) · [`packages/experimental/webhook/src/brand.ts:9`](../packages/experimental/webhook/src/brand.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/jobs/jobs/src/brand.ts:19`](../packages/jobs/jobs/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
+来源：[`packages/academic/model/src/trace.ts:25`](../packages/academic/model/src/trace.ts) · [`packages/academic/model/src/types.ts:10`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:13`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:16`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:19`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:22`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:25`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:31`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:34`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:37`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:4`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:40`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:43`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:57`](../packages/academic/model/src/types.ts) · [`packages/academic/model/src/types.ts:7`](../packages/academic/model/src/types.ts) · [`packages/academic/research-controller/src/types.ts:90`](../packages/academic/research-controller/src/types.ts) · [`packages/api/session-controller/src/types.ts:409`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:21`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:21`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:33`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:9`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/webhook/src/brand.ts:12`](../packages/experimental/webhook/src/brand.ts) · [`packages/experimental/webhook/src/brand.ts:6`](../packages/experimental/webhook/src/brand.ts) · [`packages/experimental/webhook/src/brand.ts:9`](../packages/experimental/webhook/src/brand.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/jobs/jobs/src/brand.ts:19`](../packages/jobs/jobs/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
 
 `string`
 
@@ -13956,7 +13956,7 @@ SHA-256: `016e5ffc7e544fb7cf875be373c55598ba8c02e29ad05abd507aed629dd79ca2`
 
 SHA-256: `02fbf82d38efa5184d1aa479b407df37c858eaba3a46fd8f0ba4ae55dae1a656`
 
-来源：[`packages/academic/research-controller/src/types.ts:365`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:371`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -13997,7 +13997,7 @@ SHA-256: `1627816e0e4480ae87d9a1fa69e672b6907835e63e71c7b53f13c457a72a475c`
 
 SHA-256: `5780045243a24a3fe604a79aa9679242b0dfb2d05fef8ff96ddc6b5c7e9a9d0f`
 
-来源：[`packages/academic/research-controller/src/types.ts:365`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:371`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -14012,7 +14012,7 @@ SHA-256: `5780045243a24a3fe604a79aa9679242b0dfb2d05fef8ff96ddc6b5c7e9a9d0f`
 
 SHA-256: `5a0dac2cd2e54daaf4e11613ece68939e937e31947172906050906fb2ecec5a6`
 
-来源：[`packages/academic/research-controller/src/types.ts:365`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:371`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -14105,7 +14105,7 @@ SHA-256: `ccd058642f60231b7b925dc8eff919b897f1fa23f2749a4d6166c4671d0ea55f`
 
 SHA-256: `e4db481b110c42a287e2de05f3ed8aa5178b8f5d64d7577e18c0e9762cef6fc3`
 
-来源：[`packages/academic/research-controller/src/types.ts:365`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:371`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -14120,7 +14120,7 @@ SHA-256: `e4db481b110c42a287e2de05f3ed8aa5178b8f5d64d7577e18c0e9762cef6fc3`
 
 SHA-256: `f58100a539463336bd03a3c70c986c6696de9455afa69d1f3feaa8dc82d2c726`
 
-来源：[`packages/academic/research-controller/src/types.ts:365`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:371`](../packages/academic/research-controller/src/types.ts)
 
 以下类型之一：
 
@@ -14917,7 +14917,7 @@ SHA-256: `df843efd87c78cf8de98f8e0d0216956cd568d0d0e56a22c853663e274aa1a18`
 
 SHA-256: `488e7930a8704d9f69937786e651250b581b8086f5a7912981dd0841ee49ca63`
 
-来源：[`packages/academic/research-controller/src/types.ts:227`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:233`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15024,7 +15024,7 @@ SHA-256: `cbbe8377ee744964537dbafd83607219e58ba79a13f6db0d0645c7ad3d5e8a09`
 
 SHA-256: `b27d53c691456543265c4350e66409c49e052391a798772ea9ba55b9a706f925`
 
-来源：[`packages/academic/research-controller/src/types.ts:369`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:375`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15267,7 +15267,7 @@ SHA-256: `8ad45ad053b4d89f8865c17cc9ff3b8748e86045f3f0fb816269a34af2619141`
 
 SHA-256: `b2c29e77b797fa9c5b9a90a20c26fbc2e37d347c169204f949afb87e6b66a548`
 
-来源：[`packages/academic/research-controller/src/types.ts:444`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:450`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15529,7 +15529,7 @@ SHA-256: `eda4f07eca783530485bd46bfa77a0e759558111160b1370984d55c244cac53b`
 
 SHA-256: `4276604f2151584c193f6a91c07efef303d0a1f212805d4996dba7d576071ead`
 
-来源：[`packages/academic/research-controller/src/types.ts:246`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:252`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -15752,7 +15752,7 @@ SHA-256: `1ccb56061942f5ccb0d30c9e4f2883b9d115ff906560029de637b61d3cde896d`
 
 SHA-256: `97567ae98b40b4ebfd734e07febe577e8e0e24e5e66a7b0132b70a3f716ef4f4`
 
-来源：[`packages/academic/research-controller/src/types.ts:439`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:445`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17281,7 +17281,7 @@ SHA-256: `9c001ecb5e1d3c3894410db2a1e383842e5f8454fb52182338686158abc1b3ee`
 
 SHA-256: `ec4bbb60c552152b3082b3d500c011d85776ef9a5ba9fd194c54d8d4e5570339`
 
-来源：[`packages/academic/research-controller/src/types.ts:35`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:38`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17439,7 +17439,7 @@ SHA-256: `fa47f96898f93339d16f9c03c1dc2ec058f1d70fcda83b59f60b4c86f85633f6`
 
 SHA-256: `2433ac6299d9191709edf043363b37e1b2d6742eaac9f5a3d0a7f4796e6fec93`
 
-来源：[`packages/academic/research-controller/src/types.ts:368`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:374`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17453,7 +17453,7 @@ SHA-256: `2433ac6299d9191709edf043363b37e1b2d6742eaac9f5a3d0a7f4796e6fec93`
 
 SHA-256: `346faf91a6ab92bc8a82d8c5bf4bcc1cf32851e73ef6592438dfbc5b1f833c40`
 
-来源：[`packages/academic/research-controller/src/types.ts:368`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:374`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17467,7 +17467,7 @@ SHA-256: `346faf91a6ab92bc8a82d8c5bf4bcc1cf32851e73ef6592438dfbc5b1f833c40`
 
 SHA-256: `49438e4af23aa2177b245eaf60d7b071b53c41d30474898515fcd87a10d95b3b`
 
-来源：[`packages/academic/research-controller/src/types.ts:368`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:374`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17481,7 +17481,7 @@ SHA-256: `49438e4af23aa2177b245eaf60d7b071b53c41d30474898515fcd87a10d95b3b`
 
 SHA-256: `b06de5a4de420af42b5f15b1b9c15f3e3e92f60d0c56cb1dd0cf5585391e70a5`
 
-来源：[`packages/academic/research-controller/src/types.ts:368`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:374`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17495,7 +17495,7 @@ SHA-256: `b06de5a4de420af42b5f15b1b9c15f3e3e92f60d0c56cb1dd0cf5585391e70a5`
 
 SHA-256: `ff3dd8ae5f372a4574fb043834f394a5337af592fed8dac6e90f940a39b74c37`
 
-来源：[`packages/academic/research-controller/src/types.ts:368`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:374`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17574,7 +17574,7 @@ SHA-256: `9f04f9814a7cd94f4cc7563bbabfa26bdbaa3c0a595b3178235ca74aba75993e`
 
 SHA-256: `5c0cb191b0eec9024f0ac0414d8898c37a42852943e87c3f4d8dc29fa8375d25`
 
-来源：[`packages/academic/research-controller/src/types.ts:259`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:265`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17588,7 +17588,7 @@ SHA-256: `5c0cb191b0eec9024f0ac0414d8898c37a42852943e87c3f4d8dc29fa8375d25`
 
 SHA-256: `aeb94830c90a3b21896606634d8aa76463d3d32b81f01577631dd44baa789da9`
 
-来源：[`packages/academic/research-controller/src/types.ts:260`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:266`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17641,7 +17641,7 @@ SHA-256: `5a2e67e0037591838bee9198a23c94ab811931d053a5a1919d68b6b9beea2631`
 
 SHA-256: `7f6605d77f6a6146a7261c29ca9fedcc41674209793cd00caa08597b74fddead`
 
-来源：[`packages/academic/research-controller/src/types.ts:401`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:407`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17654,7 +17654,7 @@ SHA-256: `7f6605d77f6a6146a7261c29ca9fedcc41674209793cd00caa08597b74fddead`
 
 SHA-256: `890e7c90e6ba453873ddd77715f7715de002c2d476229855c9e1c93cc35c2790`
 
-来源：[`packages/academic/model/src/query-workflow.ts:366`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/research-controller/src/types.ts:400`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/model/src/query-workflow.ts:366`](../packages/academic/model/src/query-workflow.ts) · [`packages/academic/research-controller/src/types.ts:406`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17667,7 +17667,7 @@ SHA-256: `890e7c90e6ba453873ddd77715f7715de002c2d476229855c9e1c93cc35c2790`
 
 SHA-256: `ef093a3d91e967d50b64ae0598f0576bfa8919b3ed2b0c86bafc2f64a592c9b7`
 
-来源：[`packages/academic/research-controller/src/types.ts:462`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:468`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17747,7 +17747,7 @@ SHA-256: `5dd766ccd1702a1142ad8b4bd44f2242f8e8a6752669ad3de0a5d224329b1438`
 
 SHA-256: `7e5d620e439bcb5da37d263c9b4c6e6368133df41e22f53cc7e6db56aeba78c0`
 
-来源：[`packages/academic/research-controller/src/types.ts:475`](../packages/academic/research-controller/src/types.ts) · [`packages/academic/workflow/src/recovery-checkpoint.ts:62`](../packages/academic/workflow/src/recovery-checkpoint.ts)
+来源：[`packages/academic/research-controller/src/types.ts:481`](../packages/academic/research-controller/src/types.ts) · [`packages/academic/workflow/src/recovery-checkpoint.ts:62`](../packages/academic/workflow/src/recovery-checkpoint.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17768,7 +17768,7 @@ SHA-256: `1173a03ced942c432814c94919348dd89eb650d389e69fb91aeb328cc6b2e58b`
 
 SHA-256: `e3f4d1e5589d76eef1034aa681d8cecdef9f0e241ac0dce47f424a49b06619ed`
 
-来源：[`packages/academic/research-controller/src/types.ts:366`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:372`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17780,7 +17780,7 @@ SHA-256: `e3f4d1e5589d76eef1034aa681d8cecdef9f0e241ac0dce47f424a49b06619ed`
 
 SHA-256: `4a0ef96f36cd52886ec7b0bb2e54cb70f1b59b9187d1d806b5c71b8a56437d1b`
 
-来源：[`packages/academic/research-controller/src/types.ts:367`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:373`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17793,7 +17793,7 @@ SHA-256: `4a0ef96f36cd52886ec7b0bb2e54cb70f1b59b9187d1d806b5c71b8a56437d1b`
 
 SHA-256: `67729a6681c9ba9d4750df6924d9df8b5ba80f24169ad948f53758f054601f60`
 
-来源：[`packages/academic/research-controller/src/types.ts:367`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:373`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17806,7 +17806,7 @@ SHA-256: `67729a6681c9ba9d4750df6924d9df8b5ba80f24169ad948f53758f054601f60`
 
 SHA-256: `7953bd7774457f0b9b8264507ac516363aa06e72751c7aba7e1d4d77b36d1a98`
 
-来源：[`packages/academic/research-controller/src/types.ts:367`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:373`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17819,7 +17819,7 @@ SHA-256: `7953bd7774457f0b9b8264507ac516363aa06e72751c7aba7e1d4d77b36d1a98`
 
 SHA-256: `d156dc8d68b7cd46e0e22abd9859fbc82b7f18f49318e58fcb7d24ff2b92f050`
 
-来源：[`packages/academic/research-controller/src/types.ts:367`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:373`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17832,7 +17832,7 @@ SHA-256: `d156dc8d68b7cd46e0e22abd9859fbc82b7f18f49318e58fcb7d24ff2b92f050`
 
 SHA-256: `efd4f3ec92ab4bb0fe5e71cf0187e91af5c78534c15c86c5baeb9e393702d980`
 
-来源：[`packages/academic/research-controller/src/types.ts:367`](../packages/academic/research-controller/src/types.ts)
+来源：[`packages/academic/research-controller/src/types.ts:373`](../packages/academic/research-controller/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

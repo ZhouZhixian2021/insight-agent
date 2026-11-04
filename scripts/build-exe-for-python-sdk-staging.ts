@@ -1,6 +1,7 @@
 /** Prepare a symlink-free executable runtime payload with shared workspace module instances. */
 import { cp, lstat, readFile, readdir, realpath, rm, unlink } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { load } from 'js-yaml'
 
 /**
@@ -13,9 +14,34 @@ export function pythonRuntimeDeployArguments(staging: string): string[] {
     '--filter', 'dsh-python-runtime-closure', 'deploy', '--prod', '--frozen-lockfile',
     '--config.inject-workspace-packages=true',
     '--config.allow-unused-patches=true', '--config.node-linker=hoisted',
-    '--config.auto-install-peers=false', '--config.link-workspace-packages=true',
+    // Shared-lockfile deploy rewrites the reviewed local package to an absolute
+    // file:// identity. Keep it blocked, then verify the sole ignored script
+    // and run that reviewed helper explicitly after deployment.
+    '--config.strict-dep-builds=false',
+    '--config.link-workspace-packages=true',
     '--config.hoist-workspace-packages=false', staging,
   ]
+}
+
+/**
+ * The shared-lockfile deploy's absolute file URL cannot match the root
+ * workspace's relative allowBuilds key. Reject every new ignored build before
+ * running the one reviewed spawn-helper repair explicitly.
+ */
+export async function needsStagedSpawnHelper(staging: string, workspaceRoot: string): Promise<boolean> {
+  const file = join(staging, 'node_modules', '.modules.yaml')
+  const manifest: unknown = load(await readFile(file, 'utf8'))
+  if (typeof manifest !== 'object' || manifest === null || !('ignoredBuilds' in manifest)
+    || !Array.isArray(manifest.ignoredBuilds)
+    || !manifest.ignoredBuilds.every((build: unknown) => typeof build === 'string')) {
+    throw new Error(`${file}: ignoredBuilds must be a list of package identities`)
+  }
+  const expected = `@deepseek-ai/dsh-subprocess-local@${pathToFileURL(join(workspaceRoot,
+    'packages/subprocess/subprocess-local')).href}`
+  const ignored = manifest.ignoredBuilds
+  if (ignored.length === 0) return false
+  if (ignored.length === 1 && ignored[0] === expected) return true
+  throw new Error(`${file}: unreviewed ignored build scripts: ${ignored.join(', ')}`)
 }
 
 function isHoistedLocations(value: unknown): value is Record<string, string[]> {

@@ -216,7 +216,7 @@ async function harness(options: {
   contexts.push(ctx)
   const dispose = (): void => {}
   ctx.provide('typert', { lookups: { configure: () => dispose }, contexts: { configureHost: () => dispose } } as never)
-  const search = vi.fn()
+  const search = vi.fn<AcademicSourceRuntime['searchAll']>()
   const searchProviders = vi.fn()
   const verifyReference = vi.fn<AcademicSourceRuntime['verifyReference']>()
   const webSearch = vi.fn()

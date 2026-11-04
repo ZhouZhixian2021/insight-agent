@@ -77,7 +77,7 @@ describe('Academic plan compatibility before review', () => {
   it('accepts survey-bound version 9 only with exact direction assignments and reviewed budgets', () => {
     const payload = domainPayload()
     const markdown = domainMarkdown(payload)
-    expect(() => validateAcademicPlan(markdown)).not.toThrow()
+    expect(() => { validateAcademicPlan(markdown) }).not.toThrow()
     const { brief, searches } = researchPlanFromApproval('s', {
       identity: 'two', markdown, reviewedAt: '2026-11-02T00:00:00Z' })
     expect(brief.domainResearchPlan?.surveyPlanId).toBe('s:approved-survey:one')
@@ -99,11 +99,11 @@ describe('Academic plan compatibility before review', () => {
       result: { map: { directions: [{ directionId: 'd1', label: '<本轮深入的方向>' },
         { directionId: 'd2', label: '<本轮不作系统覆盖的已知方向>' },
         { directionId: 'd3', label: '未分配的方向' }] } } } as never })).toThrow('遗漏')
-    expect(() => validateAcademicPlan(domainMarkdown({ ...payload,
-      questions: [...payload.questions as string[], '未经方向分配的问题'] }))).toThrow('deep-dive questions')
+    expect(() => { validateAcademicPlan(domainMarkdown({ ...payload,
+      questions: [...payload.questions as string[], '未经方向分配的问题'] })) }).toThrow('deep-dive questions')
     const invalid = { ...payload, domainResearchPlan: {
       ...(payload.domainResearchPlan as object), directions: [] } }
-    expect(() => validateAcademicPlan(markdown.replace(JSON.stringify(payload), JSON.stringify(invalid))))
+    expect(() => { validateAcademicPlan(markdown.replace(JSON.stringify(payload), JSON.stringify(invalid))) })
       .toThrow('directions')
   })
 
