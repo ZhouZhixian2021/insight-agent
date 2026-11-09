@@ -41,6 +41,15 @@ const { boot } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/boot/a
 const WEB_BUNDLE = join(REPO_ROOT, 'packages/bundle/web-app')
 const WEB_PATCHES = bundlePatchPaths(WEB_BUNDLE, (JSON.parse(readFileSync(join(WEB_BUNDLE, 'package.json'), 'utf8')) as { dsh: { bundle: { patch: string[] } } }).dsh.bundle)
 const webPatches = (label: string): PatchOptions[] => WEB_PATCHES.flatMap(file => loadOverlayPatches(label, file))
+/** Existing workflow fixtures supply their own network registry; the free-reader composition has a separate scenario. */
+function productFixtureWeb(): PatchOptions {
+  const patches = loadOverlayPatches('product fixture', join(REPO_ROOT, 'packages/product-insight/bundle/presets/product.patch.yml'))
+  const definition = composeEntries([patches]).find(row => row.id === 'preset-product-insight')!.config as import('@deepseek-ai/dsh-agent-preset-registry').PresetDefinition
+  const group = definition.plugins.find(row => row.id === 'product-web-context')!
+  const children = group.config as import('@deepseek-ai/dsh-agent-preset-registry').PresetDefinition['plugins']
+  return { id: 'preset-product-insight', config: { ...definition,
+    plugins: children.filter(row => row.id !== 'product-web' && row.id !== 'product-free-web') } }
+}
 const CODEX_PACKAGE_DIR = join(REPO_ROOT, 'packages/subagent/subagent-codex')
 const CLAUDE_CODE_PACKAGE_DIR = join(REPO_ROOT, 'packages/subagent/subagent-claude-code')
 /** The installation anchor whose dependency surface the runtime resolution mirrors. */
@@ -189,7 +198,7 @@ class ProductInvestigationAdapter extends MinimalCompactionAdapter {
       yield { type: 'finish', reason: { kind: 'stop' } }
       return
     }
-    if (options.system?.startsWith('Write a concise Simplified Chinese answer')) {
+    if (options.system?.startsWith('Write evidence-led Simplified Chinese prose')) {
       this.synthesisCalls += 1
       const code = this.synthesisScenario === 'transport' ? 'TRANSPORT'
         : this.synthesisScenario === 'timeout' ? 'TIMEOUT' : this.synthesisScenario === 'auth' ? 'AUTH' : undefined
@@ -407,6 +416,31 @@ beforeAll(async () => {
 }, 120_000)
 
 describe('the shipped Web composition', () => {
+  it('uses product-local free search instead of the global search plugin', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'dsh-product-free-web-'))
+    onTestFinished(() => rm(home, { recursive: true, force: true }))
+    const ctx = await bootWeb(home, [{ id: 'web', config: { searchProvider: 'missing-external-plugin', fetchProvider: 'missing-external-plugin' } }])
+    onTestFinished(() => ctx.fiber.dispose())
+    const { HttpFetchProvider } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/web/web-fetch-http/lib/index.js')) as typeof import('@deepseek-ai/dsh-web-fetch-http')
+    const network = vi.spyOn(HttpFetchProvider.prototype, 'fetch').mockImplementation(async request => ({
+      url: request.url, statusCode: 200, truncated: false, body: { kind: 'html', content: request.url.includes('duckduckgo.com')
+        ? '<div class="result"><a class="result__a" href="https://example.com/product">Example specifications</a><a class="result__snippet">Public product documentation</a></div>'
+        : `<article>${'Example public specifications. '.repeat(20)}</article>` },
+    }))
+    onTestFinished(() => { network.mockRestore() })
+    const handle = await ctx.agents.create({ sessionId: SessionId(`product-free-${randomUUID()}`),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined) })
+    onTestFinished(() => handle.dispose())
+    const search = await ctx.tools.execute({ callId: ToolCallId('free-search-check'), name: 'web_search', arguments: { queries: ['Example specifications'] },
+      signal: new AbortController().signal, agent: handle.agent })
+    expect(search.isError).toBe(false)
+    expect(JSON.stringify(search)).toContain('https://example.com/product')
+    const page = await ctx.tools.execute({ callId: ToolCallId('public-page-check'), name: 'web_fetch', arguments: { url: 'https://example.com/product' },
+      signal: new AbortController().signal, agent: handle.agent })
+    expect(page.isError).toBe(false)
+    expect(JSON.stringify(page)).toContain('Example public specifications')
+    expect(network.mock.calls.length).toBe(2)
+  })
   it('exposes only the directory tool in the global layer', () => {
     // Directory selection is global; action tools belong to their Agent presets.
     expect(toolNames(ctx)).toEqual(['working_directory'])
@@ -504,7 +538,7 @@ describe('the shipped Web composition', () => {
   ] as const)('runs the approved product plan with $scenario synthesis', async ({ scenario, status, errors, firstFailure }) => {
     const home = await mkdtemp(join(tmpdir(), 'dsh-product-investigation-'))
     onTestFinished(() => rm(home, { recursive: true, force: true }))
-    const productCtx = await bootWeb(home, [{ id: 'web', config: {
+    const productCtx = await bootWeb(home, [productFixtureWeb(), { id: 'web', config: {
       searchProvider: 'product-fixture-search', fetchProvider: 'product-fixture-fetch',
     } }])
     onTestFinished(() => productCtx.fiber.dispose())
@@ -688,7 +722,7 @@ describe('the shipped Web composition', () => {
     let revised = false
     const home = await mkdtemp(join(tmpdir(), 'dsh-product-gap-investigation-'))
     onTestFinished(() => rm(home, { recursive: true, force: true }))
-    const productCtx = await bootWeb(home, [{ id: 'web', config: {
+    const productCtx = await bootWeb(home, [productFixtureWeb(), { id: 'web', config: {
       searchProvider: 'product-gap-search', fetchProvider: 'product-gap-fetch',
     } }])
     onTestFinished(() => productCtx.fiber.dispose())
@@ -763,7 +797,7 @@ describe('the shipped Web composition', () => {
     if (refresh) {
       const stream = adapter.stream.bind(adapter)
       vi.spyOn(adapter, 'stream').mockImplementation(async function* (options) {
-        if (!revised && options.system?.startsWith('Write a concise Simplified Chinese answer')) {
+        if (!revised && options.system?.startsWith('Write evidence-led Simplified Chinese prose')) {
           const aborted = Promise.withResolvers<undefined>()
           const onAbort = () => { aborted.resolve(undefined) }
           options.signal?.addEventListener('abort', onAbort, { once: true })

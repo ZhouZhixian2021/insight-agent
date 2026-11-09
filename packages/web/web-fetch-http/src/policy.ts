@@ -81,6 +81,7 @@ export function classifyContentType(contentType: string | null): FetchableKind |
   if (mime === 'application/pdf') return 'pdf'
   if (mime === 'text/html' || mime === 'application/xhtml+xml') return 'html'
   if (mime.startsWith('text/')) return 'text'
+  if (mime === 'application/javascript' || mime === 'application/ecmascript') return 'text'
   if (mime === 'application/json' || mime === 'application/xml' || mime.endsWith('+json') || mime.endsWith('+xml')) return 'text'
   return undefined
 }

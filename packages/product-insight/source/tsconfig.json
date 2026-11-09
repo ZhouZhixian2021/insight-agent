@@ -1,10 +1,27 @@
 {
   "extends": "../../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
-  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
   "references": [
-    { "path": "../../../vendor/cordis" },
-    { "path": "../model" },
-    { "path": "../../web/web" }
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../model"
+    },
+    {
+      "path": "../../web/web"
+    },
+    {
+      "path": "../../web/web-fetch-http"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    }
   ]
 }

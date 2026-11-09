@@ -2,22 +2,45 @@
   "name": "@deepseek-ai/dsh-product-insight-bundle",
   "description": "Selectable product insight agent preset over the shared Web tools",
   "version": "0.2.1-rc.2",
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "git+https://github.com/deepseek-ai/deepseek-harness.git", "directory": "packages/product-insight/bundle" },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/product-insight/bundle"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "exports": {
-    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
-    "./client": { "types": "./lib/types/client/index.d.ts", "default": "./lib/client.js" },
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
     "./presets/*.patch.yml": "./presets/*.patch.yml",
     "./web.patch.yml": "./web.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/client.js", "web.patch.yml", "presets/product.patch.yml", "lib/types/**/*.d.ts"],
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "web.patch.yml",
+    "presets/product.patch.yml",
+    "lib/types/**/*.d.ts"
+  ],
   "license": "MIT",
   "dsh": {
-    "bundle": { "patch": ["./web.patch.yml", "./presets/product.patch.yml"] },
+    "bundle": {
+      "patch": [
+        "./web.patch.yml",
+        "./presets/product.patch.yml"
+      ]
+    },
     "client": {
       "platform": "web",
       "inject": [
@@ -35,9 +58,13 @@
     "@deepseek-ai/dsh-plan-mode": "workspace:*",
     "@deepseek-ai/dsh-product-insight-workflow": "workspace:*",
     "@deepseek-ai/dsh-tool-ask-user": "workspace:*",
-    "@deepseek-ai/dsh-tool-web": "workspace:*"
+    "@deepseek-ai/dsh-tool-web": "workspace:*",
+    "@deepseek-ai/dsh-product-insight-source": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*"
   },
-  "peerDependencies": { "@deepseek-ai/cordis": "workspace:~" },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-client-locale": "workspace:*",

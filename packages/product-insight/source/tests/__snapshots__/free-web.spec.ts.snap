@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`free product search > retains decoded links and snippets without promoting them to evidence 1`] = `
+{
+  "sources": [
+    {
+      "snippet": "Version 2 features",
+      "title": "Example & specs",
+      "url": "https://example.com/spec",
+    },
+  ],
+  "truncated": false,
+}
+`;

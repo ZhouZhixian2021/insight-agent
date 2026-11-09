@@ -98,6 +98,11 @@ describe('approved product investigation', () => {
     expect(reports.at(-1)).toContain('检索与取证范围')
     expect(reports.at(-1)).toContain('候选网页 1 个；入选 1 个；已获取正文 1 个')
     expect(reports.at(-1)).toContain('搜索结果仅用于发现候选网页')
+    const report = reports.at(-1)!
+    expect(report).toContain('内容限制与未回答问题')
+    expect(report.indexOf('## 产品分析')).toBeLessThan(report.indexOf('## 证据附录'))
+    expect(report).not.toContain('关键来源陈述：')
+    expect(report).not.toContain('置信度：低')
   })
 
   it('discloses truncated and failed searches without exposing provider errors', async () => {

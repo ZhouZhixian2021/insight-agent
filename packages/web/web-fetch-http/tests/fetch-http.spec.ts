@@ -70,6 +70,8 @@ describe('policy helpers', () => {
     expect(classifyContentType('application/xhtml+xml')).toBe('html')
     expect(classifyContentType('text/plain')).toBe('text')
     expect(classifyContentType('application/json')).toBe('text')
+    expect(classifyContentType('application/javascript')).toBe('text')
+    expect(classifyContentType('application/ecmascript')).toBe('text')
     expect(classifyContentType('application/pdf')).toBe('pdf')
     expect(classifyContentType('image/png')).toBeUndefined()
     expect(classifyContentType(null)).toBeUndefined()

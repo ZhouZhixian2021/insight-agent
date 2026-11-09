@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 With `dsh-web-fetch-http`, the harness can fetch public HTTP(S) resources through the web service (`ctx.web`) and get their status code plus bounded content without sending credentials. HTML/text is decoded; PDF remains bytes for programmatic consumers. It returns non-2xx responses as results rather than errors, and rejects non-public destinations and unsupported binary types. The model-facing `web_fetch` tool lives in `dsh-tool-web` and intentionally rejects PDF bytes.
 
+JavaScript and ECMAScript response MIME types are retained as text so guarded browser resource retrieval can render public pages. The same URL and response bounds still apply.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

@@ -12229,6 +12229,9 @@ importers:
       '@deepseek-ai/dsh-plan-mode':
         specifier: workspace:*
         version: link:../../plan/plan-mode
+      '@deepseek-ai/dsh-product-insight-source':
+        specifier: workspace:*
+        version: link:../source
       '@deepseek-ai/dsh-product-insight-workflow':
         specifier: workspace:*
         version: link:../workflow
@@ -12238,6 +12241,9 @@ importers:
       '@deepseek-ai/dsh-tool-web':
         specifier: workspace:*
         version: link:../../web/tool-web
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../../web/web
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
@@ -12284,6 +12290,9 @@ importers:
 
   packages/product-insight/source:
     dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
       mdast-util-from-markdown:
         specifier: 2.0.3
         version: 2.0.3(supports-color@9.4.0)
@@ -12293,6 +12302,9 @@ importers:
       pdfjs-dist:
         specifier: 6.3.289
         version: 6.3.289
+      playwright-core:
+        specifier: 1.61.1
+        version: 1.61.1
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
@@ -12306,6 +12318,9 @@ importers:
       '@deepseek-ai/dsh-web':
         specifier: workspace:*
         version: link:../../web/web
+      '@deepseek-ai/dsh-web-fetch-http':
+        specifier: workspace:*
+        version: link:../../web/web-fetch-http
 
   packages/product-insight/workflow:
     devDependencies:
