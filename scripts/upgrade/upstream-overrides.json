@@ -1780,6 +1780,166 @@
       "addedLines": 32,
       "removedLines": 3,
       "upstreamChurn6mo": 168
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "冻结部署流程说明的中英文配对记录，由翻译配对工具生成。",
+      "addedLines": 2,
+      "removedLines": 2
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "记录专用部署锁、冻结解析和命令级工作区注入，移除已停用的 legacy deploy 补包说明。",
+      "addedLines": 1,
+      "removedLines": 1
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "中文说明专用部署锁、冻结解析和命令级工作区注入，移除已停用的 legacy deploy 补包说明。",
+      "addedLines": 1,
+      "removedLines": 1
+    },
+    {
+      "path": "docs/rescope.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "产品标识符重命名例外说明的中英文配对记录，由翻译配对工具生成。",
+      "addedLines": 2,
+      "removedLines": 2
+    },
+    {
+      "path": "docs/rescope.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "说明预设标识、inspect 事件名和预设列表的保留规则，同时要求同文件中的包引用继续重命名。",
+      "addedLines": 2,
+      "removedLines": 1
+    },
+    {
+      "path": "docs/rescope.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "中文说明预设标识、inspect 事件名和预设列表的保留规则，同时要求同文件中的包引用继续重命名。",
+      "addedLines": 2,
+      "removedLines": 1
+    },
+    {
+      "path": "packages/plan/plan-mode/tests/projection.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证旧投影缓存通过已提交的 exit_plan_mode 调用重建审阅尝试和 lastExitTurn，不直接沿用旧缓存。",
+      "addedLines": 29,
+      "removedLines": 2
+    },
+    {
+      "path": "packages/test-support/client-runtime/src/assembly/bundle-roster.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "解析 bundle 名称时先检查锚点自身的 package.json，支持组合包从自身清单定位后再搜索依赖。",
+      "addedLines": 3,
+      "removedLines": 0
+    },
+    {
+      "path": "packages/test-support/session-snapshot/src/identity.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "对学术覆盖修复事件的 fingerprint 和 digest 做稳定身份替换，保留跨记录相等关系。",
+      "addedLines": 2,
+      "removedLines": 0
+    },
+    {
+      "path": "packages/test-support/session-snapshot/tests/identity.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证覆盖修复摘要的相等与不同关系、重复替换幂等性及其他事件哈希不变。",
+      "addedLines": 19,
+      "removedLines": 0
+    },
+    {
+      "path": "python/sdk-runtime/README.i18n.yaml",
+      "category": "generated",
+      "owner": "ZhouZhixian2021",
+      "reason": "Python SDK 冻结部署说明的中英文配对记录，由翻译配对工具生成。",
+      "addedLines": 2,
+      "removedLines": 2
+    },
+    {
+      "path": "python/sdk-runtime/README.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "说明专用部署锁和仅部署命令启用的工作区注入，并保留 Office 精确版本与完整性校验约束。",
+      "addedLines": 2,
+      "removedLines": 0
+    },
+    {
+      "path": "python/sdk-runtime/README.zh.md",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "中文说明专用部署锁和仅部署命令启用的工作区注入，并保留 Office 精确版本与完整性校验约束。",
+      "addedLines": 2,
+      "removedLines": 0
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk-staging.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证冻结部署安装锁定版本、保留锁文件与共享依赖身份，并检查残留链接及 Office 完整性身份。",
+      "addedLines": 115,
+      "removedLines": 2
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk-staging.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "统一构造冻结锁部署参数，使用命令级工作区注入并保留生产依赖和 hoisted 布局约束。",
+      "addedLines": 15,
+      "removedLines": 0
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证构建器部署参数采用冻结锁和工作区注入，不再使用 legacy 部署。",
+      "addedLines": 3,
+      "removedLines": 1
+    },
+    {
+      "path": "scripts/build-exe-for-python-sdk.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "接入统一冻结部署参数，移除 legacy 补包与开发依赖重装流程，并按暂存目录依赖身份去重。",
+      "addedLines": 4,
+      "removedLines": 40
+    },
+    {
+      "path": "scripts/rescope-vendor.spec.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "验证产品预设和 inspect 事件保留原标识、包引用继续重命名，以及逆向转换和幂等性。",
+      "addedLines": 148,
+      "removedLines": 2
+    },
+    {
+      "path": "scripts/rescope-vendor.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "按语法树及限定文件识别产品预设、inspect 事件和文档预设列表，保留产品标识并继续重写包引用。",
+      "addedLines": 143,
+      "removedLines": 4
+    },
+    {
+      "path": "scripts/verify-public-repository-links.ts",
+      "category": "fork",
+      "owner": "ZhouZhixian2021",
+      "reason": "扩大 git ls-files 输出缓冲区至 64 MiB，避免仓库文件清单超过默认缓冲区而中断链接检查。",
+      "addedLines": 5,
+      "removedLines": 1
     }
   ]
 }

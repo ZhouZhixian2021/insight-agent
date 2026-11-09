@@ -58,7 +58,7 @@ Controller 新运行启用 `coverageTargeting`：按缺口选择论文和段落�
 
 普通进度继续使用必读的 `academic/background-run-progress` 事件，保持原有身份、时间、检索运行 ID 和进度载荷。Q6 的 Session／运行／Brief 绑定相同且候选内容相等时，包括重新创建但内容相等的候选对象，必读的 `academic/background-run-q6-update` 事件保存进度以及除 `candidates` 外的完整 Q6 元数据。读取器从匹配的完整基底继承候选。完整的 `academic/background-run-state` 检查点保留原有 `schemaVersion: 1` 载荷，在初始化、候选内容变化、绑定或检索运行 ID 变化、取消意图和终态结算时写入。
 
-读取器将三类事件折叠为相同的完整 Remote 视图；旧完整检查点和不含 Q6 元数据的旧进度事件继续可读。只认识旧 progress 标签的读取器会拒绝新的必读 Q6-update 标签，不会静默丢失元数据。学术投影缓存状态版本为 3，Session 写入格式仍为 4。[兼容记录](../../../docs/persistence-changes/2026-10-26-academic-background-progress.zh.md)说明了两类必读轻量事件。
+读取器将三类事件折叠为相同的完整 Remote 视图；旧完整检查点和不含 Q6 元数据的旧进度事件继续可读。公开的 `/types` 入口为浏览器消费方提供这些事件的载荷类型及 `SessionEventMap` 声明。只认识旧 progress 标签的读取器会拒绝新的必读 Q6-update 标签，不会静默丢失元数据。学术投影缓存状态版本为 3，Session 写入格式仍为 4。[兼容记录](../../../docs/persistence-changes/2026-10-26-academic-background-progress.zh.md)说明了两类必读轻量事件。
 
 Host 正常释放时记录 `service_stopped` 并等待任务停止；异常停止后重新打开未结算日志时返回 `interrupted`，不编造取消来源。两种情形都保留最后进度和检索运行 ID。原有基于检查点的 `resumeRetrievalRunId` 是独立的显式操作，可能重试未结算批次。旧 `run` 和 `runStream` 继续保留调用方断开即取消的语义，直至 Web 页面迁移。
 

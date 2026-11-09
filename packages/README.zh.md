@@ -33,6 +33,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`typert/`](typert/README.zh.md) | 类型图生成、产物加载与运行时注册表 |
 | [`goal/`](goal/README.zh.md) | 同会话 goal 的持久化与生命周期 |
 | [`academic/`](academic/README.zh.md) | 不依赖提供方的学术洞察数据与能力 |
+| [`product-insight/`](product-insight/README.zh.md) | 产品调查的共享记录和后续领域模块 |
 | [`schedule/`](schedule/README.zh.md) | Host 拥有的定时后续操作 |
 | [`feedback/`](feedback/README.zh.md) | 人类反馈的采集与命令 |
 | [`telemetry/`](telemetry/README.zh.md) | 共享 Cordis OTel 上报通道 |

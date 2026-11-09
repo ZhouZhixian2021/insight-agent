@@ -46,6 +46,8 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/academic/model': { kind: 'indirect', reason: 'The library only defines caller-owned academic records; workflow and analysis consumers own model-visible rendering.' },
+  'packages/product-insight/model': { kind: 'none', reason: 'The library only defines product investigation records and pure decisions; no consumer currently renders them for a model.' },
+  'packages/product-insight/source': { kind: 'none', reason: 'The library returns caller-owned source records and verified excerpts; it does not render model-visible text.' },
   'packages/academic/evidence': { kind: 'indirect', reason: 'The library only constructs caller-owned evidence records and cards; the analysis or report consumer owns model-visible rendering.' },
   'packages/academic/ingestion': { kind: 'indirect', reason: 'The library only deduplicates and merges caller-owned records; the retrieval or workflow consumer owns model-visible rendering.' },
   'packages/academic/retrieval': { kind: 'indirect', reason: 'The library plans caller-owned queries and returns verified candidates; the workflow consumer owns model-visible rendering and logging.' },
@@ -198,6 +200,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/experimental/badge-skill-bundle': { kind: 'indirect', reason: 'The profile layer delegates model-visible behavior to its selected capability.' },
   'packages/experimental/session-titles-bundle': { kind: 'indirect', reason: 'The profile layer delegates model-visible behavior to its selected capability.' },
   'packages/academic/bundle': { kind: 'indirect', reason: 'The bundle assembles existing preset plugins and workflow consumers, which render its moved research instructions and skills.' },
+  'packages/product-insight/bundle': { kind: 'indirect', reason: 'The bundle assembles the product preset plugins, which render the bundled investigation instructions.' },
   'packages/bundle/base': { kind: 'indirect', reason: 'The bundle is a patch-list carrier; each inserted row\'s package owns its model-facing behavior.' },
   'packages/bundle/headless': { kind: 'none', reason: 'The one-shot runner submits the task as an ordinary user message; prompts and tools belong to the composed base and headless bundles.' },
   'packages/llm/llm': { kind: 'none', reason: 'The adapter registry forwards already-assembled requests unchanged.' },

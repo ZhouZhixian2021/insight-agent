@@ -1,0 +1,4 @@
+# Product investigation progress and saved reports in the standard Chat transcript.
+- insert:
+    - id: ui-product-insight
+      name: '@deepseek-ai/dsh-product-insight-bundle'

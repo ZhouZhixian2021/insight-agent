@@ -12,6 +12,7 @@ const anchor = fileURLToPath(new URL('../../../../apps/cli/package.json', import
 const base = '@deepseek-ai/dsh-base'
 const web = '@deepseek-ai/dsh-web-app'
 const academic = '@deepseek-ai/dsh-academic-bundle'
+const product = '@deepseek-ai/dsh-product-insight-bundle'
 
 function home(): string {
   const directory = mkdtempSync(join(tmpdir(), 'academic-bundle-'))
@@ -23,13 +24,14 @@ describe('Academic profile composition', () => {
   it('loads the shipped bundle with host, browser and preset entries exactly once', () => {
     const profile = loadProfile('test', 'web', anchor, home())
     expect(profile.skippedBundles).toEqual([])
-    expect(profile.layers.map(layer => layer.packageName)).toEqual([base, web, academic])
+    expect(profile.layers.map(layer => layer.packageName)).toEqual([base, web, academic, product])
     const warnings: string[] = []
     const entries = composeEntries(profile.layers.map(layer => layer.patches), warning => warnings.push(warning))
     expect(warnings).toEqual([])
     for (const id of ['academic-source', 'academic-source-arxiv', 'academic-source-openalex',
       'academic-source-acl', 'academic-source-cvf', 'academic-source-pmlr',
-      'academic-research-controller', 'ui-academic-research', 'preset-academic']) {
+      'academic-research-controller', 'ui-academic-research', 'ui-product-insight',
+      'preset-academic', 'preset-product-insight']) {
       expect(entries.filter(entry => entry.id === id), id).toHaveLength(1)
     }
     expect(entries.find(entry => entry.id === 'academic-research-controller')?.config).toMatchObject({
@@ -38,6 +40,22 @@ describe('Academic profile composition', () => {
     })
     expect(entries.find(entry => entry.id === 'web-fetch-http')?.config).toMatchObject({
       maxResponseBytes: 10000000, maxBodyChars: 5000000, timeoutMs: 120000,
+    })
+    expect(entries.find(entry => entry.id === 'preset-product-insight')?.config).toMatchObject({
+      plugins: [
+        { id: 'persona' },
+        { id: 'agent-instructions' },
+        { id: 'tool-ask-user' },
+        { id: 'tool-web' },
+        { id: 'tool-jobs' },
+        { id: 'product-plan-validation', name: '@deepseek-ai/dsh-product-insight-workflow' },
+        {
+          id: 'planning', isolate: { planMode: true }, config: [{
+            id: 'plan-mode', name: '@deepseek-ai/dsh-plan-mode',
+            config: { initialActive: true, reenterOnUserMessage: true, missingExitRetries: 1 },
+          }],
+        },
+      ],
     })
   })
 
@@ -58,11 +76,11 @@ describe('Academic profile composition', () => {
     const patch = readFileSync(join(profileDir, 'cordis.patch.yml'), 'utf8')
     loadProfile('test', 'web', anchor, directory)
     expect(readProfileManifest('test', profileDir)).toMatchObject({
-      description: 'User setting', dsh: { profile: { bundles: [base, web, academic] } },
+      description: 'User setting', dsh: { profile: { bundles: [base, web, academic, product] } },
     })
     expect(readFileSync(join(profileDir, 'cordis.patch.yml'), 'utf8')).toBe(patch)
     loadProfile('test', 'web', anchor, directory)
-    expect(readProfileManifest('test', profileDir).dsh?.profile?.bundles).toEqual([base, web, academic])
+    expect(readProfileManifest('test', profileDir).dsh?.profile?.bundles).toEqual([base, web, academic, product])
   })
 
   it('leaves a customized Web bundle list under user control', () => {

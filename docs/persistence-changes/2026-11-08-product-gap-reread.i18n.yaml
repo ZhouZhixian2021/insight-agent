@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-08-product-gap-reread.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-08-product-gap-reread.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-08-product-gap-reread:
+  en: e84c626337abc326
+  zh: 77b12df366499c95
+/2026-11-08-product-gap-reread/summary:
+  en: 894b56500831d6e0
+  zh: 69867bd9835e1fa2
+/2026-11-08-product-gap-reread/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-08-product-gap-reread/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-08-product-gap-reread/compatibility:
+  en: 552834ffe8e41223
+  zh: b939e9e03a2c16c1
+/2026-11-08-product-gap-reread/verification:
+  en: 680388d8e796a58a
+  zh: 8c1cd0ee2c8eb698
+/2026-11-08-product-gap-reread/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

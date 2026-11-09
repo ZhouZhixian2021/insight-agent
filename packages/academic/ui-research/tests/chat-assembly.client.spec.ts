@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 /** Boot the shipped Web dependency closure through the production Client Loader. */
 import { expect } from 'vitest'
+import { resolve } from 'node:path'
 import { bundleRoster, createClientTest, WEB_PROFILE_BUNDLES } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
 import { academicChatDefinition } from '../src/client/chat-definition.ts'
 
 const self = '@deepseek-ai/dsh-client-ui-academic-research'
-const academicWebApp = bundleRoster([...WEB_PROFILE_BUNDLES, '@deepseek-ai/dsh-academic-bundle'], undefined, {
+const cliManifest = resolve(process.cwd(), 'apps/cli/package.json')
+const academicWebApp = bundleRoster([...WEB_PROFILE_BUNDLES, '@deepseek-ai/dsh-academic-bundle'], cliManifest, {
   get: (name: string) => name === 'profileContext' ? { name: 'web' } : undefined,
 })
 const it = createClientTest({

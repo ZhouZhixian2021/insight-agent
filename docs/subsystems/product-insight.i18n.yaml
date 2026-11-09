@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for product-insight.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/subsystems/product-insight.md
+/:
+  en: 46477cc101b87300
+  zh: f2c1621df4b3a339
+/product-insight-subsystem:
+  en: 4cb4a87b07c813b0
+  zh: 341e09ca73a5c881
+/product-insight-subsystem/current-scope:
+  en: 70a972794086519c
+  zh: 3f2e66d97b8e7d88
+/product-insight-subsystem/shared-records:
+  en: 286d2354e254506f
+  zh: c23136bfc5cdec32
+/product-insight-subsystem/pure-decisions:
+  en: 2203c4fd8b2580e9
+  zh: 50774d41c55ed44d
+/product-insight-subsystem/dependency-direction:
+  en: 6d9da2b5eb8b9f1c
+  zh: 82ec8465c0bdaba5

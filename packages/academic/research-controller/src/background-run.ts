@@ -3,37 +3,12 @@ import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { z } from 'zod'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { AcademicBackgroundRunId, AcademicBackgroundRunView, AcademicQ6Projection, AcademicResearchRunValue } from './types.ts'
+import type {
+  AcademicBackgroundRunId, AcademicBackgroundRunView, AcademicBackgroundRunProgress,
+  AcademicBackgroundRunQ6Metadata, AcademicBackgroundRunQ6Update, AcademicQ6Projection, AcademicResearchRunValue,
+} from './types.ts'
 
-declare module '@deepseek-ai/dsh-session/types' {
-  interface SessionEventMap {
-    /** Complete detached-run checkpoint; subsequent progress retains its Q6 and lifecycle facts. */
-    'academic/background-run-state': AcademicBackgroundRunView
-    /** Progress after a complete checkpoint; required to recover the latest detached-run view. */
-    'academic/background-run-progress': AcademicBackgroundRunProgress
-    /** Q6 metadata after a checkpoint with identical candidates; required for exact recovery. */
-    'academic/background-run-q6-update': AcademicBackgroundRunQ6Update
-  }
-}
-
-/** Durable progress fields that leave the checkpoint's Q6, result, and lifecycle facts unchanged. */
-export interface AcademicBackgroundRunProgress {
-  readonly schemaVersion: AcademicBackgroundRunView['schemaVersion']
-  readonly sessionId: AcademicBackgroundRunView['sessionId']
-  readonly backgroundRunId: AcademicBackgroundRunView['backgroundRunId']
-  readonly researchBriefId: AcademicBackgroundRunView['researchBriefId']
-  readonly retrievalRunId: AcademicBackgroundRunView['retrievalRunId']
-  readonly updatedAt: AcademicBackgroundRunView['updatedAt']
-  readonly progress: AcademicBackgroundRunView['progress']
-}
-
-/** All Q6 metadata; candidate facts remain owned by the complete checkpoint. */
-export type AcademicBackgroundRunQ6Metadata = Omit<AcademicQ6Projection, 'candidates'>
-
-/** A Q6 revision whose candidate facts are unchanged from the complete checkpoint. */
-export interface AcademicBackgroundRunQ6Update extends AcademicBackgroundRunProgress {
-  readonly q6: AcademicBackgroundRunQ6Metadata
-}
+export type { AcademicBackgroundRunProgress, AcademicBackgroundRunQ6Metadata, AcademicBackgroundRunQ6Update } from './types.ts'
 
 const runIdentityFields = {
   schemaVersion: z.literal(1), sessionId: z.string(), backgroundRunId: z.string(),

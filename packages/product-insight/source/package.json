@@ -1,0 +1,32 @@
+{
+  "name": "@deepseek-ai/dsh-product-insight-source",
+  "description": "Provider-neutral product page discovery, acquisition and excerpt verification",
+  "version": "0.2.1-rc.2",
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/deepseek-ai/deepseek-harness.git", "directory": "packages/product-insight/source" },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib/index.js", "lib/types/**/*.d.ts"],
+  "license": "MIT",
+  "dependencies": {
+    "mdast-util-from-markdown": "2.0.3",
+    "parse5": "8.0.1",
+    "pdfjs-dist": "6.3.289"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-product-insight-model": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-brand": "workspace:*",
+    "@deepseek-ai/dsh-product-insight-model": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*"
+  }
+}

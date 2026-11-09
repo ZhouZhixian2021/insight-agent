@@ -1,0 +1,21 @@
+.card { display: grid; gap: 16px; margin-block: 16px; padding: 16px; min-width: 0; color: var(--dsw-alias-label-primary); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-sm); overflow-wrap: anywhere; }
+.header, .reportHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.header h3, .header p { margin: 0; }
+.header p { margin-top: 6px; color: var(--dsw-alias-label-secondary); }
+.pulse { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--dsw-alias-brand-primary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent); }
+.stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.stages li { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; padding: 10px; color: var(--dsw-alias-label-secondary); background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
+.stages li[data-state="active"], .stages li[data-state="done"] { color: var(--dsw-alias-label-primary); }
+.stages small { grid-column: 2; color: var(--dsw-alias-label-secondary); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 0; }
+.stats div { padding: 10px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; }
+.stats dt { color: var(--dsw-alias-label-secondary); }
+.stats dd { margin: 4px 0 0; font-weight: 600; }
+.details, .report { padding: 12px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 8px; }
+.details summary, .report summary { cursor: pointer; }
+.details ul { margin-bottom: 0; }
+.reportHeader { margin-bottom: 10px; }
+.reportActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.report button { padding: 6px 10px; color: inherit; background: var(--dsw-alias-bg-layer-1); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; font: inherit; cursor: pointer; }
+.report pre { max-height: 520px; margin-bottom: 0; padding: 12px; overflow: auto; white-space: pre-wrap; background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
+@media (max-width: 720px) { .stages { grid-template-columns: 1fr; } }
