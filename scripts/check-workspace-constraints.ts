@@ -70,6 +70,12 @@ const standardReleaseMemberDirectory = new RegExp(
 /** Installable application assembled by electron-builder rather than published to npm. */
 const desktopApplicationDirectory = 'apps/desktop'
 const localArtifactDirs = new Set(['node_modules'])
+/** Reserved product-insight leaves stay visible to the team without masquerading as packages. */
+const productInsightPlaceholders = new Set([
+  'packages/product-insight/controller',
+  'packages/product-insight/report',
+  'packages/product-insight/ui-research',
+])
 const appPackageFiles: Readonly<Record<string, readonly string[]>> = {
   '@deepseek-ai/dsh': ['lib/*.js', 'lib/types/*.d.ts'],
   '@deepseek-ai/dsh-desktop-host': [
@@ -563,7 +569,16 @@ function checkHierarchyShape(): string[] {
       if (!pkg.isDirectory()) continue
       if (localArtifactDirs.has(pkg.name)) continue
       const pkgRel = join(groupRel, pkg.name)
-      if (!existsSync(join(packagesRoot, group.name, pkg.name, 'package.json'))) {
+      const pkgPath = join(packagesRoot, group.name, pkg.name)
+      const placeholder = productInsightPlaceholders.has(pkgRel.replaceAll('\\', '/'))
+      const manifestExists = existsSync(join(pkgPath, 'package.json'))
+      if (placeholder && !manifestExists) {
+        const entries = readdirSync(pkgPath)
+        if (entries.length === 1 && entries[0] === '.gitkeep') continue
+        errors.push(`${pkgRel}: reserved directory may contain only .gitkeep until its package.json is added`)
+      } else if (placeholder) {
+        errors.push(`${pkgRel}: implemented package must be removed from productInsightPlaceholders`)
+      } else if (!manifestExists) {
         errors.push(`${pkgRel}: expected a package here (no package.json found) — the hierarchy is exactly packages/<group>/<pkg>, no deeper nesting`)
       }
     }

@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-08-product-synthesis-transient-retry.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-08-product-synthesis-transient-retry.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-08-product-synthesis-transient-retry:
+  en: a3905c9622e07d92
+  zh: 70894d37a7ae6769
+/2026-11-08-product-synthesis-transient-retry/summary:
+  en: fb40b4667716088a
+  zh: 321620c5adf60e24
+/2026-11-08-product-synthesis-transient-retry/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-08-product-synthesis-transient-retry/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-08-product-synthesis-transient-retry/compatibility:
+  en: 0ade47c5c188b564
+  zh: 18424e5f5e444767
+/2026-11-08-product-synthesis-transient-retry/verification:
+  en: 0743e3a4dee05e6d
+  zh: 06d680bc90b64dc6
+/2026-11-08-product-synthesis-transient-retry/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

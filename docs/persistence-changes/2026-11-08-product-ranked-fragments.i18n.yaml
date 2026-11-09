@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-08-product-ranked-fragments.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-08-product-ranked-fragments.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-08-product-ranked-fragments:
+  en: 8d29cf2e2920d68a
+  zh: 38d40b6825388e1f
+/2026-11-08-product-ranked-fragments/summary:
+  en: 3ce9bac9a2fd271b
+  zh: ac8974a76f882f77
+/2026-11-08-product-ranked-fragments/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-08-product-ranked-fragments/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-08-product-ranked-fragments/compatibility:
+  en: d166c23ed80669d3
+  zh: 69a2a6d05c4e20c1
+/2026-11-08-product-ranked-fragments/verification:
+  en: b27cfdc8f61e361d
+  zh: e45c393738cb282e
+/2026-11-08-product-ranked-fragments/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

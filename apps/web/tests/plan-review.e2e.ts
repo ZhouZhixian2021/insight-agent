@@ -471,7 +471,7 @@ describe('academic concise approval browser flow', () => {
         await page.locator('[data-composer-input]').first().waitFor()
         const agent = scaffold.ctx.agents.roots().find(item => item.session.id === id)
         if (agent === undefined) throw new Error('Selected session must have a live root agent')
-        const plan = await readFile('z-team_docs/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', 'utf8')
+        const plan = await readFile('z-team_docs/学术洞察/interface-samples/academic-model-v1/academic-pe1-plan.sample.md', 'utf8')
         const request = (detail: string) => scaffold.ctx.userQuestions.ask({ agent, signal: abort.signal,
           questions: [{ id: 'plan-review', question: 'Review this research plan', detail,
             options: [{ label: 'Approve' }, { label: 'Keep planning' }], intent: { kind: 'plan-review', approve: 'Approve' } }] })

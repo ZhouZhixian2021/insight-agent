@@ -33,6 +33,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`typert/`](typert/README.md) | Type graph generation, artifact loading, and runtime registry |
 | [`goal/`](goal/README.md) | Same-session goal persistence and lifecycle |
 | [`academic/`](academic/README.md) | Provider-neutral academic-insight data and capabilities |
+| [`product-insight/`](product-insight/README.md) | Shared product investigation records and planned domain modules |
 | [`schedule/`](schedule/README.md) | Host-owned scheduled follow-ups |
 | [`feedback/`](feedback/README.md) | Human feedback capture and command |
 | [`telemetry/`](telemetry/README.md) | Shared Cordis OTel reporting channels |

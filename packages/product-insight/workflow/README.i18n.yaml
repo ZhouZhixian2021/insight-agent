@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/product-insight/workflow/README.md
+/:
+  en: c449168549923ac0
+  zh: 0fd82cd3009105da
+/deepseek-ai-dsh-product-insight-workflow:
+  en: 2f0066856f467ebb
+  zh: 8147dcc90b82e5b7
+/deepseek-ai-dsh-product-insight-workflow/summary:
+  en: 59aad83db4185b4e
+  zh: f3287d45b7e53bc4
+/deepseek-ai-dsh-product-insight-workflow/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f0f7f88fe2f53b05
+/deepseek-ai-dsh-product-insight-workflow/use-this-package:
+  en: d2db2bf84211297a
+  zh: 402e77d7fb1bd96d
+/deepseek-ai-dsh-product-insight-workflow/understand-the-implementation:
+  en: b45afabecf7dab9a
+  zh: a722ae32b2944f17
+/deepseek-ai-dsh-product-insight-workflow/further-exploration:
+  en: e386e19c24138a3c
+  zh: 0d8c7e4fc80d4c57
+/deepseek-ai-dsh-product-insight-workflow/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction:
+  en: cb04cbc41b05332f
+  zh: 38a973fed7f72395
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/what-the-model-sees:
+  en: 901fc482461bf896
+  zh: 7093c435d3d82143
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/token-effect:
+  en: 9bd1a6adfa2b22b7
+  zh: c00ce3b84b259973
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/kv-cache-effect:
+  en: 4ab441e02d8ae044
+  zh: cfa1cd4648fea48d
+/deepseek-ai-dsh-product-insight-workflow/known-limitations-and-deferred-work:
+  en: 866b13f59b8d7f82
+  zh: 13583b089f551d9d
+/deepseek-ai-dsh-product-insight-workflow/known-limitations-and-deferred-work/dev-note:
+  en: bb3cf6173f1abeee
+  zh: 97766626b04b5fae

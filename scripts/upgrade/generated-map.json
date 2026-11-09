@@ -172,6 +172,22 @@
     {
       "path": "pnpm-lock.yaml",
       "command": "pnpm install"
+    },
+    {
+      "path": ".agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-07-10-single-file-executable-sdk-runtime-distribution.md"
+    },
+    {
+      "path": "docs/rescope.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write docs/rescope.md"
+    },
+    {
+      "path": "python/sdk-runtime/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write python/sdk-runtime/README.md"
+    },
+    {
+      "path": "packages/client/ui-agent-preset/README.i18n.yaml",
+      "command": "pnpm run verify-translation-pairing --write packages/client/ui-agent-preset/README.md"
     }
   ]
 }

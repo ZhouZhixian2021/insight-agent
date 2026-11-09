@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../util/brand" },
+    { "path": "../../jobs/jobs" },
+    { "path": "../model" },
+    { "path": "../source" },
+    { "path": "../../core/session" },
+    { "path": "../../llm/llm" },
+    { "path": "../../session-query/session-query" },
+    { "path": "../../core/tools" },
+    { "path": "../../web/web" }
+  ]
+}

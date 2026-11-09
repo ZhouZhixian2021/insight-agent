@@ -1,0 +1,256 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/synthesis-request-v1",
+      "kind": "event",
+      "event": "product/synthesis-request-v1",
+      "surface": false,
+      "digest": "04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 7,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "attempt",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "maxTokens",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "provider",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "reasoningEffort",
+                "type": 6,
+                "optional": true
+              },
+              {
+                "name": "system",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "user",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "literal",
+            "value": 2
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/synthesis-request-v1"
+          }
+        ]
+      }
+    },
+    {
+      "key": "event:product/synthesis-result-v1",
+      "kind": "event",
+      "event": "product/synthesis-result-v1",
+      "surface": false,
+      "digest": "e20c3c49dbdff4556fe3715039210c787844662a0218f7011a29d14b5f02960d",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 13,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 14,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "error",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "failureCode",
+                "type": 7,
+                "optional": true
+              },
+              {
+                "name": "requestSeq",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 12,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "request_failed"
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_output"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "union",
+            "types": [
+              8,
+              9,
+              10
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "ABORTED"
+          },
+          {
+            "kind": "literal",
+            "value": "TIMEOUT"
+          },
+          {
+            "kind": "literal",
+            "value": "TRANSPORT"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/synthesis-result-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

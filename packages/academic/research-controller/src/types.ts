@@ -115,6 +115,36 @@ export interface AcademicBackgroundRunView extends AcademicBackgroundRunKey {
   readonly cancelReason: 'user_requested' | 'service_stopped' | null
 }
 
+/** Durable progress fields that leave the checkpoint's Q6, result, and lifecycle facts unchanged. */
+export interface AcademicBackgroundRunProgress {
+  readonly schemaVersion: AcademicBackgroundRunView['schemaVersion']
+  readonly sessionId: AcademicBackgroundRunView['sessionId']
+  readonly backgroundRunId: AcademicBackgroundRunView['backgroundRunId']
+  readonly researchBriefId: AcademicBackgroundRunView['researchBriefId']
+  readonly retrievalRunId: AcademicBackgroundRunView['retrievalRunId']
+  readonly updatedAt: AcademicBackgroundRunView['updatedAt']
+  readonly progress: AcademicBackgroundRunView['progress']
+}
+
+/** All Q6 metadata; candidate facts remain owned by the complete checkpoint. */
+export type AcademicBackgroundRunQ6Metadata = Omit<AcademicQ6Projection, 'candidates'>
+
+/** A Q6 revision whose candidate facts are unchanged from the complete checkpoint. */
+export interface AcademicBackgroundRunQ6Update extends AcademicBackgroundRunProgress {
+  readonly q6: AcademicBackgroundRunQ6Metadata
+}
+
+declare module '@deepseek-ai/dsh-session/types' {
+  interface SessionEventMap {
+    /** Complete detached-run checkpoint; subsequent progress retains its Q6 and lifecycle facts. */
+    'academic/background-run-state': AcademicBackgroundRunView
+    /** Progress after a complete checkpoint; required to recover the latest detached-run view. */
+    'academic/background-run-progress': AcademicBackgroundRunProgress
+    /** Q6 metadata after a checkpoint with identical candidates; required for exact recovery. */
+    'academic/background-run-q6-update': AcademicBackgroundRunQ6Update
+  }
+}
+
 /** Small discovery row; fetch the complete selected run with getBackgroundRun. */
 export type AcademicBackgroundRunSummary = Pick<AcademicBackgroundRunView,
   'schemaVersion' | 'sessionId' | 'backgroundRunId' | 'researchBriefId' | 'state' | 'startedAt' | 'updatedAt'

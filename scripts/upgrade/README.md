@@ -2,16 +2,16 @@
 
 English | [中文](README.zh.md)
 
-This directory turns "what we changed in upstream" into data that can be checked and recomputed, instead of knowledge scattered across 129 files.
+This directory records upstream rewrites and their regeneration commands so maintainers can inspect the upgrade work from one maintained inventory.
 
 ## Why it exists
 
 `master` is upstream ([`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness)) plus our own development. That development takes two forms:
 
-- **Added files** (the 998 paths under `packages/academic/*` and friends) — upstream has no file with that name, so they never conflict;
-- **Rewritten upstream files** (the 175 registered here) — a conflict appears as soon as upstream touches the same region.
+- **Added files**, including `packages/academic/*`, reduce direct file conflicts but still depend on upstream APIs, build rules, and data formats;
+- **Rewritten upstream files** require a merge review when upstream changes overlap the local edits. The current inventory is `upstream-overrides.json`.
 
-The second form is the only source of upgrade cost. This directory does two things: every rewrite has an owner, a reason, and a ceiling, and the generated ones never enter manual merging.
+The inventory gives every rewrite a maintenance owner, a reason, and a category. Generated artifacts are rebuilt from their owning sources; added business modules also require compatibility review when their framework dependencies change.
 
 ## Everyday commands
 
@@ -62,10 +62,10 @@ Add one entry to `entries` in `upstream-overrides.json`:
 
 - `category` is one of `fork` (hand-written change), `generated` (build product), `wiring` (integration point);
 - A file marked `generated` without a generator marker and without an entry in `generatedExemptions` fails the gate as a miscategorization;
-- One more `fork` entry pushes the count past `budget.maxForkFiles` and fails the gate. That is deliberate: **the rewrite count may only shrink**.
+- The gate fails when registered manual rewrites exceed `budget.maxForkFiles`. Register missing historical changes accurately even when that exposes an existing overrun; retire justified rewrites instead of relabeling them or increasing the ceiling to hide the debt.
 
 ## Generated artifacts
 
-`generated-map.json` records which command recomputes each of the 40 generated artifacts. The test is always the same: **can one command rebuild this file completely?** If it can, no one edits it by hand, and no one resolves it by hand during an upgrade.
+`generated-map.json` records the command that recomputes each registered generated artifact. Only classify a file as generated when its owning command can rebuild it completely; manual code and prose remain manual rewrites.
 
 `replay-generated.mjs --apply` runs everything twice and compares `git status`: any change on the second pass is an error, because it means some content is not computed by a script. The generators spawn tsx and esbuild, so a confined sandbox rejects the pipe access; run this step in a normal terminal.

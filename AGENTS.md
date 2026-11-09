@@ -20,6 +20,7 @@ packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
   core/                 agent/session API
   api/                  remote BFF
   academic/             academic research
+  product-insight/       product investigation
   typert/               type graphs
   llm/                  model providers
   shell/                command execution

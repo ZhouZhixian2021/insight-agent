@@ -2,7 +2,7 @@
 import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatNode } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-tools/types'
-import type {} from '@deepseek-ai/dsh-api-academic-research-controller/src/background-run.ts'
+import type {} from '@deepseek-ai/dsh-api-academic-research-controller/types'
 
 /** A submitted academic plan remains hidden until its own explicit approval settles. */
 export interface AcademicChatPlan {

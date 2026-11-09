@@ -16,6 +16,9 @@ export interface ProductPackagePolicy {
  * Optional integrations may be reached by an optional bundle without becoming default capabilities.
  */
 export const PRODUCT_PACKAGE_POLICY: Readonly<Record<string, ProductPackagePolicy>> = {
+  'packages/product-insight/model': { category: 'optional', reason: 'Shared records for the optional product-insight business flow; its source, workflow, and bundle consumers are still being built.' },
+  'packages/product-insight/source': { category: 'optional', reason: 'Provider-neutral source discovery for the optional product-insight business flow; its controller and bundle consumers are still being built.' },
+  'packages/product-insight/workflow': { category: 'optional', reason: 'Approved product investigation runner awaiting its controller and browser consumers.' },
   'packages/academic/source-browser': { category: 'optional', reason: 'Requires explicitly configured scholarly search scopes and a Session-owned Playwright browser.' },
   'packages/browser-use/browser-use': { category: 'optional', reason: 'Service definition used by explicitly selected browser providers.' },
   'packages/computer-use/computer-use': { category: 'optional', reason: 'Service definition used by explicitly selected computer providers.' },

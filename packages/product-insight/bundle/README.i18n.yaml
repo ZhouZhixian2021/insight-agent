@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/product-insight/bundle/README.md
+/:
+  en: f99cf11a93d2cf69
+  zh: d4fa0472c5f9d8be
+/deepseek-ai-dsh-product-insight-bundle:
+  en: c7d1966a8a1516a4
+  zh: 10b635049baa34ac
+/deepseek-ai-dsh-product-insight-bundle/summary:
+  en: a894346e486c3c5c
+  zh: 2cc6e85f66589323
+/deepseek-ai-dsh-product-insight-bundle/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f0f7f88fe2f53b05
+/deepseek-ai-dsh-product-insight-bundle/use-this-package:
+  en: fe33da49bd868b77
+  zh: a46c1a6046aefcca
+/deepseek-ai-dsh-product-insight-bundle/understand-the-implementation:
+  en: 2f2d93d4491e3b6b
+  zh: d4ed143725af6edc
+/deepseek-ai-dsh-product-insight-bundle/further-exploration:
+  en: f0d2ff3fde8a51a0
+  zh: 377184c3d4be2cb6
+/deepseek-ai-dsh-product-insight-bundle/model-experience:
+  en: a6eec94e3e4d03b2
+  zh: e9904240b7b369a0
+/deepseek-ai-dsh-product-insight-bundle/model-experience/kv-cache-effect:
+  en: dfabcfcc619c38ee
+  zh: db8ea1538e0d7f7a
+/deepseek-ai-dsh-product-insight-bundle/known-limitations-and-deferred-work:
+  en: f1b841d16304c927
+  zh: 5145c982878b0135
+/deepseek-ai-dsh-product-insight-bundle/known-limitations-and-deferred-work/dev-note:
+  en: 92216ae583e55ffe
+  zh: 4d527b13a73b3301

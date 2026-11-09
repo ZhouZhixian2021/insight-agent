@@ -347,6 +347,13 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-agent-preset-registry` | yes | Declarative Agent preset registry and profile-backed editing |
 | `@deepseek-ai/dsh-persona` | yes | Composition-authored deployment persona section for the DeepSeek Harness |
 
+## product-insight
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-product-insight-bundle` | no | Selectable product insight agent preset over the shared Web tools |
+| `@deepseek-ai/dsh-product-insight-workflow` | no | Approved product investigation orchestration |
+
 ## ptc-runtime
 
 | Package | Config | Description |

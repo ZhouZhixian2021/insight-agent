@@ -1,0 +1,1235 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/checkpoint-v1",
+      "kind": "event",
+      "event": "product/checkpoint-v1",
+      "surface": false,
+      "digest": "7283f744becf9d5abb73431e438001e03b5de6c28d6398707e0a0c939efd5a47",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 103,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 104,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "claims",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "discovery",
+                "type": 26,
+                "optional": false
+              },
+              {
+                "name": "elapsedMilliseconds",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "evidence",
+                "type": 69,
+                "optional": false
+              },
+              {
+                "name": "failures",
+                "type": 29,
+                "optional": false
+              },
+              {
+                "name": "fragmentIndex",
+                "type": 20,
+                "optional": true
+              },
+              {
+                "name": "nextIndex",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "pages",
+                "type": 79,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "planVersion",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "productId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "reviews",
+                "type": 86,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 92,
+                "optional": false
+              },
+              {
+                "name": "verifications",
+                "type": 97,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 3
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "claimId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "confidence",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "confidenceReasons",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "evidenceLinks",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "evidenceSnapshot",
+                "type": 17,
+                "optional": false
+              },
+              {
+                "name": "questionIds",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "scope",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "uncertainty",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "validity",
+                "type": 23,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              6,
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "low"
+          },
+          {
+            "kind": "literal",
+            "value": "medium"
+          },
+          {
+            "kind": "literal",
+            "value": "high"
+          },
+          {
+            "kind": "literal",
+            "value": "insufficient"
+          },
+          {
+            "kind": "tuple",
+            "elements": [
+              {
+                "type": 4,
+                "optional": false,
+                "rest": false
+              },
+              {
+                "type": 4,
+                "optional": false,
+                "rest": true
+              }
+            ]
+          },
+          {
+            "kind": "array",
+            "element": 12
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "rationale",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "relation",
+                "type": 13,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "background"
+          },
+          {
+            "kind": "literal",
+            "value": "supports"
+          },
+          {
+            "kind": "literal",
+            "value": "contradicts"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceItems",
+                "type": 18,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "planVersion",
+                "type": 20,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 19
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "evidenceId",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "array",
+            "element": 4
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "union",
+            "types": [
+              24,
+              25
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "current"
+          },
+          {
+            "kind": "literal",
+            "value": "stale"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "cancelled",
+                "type": 27,
+                "optional": false
+              },
+              {
+                "name": "candidates",
+                "type": 28,
+                "optional": false
+              },
+              {
+                "name": "searches",
+                "type": 64,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "boolean"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "failures",
+                "type": 29,
+                "optional": false
+              },
+              {
+                "name": "items",
+                "type": 48,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 60,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 30
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "category",
+                "type": 31,
+                "optional": false
+              },
+              {
+                "name": "failureId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "message",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "occurredAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "retryable",
+                "type": 27,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "stage",
+                "type": 41,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_request"
+          },
+          {
+            "kind": "literal",
+            "value": "authentication_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "network_error"
+          },
+          {
+            "kind": "literal",
+            "value": "not_found"
+          },
+          {
+            "kind": "literal",
+            "value": "parse_failed"
+          },
+          {
+            "kind": "literal",
+            "value": "rate_limited"
+          },
+          {
+            "kind": "literal",
+            "value": "timeout"
+          },
+          {
+            "kind": "literal",
+            "value": "unknown"
+          },
+          {
+            "kind": "literal",
+            "value": "upstream_error"
+          },
+          {
+            "kind": "union",
+            "types": [
+              42,
+              43,
+              44,
+              45,
+              46,
+              47
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "fetch"
+          },
+          {
+            "kind": "literal",
+            "value": "report"
+          },
+          {
+            "kind": "literal",
+            "value": "screening"
+          },
+          {
+            "kind": "literal",
+            "value": "discovery"
+          },
+          {
+            "kind": "literal",
+            "value": "analysis"
+          },
+          {
+            "kind": "literal",
+            "value": "extraction"
+          },
+          {
+            "kind": "array",
+            "element": 49
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "discoveredAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "discoveryChannel",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "productId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "publisher",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "questionIds",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "screening",
+                "type": 50,
+                "optional": false
+              },
+              {
+                "name": "sourceType",
+                "type": 55,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "url",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "reason",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "screenedAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 51,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              52,
+              53,
+              54
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "needs_review"
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "literal",
+            "value": "excluded"
+          },
+          {
+            "kind": "union",
+            "types": [
+              56,
+              57,
+              58,
+              59
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "official_documentation"
+          },
+          {
+            "kind": "literal",
+            "value": "official_product_page"
+          },
+          {
+            "kind": "literal",
+            "value": "official_release_note"
+          },
+          {
+            "kind": "literal",
+            "value": "other"
+          },
+          {
+            "kind": "union",
+            "types": [
+              61,
+              62,
+              63
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "partial_success"
+          },
+          {
+            "kind": "literal",
+            "value": "success"
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "array",
+            "element": 65
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "failureId",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "query",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "questionId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "recordedCount",
+                "type": 20,
+                "optional": true
+              },
+              {
+                "name": "returnedCount",
+                "type": 20,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 66,
+                "optional": false
+              },
+              {
+                "name": "truncated",
+                "type": 27,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              62,
+              63,
+              67,
+              68
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "skipped"
+          },
+          {
+            "kind": "literal",
+            "value": "cancelled"
+          },
+          {
+            "kind": "array",
+            "element": 70
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "evidenceId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "extractionMethod",
+                "type": 71,
+                "optional": false
+              },
+              {
+                "name": "locator",
+                "type": 72,
+                "optional": false
+              },
+              {
+                "name": "qualityNotes",
+                "type": 21,
+                "optional": true
+              },
+              {
+                "name": "questionIds",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sourceSnapshotId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "sourcedStatement",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "verbatimExcerpt",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "name",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              73,
+              75,
+              77
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "end",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 74,
+                "optional": false
+              },
+              {
+                "name": "start",
+                "type": 20,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "text_range"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "fragment",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 76,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "url_fragment"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "heading",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 78,
+                "optional": false
+              },
+              {
+                "name": "occurrence",
+                "type": 20,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "heading"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "cancelled",
+                "type": 27,
+                "optional": false
+              },
+              {
+                "name": "snapshots",
+                "type": 80,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "failures",
+                "type": 29,
+                "optional": false
+              },
+              {
+                "name": "items",
+                "type": 81,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 60,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 82
+          },
+          {
+            "kind": "union",
+            "types": [
+              83,
+              85
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "contentHash",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "contentRef",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "declaredPublisher",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "observedAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "productVersionLabel",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sourcePublishedAt",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "sourceRegionLabel",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "sourceSnapshotId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "sourceUpdatedAt",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 84,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "available"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "failureId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "observedAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sourceSnapshotId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 63,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 87
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "questionIds",
+                "type": 21,
+                "optional": false
+              },
+              {
+                "name": "rationale",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "verdict",
+                "type": 88,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              89,
+              90,
+              91
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "supported"
+          },
+          {
+            "kind": "literal",
+            "value": "uncertain"
+          },
+          {
+            "kind": "literal",
+            "value": "unsupported"
+          },
+          {
+            "kind": "union",
+            "types": [
+              93,
+              94,
+              95,
+              96
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "pages"
+          },
+          {
+            "kind": "literal",
+            "value": "verification"
+          },
+          {
+            "kind": "literal",
+            "value": "evidence"
+          },
+          {
+            "kind": "literal",
+            "value": "claims"
+          },
+          {
+            "kind": "array",
+            "element": 98
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "claimId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "complete",
+                "type": 27,
+                "optional": false
+              },
+              {
+                "name": "judgments",
+                "type": 99,
+                "optional": false
+              },
+              {
+                "name": "questionId",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 100
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "evidenceId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "rationale",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "relation",
+                "type": 101,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              15,
+              16,
+              90,
+              102
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "unrelated"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/checkpoint-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

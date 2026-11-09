@@ -386,6 +386,23 @@ describe('loadProfile', () => {
     ])
   })
 
+  it('adds the product preset bundle to the prior shipped Web tuple without changing custom lists', () => {
+    const bundles = [...PROFILE_TEMPLATES.web?.bundles ?? []]
+    const anchor = stageInstallation(Object.fromEntries([...bundles, 'custom-bundle'].map(name => [name, { patch: '[]\n' }])))
+    const home = tmp()
+    const stock = resolveProfileDir('web', home)
+    initProfile(stock, bundles.slice(0, -1))
+    loadProfile('t', 'web', anchor, home)
+    expect(readProfileManifest('t', stock).dsh?.profile?.bundles).toEqual(bundles)
+
+    const customHome = tmp()
+    const custom = resolveProfileDir('web', customHome)
+    initProfile(custom, [...bundles.slice(0, -1), 'custom-bundle'])
+    loadProfile('t', 'web', anchor, customHome)
+    expect(readProfileManifest('t', custom).dsh?.profile?.bundles)
+      .toEqual([...bundles.slice(0, -1), 'custom-bundle'])
+  })
+
   it('removes a retired bundle from an application-owned profile and keeps the rest of the manifest', () => {
     const anchor = stageInstallation({
       '@deepseek-ai/dsh-base': { patch: '[]\n' },

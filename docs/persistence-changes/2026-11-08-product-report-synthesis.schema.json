@@ -1,0 +1,211 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/synthesis-request-v1",
+      "kind": "event",
+      "event": "product/synthesis-request-v1",
+      "surface": false,
+      "digest": "447f8905f4ba2d1d98bde5471a2a0de9dd5a98465ecb06dceebcf9f4c19ae2b8",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "maxTokens",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "provider",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "reasoningEffort",
+                "type": 3,
+                "optional": true
+              },
+              {
+                "name": "system",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "user",
+                "type": 3,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/synthesis-request-v1"
+          }
+        ]
+      }
+    },
+    {
+      "key": "event:product/synthesis-result-v1",
+      "kind": "event",
+      "event": "product/synthesis-result-v1",
+      "surface": false,
+      "digest": "55704245f3bd44251214699cd17c5d7dc1ff9a02a5757015fea967fe895f516a",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 9,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 10,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "error",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "requestSeq",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "invalid_output"
+          },
+          {
+            "kind": "literal",
+            "value": "output_limit"
+          },
+          {
+            "kind": "literal",
+            "value": "request_failed"
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/synthesis-result-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}
