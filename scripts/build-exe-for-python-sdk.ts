@@ -18,7 +18,8 @@ import { pathToFileURL } from 'node:url'
 import { resolveLinuxNodePtyAddon, resolveWindowsNodePtyAddons } from './executable-native-pty.ts'
 import { officeSidecarArchives, runtimeNpmArchive, OFFICE_ASSET_IGNORES } from './build-exe-for-python-sdk-office.ts'
 import { syncPythonRuntimeProduct } from './build-exe-for-python-sdk-resources.ts'
-import { deduplicateStagedWorkspacePackages, materializeStagedLinks, pythonRuntimeDeployArguments } from './build-exe-for-python-sdk-staging.ts'
+import { deduplicateStagedWorkspacePackages, materializeStagedLinks, needsStagedSpawnHelper,
+  pythonRuntimeDeployArguments } from './build-exe-for-python-sdk-staging.ts'
 import { prepareOfficeSkillAssets } from './primary-runtime/prepare.ts'
 import primaryLock from './primary-runtime/lock.json' with { type: 'json' }
 
@@ -280,6 +281,11 @@ class SingleExeBuild {
     if (this.cli.dryRun) console.log(`build-exe-for-python-sdk: [dry-run] rm -rf ${this.staging}`)
     else await rm(this.staging, { recursive: true, force: true })
     await this.runPnpm('deploy', pythonRuntimeDeployArguments(this.staging))
+    if (this.cli.dryRun || await needsStagedSpawnHelper(this.staging, root)) {
+      await this.run('reviewed subprocess spawn-helper repair', process.execPath, [
+        join(this.staging, 'node_modules', '@deepseek-ai', 'dsh-subprocess-local', 'scripts', 'ensure-spawn-helper.mjs'),
+      ])
+    }
     await this.materializeStagedLinks()
     if (this.cli.dryRun) {
       for (const name of DEPLOY_ONLY_DOCS) console.log(`build-exe-for-python-sdk: [dry-run] rm -f ${join(this.staging, name)}`)

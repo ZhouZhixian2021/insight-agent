@@ -149,7 +149,8 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
   'academic-plan-chinese': {
     runtimeProfile: 'sdk-minimal',
     environment: {
-      DSH_TEST_ACADEMIC_BRIEF_TEMPLATE: fileURLToPath(new URL('../../packages/bundle/web-app/presets/academic/skills/academic-insight-report/references/research-brief.md', import.meta.url)),
+      // Frozen oracle input predates the academic preset move and its later template revisions.
+      DSH_TEST_ACADEMIC_BRIEF_TEMPLATE: fileURLToPath(new URL('./academic-plan-chinese/research-brief.compat.md', import.meta.url)),
     },
     expectedTools: { exit_plan_mode: ['plan'], read_image: ['file_path'], working_directory: [] },
   },

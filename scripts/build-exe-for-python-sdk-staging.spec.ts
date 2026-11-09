@@ -7,10 +7,11 @@ import { createServer } from 'node:http'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { createHash } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { c as tar } from 'tar'
 import { afterEach, expect, it, onTestFinished } from 'vitest'
-import { deduplicateStagedWorkspacePackages, materializeStagedLinks, pythonRuntimeDeployArguments } from './build-exe-for-python-sdk-staging.ts'
+import { deduplicateStagedWorkspacePackages, materializeStagedLinks, needsStagedSpawnHelper,
+  pythonRuntimeDeployArguments } from './build-exe-for-python-sdk-staging.ts'
 import { runtimeNpmArchive } from './build-exe-for-python-sdk-office.ts'
 import { officePackageDirectories } from './libreoffice-packages.mjs'
 
@@ -131,6 +132,22 @@ it('deploys locked dependencies when the registry advertises a newer compatible 
     version: '2.8.1', integrity: integrities.get('2.8.1'),
   })
 }, 60_000)
+
+it('permits only the reviewed subprocess helper to be skipped by shared-lockfile deploy', async () => {
+  const workspace = await fixture('dsh-python-deploy-builds-')
+  const staging = join(workspace, 'payload')
+  const modules = join(staging, 'node_modules')
+  await mkdir(modules, { recursive: true })
+  const metadata = join(modules, '.modules.yaml')
+  await writeFile(metadata, JSON.stringify({ ignoredBuilds: [] }))
+  await expect(needsStagedSpawnHelper(staging, workspace)).resolves.toBe(false)
+  const reviewed = `@deepseek-ai/dsh-subprocess-local@${pathToFileURL(join(workspace,
+    'packages/subprocess/subprocess-local')).href}`
+  await writeFile(metadata, JSON.stringify({ ignoredBuilds: [reviewed] }))
+  await expect(needsStagedSpawnHelper(staging, workspace)).resolves.toBe(true)
+  await writeFile(metadata, JSON.stringify({ ignoredBuilds: [reviewed, 'unexpected@file:///tmp/source'] }))
+  await expect(needsStagedSpawnHelper(staging, workspace)).rejects.toThrow('unreviewed ignored build scripts')
+})
 
 /** List every symbolic link below a directory. */
 async function listSymlinks(directory: string): Promise<string[]> {

@@ -14,7 +14,7 @@
     "./web.patch.yml": "./web.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/client.js", "presets/product.patch.yml", "web.patch.yml", "lib/types/**/*.d.ts"],
+  "files": ["lib/index.js", "lib/client.js", "web.patch.yml", "presets/product.patch.yml", "lib/types/**/*.d.ts"],
   "license": "MIT",
   "dsh": {
     "bundle": { "patch": ["./web.patch.yml", "./presets/product.patch.yml"] },

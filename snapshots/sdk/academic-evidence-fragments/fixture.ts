@@ -23,6 +23,7 @@ export function apply(ctx: Context): void {
         segments: [{ text: 'abcdefghABCDEFGH', locator: { kind: 'abstract' } }],
       }, {
         policy: { maximumCharacters: 8, minimumCharacters: 2, overlapCharacters: 0, maximumAttempts: 3,
+          maximumConcurrentDispatches: 1,
           maximumOutputTokens: 512, initialRetryDelayMs: 0 },
         generator: async (request) => {
           const text = request.segments[0]?.text
