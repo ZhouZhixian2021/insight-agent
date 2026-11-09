@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 This bundle adds Product Insight to the Web agent preset selector. The preset presents an investigation plan for review. After approval, its Agent tool starts a Session-owned background job for Web discovery, page acquisition, exact excerpt checks, semantic support review, cross-site comparison, and report delivery checks. An inline transcript card projects those Session events into live stages, counters, blockers, and the saved Markdown report, so progress remains visible without relying on an Agent status message. The job saves a cited report when ready or a draft with blockers; evidence, comparison, claim, report, and task-state records remain in the owning Session.
 
+The product preset owns an isolated Web registry with product-free-search and product-public-page. Planning tools and background investigation use these providers without requiring dsh-web-tools; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -57,6 +59,8 @@ Indirectly, through the product preset plugins. During planning, the agent must 
 #### KV Cache effect
 
 Selecting this preset changes its persona, planning instructions, and tool schemas relative to another preset; repeated turns in one session keep the same composition.
+
+Chat renders formatted report text. Evidence and diagnostic appendices are collapsed by default and remain available in Markdown and self-contained HTML downloads. Rendering does not call a model or change delivery decisions.
 
 ## Known Limitations and Deferred Work
 

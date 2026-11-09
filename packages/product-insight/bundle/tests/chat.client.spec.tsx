@@ -62,8 +62,8 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(screen.getByText('缺少独立佐证')).toBeTruthy()
   expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeTruthy()
   expect(screen.getByRole('button', { name: '下载 HTML' })).toBeTruthy()
-  expect(screen.getByText((_, element) => element?.tagName === 'PRE'
-    && element.textContent === '# 调查草稿\n\n已保存正文。')).toBeTruthy()
+  expect(screen.getByRole('heading', { name: '调查草稿' })).toBeTruthy()
+  expect(screen.getByText('已保存正文。')).toBeTruthy()
   expect(screen.getAllByText('已完成')).toHaveLength(5)
 })
 
@@ -71,7 +71,7 @@ it('exports and downloads a self-contained safe HTML report', () => {
   const run = { callId: 'call', title: '<img src=x onerror=alert(1)>', approved: true, runState: 'completed', stage: 6,
     candidatePages: 3, availablePages: 2, evidence: 4, claims: 2, verifications: 1, failures: 1,
     elapsedMilliseconds: 12_400, deliveryStatus: 'draft', reasons: ['缺少独立佐证', '<script>unsafe()</script>'],
-    report: '# 产品报告\n\n## 结论\n\n| 项目 | 结果 |\n|---|---|\n| A | 有限 |\n\n[来源](https://example.com/a)\n\n<script>alert(1)</script>\n\n![跟踪图](https://example.com/pixel)' } as const
+    report: '# 产品报告\n\n## 结论\n\n| 项目 | 结果 |\n|---|---|\n| A | 有限 |\n\n[来源](https://example.com/a)\n\n<script>alert(1)</script>\n\n![跟踪图](https://example.com/pixel)\n\n## 证据附录\n\n原文依据。' } as const
   const html = exportProductHtml(run, t)
   const doc = new DOMParser().parseFromString(html, 'text/html')
   expect(doc.querySelector('h1')?.textContent).toBe(run.title)
@@ -81,6 +81,9 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect(doc.querySelector('[onclick],[onerror]')).toBeNull()
   expect(doc.querySelector('meta[http-equiv]')?.getAttribute('content')).toContain("default-src 'none'")
   expect(doc.querySelector('a[href="https://example.com/a"]')?.getAttribute('rel')).toBe('noopener noreferrer')
+  expect(doc.querySelector('details summary')?.textContent).toBe('证据附录')
+  expect(doc.querySelector('details')?.hasAttribute('open')).toBe(false)
+  expect(doc.querySelector('details')?.textContent).toContain('原文依据。')
 
   vi.useFakeTimers()
   const create = vi.fn().mockReturnValue('blob:product-report')

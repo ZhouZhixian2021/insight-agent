@@ -6,6 +6,8 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms, PRODUCT_PAGE_FRAGMENT_CHARACTERS } from './page-content.ts'
 
+export { name, inject, Config, apply } from './web-provider.ts'
+
 export { prepareProductPage, extractProductPageEvidence, productTextRange, selectProductGapFragment,
   rankProductPageFragments, splitProductPageText, splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS } from './page-content.ts'

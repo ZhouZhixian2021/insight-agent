@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 Use this library to turn an approved product plan into an explained page list, acquire selected pages, and verify exact excerpts. It sends one bounded DSH Web query per question, may add one approved gap query per unanswered question, merges duplicate URLs, and retains successful work when another query or fetch fails. The caller owns Web provider selection and persistence.
 
+The product preset also loads this package as a Cordis plugin in an isolated Web registry. It uses DuckDuckGo HTML search without an API key and bounded HTTP retrieval, falling back to an anonymous installed Edge browser on Windows (Chrome elsewhere) for empty or JavaScript-dependent pages. Browser requests use the same public-URL checks and proxy policy. Defaults: 10 search results, 25-second HTTP timeout, 30-second browser timeout, 60 browser requests, and 500,000 response characters. The browser permits GET requests only; login, CAPTCHA, interactive actions and some dynamic pages remain unsupported. Search rate limits and changed layouts are failures, not empty successful results. Search has no paid API dependency; model usage and network costs remain. This does not require dsh-web-tools.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

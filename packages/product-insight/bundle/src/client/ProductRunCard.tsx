@@ -2,7 +2,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import { MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
+import { ProductReport } from './ProductReport.tsx'
 import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatNode, ChatNodeViewProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -203,7 +203,7 @@ function downloadMarkdown(markdown: string): void {
 }
 
 const htmlTags = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY',
-  'TR', 'TH', 'TD', 'BLOCKQUOTE', 'PRE', 'CODE', 'STRONG', 'EM', 'DEL', 'BR', 'HR', 'A', 'SUP', 'SUB', 'SPAN', 'DIV'])
+  'TR', 'TH', 'TD', 'BLOCKQUOTE', 'PRE', 'CODE', 'STRONG', 'EM', 'DEL', 'BR', 'HR', 'A', 'SUP', 'SUB', 'SPAN', 'DIV', 'DETAILS', 'SUMMARY'])
 const escapeHtml = (text: string) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
 
@@ -227,7 +227,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:16px}
 export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRun'>['t']): string {
   if (run.report === undefined) throw new Error('Product HTML export requires a saved report')
   const template = document.createElement('template')
-  template.innerHTML = renderToStaticMarkup(<MarkdownText text={run.report}
+  template.innerHTML = renderToStaticMarkup(<ProductReport text={run.report}
     labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} />)
   const headings: { id: string; text: string; level: number }[] = []
   const serialize = (node: Node): string => {
@@ -315,7 +315,8 @@ export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insi
           <button type="button" onClick={() => { downloadMarkdown(run.report as string) }}>{t('download')}</button>
           <button type="button" onClick={() => { downloadProductHtml(exportProductHtml(run, t)) }}>{t('downloadHtml')}</button>
         </div></div>
-      <details><summary>{t('reportContent')}</summary><pre>{run.report}</pre></details>
+      <details open><summary>{t('reportContent')}</summary><ProductReport text={run.report}
+        labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} /></details>
     </section> : run.runState === 'completed' && <p role="note">{t('noReport')}</p>}
   </section>
 }

@@ -86,7 +86,7 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
         if (item === undefined || url === undefined || !safeSourceUrl(url)) throw new RangeError('Product synthesis source URL is unavailable')
         return `[来源 ${index + 1}](${citationLink(url, item)})`
       })
-      return [`### ${escape(question)}`, '', `${escape(text)} ${links.join(' ')}`, '']
+      return [`### ${escape(question)}`, '', `${text.split(/\n\s*\n/u).map(part => escape(part)).join('\n\n')} ${links.join(' ')}`, '']
     })].join('\n')
 }
 
@@ -250,80 +250,113 @@ export function prepareProductReport(input: ProductReportInput): {
   return { assessment, markdown: assessment.status === 'blocked' ? null : renderProductReport(input, assessment) }
 }
 
-/** Keep rejected source statements visible without phrasing them as admitted claims. */
+/** Render reader-facing answers first and keep source checks in a separate evidence appendix. */
 export function renderProductReport(input: ProductReportInput, assessment: ProductReportAssessment,
   synthesis?: string): string {
   if (assessment.status === 'blocked') throw new RangeError('A blocked product report has no renderable evidence')
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
-  const snapshotByPage = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
-  const checkedByPage = new Map(input.sourceRevalidation?.snapshots.items.map(item => [item.candidatePageId, item]) ?? [])
-  const reviewByEvidence = new Map(input.reviews.map(review => [review.evidenceId, review]))
-  const keyByQuestion = new Map(keyProductClaims(input.plan, input.claims, input.evidence,
-    input.discovery.candidates.items).map(item => [item.questionId, item.claim]))
+  const reviewById = new Map(input.reviews.map(review => [review.evidenceId, review]))
   const title = assessment.status === 'ready' ? '产品资料调查报告' : '产品资料调查草稿'
-  const notice = assessment.status === 'ready'
-    ? '已按获批域名和页面声明完成跨站来源核对；页面自报发布方不证明实际归属，也不等于对来源真实性或产品实际行为的核实。'
-    : '交付条件尚未全部满足；以下内容是带来源的调查草稿。'
   const lines = [`# ${escape(input.product.name)} — ${title}`, '',
-    `调查范围：${escape(input.plan.scope)}`, '', notice, '']
+    `调查范围：${escape(input.plan.scope)}`, '',
+    '本报告依据本次获取的资料；来源说明和测试结论不等于对产品实际行为的独立验证。', '']
+  lines.push('## 交付状态', '', assessment.status === 'ready'
+    ? '当前已执行的交付检查通过。内容适用范围和资料限制仍需结合下文阅读。'
+    : '交付条件尚未全部满足，以下保留已有依据与可回答的内容。', '')
   if (assessment.status === 'draft') {
-    lines.push('## 交付未达标原因', '', ...assessment.reasons.map(reason => `- ${escape(reason)}`), '')
+    lines.push('### 交付未达标原因', '',
+      ...[...new Set(assessment.reasons)].map(reason => `- ${escape(productDeliveryReason(reason))}`), '')
   }
   if (synthesis !== undefined) lines.push(synthesis, '')
-  lines.push(...renderDiscoveryDisclosure(input))
-  lines.push('## 来源身份与适用范围', '')
-  for (const page of input.discovery.candidates.items.filter(item => item.screening.status === 'selected')) {
-    const snapshot = snapshotByPage.get(page.candidatePageId)
-    const checked = checkedByPage.get(page.candidatePageId)
-    if (!safeSourceUrl(page.url)) continue
-    const source = assessProductSource(input.product, input.plan, page, snapshot)
-    const details = snapshot?.status === 'available'
-      ? `页面声明发布方：${snapshot.declaredPublisher ?? '未知'}；发布日期：${snapshot.sourcePublishedAt ?? '未知'}；更新日期：${snapshot.sourceUpdatedAt ?? '未知'}；产品版本：${snapshot.productVersionLabel ?? '未知'}；地区：${snapshot.sourceRegionLabel ?? '未知'}`
-      : '页面内容未获取'
-    lines.push(`- [来源](${safeLink(page.url)})；计划发布方：${escape(source.publisher ?? '未知')}；${escape(details)}；${checked?.status === 'available' ? `最近复核：${escape(checked.observedAt)}；` : ''}${source.eligible ? '适用' : `待核实：${escape(source.reasons.join(' '))}`}`)
-  }
-  lines.push('')
-  for (const question of input.plan.questions) {
-    lines.push(`## ${escape(question.text)}`, '')
-    const reviewed = input.claims.filter(item => item.questionIds.includes(question.questionId))
-    const key = keyByQuestion.get(question.questionId)
-    if (key !== undefined) {
-      const verification = input.verifications.find(item => item.questionId === question.questionId)
-      lines.push(`关键来源陈述：${escape(key.text)}（置信度：低；${escape(key.confidenceReasons[0])}）`, '')
-      if (verification) {
-        const counts = { supports: 0, contradicts: 0, unrelated: 0, uncertain: 0 }
-        for (const item of verification.judgments) counts[item.relation] += 1
-        lines.push(`交叉来源核对：支持 ${counts.supports}、冲突 ${counts.contradicts}、范围或语义不明 ${counts.uncertain}；${verification.complete ? '已核对全部入选陈述' : '核对未完成'}。`, '')
-        for (const item of verification.judgments.filter(item =>
-          item.relation === 'supports' || item.relation === 'contradicts' || item.relation === 'uncertain')) {
-          const evidence = input.evidence.find(candidate => candidate.evidenceId === item.evidenceId)
+  else {
+    lines.push('## 产品分析', '', '以下为已核对的来源陈述；尚未完成连贯的模型综合，不据此推断普遍适用的选用建议。', '')
+    const shown = new Set<string>()
+    for (const question of input.plan.questions) {
+      const claims = input.claims.filter(claim => claim.questionIds.includes(question.questionId))
+      lines.push(`### ${escape(question.text)}`, '')
+      const fresh = claims.filter(claim => !shown.has(claim.text))
+      for (const claim of fresh) {
+        if (shown.has(claim.text)) continue
+        const links = claim.evidenceLinks.flatMap((link) => {
+          const evidence = input.evidence.find(item => item.evidenceId === link.evidenceId)
           const page = evidence === undefined ? undefined : pageById.get(evidence.candidatePageId)
-          if (!evidence || !page || !safeSourceUrl(page.url)) continue
-          const label = item.relation === 'supports' ? '支持来源'
-            : item.relation === 'contradicts' ? '冲突来源' : '待核实来源'
-          lines.push(`${label}：${escape(evidence.sourcedStatement)} [来源](${citationLink(page.url, evidence)})；${escape(item.rationale)}`, '')
-        }
+          return evidence === undefined || page === undefined || !safeSourceUrl(page.url) ? []
+            : [`[来源](${citationLink(page.url, evidence)})`]
+        })
+        if (links.length === 0) continue
+        lines.push(`${escape(claim.text)} ${[...new Set(links)].join(' ')}`, '')
+        shown.add(claim.text)
       }
-      const other = reviewed.filter(item => item.claimId !== key.claimId)
-      if (other.length) lines.push(...other.map(item => `其他已审核来源陈述：${escape(item.text)}`), '')
+      if (claims.length === 0) lines.push('尚无通过语义审核的来源陈述，当前资料尚不足以回答这个问题。', '')
+      else if (fresh.length === 0) lines.push('本题与前述问题共用来源陈述，尚无额外的独立发现。', '')
     }
-    else lines.push('尚无通过语义审核的来源陈述。', '')
-    const matching = input.evidence.filter(item => item.questionIds.includes(question.questionId))
-    for (const item of matching) {
-      const page = pageById.get(item.candidatePageId)
-      if (page === undefined || !safeSourceUrl(page.url)) continue
-      const sourceUrl = citationLink(page.url, item)
-      const review = reviewByEvidence.get(item.evidenceId)
-      const assessmentText = review === undefined ? '语义审核未完成'
-        : review.verdict === 'supported' ? '语义审核通过'
-          : `语义审核${review.verdict === 'uncertain' ? '不确定' : '未通过'}：${escape(review.rationale)}`
-      lines.push(`> ${escape(item.verbatimExcerpt)}`, '',
-        `${assessmentText}；来源陈述：${escape(item.sourcedStatement)} [来源](${sourceUrl})`, '')
-    }
-    if (matching.length === 0) lines.push('未找到可核对的来源摘录。', '')
   }
-  if (input.gaps.length) lines.push('## 资料缺口', '', ...input.gaps.map(gap => `- ${escape(gap.missingContent)}`), '')
+  lines.push('## 内容限制与未回答问题', '',
+    '- 结论仅适用于原文说明的版本、套餐、地区和测试条件；未说明的条件保持未知。',
+    '- 官方说明、宣传、第三方测试和用户反馈应按各自来源理解；不同条件的结果不能直接排名。',
+    '- 本次未找到依据，不代表产品不存在相关功能，也不代表已覆盖全部公开资料。',
+    ...[...new Set(input.gaps.map(gap => gap.missingContent))].map(gap => `- 尚未回答：${escape(gap)}`), '')
+  lines.push('## 参考来源', '', '页面自报发布方不证明实际归属；来源身份按已批准的范围理解。', '')
+  const referenced = new Set(input.evidence.map(item => item.candidatePageId))
+  for (const page of input.discovery.candidates.items.filter(page => referenced.has(page.candidatePageId))) {
+    if (!safeSourceUrl(page.url)) continue
+    const snapshot = input.pages.snapshots.items.find(item => item.candidatePageId === page.candidatePageId)
+    const checked = input.sourceRevalidation?.snapshots.items.find(item => item.candidatePageId === page.candidatePageId)
+    if (checked?.status === 'available') lines.push(`最近复核：${escape(checked.observedAt)}`)
+    lines.push(`- [${escape(page.title ?? page.url)}](${safeLink(page.url)})；发布方：${escape(page.publisher ?? '未知')}；${snapshot?.status === 'available'
+      ? `获取时间：${escape(snapshot.observedAt)}；页面声明发布方：${escape(snapshot.declaredPublisher ?? '未知')}；发布日期：${escape(snapshot.sourcePublishedAt ?? '未知')}；更新日期：${escape(snapshot.sourceUpdatedAt ?? '未知')}；版本：${escape(snapshot.productVersionLabel ?? '未知')}；地区：${escape(snapshot.sourceRegionLabel ?? '未知')}`
+      : '正文不可用'}`)
+  }
+  lines.push('', '## 证据附录', '')
+  const seen = new Set<string>()
+  for (const item of input.evidence) {
+    if (seen.has(item.evidenceId)) continue
+    seen.add(item.evidenceId)
+    const page = pageById.get(item.candidatePageId)
+    if (!page || !safeSourceUrl(page.url)) continue
+    const review = reviewById.get(item.evidenceId)
+    const state = review?.verdict === 'supported' ? '来源陈述获摘录支持'
+      : review?.verdict === 'unsupported' ? '摘录不支持该陈述'
+        : review?.verdict === 'uncertain' ? '支持关系仍不确定' : '尚未审核支持关系'
+    lines.push(`### 证据 ${seen.size}`, '', `> ${escape(item.verbatimExcerpt)}`, '',
+      `${state}；来源陈述：${escape(item.sourcedStatement)} [来源](${citationLink(page.url, item)})`, '')
+    if (review) lines.push(`核对说明：${escape(review.rationale)}`, '')
+  }
+  lines.push('### 跨来源核对', '')
+  for (const verification of input.verifications) {
+    const question = input.plan.questions.find(item => item.questionId === verification.questionId)
+    lines.push(`**${escape(question?.text ?? '研究问题')}**：${verification.complete ? '核对完成' : '核对未完成'}`, '')
+    for (const judgment of verification.judgments) {
+      const evidence = input.evidence.find(item => item.evidenceId === judgment.evidenceId)
+      const page = evidence && pageById.get(evidence.candidatePageId)
+      if (!evidence || !page || !safeSourceUrl(page.url)) continue
+      const label = judgment.relation === 'supports' ? '支持来源' : judgment.relation === 'contradicts'
+        ? '冲突来源' : judgment.relation === 'uncertain' ? '待核实来源' : '无关来源'
+      lines.push(`- ${label}：[来源](${citationLink(page.url, evidence)})；${escape(judgment.rationale)}`)
+    }
+    lines.push('')
+  }
+  lines.push(...renderDiscoveryDisclosure(input))
+  if (assessment.status === 'draft') lines.push('## 原始交付诊断', '',
+    ...[...new Set(assessment.reasons)].map(reason => `- ${escape(reason)}`), '')
   return lines.join('\n')
+}
+
+/** Translate known delivery failures without exposing record identities in the reading summary. */
+function productDeliveryReason(reason: string): string {
+  if (reason.startsWith('Unanswered question: ')) return `尚未回答：${reason.slice('Unanswered question: '.length)}`
+  if (reason.startsWith('No admitted claim answers: ')) return `缺少有效结论：${reason.slice(26)}`
+  if (reason.includes('independent publisher')) return '部分问题的关键结论缺少获批的独立来源佐证。'
+  if (reason.includes('Conflicting source')) return '部分来源的陈述仍存在冲突。'
+  if (reason.includes('scope or meaning')) return '部分来源的适用范围或含义仍不明确。'
+  if (reason.includes('searches did not complete')) return '部分获批检索未完成，或受到数量和范围限制。'
+  if (reason.includes('operation(s) failed')) return '部分调查操作失败，已有成果已保留。'
+  if (reason.includes('cancelled or interrupted')) return '调查已取消或中断，尚未完成全部步骤。'
+  if (reason.includes('semantic review')) return '部分来源陈述尚未完成有效的支持关系审核。'
+  if (reason.includes('source') || reason.startsWith('Claim ')) return '部分来源、版本、证据关联或交叉核对未满足交付要求。'
+  if (reason.includes('Cross-source')) return '部分问题的跨来源核对尚未完成或关联无效。'
+  if (/[\u4e00-\u9fff]/u.test(reason)) return reason
+  return '另有交付检查未通过，具体记录见原始交付诊断。'
 }
 
 /** Show settled search and acquisition facts without treating search metadata as evidence. */

@@ -158,6 +158,11 @@ export class ProductPageTextLimitError extends RangeError {
   constructor() { super('Product page exceeds the approved text limit') }
 }
 
+/** A successful HTML response contains no readable text before rendering. */
+export class ProductPageEmptyError extends RangeError {
+  constructor() { super('Product page has no readable text') }
+}
+
 /**
  * Prepare complete HTML or plain text for source evidence.
  * @param fetched - Completed Web response, including body and truncation status.
@@ -190,7 +195,7 @@ export function prepareProductPage(fetched: WebFetchResult, maximumCharacters?: 
     case 'pdf': throw new RangeError('Product page PDF extraction requires asynchronous preparation')
     default: return assertNever(fetched.body)
   }
-  if (text.length === 0) throw new RangeError('Product page has no readable text')
+  if (text.length === 0) throw new ProductPageEmptyError()
   if (maximumCharacters !== undefined && text.length > maximumCharacters) {
     throw new ProductPageTextLimitError()
   }

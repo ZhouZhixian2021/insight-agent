@@ -5,7 +5,8 @@
     "outDir": "lib/types",
     "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
   },
-  "files": ["src/client/index.ts", "src/client/ProductRunCard.tsx", "src/css-modules.d.ts"],
+  "files": ["src/client/index.ts", "src/client/ProductRunCard.tsx",
+    "src/client/ProductReport.tsx", "src/css-modules.d.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../client/locale/tsconfig.client.json" },
