@@ -4,7 +4,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductQuestionId,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
-import { productQuestionTerms, PRODUCT_PAGE_FRAGMENT_CHARACTERS } from './page-content.ts'
+import { productQuestionTerms } from './page-content.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
 export type { SearchObservation } from './search-recovery.ts'
@@ -77,9 +77,9 @@ export interface ProductDiscoveryAdapters {
  * @returns Maximum complete canonical text characters per selected page.
  */
 export function resolveProductPageCharacterLimit(plan: ProductPlan): number {
-  const maximum = plan.limits?.maximumPageCharacters ?? PRODUCT_PAGE_FRAGMENT_CHARACTERS
-  if (!Number.isSafeInteger(maximum) || maximum < PRODUCT_PAGE_FRAGMENT_CHARACTERS || maximum > 48_000) {
-    throw new RangeError('maximumPageCharacters must be between 12000 and 48000')
+  const maximum = plan.limits?.maximumPageCharacters ?? Number.MAX_SAFE_INTEGER
+  if (!Number.isSafeInteger(maximum) || maximum < 1) {
+    throw new RangeError('maximumPageCharacters must be a positive safe integer')
   }
   return maximum
 }
@@ -104,7 +104,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   if (maximum !== undefined && (!Number.isSafeInteger(maximum) || maximum < 1)) {
     throw new RangeError('maximumCandidatePages must be a positive integer')
   }
-  const limit = Math.min(maxResultsPerQuery, maximum ?? maxResultsPerQuery)
+  const limit = maxResultsPerQuery
   const gap = input.gapQuestionIds
   const attempts = input.existing?.searches.filter(isProductGapSearch) ?? []
   const triedDomains = new Set(attempts.flatMap(({ query }) => query.match(/ site:([a-z0-9.-]+)$/iu)?.slice(1) ?? []))
@@ -330,10 +330,9 @@ Pick<CandidatePage['screening'], 'status' | 'reason'> {
   if (officialPage) {
     return { status: 'selected', reason: 'URL matches the approved official host; check product relevance against the page text.' }
   }
+  if (!approvedPublisher) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
   if (named) {
-    return { status: 'selected', reason: approvedPublisher
-      ? 'Search metadata names the product and its host matches a user-approved publisher domain.'
-      : 'Search metadata names the product; publisher identity remains unverified.' }
+    return { status: 'selected', reason: 'Search metadata names the product and its host matches a user-approved publisher domain.' }
   }
   return { status: 'needs_review', reason: 'Publisher and product relevance need page review.' }
 }

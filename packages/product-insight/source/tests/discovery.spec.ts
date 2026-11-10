@@ -50,17 +50,17 @@ describe('product page discovery', () => {
     expect(result.searches.map(item => item.status)).toEqual(['success', 'failed'])
   })
 
-  it('selects a named external page for checking while retaining unknown publishers as unreviewed', async () => {
+  it('excludes unapproved hosts before reading even when their titles name the product', async () => {
     const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
       now, web: { search: async () => ({ sources: [
         { url: 'https://review.test/example', title: 'Example review' },
         { url: 'https://unknown.test/article', title: 'Unrelated article' }], truncated: false }) },
     })
     expect(result.candidates.items[0]).toMatchObject({ sourceType: 'other',
-      screening: { status: 'selected' } })
-    expect(result.candidates.items[0]?.screening.reason).toContain('unverified')
+      screening: { status: 'excluded' } })
+    expect(result.candidates.items[0]?.screening.reason).toContain('not an approved')
     expect(result.candidates.items[1]).toMatchObject({ sourceType: 'other',
-      screening: { status: 'needs_review' } })
+      screening: { status: 'excluded' } })
     const approved = await discoverCandidatePages({ product,
       plan: { ...plan, sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }] },
       maxResultsPerQuery: 5 }, { now, web: { search: async () => ({ sources: [
@@ -90,7 +90,7 @@ describe('product page discovery', () => {
     const result = await discoverCandidatePages({ product,
       plan: { ...plan, limits: { maximumCandidatePages: 2 } }, maxResultsPerQuery: 5 }, {
       now, web: { search: async ({ query, maxResults }) => {
-        expect(maxResults).toBe(2)
+        expect(maxResults).toBe(5)
         return { sources: (query.includes('Features?') ? [features, `${features}/more`] : [price, `${features}#details`])
           .map(url => ({ url })), truncated: false }
       } },
@@ -121,7 +121,8 @@ describe('product page discovery', () => {
   it('uses a full review-only pool for follow-up without exceeding the approved candidate limit', async () => {
     const apple: Product = { ...product, name: 'Apple fall lineup (phone, tablet, desktop)', developer: 'Apple',
       officialUrl: 'https://www.apple.com/' }
-    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2, maximumGapSearches: 1 } }
+    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2, maximumGapSearches: 1 },
+      sourcePublishers: [{ name: 'Regional', domain: 'www.apple.com.cn' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
     const regional = 'https://www.apple.com.cn/newsroom/phone'
     const official = 'https://www.apple.com/newsroom/phone'
     const queries: string[] = []
@@ -148,7 +149,7 @@ describe('product page discovery', () => {
     const vivo: Product = { ...product, name: 'vivo latest product lineup', developer: 'vivo',
       officialUrl: 'https://www.vivo.com.cn/' }
     const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 8, maximumGapSearches: 2 },
-      sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }] }
+      sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
     const web = { search: async ({ query }: { query: string }) => ({ sources: query.includes('site:www.vivo.com.cn')
       ? Array.from({ length: 5 }, (_, index) => ({ url: `https://www.vivo.com.cn/product-${index}` }))
       : query.includes('site:review.test')
@@ -207,4 +208,17 @@ describe('product page discovery', () => {
       existing: extended, gapQuestionIds: [first] }, { now, web }))
       .rejects.toThrow(/search allowance/u)
   })
+})
+
+
+it('requests sixty links before screening, keeping unapproved domains out of page reading', async () => {
+  const result = await discoverCandidatePages({ product,
+    plan: { ...plan, limits: { maximumCandidatePages: 30 } }, maxResultsPerQuery: 60 },
+  { now, web: { search: async (request) => {
+    expect(request.maxResults).toBe(60)
+    return { sources: [{ url: 'https://unapproved.test/example', title: 'Example features' },
+      { url: 'https://example.com/features' }], truncated: false }
+  } } })
+  expect(result.candidates.items.find(page => page.url.includes('unapproved'))?.screening.status).toBe('excluded')
+  expect(result.candidates.items.find(page => page.url === 'https://example.com/features')?.screening.status).toBe('selected')
 })

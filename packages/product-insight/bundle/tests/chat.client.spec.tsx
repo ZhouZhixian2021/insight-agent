@@ -35,6 +35,9 @@ it('projects approved product stages and the saved report into one Chat card', (
       snapshots: [{ status: 'available' }, { status: 'available' }, { status: 'unavailable' }] } },
     { type: 'product/checkpoint-v1', data: { planId, stage: 'evidence', elapsedMilliseconds: 12_400,
       failures: [{ failureId: 'f1' }] } },
+    { type: 'product/model-request-v1', data: { planId, candidatePageId: 'page-1', provider: 'mock', model: 'model',
+      system: 'Read', user: 'Source', maxTokens: 8192 } },
+    { type: 'product/model-result-v1', data: { planId, candidatePageId: 'page-1', status: 'completed', text: '[]', error: null } },
     { type: 'product/evidence-v1', data: { planId, items: [{}, {}, {}, {}] } },
     { type: 'product/claims-v1', data: { planId, items: [{}, {}] } },
     { type: 'product/verification-v1', data: { planId, verification: {} } },
@@ -64,7 +67,9 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(screen.getByRole('button', { name: '下载 HTML' })).toBeTruthy()
   expect(screen.getByRole('heading', { name: '调查草稿' })).toBeTruthy()
   expect(screen.getByText('已保存正文。')).toBeTruthy()
-  expect(screen.getAllByText('已完成')).toHaveLength(5)
+  expect(screen.getAllByText('已完成').filter(element => element.tagName === 'SMALL')).toHaveLength(5)
+  expect(screen.getByRole('button', { name: 'traceDownload' })).toBeTruthy()
+  expect(screen.getAllByText(/product\/model-request-v1/u).length).toBeGreaterThan(0)
 })
 
 it('exports and downloads a self-contained safe HTML report', () => {
@@ -81,9 +86,10 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect(doc.querySelector('[onclick],[onerror]')).toBeNull()
   expect(doc.querySelector('meta[http-equiv]')?.getAttribute('content')).toContain("default-src 'none'")
   expect(doc.querySelector('a[href="https://example.com/a"]')?.getAttribute('rel')).toBe('noopener noreferrer')
-  expect(doc.querySelector('details summary')?.textContent).toBe('证据附录')
-  expect(doc.querySelector('details')?.hasAttribute('open')).toBe(false)
-  expect(doc.querySelector('details')?.textContent).toContain('原文依据。')
+  const disclosures = [...doc.querySelectorAll('details')]
+  expect(disclosures.every(item => !item.hasAttribute('open'))).toBe(true)
+  expect(disclosures[0]?.querySelector('summary')?.textContent).toBe('未达标原因')
+  expect(disclosures.find(item => item.querySelector('summary')?.textContent === '证据附录')?.textContent).toContain('原文依据。')
 
   vi.useFakeTimers()
   const create = vi.fn().mockReturnValue('blob:product-report')
