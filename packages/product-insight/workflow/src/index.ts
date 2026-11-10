@@ -23,7 +23,7 @@ import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApp
 import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
 import { assessProductCorroboration, assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
-import { evaluateProductReport, MAX_PRODUCT_REPORT_BYTES, productSynthesisInput, renderProductReport, renderProductSynthesis,
+import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
   type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
 import { registerProductInvestigationTool } from './session-tool.ts'
 
@@ -395,7 +395,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           continue
         }
         const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
-        const sourceFragments = splitProductPageText(text, fragmentOverlapCharacters)
+        const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
+          ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
         const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
           ? currentCheckpoint : undefined
         const fragmentStart = savedPage?.fragmentIndex ?? 0
@@ -410,13 +411,11 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           throw new RangeError('Recovery fragment order does not match captured source text')
         }
         if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
-        const baseDrafts = Math.floor(8 / sourceFragments.length)
-        const extraDrafts = 8 % sourceFragments.length
         const fragments = order.map((start) => {
           const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
           const fragment = sourceFragments[sourceIndex]
           if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
-          return { fragment, maximumDrafts: baseDrafts + Number(sourceIndex < extraDrafts) }
+          return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
         })
         // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
         const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
@@ -510,10 +509,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       for (const question of unanswered) {
         if (operationSignal?.aborted || readBudget.remaining === 0) break
         const target = sources.flatMap((source) => {
-          const remaining = 8 - evidence.filter(item => item.candidatePageId === source.page.candidatePageId).length
-          if (remaining <= 0) return []
           const match = selectProductGapFragment(source.text, question.text)
-          return match === undefined ? [] : [{ ...source, ...match, allowance: Math.min(remaining, 2) }]
+          return match === undefined ? [] : [{ ...source, ...match, allowance: Number.MAX_SAFE_INTEGER }]
         }).toSorted((left, right) => right.score - left.score)[0]
         if (target === undefined) continue
         readBudget.remaining -= 1
@@ -661,16 +658,15 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     evidence, reviews, claims, verifications, gaps, failures, cancelled: operationSignal?.aborted ?? false }
   const initialAssessment = evaluateProductReport(reportInput)
   let synthesizedMarkdown: string | undefined
-  if (adapters.synthesizeReport !== undefined && initialAssessment.status === 'ready') {
+  if (adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
     try {
       const material = productSynthesisInput(reportInput)
-      const paragraphs = await adapters.synthesizeReport(material, operationSignal)
+      const writable = { ...material, questions: material.questions.filter(question => question.evidence.length > 0) }
+      const paragraphs = writable.questions.length === 0 ? new Map<string, string>()
+        : await adapters.synthesizeReport(writable, operationSignal)
       operationSignal?.throwIfAborted()
       const synthesis = renderProductSynthesis(reportInput, material, paragraphs)
       const markdown = renderProductReport(reportInput, initialAssessment, synthesis)
-      if (Buffer.byteLength(markdown, 'utf8') > MAX_PRODUCT_REPORT_BYTES) {
-        throw new RangeError('Synthesized product report exceeds the size limit')
-      }
       synthesizedMarkdown = markdown
     } catch {
       if (!operationSignal?.aborted) {
@@ -695,7 +691,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     delivery = { status: 'blocked', reasons: assessment.reasons, report: null }
   } else {
     try {
-      const markdown = assessment.status === 'ready' && synthesizedMarkdown !== undefined
+      const markdown = !operationSignal?.aborted && synthesizedMarkdown !== undefined
         ? synthesizedMarkdown : renderProductReport(reportInput, assessment)
       const contentRef = await adapters.saveReport(markdown)
       if (contentRef.trim().length === 0) throw new RangeError('Saved report reference is empty')
@@ -733,7 +729,7 @@ function locateProductDraft(draft: ProductEvidenceDraft, fragment: ProductPageFr
   const hinted = draft.startHint
   const validHint = hinted !== undefined && Number.isSafeInteger(hinted) && hinted >= 0
     && fragment.text.slice(hinted, hinted + draft.verbatimExcerpt.length) === draft.verbatimExcerpt
-  const local = validHint && hinted !== undefined ? hinted : fragment.text.indexOf(draft.verbatimExcerpt)
+  const local = validHint ? hinted : fragment.text.indexOf(draft.verbatimExcerpt)
   const unique = validHint || local >= 0 && fragment.text.indexOf(draft.verbatimExcerpt, local + 1) < 0
   return { ...draft, startHint: Number.isSafeInteger(local) && local >= 0 && unique
     && fragment.text.slice(local, local + draft.verbatimExcerpt.length) === draft.verbatimExcerpt

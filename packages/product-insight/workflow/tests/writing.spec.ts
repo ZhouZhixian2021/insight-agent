@@ -24,7 +24,7 @@ describe('product evidence-led writing', () => {
       expect(() => parseProductSynthesis(output('有条件支持。', references), input)).toThrow()
     }
     expect(() => parseProductSynthesis('[]', input)).toThrow()
-    expect(() => parseProductSynthesis(output('字'.repeat(7000)), input)).toThrow()
+    expect(parseProductSynthesis(output('字'.repeat(7000)), input).get('deployment')).toHaveLength(7000)
   })
 
   it('pins the product reading and writing instructions', () => {

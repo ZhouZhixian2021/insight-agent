@@ -123,8 +123,7 @@ function splitText(text: string, maximumCharacters: number, overlapCharacters: n
 export function splitFailedProductFragment(fragment: ProductPageFragment):
 readonly [ProductPageFragment, ProductPageFragment] | null {
   if (!Number.isSafeInteger(fragment.start) || fragment.start < 0 || !Number.isSafeInteger(fragment.end)
-    || fragment.end - fragment.start !== fragment.text.length
-    || fragment.text.length > PRODUCT_PAGE_FRAGMENT_CHARACTERS) {
+    || fragment.end - fragment.start !== fragment.text.length) {
     throw new RangeError('Failed product fragment has invalid source offsets or size')
   }
   if (fragment.text.length < 3_000) return null
@@ -182,13 +181,13 @@ export function prepareProductPage(fetched: WebFetchResult, maximumCharacters?: 
       metadata = pageMetadata(fetched.body.content)
       text = htmlText(fetched.body.content)
       // Keep the canonical string of pages that already fit, including sources cited by saved evidence.
-      if (maximumCharacters !== undefined && text.length > maximumCharacters) {
+      if (maximumCharacters === Number.MAX_SAFE_INTEGER || maximumCharacters !== undefined && text.length > maximumCharacters) {
         text = readableArticleText(fetched.body.content) || text
       }
       break
     case 'text':
       text = fetched.body.content.trim()
-      if (maximumCharacters !== undefined && text.length > maximumCharacters && text.includes('](')) {
+      if (text.includes('](')) {
         text = stripMarkdownDestinations(text)
       }
       break
@@ -207,12 +206,11 @@ function pageTextHash(text: string): string {
 }
 
 /** Extract complete PDF text with one form feed per physical page, including empty pages. */
-export async function prepareProductPdf(fetched: WebFetchResult, maximumCharacters = 48_000,
+export async function prepareProductPdf(fetched: WebFetchResult, maximumCharacters = Number.MAX_SAFE_INTEGER,
   signal?: AbortSignal): Promise<PreparedProductPage> {
   if (fetched.statusCode < 200 || fetched.statusCode >= 300 || fetched.truncated || fetched.body.kind !== 'pdf') {
     throw new RangeError('Product PDF requires a complete successful PDF response')
   }
-  if (fetched.body.content.byteLength > 16 * 1024 * 1024) throw new RangeError('Product PDF exceeds the byte limit')
   const { getDocument, VerbosityLevel } = await import('pdfjs-dist/legacy/build/pdf.mjs')
   signal?.throwIfAborted()
   const loading = getDocument({ data: new Uint8Array(fetched.body.content), stopAtErrors: true, verbosity: VerbosityLevel.ERRORS })
@@ -221,7 +219,6 @@ export async function prepareProductPdf(fetched: WebFetchResult, maximumCharacte
   const listener = signal === undefined ? undefined : addAbortListener(signal, () => { void close().catch(() => {}) })
   try {
     const document = await loading.promise
-    if (document.numPages > 200) throw new RangeError('Product PDF exceeds the page limit')
     const pages: string[] = []
     let length = 0
     for (let number = 1; number <= document.numPages; number++) {

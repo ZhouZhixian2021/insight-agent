@@ -19,7 +19,7 @@ export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownTe
     if (heading !== undefined) {
       if (current) sections.push({ text: current, ...(title === undefined ? {} : { title }) })
       title = appendixTitles.has(heading) ? heading : undefined
-      current = `${line}\n`
+      current = title === undefined ? `${line}\n` : ''
     } else current += `${line}\n`
   }
   if (current) sections.push({ text: current, ...(title === undefined ? {} : { title }) })

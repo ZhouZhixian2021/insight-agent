@@ -1,5 +1,6 @@
 /** Product investigation progress and saved reports in the Chat transcript. */
 import type { Context } from '@deepseek-ai/cordis'
+import { useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import { ProductReport } from './ProductReport.tsx'
@@ -14,6 +15,20 @@ import css from './ProductRunCard.module.css'
 
 type DeliveryStatus = 'blocked' | 'draft' | 'final'
 type RunState = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+interface ProductTraceEntry {
+  readonly seq: number
+  readonly time: number
+  readonly type: string
+  readonly status: 'running' | 'completed' | 'failed' | 'recorded'
+  readonly page?: string
+  readonly model?: string
+  readonly inputCharacters?: number
+  readonly durationMilliseconds?: number
+  readonly outputCharacters?: number
+  readonly error?: string
+  readonly details?: unknown
+}
 
 /** Complete client projection for one approved product investigation. */
 export interface ProductChatRun {
@@ -32,6 +47,7 @@ export interface ProductChatRun {
   readonly elapsedMilliseconds: number
   readonly deliveryStatus?: DeliveryStatus
   readonly reasons: readonly string[]
+  readonly trace?: readonly ProductTraceEntry[]
   readonly report?: string
 }
 
@@ -93,6 +109,27 @@ function count(value: unknown): number { return Array.isArray(value) ? value.len
 
 function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDefinition['match']>[0]): ProductChatRun {
   const data: Record<string, unknown> = record(event.data) ? event.data : {}
+  if (event.type.startsWith('product/') && !(state.trace ?? []).some(entry => entry.seq === event.seq)) {
+    const status = data.error || data.status === 'failed' || data.state === 'failed' ? 'failed'
+      : event.type.includes('-request-') ? 'running' : event.type.includes('-result-') ? 'completed' : 'recorded'
+    const prior = [...state.trace ?? []]
+    const requestType = event.type.replace('-result-', '-request-')
+    const requestIndex = event.type.includes('-result-') ? prior.findLastIndex(entry => entry.type === requestType
+      && entry.status === 'running' && (typeof data.candidatePageId !== 'string' || entry.page === data.candidatePageId)) : -1
+    const request = prior[requestIndex]
+    const duration = request === undefined ? undefined : Math.max(0, event.time - request.time)
+    if (request !== undefined) prior[requestIndex] = { ...request, status, durationMilliseconds: duration ?? 0 }
+    state = { ...state, trace: [...prior, {
+      seq: event.seq, time: event.time, type: event.type, status,
+      ...duration === undefined ? {} : { durationMilliseconds: duration },
+      ...typeof data.candidatePageId === 'string' ? { page: data.candidatePageId } : {},
+      ...typeof data.model === 'string' ? { model: data.model } : {},
+      ...typeof data.user === 'string' ? { inputCharacters: data.user.length } : {},
+      ...typeof data.text === 'string' ? { outputCharacters: data.text.length } : {},
+      ...typeof data.error === 'string' ? { error: data.error } : {},
+      ...Array.isArray(data.failures) ? { details: data.failures } : {},
+    }] }
+  }
   const planId = typeof data.planId === 'string' ? data.planId : state.planId
   switch (event.type) {
     case 'tool/result':
@@ -114,6 +151,8 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(stageNumber(data.stage), state.stage),
         failures: count(data.failures), elapsedMilliseconds: typeof data.elapsedMilliseconds === 'number'
           ? data.elapsedMilliseconds : state.elapsedMilliseconds }
+    case 'product/model-request-v1': case 'product/model-result-v1':
+      return { ...state, stage: Math.max(2, state.stage) }
     case 'product/evidence-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(2, state.stage), evidence: count(data.items) }
     case 'product/claim-review-request-v1': case 'product/claim-review-result-v1':
@@ -182,6 +221,8 @@ const zh = {
   claimCount: '已审核结论', verificationCount: '跨来源核验', failureCount: '失败操作', elapsed: '已用时', seconds: '秒',
   blockers: '未达标原因', reportContent: '报告正文', download: '下载 Markdown', downloadHtml: '下载 HTML',
   htmlContents: '目录', htmlSummary: '调查摘要', htmlCopy: '复制代码', htmlCopied: '已复制', htmlFootnotes: '脚注',
+  trace: '研究过程与 Trace', traceDownload: '下载 Trace', all: '全部', traceStatus: '调用状态',
+  traceNote: '仅展示已记录事件；字符数不是 token 数，调用成功不代表结论审核通过。',
   noReport: '调查已结算，但没有保存报告正文。',
 } as const
 type ProductRunKey = keyof typeof zh
@@ -193,7 +234,18 @@ const en: Record<ProductRunKey, string> = {
   claimCount: 'Reviewed claims', verificationCount: 'Cross-source checks', failureCount: 'Failed operations', elapsed: 'Elapsed', seconds: 'seconds',
   blockers: 'Delivery blockers', reportContent: 'Report content', download: 'Download Markdown', downloadHtml: 'Download HTML',
   htmlContents: 'Contents', htmlSummary: 'Investigation summary', htmlCopy: 'Copy code', htmlCopied: 'Copied', htmlFootnotes: 'Footnotes',
+  trace: 'Research process and Trace', traceDownload: 'Download Trace', all: 'All', traceStatus: 'Call status',
+  traceNote: 'Recorded events only; character counts are not tokens. Successful calls do not establish valid conclusions.',
   noReport: 'The investigation settled without a saved report body.',
+}
+
+function downloadProductTrace(run: ProductChatRun): void {
+  const url = URL.createObjectURL(new Blob([JSON.stringify({ schemaVersion: 1, planId: run.planId,
+    state: run.runState, deliveryStatus: run.deliveryStatus, events: run.trace ?? [] }, null, 2)],
+  { type: 'application/json;charset=utf-8' }))
+  const anchor = document.createElement('a')
+  anchor.href = url; anchor.download = 'product-insight-trace.json'; anchor.click()
+  setTimeout(() => { URL.revokeObjectURL(url) }, 1000)
 }
 
 function downloadMarkdown(markdown: string): void {
@@ -268,7 +320,7 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
     <title>${escapeHtml(title)}</title><style>${productHtmlStyles}</style></head><body>
     <header class="header"><span class="status">${escapeHtml(t(run.deliveryStatus ?? run.runState))}</span><h1>${escapeHtml(title)}</h1>
     <h2>${escapeHtml(t('htmlSummary'))}</h2><dl class="summary">${summary.map(([key, value]) => `<div><dt>${escapeHtml(t(key))}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl>
-    ${run.reasons.length === 0 ? '' : `<aside class="notice"><h2>${escapeHtml(t('blockers'))}</h2>${list(run.reasons)}</aside>`}</header>
+    ${run.reasons.length === 0 ? '' : `<details class="notice"><summary>${escapeHtml(t('blockers'))}</summary>${list([...new Set(run.reasons)])}</details>`}</header>
     <div class="layout"><nav aria-label="${escapeHtml(t('htmlContents'))}"><h2>${escapeHtml(t('htmlContents'))}</h2><ul>${contents.map(heading =>
       `<li><a href="#${heading.id}">${escapeHtml(heading.text)}</a></li>`).join('')}</ul></nav><article class="paper">${body}</article></div></body></html>`
 }
@@ -289,6 +341,7 @@ function stageState(run: ProductChatRun, index: number): 'pending' | 'active' | 
 /** Render durable product workflow stages and the saved report without invoking the Agent. */
 export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insight-run'>, 'node'> & PropsLocale<'productRun'>) {
   const run = node.data
+  const [traceStatus, setTraceStatus] = useState('all')
   const stages: readonly [ProductRunKey, number][] = [['pages', 1], ['evidence', 2], ['review', 3], ['verification', 4], ['report', 5]]
   const status = run.deliveryStatus ?? run.runState
   return <section className={css.card} data-product-insight-run={node.id} aria-label={t('title')}>
@@ -307,7 +360,19 @@ export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insi
       <div><dt>{t('failureCount')}</dt><dd>{run.failures}</dd></div>
       <div><dt>{t('elapsed')}</dt><dd>{Math.round(run.elapsedMilliseconds / 1000)} {t('seconds')}</dd></div>
     </dl>
-    {run.reasons.length > 0 && <details className={css.details} open={run.deliveryStatus !== 'final'}>
+    <details className={css.details}>
+      <summary>{t('trace')} · {run.trace?.length ?? 0}</summary>
+      <p>{t('traceNote')}</p>
+      <label>{t('traceStatus')} <select value={traceStatus} onChange={(event) => { setTraceStatus(event.target.value) }}>
+        <option value="all">{t('all')}</option><option value="running">{t('active')}</option>
+        <option value="completed">{t('done')}</option><option value="failed">{t('failed')}</option>
+      </select></label>
+      <button type="button" onClick={() => { downloadProductTrace(run) }}>{t('traceDownload')}</button>
+      <ol>{(run.trace ?? []).filter(entry => traceStatus === 'all' || entry.status === traceStatus).map(entry =>
+        <li key={entry.seq}><details><summary>{new Date(entry.time).toLocaleTimeString()} · {entry.type} · {entry.status}</summary>
+          <pre>{JSON.stringify(entry, null, 2)}</pre></details></li>)}</ol>
+    </details>
+    {run.reasons.length > 0 && <details className={css.details}>
       <summary>{t('blockers')} · {run.reasons.length}</summary><ul>{run.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
     </details>}
     {run.report !== undefined ? <section className={css.report}>

@@ -7,7 +7,6 @@ import type { ProductSemanticReview } from './claim-review.ts'
 import { assessProductCorroboration, assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   distinctProductSites, keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
-export const MAX_PRODUCT_REPORT_BYTES = 64_000
 
 /** Ready means the approved investigation is complete enough to deliver, not independently true. */
 export interface ProductReportAssessment {
@@ -32,40 +31,61 @@ export interface ProductReportInput {
   readonly cancelled: boolean
 }
 
-/** Approved questions with the key excerpt and a corroborating excerpt per question. */
+/** Approved questions with all source-qualified, reviewed evidence for each question. */
 export interface ProductSynthesisInput {
   readonly scope: string
   readonly sourceCriteria?: NonNullable<ProductPlan['sourceCriteria']>
   readonly questions: readonly {
     readonly questionId: string
     readonly question: string
+    readonly limitations?: readonly string[]
     readonly evidence: readonly Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'>[]
   }[]
 }
 
-/** Build synthesis material after the report delivery checks have passed. */
+/** Build source-qualified writing material independently of final delivery status. */
 export function productSynthesisInput(input: ProductReportInput): ProductSynthesisInput {
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const keys = keyProductClaims(input.plan, input.claims, input.evidence, input.discovery.candidates.items)
-  const questions = keys.map(({ questionId, claim }) => {
-    const question = input.plan.questions.find(item => item.questionId === questionId)
-    const primaryId = claim.evidenceLinks[0]?.evidenceId
+  const reviews = new Map(input.reviews.map(item => [item.evidenceId, item]))
+  const snapshots = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
+  const claims = input.claims.filter(claim => validClaimLinks(input.plan, claim, evidence, reviews, pages)
+    && checkProductClaimFreshness(claim, input.plan, evidence, snapshots).status === 'current'
+    && claim.evidenceLinks.every((link) => {
+      const item = evidence.get(link.evidenceId)
+      if (item === undefined) return false
+      const page = pages.get(item.candidatePageId)
+      const snapshot = snapshots.get(item.candidatePageId)
+      return assessProductSource(input.product, input.plan, page, snapshot).eligible
+        && (input.sourceRevalidation === undefined || sameProductPageFacts(snapshot,
+          input.sourceRevalidation.snapshots.items.find(value => value.candidatePageId === item.candidatePageId)))
+    }))
+  const eligibleIds = new Set(claims.flatMap(claim => claim.evidenceLinks.map(link => link.evidenceId)))
+  const keys = keyProductClaims(input.plan, claims, input.evidence, input.discovery.candidates.items)
+  const questions = input.plan.questions.map((question) => {
+    const claim = keys.find(item => item.questionId === question.questionId)?.claim
+    const primaryId = claim?.evidenceLinks[0]?.evidenceId
     const primary = primaryId === undefined ? undefined : evidence.get(primaryId)
     const primaryPage = primary === undefined ? undefined : pages.get(primary.candidatePageId)
-    const verification = input.verifications.find(item => item.questionId === questionId)
-    const support = verification?.judgments.filter(item => item.relation === 'supports')
+    const verification = input.verifications.find(item => item.questionId === question.questionId
+      && item.claimId === claim?.claimId && item.complete)
+    const support = verification?.judgments.filter(item => item.relation === 'supports' && eligibleIds.has(item.evidenceId))
       .map(item => evidence.get(item.evidenceId)).find((item) => {
         const page = item === undefined ? undefined : pages.get(item.candidatePageId)
-        return page?.publisher?.toLocaleLowerCase() !== primaryPage?.publisher?.toLocaleLowerCase()
+        return item?.questionIds.includes(question.questionId)
+          && page?.publisher?.toLocaleLowerCase() !== primaryPage?.publisher?.toLocaleLowerCase()
           && distinctProductSites(primaryPage, page)
       })
-    if (question === undefined || primary === undefined || support === undefined) {
-      throw new RangeError('Product synthesis requires a key claim and corroborating evidence for each question')
-    }
-    return { questionId, question: question.text,
-      evidence: [primary, support].map(({ evidenceId, sourcedStatement, verbatimExcerpt }) =>
-        ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
+    const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => gap.missingContent)
+    if (!primary) limitations.push('当前没有满足来源、原文关联与审核要求的材料，尚不能回答本题。')
+    else if (!support) limitations.push('当前说法有来源摘录支持，但缺少符合要求的独立来源佐证；不能视为独立实测结论。')
+    if (verification?.judgments.some(item => item.relation === 'contradicts')) limitations.push('来源存在相反陈述，当前不能作确定判断。')
+    if (verification?.judgments.some(item => item.relation === 'uncertain')) limitations.push('部分来源的含义或适用条件仍不明确。')
+    return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
+      evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
+        && claims.some(claim => claim.questionIds.includes(question.questionId)
+          && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))
+        .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
   })
   return { scope: input.plan.scope, questions,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
@@ -77,16 +97,17 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page.url]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
   return ['## 综合回答', '', '以下综合表述依据已核对的来源陈述。逐条摘录和适用范围见下文。', '',
-    ...material.questions.flatMap(({ questionId, question, evidence: references }) => {
-      const text = paragraphs.get(questionId)
+    ...material.questions.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
+      const text = references.length === 0 ? '现有材料不足以形成有依据的回答。' : paragraphs.get(questionId)
       if (text === undefined) throw new RangeError('Product synthesis is missing an approved answer')
-      const links = references.map(({ evidenceId }, index) => {
+      const sourceLinks = references.map(({ evidenceId }) => {
         const item = evidence.get(evidenceId)
         const url = item === undefined ? undefined : pages.get(item.candidatePageId)
         if (item === undefined || url === undefined || !safeSourceUrl(url)) throw new RangeError('Product synthesis source URL is unavailable')
-        return `[来源 ${index + 1}](${citationLink(url, item)})`
+        return citationLink(url, item)
       })
-      return [`### ${escape(question)}`, '', `${text.split(/\n\s*\n/u).map(part => escape(part)).join('\n\n')} ${links.join(' ')}`, '']
+      const links = [...new Set(sourceLinks)].map((url, index) => `[来源 ${index + 1}](${url})`)
+      return [`### ${escape(question)}`, '', `${text.split(/\n\s*\n/u).map(part => escape(part)).join('\n\n')} ${links.join(' ')}`, '', ...limitations.map(note => `资料限制：${escape(note)}`), '']
     })].join('\n')
 }
 
@@ -266,7 +287,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
     : '交付条件尚未全部满足，以下保留已有依据与可回答的内容。', '')
   if (assessment.status === 'draft') {
     lines.push('### 交付未达标原因', '',
-      ...[...new Set(assessment.reasons)].map(reason => `- ${escape(productDeliveryReason(reason))}`), '')
+      ...[...new Set(assessment.reasons.map(productDeliveryReason))].map(reason => `- ${escape(reason)}`), '')
   }
   if (synthesis !== undefined) lines.push(synthesis, '')
   else {

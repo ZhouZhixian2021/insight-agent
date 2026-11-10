@@ -10,7 +10,7 @@ import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApp
   evaluateProductReport, runApprovedProductInvestigation, runProductInvestigation,
   type ProductInvestigationAdapters, type ProductInvestigationCheckpoint } from '../src/index.ts'
 import { latestProductBackgroundRun } from '../src/background-run.ts'
-import { completedProductModelText, parseDrafts, reconcileProductSourceRevalidation } from '../src/session-tool.ts'
+import { completedProductModelText, fitsProductModelInput, parseDrafts, reconcileProductSourceRevalidation } from '../src/session-tool.ts'
 
 const productId = createProductId()
 const questionId = createProductQuestionId()
@@ -122,6 +122,39 @@ describe('approved product investigation', () => {
     expect(report.indexOf('## 产品分析')).toBeLessThan(report.indexOf('## 证据附录'))
     expect(report).not.toContain('关键来源陈述：')
     expect(report).not.toContain('置信度：低')
+  })
+
+  it('writes a grounded draft using the same question sections as a final report', async () => {
+    const synthesizeReport = vi.fn<NonNullable<ProductInvestigationAdapters['synthesizeReport']>>(async (material) => {
+      expect(material.questions).toHaveLength(1)
+      expect(material.questions[0]?.evidence).toHaveLength(1)
+      expect(material.questions[0]?.limitations?.join(' ')).toContain('缺少符合要求的独立来源佐证')
+      return new Map([[String(questionId), '产品资料说明支持导出，可用于保存已有内容。当前仅有单一来源，尚不能视为独立实测。']])
+    })
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters, synthesizeReport,
+      web: { ...adapters.web, fetch: async () => ({ url: 'https://example.com/features', statusCode: 200,
+        truncated: false, body: { kind: 'html', content: pageHtml('Example supports export.', 'Example Inc') } }) } })
+    expect(synthesizeReport).toHaveBeenCalledTimes(1)
+    expect(result.delivery.status).toBe('draft')
+    const markdown = reports.at(-1)!
+    expect(markdown).toContain('## 综合回答')
+    expect(markdown).toContain('产品资料说明支持导出')
+    expect(markdown).toContain('### What does it cost?')
+    expect(markdown).toContain('现有材料不足以形成有依据的回答')
+    expect(markdown).toContain('[来源 1](https://example.com/features)')
+    expect(markdown).not.toContain('## 产品分析')
+  })
+
+  it('does not send ineligible evidence to draft synthesis or invent an answer', async () => {
+    const synthesizeReport = vi.fn(async () => new Map<string, string>())
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters, synthesizeReport })
+    expect(result.evidence).toHaveLength(1)
+    expect(result.delivery.status).toBe('draft')
+    expect(synthesizeReport).not.toHaveBeenCalled()
+    expect(reports.at(-1)).toContain('## 综合回答')
+    expect(reports.at(-1)).toContain('当前没有满足来源、原文关联与审核要求的材料')
   })
 
   it('discloses truncated and failed searches without exposing provider errors', async () => {
@@ -343,8 +376,8 @@ describe('approved product investigation', () => {
     expect(proposeEvidence.mock.calls[2]?.[1]).toBe(body.slice(10_501))
     expect(versionTwo.evidence.map(item => item.locator)).toEqual([...result.evidence].reverse().map(item => item.locator))
     const legacy = await runProductInvestigation({ ...input, plan }, resumable)
-    expect(legacy.pages.snapshots.status).toBe('failed')
-    expect(proposeEvidence).toHaveBeenCalledTimes(3)
+    expect(legacy.pages.snapshots.status).toBe('success')
+    expect(proposeEvidence).toHaveBeenCalledTimes(4)
     const partial = await runProductInvestigation(input, { ...resumable,
       proposeEvidence: async (page, text, questions) => {
         if (text.includes('costs $10')) throw new Error('Second fragment unavailable')
@@ -442,7 +475,7 @@ describe('approved product investigation', () => {
     const result = await runProductInvestigation({ ...input, checkpoint: reconciled.checkpoint, sourceRevalidation: fresh },
       { ...setup, saveCheckpoint: async () => {} })
     expect(proposeEvidence.mock.calls.filter(call => call[0].url === review).map(call => [call[4]?.start, call[5]]))
-      .toEqual([[42_004, 1], [0, 2], [10_501, 2], [21_002, 2], [31_503, 1]])
+      .toEqual([42_004, 0, 10_501, 21_002, 31_503].map(start => [start, Number.MAX_SAFE_INTEGER]))
     expect(result.evidence.find(item => item.verbatimExcerpt === price))
       .toEqual(saved.evidence.find(item => item.verbatimExcerpt === price))
   })
@@ -471,7 +504,8 @@ describe('approved product investigation', () => {
     const input = { product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }
     const result = await runProductInvestigation(input, recovery)
-    expect(calls.map(call => call.allowance)).toEqual([8, 4, 4])
+    expect(calls.map(call => call.allowance)).toEqual([Number.MAX_SAFE_INTEGER,
+      Math.ceil(Number.MAX_SAFE_INTEGER / 2), Math.floor(Number.MAX_SAFE_INTEGER / 2)])
     expect(calls[1]?.length).toBeLessThan(calls[0]!.length)
     expect(calls[2]?.length).toBeLessThan(calls[0]!.length)
     expect(calls[2]?.start).toBeGreaterThan(0)
@@ -514,8 +548,8 @@ describe('approved product investigation', () => {
     const temporary = new Error('Transient model failure')
     const seen = new Set<number>()
     const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (
-      _page, _text, _questions, _signal, fragment, allowance) => {
-      if (allowance === 2) throw new SyntaxError('Invalid evidence output')
+      _page, _text, _questions, _signal, fragment, _allowance) => {
+      if (_text.length === 12_000 && (fragment?.start ?? 0) < 31_503) throw new SyntaxError('Invalid evidence output')
       if (fragment !== undefined && fragment.start >= 31_503 && !seen.has(fragment.start)) {
         seen.add(fragment.start)
         throw temporary
@@ -1058,9 +1092,9 @@ describe('product plan approval handoff', () => {
       questions: ['Only one?'] }))).toThrow(/two to five/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload, limits: undefined }))).toThrow(/limits/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
-      limits: { maximumCandidatePages: 13, maximumElapsedMinutes: 10 } }))).toThrow(/at most 12/u)
+      limits: { maximumCandidatePages: 31, maximumElapsedMinutes: 10 } }))).toThrow(/at most 30/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
-      limits: { ...payload.limits, maximumPageCharacters: 48_001 } }))).toThrow(/between 12000 and 48000/u)
+      limits: { ...payload.limits, maximumPageCharacters: -1 } }))).toThrow(/positive/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
       limits: { ...payload.limits, maximumGapSearches: 3 } }))).toThrow(/approved questions/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
@@ -1118,4 +1152,33 @@ describe('durable product background state', () => {
     expect(latestProductBackgroundRun(events, String(plan.planId), () => false)?.state).toBe('interrupted')
     expect(latestProductBackgroundRun(events, 'another-plan', () => false)).toBeUndefined()
   })
+})
+
+
+it('reads the complete cleaned source and keeps more than eight excerpts and two synthesis references', async () => {
+  const facts = Array.from({ length: 12 }, (_, index) => `Example supports feature ${index}.`)
+  const body = facts.join(' ') + ' More context.'.repeat(8_000)
+  const proposeEvidence = vi.fn(async (_page: unknown, text: string) => {
+    expect(text).toBe(body)
+    return facts.map(text => ({ verbatimExcerpt: text, sourcedStatement: text, questionIds: [questionId] }))
+  })
+  const synthesizeReport = vi.fn(async (input: import('../src/report.ts').ProductSynthesisInput) => {
+    expect(input.questions[0]?.evidence).toHaveLength(12)
+    return new Map(input.questions.map(question => [question.questionId, '完整解释功能与使用条件。']))
+  })
+  const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 60,
+    extractionMethod: { name: 'model', version: '1' } }, { ...adapters, proposeEvidence, synthesizeReport,
+    web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false,
+      body: { kind: 'html', content: pageHtml(body, product.developer) } }) } })
+  expect(proposeEvidence).toHaveBeenCalledTimes(1)
+  expect(result.evidence).toHaveLength(12)
+  expect(synthesizeReport).toHaveBeenCalledTimes(1)
+})
+
+it('accepts long complete evidence and reserves model response capacity', () => {
+  const drafts = Array.from({ length: 12 }, () => ({ verbatimExcerpt: '原文'.repeat(1000),
+    sourcedStatement: '说明'.repeat(400), questionIds: [questionId] }))
+  expect(parseDrafts(JSON.stringify(drafts))).toHaveLength(12)
+  expect(fitsProductModelInput('Instructions', 'Source', 32_000, 8_000)).toBe(true)
+  expect(fitsProductModelInput('Instructions', 'Source', 8_000, 8_000)).toBe(false)
 })

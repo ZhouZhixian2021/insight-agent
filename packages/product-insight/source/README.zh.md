@@ -29,7 +29,7 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-`discoverCandidatePages()` 接收产品、当前版本获批的计划、明确的单次搜索上限、DSH Web 搜索适配器和时钟。返回的 `candidates` 保留选中、排除、待核对网页及失败；`searches` 保留查询、问题、数量、截断及跳过或取消情况。传入 `existing` 和获批的 `gapQuestionIds`，可在同一候选页上限内对问题各补搜一次。`corroborationFor` 指明关键来源时，发现流程会选择不同的获批发布方及站点，只接纳目标域名的结果。两种补搜共用获批额度。将入选网页传给 `fetchProductPages()`，提供 Web 获取适配器和持久保存正文的 `saveText` 回调，并将 `resolveProductPageCharacterLimit()` 算出的上限放在可选信号之后的第四个参数；完整规范化正文存好后才发布成功快照。`splitProductPageText()` 将正文分成每段不超过 12,000 个 UTF-16 代码单元的模型输入，并保留全文偏移。可选的第二个参数设置最多 1,499 个代码单元的重叠；为保持代理项完整，片段可能再多重复一个代码单元。省略时仍使用连续且不重叠的片段。`selectProductGapFragment()` 为获批问题选出词语最匹配且不超过 3,000 个代码单元的片段，并保留原文偏移。`splitFailedProductFragment()` 将至少 3,000 个代码单元的失败片段拆成两个更短且重叠的来源范围。将已保存正文、快照和定位后的摘录交给 `extractProductPageEvidence()`；只有准确摘录才成为证据。详见[团队接口文档](../../../z-team_docs/产品洞察/接口约定/01-候选网页发现与初筛接口草案.md)。
+`discoverCandidatePages()` 在抓取前筛选获批来源域名、合并重复网址并保留逐查询失败。单次搜索结果上限与最终候选数独立。`fetchProductPages()` 最多同时读取三个入选页面，先保存完整规范正文，再发布快照。计划未显式限制字符数时，清理后的 HTML 和 PDF 正文不再因 12000/48000 字符、16 MiB 或 200 页而被拒绝；历史显式字符额度仍生效。`splitProductPageText()` 保留用于历史固定窗口，新无字符额度计划由工作流按模型上下文容量处理。摘录与保存的全文核对，PDF 保留物理页码。传输资源保护仍可配置：默认响应 64 MiB、正文 16,777,216 字符；超出时记录失败，不静默截断后冒充完整。浏览器请求数和网络超时保护保留。
 
 -----
 

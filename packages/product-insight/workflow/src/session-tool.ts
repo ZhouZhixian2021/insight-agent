@@ -25,7 +25,7 @@ import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, Prod
 import type { ProductSemanticReview } from './claim-review.ts'
 import { checkCrossSourceJudgments, comparisonEvidence, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
-import { MAX_PRODUCT_REPORT_BYTES, type ProductSynthesisInput } from './report.ts'
+import { type ProductSynthesisInput } from './report.ts'
 import { PRODUCT_READING_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from './writing.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
@@ -40,6 +40,8 @@ declare module '@deepseek-ai/dsh-session/types' {
     'product/source-text-v1': { contentRef: string; candidatePageId: string; contentHash: string; text: string }
     /** Exact request sent to the evidence model for one saved source. */
     'product/model-request-v1': {
+      /** Absent on historical records; never infer a different plan. */
+      planId?: string
       candidatePageId: string
       provider: string
       model: string
@@ -49,6 +51,8 @@ declare module '@deepseek-ai/dsh-session/types' {
     }
     /** Complete or failed model response, including any partial output. */
     'product/model-result-v1': {
+      /** Absent on historical records; never infer a different plan. */
+      planId?: string
       candidatePageId: string
       status: 'completed' | 'failed'
       text: string
@@ -115,6 +119,8 @@ declare module '@deepseek-ai/dsh-session/types' {
     }
     /** Raw bounded output paired with its exact request by Session sequence. */
     'product/synthesis-result-v1': {
+      /** Absent on historical records; never infer a different plan. */
+      planId?: string
       requestSeq: number
       text: string
       error: 'invalid_output' | 'output_limit' | 'request_failed' | null
@@ -149,8 +155,6 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'region, time and conditions. Use contradicts only for incompatible facts under matching conditions. Different scope '
   + 'or missing context requires uncertain; a different fact is unrelated. Do not infer publisher independence from URLs. '
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
-const MAX_MODEL_OUTPUT_BYTES = 20_000
-const MAX_EVIDENCE_OUTPUT_BYTES = 40_000
 const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
 const SYNTHESIS_SYSTEM = PRODUCT_WRITING_INSTRUCTION
 
@@ -222,7 +226,7 @@ export function registerProductInvestigationTool(ctx: Context,
       const selected = session.requestHeader()?.config ?? agent.options
       if (!selected.provider || !selected.model) throw new Error('The session has no selected model')
       const model: LlmCallConfig = { provider: selected.provider, model: selected.model,
-        maxTokens: Math.min(selected.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS, MAX_EVIDENCE_OUTPUT_TOKENS),
+        ...selected.maxTokens === undefined ? {} : { maxTokens: selected.maxTokens },
         ...selected.reasoningEffort === undefined ? {} : { reasoningEffort: selected.reasoningEffort } }
       signal.throwIfAborted()
       const release = Promise.withResolvers<void>()
@@ -290,7 +294,12 @@ export function registerProductInvestigationTool(ctx: Context,
       pending.set(exec.agent, plan.planId)
     }
   })
-  ctx.on('agent/status', async ({ agent, status }) => {
+  ctx.on('agent/status', ({ agent, status }) => {
+    void handleIdle(agent, status).catch((error: unknown) => {
+      ctx.logger.warn('Product background state save failed: %o', error)
+    })
+  })
+  async function handleIdle(agent: NonNullable<ToolExecution['agent']>, status: string) {
     const planId = pending.get(agent)
     if (status !== 'idle' || planId === undefined) return
     pending.delete(agent)
@@ -304,7 +313,7 @@ export function registerProductInvestigationTool(ctx: Context,
           reportRef: null, deliveryStatus: null, error: error instanceof Error ? error.message : String(error) })
       }
     }
-  })
+  }
   ctx.tools.register(defineTool({
     name: 'run_product_investigation',
     description: 'Explicitly resume a saved product investigation when the user asks. New approved plans start automatically. The transcript displays the saved result; do not rewrite it.',
@@ -323,7 +332,7 @@ export function registerProductInvestigationTool(ctx: Context,
     description: 'Cancel this session’s active product investigation only when the user requests cancellation. Saved evidence and reports remain available.',
     parameters: {},
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
-    async execute(_args, exec) {
+    execute(_args, exec) {
       if (!exec.agent) throw new Error('Product investigation requires the calling session')
       const jobs = ctx.get('jobs')
       if (!jobs) throw new Error('Product jobs service is unavailable')
@@ -331,7 +340,7 @@ export function registerProductInvestigationTool(ctx: Context,
         && (item.status === 'running' || item.status === 'stopping'))
       if (job) jobs.kill(job.id, exec.agent.session.id, 'User cancelled product investigation')
       exec.concludeTurn()
-      return job ? '已请求取消产品调查，已保存内容仍可查看。' : '当前没有正在运行的产品调查。'
+      return Promise.resolve(job ? '已请求取消产品调查，已保存内容仍可查看。' : '当前没有正在运行的产品调查。')
     },
     presentCall: () => ({ card: 'generic', title: '取消产品调查' }),
   }))
@@ -515,7 +524,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
   else if (sourceRevalidation !== undefined) onProgress(
     `来源未变化，正在从${({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
   const result = await runInvestigation({ sessionId: key, events,
-    maxResultsPerQuery: 5, extractionMethod: { name: 'product-model', version: '1' },
+    maxResultsPerQuery: 60, extractionMethod: { name: 'product-model', version: '1' },
     ...activeCheckpoint === undefined ? {} : { checkpoint: activeCheckpoint },
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation } }, {
     web: productWeb, now, saveText,
@@ -562,9 +571,6 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       return synthesizeProductReport(ctx, session, model, plan, input, persist, events, requestSignal)
     },
     saveReport: async (markdown) => {
-      if (Buffer.byteLength(markdown, 'utf8') > MAX_PRODUCT_REPORT_BYTES) {
-        throw new RangeError('Product report exceeds the output limit')
-      }
       const contentRef = `${plan.planId}:report`
       session.append('product/report-v1', { contentRef, planId: plan.planId, markdown })
       await persist()
@@ -600,14 +606,36 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
   signal?: AbortSignal): Promise<ReadonlyMap<string, string>> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product synthesis model service is unavailable')
+  const capacity = await llm.prepareCall(config, signal)
+  const serialized = JSON.stringify(input)
+  if (!fitsProductModelInput(SYNTHESIS_SYSTEM, serialized, capacity.context?.contextWindow,
+    capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
+    const groups: ProductSynthesisInput[] = []
+    if (input.questions.length > 1) {
+      groups.push(...input.questions.map(question => ({ ...input, questions: [question] })))
+    } else {
+      const question = input.questions[0]
+      if (!question || question.evidence.length < 2) throw new RangeError('A product evidence item exceeds model synthesis capacity')
+      const middle = Math.ceil(question.evidence.length / 2)
+      groups.push(...[question.evidence.slice(0, middle), question.evidence.slice(middle)]
+        .map(evidence => ({ ...input, questions: [{ ...question, evidence }] })))
+    }
+    const combined = new Map<string, string>()
+    for (const group of groups) {
+      const paragraphs = await synthesizeProductReport(ctx, session, config, plan, group, persist, events, signal)
+      for (const [id, paragraph] of paragraphs) combined.set(id,
+        [combined.get(id), paragraph].filter(Boolean).join('\n\n'))
+    }
+    return combined
+  }
   const attempt = async (ordinal: 1 | 2, retry?: ProductSynthesisOutputError['code']): Promise<ReadonlyMap<string, string>> => {
-    const deadline = AbortSignal.timeout(60_000)
+    const deadline = new AbortController().signal
     const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
     const user = JSON.stringify(retry === undefined ? input : { ...input,
       correction: retry === 'output_limit'
         ? 'The previous answer exceeded the output budget. Regenerate the complete array with less repetition; preserve conditions and limitations for every question.'
         : 'The previous answer failed JSON or evidence reference validation. Regenerate the entire array with the exact IDs.' })
-    const prepared = await llm.prepareCall({ ...config, maxTokens: Math.min(config.maxTokens ?? 4096, 4096) }, operationSignal)
+    const prepared = await llm.prepareCall(config, operationSignal)
     operationSignal.throwIfAborted()
     const { provider, model, maxTokens = 4096, reasoningEffort } = prepared.config
     const request = events.findLast(event => event.type === 'product/synthesis-request-v1'
@@ -643,7 +671,6 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
         assembler.push(chunk)
         if (chunk.type === 'finish') finished = true
         const text = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-        if (Buffer.byteLength(text, 'utf8') > MAX_MODEL_OUTPUT_BYTES) throw new ProductSynthesisOutputError('output_limit')
         output = text
       }
       operationSignal.throwIfAborted()
@@ -664,7 +691,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
     catch (error) {
       const failureCode = signal?.aborted ? 'ABORTED' : deadline.aborted ? 'TIMEOUT'
         : error instanceof ProductTransientModelError ? error.code : undefined
-      session.append('product/synthesis-result-v1', { requestSeq, text: output,
+      session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, text: output,
         error: failureCode === undefined && error instanceof ProductSynthesisOutputError ? error.code : 'request_failed',
         ...failureCode === undefined ? {} : { failureCode } })
       await persist()
@@ -673,7 +700,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
       }
       throw error
     }
-    session.append('product/synthesis-result-v1', { requestSeq, text: output, error: null })
+    session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, text: output, error: null })
     await persist()
     return paragraphs
   }
@@ -697,7 +724,6 @@ async function awaitProductModel<T>(run: () => Promise<T>, signal: AbortSignal):
 
 /** Validate complete, bounded model prose and exact evidence identities before rendering. */
 export function parseProductSynthesis(text: string, input: ProductSynthesisInput): ReadonlyMap<string, string> {
-  if (Buffer.byteLength(text, 'utf8') > MAX_MODEL_OUTPUT_BYTES) throw new ProductSynthesisOutputError('output_limit')
   let value: unknown
   try { value = JSON.parse(text) }
   catch (error) { throw new ProductSynthesisOutputError('invalid_output', { cause: error }) }
@@ -786,12 +812,12 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     readonly questionId: ProductQuestionId
     readonly text: string
   }[], persist: () => Promise<void>, events: readonly SessionEvent[],
-  signal?: AbortSignal, fragment?: ProductPageFragment, maximumDrafts = 8): Promise<readonly ProductEvidenceDraft[]> {
+  signal?: AbortSignal, fragment?: ProductPageFragment, maximumDrafts = Number.MAX_SAFE_INTEGER): Promise<readonly ProductEvidenceDraft[]> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product evidence model service is unavailable')
-  const deadline = AbortSignal.timeout(60_000)
+  const deadline = new AbortController().signal
   const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
-  const user = JSON.stringify({ sourceUrl: page.url, questions, pageText: text, maximumDrafts,
+  const user = JSON.stringify({ sourceUrl: page.url, questions, pageText: text,
     ...fragment === undefined ? {} : { sourceRange: { start: fragment.start, end: fragment.end } } })
   const system = text.includes('\f') ? `${SYSTEM} Form feeds mark PDF page boundaries. Excerpts must stay within one page.` : SYSTEM
   const prepared = await awaitProductModel(() => llm.prepareCall(config, operationSignal), operationSignal).catch((error: unknown) => {
@@ -802,6 +828,22 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     }
     throw error
   })
+  const fits = fitsProductModelInput(system, user, prepared.context?.contextWindow,
+    prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)
+  if (!fits) {
+    const middle = productTextMiddle(text)
+    const drafts: ProductEvidenceDraft[] = []
+    for (const [start, end] of [[0, middle], [middle, text.length]] as const) {
+      const part = text.slice(start, end)
+      const children = await proposeEvidence(ctx, session, config, page, part, questions, persist, events,
+        operationSignal, { start: (fragment?.start ?? 0) + start, end: (fragment?.start ?? 0) + end, text: part })
+      for (const draft of children) {
+        const hint = draft.startHint ?? part.indexOf(draft.verbatimExcerpt)
+        if (hint >= 0) drafts.push({ ...draft, startHint: start + hint })
+      }
+    }
+    return drafts
+  }
   const replay = completedProductModelText(events,
     event => event.type === 'product/model-request-v1' && event.data.candidatePageId === page.candidatePageId
       && event.data.user === user && event.data.system === system
@@ -822,7 +864,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
       + outputTokens > prepared.context.contextWindow) {
     throw new RangeError('Product evidence input and output reserve exceed the model context window')
   }
-  session.append('product/model-request-v1', { candidatePageId: page.candidatePageId,
+  session.append('product/model-request-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
     provider: prepared.config.provider, model: prepared.config.model, system, user,
     maxTokens: outputTokens })
   await persist()
@@ -835,7 +877,6 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
       operationSignal.throwIfAborted()
       assembler.push(chunk)
       output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-      if (Buffer.byteLength(output, 'utf8') > MAX_EVIDENCE_OUTPUT_BYTES) throw new RangeError('Evidence response exceeds the output limit')
     }
     operationSignal.throwIfAborted()
     const finish = assembler.finish
@@ -856,7 +897,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
   catch (error) {
     const failure = deadline.aborted && !signal?.aborted && !(error instanceof ProductTransientModelError)
       ? new ProductTransientModelError('TIMEOUT', { cause: error }) : error
-    session.append('product/model-result-v1', { candidatePageId: page.candidatePageId,
+    session.append('product/model-result-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
       status: 'failed', text: output, error: failure instanceof Error ? failure.message : String(failure) })
     await persist()
     if (recoverableEvidenceModelFailure(failure)) {
@@ -865,7 +906,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     }
     throw failure
   }
-  session.append('product/model-result-v1', { candidatePageId: page.candidatePageId,
+  session.append('product/model-result-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
     status: 'completed', text: output, error: null })
   await persist()
   return drafts
@@ -877,12 +918,20 @@ async function reviewEvidence(ctx: Context, session: Session, config: LlmCallCon
   signal?: AbortSignal): Promise<readonly ProductSemanticReview[]> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product semantic review model service is unavailable')
-  const deadline = AbortSignal.timeout(60_000)
+  const deadline = new AbortController().signal
   const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
   const user = JSON.stringify({ questions, evidence: evidence.map(item => ({ evidenceId: item.evidenceId,
     questionIds: item.questionIds, verbatimExcerpt: item.verbatimExcerpt,
     sourcedStatement: item.sourcedStatement })) })
-  const prepared = await llm.prepareCall({ ...config, maxTokens: Math.min(config.maxTokens ?? 4096, 4096) }, operationSignal)
+  const prepared = await llm.prepareCall(config, operationSignal)
+  if (!fitsProductModelInput(REVIEW_SYSTEM, user, prepared.context?.contextWindow,
+    prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
+    if (evidence.length < 2) throw new RangeError('A product evidence item exceeds semantic review context capacity')
+    const middle = Math.ceil(evidence.length / 2)
+    const left = await reviewEvidence(ctx, session, config, plan, evidence.slice(0, middle), questions, persist, events, signal)
+    const right = await reviewEvidence(ctx, session, config, plan, evidence.slice(middle), questions, persist, events, signal)
+    return [...left, ...right]
+  }
   const replay = completedProductModelText(events,
     event => event.type === 'product/claim-review-request-v1' && event.data.planId === plan.planId
       && event.data.user === user && event.data.system === REVIEW_SYSTEM
@@ -903,9 +952,6 @@ async function reviewEvidence(ctx: Context, session: Session, config: LlmCallCon
       operationSignal.throwIfAborted()
       assembler.push(chunk)
       output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-      if (Buffer.byteLength(output, 'utf8') > MAX_MODEL_OUTPUT_BYTES) {
-        throw new RangeError('Semantic review response exceeds the output limit')
-      }
     }
     if (assembler.finish.kind !== 'stop') throw new Error(`Semantic review model ended with ${assembler.finish.kind}`)
     const reviews = parseReviews(output)
@@ -943,7 +989,7 @@ async function compareClaimSources(ctx: Context, session: Session, config: LlmCa
   const judgments: ProductCrossSourceJudgment[] = []
   for (let offset = 0; offset < candidates.length; offset += 8) {
     const batch = candidates.slice(offset, offset + 8)
-    const deadline = AbortSignal.timeout(60_000)
+    const deadline = new AbortController().signal
     const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
     const user = JSON.stringify({ scope: plan.scope, questionId, keyClaim: claim.text,
       primary: { evidenceId: primary.evidenceId, sourceUrl: primaryPage.url,
@@ -952,8 +998,18 @@ async function compareClaimSources(ctx: Context, session: Session, config: LlmCa
         sourceUrl: pages.find(page => page.candidatePageId === item.candidatePageId)?.url,
         statement: item.sourcedStatement, excerpt: item.verbatimExcerpt })) })
     const batchIndex = firstBatchIndex + offset / 8
-    const prepared = await llm.prepareCall({ ...config, maxTokens: Math.min(config.maxTokens ?? 2048, 2048) },
+    const prepared = await llm.prepareCall(config,
       operationSignal)
+    if (!fitsProductModelInput(CROSS_CHECK_SYSTEM, user, prepared.context?.contextWindow,
+      prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
+      if (batch.length < 2) throw new RangeError('Product comparison exceeds the configured model context')
+      const middle = Math.ceil(batch.length / 2)
+      const left = await compareClaimSources(ctx, session, config, plan, claim, questionId,
+        batch.slice(0, middle), evidence, pages, batchIndex, persist, events, signal)
+      const right = await compareClaimSources(ctx, session, config, plan, claim, questionId,
+        batch.slice(middle), evidence, pages, batchIndex, persist, events, signal)
+      return [...left, ...right]
+    }
     const replay = completedProductModelText(events,
       event => event.type === 'product/cross-check-request-v1' && event.data.planId === plan.planId
         && event.data.questionId === questionId && event.data.claimId === claim.claimId
@@ -986,9 +1042,6 @@ async function compareClaimSources(ctx: Context, session: Session, config: LlmCa
         operationSignal.throwIfAborted()
         assembler.push(chunk)
         output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-        if (Buffer.byteLength(output, 'utf8') > MAX_MODEL_OUTPUT_BYTES) {
-          throw new RangeError('Cross-source response exceeds the output limit')
-        }
       }
       if (assembler.finish.kind !== 'stop') throw new Error(`Cross-source model ended with ${assembler.finish.kind}`)
       const compared = parseCrossSourceJudgments(output)
@@ -1080,11 +1133,11 @@ function parseReviews(text: string): readonly ProductSemanticReview[] {
  */
 export function parseDrafts(text: string): readonly ProductEvidenceDraft[] {
   const value: unknown = JSON.parse(text)
-  if (!Array.isArray(value) || value.length > 8) throw new RangeError('Evidence model must return at most eight drafts')
+  if (!Array.isArray(value)) throw new RangeError('Evidence model must return an array')
   return value.map((item: unknown): ProductEvidenceDraft => {
     if (!record(item) || typeof item.verbatimExcerpt !== 'string' || !item.verbatimExcerpt.trim()
-      || item.verbatimExcerpt.length > 1500 || typeof item.sourcedStatement !== 'string'
-      || !item.sourcedStatement.trim() || item.sourcedStatement.length > 600
+      || typeof item.sourcedStatement !== 'string'
+      || !item.sourcedStatement.trim()
       || !Array.isArray(item.questionIds) || item.questionIds.length === 0
       || !item.questionIds.every(id => typeof id === 'string' && id.length <= 200)
       || item.startHint !== undefined && (typeof item.startHint !== 'number'
@@ -1124,4 +1177,18 @@ function recoverableComparisonModelFailure(error: unknown): boolean {
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** Reserve the configured response budget and serialization overhead before dispatch. */
+export function fitsProductModelInput(system: string, user: string, contextWindow: number | undefined,
+  outputTokens: number): boolean {
+  return contextWindow === undefined || estimateContent([{ type: 'text', text: system }])
+    + estimateContent([{ type: 'text', text: user }]) + ROLE_OVERHEAD * 2 + outputTokens <= contextWindow
+}
+
+function productTextMiddle(text: string): number {
+  let middle = Math.floor(text.length / 2)
+  if (middle > 0 && /[\uDC00-\uDFFF]/u.test(text.charAt(middle))) middle--
+  if (middle <= 0) throw new RangeError('Product model context cannot fit source text with its instructions')
+  return middle
 }

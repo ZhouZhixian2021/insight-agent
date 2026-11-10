@@ -136,7 +136,9 @@ export function parseProductPlanMarkdown(markdown: string): {
     'maximumPageCharacters', 'maximumGapSearches', 'maximumGapReads'], 'Product plan limits')
   const limits = {
     maximumCandidatePages: positiveInteger(value.limits.maximumCandidatePages, 'maximumCandidatePages'),
-    maximumElapsedMinutes: positiveNumber(value.limits.maximumElapsedMinutes, 'maximumElapsedMinutes'),
+    ...value.limits.maximumElapsedMinutes === undefined ? {} : {
+      maximumElapsedMinutes: positiveNumber(value.limits.maximumElapsedMinutes, 'maximumElapsedMinutes'),
+    },
     ...value.limits.maximumPageCharacters === undefined ? {} : {
       maximumPageCharacters: positiveInteger(value.limits.maximumPageCharacters, 'maximumPageCharacters'),
     },
@@ -147,12 +149,7 @@ export function parseProductPlanMarkdown(markdown: string): {
       maximumGapReads: positiveInteger(value.limits.maximumGapReads, 'maximumGapReads'),
     },
   }
-  if (limits.maximumCandidatePages > 12) throw new RangeError('maximumCandidatePages must be at most 12')
-  if (limits.maximumElapsedMinutes > 20) throw new RangeError('maximumElapsedMinutes must be at most 20')
-  if (limits.maximumPageCharacters !== undefined
-    && (limits.maximumPageCharacters < 12_000 || limits.maximumPageCharacters > 48_000)) {
-    throw new RangeError('maximumPageCharacters must be between 12000 and 48000')
-  }
+  if (limits.maximumCandidatePages > 30) throw new RangeError('maximumCandidatePages must be at most 30')
   if (limits.maximumGapSearches !== undefined && limits.maximumGapSearches > value.questions.length) {
     throw new RangeError('maximumGapSearches must not exceed the number of approved questions')
   }
@@ -202,7 +199,7 @@ export function parseProductPlanMarkdown(markdown: string): {
     const minimumSourceDate = value.sourceCriteria.minimumSourceDate === undefined ? undefined
       : nonEmpty(value.sourceCriteria.minimumSourceDate, 'minimumSourceDate')
     if (region !== undefined && region.length > 120 || productVersion !== undefined && productVersion.length > 120) {
-      throw new RangeError('Source region and productVersion must be at most 120 characters')
+      throw new RangeError('Source region and productVersion must be at most 300 characters')
     }
     if (minimumSourceDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/u.test(minimumSourceDate)
       || !Number.isFinite(Date.parse(minimumSourceDate))
