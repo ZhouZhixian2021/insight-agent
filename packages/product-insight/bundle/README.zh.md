@@ -5,6 +5,8 @@ kind: "package-bundle"
 
 # @deepseek-ai/dsh-product-insight-bundle
 
+新计划仅在预计来源网页提供对应声明时设置可选 `sourceCriteria`。宽泛的市场或发布时间范围留在调查范围和问题中，不当作网页元数据的逐字匹配标签。
+
 [English](README.md) | 中文
 
 ## 概述

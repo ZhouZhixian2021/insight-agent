@@ -132,7 +132,7 @@ describe('product page discovery', () => {
         : [{ url: regional }, { url: 'https://unrelated.test/article' }], truncated: false }
     } }
     const initial = await discoverCandidatePages({ product: apple, plan: scoped, maxResultsPerQuery: 2 }, { web, now })
-    expect(initial.candidates.items.map(item => item.screening.status)).toEqual(['needs_review', 'needs_review'])
+    expect(initial.candidates.items.map(item => item.screening.status)).toEqual(['needs_review'])
     const updated = await discoverCandidatePages({ product: apple, plan: scoped, maxResultsPerQuery: 2,
       existing: initial, gapQuestionIds: [first] }, { web, now })
     expect(queries).toHaveLength(3)
@@ -142,6 +142,29 @@ describe('product page discovery', () => {
       { url: official, publisher: 'Apple', sourceType: 'official_product_page', screening: { status: 'selected' } },
     ])
     expect(updated.searches[2]).toMatchObject({ reason: 'evidence_gap', status: 'success', recordedCount: 1 })
+  })
+
+  it('keeps follow-up room and admits an approved publisher that names the brand', async () => {
+    const vivo: Product = { ...product, name: 'vivo latest product lineup', developer: 'vivo',
+      officialUrl: 'https://www.vivo.com.cn/' }
+    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 8, maximumGapSearches: 2 },
+      sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }] }
+    const web = { search: async ({ query }: { query: string }) => ({ sources: query.includes('site:www.vivo.com.cn')
+      ? Array.from({ length: 5 }, (_, index) => ({ url: `https://www.vivo.com.cn/product-${index}` }))
+      : query.includes('site:review.test')
+        ? [{ url: 'https://review.test/x500', title: 'vivo X500 specifications' }]
+        : Array.from({ length: 8 }, (_, index) => ({ url: `https://unrelated.test/article-${index}` })),
+    truncated: false }) }
+    const initial = await discoverCandidatePages({ product: vivo, plan: scoped, maxResultsPerQuery: 8 }, { web, now })
+    expect(initial.candidates.items).toHaveLength(6)
+    expect(initial.candidates.items.every(page => page.screening.status === 'needs_review')).toBe(true)
+    const updated = await discoverCandidatePages({ product: vivo, plan: scoped, maxResultsPerQuery: 8,
+      existing: initial, gapQuestionIds: [first, second] }, { web, now })
+    expect(updated.candidates.items).toHaveLength(8)
+    expect(updated.candidates.items.filter(page => page.screening.status === 'selected')).toHaveLength(6)
+    expect(updated.candidates.items.find(page => page.url === 'https://review.test/x500'))
+      .toMatchObject({ publisher: 'Review Test', screening: { status: 'selected' } })
+    expect(updated.searches.slice(2)).toMatchObject([{ recordedCount: 5 }, { recordedCount: 1 }])
   })
 
   it('tries the official host after a failed acquisition and rotates equally uncovered approved hosts', async () => {

@@ -5,6 +5,8 @@ kind: "package-bundle"
 
 # @deepseek-ai/dsh-product-insight-bundle
 
+New plans use optional `sourceCriteria` only for page declarations that sources are expected to publish. Broad market or release-period prose stays in the scope and questions; it is not an exact-match page metadata label.
+
 English | [中文](README.zh.md)
 
 ## Summary

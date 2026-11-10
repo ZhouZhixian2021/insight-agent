@@ -82,6 +82,22 @@ describe('approved product investigation', () => {
     expect(() => parseDrafts(JSON.stringify([{ ...draft, startHint: -1 }]))).toThrow(/invalid draft/u)
   })
 
+  it('recovers a wrong offset only when the exact excerpt has one location', async () => {
+    const excerpt = 'Example supports export.'
+    const run = (content: string) => runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      web: { ...adapters.web, fetch: async () => ({ url: 'https://example.com/features', statusCode: 200,
+        truncated: false, body: { kind: 'text', content } }) },
+      proposeEvidence: async () => [{ verbatimExcerpt: excerpt, sourcedStatement: excerpt,
+        questionIds: [questionId], startHint: 5 }] })
+    const unique = await run(excerpt)
+    expect(unique.evidence).toMatchObject([{ locator: { kind: 'text_range', start: 0 } }])
+    expect(unique.run.failures).toHaveLength(0)
+    const repeated = await run(`${excerpt} ${excerpt}`)
+    expect(repeated.evidence).toHaveLength(0)
+    expect(repeated.run.failures).toMatchObject([{ message: 'Fragment 1, draft 0: invalid_start_hint' }])
+  })
+
   it('produces a cited draft and preserves unanswered questions', async () => {
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, adapters)
@@ -94,6 +110,9 @@ describe('approved product investigation', () => {
     expect(result.delivery.status).toBe('draft')
     expect(reports.at(-1)).toContain('[来源](https://example.com/features)')
     expect(result.assessment.status).toBe('draft')
+    expect(result.delivery.reasons.some(reason => reason.startsWith('No admitted claim answers:'))).toBe(false)
+    expect(result.delivery.reasons.some(reason => reason.startsWith('Cross-site review does not prove'))).toBe(false)
+    expect(result.delivery.report?.limitations).toContain('Cross-site judgments do not prove publisher independence or product behavior.')
     expect(reports.at(-1)).toContain('交付未达标原因')
     expect(reports.at(-1)).toContain('检索与取证范围')
     expect(reports.at(-1)).toContain('候选网页 1 个；入选 1 个；已获取正文 1 个')
@@ -615,6 +634,43 @@ describe('approved product investigation', () => {
       && failure.message.includes('exactly once'))).toBe(true)
   })
 
+  it('uses approved gap search after an incomplete semantic review', async () => {
+    const scopedPlan = { ...plan, limits: { maximumCandidatePages: 2,
+      maximumElapsedMinutes: 10, maximumGapSearches: 1 } }
+    const search = vi.fn(async (request: { readonly query: string }) => ({ sources: [{
+      url: request.query.includes('site:') ? 'https://review.test/example' : 'https://example.com/features',
+      title: 'Example product' }], truncated: false }))
+    const result = await runProductInvestigation({ product, plan: scopedPlan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      web: { ...adapters.web, search, fetch: async request => ({ url: request.url,
+        statusCode: 200, truncated: false, body: { kind: 'html', content: pageHtml('Example supports export.',
+          request.url.includes('review.test') ? 'Review Test' : 'Example Inc') } }) },
+      reviewEvidence: async () => [] })
+    expect(result.run.failures.some(failure => failure.stage === 'analysis')).toBe(true)
+    expect(result.discovery.searches.some(item => item.reason === 'evidence_gap')).toBe(true)
+    expect(search).toHaveBeenCalledTimes(3)
+    expect(result.delivery.status).toBe('draft')
+  })
+
+  it('searches an approved independent publisher when the key page lacks scope metadata', async () => {
+    const scopedPlan: ProductPlan = { ...plan, questions: [plan.questions[0]!],
+      limits: { maximumCandidatePages: 2, maximumElapsedMinutes: 10, maximumGapSearches: 1 } }
+    const search = vi.fn(async (request: { readonly query: string }) => ({ sources: [{
+      url: request.query.includes('site:') ? 'https://review.test/example' : 'https://example.com/features',
+      title: 'Example product' }], truncated: false }))
+    const result = await runProductInvestigation({ product, plan: scopedPlan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      web: { search, fetch: async request => ({ url: request.url, statusCode: 200, truncated: false,
+        body: { kind: 'html', content: request.url.includes('review.test')
+          ? pageHtml('Example supports export.', 'Review Test')
+          : '<article>Example supports export.</article>' } }) },
+      compareClaim: async (_claim, _question, candidates) => candidates.map(item => ({
+        evidenceId: item.evidenceId, relation: 'supports', rationale: 'Same product fact.' })) })
+    expect(result.discovery.searches.some(item => item.reason === 'corroboration_gap')).toBe(true)
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(result.delivery.status).toBe('draft')
+  })
+
   it('reviews a failed batch in two bounded halves and retains the successful half', async () => {
     const statements = ['Example supports export.', 'Example supports import.',
       'Example costs $10.', 'Example offers a trial.']
@@ -784,6 +840,31 @@ describe('approved product investigation', () => {
       saveCheckpoint: async () => {} })
     expect(empty.discovery.searches).toHaveLength(3)
     expect(empty.discovery.searches[2]).toMatchObject({ reason: 'evidence_gap', recordedCount: 0 })
+  })
+
+  it('uses a saved-page gap read after a gap search brings in the first readable page', async () => {
+    const scoped: ProductPlan = { ...plan,
+      questions: [{ questionId, text: 'Example supports export?' }, plan.questions[1]!],
+      limits: { maximumCandidatePages: 2, maximumGapSearches: 1, maximumGapReads: 1 } }
+    const checkpoints: ProductInvestigationCheckpoint[] = []
+    let calls = 0
+    const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (_page, _text, questions) =>
+      ++calls === 1 ? [] : [{ verbatimExcerpt: 'Example supports export.',
+        sourcedStatement: 'Example supports export.', questionIds: [questions[0]!.questionId] }])
+    const result = await runProductInvestigation({ product, plan: scoped, maxResultsPerQuery: 2,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      web: { search: async ({ query }) => ({ sources: query.includes('site:')
+        ? [{ url: 'https://example.com/features', title: 'Example features' }]
+        : [{ url: 'https://unrelated.test/article' }], truncated: false }),
+      fetch: async () => ({ url: 'https://example.com/features', statusCode: 200, truncated: false,
+        body: { kind: 'html', content: pageHtml('Example supports export.', 'Example Inc') } }) },
+      proposeEvidence, saveCheckpoint: async (checkpoint) => { checkpoints.push(checkpoint) } })
+    expect(result.discovery.searches.filter(search => search.reason === 'evidence_gap')).toHaveLength(1)
+    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(result.evidence).toHaveLength(1)
+    expect(checkpoints.find(checkpoint => checkpoint.pages.snapshots.items.length === 0)?.gapReadCompleted)
+      .toBeUndefined()
+    expect(checkpoints.at(-1)?.gapReadCompleted).toBe(true)
   })
 
   it('resumes the new gap evidence at review without reopening the saved page for extraction', async () => {

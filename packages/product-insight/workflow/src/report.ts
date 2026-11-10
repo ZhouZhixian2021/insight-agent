@@ -150,7 +150,8 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     reasons.push('Report claim identities are not unique.')
   }
   for (const question of input.plan.questions) {
-    if (!input.claims.some(claim => claim.questionIds.includes(question.questionId))) {
+    if (!input.claims.some(claim => claim.questionIds.includes(question.questionId))
+      && !input.gaps.some(gap => gap.questionId === question.questionId)) {
       reasons.push(`No admitted claim answers: ${question.text}`)
     }
   }
