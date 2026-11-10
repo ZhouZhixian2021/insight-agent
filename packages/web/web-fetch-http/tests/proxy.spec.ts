@@ -72,6 +72,17 @@ async function installProxy(): Promise<() => Promise<void>> {
 }
 
 describe('fetching through a proxy', () => {
+  it('releases a request-owned HTTP/1.1 dispatcher and preserves redirect checks', async () => {
+    disposeProxy = await installProxy()
+    const provider = new HttpFetchProvider({ ...limits, http1Only: true })
+    expect((await provider.fetch({ url: proxyTarget })).body.content).toBe('via-proxy')
+    proxy.removeAllListeners('request')
+    proxy.on('request', (_request, response) => {
+      response.writeHead(302, { location: 'http://elsewhere.example/next' })
+      response.end()
+    })
+    await expect(provider.fetch({ url: proxyTarget })).rejects.toThrow(expect.objectContaining({ code: 'WEB_REDIRECT_BLOCKED' }))
+  })
   it('tunnels the request and never resolves a public address for it', async () => {
     const resolve = vi.spyOn(publicHttpNetwork, 'resolve')
     disposeProxy = await installProxy()

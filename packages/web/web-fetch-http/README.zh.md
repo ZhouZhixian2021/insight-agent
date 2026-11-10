@@ -13,6 +13,8 @@ kind: "package-reference"
 
 JavaScript 和 ECMAScript 响应 MIME 类型按文本保留，供受保护的浏览器资源读取渲染公开网页；仍遵守相同的网址与响应大小限制。
 
+程序调用方可设置 `HttpFetchLimits.http1Only` 以兼容代理。它为请求创建 HTTP/1.1 代理连接，在读取完成或失败后释放，不更改全局代理策略。未设置时保留原有传输方式；网址、重定向、取消和响应大小限制继续生效。
+
 ## 目录
 
 - [使用本包](#use-this-package)

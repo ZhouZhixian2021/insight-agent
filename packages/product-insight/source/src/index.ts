@@ -7,6 +7,7 @@ import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms, PRODUCT_PAGE_FRAGMENT_CHARACTERS } from './page-content.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
+export type { SearchObservation } from './search-recovery.ts'
 
 export { prepareProductPage, extractProductPageEvidence, productTextRange, selectProductGapFragment,
   rankProductPageFragments, splitProductPageText, splitFailedProductFragment,

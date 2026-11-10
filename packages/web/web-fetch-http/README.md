@@ -13,6 +13,8 @@ With `dsh-web-fetch-http`, the harness can fetch public HTTP(S) resources throug
 
 JavaScript and ECMAScript response MIME types are retained as text so guarded browser resource retrieval can render public pages. The same URL and response bounds still apply.
 
+Programmatic callers may set `HttpFetchLimits.http1Only` for proxy compatibility. It uses a request-owned HTTP/1.1 proxy dispatcher, released after reading or failure, without changing the global proxy policy. Omitted values retain the existing transport; URL, redirect, cancellation and response limits remain enforced.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

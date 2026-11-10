@@ -180,6 +180,12 @@ describe('approved product investigation', () => {
     const reportInput = { product, plan, discovery: result.discovery, pages: result.pages,
       evidence: result.evidence, reviews: result.reviews, claims: result.claims,
       verifications: result.verifications, gaps: result.gaps, failures: result.run.failures, cancelled: false }
+    const officialSnapshots = result.pages.snapshots.items.map(snapshot => snapshot.status === 'available'
+      && result.discovery.candidates.items.some(page => page.candidatePageId === snapshot.candidatePageId
+        && page.url.startsWith(product.officialUrl))
+      ? { ...snapshot, declaredPublisher: 'Official Newsroom (China)' } : snapshot)
+    expect(evaluateProductReport({ ...reportInput, pages: { ...result.pages,
+      snapshots: { ...result.pages.snapshots, items: officialSnapshots } } }).status).toBe('ready')
     for (const changed of [
       { declaredPublisher: 'Another Publisher' }, { sourceRegionLabel: 'EU' },
       { productVersionLabel: 'v2' }, { sourceUpdatedAt: '2026-09-01T00:00:00.000Z' },

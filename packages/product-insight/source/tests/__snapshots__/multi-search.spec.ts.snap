@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`direct multiple-engine product search > merges sources by rank, deduplicates links and preserves the exact query 1`] = `
+{
+  "content": "搜索来源状态（仅用于发现网页，不是正文证据）：duckduckgo: 1 条；bing: 2 条；yahoo: 1 条。合并去重 3 条，保留 2 条。",
+  "sources": [
+    {
+      "title": "Product",
+      "url": "https://example.com/spec",
+    },
+    {
+      "snippet": "Access details",
+      "title": "Permissions",
+      "url": "https://example.org/permissions",
+    },
+  ],
+  "truncated": true,
+}
+`;

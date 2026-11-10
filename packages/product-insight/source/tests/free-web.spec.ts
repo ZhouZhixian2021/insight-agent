@@ -10,6 +10,15 @@ const result = (content: string, statusCode = 200): WebFetchResult => ({ url: 'h
 const html = '<div class="result"><a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fspec">Example &amp; specs</a><a class="result__snippet">Version 2 features</a></div>'
 
 describe('free product search', () => {
+  it('uses result content regardless of HTTP status and still rejects challenge pages', () => {
+    for (const status of [202, 403, 429, 503]) {
+      expect(parseDuckDuckGoResults(result(html, status), 5).sources).toHaveLength(1)
+    }
+    expect(() => parseDuckDuckGoResults(result('<form id="challenge-form"></form>', 202), 5))
+      .toThrow(expect.objectContaining({ code: 'WEB_PROVIDER_CHALLENGE' }))
+    expect(() => parseDuckDuckGoResults(result('<p>Service unavailable</p>', 202), 5))
+      .toThrow(expect.objectContaining({ code: 'WEB_PROVIDER_LAYOUT_CHANGED' }))
+  })
   it('retains decoded links and snippets without promoting them to evidence', () => {
     expect(parseDuckDuckGoResults(result(html + html), 5)).toEqual({ truncated: false,
       sources: [{ url: 'https://example.com/spec', title: 'Example & specs', snippet: 'Version 2 features' }] })
@@ -25,6 +34,7 @@ describe('free product search', () => {
     const ctx = new Context()
     await ctx.plugin(WebRuntime, { searchProvider: 'product-free-search', fetchProvider: 'product-public-page' })
     const fiber = await ctx.plugin(provider, {
+      searchHttp1Only: true,
       browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
       browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
       timeoutMs: 25000, maximumResponseBytes: 5_000_000,

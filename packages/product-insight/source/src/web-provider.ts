@@ -3,7 +3,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { WebError, type WebFetchResult } from '@deepseek-ai/dsh-web'
 import { HttpFetchProvider } from '@deepseek-ai/dsh-web-fetch-http'
-import { parseDuckDuckGoResults } from './free-search.ts'
+import { parseSearchResults, searchMultiple, type SearchEngine } from './multi-search.ts'
+import { observeSearchPage, resolveSearchSelection } from './search-recovery.ts'
 import { readProductBrowserPage } from './browser-reader.ts'
 import { prepareProductPage, ProductPageEmptyError } from './page-content.ts'
 
@@ -14,6 +15,10 @@ export const inject = ['web']
 
 /** Free-search and browser deployment settings; no credentials are required. */
 export interface Config {
+  searchEngines?: SearchEngine[]
+  searchHttp1Only: boolean
+  searchRecoveryCharacters?: number
+  searchRecoveryLinks?: number
   timeoutMs: number
   maximumResponseBytes: number
   maximumBodyCharacters: number
@@ -26,6 +31,10 @@ export interface Config {
 }
 
 export const Config: z<Config> = z.object({
+  searchEngines: z.array(z.union(['duckduckgo', 'bing', 'yahoo'])).default(['duckduckgo', 'bing', 'yahoo']),
+  searchHttp1Only: z.boolean().default(true),
+  searchRecoveryCharacters: z.number().default(16000),
+  searchRecoveryLinks: z.number().default(60),
   timeoutMs: z.number().default(25000),
   maximumResponseBytes: z.number().default(5_000_000),
   maximumBodyCharacters: z.number().default(500_000),
@@ -43,6 +52,14 @@ export const Config: z<Config> = z.object({
  * @param config - Validated deployment limits; browser failures retain their error rather than returning a shell.
  */
 export function apply(ctx: Context, config: Config): void {
+  const engines = config.searchEngines
+  const { searchRecoveryCharacters, searchRecoveryLinks } = config
+  if (searchRecoveryCharacters === undefined || searchRecoveryLinks === undefined) {
+    throw new Error('product-insight-source: search recovery limits must be resolved by Config')
+  }
+  if (!engines?.length || new Set(engines).size !== engines.length) {
+    throw new Error('product-insight-source: searchEngines must contain unique supported engines')
+  }
   for (const [key, value] of Object.entries(config)) {
     if (typeof value === 'number' && (!Number.isSafeInteger(value) || value < 1 || value > 2_147_483_647)) {
       throw new Error(`product-insight-source: ${key} must be a positive bounded integer`)
@@ -52,12 +69,34 @@ export function apply(ctx: Context, config: Config): void {
     maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
   ctx.web.registerFetchProvider(http)
+  const searchHttp = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
+    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, http1Only: config.searchHttp1Only,
+    userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
   ctx.web.registerSearchProvider({ id: 'product-free-search', available: () => true,
     async search(request, signal) {
       const maximum = Math.min(request.maxResults ?? config.maximumSearchResults, config.maximumSearchResults)
-      const url = new URL('https://html.duckduckgo.com/html/')
-      url.searchParams.set('q', request.query)
-      return parseDuckDuckGoResults(await http.fetch({ url: url.href }, signal), maximum)
+      const result = await searchMultiple(request.query, maximum, engines, (url, active) => searchHttp.fetch({ url }, active), signal,
+        config.browserEnabled ? async (engine, initial) => {
+          const active = signal ? AbortSignal.any([signal, AbortSignal.timeout(config.browserTimeoutMs * 3)])
+            : AbortSignal.timeout(config.browserTimeoutMs * 3)
+          const rendered = await readProductBrowserPage(initial.url, initial,
+            (url, current) => searchHttp.fetch({ url }, current), {
+              channel: config.browserChannel, timeoutMs: config.browserTimeoutMs,
+              maximumCharacters: config.maximumBodyCharacters, maximumRequests: config.browserMaximumRequests,
+              minimumTextCharacters: 1,
+            }, active)
+          try { return parseSearchResults(engine, rendered, maximum) } catch (error) {
+            if (!(error instanceof WebError) || error.code !== 'WEB_PROVIDER_LAYOUT_CHANGED') throw error
+          }
+          if (rendered.body.kind !== 'html') throw new WebError('搜索页没有可读内容。', 'WEB_PROVIDER_FAILED')
+          const observation = observeSearchPage(engine, rendered.url, rendered.body.content, request.query,
+            maximum, searchRecoveryCharacters, searchRecoveryLinks)
+          const ids = await ctx.serial('product/search-recognize', observation, active)
+          if (!ids) throw new WebError('当前会话没有可用的搜索识别模型。', 'WEB_PROVIDER_FAILED')
+          return resolveSearchSelection(observation, ids)
+        } : undefined)
+      ctx.logger.info(result.content)
+      return result
     },
   })
   ctx.web.registerFetchProvider({ id: 'product-public-page', available: () => true,

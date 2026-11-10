@@ -24,8 +24,7 @@ function descendants(node: Node): Node[] {
  * @returns Search links and snippets, with an explicit result-limit flag.
  */
 export function parseDuckDuckGoResults(fetched: WebFetchResult, maximum: number): WebSearchResult {
-  if (fetched.statusCode === 429) throw new WebError('免费搜索暂时限流，请稍后重试。', 'WEB_RATE_LIMITED')
-  if (fetched.statusCode !== 200 || fetched.body.kind !== 'html' || fetched.truncated) {
+  if (fetched.body.kind !== 'html' || fetched.truncated) {
     throw new WebError(`免费搜索未返回完整结果（HTTP ${fetched.statusCode}）。`, 'WEB_PROVIDER_FAILED')
   }
   const html = fetched.body.content
@@ -52,6 +51,7 @@ export function parseDuckDuckGoResults(fetched: WebFetchResult, maximum: number)
       ...snippet ? { snippet: text(snippet).replace(/\s+/gu, ' ').trim() } : {} })
   }
   if (!sources.size && !/no-results|No results found/iu.test(html)) {
+    if (fetched.statusCode === 429) throw new WebError('免费搜索暂时限流，请稍后重试。', 'WEB_RATE_LIMITED')
     throw new WebError('免费搜索页面格式未识别，不能据此认定没有相关网页。', 'WEB_PROVIDER_LAYOUT_CHANGED')
   }
   return { sources: [...sources.values()].slice(0, maximum), truncated: sources.size > maximum }

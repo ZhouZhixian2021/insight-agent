@@ -1,5 +1,6 @@
 /** Bounded product investigation from an approved plan through cited report delivery. */
 import { setTimeout as delay } from 'node:timers/promises'
+import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-tools'
 import { createEvidenceGapId, createProductBatchResult, createProductFailureId, createProductReportId, createProductRunId,
@@ -47,9 +48,19 @@ export const inject = ['tools']
 
 /** Reject malformed product execution blocks without changing approval state. */
 export function apply(ctx: Context): void {
+  registerSearchRecognition(ctx)
   registerProductInvestigationTool(ctx, runApprovedProductInvestigation)
   ctx.on('tools/execute', async (exec, next) => {
+    if (exec.name === 'web_search' && exec.agent) {
+      const agents = ctx.get('agents')
+      if (!agents) throw new Error('Product search requires agent attribution')
+      return agents.withInitiator(exec.agent, next)
+    }
     if (exec.name === 'exit_plan_mode') {
+      if (exec.agent && ctx.get('jobs')?.list(exec.agent.session.id).some(job =>
+        job.kind === 'product-insight' && (job.status === 'running' || job.status === 'stopping'))) {
+        throw new Error('当前产品调查仍在运行，请等待完成或明确取消后再批准新的计划。')
+      }
       const args = exec.arguments as { readonly plan?: unknown } | null
       parseProductPlanMarkdown(typeof args?.plan === 'string' ? args.plan : '')
     }

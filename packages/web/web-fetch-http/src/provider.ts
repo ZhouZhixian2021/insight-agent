@@ -17,6 +17,8 @@ import { classifyContentType, decoderForCharset, isSameOrigin, parseCharset, val
 
 /** Resolved provider limits (the plugin's schemastery Config supplies defaults). */
 export interface HttpFetchLimits {
+  /** Use HTTP/1.1 for proxied requests when an upstream rejects HTTP/2 streams. */
+  http1Only?: boolean
   /** Maximum response body size in bytes (read is aborted past this). */
   maxResponseBytes: number
   /** Maximum decoded body length in characters (truncated past this). */
@@ -133,6 +135,17 @@ export class HttpFetchProvider implements WebFetchProvider {
       // nothing and let a proxy on this machine reach the very service they keep out of reach.
       const route = proxyRouteFor(url)
       if (route.proxied && !isNonPublicIpLiteral(url.hostname)) {
+        if (this.limits.http1Only) {
+          const { ProxyAgent } = await import('undici')
+          const dispatcher = new ProxyAgent({ uri: route.proxy, allowH2: false })
+          try {
+            const result = await publicHttpNetwork.requestVia(dispatcher, url, headers, signal)
+            return { response: result.response, close: async () => { await dispatcher.destroy() } }
+          } catch (error) {
+            await dispatcher.destroy()
+            throw error
+          }
+        }
         return await publicHttpNetwork.requestVia(route.dispatcher, url, headers, signal)
       }
       const addresses = await this.resolveAddresses(url.hostname, signal)
