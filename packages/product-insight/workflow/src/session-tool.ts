@@ -16,7 +16,7 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-session-query'
 import { estimateContent, ROLE_OVERHEAD } from '@deepseek-ai/dsh-token-meter/estimate'
-import { defineTool } from '@deepseek-ai/dsh-tools'
+import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 
 import { latestApprovedProductPlan, productPlanFromApproval } from './approved-plan.ts'
 import { latestProductBackgroundRun, type ProductBackgroundRunState } from './background-run.ts'
@@ -177,109 +177,163 @@ class RecoverableProductComparisonOutputError extends Error {}
 export function registerProductInvestigationTool(ctx: Context,
   runInvestigation: typeof runApprovedProductInvestigation): void {
   const active = new Set<string>()
+  ctx.inject(['jobs'], (scope) => { scope.jobs.attachController('product-investigation') })
+  const start = async (agent: NonNullable<ToolExecution['agent']>, signal: AbortSignal, expectedPlanId?: string): Promise<string> => {
+    const session = agent.session
+    const key = String(session.id)
+    if (active.has(key)) throw new Error('Product investigation is already running in this session')
+    active.add(key)
+    try {
+      const sessions = ctx.get('sessions')
+      const query = ctx.get('sessionQuery')
+      const web = ctx.get('web')
+      const llm = ctx.get('llm')
+      if (!sessions || !query || !web || !llm) {
+        throw new Error('Product investigation requires Session storage, query, Web, and model services')
+      }
+      if (!await sessions.flush(session)) throw new Error('Product plan approval was not durably saved')
+      let events: readonly SessionEvent[]
+      {
+        using observation = await query.observeSession(session.id, { signal, projectionMode: 'none' })
+        events = observation.events
+      }
+      const approved = latestApprovedProductPlan(events)
+      if (approved === undefined) throw new Error('Approve a product investigation plan before running it')
+      const { plan } = productPlanFromApproval({ sessionId: key, ...approved })
+      if (expectedPlanId !== undefined && plan.planId !== expectedPlanId) return '已由后续计划替代。'
+      const previous = completedProductRun(events, plan.planId)
+      if (previous?.type === 'product/run-settlement-v1') {
+        const report = events.findLast(event => event.type === 'product/report-v1'
+          && event.data.contentRef === previous.data.reportRef)
+        return report?.type === 'product/report-v1' ? report.data.markdown
+          : `调查已运行；${previous.data.reasons.join('；')}`
+      }
+      const jobs = ctx.get('jobs')
+      if (!jobs) throw new Error('Product background investigation requires the jobs service')
+      const another = jobs.list(session.id).find(job => job.kind === 'product-insight'
+        && (job.status === 'running' || job.status === 'stopping'))
+      if (another !== undefined) return `产品调查正在后台运行，任务 ID：${another.id}。进度和报告将显示在对话中的产品调查卡。`
+      const current = latestProductBackgroundRun(events, plan.planId, jobId => jobIsActive(jobs, session.id, jobId))
+      if (current?.state === 'running') {
+        return `产品调查正在后台运行，任务 ID：${current.jobId}。进度和报告将显示在对话中的产品调查卡。`
+      }
+      const resuming = events.some(event => event.type === 'product/checkpoint-v1'
+        && event.data.planId === plan.planId)
+      const selected = session.requestHeader()?.config ?? agent.options
+      if (!selected.provider || !selected.model) throw new Error('The session has no selected model')
+      const model: LlmCallConfig = { provider: selected.provider, model: selected.model,
+        maxTokens: Math.min(selected.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS, MAX_EVIDENCE_OUTPUT_TOKENS),
+        ...selected.reasoningEffort === undefined ? {} : { reasoningEffort: selected.reasoningEffort } }
+      signal.throwIfAborted()
+      const release = Promise.withResolvers<void>()
+      const controller = new AbortController()
+      const startedAt = new Date().toISOString()
+      const jobId = jobs.start({ kind: 'product-insight', label: '产品资料调查', owner: session.id,
+        outputLimitBytes: 4096,
+        run: job => ({ cancel: () => { controller.abort() },
+          done: (async (): Promise<JobOutcome> => {
+            await release.promise
+            try {
+              controller.signal.throwIfAborted()
+              const agents = ctx.get('agents')
+              if (!agents) throw new Error('Product investigation requires agent attribution')
+              const { result } = await agents.withInitiator(agent, () => performProductInvestigation(ctx, session, model, plan, key,
+                events, runInvestigation, controller.signal, (line) => { job.updateProgress(line) }))
+              const cancelled = controller.signal.aborted
+              await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
+                state: cancelled ? 'cancelled' : 'completed', startedAt, updatedAt: new Date().toISOString(),
+                reportRef: result.delivery.report?.contentRef ?? null,
+                deliveryStatus: result.delivery.status, error: null })
+              return { status: cancelled ? 'killed' : 'completed', result:
+                `产品调查${cancelled ? '已取消' : '已完成'}（${result.delivery.status}）。调用 get_product_investigation 查看已保存内容。` }
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              try {
+                await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
+                  state: controller.signal.aborted ? 'cancelled' : 'failed', startedAt,
+                  updatedAt: new Date().toISOString(), reportRef: null, deliveryStatus: null,
+                  error: message })
+              } catch (persistError) {
+                ctx.logger.warn(`Product background settlement was not durable: ${String(persistError)}`)
+              }
+              return { status: controller.signal.aborted ? 'killed' : 'failed', detail: message }
+            }
+          })() }),
+      })
+      try {
+        await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(jobId),
+          state: 'running', startedAt, updatedAt: startedAt, reportRef: null,
+          deliveryStatus: null, error: null })
+      } catch (error) {
+        try { jobs.kill(jobId, session.id, 'Product task registration was not durable') }
+        catch (killError) { ctx.logger.warn(`Product job cancellation failed after registration failure: ${String(killError)}`) }
+        release.resolve()
+        throw error
+      }
+      release.resolve()
+      return `产品调查已在后台${resuming ? '续跑' : '启动'}，任务 ID：${jobId}。进度和已保存报告将直接显示在产品调查卡中，无需再次生成回答。`
+    } finally {
+      active.delete(key)
+    }
+  }
+  // The host consumes the committed approval after the planning turn has ended.
+  const pending = new WeakMap<NonNullable<ToolExecution['agent']>, ProductPlan['planId']>()
+  const lifetime = new AbortController()
+  ctx.effect(() => () => { lifetime.abort() }, 'product approval lifetime')
+  ctx.on('tools/result', (exec, result) => {
+    if (exec.name === 'exit_plan_mode' && exec.agent && !result.isError
+      && typeof result.meta === 'object' && result.meta !== null
+      && !Array.isArray(result.meta) && result.meta.approved === true) {
+      const args = exec.arguments as { plan: string }
+      const { plan } = productPlanFromApproval({ sessionId: String(exec.agent.session.id),
+        identity: String(exec.callId), markdown: args.plan, reviewedAt: new Date().toISOString() })
+      pending.set(exec.agent, plan.planId)
+    }
+  })
+  ctx.on('agent/status', async ({ agent, status }) => {
+    const planId = pending.get(agent)
+    if (status !== 'idle' || planId === undefined) return
+    pending.delete(agent)
+    try { await start(agent, lifetime.signal, planId) }
+    catch (error) {
+      ctx.logger.warn('Product approved investigation could not start: %o', error)
+      if (!lifetime.signal.aborted) {
+        const now = new Date().toISOString()
+        await saveBackgroundState(ctx, agent.session, { planId,
+          jobId: `product-start-${planId}`, state: 'failed', startedAt: now, updatedAt: now,
+          reportRef: null, deliveryStatus: null, error: error instanceof Error ? error.message : String(error) })
+      }
+    }
+  })
   ctx.tools.register(defineTool({
     name: 'run_product_investigation',
-    description: 'Start or explicitly resume the approved product investigation in a background job. A repeated call after interruption uses the last complete checkpoint for the same approved plan. Returns a job ID; use get_product_investigation after completion.',
+    description: 'Explicitly resume a saved product investigation when the user asks. New approved plans start automatically. The transcript displays the saved result; do not rewrite it.',
     parameters: {},
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
     async execute(_args, exec) {
-      const agent = exec.agent
-      if (agent === undefined) throw new Error('Product investigation requires the calling session')
-      const session = agent.session
-      const key = String(session.id)
-      if (active.has(key)) throw new Error('Product investigation is already running in this session')
-      active.add(key)
-      try {
-        const sessions = ctx.get('sessions')
-        const query = ctx.get('sessionQuery')
-        const web = ctx.get('web')
-        const llm = ctx.get('llm')
-        if (!sessions || !query || !web || !llm) {
-          throw new Error('Product investigation requires Session storage, query, Web, and model services')
-        }
-        if (!await sessions.flush(session)) throw new Error('Product plan approval was not durably saved')
-        let events: readonly SessionEvent[]
-        {
-          using observation = await query.observeSession(session.id, { signal: exec.signal, projectionMode: 'none' })
-          events = observation.events
-        }
-        const approved = latestApprovedProductPlan(events)
-        if (approved === undefined) throw new Error('Approve a product investigation plan before running it')
-        const { plan } = productPlanFromApproval({ sessionId: key, ...approved })
-        const previous = completedProductRun(events, plan.planId)
-        if (previous?.type === 'product/run-settlement-v1') {
-          const report = events.findLast(event => event.type === 'product/report-v1'
-            && event.data.contentRef === previous.data.reportRef)
-          return report?.type === 'product/report-v1' ? report.data.markdown
-            : `调查已运行；${previous.data.reasons.join('；')}`
-        }
-        const jobs = ctx.get('jobs')
-        if (!jobs) throw new Error('Product background investigation requires the jobs service')
-        const another = jobs.list(session.id).find(job => job.kind === 'product-insight'
-          && (job.status === 'running' || job.status === 'stopping'))
-        if (another !== undefined) return `产品调查正在后台运行，任务 ID：${another.id}。使用 job_output 查看进度。`
-        const current = latestProductBackgroundRun(events, plan.planId, jobId => jobIsActive(jobs, session.id, jobId))
-        if (current?.state === 'running') {
-          return `产品调查正在后台运行，任务 ID：${current.jobId}。使用 job_output 查看进度。`
-        }
-        const resuming = events.some(event => event.type === 'product/checkpoint-v1'
-          && event.data.planId === plan.planId)
-        const selected = session.requestHeader()?.config ?? agent.options
-        if (!selected.provider || !selected.model) throw new Error('The session has no selected model')
-        const model: LlmCallConfig = { provider: selected.provider, model: selected.model,
-          maxTokens: Math.min(selected.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS, MAX_EVIDENCE_OUTPUT_TOKENS),
-          ...selected.reasoningEffort === undefined ? {} : { reasoningEffort: selected.reasoningEffort } }
-        exec.signal.throwIfAborted()
-        const release = Promise.withResolvers<void>()
-        const controller = new AbortController()
-        const startedAt = new Date().toISOString()
-        const jobId = jobs.start({ kind: 'product-insight', label: '产品资料调查', owner: session.id,
-          outputLimitBytes: 4096,
-          run: job => ({ cancel: () => { controller.abort() },
-            done: (async (): Promise<JobOutcome> => {
-              await release.promise
-              try {
-                controller.signal.throwIfAborted()
-                const { result } = await performProductInvestigation(ctx, session, model, plan, key,
-                  events, runInvestigation, controller.signal, (line) => { job.updateProgress(line) })
-                const cancelled = controller.signal.aborted
-                await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
-                  state: cancelled ? 'cancelled' : 'completed', startedAt, updatedAt: new Date().toISOString(),
-                  reportRef: result.delivery.report?.contentRef ?? null,
-                  deliveryStatus: result.delivery.status, error: null })
-                return { status: cancelled ? 'killed' : 'completed', result:
-                  `产品调查${cancelled ? '已取消' : '已完成'}（${result.delivery.status}）。调用 get_product_investigation 查看已保存内容。` }
-              } catch (error) {
-                const message = error instanceof Error ? error.message : String(error)
-                try {
-                  await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
-                    state: controller.signal.aborted ? 'cancelled' : 'failed', startedAt,
-                    updatedAt: new Date().toISOString(), reportRef: null, deliveryStatus: null,
-                    error: message })
-                } catch (persistError) {
-                  ctx.logger.warn(`Product background settlement was not durable: ${String(persistError)}`)
-                }
-                return { status: controller.signal.aborted ? 'killed' : 'failed', detail: message }
-              }
-            })() }),
-        })
-        try {
-          await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(jobId),
-            state: 'running', startedAt, updatedAt: startedAt, reportRef: null,
-            deliveryStatus: null, error: null })
-        } catch (error) {
-          try { jobs.kill(jobId, session.id, 'Product task registration was not durable') }
-          catch (killError) { ctx.logger.warn(`Product job cancellation failed after registration failure: ${String(killError)}`) }
-          release.resolve()
-          throw error
-        }
-        release.resolve()
-        return `产品调查已在后台${resuming ? '续跑' : '启动'}，任务 ID：${jobId}。完成后调用 get_product_investigation 读取报告；可用 job_output 查看进度。`
-      } finally {
-        active.delete(key)
-      }
+      if (!exec.agent) throw new Error('Product investigation requires the calling session')
+      const result = await start(exec.agent, exec.signal)
+      exec.concludeTurn()
+      return result
     },
     presentCall: () => ({ card: 'generic', title: '产品资料调查' }),
+  }))
+  ctx.tools.register(defineTool({
+    name: 'cancel_product_investigation',
+    description: 'Cancel this session’s active product investigation only when the user requests cancellation. Saved evidence and reports remain available.',
+    parameters: {},
+    output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
+    async execute(_args, exec) {
+      if (!exec.agent) throw new Error('Product investigation requires the calling session')
+      const jobs = ctx.get('jobs')
+      if (!jobs) throw new Error('Product jobs service is unavailable')
+      const job = jobs.list(exec.agent.session.id).find(item => item.kind === 'product-insight'
+        && (item.status === 'running' || item.status === 'stopping'))
+      if (job) jobs.kill(job.id, exec.agent.session.id, 'User cancelled product investigation')
+      exec.concludeTurn()
+      return job ? '已请求取消产品调查，已保存内容仍可查看。' : '当前没有正在运行的产品调查。'
+    },
+    presentCall: () => ({ card: 'generic', title: '取消产品调查' }),
   }))
   ctx.tools.register(defineTool({
     name: 'get_product_investigation',
@@ -287,6 +341,7 @@ export function registerProductInvestigationTool(ctx: Context,
     parameters: {},
     output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
     async execute(_args, exec) {
+      exec.concludeTurn()
       const session = exec.agent?.session
       if (!session) throw new Error('Product investigation requires the calling session')
       const sessions = ctx.get('sessions')
@@ -314,7 +369,7 @@ export function registerProductInvestigationTool(ctx: Context,
         jobId => jobs !== undefined && jobIsActive(jobs, session.id, jobId))
       if (background === undefined) return '获批的产品调查尚未启动。'
       if (background.state === 'running') {
-        return `产品调查正在后台运行，任务 ID：${background.jobId}。使用 job_output 查看进度。`
+        return `产品调查正在后台运行，任务 ID：${background.jobId}。进度和报告将显示在对话中的产品调查卡。`
       }
       const evidence = events.findLast(event => event.type === 'product/evidence-v1'
         && event.data.planId === plan.planId)

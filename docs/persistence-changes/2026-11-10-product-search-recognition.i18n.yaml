@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-10-product-search-recognition.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-10-product-search-recognition.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-10-product-search-recognition:
+  en: 7af34f986617f6f7
+  zh: 80c3ecb89397bea1
+/2026-11-10-product-search-recognition/summary:
+  en: fe687a59c09458f7
+  zh: 30b9038205d32866
+/2026-11-10-product-search-recognition/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-10-product-search-recognition/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-10-product-search-recognition/compatibility:
+  en: e3649d814de5f34b
+  zh: 974bbb36f6be9d3a
+/2026-11-10-product-search-recognition/verification:
+  en: f2a3688488fdc94f
+  zh: 60150053f6c6f549
+/2026-11-10-product-search-recognition/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

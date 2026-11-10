@@ -96,6 +96,8 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `event:product/pages-v1` | event | `e526e5619fe0f1f2a7cdf258172392b648389395edf5276df2e8e60648ca99a6` | [`{ type: "product/pages-v1" }`](#persistence-type-sha256-e526e5619fe0f1f2a7cdf258172392b648389395edf5276df2e8e60648ca99a6) |
 | `event:product/report-v1` | event | `4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597` | [`{ type: "product/report-v1" }`](#persistence-type-sha256-4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597) |
 | `event:product/run-settlement-v1` | event | `1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c` | [`{ type: "product/run-settlement-v1" }`](#persistence-type-sha256-1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c) |
+| `event:product/search-recognition-request-v1` | event | `176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35` | [`{ type: "product/search-recognition-request-v1" }`](#persistence-type-sha256-176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35) |
+| `event:product/search-recognition-result-v1` | event | `b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733` | [`{ type: "product/search-recognition-result-v1" }`](#persistence-type-sha256-b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733) |
 | `event:product/source-text-v1` | event | `d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0` | [`{ type: "product/source-text-v1" }`](#persistence-type-sha256-d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0) |
 | `event:product/synthesis-request-v1` | event | `04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0` | [`{ type: "product/synthesis-request-v1" }`](#persistence-type-sha256-04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0) |
 | `event:product/synthesis-result-v1` | event | `e20c3c49dbdff4556fe3715039210c787844662a0218f7011a29d14b5f02960d` | [`{ type: "product/synthesis-result-v1" }`](#persistence-type-sha256-e20c3c49dbdff4556fe3715039210c787844662a0218f7011a29d14b5f02960d) |
@@ -1171,7 +1173,7 @@ Source: [`packages/product-insight/workflow/src/background-run.ts:19`](../packag
 'product/checkpoint-v1': ProductInvestigationCheckpoint
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-request-v1--log-only"></a>
 
@@ -1189,7 +1191,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:60`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-result-v1--log-only"></a>
 
@@ -1205,7 +1207,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:62`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:71`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:73`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaims-v1--log-only"></a>
 
@@ -1216,7 +1218,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:71`](../packages
 'product/claims-v1': { planId: string; items: readonly ProductClaim[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:78`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-request-v1--log-only"></a>
 
@@ -1237,7 +1239,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:78`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:82`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-result-v1--log-only"></a>
 
@@ -1256,7 +1258,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:92`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:94`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productevidence-v1--log-only"></a>
 
@@ -1267,7 +1269,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:92`](../packages
 'product/evidence-v1': { planId: string; items: readonly ProductEvidence[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-request-v1--log-only"></a>
 
@@ -1285,7 +1287,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:56`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-result-v1--log-only"></a>
 
@@ -1301,7 +1303,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:40`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:49`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:51`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productpages-v1--log-only"></a>
 
@@ -1312,7 +1314,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:49`](../packages
 'product/pages-v1': { planId: string; candidates: readonly CandidatePage[]; snapshots: readonly SourceSnapshot[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productreport-v1--log-only"></a>
 
@@ -1323,7 +1325,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:58`](../packages
 'product/report-v1': { contentRef: string; planId: string; markdown: string }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productrun-settlement-v1--log-only"></a>
 
@@ -1340,7 +1342,41 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:122`](../package
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:126`](../packages/product-insight/workflow/src/session-tool.ts)
+
+<a id="productsearch-recognition-request-v1--log-only"></a>
+
+#### `product/search-recognition-request-v1` — log-only
+
+```ts persistence-catalog
+/** Exact model-visible search-page recovery request. */
+'product/search-recognition-request-v1': {
+  requestId: string
+  provider: string
+  model: string
+  system: string
+  user: string
+  maxTokens: number
+}
+```
+
+Source: [`packages/product-insight/workflow/src/search-recognition.ts:13`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+<a id="productsearch-recognition-result-v1--log-only"></a>
+
+#### `product/search-recognition-result-v1` — log-only
+
+```ts persistence-catalog
+/** Completed or failed search recognition, with partial model output retained. */
+'product/search-recognition-result-v1': {
+  requestId: string
+  status: 'completed' | 'failed'
+  text: string
+  error: string | null
+}
+```
+
+Source: [`packages/product-insight/workflow/src/search-recognition.ts:22`](../packages/product-insight/workflow/src/search-recognition.ts)
 
 <a id="productsource-text-v1--log-only"></a>
 
@@ -1351,7 +1387,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:124`](../package
 'product/source-text-v1': { contentRef: string; candidatePageId: string; contentHash: string; text: string }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:38`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-request-v1--log-only"></a>
 
@@ -1371,7 +1407,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:38`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:106`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-result-v1--log-only"></a>
 
@@ -1387,7 +1423,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:104`](../package
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:115`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:117`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productverification-v1--log-only"></a>
 
@@ -1398,7 +1434,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:115`](../package
 'product/verification-v1': { planId: string; verification: ProductQuestionVerification }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:102`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
 
 ### `request/*`
 
@@ -4807,6 +4843,22 @@ SHA-256: `def984fbab50468d67944ae37750f3dfa00bbd37d44aeeed0d6f94591bf9c587`
 SHA-256: `4e3c4ad1c7d0658cc5f7e458f2cad752efb1b7258836c4ef12fc3fd31fb9262f`
 
 `"product/run-settlement-v1"`
+
+<a id="persistence-type-sha256-dedb75560e9eb61632d28e07044d4efb2a1d6b1df602e216d01222140790e2de"></a>
+
+### `"product/search-recognition-request-v1"`
+
+SHA-256: `dedb75560e9eb61632d28e07044d4efb2a1d6b1df602e216d01222140790e2de`
+
+`"product/search-recognition-request-v1"`
+
+<a id="persistence-type-sha256-e3756540363a7288e5d52528a8f4dccdba11b211999dfde5a76d80128cea4741"></a>
+
+### `"product/search-recognition-result-v1"`
+
+SHA-256: `e3756540363a7288e5d52528a8f4dccdba11b211999dfde5a76d80128cea4741`
+
+`"product/search-recognition-result-v1"`
 
 <a id="persistence-type-sha256-a54e1b89dfe2c9122e3fcc852f9eecc6453dda6a934857151cd19beab81fb9c8"></a>
 
@@ -11557,7 +11609,7 @@ Array of [`ProductCrossSourceJudgment`](#persistence-type-sha256-bc35be9f30420ec
 
 SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
-Sources: [`packages/product-insight/source/src/index.ts:30`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:33`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11658,7 +11710,7 @@ Array of [`ProductFailure`](#persistence-type-sha256-a092d293caa314b76c41ebe6796
 
 SHA-256: `4885840396b2c2b9e38c6fddd76f3db43c29ab919f7511ecd1870ec874b86bea`
 
-Sources: [`packages/product-insight/workflow/src/index.ts:73`](../packages/product-insight/workflow/src/index.ts)
+Sources: [`packages/product-insight/workflow/src/index.ts:80`](../packages/product-insight/workflow/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11736,7 +11788,7 @@ Array of [`ProductQuestionVerification`](#persistence-type-sha256-7afd252587ac1f
 
 SHA-256: `ee613650103fabc796f81f2141e7cc8235635e1485f0b2dbcecb4c29fa11b143`
 
-Sources: [`packages/product-insight/source/src/index.ts:18`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:21`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16109,7 +16161,7 @@ SHA-256: `864f086999955e4f3d1cca2f217c16607a61dc068c4ec5348b3eb5b0c562078b`
 
 SHA-256: `5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:106`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16128,7 +16180,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:104`](../packag
 
 SHA-256: `be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:92`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:94`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16146,7 +16198,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:92`](../package
 
 SHA-256: `de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:82`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16218,7 +16270,7 @@ Sources: [`packages/product-insight/model/src/types.ts:131`](../packages/product
 
 SHA-256: `0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:38`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16233,7 +16285,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:38`](../package
 
 SHA-256: `633ebc0eda83191bf5a0edd94d59f3a3887ab4a79d89480b2b6a10618a1a157f`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:49`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:51`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16265,7 +16317,7 @@ Sources: [`packages/product-insight/model/src/types.ts:145`](../packages/product
 
 SHA-256: `f1e4de996016fc945e2f5f5c2d80d1e947f851bc9540912a4627a20c64bffa44`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16282,7 +16334,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:40`](../package
 
 SHA-256: `75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16620,7 +16672,7 @@ Sources: [`packages/academic/workflow/src/progress.ts:110`](../packages/academic
 
 SHA-256: `5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16870,7 +16922,7 @@ Sources: [`packages/core/session/src/types.ts:465`](../packages/core/session/src
 
 SHA-256: `3fa417e610bbbc0e433769cfdbba77765035fe8812a572c013c2ea4ab886a7ba`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:115`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:117`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16898,12 +16950,27 @@ Sources: [`packages/core/session/src/types.ts:213`](../packages/core/session/src
 
 SHA-256: `0f84006fb3e2b1e66a47ea24526c30a2568442024fb92958a90696d18aa1c458`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:71`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:73`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
 | `error` | required | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
 | `planId` | required | `string` |
+| `status` | required | [`union (2 variants)`](#persistence-type-sha256-3b8dac03e28eec7c440d3e84b6c0af6955c86ffa7484d83b4f5a2315d235e932) |
+| `text` | required | `string` |
+
+<a id="persistence-type-sha256-d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005"></a>
+
+### `{ error, requestId, status, text }`
+
+SHA-256: `d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005`
+
+Sources: [`packages/product-insight/workflow/src/search-recognition.ts:22`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `error` | required | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
+| `requestId` | required | `string` |
 | `status` | required | [`union (2 variants)`](#persistence-type-sha256-3b8dac03e28eec7c440d3e84b6c0af6955c86ffa7484d83b4f5a2315d235e932) |
 | `text` | required | `string` |
 
@@ -17235,7 +17302,7 @@ Sources: [`packages/core/session/src/types.ts:342`](../packages/core/session/src
 
 SHA-256: `5842da8ceea55fda749bc9152d578e3e1da98b9f144cc64f4b486833ec24b7ee`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17248,7 +17315,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:56`](../package
 
 SHA-256: `92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:78`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -18816,7 +18883,7 @@ SHA-256: `bea6038fa31125506cec429e87223c135d6fc1b7dcadf495d4c4b4deba0e6990`
 
 SHA-256: `72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -18824,6 +18891,23 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:62`](../package
 | `model` | required | `string` |
 | `planId` | required | `string` |
 | `provider` | required | `string` |
+| `system` | required | `string` |
+| `user` | required | `string` |
+
+<a id="persistence-type-sha256-6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba"></a>
+
+### `{ maxTokens, model, provider, requestId, … }`
+
+SHA-256: `6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba`
+
+Sources: [`packages/product-insight/workflow/src/search-recognition.ts:13`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `maxTokens` | required | `number` |
+| `model` | required | `string` |
+| `provider` | required | `string` |
+| `requestId` | required | `string` |
 | `system` | required | `string` |
 | `user` | required | `string` |
 
@@ -18958,7 +19042,7 @@ SHA-256: `d62eb3ce49a3c505f82b1e86f554e82764ad4badd8bc26dab2db216a402eabed`
 
 SHA-256: `6ee18c5f659d82fb1184649ea0e32b41f8aab1e1f30dead4972478fcb51ef443`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:126`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -18974,7 +19058,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packag
 
 SHA-256: `8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:102`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -20960,6 +21044,38 @@ SHA-256: `1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c`
 | `seq` | required | `number` |
 | `time` | required | `number` |
 | `type` | required | `"product/run-settlement-v1"` |
+
+<a id="persistence-type-sha256-176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35"></a>
+
+<a id="persistence-type-eventproductsearch-recognition-request-v1"></a>
+
+### `{ type: "product/search-recognition-request-v1" }`
+
+SHA-256: `176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`{ maxTokens, model, provider, requestId, … }`](#persistence-type-sha256-6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"product/search-recognition-request-v1"` |
+
+<a id="persistence-type-sha256-b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733"></a>
+
+<a id="persistence-type-eventproductsearch-recognition-result-v1"></a>
+
+### `{ type: "product/search-recognition-result-v1" }`
+
+SHA-256: `b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`{ error, requestId, status, text }`](#persistence-type-sha256-d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"product/search-recognition-result-v1"` |
 
 <a id="persistence-type-sha256-d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0"></a>
 

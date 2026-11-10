@@ -101,6 +101,7 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       const next = data.state === 'running' || data.state === 'completed' || data.state === 'failed' || data.state === 'cancelled'
         ? data.state : state.runState
       return { ...state, ...(planId === undefined ? {} : { planId }), runState: next,
+        ...(typeof data.error === 'string' && data.error.length > 0 ? { reasons: [data.error] } : {}),
         stage: next === 'running' ? Math.max(1, state.stage) : state.stage,
         ...(data.deliveryStatus === 'blocked' || data.deliveryStatus === 'draft' || data.deliveryStatus === 'final'
           ? { deliveryStatus: data.deliveryStatus } : {}) }

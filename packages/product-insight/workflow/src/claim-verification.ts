@@ -119,11 +119,7 @@ export function assessProductSource(product: Product, plan: ProductPlan, page: C
     const official = new URL(product.officialUrl).hostname.toLowerCase()
     if (host === official || host.endsWith(`.${official}`)) {
       publisher = product.developer
-      if (page.publisher !== product.developer) reasons.push('Official source attribution differs from the approved product.')
-      if (snapshot.declaredPublisher !== undefined
-        && snapshot.declaredPublisher.toLocaleLowerCase() !== product.developer.toLocaleLowerCase()) {
-        reasons.push('Official page publisher declaration differs from the approved developer.')
-      }
+      // The approved official host establishes attribution; site labels are not legal company names.
     } else {
       const approved = plan.sourcePublishers?.find(item => host === item.domain
         || host.endsWith(`.${item.domain}`))

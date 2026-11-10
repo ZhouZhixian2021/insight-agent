@@ -98,6 +98,8 @@
 | `event:product/pages-v1` | event | `e526e5619fe0f1f2a7cdf258172392b648389395edf5276df2e8e60648ca99a6` | [`{ type: "product/pages-v1" }`](#persistence-type-sha256-e526e5619fe0f1f2a7cdf258172392b648389395edf5276df2e8e60648ca99a6) |
 | `event:product/report-v1` | event | `4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597` | [`{ type: "product/report-v1" }`](#persistence-type-sha256-4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597) |
 | `event:product/run-settlement-v1` | event | `1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c` | [`{ type: "product/run-settlement-v1" }`](#persistence-type-sha256-1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c) |
+| `event:product/search-recognition-request-v1` | event | `176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35` | [`{ type: "product/search-recognition-request-v1" }`](#persistence-type-sha256-176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35) |
+| `event:product/search-recognition-result-v1` | event | `b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733` | [`{ type: "product/search-recognition-result-v1" }`](#persistence-type-sha256-b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733) |
 | `event:product/source-text-v1` | event | `d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0` | [`{ type: "product/source-text-v1" }`](#persistence-type-sha256-d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0) |
 | `event:product/synthesis-request-v1` | event | `04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0` | [`{ type: "product/synthesis-request-v1" }`](#persistence-type-sha256-04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0) |
 | `event:product/synthesis-result-v1` | event | `e20c3c49dbdff4556fe3715039210c787844662a0218f7011a29d14b5f02960d` | [`{ type: "product/synthesis-result-v1" }`](#persistence-type-sha256-e20c3c49dbdff4556fe3715039210c787844662a0218f7011a29d14b5f02960d) |
@@ -1173,7 +1175,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/checkpoint-v1': ProductInvestigationCheckpoint
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-request-v1--log-only"></a>
 
@@ -1191,7 +1193,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-result-v1--log-only"></a>
 
@@ -1207,7 +1209,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:71`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:73`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaims-v1--log-only"></a>
 
@@ -1218,7 +1220,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/claims-v1': { planId: string; items: readonly ProductClaim[] }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:78`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-request-v1--log-only"></a>
 
@@ -1239,7 +1241,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:82`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-result-v1--log-only"></a>
 
@@ -1258,7 +1260,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:92`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:94`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productevidence-v1--log-only"></a>
 
@@ -1269,7 +1271,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/evidence-v1': { planId: string; items: readonly ProductEvidence[] }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-request-v1--log-only"></a>
 
@@ -1287,7 +1289,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-result-v1--log-only"></a>
 
@@ -1303,7 +1305,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:49`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:51`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productpages-v1--log-only"></a>
 
@@ -1314,7 +1316,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/pages-v1': { planId: string; candidates: readonly CandidatePage[]; snapshots: readonly SourceSnapshot[] }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productreport-v1--log-only"></a>
 
@@ -1325,7 +1327,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/report-v1': { contentRef: string; planId: string; markdown: string }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productrun-settlement-v1--log-only"></a>
 
@@ -1342,7 +1344,41 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:126`](../packages/product-insight/workflow/src/session-tool.ts)
+
+<a id="productsearch-recognition-request-v1--log-only"></a>
+
+#### `product/search-recognition-request-v1` — log-only
+
+```ts persistence-catalog
+/** Exact model-visible search-page recovery request. */
+'product/search-recognition-request-v1': {
+  requestId: string
+  provider: string
+  model: string
+  system: string
+  user: string
+  maxTokens: number
+}
+```
+
+来源：[`packages/product-insight/workflow/src/search-recognition.ts:13`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+<a id="productsearch-recognition-result-v1--log-only"></a>
+
+#### `product/search-recognition-result-v1` — log-only
+
+```ts persistence-catalog
+/** Completed or failed search recognition, with partial model output retained. */
+'product/search-recognition-result-v1': {
+  requestId: string
+  status: 'completed' | 'failed'
+  text: string
+  error: string | null
+}
+```
+
+来源：[`packages/product-insight/workflow/src/search-recognition.ts:22`](../packages/product-insight/workflow/src/search-recognition.ts)
 
 <a id="productsource-text-v1--log-only"></a>
 
@@ -1353,7 +1389,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/source-text-v1': { contentRef: string; candidatePageId: string; contentHash: string; text: string }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:38`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-request-v1--log-only"></a>
 
@@ -1373,7 +1409,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:106`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-result-v1--log-only"></a>
 
@@ -1389,7 +1425,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:115`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:117`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productverification-v1--log-only"></a>
 
@@ -1400,7 +1436,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 'product/verification-v1': { planId: string; verification: ProductQuestionVerification }
 ```
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:102`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
 
 ### `request/*`
 
@@ -4809,6 +4845,22 @@ SHA-256: `def984fbab50468d67944ae37750f3dfa00bbd37d44aeeed0d6f94591bf9c587`
 SHA-256: `4e3c4ad1c7d0658cc5f7e458f2cad752efb1b7258836c4ef12fc3fd31fb9262f`
 
 `"product/run-settlement-v1"`
+
+<a id="persistence-type-sha256-dedb75560e9eb61632d28e07044d4efb2a1d6b1df602e216d01222140790e2de"></a>
+
+### `"product/search-recognition-request-v1"`
+
+SHA-256: `dedb75560e9eb61632d28e07044d4efb2a1d6b1df602e216d01222140790e2de`
+
+`"product/search-recognition-request-v1"`
+
+<a id="persistence-type-sha256-e3756540363a7288e5d52528a8f4dccdba11b211999dfde5a76d80128cea4741"></a>
+
+### `"product/search-recognition-result-v1"`
+
+SHA-256: `e3756540363a7288e5d52528a8f4dccdba11b211999dfde5a76d80128cea4741`
+
+`"product/search-recognition-result-v1"`
 
 <a id="persistence-type-sha256-a54e1b89dfe2c9122e3fcc852f9eecc6453dda6a934857151cd19beab81fb9c8"></a>
 
@@ -11559,7 +11611,7 @@ SHA-256: `993e9f919eff4878cd2c72db392c2ca7fb47d48d3a327a15f5801ddfcd22c530`
 
 SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
-来源：[`packages/product-insight/source/src/index.ts:30`](../packages/product-insight/source/src/index.ts)
+来源：[`packages/product-insight/source/src/index.ts:33`](../packages/product-insight/source/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11660,7 +11712,7 @@ SHA-256: `5812aec89676f8c84468dd9f22d11b7dcf679b6321b8d03d672ab2822e8d5e1f`
 
 SHA-256: `4885840396b2c2b9e38c6fddd76f3db43c29ab919f7511ecd1870ec874b86bea`
 
-来源：[`packages/product-insight/workflow/src/index.ts:73`](../packages/product-insight/workflow/src/index.ts)
+来源：[`packages/product-insight/workflow/src/index.ts:80`](../packages/product-insight/workflow/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11738,7 +11790,7 @@ SHA-256: `8c89902dbcffc89c263693479a2d8936cf77e9b0910fd8f6fb8b25d28186ccb4`
 
 SHA-256: `ee613650103fabc796f81f2141e7cc8235635e1485f0b2dbcecb4c29fa11b143`
 
-来源：[`packages/product-insight/source/src/index.ts:18`](../packages/product-insight/source/src/index.ts)
+来源：[`packages/product-insight/source/src/index.ts:21`](../packages/product-insight/source/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16111,7 +16163,7 @@ SHA-256: `864f086999955e4f3d1cca2f217c16607a61dc068c4ec5348b3eb5b0c562078b`
 
 SHA-256: `5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:106`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16130,7 +16182,7 @@ SHA-256: `5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265`
 
 SHA-256: `be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:92`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:94`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16148,7 +16200,7 @@ SHA-256: `be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d`
 
 SHA-256: `de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:82`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16220,7 +16272,7 @@ SHA-256: `a26b684b0c4d6af8b025d10039675b7a74dd2e405bf531dd41c42bb305544fa1`
 
 SHA-256: `0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:38`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16235,7 +16287,7 @@ SHA-256: `0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8`
 
 SHA-256: `633ebc0eda83191bf5a0edd94d59f3a3887ab4a79d89480b2b6a10618a1a157f`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:49`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:51`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16267,7 +16319,7 @@ SHA-256: `c33c929c3bb145bdf84e467ffe3c4161e50ce2392ac0dd9c50a356ae37aabd5b`
 
 SHA-256: `f1e4de996016fc945e2f5f5c2d80d1e947f851bc9540912a4627a20c64bffa44`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:40`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16284,7 +16336,7 @@ SHA-256: `f1e4de996016fc945e2f5f5c2d80d1e947f851bc9540912a4627a20c64bffa44`
 
 SHA-256: `75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:60`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16622,7 +16674,7 @@ SHA-256: `9b2fb50a62eba36fe9cb4629055300b674a6805ddbee7b3f45598707e93255fe`
 
 SHA-256: `5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16872,7 +16924,7 @@ SHA-256: `bcf0caf62d964b2fcf5404bd5c909cfa9a21c3f3c96e6b7e36d9e33565223825`
 
 SHA-256: `3fa417e610bbbc0e433769cfdbba77765035fe8812a572c013c2ea4ab886a7ba`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:115`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:117`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -16900,12 +16952,27 @@ SHA-256: `79650cfa10aa3c52440328d85e8a25f0ffadc8d7efd784e3c0819d8bb74a1985`
 
 SHA-256: `0f84006fb3e2b1e66a47ea24526c30a2568442024fb92958a90696d18aa1c458`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:71`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:73`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
 | `error` | 必需 | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
 | `planId` | 必需 | `string` |
+| `status` | 必需 | [`union (2 variants)`](#persistence-type-sha256-3b8dac03e28eec7c440d3e84b6c0af6955c86ffa7484d83b4f5a2315d235e932) |
+| `text` | 必需 | `string` |
+
+<a id="persistence-type-sha256-d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005"></a>
+
+### `{ error, requestId, status, text }`
+
+SHA-256: `d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005`
+
+来源：[`packages/product-insight/workflow/src/search-recognition.ts:22`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `error` | 必需 | [`union (2 variants)`](#persistence-type-sha256-799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba) |
+| `requestId` | 必需 | `string` |
 | `status` | 必需 | [`union (2 variants)`](#persistence-type-sha256-3b8dac03e28eec7c440d3e84b6c0af6955c86ffa7484d83b4f5a2315d235e932) |
 | `text` | 必需 | `string` |
 
@@ -17237,7 +17304,7 @@ SHA-256: `1ccb56061942f5ccb0d30c9e4f2883b9d115ff906560029de637b61d3cde896d`
 
 SHA-256: `5842da8ceea55fda749bc9152d578e3e1da98b9f144cc64f4b486833ec24b7ee`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:58`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17250,7 +17317,7 @@ SHA-256: `5842da8ceea55fda749bc9152d578e3e1da98b9f144cc64f4b486833ec24b7ee`
 
 SHA-256: `92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:78`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -18818,7 +18885,7 @@ SHA-256: `bea6038fa31125506cec429e87223c135d6fc1b7dcadf495d4c4b4deba0e6990`
 
 SHA-256: `72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:62`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -18826,6 +18893,23 @@ SHA-256: `72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238`
 | `model` | 必需 | `string` |
 | `planId` | 必需 | `string` |
 | `provider` | 必需 | `string` |
+| `system` | 必需 | `string` |
+| `user` | 必需 | `string` |
+
+<a id="persistence-type-sha256-6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba"></a>
+
+### `{ maxTokens, model, provider, requestId, … }`
+
+SHA-256: `6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba`
+
+来源：[`packages/product-insight/workflow/src/search-recognition.ts:13`](../packages/product-insight/workflow/src/search-recognition.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `maxTokens` | 必需 | `number` |
+| `model` | 必需 | `string` |
+| `provider` | 必需 | `string` |
+| `requestId` | 必需 | `string` |
 | `system` | 必需 | `string` |
 | `user` | 必需 | `string` |
 
@@ -18960,7 +19044,7 @@ SHA-256: `d62eb3ce49a3c505f82b1e86f554e82764ad4badd8bc26dab2db216a402eabed`
 
 SHA-256: `6ee18c5f659d82fb1184649ea0e32b41f8aab1e1f30dead4972478fcb51ef443`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:126`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -18976,7 +19060,7 @@ SHA-256: `6ee18c5f659d82fb1184649ea0e32b41f8aab1e1f30dead4972478fcb51ef443`
 
 SHA-256: `8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e`
 
-来源：[`packages/product-insight/workflow/src/session-tool.ts:102`](../packages/product-insight/workflow/src/session-tool.ts)
+来源：[`packages/product-insight/workflow/src/session-tool.ts:104`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -20962,6 +21046,38 @@ SHA-256: `1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c`
 | `seq` | 必需 | `number` |
 | `time` | 必需 | `number` |
 | `type` | 必需 | `"product/run-settlement-v1"` |
+
+<a id="persistence-type-sha256-176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35"></a>
+
+<a id="persistence-type-eventproductsearch-recognition-request-v1"></a>
+
+### `{ type: "product/search-recognition-request-v1" }`
+
+SHA-256: `176465659bce9f931c8f9d7d18bbff7f004287807aacd522e7caf78ecdba7f35`
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `data` | 必需 | [`{ maxTokens, model, provider, requestId, … }`](#persistence-type-sha256-6b867e97400a5c0ed6cf94aba30bae626cc4121799167c9aa1729ef715c129ba) |
+| `ignorable` | 可选 | `true` |
+| `seq` | 必需 | `number` |
+| `time` | 必需 | `number` |
+| `type` | 必需 | `"product/search-recognition-request-v1"` |
+
+<a id="persistence-type-sha256-b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733"></a>
+
+<a id="persistence-type-eventproductsearch-recognition-result-v1"></a>
+
+### `{ type: "product/search-recognition-result-v1" }`
+
+SHA-256: `b8d490dd3907278680fe8d068ff81cf228e64257f259c6b39f946432ecd6f733`
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `data` | 必需 | [`{ error, requestId, status, text }`](#persistence-type-sha256-d9590e4cc6033a3bb4143a242332b3e7250241a1e4de9893d633972b9215a005) |
+| `ignorable` | 可选 | `true` |
+| `seq` | 必需 | `number` |
+| `time` | 必需 | `number` |
+| `type` | 必需 | `"product/search-recognition-result-v1"` |
 
 <a id="persistence-type-sha256-d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0"></a>
 

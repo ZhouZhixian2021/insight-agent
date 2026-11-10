@@ -113,7 +113,7 @@ function productManualPdf(): Uint8Array {
 
 /** Plan, two reviewed excerpts, and final answer for the product tool path. */
 class ProductInvestigationAdapter extends MinimalCompactionAdapter {
-  private turns = 0
+  turns = 0
   private synthesisCalls = 0
   private evidenceFailed = false
 
@@ -232,17 +232,10 @@ class ProductInvestigationAdapter extends MinimalCompactionAdapter {
       sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }],
       sourceCriteria: { region: 'US', productVersion: 'v1', minimumSourceDate: '2026-10-01' },
     })}\n\`\`\``
-    const name = this.turns === 1 ? 'exit_plan_mode' : 'run_product_investigation'
-    if (this.turns <= 2) {
-      yield { type: 'block-start', index: 0, blockType: 'tool-call' }
-      yield { type: 'block-end', index: 0, block: { type: 'tool-call', id: ToolCallId(`product-${this.turns}`),
-        name, arguments: JSON.stringify(this.turns === 1 ? { plan } : {}) } }
-      yield { type: 'finish', reason: { kind: 'tool-calls' } }
-    } else {
-      yield { type: 'block-start', index: 0, blockType: 'text' }
-      yield { type: 'block-end', index: 0, block: { type: 'text', text: '调查草稿已生成。' } }
-      yield { type: 'finish', reason: { kind: 'stop' } }
-    }
+    yield { type: 'block-start', index: 0, blockType: 'tool-call' }
+    yield { type: 'block-end', index: 0, block: { type: 'tool-call', id: ToolCallId(`product-${this.turns}`),
+      name: 'exit_plan_mode', arguments: JSON.stringify({ plan }) } }
+    yield { type: 'finish', reason: { kind: 'tool-calls' } }
   }
 }
 /** Emits one image read, then retains the request carrying its settled result. */
@@ -416,6 +409,44 @@ beforeAll(async () => {
 }, 120_000)
 
 describe('the shipped Web composition', () => {
+  it.skipIf(!process.env.PRODUCT_BROWSER_TEST)('recovers rendered search links with the session model and reads target content', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'dsh-product-search-recovery-'))
+    onTestFinished(() => rm(home, { recursive: true, force: true }))
+    const productCtx = await bootWeb(home)
+    onTestFinished(() => productCtx.fiber.dispose())
+    class SearchAdapter extends MinimalCompactionAdapter {
+      override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+        this.requests.push(options)
+        yield { type: 'block-start', index: 0, blockType: 'text' }
+        yield { type: 'block-end', index: 0, block: { type: 'text', text: '[0]' } }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      }
+    }
+    const model = new SearchAdapter()
+    onTestFinished(productCtx.llm.registerAdapter(['search-recovery-test'], model))
+    const { HttpFetchProvider } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/web/web-fetch-http/lib/index.js')) as typeof import('@deepseek-ai/dsh-web-fetch-http')
+    const network = vi.spyOn(HttpFetchProvider.prototype, 'fetch').mockImplementation(async request => ({
+      url: request.url, statusCode: 200, truncated: false, body: { kind: 'html', content:
+        request.url.includes('duckduckgo') ? '<html><body><main id="results"></main><script>document.getElementById("results").innerHTML = \'<a href="https://example.com/product">Example product specifications</a>\';</script></body></html>'
+          : request.url.includes('bing') || request.url.includes('yahoo') ? '<p>No results found</p>'
+            : `<article>${'Example supports offline export. '.repeat(20)}</article>` },
+    }))
+    onTestFinished(() => network.mockRestore())
+    const handle = await productCtx.agents.create({ sessionId: SessionId(`search-recovery-${randomUUID()}`),
+      agentOptions: { provider: 'search-recovery-test', model: 'search-recovery-test' },
+      setup: agentCtx => productCtx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined) })
+    onTestFinished(() => handle.dispose())
+    const search = await productCtx.tools.execute({ callId: ToolCallId('recovery-search'), name: 'web_search',
+      arguments: { queries: ['Example specifications'] }, signal: new AbortController().signal, agent: handle.agent })
+    expect(search.isError).toBe(false)
+    expect(JSON.stringify(search)).toContain('https://example.com/product')
+    expect(model.requests).toHaveLength(1)
+    expect(JSON.stringify(model.requests[0]?.messages)).toContain('Example product specifications')
+    const page = await productCtx.tools.execute({ callId: ToolCallId('recovery-read'), name: 'web_fetch',
+      arguments: { url: 'https://example.com/product' }, signal: new AbortController().signal, agent: handle.agent })
+    expect(page.isError).toBe(false)
+    expect(JSON.stringify(page)).toContain('Example supports offline export')
+  }, 60000)
   it('uses product-local free search instead of the global search plugin', async () => {
     const home = await mkdtemp(join(tmpdir(), 'dsh-product-free-web-'))
     onTestFinished(() => rm(home, { recursive: true, force: true }))
@@ -439,7 +470,9 @@ describe('the shipped Web composition', () => {
       signal: new AbortController().signal, agent: handle.agent })
     expect(page.isError).toBe(false)
     expect(JSON.stringify(page)).toContain('Example public specifications')
-    expect(network.mock.calls.length).toBe(2)
+    expect(network.mock.calls.length).toBe(4)
+    expect(network.mock.calls.some(([request]) => request.url.startsWith('https://www.bing.com/search'))).toBe(true)
+    expect(network.mock.calls.some(([request]) => request.url.startsWith('https://uk.search.yahoo.com/search'))).toBe(true)
   })
   it('exposes only the directory tool in the global layer', () => {
     // Directory selection is global; action tools belong to their Agent presets.
@@ -489,7 +522,8 @@ describe('the shipped Web composition', () => {
     try {
       expect(toolNames(ctx, handle.agent)).toContain('run_product_investigation')
       expect(toolNames(ctx, handle.agent)).toContain('get_product_investigation')
-      expect(toolNames(ctx, handle.agent)).toContain('job_output')
+      expect(toolNames(ctx, handle.agent)).not.toContain('job_output')
+      expect(toolNames(ctx, handle.agent)).toContain('cancel_product_investigation')
       const unapproved = await ctx.tools.execute({
         callId: ToolCallId('unapproved-product-run'), name: 'run_product_investigation',
         arguments: {}, signal: new AbortController().signal, agent: handle.agent,
@@ -576,11 +610,13 @@ describe('the shipped Web composition', () => {
       await handle.agent.whenIdle()
       const jobs = productCtx.get('jobs')
       expect(jobs).toBeDefined()
+      await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true))
       const job = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight')
       expect(job).toBeDefined()
       if (!job) throw new Error('Product background job was not registered')
       const settledJob = await jobs!.wait(job.id, 10_000, handle.agent.session.id)
       expect(settledJob.status).toBe('completed')
+      expect(adapter.turns).toBe(1) // No post-approval or job-completion chat generation.
       expect(await productCtx.sessions.flush(handle.agent.session)).toBe(true)
       const retrieved = await productCtx.tools.execute({ callId: ToolCallId('product-read'),
         name: 'get_product_investigation', arguments: {}, signal: new AbortController().signal,
@@ -597,6 +633,7 @@ describe('the shipped Web composition', () => {
       expect(replay.isError).toBe(false)
       await using reader = await productCtx.sessionPersistence.open(handle.agent.session.id, 'read')
       const { events } = await reader.read()
+      expect(events.filter(event => event.type === 'tool/call').map(event => event.data.name)).toEqual(['exit_plan_mode'])
       const records: string[] = events.map(event => event.type)
       expect(events.filter(event => event.type === 'product/model-request-v1')
         .every(event => event.data.maxTokens === 8_192)).toBe(true)
@@ -705,6 +742,14 @@ describe('the shipped Web composition', () => {
       } else {
         expect(report).toContain('报告综合生成未完成')
         expect(report).not.toContain('## 综合回答')
+      }
+      if (scenario === 'invalid') {
+        handle.agent.followup(createUserMessage({ content: [{ type: 'text', text: '再调查一次产品价格。' }], source: { kind: 'user' } }))
+        await handle.agent.whenIdle()
+        await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).filter(item => item.kind === 'product-insight')).toHaveLength(2))
+        const nextJob = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight' && item.id !== job.id)!
+        await jobs!.wait(nextJob.id, 10_000, handle.agent.session.id)
+        expect(adapter.turns).toBe(2)
       }
     } finally {
       approveReview.mockRestore()
@@ -827,6 +872,7 @@ describe('the shipped Web composition', () => {
       await handle.agent.whenIdle()
       const jobs = productCtx.get('jobs')
       expect(jobs).toBeDefined()
+      await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true))
       const job = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight')
       expect(job).toBeDefined()
       if (!job) throw new Error('Product gap job was not registered')

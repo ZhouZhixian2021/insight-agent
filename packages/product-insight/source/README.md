@@ -11,7 +11,9 @@ English | [中文](README.zh.md)
 
 Use this library to turn an approved product plan into an explained page list, acquire selected pages, and verify exact excerpts. It sends one bounded DSH Web query per question, may add one approved gap query per unanswered question, merges duplicate URLs, and retains successful work when another query or fetch fails. The caller owns Web provider selection and persistence.
 
-The product preset also loads this package as a Cordis plugin in an isolated Web registry. It uses DuckDuckGo HTML search without an API key and bounded HTTP retrieval, falling back to an anonymous installed Edge browser on Windows (Chrome elsewhere) for empty or JavaScript-dependent pages. Browser requests use the same public-URL checks and proxy policy. Defaults: 10 search results, 25-second HTTP timeout, 30-second browser timeout, 60 browser requests, and 500,000 response characters. The browser permits GET requests only; login, CAPTCHA, interactive actions and some dynamic pages remain unsupported. Search rate limits and changed layouts are failures, not empty successful results. Search has no paid API dependency; model usage and network costs remain. This does not require dsh-web-tools.
+The product preset loads this package in an isolated Web registry. `searchEngines` defaults to DuckDuckGo, Bing and Yahoo (UK endpoint): each receives the same approved query concurrently, without API keys, Docker or dsh-web-tools. Results are interleaved by rank, stripped of tracking parameters, deduplicated and capped at 10 combined links. Source failures retain healthy results and mark coverage incomplete; all-source failure rejects the request. Source outcomes appear in search result diagnostics. Captchas and unknown layouts are failures, never successful empty results. `searchHttp1Only` defaults to true for proxy compatibility; other HTTP consumers retain their transport defaults. Free HTML endpoints can change or rate-limit; three engines do not imply three independent indexes or complete coverage.
+
+Page retrieval uses bounded HTTP, falling back to anonymous installed Edge on Windows (Chrome elsewhere) for empty or JavaScript-dependent pages. Browser requests retain public-URL checks and proxy policy. Defaults: 25-second HTTP timeout per concurrent search source, 30-second browser timeout, 60 browser requests and 500,000 response characters. Browser requests permit GET only; login, CAPTCHA, interactive actions and some dynamic pages remain unsupported. Snippets are discovery material, not evidence. Model and network costs remain.
 
 ## Table of Contents
 
@@ -56,11 +58,11 @@ When follow-up searches are approved, initial review-needed candidates leave one
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as the caller owns any model-visible presentation of candidates and failures.
+Unknown search layouts trigger one bounded browser render per engine. If ordinary parsing still fails, the product workflow selects only observed external link IDs with the current session model. Verification pages are rejected. Recovery observes at most `searchRecoveryCharacters` characters (default 16,000) and `searchRecoveryLinks` links (default 60); results remain discovery material, and target pages must still be fetched and verified. Disabling `browserEnabled` disables this recovery path.
 
 #### KV Cache effect
 
-No direct effect; this library does not construct a model prompt.
+Recovery passes bounded page observations to the workflow's independent model request; successful ordinary parsing adds no model request or conversation replay.
 
 ## Known Limitations and Deferred Work
 
