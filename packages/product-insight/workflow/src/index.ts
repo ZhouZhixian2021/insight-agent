@@ -468,9 +468,14 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     }
     await adapters.saveClaims(claims)
     const unanswered = input.plan.questions.filter(question => !claims.some(claim => claim.questionIds.includes(question.questionId)))
-    const canFillGaps = (): boolean => !operationSignal?.aborted && !failures.some(failure => failure.stage === 'analysis')
+    const canFillGaps = (): boolean => !operationSignal?.aborted
       && currentCheckpoint?.stage !== 'verification'
-    if (canFillGaps() && !gapReadCompleted && maximumGapReads > 0 && unanswered.length > 0) {
+    const gapAttempts = discovery.searches.filter(isProductGapSearch)
+    const gapQuestions = unanswered.filter(question => !gapAttempts.some(search => search.questionId === question.questionId))
+    const remainingGapSearches = maximumGapSearches - gapAttempts.length
+    const canSearchGaps = remainingGapSearches > 0 && gapQuestions.length > 0
+      && hasProductCandidateCapacity(discovery.candidates.items, input.plan.limits?.maximumCandidatePages ?? 0)
+    if (canFillGaps() && !canSearchGaps && !gapReadCompleted && maximumGapReads > 0 && unanswered.length > 0) {
       const previousEvidenceCount = evidence.length
       const sources: { page: CandidatePage; snapshot: AvailableSourceSnapshot; text: string }[] = []
       for (const snapshot of pages.snapshots.items) {
@@ -519,18 +524,13 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         await adapters.savePages(items, pages.snapshots.items)
       }
       if (operationSignal?.aborted) break
-      gapReadCompleted = true
+      gapReadCompleted = readBudget.remaining < maximumGapReads
       if (previousEvidenceCount > 0) await checkpoint('claims', previousEvidenceCount)
       else if (pages.snapshots.items.length > 0) await checkpoint('evidence', pages.snapshots.items.length)
       else await checkpoint('pages', 0)
       if (evidence.length > previousEvidenceCount) continue
     }
-    let gapAttempts = discovery.searches.filter(isProductGapSearch)
-    const gapQuestions = unanswered.filter(question => !gapAttempts.some(search => search.questionId === question.questionId))
-    const remainingGapSearches = maximumGapSearches - gapAttempts.length
-    if (canFillGaps()
-      && remainingGapSearches > 0 && gapQuestions.length > 0
-      && hasProductCandidateCapacity(discovery.candidates.items, input.plan.limits?.maximumCandidatePages ?? 0)) {
+    if (canFillGaps() && canSearchGaps) {
       const previousSnapshots = await searchForGaps(gapQuestions.slice(0, remainingGapSearches).map(question => question.questionId))
       if (operationSignal?.aborted) break
       if (previousSnapshots !== undefined) {
@@ -543,7 +543,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       if (evidence.length > 0) await checkpoint('claims', evidence.length)
       else if (pages.snapshots.items.length > 0) await checkpoint('evidence', pages.snapshots.items.length)
       else await checkpoint('pages', 0)
-      gapAttempts = discovery.searches.filter(isProductGapSearch)
+      continue
     }
     const selectedClaims = keyProductClaims(input.plan, claims, evidence, discovery.candidates.items)
     const verificationStart = currentCheckpoint?.stage === 'verification' ? currentCheckpoint.nextIndex : 0
@@ -607,7 +607,6 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     const remainingCorroborationSearches = maximumGapSearches - gapAttempts.length
     if (!operationSignal?.aborted && remainingCorroborationSearches > 0
       && !gapAttempts.some(search => search.reason === 'corroboration_gap')
-      && !failures.some(failure => failure.stage === 'analysis')
       && hasProductCandidateCapacity(discovery.candidates.items, input.plan.limits?.maximumCandidatePages ?? 0)) {
       const context = { product: input.product, plan: input.plan, pages: byPage,
         evidence: new Map(evidence.map(item => [item.evidenceId, item])),
@@ -621,7 +620,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         try { checkCrossSourceJudgments(comparisonEvidence(selected.questionId, selected.claim, claims, evidence), verification.judgments) }
         catch { continue }
         const result = assessProductCorroboration(context, selected.claim, verification.judgments)
-        if (!result.corroborated && result.primarySource.eligible && result.primaryPage !== undefined
+        if (!result.corroborated && result.primaryPage !== undefined
           && productCorroborationDomains(input.product, input.plan, result.primaryPage).length > 0) {
           targets.set(selected.questionId, result.primaryPage.candidatePageId)
         }
@@ -689,14 +688,13 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         ? synthesizedMarkdown : renderProductReport(reportInput, assessment)
       const contentRef = await adapters.saveReport(markdown)
       if (contentRef.trim().length === 0) throw new RangeError('Saved report reference is empty')
-      delivery = { status: assessment.status === 'ready' ? 'final' : 'draft', reasons: [
-        ...assessment.reasons, 'Cross-site review does not prove publisher independence, source truth, or product behavior.',
-      ], report: { schemaVersion: 1, reportId: createProductReportId(), planId: input.plan.planId,
-        planVersion: input.plan.version, generatedAt: completedAt, assessedAt: completedAt,
-        claimIds: keyProductClaims(input.plan, claims, evidence, discovery.candidates.items)
-          .map(item => item.claim.claimId), evidenceIds: evidence.map(item => item.evidenceId),
-        limitations: [...(assessment.status === 'draft' ? assessment.reasons : []),
-          'Cross-site judgments do not prove publisher independence or product behavior.'], contentRef } }
+      delivery = { status: assessment.status === 'ready' ? 'final' : 'draft', reasons: assessment.reasons,
+        report: { schemaVersion: 1, reportId: createProductReportId(), planId: input.plan.planId,
+          planVersion: input.plan.version, generatedAt: completedAt, assessedAt: completedAt,
+          claimIds: keyProductClaims(input.plan, claims, evidence, discovery.candidates.items)
+            .map(item => item.claim.claimId), evidenceIds: evidence.map(item => item.evidenceId),
+          limitations: [...(assessment.status === 'draft' ? assessment.reasons : []),
+            'Cross-site judgments do not prove publisher independence or product behavior.'], contentRef } }
     } catch (error) {
       failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'report',
         category: 'unknown', message: error instanceof Error ? error.message : String(error),
@@ -721,9 +719,11 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
 
 /** Pin each proposed excerpt to its supplied fragment before full-page source verification. */
 function locateProductDraft(draft: ProductEvidenceDraft, fragment: ProductPageFragment): ProductEvidenceDraft {
-  const local = draft.startHint ?? fragment.text.indexOf(draft.verbatimExcerpt)
-  const unique = draft.startHint !== undefined
-    || fragment.text.indexOf(draft.verbatimExcerpt, local + 1) < 0
+  const hinted = draft.startHint
+  const validHint = hinted !== undefined && Number.isSafeInteger(hinted) && hinted >= 0
+    && fragment.text.slice(hinted, hinted + draft.verbatimExcerpt.length) === draft.verbatimExcerpt
+  const local = validHint && hinted !== undefined ? hinted : fragment.text.indexOf(draft.verbatimExcerpt)
+  const unique = validHint || local >= 0 && fragment.text.indexOf(draft.verbatimExcerpt, local + 1) < 0
   return { ...draft, startHint: Number.isSafeInteger(local) && local >= 0 && unique
     && fragment.text.slice(local, local + draft.verbatimExcerpt.length) === draft.verbatimExcerpt
     ? fragment.start + local : -1 }

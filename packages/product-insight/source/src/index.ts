@@ -132,14 +132,21 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     throw new RangeError('Product officialUrl must be HTTP(S)')
   }
   const candidateLimit = maximum ?? Number.POSITIVE_INFINITY
+  const reservedGapSlots = gap === undefined && Number.isFinite(candidateLimit)
+    ? Math.min(plan.limits?.maximumGapSearches ?? 0, Math.max(0, candidateLimit - 1)) : 0
+  const reviewLimit = candidateLimit - reservedGapSlots
   const priorities = ['selected', 'needs_review', 'excluded'] as const
   function screenSource(source: WebSearchResult['sources'][number]) {
     const parsed = parseCandidateUrl(source.url)
     const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
     const approvedPublisher = parsed === null ? undefined : plan.sourcePublishers?.find(item => withinDomain(parsed.hostname, item.domain))
+    const leadingBrand = approvedPublisher === undefined ? undefined
+      : /^[a-z][a-z0-9-]{2,}/iu.exec(product.name)?.[0].toLocaleLowerCase()
     const named = [source.title, source.snippet, parsed?.hostname, parsed?.pathname].some(part =>
       part !== undefined && [product.name, ...product.aliases ?? []].some(name =>
         name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
+      || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
+        part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
     return { source, parsed, officialPage, approvedPublisher,
       screening: screenCandidate(parsed, officialPage, named, approvedPublisher !== undefined) }
   }
@@ -153,6 +160,10 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       if (gap === undefined && !prior.questionIds.includes(questionId)) {
         candidates.set(key, { ...prior, questionIds: [...prior.questionIds, questionId] })
       }
+      return 'ignored'
+    }
+    if (prior === undefined && gap === undefined && screening.status === 'needs_review'
+      && [...candidates.values()].filter(page => page.screening.status === 'needs_review').length >= reviewLimit) {
       return 'ignored'
     }
     if (prior === undefined && candidates.size >= candidateLimit) {
