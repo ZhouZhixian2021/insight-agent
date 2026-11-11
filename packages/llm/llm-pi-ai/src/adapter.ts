@@ -398,6 +398,7 @@ export class PiAiAdapter extends LlmAdapter {
       : AbortSignal.any([options.signal, consumer.signal])
     const streamIdleTimeoutMs = profile.streamIdleTimeoutMs
     using watchdog = idleWatchdog(upstream, streamIdleTimeoutMs, 'LLM_STREAM_IDLE_TIMEOUT')
+    let reportTransport: ((code: string) => void) | undefined
 
     try {
       const containsImage = options.messages.some(message => contentHasImage(message.content))
@@ -422,10 +423,10 @@ export class PiAiAdapter extends LlmAdapter {
             maxBytes: profile.requestImageMaxBytes,
           },
         }, onReplayDegrade)
-      const transport = new TransportCapture()
-      const callId = randomUUID()
+      const callId = options.traceId ?? randomUUID()
+      const transport = new TransportCapture(options.traceId)
       let diagnosticReported = false
-      const reportTransport = (failureCode: string): void => {
+      reportTransport = (failureCode: string): void => {
         if (diagnosticReported || this.config.onTransportDiagnostic === undefined) return
         diagnosticReported = true
         try {
@@ -453,12 +454,11 @@ export class PiAiAdapter extends LlmAdapter {
         while (true) {
           const result = await watchdog.next(iterator)
           if (result.done) {
+            reportTransport('COMPLETED')
             exhausted = true
             return
           }
-          if (result.value.type === 'finish' && result.value.reason.kind === 'error'
-            && (result.value.reason.failure.code === 'TRANSPORT'
-              || result.value.reason.failure.code === 'TIMEOUT')) {
+          if (result.value.type === 'finish' && result.value.reason.kind === 'error') {
             reportTransport(result.value.reason.failure.code)
           }
           yield result.value
@@ -473,6 +473,7 @@ export class PiAiAdapter extends LlmAdapter {
         }
       }
     } catch (error: unknown) {
+      reportTransport?.(error instanceof LlmError ? error.code : 'UNKNOWN')
       if (timeoutOf(watchdog.signal, 'LLM_STREAM_IDLE_TIMEOUT') !== undefined) {
         throw new LlmError(`pi-ai stream idle timeout after ${streamIdleTimeoutMs}ms`, 'TIMEOUT', { cause: error })
       }

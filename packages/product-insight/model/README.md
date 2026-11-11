@@ -37,6 +37,8 @@ Source, workflow, report, controller, and browser packages will consume its publ
 
 [Types](src/types.ts) separate a discovered page from each successful or failed fetch; only a successful snapshot carries content and its hash. A plan can approve a per-page text allowance, a bounded number of question-targeted gap searches, external publishers, and explicit region, version, and date criteria; an available snapshot can retain page-declared publisher, dates, region, and version without treating absent fields as known. Evidence retains the exact source snapshot, while a conclusion records the plan version and content identities used for analysis. [IDs](src/ids.ts) use branded UUIDs. The [freshness check](src/claim-freshness.ts) reports known changes as stale and missing observations as unverifiable, without mutating stored conclusions.
 
+`ProductEvidence` reads both version 1 single-excerpt records and version 2 records with independently located `supportingExcerpts`. Version 2 keeps the primary excerpt and locator for existing citation consumers. Each supporting excerpt has its own exact text range in the same saved source; a quote is never synthesized across gaps.
+
 </details>
 
 -----
