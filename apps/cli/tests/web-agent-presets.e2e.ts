@@ -431,7 +431,7 @@ describe('the shipped Web composition', () => {
           : request.url.includes('bing') || request.url.includes('yahoo') ? '<p>No results found</p>'
             : `<article>${'Example supports offline export. '.repeat(20)}</article>` },
     }))
-    onTestFinished(() => network.mockRestore())
+    onTestFinished(() => { network.mockRestore() })
     const handle = await productCtx.agents.create({ sessionId: SessionId(`search-recovery-${randomUUID()}`),
       agentOptions: { provider: 'search-recovery-test', model: 'search-recovery-test' },
       setup: agentCtx => productCtx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined) })
@@ -610,7 +610,7 @@ describe('the shipped Web composition', () => {
       await handle.agent.whenIdle()
       const jobs = productCtx.get('jobs')
       expect(jobs).toBeDefined()
-      await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true))
+      await vi.waitFor(() => { expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true) })
       const job = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight')
       expect(job).toBeDefined()
       if (!job) throw new Error('Product background job was not registered')
@@ -746,7 +746,7 @@ describe('the shipped Web composition', () => {
       if (scenario === 'invalid') {
         handle.agent.followup(createUserMessage({ content: [{ type: 'text', text: '再调查一次产品价格。' }], source: { kind: 'user' } }))
         await handle.agent.whenIdle()
-        await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).filter(item => item.kind === 'product-insight')).toHaveLength(2))
+        await vi.waitFor(() => { expect(jobs!.list(handle.agent.session.id).filter(item => item.kind === 'product-insight')).toHaveLength(2) })
         const nextJob = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight' && item.id !== job.id)!
         await jobs!.wait(nextJob.id, 10_000, handle.agent.session.id)
         expect(adapter.turns).toBe(2)
@@ -872,7 +872,7 @@ describe('the shipped Web composition', () => {
       await handle.agent.whenIdle()
       const jobs = productCtx.get('jobs')
       expect(jobs).toBeDefined()
-      await vi.waitFor(() => expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true))
+      await vi.waitFor(() => { expect(jobs!.list(handle.agent.session.id).some(item => item.kind === 'product-insight')).toBe(true) })
       const job = jobs!.list(handle.agent.session.id).find(item => item.kind === 'product-insight')
       expect(job).toBeDefined()
       if (!job) throw new Error('Product gap job was not registered')

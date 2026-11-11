@@ -9,11 +9,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use this library to turn an approved product plan into an explained page list, acquire selected pages, and verify exact excerpts. It sends one bounded DSH Web query per question, may add one approved gap query per unanswered question, merges duplicate URLs, and retains successful work when another query or fetch fails. The caller owns Web provider selection and persistence.
+Use this library to discover approved product pages, acquire bounded source text, and verify exact evidence positions. It retains successful queries and fetches when another fails; the workflow owns model selection, persistence and reporting.
 
-The product preset loads this package in an isolated Web registry. `searchEngines` defaults to DuckDuckGo, Bing and Yahoo (UK endpoint): each receives the same approved query concurrently, without API keys, Docker or dsh-web-tools. Results are interleaved by rank, stripped of tracking parameters, deduplicated and capped at 10 combined links. Source failures retain healthy results and mark coverage incomplete; all-source failure rejects the request. Source outcomes appear in search result diagnostics. Captchas and unknown layouts are failures, never successful empty results. `searchHttp1Only` defaults to true for proxy compatibility; other HTTP consumers retain their transport defaults. Free HTML endpoints can change or rate-limit; three engines do not imply three independent indexes or complete coverage.
-
-Page retrieval uses bounded HTTP, falling back to anonymous installed Edge on Windows (Chrome elsewhere) for empty or JavaScript-dependent pages. Browser requests retain public-URL checks and proxy policy. Defaults: 25-second HTTP timeout per concurrent search source, 30-second browser timeout, 60 browser requests and 500,000 response characters. Browser requests permit GET only; login, CAPTCHA, interactive actions and some dynamic pages remain unsupported. Snippets are discovery material, not evidence. Model and network costs remain.
+An isolated product Web registry offers multi-engine free search and public-page fetching. Search snippets remain discovery material and cannot become evidence.
 
 ## Table of Contents
 
@@ -29,7 +27,11 @@ Page retrieval uses bounded HTTP, falling back to anonymous installed Edge on Wi
 <a id="use-this-package"></a>
 ## Use this package
 
-`discoverCandidatePages()` screens approved source domains before acquisition, merges duplicate URLs and retains per-query failures. Search requests and the retained candidate bound are separate. `fetchProductPages()` reads up to three selected pages concurrently and saves the complete canonical text before publishing its snapshot. Without an explicit plan character bound, cleaned HTML and PDF text are not rejected at 12000/48000 characters, 16 MiB or 200 pages. Legacy explicit character bounds remain enforceable. `splitProductPageText()` remains a legacy fixed-window helper; new unbounded-plan execution uses model context capacity in the workflow. Excerpts are verified against complete saved text with physical PDF page numbers. Transport resource protection remains configurable: default response 64 MiB and body 16,777,216 characters; exceeding transport capacity is recorded, never silently treated as complete. Browser request and timeout protections remain.
+`discoverCandidatePages()` screens approved source domains before acquisition, merges duplicate URLs and retains per-query failures. Search requests and the retained candidate bound are separate. `fetchProductPages()` reads up to three selected pages concurrently and saves the complete canonical text before publishing its snapshot. The approved page limit is 12,000–48,000 characters; absent an explicit limit, the default remains 12,000. Oversized pages may be reduced to their article text, but pages still exceeding the limit fail acquisition. `splitProductPageText()` remains available for legacy checkpoints. Excerpts are verified against complete saved text with physical PDF page numbers. Transport resource protection remains configurable: default response 64 MiB and body 16,777,216 characters; exceeding transport capacity is recorded, never silently treated as complete. Browser request and timeout protections remain.
+
+The free search provider queries DuckDuckGo, Bing and Yahoo concurrently, interleaves ranked links, removes tracking parameters, and records each engine's outcome. It treats captchas and unknown layouts as failures. Page retrieval uses bounded HTTP with a browser fallback for empty or JavaScript-dependent pages. The browser allows public GET requests only; login and interactive pages remain outside this acquisition path.
+
+For new investigations, `indexProductPagePassages()` marks exact sentence-sized source ranges and nearby context without rewriting the saved text. `keywordProductPassageRetriever` ranks them per approved question and presents at most six, including neighbors; `ProductPassageRetriever` is the extension point for later semantic retrieval. The model returns passage IDs. `extractProductPassageEvidence()` checks the snapshot hash, selected IDs and question links, then copies one to three exact excerpts from saved text into version 2 evidence. Legacy fragment extraction remains available for old checkpoints. `evaluateProductPassageRetrieval()` accepts manually checked saved-text ranges and reports retrieval recall; an empty sample set returns no recall result.
 
 -----
 
@@ -58,15 +60,15 @@ When follow-up searches are approved, initial review-needed candidates leave one
 <a id="model-experience"></a>
 ## Model Experience
 
-Unknown search layouts trigger one bounded browser render per engine. If ordinary parsing still fails, the product workflow selects only observed external link IDs with the current session model. Verification pages are rejected. Recovery observes at most `searchRecoveryCharacters` characters (default 16,000) and `searchRecoveryLinks` links (default 60); results remain discovery material, and target pages must still be fetched and verified. Disabling `browserEnabled` disables this recovery path.
+None, as this library contributes source data and Web providers without adding model context or dispatching model requests.
 
 #### KV Cache effect
 
-Recovery passes bounded page observations to the workflow's independent model request; successful ordinary parsing adds no model request or conversation replay.
+The workflow may use a separate model call to recognize observed links when ordinary search parsing fails; this library does not add conversation replay.
 
 ## Known Limitations and Deferred Work
 
-- **Document extraction limits** — PDF acquisition requires an extractable text layer and accepts at most 16 MiB and 200 physical pages within the approved character limit. HTML normalization handles common semantic tags and entities; pages with complex rendered layouts need a browser or DOM extraction adapter. A page beyond its approved text bound fails acquisition. Without overlap, an excerpt crossing a model-window edge may be missed; the product workflow uses 1,499 characters of repeated context for excerpts of at most 1,500 characters.
+- **Document extraction limits** — PDF acquisition requires an extractable text layer and accepts at most 16 MiB and 200 physical pages within the approved character limit. HTML normalization handles common semantic tags and entities; pages with complex rendered layouts need a browser or DOM extraction adapter. A page beyond its approved text bound fails acquisition. Without overlap, an excerpt crossing a model-window edge may be missed; legacy fragment resumes use 1,499 characters of repeated context for excerpts of at most 1,500 characters.
 - **Caller-owned orchestration** — The caller persists source text and records, supplies proposed excerpts, and logs any model request. A consumer must verify nonofficial publisher ownership before treating a different site as an independent publisher. This package does not run the product workflow or produce a report.
 
 <a id="dev-note"></a>

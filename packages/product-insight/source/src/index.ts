@@ -4,7 +4,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductQuestionId,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
-import { productQuestionTerms } from './page-content.ts'
+import { productQuestionTerms, PRODUCT_PAGE_FRAGMENT_CHARACTERS } from './page-content.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
 export type { SearchObservation } from './search-recovery.ts'
@@ -16,6 +16,12 @@ export type { PreparedProductPage, ProductEvidenceDraft, ProductEvidenceExtracti
   ProductPageFragment, RejectedProductEvidenceDraft } from './page-content.ts'
 export { fetchProductPages, sameProductPageFacts } from './page-fetch.ts'
 export type { ProductPageFetchAdapters, ProductPageFetchResult } from './page-fetch.ts'
+export { indexProductPagePassages, keywordProductPassageRetriever, rankProductPagePassages, selectProductQuestionPassages,
+  extractProductPassageEvidence } from './passage-index.ts'
+export type { ProductPagePassage, ProductPassageRetriever, ProductPassageSelection,
+  RejectedProductPassageSelection } from './passage-index.ts'
+export { evaluateProductPassageRetrieval } from './passage-evaluation.ts'
+export type { ProductPassageEvaluationCase, ProductPassageEvaluationResult } from './passage-evaluation.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */
 export interface ProductSearchAttempt {
@@ -77,9 +83,9 @@ export interface ProductDiscoveryAdapters {
  * @returns Maximum complete canonical text characters per selected page.
  */
 export function resolveProductPageCharacterLimit(plan: ProductPlan): number {
-  const maximum = plan.limits?.maximumPageCharacters ?? Number.MAX_SAFE_INTEGER
-  if (!Number.isSafeInteger(maximum) || maximum < 1) {
-    throw new RangeError('maximumPageCharacters must be a positive safe integer')
+  const maximum = plan.limits?.maximumPageCharacters ?? PRODUCT_PAGE_FRAGMENT_CHARACTERS
+  if (!Number.isSafeInteger(maximum) || maximum < PRODUCT_PAGE_FRAGMENT_CHARACTERS || maximum > 48_000) {
+    throw new RangeError('maximumPageCharacters must be between 12000 and 48000')
   }
   return maximum
 }

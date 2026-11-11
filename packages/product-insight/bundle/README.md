@@ -11,9 +11,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This bundle adds Product Insight to the Web agent preset selector. The preset presents an investigation plan for review. After approval, the host starts a Session-owned background job for Web discovery, page acquisition, exact excerpt checks, semantic support review, cross-site comparison, and report delivery checks. An inline transcript card projects those Session events into live stages, counters, blockers, and the saved Markdown report, so progress remains visible without relying on an Agent status message. The job saves a cited report when ready or a draft with blockers; evidence, comparison, claim, report, and task-state records remain in the owning Session.
+This bundle adds Product Insight to the Web agent preset selector. After plan approval, a Session-owned background job searches approved sources, extracts and reviews evidence, checks independent support, and saves a cited report or a draft with blockers. A transcript card shows live stages, counts, Trace and the saved report.
 
-The product preset owns an isolated Web registry with product-free-search and product-public-page. Planning tools and background investigation use these providers without requiring dsh-web-tools; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
+The preset currently selects installed Web search through `product-installed-search` and public-page acquisition; local multi-engine `product-free-search` remains available.
 
 ## Table of Contents
 
@@ -41,6 +41,8 @@ The shipped Web profile loads this bundle after the Academic bundle. Select **Pr
 
 [The preset patch](presets/product.patch.yml) declares the persona, plan mode, question tool, provider-neutral Web tools, and the product workflow plugin. A proposed `product-insight-plan-json` block is checked before review. The workflow tool rechecks the durable approval before using Web and model services. [The Web patch](web.patch.yml) injects the feature-owned transcript projection. It folds durable product workflow events through the Conversation Definition/slot boundary, so live updates and replayed sessions render the same card without changing a shared framework prompt or UI component.
 
+The product preset owns an isolated Web registry. Planning tools and background investigation route searches to the installed `dsh-web-tools` provider in the root Web registry while retaining `product-public-page` for page retrieval. The product-local `product-free-search` remains available for explicit selection; other presets retain their own search configuration. The Web profile must install and configure `dsh-web-tools`. Restart the server and create a new product-insight conversation after changing this preset.
+
 </details>
 
 -----
@@ -62,8 +64,6 @@ Indirectly, through the product preset plugins. During planning, the agent must 
 
 Selecting this preset changes its persona, planning instructions, and tool schemas relative to another preset; repeated turns in one session keep the same composition.
 
-Chat renders formatted report text. Evidence and diagnostic appendices are collapsed by default and remain available in Markdown and self-contained HTML downloads. Rendering does not call a model or change delivery decisions.
-
 ## Known Limitations and Deferred Work
 
 - The background job remains process-local and belongs to the Agent. A process restart leaves its saved state readable as interrupted; an explicit new call resumes the latest complete checkpoint for that plan. Automatic continuation remains separate work. The transcript card is a Session projection rather than an independent task-control page. Final status requires cross-site corroboration without unresolved conflicts; it does not establish publisher independence or product behavior.
@@ -75,6 +75,8 @@ Chat renders formatted report text. Evidence and diagnostic appendices are colla
 <summary>Working context for maintainers — click to expand</summary>
 
 Keep product transcript presentation in this bundle and durable investigation state in the workflow package. Add fields through Session events and the projection instead of coupling the card to an Agent response.
+
+Temporary switch record (2026-11-10): vivo investigations received repeated HTTP 202 responses and unrecognized HTML from the free search endpoint. To return after free search is repaired and verified with a live query, change only `searchProvider` in `presets/product.patch.yml` from `product-installed-search` to `product-free-search`. Keep the source plugin and `fetchProvider: product-public-page` in place. Restart Web and use a new Product Insight conversation to verify both planning search and background discovery; the installed-provider bridge can remain registered but unused.
 
 </details>
 

@@ -39,7 +39,9 @@ export interface ProductSynthesisInput {
     readonly questionId: string
     readonly question: string
     readonly limitations?: readonly string[]
-    readonly evidence: readonly Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'>[]
+    readonly evidence: readonly (Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'> & {
+      readonly supportingExcerpts?: readonly string[]
+    })[]
   }[]
 }
 
@@ -85,7 +87,10 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
         && claims.some(claim => claim.questionIds.includes(question.questionId)
           && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))
-        .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
+        .map(item => ({ evidenceId: item.evidenceId, sourcedStatement: item.sourcedStatement,
+          verbatimExcerpt: item.verbatimExcerpt,
+          ...item.schemaVersion === 2 && item.supportingExcerpts.length > 0
+            ? { supportingExcerpts: item.supportingExcerpts.map(span => span.verbatimExcerpt) } : {} })) }
   })
   return { scope: input.plan.scope, questions,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
@@ -341,6 +346,8 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       : review?.verdict === 'unsupported' ? '摘录不支持该陈述'
         : review?.verdict === 'uncertain' ? '支持关系仍不确定' : '尚未审核支持关系'
     lines.push(`### 证据 ${seen.size}`, '', `> ${escape(item.verbatimExcerpt)}`, '',
+      ...item.schemaVersion === 2 ? item.supportingExcerpts.flatMap(span =>
+        [`> ${escape(span.verbatimExcerpt)}`, '']) : [],
       `${state}；来源陈述：${escape(item.sourcedStatement)} [来源](${citationLink(page.url, item)})`, '')
     if (review) lines.push(`核对说明：${escape(review.rationale)}`, '')
   }

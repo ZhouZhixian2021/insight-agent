@@ -136,9 +136,7 @@ export function parseProductPlanMarkdown(markdown: string): {
     'maximumPageCharacters', 'maximumGapSearches', 'maximumGapReads'], 'Product plan limits')
   const limits = {
     maximumCandidatePages: positiveInteger(value.limits.maximumCandidatePages, 'maximumCandidatePages'),
-    ...value.limits.maximumElapsedMinutes === undefined ? {} : {
-      maximumElapsedMinutes: positiveNumber(value.limits.maximumElapsedMinutes, 'maximumElapsedMinutes'),
-    },
+    maximumElapsedMinutes: positiveNumber(value.limits.maximumElapsedMinutes, 'maximumElapsedMinutes'),
     ...value.limits.maximumPageCharacters === undefined ? {} : {
       maximumPageCharacters: positiveInteger(value.limits.maximumPageCharacters, 'maximumPageCharacters'),
     },
@@ -149,7 +147,12 @@ export function parseProductPlanMarkdown(markdown: string): {
       maximumGapReads: positiveInteger(value.limits.maximumGapReads, 'maximumGapReads'),
     },
   }
-  if (limits.maximumCandidatePages > 30) throw new RangeError('maximumCandidatePages must be at most 30')
+  if (limits.maximumCandidatePages > 12) throw new RangeError('maximumCandidatePages must be at most 12')
+  if (limits.maximumElapsedMinutes > 20) throw new RangeError('maximumElapsedMinutes must be at most 20')
+  if (limits.maximumPageCharacters !== undefined
+    && (limits.maximumPageCharacters < 12_000 || limits.maximumPageCharacters > 48_000)) {
+    throw new RangeError('maximumPageCharacters must be between 12000 and 48000')
+  }
   if (limits.maximumGapSearches !== undefined && limits.maximumGapSearches > value.questions.length) {
     throw new RangeError('maximumGapSearches must not exceed the number of approved questions')
   }
