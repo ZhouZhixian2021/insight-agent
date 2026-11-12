@@ -127,9 +127,7 @@ export function assessProductSource(product: Product, plan: ProductPlan, page: C
       else {
         publisher = approved.name
         if (page.publisher !== approved.name) reasons.push('Discovered publisher differs from the approved domain.')
-        if (snapshot.declaredPublisher?.toLocaleLowerCase() !== approved.name.toLocaleLowerCase()) {
-          reasons.push('Page publisher declaration is missing or differs from the approved publisher.')
-        }
+        // Missing or different page labels are disclosed by the report, not source rejection.
       }
     }
   } catch { reasons.push('Source URL has no verifiable HTTP host.') }

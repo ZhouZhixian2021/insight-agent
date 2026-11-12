@@ -342,7 +342,7 @@ function stageState(run: ProductChatRun, index: number): 'pending' | 'active' | 
 export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insight-run'>, 'node'> & PropsLocale<'productRun'>) {
   const run = node.data
   const [traceStatus, setTraceStatus] = useState('all')
-  const stages: readonly [ProductRunKey, number][] = [['pages', 1], ['evidence', 2], ['review', 3], ['verification', 4], ['report', 5]]
+  const stages: readonly (readonly [ProductRunKey, number])[] = [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
   const status = run.deliveryStatus ?? run.runState
   return <section className={css.card} data-product-insight-run={node.id} aria-label={t('title')}>
     <header className={css.header}><div><h3>{run.title || t('title')}</h3><p>{t(status)}</p></div>
@@ -356,7 +356,7 @@ export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insi
       <div><dt>{t('sourcePages')}</dt><dd>{run.candidatePages} / {run.availablePages}</dd></div>
       <div><dt>{t('evidenceCount')}</dt><dd>{run.evidence}</dd></div>
       <div><dt>{t('claimCount')}</dt><dd>{run.claims}</dd></div>
-      <div><dt>{t('verificationCount')}</dt><dd>{run.verifications}</dd></div>
+      {run.verifications > 0 && <div><dt>{t('verificationCount')}</dt><dd>{run.verifications}</dd></div>}
       <div><dt>{t('failureCount')}</dt><dd>{run.failures}</dd></div>
       <div><dt>{t('elapsed')}</dt><dd>{Math.round(run.elapsedMilliseconds / 1000)} {t('seconds')}</dd></div>
     </dl>

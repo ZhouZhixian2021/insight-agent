@@ -79,8 +79,23 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
     const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => gap.missingContent)
     if (!primary) limitations.push('当前没有满足来源、原文关联与审核要求的材料，尚不能回答本题。')
     else if (!support) limitations.push('当前说法有来源摘录支持，但缺少符合要求的独立来源佐证；不能视为独立实测结论。')
-    if (verification?.judgments.some(item => item.relation === 'contradicts')) limitations.push('来源存在相反陈述，当前不能作确定判断。')
-    if (verification?.judgments.some(item => item.relation === 'uncertain')) limitations.push('部分来源的含义或适用条件仍不明确。')
+    for (const judgment of verification?.judgments ?? []) {
+      if (judgment.relation === 'contradicts') limitations.push(`跨来源比较提示可能存在冲突：${judgment.rationale} 应保留各自的产品与测试条件，不能合并为一致结论。`)
+      if (judgment.relation === 'uncertain') limitations.push(`跨来源比较尚不确定：${judgment.rationale} 未完整佐证不等于原始陈述错误。`)
+    }
+    for (const item of input.evidence.filter(item => eligibleIds.has(item.evidenceId)
+      && claims.some(claim => claim.questionIds.includes(question.questionId)
+        && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))) {
+      const page = pages.get(item.candidatePageId)
+      const snapshot = snapshots.get(item.candidatePageId)
+      if (page === undefined || snapshot?.status !== 'available') continue
+      const host = new URL(page.url).hostname.toLowerCase()
+      const approved = input.plan.sourcePublishers?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
+      if (approved && snapshot.declaredPublisher?.toLocaleLowerCase() !== approved.name.toLocaleLowerCase()) {
+        limitations.push(`来源“${page.title ?? page.url}”的页面发布方未确定：${snapshot.declaredPublisher === undefined
+          ? '未提取到发布方声明' : '页面声明与计划登记名称不一致'}；按已批准域名纳入，结论仍须由原文支持。`)
+      }
+    }
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
       evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
         && claims.some(claim => claim.questionIds.includes(question.questionId)
@@ -127,19 +142,13 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     reasons.push('The report contains a product or page outside the approved plan.')
   }
   if (input.cancelled || input.discovery.cancelled) reasons.push('The investigation was cancelled or interrupted.')
-  if (input.failures.length) reasons.push(`${input.failures.length} investigation operation(s) failed.`)
   if (input.failures.some(failure => failure.stage === 'report')) {
     reasons.push('报告综合生成未完成。请参考下方已核对的来源陈述。')
   }
   const approvedQuestionIds = new Set(input.plan.questions.map(question => question.questionId))
-  if (input.discovery.searches.length < input.plan.questions.length
-    || input.discovery.searches.some(search => !approvedQuestionIds.has(search.questionId)
-      || search.status !== 'success' || search.truncated)
-    || input.plan.questions.some(question => !input.discovery.searches.some(search =>
-      search.questionId === question.questionId && search.status === 'success' && !search.truncated))) {
-    reasons.push('Some approved source searches did not complete within the reviewed scope.')
+  if (input.discovery.searches.some(search => !approvedQuestionIds.has(search.questionId))) {
+    reasons.push('A source search refers to a question outside the approved plan.')
   }
-  if (input.gaps.length) reasons.push(...input.gaps.map(gap => `Unanswered question: ${gap.missingContent}`))
   const evidenceById = new Map(input.evidence.map(item => [item.evidenceId, item]))
   const reviewsById = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
@@ -170,12 +179,6 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
   if (new Set(input.claims.map(claim => claim.claimId)).size !== input.claims.length) {
     reasons.push('Report claim identities are not unique.')
   }
-  for (const question of input.plan.questions) {
-    if (!input.claims.some(claim => claim.questionIds.includes(question.questionId))
-      && !input.gaps.some(gap => gap.questionId === question.questionId)) {
-      reasons.push(`No admitted claim answers: ${question.text}`)
-    }
-  }
   for (const claim of input.claims) {
     if (!validClaimLinks(input.plan, claim, evidenceById, reviewsById, pageById)) {
       reasons.push(`Claim ${claim.claimId} has an invalid source or question link.`)
@@ -194,37 +197,30 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     }
   }
   const selected = keyProductClaims(input.plan, input.claims, input.evidence, input.discovery.candidates.items)
-  if (input.verifications.length !== selected.length
-    || new Set(input.verifications.map(item => item.questionId)).size !== input.verifications.length) {
-    reasons.push('Cross-source checks do not cover every answered question exactly once.')
-  }
-  for (const { questionId, claim } of selected) {
-    const questionText = input.plan.questions.find(item => item.questionId === questionId)?.text ?? 'unknown question'
-    const verification = input.verifications.find(item => item.questionId === questionId)
-    const candidates = comparisonEvidence(questionId, claim, input.claims, input.evidence)
-    if (!verification || verification.claimId !== claim.claimId || !verification.complete) {
-      reasons.push(`Cross-source check is incomplete for: ${questionText}`)
+  // Historical comparisons remain inspectable; new investigations do not require them.
+  for (const verification of input.verifications) {
+    const selectedClaim = selected.find(item => item.questionId === verification.questionId
+      && item.claim.claimId === verification.claimId)
+    if (!selectedClaim) {
+      reasons.push('A saved cross-source check has an invalid claim or question link.')
       continue
     }
+    const { questionId, claim } = selectedClaim
+    const questionText = input.plan.questions.find(item => item.questionId === questionId)?.text ?? 'unknown question'
+    const candidates = comparisonEvidence(questionId, claim, input.claims, input.evidence)
+    if (!verification.complete) continue
     try { checkCrossSourceJudgments(candidates, verification.judgments) }
     catch { reasons.push(`Cross-source check has invalid evidence links for: ${questionText}`); continue }
-    if (verification.judgments.some(item => item.relation === 'contradicts')) {
-      reasons.push(`Conflicting source statements remain for: ${questionText}`)
-    }
-    if (verification.judgments.some(item => item.relation === 'uncertain')) {
-      reasons.push(`Source scope or meaning remains uncertain for: ${questionText}`)
-    }
-    const { primarySource, ineligible, corroborated } = assessProductCorroboration({
+    const { primarySource, ineligible } = assessProductCorroboration({
       product: input.product, plan: input.plan, evidence: evidenceById, pages: pageById, snapshots: latestByPage,
     }, claim, verification.judgments)
     if (!primarySource.eligible) {
       reasons.push(`Key source is not eligible for ${questionText}: ${primarySource.reasons.join(' ')}`)
     }
     if (ineligible.size) reasons.push(`Supporting source is not eligible for ${questionText}: ${[...ineligible].join(' ')}`)
-    if (!corroborated) reasons.push(`No approved independent publisher corroborates the key claim for: ${questionText}`)
   }
   return reasons.length ? { status: 'draft', reasons }
-    : { status: 'ready', reasons: ['Approved questions have current, cited statements corroborated across sites.'] }
+    : { status: 'ready', reasons: ['Admitted claims have valid, current source links; coverage gaps and missing corroboration are disclosed separately.'] }
 }
 
 function validClaimLinks(plan: ProductPlan, claim: ProductClaim,
@@ -317,7 +313,8 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
     '- 结论仅适用于原文说明的版本、套餐、地区和测试条件；未说明的条件保持未知。',
     '- 官方说明、宣传、第三方测试和用户反馈应按各自来源理解；不同条件的结果不能直接排名。',
     '- 本次未找到依据，不代表产品不存在相关功能，也不代表已覆盖全部公开资料。',
-    ...[...new Set(input.gaps.map(gap => gap.missingContent))].map(gap => `- 尚未回答：${escape(gap)}`), '')
+    ...(synthesis === undefined ? productSynthesisInput(input).questions.flatMap(question =>
+      (question.limitations ?? []).map(note => `- ${escape(question.question)}：${escape(note)}`)) : []), '')
   lines.push('## 参考来源', '', '页面自报发布方不证明实际归属；来源身份按已批准的范围理解。', '')
   const referenced = new Set(input.evidence.map(item => item.candidatePageId))
   for (const page of input.discovery.candidates.items.filter(page => referenced.has(page.candidatePageId))) {
@@ -344,7 +341,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       `${state}；来源陈述：${escape(item.sourcedStatement)} [来源](${citationLink(page.url, item)})`, '')
     if (review) lines.push(`核对说明：${escape(review.rationale)}`, '')
   }
-  lines.push('### 跨来源核对', '')
+  if (input.verifications.length) lines.push('### 历史跨来源核对', '')
   for (const verification of input.verifications) {
     const question = input.plan.questions.find(item => item.questionId === verification.questionId)
     lines.push(`**${escape(question?.text ?? '研究问题')}**：${verification.complete ? '核对完成' : '核对未完成'}`, '')
@@ -392,6 +389,13 @@ function renderDiscoveryDisclosure(input: ProductReportInput): string[] {
   const lines = ['## 检索与取证范围', '',
     '搜索结果仅用于发现候选网页；下文引用来自已获取并核对的网页正文。检索未报告截断也不代表覆盖全部公开资料。', '',
     `候选网页 ${input.discovery.candidates.items.length} 个；入选 ${selected.length} 个；已获取正文 ${available} 个；获取失败 ${failed} 个；未完成获取 ${pending} 个；待审 ${needsReview} 个。`, '']
+  if (input.failures.length) {
+    const stages: Record<string, string> = { discovery: '网页发现', screening: '网页筛选', fetch: '正文获取', extraction: '证据提取',
+      analysis: '语义审核与分析', report: '报告生成' }
+    const counts = new Map<string, number>()
+    for (const failure of input.failures) counts.set(failure.stage, (counts.get(failure.stage) ?? 0) + 1)
+    lines.push(`部分操作失败：${[...counts].map(([stage, count]) => `${stages[stage] ?? '其他处理'} ${count} 次`).join('；')}。已保留可用结果；失败次数不单独决定交付状态，具体错误见运行追踪。`, '')
+  }
   for (const question of input.plan.questions) {
     const attempts = input.discovery.searches.filter(search => search.questionId === question.questionId)
     if (attempts.length === 0) {
@@ -403,10 +407,16 @@ function renderDiscoveryDisclosure(input: ProductReportInput): string[] {
         : search.status === 'cancelled' ? '已取消' : '未执行'
       const counts = search.status === 'success'
         ? `；返回 ${search.returnedCount ?? '未知'} 条；新增候选 ${search.recordedCount ?? '未知'} 个` : ''
-      const reason = search.reason === undefined ? '' : search.reason === 'evidence_gap'
-        ? '；针对资料缺口补充搜索' : search.reason === 'corroboration_gap'
-          ? '；针对独立佐证不足补充搜索' : `；原因：${escape(search.reason)}`
-      lines.push(`- ${escape(question.text)}：${status}${counts}；截断或提前停止：${search.truncated ? '是' : '否'}${reason}；查询：${escape(search.query)}。`)
+      const scopeNote = search.status === 'failed' ? '；本次未获得可用搜索结果，可用资料以其他成功查询为准'
+        : search.truncated
+          ? '；检索覆盖受限：记录未细分数量上限、部分搜索源失败或辅助恢复等原因，不能据此判定本次搜索无结果'
+          : '；未记录覆盖受限，不代表完整检索'
+      const reason = search.reason === undefined ? '' : search.reason === 'candidate_limit'
+        ? '；候选网页数量已达到计划上限' : search.reason === 'elapsed_limit'
+          ? '；已达到计划耗时上限' : search.reason === 'cancelled' ? '；调查已取消' : search.reason === 'evidence_gap'
+            ? '；针对资料缺口补充搜索' : search.reason === 'corroboration_gap'
+              ? '；针对独立佐证不足补充搜索' : `；原因：${escape(search.reason)}`
+      lines.push(`- ${escape(question.text)}：${status}${counts}${scopeNote}${reason}；查询：${escape(search.query)}。`)
     }
   }
   return [...lines, '']

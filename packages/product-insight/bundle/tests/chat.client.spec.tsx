@@ -20,6 +20,16 @@ const labels: Record<string, string> = { draft: '调查草稿', pages: '来源�
   htmlFootnotes: '脚注', title: '产品洞察调查', noReport: '无报告' }
 const t = ((key: string) => labels[key] ?? key) as never
 
+it('shows four stages without an independent corroboration step for new investigations', () => {
+  render(<ProductRunCard t={t} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
+    stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,
+    failures: 0, elapsedMilliseconds: 1, reasons: [] } } as never} />)
+  expect(screen.getByText('语义审核')).toBeTruthy()
+  expect(screen.getByText('报告生成')).toBeTruthy()
+  expect(screen.queryByText('独立佐证')).toBeNull()
+  expect(screen.queryByText('跨来源核验')).toBeNull()
+})
+
 it('projects approved product stages and the saved report into one Chat card', () => {
   const events = [
     { type: 'turn/start', data: { turn: 1 } },
