@@ -649,6 +649,8 @@ interface GenerateOptions {
    */
   stop?: string[]
   signal?: AbortSignal
+  /** Opaque client-generated correlation ID for an auxiliary request; adapters may forward it as an HTTP header. */
+  traceId?: string
   /**
    * Session identity stamped by the loop for request routing. Replay uses it
    * to separate cursors; adapters may map it to model-hidden transport metadata.

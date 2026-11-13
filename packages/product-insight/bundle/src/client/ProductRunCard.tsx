@@ -23,6 +23,7 @@ interface ProductTraceEntry {
   readonly status: 'running' | 'completed' | 'failed' | 'recorded'
   readonly page?: string
   readonly model?: string
+  readonly traceId?: string
   readonly inputCharacters?: number
   readonly durationMilliseconds?: number
   readonly outputCharacters?: number
@@ -124,6 +125,7 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       ...duration === undefined ? {} : { durationMilliseconds: duration },
       ...typeof data.candidatePageId === 'string' ? { page: data.candidatePageId } : {},
       ...typeof data.model === 'string' ? { model: data.model } : {},
+      ...typeof data.traceId === 'string' ? { traceId: data.traceId } : {},
       ...typeof data.user === 'string' ? { inputCharacters: data.user.length } : {},
       ...typeof data.text === 'string' ? { outputCharacters: data.text.length } : {},
       ...typeof data.error === 'string' ? { error: data.error } : {},
@@ -147,13 +149,14 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(1, state.stage),
         candidatePages: count(data.candidates), availablePages: Array.isArray(data.snapshots)
           ? data.snapshots.filter(item => record(item) && item.status === 'available').length : state.availablePages }
-    case 'product/checkpoint-v1':
+    case 'product/checkpoint-v1': case 'product/checkpoint-v2':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(stageNumber(data.stage), state.stage),
         failures: count(data.failures), elapsedMilliseconds: typeof data.elapsedMilliseconds === 'number'
           ? data.elapsedMilliseconds : state.elapsedMilliseconds }
     case 'product/model-request-v1': case 'product/model-result-v1':
+    case 'product/passage-model-request-v1': case 'product/passage-model-result-v1':
       return { ...state, stage: Math.max(2, state.stage) }
-    case 'product/evidence-v1':
+    case 'product/evidence-v1': case 'product/evidence-v2':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(2, state.stage), evidence: count(data.items) }
     case 'product/claim-review-request-v1': case 'product/claim-review-result-v1':
     case 'product/claims-v1':
