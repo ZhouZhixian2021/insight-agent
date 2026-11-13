@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { describe, expect, it } from 'vitest'
-import type { AvailableSourceSnapshot, CandidatePage, CandidatePageId, ProductId, ProductPlan,
+import type { AvailableSourceSnapshot, CandidatePage, CandidatePageId, ProductId,
   ProductPlanId, ProductQuestionId, SourceSnapshotId } from '@deepseek-ai/dsh-product-insight-model'
 import { extractProductPageEvidence, fetchProductPages, prepareProductPage, rankProductPageFragments,
-  resolveProductPageCharacterLimit,
   sameProductPageFacts, splitFailedProductFragment, splitProductPageText,
   PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS } from '../src/index.ts'
 
@@ -165,18 +164,6 @@ describe('product page evidence', () => {
       .toThrow(/approved text limit/u)
     expect(() => prepareProductPage({ ...fetched, body: { kind: 'text', content: 'a'.repeat(36_001) } }, 36_000))
       .toThrow(/approved text limit/u)
-  })
-
-  it('keeps a complete page beyond 48,000 characters when the approved plan omits a page limit', async () => {
-    const maximum = resolveProductPageCharacterLimit({ limits: { maximumCandidatePages: 30 } } as ProductPlan)
-    expect(maximum).toBe(Number.MAX_SAFE_INTEGER)
-    const content = `Product details. ${'A'.repeat(50_000)}`
-    const saved: string[] = []
-    const result = await fetchProductPages([candidate], { now: () => '2026-11-06T00:00:00Z',
-      web: { fetch: async () => ({ ...fetched, body: { kind: 'text', content } }) },
-      saveText: async (_page, text) => { saved.push(text); return 'store:long-page' } }, undefined, maximum)
-    expect(result.snapshots.items[0]?.status).toBe('available')
-    expect(saved).toEqual([content])
   })
 
   it('retains provider Markdown prose, captions and source order within the bound', () => {

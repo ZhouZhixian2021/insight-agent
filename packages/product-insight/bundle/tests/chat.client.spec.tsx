@@ -46,17 +46,9 @@ it('projects approved product stages and the saved report into one Chat card', (
     { type: 'product/checkpoint-v1', data: { planId, stage: 'evidence', elapsedMilliseconds: 12_400,
       failures: [{ failureId: 'f1' }] } },
     { type: 'product/model-request-v1', data: { planId, candidatePageId: 'page-1', provider: 'mock', model: 'model',
-      traceId: 'trace-123',
       system: 'Read', user: 'Source', maxTokens: 8192 } },
     { type: 'product/model-result-v1', data: { planId, candidatePageId: 'page-1', status: 'completed', text: '[]', error: null } },
     { type: 'product/evidence-v1', data: { planId, items: [{}, {}, {}, {}] } },
-    { type: 'product/checkpoint-v2', data: { planId, stage: 'evidence', elapsedMilliseconds: 12_400,
-      failures: [{ failureId: 'f1' }] } },
-    { type: 'product/passage-model-request-v1', data: { planId, candidatePageId: 'page-1', provider: 'mock', model: 'model',
-      system: 'Select passages', user: 'Passages', maxTokens: 8192 } },
-    { type: 'product/passage-model-result-v1', data: { planId, candidatePageId: 'page-1', status: 'completed',
-      text: '[{"passageIds":["p1"]}]', error: null } },
-    { type: 'product/evidence-v2', data: { planId, items: [{}, {}, {}, {}] } },
     { type: 'product/claims-v1', data: { planId, items: [{}, {}] } },
     { type: 'product/verification-v1', data: { planId, verification: {} } },
     { type: 'product/report-v1', data: { planId, contentRef: `${planId}:report`, markdown: '# 调查草稿\n\n已保存正文。' } },
@@ -78,8 +70,6 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(node.data).toMatchObject({ approved: true, runState: 'completed', deliveryStatus: 'draft',
     candidatePages: 3, availablePages: 2, evidence: 4, claims: 2, verifications: 1,
     failures: 1, elapsedMilliseconds: 12_400, report: '# 调查草稿\n\n已保存正文。' })
-  expect((node.data as { trace: readonly { traceId?: string }[] }).trace).toContainEqual(
-    expect.objectContaining({ traceId: 'trace-123' }))
   render(<ProductRunCard node={node as never} t={t} />)
   expect(screen.getByText('华为产品调查计划')).toBeTruthy()
   expect(screen.getByText('缺少独立佐证')).toBeTruthy()
@@ -90,7 +80,6 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(screen.getAllByText('已完成').filter(element => element.tagName === 'SMALL')).toHaveLength(5)
   expect(screen.getByRole('button', { name: 'traceDownload' })).toBeTruthy()
   expect(screen.getAllByText(/product\/model-request-v1/u).length).toBeGreaterThan(0)
-  expect(screen.getAllByText(/product\/passage-model-request-v1/u).length).toBeGreaterThan(0)
 })
 
 it('exports and downloads a self-contained safe HTML report', () => {

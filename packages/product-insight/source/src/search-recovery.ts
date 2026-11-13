@@ -3,7 +3,6 @@ import { parse, type DefaultTreeAdapterTypes } from 'parse5'
 import { WebError, type WebSearchResult } from '@deepseek-ai/dsh-web'
 import { targetUrl, type SearchEngine } from './multi-search.ts'
 
-/** Bounded text and numbered links observed on one rendered search page; link IDs are local to this observation. */
 export interface SearchObservation {
   readonly query: string
   readonly pageUrl: string

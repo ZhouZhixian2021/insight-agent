@@ -6,9 +6,6 @@ export interface TransportDiagnostic {
   readonly causeCodes: readonly string[]
   readonly status?: number
   readonly requestId?: string
-  readonly responseAtMs?: number
-  readonly firstByteAtMs?: number
-  readonly streamBytes: number
   readonly elapsedMs: number
 }
 
@@ -51,27 +48,17 @@ export class TransportCapture {
   private error: unknown
   private status: number | undefined
   private requestId: string | undefined
-  private responseAtMs: number | undefined
-  private firstByteAtMs: number | undefined
-  private streamBytes = 0
-
-  constructor(private readonly traceId?: string) {
-    if (traceId !== undefined && !SAFE_REQUEST_ID.test(traceId)) throw new TypeError('Invalid model trace ID')
-  }
 
   /** Fetch implementation scoped to one model call. */
   readonly fetch: typeof globalThis.fetch = async (input, init) => {
     let response: Response
     try {
-      const headers = new Headers(init?.headers)
-      if (this.traceId !== undefined) headers.set('x-request-id', this.traceId)
-      response = await globalThis.fetch(input, { ...init, headers })
+      response = await globalThis.fetch(input, init)
     } catch (error: unknown) {
       this.record('request', error)
       throw error
     }
     this.status = response.status
-    this.responseAtMs = Date.now() - this.startedAt
     const id = response.headers.get('x-request-id') ?? response.headers.get('request-id')
     if (id !== null && SAFE_REQUEST_ID.test(id)) this.requestId = id
     if (response.body === null || !response.ok
@@ -83,11 +70,7 @@ export class TransportCapture {
         try {
           const result = await reader.read()
           if (result.done) controller.close()
-          else {
-            this.firstByteAtMs ??= Date.now() - this.startedAt
-            this.streamBytes += result.value.byteLength
-            controller.enqueue(result.value)
-          }
+          else controller.enqueue(result.value)
         } catch (error: unknown) {
           this.record('response-stream', error)
           controller.error(error)
@@ -117,9 +100,6 @@ export class TransportCapture {
       ...errorFacts(this.error),
       ...this.status === undefined ? {} : { status: this.status },
       ...this.requestId === undefined ? {} : { requestId: this.requestId },
-      ...this.responseAtMs === undefined ? {} : { responseAtMs: this.responseAtMs },
-      ...this.firstByteAtMs === undefined ? {} : { firstByteAtMs: this.firstByteAtMs },
-      streamBytes: this.streamBytes,
       elapsedMs: Date.now() - this.startedAt,
     }
   }

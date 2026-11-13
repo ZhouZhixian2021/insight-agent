@@ -13,14 +13,11 @@ kind: "subsystem"
 
 ## 共享记录
 
-`ProductEvidence` 兼容单段引文的版本 1 与带多个独立原文位置的版本 2；所有位置都指向同一份保存的正文及其哈希，PDF 多段引文限于同一物理页。版本 4 的 `ProductInvestigationCheckpoint` 按页内问题游标续跑新的位置选择流程；版本 1 至 3 仍按已保存的分片游标恢复。
-
 | 记录 | 含义 |
 | --- | --- |
 | `Product` 与 `ProductPlan` | 稳定的产品身份和带版本的调查范围；审批指向准确的计划版本，也可设置每页正文上限、问题缺口补搜次数及获准的外部发布方、地区、版本和来源日期要求。 |
 | `CandidatePage` | 已发现的网址、来源角色、关联问题及 A 给出的筛选决定和理由。 |
 | `SourceSnapshot` | 一次网页获取观察。成功时保存正文位置、内容校验值，以及可选的页面自报发布方、日期、地区和版本；失败时保存失败 ID。发布日期、更新日期与获取日期分别记录。 |
-| `SearchObservation` | 搜索页面上实际观察到的有界、带编号链接，供可选的搜索布局识别事件使用；选中的编号必须来自该记录。 |
 | `ProductEvidence` | 指向成功快照、内容校验值和调查问题的准确原文及位置。PDF 文本范围还记录引用链接使用的物理页码。 |
 | `ProductClaim` 与 `ProductEvidenceGap` | 带适用范围、可信理由和证据关联的结论，或具体的资料缺口。 |
 | `ProductRun` 与 `ProductReportDelivery` | 处理结果与报告交付决定分开；部分成功可保留有用证据，阻止交付时不产生报告文件。 |
@@ -37,33 +34,3 @@ kind: "subsystem"
 ## 依赖方向
 
 模型包只依赖共享 ID 与 UUID 工具。产品来源、工作流、报告、控制器和页面包可使用它的公开接口；模型包不反向导入这些包或学术洞察内部代码。[团队字段方案](../../z-team_docs/产品洞察/接口约定/00-首版共享字段方案.md)记录 A、C 职责和首阶段调查范围。
-
-<!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
-
-<a id="cordis-surface"></a>
-
-## Cordis API
-
-Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
-
-<a id="product-events"></a>
-
-### `product/*` events
-
-<a id="productsearch-recognize--serial"></a>
-
-#### `product/search-recognize` — serial
-
-Select organic result link IDs from untrusted rendered search content.
-
-```ts cordis-catalog
-/** Select organic result link IDs from untrusted rendered search content.
- * @mode serial
- * @param observation - Bounded page facts, never evidence.
- * @param signal - Shared operation deadline and cancellation.
- */
-'product/search-recognize'(observation: SearchObservation, signal: AbortSignal): Promise<readonly number[] | undefined>
-```
-
-Source: [`packages/product-insight/source/src/search-recovery.ts`](../../packages/product-insight/source/src/search-recovery.ts)
-<!-- END GENERATED cordis-surface -->

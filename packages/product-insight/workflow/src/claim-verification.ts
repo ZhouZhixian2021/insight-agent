@@ -116,9 +116,10 @@ export function assessProductSource(product: Product, plan: ProductPlan, page: C
   let publisher: string | null = null
   try {
     const host = new URL(page.url).hostname.toLowerCase()
-    if (page.sourceType === 'official_product_page') {
+    const official = new URL(product.officialUrl).hostname.toLowerCase()
+    if (host === official || host.endsWith(`.${official}`)) {
       publisher = product.developer
-      // Discovery already matched the approved official site, country sites included; labels are not legal names.
+      // The approved official host establishes attribution; site labels are not legal company names.
     } else {
       const approved = plan.sourcePublishers?.find(item => host === item.domain
         || host.endsWith(`.${item.domain}`))

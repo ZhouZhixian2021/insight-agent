@@ -9,9 +9,11 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-web-fetch-http` through `ctx.web` to fetch public HTTP(S) resources without credentials. It returns bounded decoded text or PDF bytes with the response status, including non-2xx statuses, and rejects private destinations and unsupported binary types. The model-facing `web_fetch` tool is owned by `dsh-tool-web` and rejects PDF bytes.
+With `dsh-web-fetch-http`, the harness can fetch public HTTP(S) resources through the web service (`ctx.web`) and get their status code plus bounded content without sending credentials. HTML/text is decoded; PDF remains bytes for programmatic consumers. It returns non-2xx responses as results rather than errors, and rejects non-public destinations and unsupported binary types. The model-facing `web_fetch` tool lives in `dsh-tool-web` and intentionally rejects PDF bytes.
 
-Programmatic callers may set `HttpFetchLimits.http1Only` for proxy compatibility. JavaScript and ECMAScript responses remain text for guarded browser rendering; URL, redirect, cancellation and response limits still apply.
+JavaScript and ECMAScript response MIME types are retained as text so guarded browser resource retrieval can render public pages. The same URL and response bounds still apply.
+
+Programmatic callers may set `HttpFetchLimits.http1Only` for proxy compatibility. It uses a request-owned HTTP/1.1 proxy dispatcher, released after reading or failure, without changing the global proxy policy. Omitted values retain the existing transport; URL, redirect, cancellation and response limits remain enforced.
 
 ## Table of Contents
 

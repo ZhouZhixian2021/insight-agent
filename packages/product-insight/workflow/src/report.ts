@@ -3,7 +3,7 @@ import { checkProductClaimFreshness, type CandidatePage, type Product, type Prod
   type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
 import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
-import { adoptEvidenceQuestions, type ProductSemanticReview } from './claim-review.ts'
+import type { ProductSemanticReview } from './claim-review.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   distinctProductSites, keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -39,9 +39,7 @@ export interface ProductSynthesisInput {
     readonly questionId: string
     readonly question: string
     readonly limitations?: readonly string[]
-    readonly evidence: readonly (Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'> & {
-      readonly supportingExcerpts?: readonly string[]
-    })[]
+    readonly evidence: readonly Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'>[]
   }[]
 }
 
@@ -49,8 +47,7 @@ export interface ProductSynthesisInput {
 export function productSynthesisInput(input: ProductReportInput): ProductSynthesisInput {
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const reviews = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
-    .map(item => [item.evidenceId, item]))
+  const reviews = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const snapshots = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   const claims = input.claims.filter(claim => validClaimLinks(input.plan, claim, evidence, reviews, pages)
     && checkProductClaimFreshness(claim, input.plan, evidence, snapshots).status === 'current',
@@ -96,10 +93,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
         && claims.some(claim => claim.questionIds.includes(question.questionId)
           && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))
-        .map(item => ({ evidenceId: item.evidenceId, sourcedStatement: item.sourcedStatement,
-          verbatimExcerpt: item.verbatimExcerpt,
-          ...item.schemaVersion === 2 && item.supportingExcerpts.length > 0
-            ? { supportingExcerpts: item.supportingExcerpts.map(span => span.verbatimExcerpt) } : {} })) }
+        .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
   })
   return { scope: input.plan.scope, questions,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
@@ -200,8 +194,7 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     reasons.push('A source search refers to a question outside the approved plan.')
   }
   const evidenceById = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const admittedReviews = adoptEvidenceQuestions(input.evidence, input.reviews)
-  const reviewsById = new Map(admittedReviews.map(item => [item.evidenceId, item]))
+  const reviewsById = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const latestByPage = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   if (input.discovery.candidates.items.some(page => page.screening.status === 'selected'
@@ -289,8 +282,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
   synthesis?: string): string {
   if (assessment.status === 'blocked') throw new RangeError('A blocked product report has no renderable evidence')
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
-  const reviewById = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
-    .map(review => [review.evidenceId, review]))
+  const reviewById = new Map(input.reviews.map(review => [review.evidenceId, review]))
   const title = assessment.status === 'ready' ? '产品资料调查报告' : '产品资料调查草稿'
   const lines = [`# ${escape(input.product.name)} — ${title}`, '',
     `调查范围：${escape(input.plan.scope)}`, '',
@@ -358,8 +350,6 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       : review?.verdict === 'unsupported' ? '摘录不支持该陈述'
         : review?.verdict === 'uncertain' ? '支持关系仍不确定' : '尚未审核支持关系'
     lines.push(`### 证据 ${seen.size}`, '', `> ${escape(item.verbatimExcerpt)}`, '',
-      ...item.schemaVersion === 2 ? item.supportingExcerpts.flatMap(span =>
-        [`> ${escape(span.verbatimExcerpt)}`, '']) : [],
       `${state}；来源陈述：${escape(item.sourcedStatement)} [来源](${citationLink(page.url, item)})`, '')
     if (review) lines.push(`核对说明：${escape(review.rationale)}`, '')
   }

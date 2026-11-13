@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createProductEvidenceId } from '@deepseek-ai/dsh-product-insight-model'
 import { parseProductSynthesis } from '../src/session-tool.ts'
 import type { ProductSynthesisInput } from '../src/report.ts'
-import { PRODUCT_PASSAGE_READING_INSTRUCTION, PRODUCT_READING_INSTRUCTION,
-  PRODUCT_WRITING_INSTRUCTION } from '../src/writing.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from '../src/writing.ts'
 
 const ids = [createProductEvidenceId(), createProductEvidenceId()]
 const input: ProductSynthesisInput = { scope: '企业版离线部署', questions: [{ questionId: 'deployment',
@@ -33,14 +32,11 @@ describe('product evidence-led writing', () => {
   it('accepts actual sentence references and rejects missing or forged inline markers', () => {
     const text = `支持离线部署。[[cite:${ids[0]}]]社区版能力未知。`
     expect(parseProductSynthesis(output(text, [ids[0]!]), input).get('deployment')).toBe(text)
-    expect(parseProductSynthesis(output(text, [ids[0]!, 'unused-stray-id']), input).get('deployment')).toBe(text)
-    expect(() => parseProductSynthesis(output(`${text}[[cite:invented]]`, [ids[0]!, 'invented']), input)).toThrow()
     expect(() => parseProductSynthesis(output('支持离线部署。', [ids[0]!]), input)).toThrow()
     expect(() => parseProductSynthesis(output('支持。[[cite:invented]]', [ids[0]!]), input)).toThrow()
   })
 
   it('pins the product reading and writing instructions', () => {
-    expect({ reading: PRODUCT_READING_INSTRUCTION, passageReading: PRODUCT_PASSAGE_READING_INSTRUCTION,
-      writing: PRODUCT_WRITING_INSTRUCTION }).toMatchSnapshot()
+    expect({ reading: PRODUCT_READING_INSTRUCTION, writing: PRODUCT_WRITING_INSTRUCTION }).toMatchSnapshot()
   })
 })

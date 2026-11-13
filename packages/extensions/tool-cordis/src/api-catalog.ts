@@ -4548,14 +4548,6 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [],
   },
   {
-    name: 'product/search-recognize',
-    mode: 'serial',
-    signature: '\'product/search-recognize\'(observation: SearchObservation, signal: AbortSignal): Promise<readonly number[] | undefined>',
-    summary: 'Select organic result link IDs from untrusted rendered search content.',
-    description: 'Select organic result link IDs from untrusted rendered search content.',
-    parameters: [{ name: 'observation', description: 'Bounded page facts, never evidence.' }, { name: 'signal', description: 'Shared operation deadline and cancellation.' }],
-  },
-  {
     name: 'schedule/changed',
     mode: 'emit',
     signature: '\'schedule/changed\'(): void',
@@ -6205,7 +6197,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'GenerateOptions',
-    declaration: 'export interface GenerateOptions {\n    provider: string;\n    model: string;\n    reasoningEffort?: ReasoningEffortId;\n    messages: RequestMessage[];\n    system?: string;\n    tools?: ToolSchema[];\n    toolHistory?: ToolHistory;\n    temperature?: number;\n    maxTokens?: number;\n    stop?: string[];\n    signal?: AbortSignal;\n    traceId?: string;\n    sessionId?: Branded<\'SessionId\'>;\n    purpose?: \'compaction\' | \'session-title\';\n}',
+    declaration: 'export interface GenerateOptions {\n    provider: string;\n    model: string;\n    reasoningEffort?: ReasoningEffortId;\n    messages: RequestMessage[];\n    system?: string;\n    tools?: ToolSchema[];\n    toolHistory?: ToolHistory;\n    temperature?: number;\n    maxTokens?: number;\n    stop?: string[];\n    signal?: AbortSignal;\n    sessionId?: Branded<\'SessionId\'>;\n    purpose?: \'compaction\' | \'session-title\';\n}',
   },
   {
     name: 'GenericCallView',
@@ -7682,10 +7674,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SearchMatchesResultView',
     declaration: 'export interface SearchMatchesResultView {\n    card: \'search\';\n    shape: \'matches\';\n    title?: string;\n    files: SearchFileMatches[];\n    truncated: boolean;\n    total: number;\n}',
-  },
-  {
-    name: 'SearchObservation',
-    declaration: 'export interface SearchObservation {\n    readonly query: string;\n    readonly pageUrl: string;\n    readonly text: string;\n    readonly links: readonly {\n        id: number;\n        url: string;\n        title: string;\n    }[];\n    readonly maximum: number;\n}',
   },
   {
     name: 'SearchPathsResultView',
