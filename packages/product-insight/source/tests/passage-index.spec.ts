@@ -44,6 +44,19 @@ describe('product page passage index', () => {
     expect(coverage).toEqual({ cases: 1, relevantRanges: 3, retrievedRanges: 3, recall: 1 })
   })
 
+  it('resolves an identifier truncated to its start offset only when that offset is unique', () => {
+    const text = 'Example costs $20.\nExample ships in May.\nExample offers support.'
+    const offered = indexProductPagePassages(text)
+    const firstRange = offered[0]!
+    const truncated = String(firstRange.id).split(':')[0]!
+    const result = extractProductPassageEvidence(candidate, snapshot(text), text, offered,
+      [{ passageIds: [truncated], sourcedStatement: 'Example costs $20.', questionIds: [questionId] },
+        { passageIds: ['9999'], sourcedStatement: 'Unknown range.', questionIds: [questionId] }],
+      { name: 'product-passage', version: '2' })
+    expect(result.evidence).toMatchObject([{ verbatimExcerpt: firstRange.text }])
+    expect(result.rejected).toEqual([{ selectionIndex: 1, reason: 'unknown_passage' }])
+  })
+
   it('keeps repeated text at separate exact offsets and carries nearby conditions', () => {
     const text = 'Example costs $20 per month.\nOnly in the US with annual billing.\nExample costs $20 per month.'
     const passages = indexProductPagePassages(text)
@@ -54,6 +67,16 @@ describe('product page passage index', () => {
     expect(passages.every(item => text.slice(item.start, item.end) === item.text)).toBe(true)
     expect(text.slice(passages[0]!.contextStart, passages[0]!.contextEnd))
       .toContain('Only in the US with annual billing.')
+  })
+
+  it('reads further passages when the first batch already shown is excluded', () => {
+    const text = Array.from({ length: 12 }, (_, index) => `Sentence ${index} mentions price ${index}.`).join('\n')
+    const passages = indexProductPagePassages(text)
+    const first = selectProductQuestionPassages(passages, 'price', 6)
+    const second = selectProductQuestionPassages(passages, 'price', 6, new Set(first.map(item => item.id)))
+    expect(first.length).toBe(5)
+    expect(second.length).toBeGreaterThan(0)
+    expect(second.some(item => first.some(shown => shown.id === item.id))).toBe(false)
   })
 
   it('never joins a PDF page or splits a surrogate pair', () => {

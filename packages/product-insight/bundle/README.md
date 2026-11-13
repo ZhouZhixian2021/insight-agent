@@ -13,7 +13,7 @@ English | [中文](README.zh.md)
 
 This bundle adds Product Insight to the Web agent preset selector. After plan approval, a Session-owned background job searches approved sources, extracts and reviews evidence, checks independent support, and saves a cited report or a draft with blockers. A transcript card shows live stages, counts, Trace and the saved report.
 
-The preset currently selects installed Web search through `product-installed-search` and public-page acquisition; local multi-engine `product-free-search` remains available.
+The preset currently selects local multi-engine `product-free-search` and `product-public-page` acquisition; the installed-plugin search bridge remains available for explicit selection.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ The preset currently selects installed Web search through `product-installed-sea
 <a id="use-this-package"></a>
 ## Use this package
 
-The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent presents the product, scope, questions, source approach, approved external publishers and any region, version or source-date requirements, candidate-page, per-page text, gap-search and elapsed-time limits, and expected result with a structured execution block. The official site is approved through `product.officialUrl`; `sourcePublishers` lists only external publishers with domains that do not overlap the official host. The user can approve or request revisions. After approval, the transcript shows a five-stage Product Insight card for page acquisition, evidence extraction, semantic review, independent verification, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
+The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent presents the product, scope, questions, source approach, approved external publishers and any region, version or source-date requirements, candidate-page and gap-search limits, whether per-page text and elapsed-time limits apply, and the expected result with a structured execution block. The official site is approved through `product.officialUrl`; `sourcePublishers` lists only external publishers with domains that do not overlap the official host. The user can approve or request revisions. After approval, the transcript shows a five-stage Product Insight card for page acquisition, evidence extraction, semantic review, independent verification, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
 
 -----
 
@@ -41,7 +41,7 @@ The shipped Web profile loads this bundle after the Academic bundle. Select **Pr
 
 [The preset patch](presets/product.patch.yml) declares the persona, plan mode, question tool, provider-neutral Web tools, and the product workflow plugin. A proposed `product-insight-plan-json` block is checked before review. The workflow tool rechecks the durable approval before using Web and model services. [The Web patch](web.patch.yml) injects the feature-owned transcript projection. It folds durable product workflow events through the Conversation Definition/slot boundary, so live updates and replayed sessions render the same card without changing a shared framework prompt or UI component.
 
-The product preset owns an isolated Web registry. Planning tools and background investigation route searches to the installed `dsh-web-tools` provider in the root Web registry while retaining `product-public-page` for page retrieval. The product-local `product-free-search` remains available for explicit selection; other presets retain their own search configuration. The Web profile must install and configure `dsh-web-tools`. Restart the server and create a new product-insight conversation after changing this preset.
+The product preset owns an isolated Web registry. Planning tools and background investigation use local `product-free-search` while retaining `product-public-page` for page retrieval. Search recognition and background model calls use the session-selected model without a backup route. The installed `dsh-web-tools` search bridge remains available for explicit selection; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
 
 </details>
 
@@ -76,7 +76,7 @@ Selecting this preset changes its persona, planning instructions, and tool schem
 
 Keep product transcript presentation in this bundle and durable investigation state in the workflow package. Add fields through Session events and the projection instead of coupling the card to an Agent response.
 
-Temporary switch record (2026-11-10): vivo investigations received repeated HTTP 202 responses and unrecognized HTML from the free search endpoint. To return after free search is repaired and verified with a live query, change only `searchProvider` in `presets/product.patch.yml` from `product-installed-search` to `product-free-search`. Keep the source plugin and `fetchProvider: product-public-page` in place. Restart Web and use a new Product Insight conversation to verify both planning search and background discovery; the installed-provider bridge can remain registered but unused.
+Search route record: on 2026-11-10, vivo investigations received repeated HTTP 202 responses and unrecognized HTML from the free search endpoint, so the preset temporarily used the installed plugin. The preset has now been switched back to `product-free-search` as requested, while retaining the source plugin and `fetchProvider: product-public-page`; the installed-provider bridge remains selectable. Restart Web and use a new Product Insight conversation to verify both planning search and background discovery.
 
 </details>
 

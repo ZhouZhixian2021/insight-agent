@@ -3,7 +3,7 @@ import { checkProductClaimFreshness, type CandidatePage, type Product, type Prod
   type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
 import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
-import type { ProductSemanticReview } from './claim-review.ts'
+import { adoptEvidenceQuestions, type ProductSemanticReview } from './claim-review.ts'
 import { assessProductCorroboration, assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   distinctProductSites, keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -49,7 +49,8 @@ export interface ProductSynthesisInput {
 export function productSynthesisInput(input: ProductReportInput): ProductSynthesisInput {
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const reviews = new Map(input.reviews.map(item => [item.evidenceId, item]))
+  const reviews = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
+    .map(item => [item.evidenceId, item]))
   const snapshots = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   const claims = input.claims.filter(claim => validClaimLinks(input.plan, claim, evidence, reviews, pages)
     && checkProductClaimFreshness(claim, input.plan, evidence, snapshots).status === 'current'
@@ -146,7 +147,8 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
   }
   if (input.gaps.length) reasons.push(...input.gaps.map(gap => `Unanswered question: ${gap.missingContent}`))
   const evidenceById = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const reviewsById = new Map(input.reviews.map(item => [item.evidenceId, item]))
+  const admittedReviews = adoptEvidenceQuestions(input.evidence, input.reviews)
+  const reviewsById = new Map(admittedReviews.map(item => [item.evidenceId, item]))
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const latestByPage = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   if (input.sourceRevalidation !== undefined) {
@@ -163,7 +165,7 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
       || snapshot.contentHash !== item.contentHash || !pageById.has(item.candidatePageId)
   })) reasons.push('Some evidence does not match its captured source snapshot.')
   if (evidenceById.size !== input.evidence.length || reviewsById.size !== input.evidence.length
-    || input.reviews.length !== input.evidence.length
+    || admittedReviews.length !== input.evidence.length
     || input.evidence.some(item => !reviewsById.has(item.evidenceId))) {
     reasons.push('Some accepted evidence lacks one complete semantic review.')
   }
@@ -282,7 +284,8 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
   synthesis?: string): string {
   if (assessment.status === 'blocked') throw new RangeError('A blocked product report has no renderable evidence')
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
-  const reviewById = new Map(input.reviews.map(review => [review.evidenceId, review]))
+  const reviewById = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
+    .map(review => [review.evidenceId, review]))
   const title = assessment.status === 'ready' ? '产品资料调查报告' : '产品资料调查草稿'
   const lines = [`# ${escape(input.product.name)} — ${title}`, '',
     `调查范围：${escape(input.plan.scope)}`, '',

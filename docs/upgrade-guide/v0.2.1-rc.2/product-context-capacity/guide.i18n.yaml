@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.1-rc.2/product-context-capacity/guide.md
 /:
-  en: d66cdc12aad4ba01
-  zh: 2341abf4b7763489
+  en: c042115b6f541d83
+  zh: d9adacd06cb36304
 /product-investigation-capacity:
   en: e0af03822330d167
   zh: 0f2e75ddae277c7b
 /product-investigation-capacity/change:
-  en: 0b2745c561d9f3f2
-  zh: 71a219267e25ff2a
+  en: 790b81c78982817a
+  zh: a7c16e68ebacb524
 /product-investigation-capacity/migration:
-  en: 311066a92e358ca6
-  zh: a9baa2b208cee8f6
+  en: d60c0cc2f2228322
+  zh: 9f33544287a8a5ec
