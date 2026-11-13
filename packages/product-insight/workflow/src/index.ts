@@ -11,7 +11,7 @@ import { createEvidenceGapId, createProductBatchResult, createProductFailureId, 
 import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages, hasProductCandidateCapacity,
   isProductGapSearch,
   rankProductPageFragments,
-  resolveProductPageCharacterLimit, sameProductPageFacts, selectProductGapFragment, splitProductPageText,
+  resolveProductPageCharacterLimit, selectProductGapFragment, splitProductPageText,
   splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS,
   type ProductDiscoveryResult, type ProductEvidenceDraft, type ProductPageFetchAdapters, type ProductPageFetchResult,
@@ -214,17 +214,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const checkpointVersion = input.checkpoint?.schemaVersion ?? 3
   const fragmentOverlapCharacters = input.checkpoint === undefined
     ? PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS : input.checkpoint.fragmentOverlapCharacters ?? 0
-  if (input.sourceRevalidation !== undefined) {
-    if (input.checkpoint === undefined || input.sourceRevalidation.cancelled
-      || input.sourceRevalidation.snapshots.failures.length > 0) {
-      throw new RangeError('Product source revalidation requires a complete recovery checkpoint')
-    }
-    const saved = new Map(input.checkpoint.pages.snapshots.items.map(item => [item.candidatePageId, item]))
-    const checked = new Map(input.sourceRevalidation.snapshots.items.map(item => [item.candidatePageId, item]))
-    if (input.checkpoint.discovery.candidates.items.some(page => page.screening.status === 'selected'
-      && !sameProductPageFacts(saved.get(page.candidatePageId), checked.get(page.candidatePageId)))) {
-      throw new RangeError('Product recovery source changed before investigation resumed')
-    }
+  if (input.sourceRevalidation !== undefined && input.checkpoint === undefined) {
+    throw new RangeError('Product source revalidation requires a recovery checkpoint')
   }
   const runId = createProductRunId()
   const startedAt = adapters.now()
@@ -439,9 +430,17 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       if (operationSignal?.aborted) break
       const batch = evidence.slice(offset, offset + 8)
       const admitReviews = (items: readonly ProductEvidence[], judged: readonly ProductSemanticReview[]): void => {
-        const admitted = claimsFromSemanticReview(input.plan, items, judged)
-        reviews.push(...judged)
-        claims.push(...admitted)
+        const unresolved: string[] = []
+        for (const item of items) {
+          if (reviews.some(review => review.evidenceId === item.evidenceId)) continue
+          const matches = judged.filter(review => review.evidenceId === item.evidenceId)
+          try {
+            const admitted = claimsFromSemanticReview(input.plan, [item], matches)
+            reviews.push(...matches)
+            claims.push(...admitted)
+          } catch { unresolved.push(item.evidenceId) }
+        }
+        if (unresolved.length) throw new RangeError(`Missing or invalid semantic judgments: ${unresolved.join(', ')}`)
       }
       try {
         const batchReviews = await adapters.reviewEvidence(batch, input.plan.questions, operationSignal)

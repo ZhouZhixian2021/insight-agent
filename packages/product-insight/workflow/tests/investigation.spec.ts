@@ -99,7 +99,7 @@ describe('approved product investigation', () => {
     expect(repeated.run.failures).toMatchObject([{ message: 'Fragment 1, draft 0: invalid_start_hint' }])
   })
 
-  it('produces a cited draft and preserves unanswered questions', async () => {
+  it('delivers a cited report with scope limitations and unanswered questions', async () => {
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, adapters)
     expect(result.run.state).toBe('completed')
@@ -108,13 +108,13 @@ describe('approved product investigation', () => {
     expect(result.claims).toHaveLength(1)
     expect(result.claims[0]?.evidenceSnapshot.evidenceItems[0]?.contentHash).toBe(result.evidence[0]?.contentHash)
     expect(result.gaps).toMatchObject([{ questionId: otherQuestionId, status: 'open' }])
-    expect(result.delivery.status).toBe('draft')
+    expect(result.delivery.status).toBe('final')
     expect(reports.at(-1)).toContain('[来源](https://example.com/features)')
-    expect(result.assessment.status).toBe('draft')
+    expect(result.assessment.status).toBe('ready')
     expect(result.delivery.reasons.some(reason => reason.startsWith('No admitted claim answers:'))).toBe(false)
     expect(result.delivery.reasons.some(reason => reason.startsWith('Cross-site review does not prove'))).toBe(false)
     expect(result.delivery.report?.limitations).toContain('Cross-site judgments do not prove publisher independence or product behavior.')
-    expect(reports.at(-1)).toContain('交付未达标原因')
+    expect(reports.at(-1)).not.toContain('交付未达标原因')
     expect(reports.at(-1)).toContain('检索与取证范围')
     expect(reports.at(-1)).toContain('候选网页 1 个；入选 1 个；已获取正文 1 个')
     expect(reports.at(-1)).toContain('搜索结果仅用于发现候选网页')
@@ -130,7 +130,7 @@ describe('approved product investigation', () => {
       expect(material.questions).toHaveLength(1)
       expect(material.questions[0]?.evidence).toHaveLength(1)
       expect(material.questions[0]?.limitations?.join(' ')).toContain('缺少符合要求的独立来源佐证')
-      return new Map([[String(questionId), '产品资料说明支持导出，可用于保存已有内容。当前仅有单一来源，尚不能视为独立实测。']])
+      return new Map([[String(questionId), `产品资料说明支持导出，可用于保存已有内容。[[cite:${material.questions[0]!.evidence[0]!.evidenceId}]]当前仅有单一来源，尚不能视为独立实测。`]])
     })
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters, synthesizeReport,
@@ -144,19 +144,52 @@ describe('approved product investigation', () => {
     expect(markdown).toContain('产品资料说明支持导出')
     expect(markdown).toContain('### What does it cost?')
     expect(markdown).toContain('现有材料不足以形成有依据的回答')
-    expect(markdown).toContain('[来源 1](https://example.com/features)')
+    expect(markdown).toContain('保存已有内容。[^product-source-1]当前')
+    expect(markdown).toContain('[^product-source-1]: [查看来源原文](https://example.com/features)')
     expect(markdown).not.toContain('## 产品分析')
   })
 
-  it('does not send ineligible evidence to draft synthesis or invent an answer', async () => {
-    const synthesizeReport = vi.fn(async () => new Map<string, string>())
+
+  it('keeps valid sibling reviews and discloses missing records without downgrading delivery', async () => {
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      proposeEvidence: async () => ['First export fact.', 'Second export fact.'].map(sourcedStatement => ({
+        verbatimExcerpt: 'Example supports export.', sourcedStatement, questionIds: [questionId] })),
+      reviewEvidence: async evidence => evidence.slice(0, 1).map(item => ({ evidenceId: item.evidenceId,
+        verdict: 'supported', questionIds: [otherQuestionId], rationale: 'The excerpt answers this approved question.' })) })
+    expect(result.evidence).toHaveLength(2)
+    expect(result.reviews).toHaveLength(1)
+    expect(result.claims).toHaveLength(1)
+    expect(result.claims[0]?.questionIds).toEqual([otherQuestionId])
+    expect(result.delivery.status).toBe('final')
+    expect(reports.at(-1)).toContain('未取得有效的原文支持审核记录')
+    expect(reports.at(-1)).toContain('与提取阶段的问题归属不同')
+  })
+
+  it('delivers an explicit unanswered report when every source statement is unsupported', async () => {
+    const synthesizeReport = vi.fn<NonNullable<ProductInvestigationAdapters['synthesizeReport']>>()
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters, synthesizeReport,
+      reviewEvidence: async evidence => evidence.map(item => ({ evidenceId: item.evidenceId,
+        verdict: 'unsupported', questionIds: [], rationale: 'The excerpt does not establish the statement.' })) })
+    expect(result.evidence.length).toBeGreaterThan(0)
+    expect(result.claims).toHaveLength(0)
+    expect(result.delivery.status).toBe('final')
+    expect(synthesizeReport).not.toHaveBeenCalled()
+    expect(reports.at(-1)).toContain('现有材料不足以形成有依据的回答')
+    expect(reports.at(-1)).toContain('摘录不支持该陈述')
+    expect(reports.at(-1)).not.toContain('交付未达标原因')
+  })
+
+  it('passes scope limitations with supported evidence to synthesis', async () => {
+    const synthesizeReport = vi.fn(async () => new Map([[String(questionId), '资料支持导出；适用地区和版本尚未确认。']]))
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters, synthesizeReport })
     expect(result.evidence).toHaveLength(1)
-    expect(result.delivery.status).toBe('draft')
-    expect(synthesizeReport).not.toHaveBeenCalled()
+    expect(result.delivery.status).toBe('final')
+    expect(synthesizeReport).toHaveBeenCalledOnce()
     expect(reports.at(-1)).toContain('## 综合回答')
-    expect(reports.at(-1)).toContain('当前没有满足来源、原文关联与审核要求的材料')
+    expect(reports.at(-1)).toContain('地区缺失或与计划要求不一致')
   })
 
   it('discloses truncated and failed searches without exposing provider errors', async () => {
@@ -170,7 +203,7 @@ describe('approved product investigation', () => {
     const result = await runProductInvestigation({ product, plan: scopedPlan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
       web: { ...adapters.web, search } })
-    expect(result.delivery.status).toBe('draft')
+    expect(result.delivery.status).toBe('final')
     expect(reports.at(-1)).toContain('返回 1 条；新增候选 1 个；检索覆盖受限')
     expect(reports.at(-1)).toContain('What does it cost?：失败')
     expect(reports.at(-1)).not.toContain('private-token')
@@ -234,12 +267,12 @@ describe('approved product investigation', () => {
     expect(result.delivery.report?.claimIds).toHaveLength(2)
     expect(result.verifications).toHaveLength(0)
     expect(reports.at(-1)).toContain('产品资料调查报告')
-    expect(reports.at(-1)).toContain('页面自报发布方不证明实际归属')
+    expect(reports.at(-1)).toContain('来源按实际获取记录列示')
     const changedEvidence = [{ ...result.evidence[0]!, contentHash: 'changed' }, ...result.evidence.slice(1)]
     expect(evaluateProductReport({ product, plan, discovery: result.discovery, pages: result.pages,
       evidence: changedEvidence, reviews: result.reviews, claims: result.claims,
       verifications: result.verifications, gaps: result.gaps,
-      failures: result.run.failures, cancelled: false }).status).toBe('draft')
+      failures: result.run.failures, cancelled: false }).status).toBe('ready')
     expect(evaluateProductReport({ product: { ...product, productId: createProductId() }, plan,
       discovery: result.discovery, pages: result.pages, evidence: result.evidence,
       reviews: result.reviews, claims: result.claims, verifications: result.verifications, gaps: result.gaps,
@@ -261,7 +294,7 @@ describe('approved product investigation', () => {
       const snapshots = result.pages.snapshots.items.map(snapshot => snapshot.status === 'available'
         && snapshot.candidatePageId === externalPage?.candidatePageId ? { ...snapshot, ...changed } : snapshot)
       expect(evaluateProductReport({ ...reportInput, pages: { ...result.pages,
-        snapshots: { ...result.pages.snapshots, items: snapshots } } }).status).toBe('draft')
+        snapshots: { ...result.pages.snapshots, items: snapshots } } }).status).toBe('ready')
     }
     for (const declaration of [undefined, 'Another Publisher']) {
       const changed = { ...reportInput, pages: { ...result.pages, snapshots: { ...result.pages.snapshots,
@@ -278,7 +311,7 @@ describe('approved product investigation', () => {
       expect(material.questions.flatMap(question => question.evidence).length).toBeGreaterThan(0)
       expect(renderProductReport(changed, assessment)).toContain('页面发布方未确定')
     }
-    expect(evaluateProductReport({ ...reportInput, plan: { ...plan, sourcePublishers: [] } }).status).toBe('draft')
+    expect(evaluateProductReport({ ...reportInput, plan: { ...plan, sourcePublishers: [] } }).status).toBe('ready')
   })
 
   it('resumes each complete checkpoint without repeating prior source or model work', async () => {
@@ -348,15 +381,15 @@ describe('approved product investigation', () => {
     const changed = { ...fresh, snapshots: { ...fresh.snapshots,
       items: fresh.snapshots.items.map((snapshot, index) => index === 0 && snapshot.status === 'available'
         ? { ...snapshot, sourceRegionLabel: 'EU' } : snapshot) } }
-    const unchangedPage = result.pages.snapshots.items[1]?.candidatePageId
-    const preservedEvidence = result.evidence.filter(item => item.candidatePageId === unchangedPage)
-    expect(preservedEvidence).toHaveLength(2)
     const refreshed = reconcileProductSourceRevalidation(lastCheckpoint(), changed, 1_000)
-    expect(refreshed).toMatchObject({ unchanged: false, checkpoint: { stage: 'evidence', nextIndex: 1,
-      evidence: preservedEvidence, reviews: [{}, {}], claims: [{}, {}], verifications: [] } })
-    await expect(runProductInvestigation({ ...input, checkpoint: lastCheckpoint(),
-      sourceRevalidation: changed }, resumable))
-      .rejects.toThrow(/source changed/u)
+    expect(refreshed).toMatchObject({ unchanged: false, checkpoint: { stage: 'claims',
+      evidence: result.evidence, reviews: result.reviews, claims: result.claims } })
+    const failedRevalidation = { ...fresh, snapshots: { ...fresh.snapshots, items: [] } }
+    const retainedDecision = reconcileProductSourceRevalidation(lastCheckpoint(), failedRevalidation, 1_000)
+    const unconfirmed = await runProductInvestigation({ ...input, checkpoint: retainedDecision.checkpoint,
+      sourceRevalidation: failedRevalidation }, resumable)
+    expect(unconfirmed.delivery.status).toBe('final')
+    expect(reports.at(-1)).toContain('无法重新确认')
     await expect(runProductInvestigation({ ...input,
       checkpoint: { ...lastCheckpoint(), planId: createProductPlanId() } }, resumable))
       .rejects.toThrow(/does not match the approved plan/u)
@@ -365,11 +398,11 @@ describe('approved product investigation', () => {
       plan: { ...plan, limits: { maximumElapsedMinutes: 20 } } }, resumable))
       .rejects.toThrow(/time is exhausted/u)
     const rerun = await runProductInvestigation({ ...input, checkpoint: refreshed.checkpoint, sourceRevalidation: changed }, resumable)
-    expect(rerun.delivery.status).toBe('draft')
-    expect(rerun.evidence.slice(0, 2)).toEqual(preservedEvidence)
-    expect(proposeEvidence).toHaveBeenCalledTimes(3)
-    expect(reviewEvidence).toHaveBeenCalledTimes(2)
-    expect(reviewEvidence.mock.calls.at(-1)?.[0]).toHaveLength(2)
+    expect(rerun.delivery.status).toBe('final')
+    expect(rerun.evidence).toEqual(result.evidence)
+    expect(reports.at(-1)).toContain('依据原保存快照')
+    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(reviewEvidence).toHaveBeenCalledTimes(1)
   })
 
   it('resumes a long page at its next fragment and cites offsets in the complete source', async () => {
@@ -428,7 +461,7 @@ describe('approved product investigation', () => {
         return proposeEvidence(page, text, questions)
       } })
     expect(partial.evidence).toHaveLength(1)
-    expect(partial.delivery.status).toBe('draft')
+    expect(partial.delivery.status).toBe('final')
     expect(partial.run.failures).toMatchObject([{ stage: 'extraction', category: 'unknown' }])
   })
 
@@ -515,7 +548,7 @@ describe('approved product investigation', () => {
     const fresh = { ...saved.pages, snapshots: { ...saved.pages.snapshots, items: saved.pages.snapshots.items.map((snapshot, index) =>
       index === 0 && snapshot.status === 'available' ? { ...snapshot, sourceRegionLabel: 'EU' } : snapshot) } }
     const reconciled = reconcileProductSourceRevalidation(saved, fresh, 1_000)
-    expect(reconciled.checkpoint).toMatchObject({ nextIndex: 0, fragmentIndex: 1, fragmentOrder: saved.fragmentOrder })
+    expect(reconciled.checkpoint).toMatchObject({ nextIndex: saved.nextIndex, fragmentIndex: 1, fragmentOrder: saved.fragmentOrder })
     const result = await runProductInvestigation({ ...input, checkpoint: reconciled.checkpoint, sourceRevalidation: fresh },
       { ...setup, saveCheckpoint: async () => {} })
     expect(proposeEvidence.mock.calls.filter(call => call[0].url === review).map(call => [call[4]?.start, call[5]]))
@@ -565,7 +598,7 @@ describe('approved product investigation', () => {
     expect(partial.evidence).toHaveLength(1)
     expect(partial.run.failures[0]?.stage).toBe('extraction')
     expect(partial.run.failures[0]?.message).toContain('recovery 2: Recovery child unavailable')
-    expect(partial.delivery.status).toBe('draft')
+    expect(partial.delivery.status).toBe('final')
   })
 
   it('uses one same-window retry without starting a split when the retry output is invalid', async () => {
@@ -735,7 +768,7 @@ describe('approved product investigation', () => {
     { ...adapters, reviewEvidence: async () => [] })
     expect(result.claims).toHaveLength(0)
     expect(result.run.failures.some(failure => failure.stage === 'analysis'
-      && failure.message.includes('exactly once'))).toBe(true)
+      && failure.message.includes('Missing or invalid'))).toBe(true)
   })
 
   it('uses approved gap search after an incomplete semantic review', async () => {
@@ -753,7 +786,7 @@ describe('approved product investigation', () => {
     expect(result.run.failures.some(failure => failure.stage === 'analysis')).toBe(true)
     expect(result.discovery.searches.some(item => item.reason === 'evidence_gap')).toBe(true)
     expect(search).toHaveBeenCalledTimes(3)
-    expect(result.delivery.status).toBe('draft')
+    expect(result.delivery.status).toBe('final')
   })
 
   it('does not search for corroboration when the key page lacks scope metadata', async () => {
@@ -772,7 +805,7 @@ describe('approved product investigation', () => {
         evidenceId: item.evidenceId, relation: 'supports', rationale: 'Same product fact.' })) })
     expect(result.discovery.searches.some(item => item.reason === 'corroboration_gap')).toBe(false)
     expect(search).toHaveBeenCalledTimes(1)
-    expect(result.delivery.status).toBe('draft')
+    expect(result.delivery.status).toBe('final')
   })
 
   it('reviews a failed batch in two bounded halves and retains the successful half', async () => {
@@ -809,7 +842,7 @@ describe('approved product investigation', () => {
     expect(partial.reviews).toHaveLength(2)
     expect(partial.claims).toHaveLength(2)
     expect(partial.run.failures[0]?.message).toContain('recovery 2: Second review half unavailable')
-    expect(partial.delivery.status).toBe('draft')
+    expect(partial.delivery.status).toBe('final')
   })
 
   it('never dispatches cross-source model batches even with many eligible statements', async () => {
@@ -849,11 +882,11 @@ describe('approved product investigation', () => {
     expect(recovered.delivery.status).toBe('final')
   })
 
-  it('does not treat an unrelated question as answered by a supported excerpt', async () => {
+  it('rejects a review linked to a question outside the approved plan', async () => {
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } },
     { ...adapters, reviewEvidence: async evidence => evidence.map(item => ({ evidenceId: item.evidenceId,
-      verdict: 'supported', questionIds: [otherQuestionId],
+      verdict: 'supported', questionIds: [createProductQuestionId()],
       rationale: 'The excerpt supports a different question.' })) })
     expect(result.claims).toHaveLength(0)
     expect(result.gaps).toHaveLength(2)

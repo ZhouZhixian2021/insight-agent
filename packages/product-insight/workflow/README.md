@@ -85,8 +85,8 @@ Extraction is page-local and may span multiple capacity-sized requests. Semantic
 <a id="known-limitations-and-deferred-work"></a>
 
 - **Process-local jobs** — The task continues after its starting tool call ends while the owning Agent remains active. After a process restart, the live job is gone and its saved task record is reported as interrupted. A new explicit call can resume committed work for the same approved plan. An uncommitted model response may need another call; automatic continuation and an independent progress page are not implemented.
-- **Revalidation scope** — Explicit resumption re-fetches the selected URLs. It keeps matching source snapshots and their checked evidence and reviews. Changed sources are extracted again, and the workflow rechecks comparisons with a changed key claim or new candidate evidence. New products, questions or sites need a newly reviewed plan. The page's publisher declaration remains self-reported.
-- **Page declarations are not ownership proof** — Final checks the approved domain against the fetched host; page publisher declarations are disclosed, not required. These checks do not independently establish legal publisher ownership, source truth, or actual product behavior. The Web fetch result exposes no HTTP headers; JavaScript-rendered metadata remains outside acquisition. Text PDF citations include a physical page link, and missing PDF scope declarations remain unknown. A dedicated report UI remains separate work.
+- **Revalidation scope** — Resumption re-fetches selected URLs but retains saved snapshots, evidence and reviews even when a source changes or cannot be fetched. Reports disclose that they describe captured content, not necessarily the current page. Cancellation still interrupts resumption.
+- **Source limitations** — Domain approval, region, version, date and snapshot mismatches are report disclosures, not standalone draft reasons. Discovery still screens domains before fetching. Statements without semantic support or a matching saved snapshot do not enter confirmed prose; a report with no supported statements explicitly leaves questions unanswered. No evidence still blocks report creation.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -99,3 +99,5 @@ The caller must persist run events and model requests so a resumed investigation
 </details>
 
 Product mode owns its job controller and does not mount the generic job-completion notifier. New approved plans start after the planning turn becomes idle; rejected or dismissed plans do not start. Restart the service and open a new product session to test the updated preset. Historical saved reports remain readable; unfinished historical plans are not silently restarted.
+
+Review judgments are admitted individually; missing or invalid judgments do not discard valid siblings or independently block delivery. Missing records are disclosed per question. Reviews may associate evidence with another approved question while preserving extraction-time associations. Synthesis places evidence markers after supported sentences; validated references become numbered footnotes and clickable superscripts in chat and HTML. Existing paragraph-end citations are not relocated automatically; regenerate those reports.

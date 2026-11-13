@@ -11,7 +11,7 @@ export interface ProductSemanticReview {
 }
 
 /**
- * Require one explicit judgment per input before admitting any conclusion from a batch.
+ * Validate explicit judgments against the approved questions and source evidence.
  * @param plan - Approved plan whose questions can receive conclusions.
  * @param evidence - Exact source excerpts submitted for review.
  * @param reviews - One model judgment for each evidence item.
@@ -30,8 +30,7 @@ export function claimsFromSemanticReview(plan: ProductPlan, evidence: readonly P
     if (item === undefined || seen.has(review.evidenceId) || !review.rationale.trim()
       || review.rationale.length > 600 || !['supported', 'unsupported', 'uncertain'].includes(review.verdict)
       || new Set(review.questionIds).size !== review.questionIds.length
-      || review.questionIds.some(id => !item.questionIds.includes(id)
-        || !plan.questions.some(question => question.questionId === id))
+      || review.questionIds.some(id => !plan.questions.some(question => question.questionId === id))
       || (review.verdict === 'supported') !== (review.questionIds.length > 0)) {
       throw new RangeError('Semantic review contains an unknown, repeated or invalid judgment')
     }

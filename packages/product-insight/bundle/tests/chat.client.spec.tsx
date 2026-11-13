@@ -112,3 +112,17 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect((click.mock.instances[0] as HTMLAnchorElement)?.download).toBe('product-insight-report.html')
   vi.runAllTimers()
 })
+
+
+it('renders sentence citations as superscript links in exported HTML', () => {
+  const run = { callId: 'cite', title: '报告', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0, failures: 0,
+    elapsedMilliseconds: 10, deliveryStatus: 'final', reasons: [],
+    report: '# 报告\n\n## 综合回答\n\n支持导出。[^product-source-1]费用尚未确认。\n\n[^product-source-1]: [查看来源原文](https://example.com/export)\n\n## 证据附录\n\n已保存原文。' } as const
+  const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
+  const citation = doc.querySelector('a[href="https://example.com/export"]')!
+  expect(citation).not.toBeNull()
+  expect(citation.textContent).toBe('¹')
+  expect(citation.parentElement?.textContent).toContain('支持导出。¹费用尚未确认。')
+  expect(doc.body.textContent).not.toContain('[^product-source-1]')
+})

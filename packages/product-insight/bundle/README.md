@@ -79,3 +79,5 @@ Keep product transcript presentation in this bundle and durable investigation st
 </details>
 
 Product mode owns its job controller and does not mount the generic job-completion notifier. New approved plans start after the planning turn becomes idle; rejected or dismissed plans do not start. Restart the service and open a new product session to test the updated preset. Historical saved reports remain readable; unfinished historical plans are not silently restarted.
+
+Generated sentence citations render as clickable superscript numbers in chat and exported HTML, linking to the corresponding source. Markdown downloads retain numbered footnotes. The synthesis model supplies citation positions and the workflow validates their identities; historical paragraph-end links are not relocated automatically.
