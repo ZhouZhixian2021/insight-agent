@@ -231,7 +231,9 @@ export function apply(ctx: Context, config: Config): void {
       )
     },
     onTransportDiagnostic: (detail) => {
-      ctx.logger.warn(`llm-pi-ai: model transport diagnostic ${JSON.stringify(detail)}`)
+      const message = `llm-pi-ai: model transport diagnostic ${JSON.stringify(detail)}`
+      if (detail.failureCode === 'COMPLETED') ctx.logger.info(message)
+      else ctx.logger.warn(message)
     },
   })
   // Independent of the route set: signing in is what makes a route worth

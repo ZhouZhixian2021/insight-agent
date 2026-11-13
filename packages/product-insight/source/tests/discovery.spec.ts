@@ -105,6 +105,15 @@ describe('product page discovery', () => {
     ])
   })
 
+  it('searches with the question and approved hints, never the plan narrative', async () => {
+    const queries: string[] = []
+    await discoverCandidatePages({ product, plan: { ...plan, scope: 'A long plan narrative that names no search term',
+      sourceCriteria: { productVersion: 'M6', region: 'CN' } }, maxResultsPerQuery: 5 }, {
+      now, web: { search: async ({ query }) => { queries.push(query); return { sources: [], truncated: false } } },
+    })
+    expect(queries).toEqual(['Example Features? M6 CN', 'Example Price? M6 CN'])
+  })
+
   it('screens before allocating the approved candidate slots', async () => {
     const result = await discoverCandidatePages({ product,
       plan: { ...plan, limits: { maximumCandidatePages: 2 } }, maxResultsPerQuery: 5 }, {
@@ -118,12 +127,43 @@ describe('product page discovery', () => {
     expect(result.searches).toMatchObject([{ recordedCount: 1, truncated: true }, { recordedCount: 1, truncated: true }])
   })
 
+  it('treats country sites of the official domain as official but never the site root', async () => {
+    const apple: Product = { ...product, name: 'Apple M6', developer: 'Apple',
+      officialUrl: 'https://www.apple.com/mac-mini/' }
+    const specs = 'https://www.apple.com.cn/mac-mini/specs/'
+    const root = 'https://www.apple.com.cn/'
+    const lookalike = 'https://apple.com.evil.test/mac-mini/'
+    const sibling = 'https://www.apple.com/imac/specs/'
+    const result = await discoverCandidatePages({ product: apple, plan, maxResultsPerQuery: 4 }, {
+      now, web: { search: async () => ({ sources: [specs, root, lookalike, sibling].map(url => ({ url })),
+        truncated: false }) },
+    })
+    expect(result.candidates.items.map(item => [item.url, item.screening.status, item.sourceType])).toEqual([
+      [specs, 'selected', 'official_product_page'],
+      [sibling, 'selected', 'official_product_page'],
+      [root, 'excluded', 'other'],
+      [lookalike, 'excluded', 'other'],
+    ])
+  })
+
+  it('keeps one candidate for a country mirror of the same official page', async () => {
+    const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
+      now, web: { search: async () => ({ sources: [
+        { url: 'https://example.com/tw/newsroom/launch/' },
+        { url: 'https://example.com/newsroom/launch/' },
+        { url: 'https://example.com/tv/home/' },
+        { url: 'https://example.com/home/' }], truncated: false }) },
+    })
+    expect(result.candidates.items.map(item => new URL(item.url).pathname))
+      .toEqual(['/tw/newsroom/launch/', '/tv/home/', '/home/'])
+  })
+
   it('uses a full review-only pool for follow-up without exceeding the approved candidate limit', async () => {
     const apple: Product = { ...product, name: 'Apple fall lineup (phone, tablet, desktop)', developer: 'Apple',
       officialUrl: 'https://www.apple.com/' }
     const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2, maximumGapSearches: 1 },
-      sourcePublishers: [{ name: 'Regional', domain: 'www.apple.com.cn' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
-    const regional = 'https://www.apple.com.cn/newsroom/phone'
+      sourcePublishers: [{ name: 'Regional', domain: 'regional.test' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
+    const regional = 'https://regional.test/newsroom/phone'
     const official = 'https://www.apple.com/newsroom/phone'
     const queries: string[] = []
     const web = { search: async ({ query }: { query: string }) => {
