@@ -4,7 +4,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductQuestionId,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
-import { productQuestionTerms, PRODUCT_PAGE_FRAGMENT_CHARACTERS } from './page-content.ts'
+import { productQuestionTerms } from './page-content.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
 export type { SearchObservation } from './search-recovery.ts'
@@ -79,13 +79,13 @@ export interface ProductDiscoveryAdapters {
 
 /**
  * Resolve the reviewed per-page source bound before any fetch or model work.
- * @param plan - Approved plan, including its optional expanded page allowance.
+ * @param plan - Approved plan, including any explicit page allowance.
  * @returns Maximum complete canonical text characters per selected page.
  */
 export function resolveProductPageCharacterLimit(plan: ProductPlan): number {
-  const maximum = plan.limits?.maximumPageCharacters ?? PRODUCT_PAGE_FRAGMENT_CHARACTERS
-  if (!Number.isSafeInteger(maximum) || maximum < PRODUCT_PAGE_FRAGMENT_CHARACTERS || maximum > 48_000) {
-    throw new RangeError('maximumPageCharacters must be between 12000 and 48000')
+  const maximum = plan.limits?.maximumPageCharacters ?? Number.MAX_SAFE_INTEGER
+  if (!Number.isSafeInteger(maximum) || maximum < 1) {
+    throw new RangeError('maximumPageCharacters must be a positive safe integer')
   }
   return maximum
 }
@@ -122,14 +122,14 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     || [...input.corroborationFor?.keys() ?? []].some(id => !gap?.includes(id))) {
     throw new RangeError('Product gap search exceeds the approved questions or search allowance')
   }
-  const candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url), page]))
+  const official = new URL(product.officialUrl)
+  const candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url, official.hostname), page]))
   const failures: ProductFailure[] = [...input.existing?.candidates.failures ?? []]
   const searches: ProductSearchAttempt[] = [...input.existing?.searches ?? []]
   const initialBatches: {
     search: { questionId: ProductQuestionId; recordedCount: number; truncated: boolean }
     sources: ReturnType<typeof screenSource>[]
   }[] = []
-  const official = new URL(product.officialUrl)
   const startedAt = Date.parse(adapters.now())
   const maximumElapsedMinutes = plan.limits?.maximumElapsedMinutes
   if (maximumElapsedMinutes !== undefined && (!Number.isFinite(maximumElapsedMinutes) || maximumElapsedMinutes <= 0)) {
@@ -145,7 +145,9 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   const priorities = ['selected', 'needs_review', 'excluded'] as const
   function screenSource(source: WebSearchResult['sources'][number]) {
     const parsed = parseCandidateUrl(source.url)
-    const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
+    const officialSite = parsed !== null && withinOfficialSite(parsed.hostname, official.hostname)
+    const officialRoot = officialSite && parsed?.pathname === '/'
+    const officialPage = officialSite && !officialRoot
     const approvedPublisher = parsed === null ? undefined : plan.sourcePublishers?.find(item => withinDomain(parsed.hostname, item.domain))
     const leadingBrand = approvedPublisher === undefined ? undefined
       : /^[a-z][a-z0-9-]{2,}/iu.exec(product.name)?.[0].toLocaleLowerCase()
@@ -155,11 +157,11 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
         part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
     return { source, parsed, officialPage, approvedPublisher,
-      screening: screenCandidate(parsed, officialPage, named, approvedPublisher !== undefined) }
+      screening: screenCandidate(parsed, officialPage, officialRoot, named, approvedPublisher !== undefined) }
   }
   const recordSource = ({ source, parsed, officialPage, approvedPublisher, screening }: ReturnType<typeof screenSource>,
     questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' => {
-    const key = candidateKey(source.url, parsed)
+    const key = candidateKey(source.url, official.hostname, parsed)
     const prior = candidates.get(key)
     const promoted = gap !== undefined && prior !== undefined && prior.screening.status !== 'selected'
       && screening.status === 'selected'
@@ -200,9 +202,10 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     if (gap !== undefined && domain === undefined) continue
     const reason = primaryId === undefined ? 'evidence_gap' : 'corroboration_gap'
     const terms = domain === undefined ? [] : [...productQuestionTerms(question.text)]
-    const query = (domain === undefined ? [product.name, question.text, plan.scope]
-      : [product.name, terms.join(' ') || question.text, plan.sourceCriteria?.productVersion,
-        plan.sourceCriteria?.region, `site:${domain}`]).filter(Boolean).join(' ').trim()
+    const query = [product.name,
+      domain === undefined ? question.text : terms.join(' ') || question.text,
+      plan.sourceCriteria?.productVersion, plan.sourceCriteria?.region,
+      ...domain === undefined ? [] : [`site:${domain}`]].filter(Boolean).join(' ').trim()
     const elapsed = maximumElapsedMinutes !== undefined
       && Date.parse(adapters.now()) - startedAt >= maximumElapsedMinutes * 60_000
     if (signal?.aborted || elapsed || gap !== undefined && !hasProductCandidateCapacity(retained, candidateLimit)) {
@@ -291,6 +294,21 @@ function withinDomain(host: string | undefined, domain: string): boolean {
   return host === domain || (host?.endsWith(`.${domain}`) ?? false)
 }
 
+/**
+ * Match a host against the approved official site rather than one host name.
+ * The approved host, its subdomains, its registered domain, and one country-code suffix of that
+ * domain all belong to the maker, so a country site such as `www.apple.com.cn` is official too.
+ * A two-label suffix such as `apple.com.co.uk` is not, because it can be registered by anyone.
+ */
+function withinOfficialSite(host: string | undefined, officialHost: string): boolean {
+  if (host === undefined) return false
+  if (withinDomain(host, officialHost)) return true
+  const domain = officialHost.replace(/^www\./u, '')
+  if (domain === officialHost && !domain.includes('.')) return false
+  if (withinDomain(host, domain)) return true
+  return new RegExp(`(^|\\.)${domain.replaceAll('.', '\\.')}\\.[a-z]{2}$`, 'u').test(host)
+}
+
 /** Prefer an approved host with the fewest selected pages, breaking ties in favor of untried hosts. */
 function gapSearchDomain(domains: readonly string[], candidates: readonly CandidatePage[],
   tried: ReadonlySet<string>): string | undefined {
@@ -326,15 +344,29 @@ function dedupUrl(url: URL): string {
   return normalized.href
 }
 
-function candidateKey(url: string, parsed = parseCandidateUrl(url)): string {
-  return parsed === null ? `invalid:${url}` : dedupUrl(parsed)
+/**
+ * Collapse an official page's country mirror onto one candidate, so `/tw/newsroom/x/` and
+ * `/newsroom/x/` do not both consume the pool. Two further path segments are required, which keeps
+ * a real two-letter product section such as `/tv/home/` distinct from `/home/`.
+ */
+function candidateKey(url: string, officialHost: string, parsed = parseCandidateUrl(url)): string {
+  if (parsed === null) return `invalid:${url}`
+  const normalized = new URL(dedupUrl(parsed))
+  if (withinOfficialSite(normalized.hostname, officialHost)
+    && /^\/[a-z]{2}(?:\/[^/]+){2,}\/?$/u.test(normalized.pathname)) {
+    normalized.pathname = normalized.pathname.replace(/^\/[a-z]{2}/u, '')
+  }
+  return normalized.href
 }
 
-function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean, approvedPublisher: boolean):
-Pick<CandidatePage['screening'], 'status' | 'reason'> {
+function screenCandidate(parsed: URL | null, officialPage: boolean, officialRoot: boolean, named: boolean,
+  approvedPublisher: boolean): Pick<CandidatePage['screening'], 'status' | 'reason'> {
   if (parsed === null) return { status: 'excluded', reason: 'Search result URL is not a valid HTTP(S) URL.' }
   if (officialPage) {
-    return { status: 'selected', reason: 'URL matches the approved official host; check product relevance against the page text.' }
+    return { status: 'selected', reason: 'URL matches the approved official site; check product relevance against the page text.' }
+  }
+  if (officialRoot) {
+    return { status: 'excluded', reason: 'The official site root identifies no product; not fetched.' }
   }
   if (!approvedPublisher) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
   if (named) {

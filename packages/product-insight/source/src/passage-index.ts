@@ -25,13 +25,13 @@ export interface ProductPassageSelection {
 /** Optional retrieval hook for a future semantic ranker; current runs use lexical ranking. */
 export interface ProductPassageRetriever {
   retrieve(passages: readonly ProductPagePassage[], question: string, maximum: number,
-    signal?: AbortSignal): Promise<readonly ProductPagePassage[]>
+    signal?: AbortSignal, exclude?: ReadonlySet<string>): Promise<readonly ProductPagePassage[]>
 }
 
 /** Default retrieval implementation; callers may later supply a semantic retriever. */
 export const keywordProductPassageRetriever: ProductPassageRetriever = {
-  retrieve: (passages, question, maximum) =>
-    Promise.resolve(selectProductQuestionPassages(passages, question, maximum)),
+  retrieve: (passages, question, maximum, _signal, exclude) =>
+    Promise.resolve(selectProductQuestionPassages(passages, question, maximum, exclude)),
 }
 
 /** An invalid selection is retained for diagnostics without discarding valid siblings. */
@@ -43,6 +43,7 @@ export interface RejectedProductPassageSelection {
 
 const MAXIMUM_PASSAGE_CHARACTERS = 1_500
 const MAXIMUM_CONTEXT_CHARACTERS = 3_000
+const EMPTY_PASSAGE_IDS: ReadonlySet<string> = new Set()
 const words = new Intl.Segmenter(undefined, { granularity: 'word' })
 
 /**
@@ -144,18 +145,22 @@ readonly ProductPagePassage[] {
  * @param passages - Ordered passages from one saved page.
  * @param question - Approved investigation question.
  * @param maximum - Maximum distinct passages visible to the model.
+ * @param exclude - Passage ids already shown for this question, skipped so a retry reads further.
  * @returns Selected exact passages in source order.
  */
 export function selectProductQuestionPassages(passages: readonly ProductPagePassage[], question: string,
-  maximum: number): readonly ProductPagePassage[] {
+  maximum: number, exclude: ReadonlySet<string> = EMPTY_PASSAGE_IDS): readonly ProductPagePassage[] {
   if (!Number.isSafeInteger(maximum) || maximum < 1) throw new RangeError('Passage allowance must be positive')
-  const ranked = rankProductPagePassages(passages, question)
-  const selected = new Set<ProductPagePassage>(ranked.slice(0, Math.min(3, maximum)))
-  for (const center of ranked.slice(0, Math.min(3, maximum))) {
+  const centers = rankProductPagePassages(passages, question)
+    .filter(passage => !exclude.has(passage.id)).slice(0, Math.min(3, maximum))
+  const selected = new Set<ProductPagePassage>(centers)
+  for (const center of centers) {
     const index = passages.indexOf(center)
     for (const distance of [1, 2]) for (const neighbor of [passages[index - distance], passages[index + distance]]) {
       if (selected.size >= maximum) break
-      if (neighbor !== undefined && neighbor.pdfPage === center.pdfPage) selected.add(neighbor)
+      if (neighbor !== undefined && neighbor.pdfPage === center.pdfPage && !exclude.has(neighbor.id)) {
+        selected.add(neighbor)
+      }
     }
   }
   return passages.filter(passage => selected.has(passage))
@@ -167,7 +172,8 @@ export function selectProductQuestionPassages(passages: readonly ProductPagePass
  * @param snapshot - Available capture of that page.
  * @param text - Complete canonical text saved under the snapshot hash.
  * @param offered - Only passages shown to the model in the request.
- * @param selections - Untrusted model choices and proposed source statements.
+ * @param selections - Untrusted model choices and proposed source statements; an identifier truncated
+ *   to the start offset resolves only when one offered range begins there.
  * @param extractionMethod - Method identity recorded on accepted evidence.
  * @returns Version 2 evidence and per-selection rejection reasons.
  */
@@ -188,18 +194,28 @@ export function extractProductPassageEvidence(candidate: CandidatePage, snapshot
     throw new RangeError('Offered passages do not match the saved page')
   }
   const allowedQuestions = new Set(candidate.questionIds)
+  const resolve = (id: string): ProductPagePassage | undefined => {
+    const exact = byId.get(id)
+    if (exact !== undefined) return exact
+    // Models drop the ':' and end offset; accept only a prefix that names exactly one offered range.
+    const matching = offered.filter(passage => passage.id.startsWith(`${id}:`))
+    return matching.length === 1 ? matching[0] : undefined
+  }
   const evidence: ProductEvidenceV2[] = []
   const rejected: RejectedProductPassageSelection[] = []
   for (const [selectionIndex, selection] of selections.entries()) {
     let reason: RejectedProductPassageSelection['reason'] | undefined
+    const resolved = selection.passageIds.map(id => resolve(id))
+    const known = resolved.filter((passage): passage is ProductPagePassage => passage !== undefined)
     if (selection.passageIds.length === 0 || selection.passageIds.length > 3) reason = 'missing_passage'
-    else if (new Set(selection.passageIds).size !== selection.passageIds.length) reason = 'repeated_passage'
-    else if (selection.passageIds.some(id => !byId.has(id))) reason = 'unknown_passage'
+    else if (new Set(selection.passageIds).size !== selection.passageIds.length
+      || new Set(known).size !== known.length) reason = 'repeated_passage'
+    else if (resolved.some(passage => passage === undefined)) reason = 'unknown_passage'
     else if (selection.questionIds.length === 0) reason = 'missing_question'
     else if (selection.questionIds.some(id => !allowedQuestions.has(id))) reason = 'unknown_question'
     else if (selection.sourcedStatement.trim().length === 0) reason = 'empty_statement'
     if (reason !== undefined) { rejected.push({ selectionIndex, reason }); continue }
-    const ranges = selection.passageIds.map(id => byId.get(id))
+    const ranges = resolved
       .filter((passage): passage is ProductPagePassage => passage !== undefined)
       .toSorted((left, right) => left.start - right.start)
     const citations = ranges.map(passage => ({ verbatimExcerpt: passage.text,

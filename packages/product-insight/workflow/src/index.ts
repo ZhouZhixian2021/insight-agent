@@ -2,7 +2,6 @@
 import { registerSearchRecognition } from './search-recognition.ts'
 import { retryProductTransport } from './transport-retry.ts'
 import type { Context } from '@deepseek-ai/cordis'
-import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-tools'
 import { createEvidenceGapId, createProductBatchResult, createProductFailureId, createProductReportId, createProductRunId,
   isExecutableProductPlan, type AvailableSourceSnapshot, type CandidatePage, type Product,
@@ -22,7 +21,7 @@ import { discoverCandidatePages, extractProductPageEvidence, extractProductPassa
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval } from './approved-plan.ts'
-import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
+import { adoptEvidenceQuestions, claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
 import { assessProductCorroboration, assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
@@ -42,31 +41,17 @@ export { evaluateProductReport, prepareProductReport } from './report.ts'
 export type { ProductReportAssessment, ProductReportInput } from './report.ts'
 
 const MAXIMUM_PAGE_EXTRACTION_CALLS = 12
+const EMPTY_PASSAGE_IDS: ReadonlySet<string> = new Set()
 
 /** Cordis plugin name for validation of proposed product plans. */
 export const name = 'product-insight-workflow'
 /** The plan guard observes tool dispatch before the review is presented. */
 export const inject = ['tools']
 
-/** Optional model routes tried after repeated transport failures in a product investigation. */
-export interface Config {
-  /** Ordered backup routes used after three consecutive transient model failures. */
-  fallbackRoutes: {
-    /** Configured model provider ID. */
-    provider: string
-    /** Model ID registered under the provider. */
-    model: string
-  }[]
-}
-
-export const Config: z<Config> = z.object({
-  fallbackRoutes: z.array(z.object({ provider: z.string(), model: z.string() })).default([]),
-})
-
 /** Reject malformed product execution blocks without changing approval state. */
-export function apply(ctx: Context, config: Config): void {
+export function apply(ctx: Context): void {
   registerSearchRecognition(ctx)
-  registerProductInvestigationTool(ctx, runApprovedProductInvestigation, config.fallbackRoutes)
+  registerProductInvestigationTool(ctx, runApprovedProductInvestigation)
   ctx.on('tools/execute', async (exec, next) => {
     if (exec.name === 'web_search' && exec.agent) {
       const agents = ctx.get('agents')
@@ -140,12 +125,10 @@ export interface ProductInvestigationAdapters {
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
     readonly text: string
-  }[], signal?: AbortSignal, fragment?: ProductPageFragment,
-    maximumDrafts?: number) => Promise<readonly ProductEvidenceDraft[]>
+  }[], signal?: AbortSignal, fragment?: ProductPageFragment) => Promise<readonly ProductEvidenceDraft[]>
   /** Version 4 model selection of exact passages already shown for one approved question. */
   readonly proposePassageEvidence?: (page: CandidatePage, text: string, passages: readonly ProductPagePassage[],
-    question: ProductPlan['questions'][number], maximumSelections: number,
-    signal?: AbortSignal) => Promise<readonly ProductPassageSelection[]>
+    question: ProductPlan['questions'][number], signal?: AbortSignal) => Promise<readonly ProductPassageSelection[]>
   /** Future semantic retrieval hook; omitted in current runs, which use keyword ranking. */
   readonly passageRetriever?: ProductPassageRetriever
   /** Return 'retry' for a transient model failure or true to allow splitting a failed window. Omission leaves failures unrecovered. */
@@ -158,6 +141,8 @@ export interface ProductInvestigationAdapters {
   readonly saveCheckpoint: (checkpoint: ProductInvestigationCheckpoint) => Promise<void>
   readonly reviewEvidence: (evidence: readonly ProductEvidence[], questions: ProductPlan['questions'],
     signal?: AbortSignal) => Promise<readonly ProductSemanticReview[]>
+  /** Runtime review batch size; recorded checkpoints retain their evidence cursor. */
+  readonly reviewBatchSize?: number
   /** Retry a transient review, review items individually after output exhaustion, or split other incomplete output. */
   readonly recoverReviewFailure?: (error: unknown) => boolean | 'retry' | 'individual'
   readonly saveClaims: (claims: readonly ProductClaim[]) => Promise<void>
@@ -301,8 +286,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     currentCheckpoint = saved
   }
   const admitDrafts = (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    drafts: readonly ProductEvidenceDraft[], range: ProductPageFragment, allowance: number, label: string): void => {
-    if (drafts.length > allowance) throw new RangeError('Fragment exceeded its evidence draft allowance')
+    drafts: readonly ProductEvidenceDraft[], range: ProductPageFragment, label: string): void => {
     const located = drafts.map(draft => locateProductDraft(draft, range))
     const extracted = extractProductPageEvidence(page, snapshot, text, located, input.extractionMethod)
     for (const item of extracted.evidence) {
@@ -318,16 +302,15 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     }
   }
   const extractPassages = async (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    question: ProductPlan['questions'][number], offered: readonly ProductPagePassage[], allowance: number,
+    question: ProductPlan['questions'][number],
+    retrieve: (exclude: ReadonlySet<string>) => Promise<readonly ProductPagePassage[]>,
     budget: { remaining: number }, label: string): Promise<void> => {
     const propose = adapters.proposePassageEvidence
     if (propose === undefined) throw new RangeError('Passage extraction adapter is unavailable for this checkpoint')
-    if (offered.length === 0 || allowance <= 0) return
     const attempt = async (passages: readonly ProductPagePassage[], active: AbortSignal): Promise<void> => {
       active.throwIfAborted()
-      const selections = await propose(page, text, passages, question, allowance, active)
+      const selections = await propose(page, text, passages, question, active)
       active.throwIfAborted()
-      if (selections.length > allowance) throw new RangeError('Question exceeded its evidence selection allowance')
       const extracted = extractProductPassageEvidence({ ...page, questionIds: [question.questionId] }, snapshot,
         text, passages, selections, input.extractionMethod)
       for (const item of extracted.evidence) {
@@ -350,39 +333,52 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         retryState.transportRetried = true
         return true
       } })
-    try { await run(offered) }
-    catch (error) {
-      if (operationSignal !== undefined && operationSignal.aborted) return
-      const recovery = adapters.recoverEvidenceFailure?.(error)
-      if (recovery === true && !retryState.transportRetried && budget.remaining > 0) {
-        budget.remaining--
-        try {
-          await run(offered.slice(0, Math.max(1, Math.ceil(offered.length / 2))))
+    const recover = async (passages: readonly ProductPagePassage[], scope: string): Promise<void> => {
+      try { await run(passages) }
+      catch (error) {
+        if (operationSignal?.aborted) return
+        const recovery = adapters.recoverEvidenceFailure?.(error)
+        if ((recovery === true || recovery === 'retry') && passages.length > 1 && budget.remaining >= 2) {
+          const middle = Math.ceil(passages.length / 2)
+          budget.remaining -= 2
+          await recover(passages.slice(0, middle), `${scope}, recovery 1`)
+          await recover(passages.slice(middle), `${scope}, recovery 2`)
           return
-        } catch (retryError) { error = retryError }
+        }
+        failures.push({ schemaVersion: 1, failureId: createProductFailureId(),
+          stage: 'extraction', category: 'unknown',
+          message: `${scope}: ${error instanceof Error ? error.message : String(error)}`,
+          retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
       }
-      if (!operationSignal?.aborted) failures.push({ schemaVersion: 1, failureId: createProductFailureId(),
-        stage: 'extraction', category: 'unknown',
-        message: `${label}: ${error instanceof Error ? error.message : String(error)}`,
-        retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
     }
+    const first = await retrieve(EMPTY_PASSAGE_IDS)
+    if (first.length === 0) return
+    const admittedBefore = evidence.length
+    const failuresBefore = failures.length
+    await recover(first, label)
+    if (evidence.length > admittedBefore || failures.length > failuresBefore
+      || budget.remaining < 1 || operationSignal?.aborted) return
+    const next = await retrieve(new Set(first.map(passage => passage.id)))
+    if (next.length === 0) return
+    budget.remaining -= 1
+    await recover(next, `${label}, next passages`)
   }
   const extractFragment = async ({ page, snapshot, text }: {
     page: CandidatePage
     snapshot: AvailableSourceSnapshot
     text: string
   }, questions: ProductPlan['questions'], fragment: ProductPageFragment,
-  maximumDrafts: number, label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
-    const propose = async (range: ProductPageFragment, allowance: number, rangeLabel: string,
+  label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
+    const propose = async (range: ProductPageFragment, rangeLabel: string,
       active: AbortSignal): Promise<void> => {
       active.throwIfAborted()
-      const drafts = await adapters.proposeEvidence(page, range.text, questions, active, range, allowance)
+      const drafts = await adapters.proposeEvidence(page, range.text, questions, active, range)
       active.throwIfAborted()
-      admitDrafts(page, snapshot, text, drafts, range, allowance, rangeLabel)
+      admitDrafts(page, snapshot, text, drafts, range, rangeLabel)
     }
     const retryState = { transportRetried: false }
-    const run = (range: ProductPageFragment, allowance: number, rangeLabel: string) => retryProductTransport(
-      active => propose(range, allowance, rangeLabel, active),
+    const run = (range: ProductPageFragment, rangeLabel: string) => retryProductTransport(
+      active => propose(range, rangeLabel, active),
       error => adapters.recoverEvidenceFailure?.(error) === 'retry',
       operationSignal, { onRetry: () => {
         if (recoveryBudget.remaining <= 0) return false
@@ -397,20 +393,19 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           : 'Targeted extraction from a saved source did not complete.',
         retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
     }
-    try { await run(fragment, maximumDrafts, label) }
+    try { await run(fragment, label) }
     catch (error) {
       if (operationSignal?.aborted) return
       const recovery = adapters.recoverEvidenceFailure?.(error)
-      const children = allowSplit && maximumDrafts >= 2 && recovery === true && !retryState.transportRetried
+      const children = allowSplit && recovery === true && !retryState.transportRetried
         && recoveryBudget.remaining >= 2
         ? splitFailedProductFragment(fragment) : null
       if (children === null) { recordFailure(error, label); return }
       recoveryBudget.remaining -= children.length
       for (const [childIndex, child] of children.entries()) {
         if (operationSignal?.aborted) break
-        const allowance = childIndex === 0 ? Math.ceil(maximumDrafts / 2) : Math.floor(maximumDrafts / 2)
         const childLabel = `${label}, recovery ${childIndex + 1}`
-        try { await run(child, allowance, childLabel) }
+        try { await run(child, childLabel) }
         catch (childError) { recordFailure(childError, childLabel) }
       }
     }
@@ -485,11 +480,10 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             if (operationSignal?.aborted) break
             const question = questions[questionIndex]
             if (question === undefined) throw new RangeError('Recovery question cursor exceeds captured page')
-            const allowance = Math.floor(8 / questions.length) + Number(questionIndex < 8 % questions.length)
-            const offered = await (adapters.passageRetriever ?? keywordProductPassageRetriever)
-              .retrieve(passages, question.text, 6, operationSignal)
-            await extractPassages(page, snapshot, text, question, offered, allowance, budget,
-              `Question ${questionIndex + 1}`)
+            const retriever = adapters.passageRetriever ?? keywordProductPassageRetriever
+            await extractPassages(page, snapshot, text, question,
+              exclude => retriever.retrieve(passages, question.text, 6, operationSignal, exclude),
+              budget, `Question ${questionIndex + 1}`)
             if (operationSignal?.aborted) break
             if (questionIndex + 1 < questions.length) await checkpoint('evidence', index, undefined, questionIndex + 1)
             else await checkpoint('evidence', index + 1)
@@ -512,23 +506,20 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           throw new RangeError('Recovery fragment order does not match captured source text')
         }
         if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
-        const baseDrafts = Math.floor(8 / sourceFragments.length)
-        const extraDrafts = 8 % sourceFragments.length
         const fragments = order.map((start) => {
           const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
           const fragment = sourceFragments[sourceIndex]
           if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
-          return { fragment, maximumDrafts: baseDrafts + Number(sourceIndex < extraDrafts) }
+          return fragment
         })
         // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
-        const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
+        const spent = fragmentStart * 2
         const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
         for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
           if (operationSignal?.aborted) break
           const current = fragments[fragmentIndex]
           if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
-          const { fragment, maximumDrafts } = current
-          await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
+          await extractFragment({ page, snapshot, text }, questions, current,
             `Fragment ${fragmentIndex + 1}`, recoveryBudget, true)
           if (operationSignal?.aborted) break
           if (fragmentIndex + 1 < fragments.length) await checkpoint('evidence', index, { index: fragmentIndex + 1, order })
@@ -538,15 +529,29 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       else await checkpoint('evidence', index + 1)
     }
     await adapters.saveEvidence(evidence)
+    const reviewedIds = new Set(reviews.map(review => review.evidenceId))
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex
-      : currentCheckpoint?.stage === 'verification' ? evidence.length : reviews.length
-    for (let offset = reviewStart; offset < evidence.length; offset += 8) {
+      : currentCheckpoint?.stage === 'verification' ? evidence.length : reviewedIds.size
+    const reviewBatchSize = adapters.reviewBatchSize ?? 8
+    if (!Number.isSafeInteger(reviewBatchSize) || reviewBatchSize < 1 || reviewBatchSize > 8) {
+      throw new RangeError('Product review batch size must be between one and eight')
+    }
+    for (let offset = reviewStart; offset < evidence.length; offset += reviewBatchSize) {
       if (operationSignal?.aborted) break
-      const batch = evidence.slice(offset, offset + 8)
+      const batch = evidence.slice(offset, offset + reviewBatchSize)
       const admitReviews = (items: readonly ProductEvidence[], judged: readonly ProductSemanticReview[]): void => {
-        const admitted = claimsFromSemanticReview(input.plan, items, judged)
-        reviews.push(...judged)
-        claims.push(...admitted)
+        // An empty response is an incomplete review, not a repeated one; the caller records the failure.
+        if (judged.length === 0 && items.length > 0) claimsFromSemanticReview(input.plan, items, judged)
+        const fresh = judged.filter(review => !reviewedIds.has(review.evidenceId))
+        if (fresh.length === 0) return
+        const freshIds = new Set(fresh.map(review => review.evidenceId))
+        const freshItems = items.filter(item => freshIds.has(item.evidenceId))
+        const admittedReviews = adoptEvidenceQuestions(freshItems, fresh)
+        claims.push(...claimsFromSemanticReview(input.plan, freshItems, admittedReviews))
+        for (const review of admittedReviews) {
+          reviewedIds.add(review.evidenceId)
+          reviews.push(review)
+        }
       }
       try {
         const batchReviews = await retryProductTransport(active => adapters.reviewEvidence(batch, input.plan.questions,
@@ -558,7 +563,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         const recovery = adapters.recoverReviewFailure?.(error)
         if (recovery === 'retry') {
           failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-            category: 'unknown', message: `Review batch ${offset / 8 + 1}, retry exhausted: ${error instanceof Error
+            category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, retry exhausted: ${error instanceof Error
               ? error.message : String(error)}`,
             retryable: true, occurredAt: adapters.now() })
         } else if (recovery === 'individual' && batch.length >= 2) {
@@ -571,7 +576,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             } catch (itemError) {
               if (operationSignal?.aborted) break
               failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                category: 'unknown', message: `Review batch ${offset / 8 + 1}, item ${itemIndex + 1}: ${itemError instanceof Error
+                category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, item ${itemIndex + 1}: ${itemError instanceof Error
                   ? itemError.message : String(itemError)}`,
                 retryable: true, occurredAt: adapters.now() })
             }
@@ -587,7 +592,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             } catch (childError) {
               if (operationSignal?.aborted) break
               failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                category: 'unknown', message: `Review batch ${offset / 8 + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
+                category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
                   ? childError.message : String(childError)}`,
                 retryable: true, occurredAt: adapters.now() })
             }
@@ -635,20 +640,22 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         if (operationSignal?.aborted || readBudget.remaining === 0) break
         const target = sources.flatMap((source) => {
           const match = selectProductGapFragment(source.text, question.text)
-          return match === undefined ? [] : [{ ...source, ...match, allowance: Number.MAX_SAFE_INTEGER }]
+          return match === undefined ? [] : [{ ...source, ...match }]
         }).toSorted((left, right) => right.score - left.score)[0]
         if (target === undefined) continue
         readBudget.remaining -= 1
-        const { page, snapshot, text, fragment, allowance } = target
+        const { page, snapshot, text, fragment } = target
         const questionPage = { ...page, questionIds: [question.questionId] }
         const before = evidence.length
         if (checkpointVersion === 4) {
           const ranked = rankProductPagePassages(indexProductPagePassages(text), question.text)
-          const offered = (ranked.length > 3 ? ranked.slice(3, 9) : ranked.slice(0, 6))
-            .toSorted((left, right) => left.start - right.start)
-          await extractPassages(questionPage, snapshot, text, question, offered, allowance, readBudget, 'Gap passages')
+          const window = ranked.length > 3 ? ranked.slice(3) : ranked
+          await extractPassages(questionPage, snapshot, text, question,
+            async exclude => window.filter(passage => !exclude.has(passage.id)).slice(0, 6)
+              .toSorted((left, right) => left.start - right.start),
+            readBudget, 'Gap passages')
         } else {
-          await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, allowance, 'Gap fragment',
+          await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, 'Gap fragment',
             readBudget, false)
         }
         if (operationSignal?.aborted) break

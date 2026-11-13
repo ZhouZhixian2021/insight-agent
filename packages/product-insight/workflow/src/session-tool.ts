@@ -29,12 +29,29 @@ import { type ProductSynthesisInput } from './report.ts'
 import { PRODUCT_PASSAGE_READING_INSTRUCTION, PRODUCT_READING_INSTRUCTION,
   PRODUCT_WRITING_INSTRUCTION } from './writing.ts'
 import { retryProductTransport } from './transport-retry.ts'
-import { ProductModelRouteSelector } from './model-route.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
   interface JobKindMap {
     'product-insight': 'product-insight'
   }
+}
+
+interface ProductModelAttemptTiming {
+  readonly elapsedMs: number
+  readonly firstChunkAtMs?: number
+  readonly firstTextAtMs?: number
+  readonly chunkCount: number
+  readonly outputChars: number
+  readonly localDeadlineExpired: boolean
+}
+
+function modelAttemptTiming(startedAt: number, firstChunkAtMs: number | undefined,
+  firstTextAtMs: number | undefined, chunkCount: number, outputChars: number,
+  deadline?: AbortSignal): ProductModelAttemptTiming {
+  return { elapsedMs: Math.round(performance.now() - startedAt),
+    ...firstChunkAtMs === undefined ? {} : { firstChunkAtMs },
+    ...firstTextAtMs === undefined ? {} : { firstTextAtMs },
+    chunkCount, outputChars, localDeadlineExpired: deadline?.aborted ?? false }
 }
 
 declare module '@deepseek-ai/dsh-session/types' {
@@ -82,6 +99,7 @@ declare module '@deepseek-ai/dsh-session/types' {
       status: 'completed' | 'failed'
       text: string
       error: string | null
+      timing?: ProductModelAttemptTiming
     }
     /** Accepted source records committed before semantic review. */
     'product/evidence-v1': { planId: string; items: readonly ProductEvidenceV1[] }
@@ -117,6 +135,7 @@ declare module '@deepseek-ai/dsh-session/types' {
       status: 'completed' | 'failed'
       text: string
       error: string | null
+      timing?: ProductModelAttemptTiming
     }
     /** Source-bound conclusions admitted after explicit positive support judgments. */
     'product/claims-v1': { planId: string; items: readonly ProductClaim[] }
@@ -204,8 +223,7 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'region, time and conditions. Use contradicts only for incompatible facts under matching conditions. Different scope '
   + 'or missing context requires uncertain; a different fact is unrelated. Do not infer publisher independence from URLs. '
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
-const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
-const MAX_EVIDENCE_OUTPUT_BYTES = 40_000
+const DEFAULT_MODEL_OUTPUT_RESERVE_TOKENS = 8_192
 const MAX_REVIEW_OUTPUT_TOKENS = 8_192
 const SYNTHESIS_SYSTEM = PRODUCT_WRITING_INSTRUCTION
 
@@ -236,8 +254,7 @@ class RecoverableProductComparisonOutputError extends Error {}
 
 /** Register start and result tools; execution rechecks durable approval. */
 export function registerProductInvestigationTool(ctx: Context,
-  runInvestigation: typeof runApprovedProductInvestigation,
-  fallbackRoutes: readonly { provider: string; model: string }[] = []): void {
+  runInvestigation: typeof runApprovedProductInvestigation): void {
   const active = new Set<string>()
   ctx.inject(['jobs'], (scope) => { scope.jobs.attachController('product-investigation') })
   const start = async (agent: NonNullable<ToolExecution['agent']>, signal: AbortSignal, expectedPlanId?: string): Promise<string> => {
@@ -284,7 +301,7 @@ export function registerProductInvestigationTool(ctx: Context,
       const selected = session.requestHeader()?.config ?? agent.options
       if (!selected.provider || !selected.model) throw new Error('The session has no selected model')
       const model: LlmCallConfig = { provider: selected.provider, model: selected.model,
-        maxTokens: Math.min(selected.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS, MAX_EVIDENCE_OUTPUT_TOKENS),
+        ...selected.maxTokens === undefined ? {} : { maxTokens: selected.maxTokens },
         ...selected.reasoningEffort === undefined ? {} : { reasoningEffort: selected.reasoningEffort } }
       signal.throwIfAborted()
       const release = Promise.withResolvers<void>()
@@ -300,7 +317,7 @@ export function registerProductInvestigationTool(ctx: Context,
               const agents = ctx.get('agents')
               if (!agents) throw new Error('Product investigation requires agent attribution')
               const { result } = await agents.withInitiator(agent, () => performProductInvestigation(ctx, session, model, plan, key,
-                events, runInvestigation, controller.signal, (line) => { job.updateProgress(line) }, fallbackRoutes))
+                events, runInvestigation, controller.signal, (line) => { job.updateProgress(line) }))
               const cancelled = controller.signal.aborted
               await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
                 state: cancelled ? 'cancelled' : 'completed', startedAt, updatedAt: new Date().toISOString(),
@@ -486,8 +503,7 @@ async function saveBackgroundState(ctx: Context, session: Session, state: Produc
 async function performProductInvestigation(ctx: Context, session: Session, model: LlmCallConfig,
   plan: ProductPlan, key: string, events: readonly SessionEvent[],
   runInvestigation: typeof runApprovedProductInvestigation, signal: AbortSignal,
-  onProgress: (line: string) => void,
-  fallbackRoutes: readonly { provider: string; model: string }[]): Promise<{ readonly result: ProductInvestigationResult }> {
+  onProgress: (line: string) => void): Promise<{ readonly result: ProductInvestigationResult }> {
   const sessions = ctx.get('sessions')
   const web = ctx.get('web')
   const llm = ctx.get('llm')
@@ -543,24 +559,6 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     }
   }
   const now = () => new Date().toISOString()
-  const routes = new ProductModelRouteSelector(model, fallbackRoutes)
-  const withRoute = async <T>(operation: (route: LlmCallConfig) => Promise<T>): Promise<T> => {
-    try {
-      const result = await operation(routes.route)
-      routes.succeeded()
-      return result
-    } catch (error) {
-      if (error instanceof ProductTransientModelError || error instanceof ProductTransientReviewError) {
-        const switched = await routes.failed(async (route) => { await llm.prepareCall(route, signal) })
-        if (switched) {
-          ctx.logger.warn('Product model route switched after repeated transport failures: %s/%s -> %s/%s',
-            switched.from.provider, switched.from.model, switched.to.provider, switched.to.model)
-          onProgress(`模型线路连接连续失败，已切换到 ${switched.to.provider}/${switched.to.model}`)
-        }
-      } else routes.succeeded()
-      throw error
-    }
-  }
   const saveText: ProductInvestigationAdapters['saveText'] = async (page, text, contentHash) => {
     if (text.length > maximumPageCharacters) throw new RangeError('Product page exceeds the approved text limit')
     const contentRef = `${page.candidatePageId}:text:${contentHash}`
@@ -634,17 +632,17 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       return Promise.resolve(text)
     },
     savePages, saveCheckpoint,
-    proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
-      withRoute(route => proposeEvidence(ctx, session, route, page, text, questions, persist, events,
-        requestSignal, fragment, maximumDrafts)),
+    proposeEvidence: (page, text, questions, requestSignal, fragment) =>
+      proposeEvidence(ctx, session, model, page, text, questions, persist, events, requestSignal, fragment),
     ...usePassages ? { proposePassageEvidence: (page: CandidatePage, text: string,
       passages: readonly ProductPagePassage[], question: ProductPlan['questions'][number],
-      maximumSelections: number, requestSignal?: AbortSignal) =>
-      withRoute(route => proposePassageEvidence(ctx, session, route, page, text, passages, question,
-        maximumSelections, persist, events, requestSignal)) } : {},
+      requestSignal?: AbortSignal) =>
+      proposePassageEvidence(ctx, session, model, page, text, passages, question,
+        persist, events, requestSignal) } : {},
     recoverEvidenceFailure: (error) => {
       if (fatal !== undefined) return false
-      return error instanceof ProductTransientModelError ? 'retry' : error instanceof RecoverableProductEvidenceOutputError
+      return error instanceof ProductTransientModelError ? 'retry'
+        : error instanceof RecoverableProductEvidenceOutputError || isLocalTimeout(error)
     },
     saveEvidence: async (items) => {
       if (usePassages) {
@@ -662,13 +660,15 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       onProgress(`已核对 ${items.length} 条来源摘录，正在审核结论`)
     },
     reviewEvidence: (items, questions, requestSignal) =>
-      withRoute(route => reviewEvidence(ctx, session, route, plan, items, questions, persist, events, requestSignal,
-        usePassages ? texts : undefined)),
+      reviewEvidence(ctx, session, model, plan, items, questions, persist, events, requestSignal,
+        usePassages ? texts : undefined),
+    reviewBatchSize: 1,
     recoverReviewFailure: error => fatal !== undefined ? false
       : error instanceof ProductTransientReviewError ? 'retry'
-        : error instanceof RecoverableProductReviewOutputError
-          && /^Semantic review (model ended with max-tokens|input and output reserve exceed)/u.test(error.message) ? 'individual'
+        : isLocalTimeout(error) ? true
           : error instanceof RecoverableProductReviewOutputError
+            && /^Semantic review (model ended with max-tokens|input and output reserve exceed)/u.test(error.message) ? 'individual'
+            : error instanceof RecoverableProductReviewOutputError
             || error instanceof RangeError && /^Semantic review (must cover|contains)/u.test(error.message),
     saveClaims: async (items) => {
       session.append('product/claims-v1', { planId: plan.planId, items })
@@ -679,8 +679,8 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       : error instanceof ProductTransientModelError ? 'retry'
         : error instanceof RecoverableProductComparisonOutputError,
     compareClaim: (claim, questionId, candidates, evidence, pages, batchIndex, requestSignal) =>
-      withRoute(route => compareClaimSources(ctx, session, route, plan, claim, questionId, candidates,
-        evidence, pages, batchIndex, persist, events, requestSignal)),
+      compareClaimSources(ctx, session, model, plan, claim, questionId, candidates,
+        evidence, pages, batchIndex, persist, events, requestSignal),
     saveVerification: async (verification) => {
       session.append('product/verification-v1', { planId: plan.planId, verification })
       await persist()
@@ -688,8 +688,8 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     },
     synthesizeReport: async (input, requestSignal) => {
       onProgress('正在综合已核对的产品资料')
-      return retryProductTransport(active => withRoute(route => synthesizeProductReport(ctx, session, route,
-        plan, input, persist, events, active)), error => error instanceof ProductTransientModelError, requestSignal)
+      return retryProductTransport(active => synthesizeProductReport(ctx, session, model,
+        plan, input, persist, events, active), error => error instanceof ProductTransientModelError, requestSignal)
     },
     saveReport: async (markdown) => {
       const contentRef = `${plan.planId}:report`
@@ -730,7 +730,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
   const capacity = await llm.prepareCall(config, signal)
   const serialized = JSON.stringify(input)
   if (!fitsProductModelInput(SYNTHESIS_SYSTEM, serialized, capacity.context?.contextWindow,
-    capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
+    capacity.config.maxTokens ?? DEFAULT_MODEL_OUTPUT_RESERVE_TOKENS)) {
     const groups: ProductSynthesisInput[] = []
     if (input.questions.length > 1) {
       groups.push(...input.questions.map(question => ({ ...input, questions: [question] })))
@@ -858,9 +858,13 @@ export function parseProductSynthesis(text: string, input: ProductSynthesisInput
       throw new ProductSynthesisOutputError('invalid_output')
     }
     const question = input.questions.find(question => question.questionId === item.questionId)
-    const ids = new Set(item.evidenceIds)
-    if (!question || paragraphs.has(item.questionId) || item.evidenceIds.length !== question.evidence.length
-      || ids.size !== question.evidence.length || question.evidence.some(reference => !ids.has(reference.evidenceId))) {
+    // A stray identifier must not discard prose whose remaining citations are all real.
+    const cited = new Set(item.evidenceIds
+      .filter((id): id is string => typeof id === 'string'
+        && question?.evidence.some(reference => reference.evidenceId === id) === true))
+    if (!question || paragraphs.has(item.questionId)
+      || cited.size !== question.evidence.length
+      || question.evidence.some(reference => !cited.has(reference.evidenceId))) {
       throw new ProductSynthesisOutputError('invalid_output')
     }
     paragraphs.set(item.questionId, item.text.trim().replace(/\r\n?/gu, '\n'))
@@ -934,21 +938,19 @@ export function reconcileProductSourceRevalidation(saved: ProductInvestigationCh
 
 async function proposePassageEvidence(ctx: Context, session: Session, config: LlmCallConfig,
   page: CandidatePage, text: string, passages: readonly ProductPagePassage[],
-  question: ProductPlan['questions'][number], maximumSelections: number,
+  question: ProductPlan['questions'][number],
   persist: () => Promise<void>, events: readonly SessionEvent[], signal?: AbortSignal):
 Promise<readonly ProductPassageSelection[]> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product passage model service is unavailable')
-  const deadline = AbortSignal.timeout(60_000)
-  const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
+  const operationSignal = signal ?? new AbortController().signal
   const user = JSON.stringify({ sourceUrl: page.url, question,
-    passages: passages.map(({ id, text: passageText }) => ({ id, text: passageText })), maximumSelections })
+    passages: passages.map(({ id, text: passageText }) => ({ id, text: passageText })) })
   const system = text.startsWith('\f')
     ? `${PASSAGE_SYSTEM} Passage IDs may be combined only within one PDF page.` : PASSAGE_SYSTEM
   const prepared = await awaitProductModel(() => llm.prepareCall(config, operationSignal), operationSignal)
     .catch((error: unknown) => {
       signal?.throwIfAborted()
-      if (deadline.aborted) throw new ProductTransientModelError('TIMEOUT', { cause: error })
       if (error instanceof LlmError && (error.code === 'TRANSPORT' || error.code === 'TIMEOUT')) {
         throw new ProductTransientModelError(error.code, { cause: error })
       }
@@ -964,9 +966,9 @@ Promise<readonly ProductPassageSelection[]> {
       ? event.data.status === 'completed' ? event.data.text : null : undefined,
     event => event.type === 'product/passage-model-request-v1' && event.data.candidatePageId === page.candidatePageId
       && (event.data.planId === undefined || event.data.planId === page.planId))
-  if (replay !== undefined) return parsePassageSelections(replay, maximumSelections)
+  if (replay !== undefined) return parsePassageSelections(replay)
   const messages: RequestUserInput[] = [{ role: 'user', content: [{ type: 'text', text: user }] }]
-  const outputTokens = prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS
+  const outputTokens = prepared.config.maxTokens ?? DEFAULT_MODEL_OUTPUT_RESERVE_TOKENS
   if (prepared.context !== undefined
     && estimateContent([{ type: 'text', text: system }]) + ROLE_OVERHEAD
       + estimateContent([{ type: 'text', text: user }]) + ROLE_OVERHEAD
@@ -979,16 +981,20 @@ Promise<readonly ProductPassageSelection[]> {
   await persist()
   const assembler = new BlockAssembler()
   let output = ''
+  const startedAt = performance.now()
+  let firstChunkAtMs: number | undefined
+  let firstTextAtMs: number | undefined
+  let chunkCount = 0
   try {
     operationSignal.throwIfAborted()
     for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
       messages, sessionId: session.id, traceId, signal: operationSignal }))) {
       operationSignal.throwIfAborted()
+      firstChunkAtMs ??= Math.round(performance.now() - startedAt)
+      chunkCount++
       assembler.push(chunk)
       output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-      if (Buffer.byteLength(output, 'utf8') > MAX_EVIDENCE_OUTPUT_BYTES) {
-        throw new RangeError('Passage response exceeds the output limit')
-      }
+      if (output.length > 0) firstTextAtMs ??= Math.round(performance.now() - startedAt)
     }
     const finish = assembler.finish
     if (finish.kind === 'error') {
@@ -999,22 +1005,22 @@ Promise<readonly ProductPassageSelection[]> {
     }
     if (finish.kind === 'aborted') throw new Error('Passage model request was aborted')
     if (finish.kind !== 'stop') throw new Error(`Evidence model ended with ${finish.kind}`)
-    const selections = parsePassageSelections(output, maximumSelections)
+    const selections = parsePassageSelections(output)
     session.append('product/passage-model-result-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
-      status: 'completed', text: output, error: null })
+      status: 'completed', text: output, error: null,
+      timing: modelAttemptTiming(startedAt, firstChunkAtMs, firstTextAtMs, chunkCount, output.length) })
     await persist()
     return selections
   } catch (error) {
-    const failure = deadline.aborted && !signal?.aborted && !(error instanceof ProductTransientModelError)
-      ? new ProductTransientModelError('TIMEOUT', { cause: error }) : error
     session.append('product/passage-model-result-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
-      status: 'failed', text: output, error: failure instanceof Error ? failure.message : String(failure) })
+      status: 'failed', text: output, error: error instanceof Error ? error.message : String(error),
+      timing: modelAttemptTiming(startedAt, firstChunkAtMs, firstTextAtMs, chunkCount, output.length) })
     await persist()
-    if (recoverableEvidenceModelFailure(failure)) {
-      throw new RecoverableProductEvidenceOutputError(failure instanceof Error ? failure.message : String(failure),
-        { cause: failure })
+    if (recoverableEvidenceModelFailure(error)) {
+      throw new RecoverableProductEvidenceOutputError(error instanceof Error ? error.message : String(error),
+        { cause: error })
     }
-    throw failure
+    throw error
   }
 }
 
@@ -1023,7 +1029,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     readonly questionId: ProductQuestionId
     readonly text: string
   }[], persist: () => Promise<void>, events: readonly SessionEvent[],
-  signal?: AbortSignal, fragment?: ProductPageFragment, maximumDrafts = Number.MAX_SAFE_INTEGER): Promise<readonly ProductEvidenceDraft[]> {
+  signal?: AbortSignal, fragment?: ProductPageFragment): Promise<readonly ProductEvidenceDraft[]> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product evidence model service is unavailable')
   const deadline = new AbortController().signal
@@ -1039,17 +1045,16 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     }
     throw error
   })
+  const outputTokens = prepared.config.maxTokens ?? DEFAULT_MODEL_OUTPUT_RESERVE_TOKENS
   const fits = fitsProductModelInput(system, user, prepared.context?.contextWindow,
-    prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)
+    outputTokens)
   if (!fits) {
     const middle = productTextMiddle(text)
     const drafts: ProductEvidenceDraft[] = []
     for (const [start, end] of [[0, middle], [middle, text.length]] as const) {
-      const remaining = maximumDrafts - drafts.length
-      if (remaining <= 0) break
       const part = text.slice(start, end)
       const children = await proposeEvidence(ctx, session, config, page, part, questions, persist, events,
-        operationSignal, { start: (fragment?.start ?? 0) + start, end: (fragment?.start ?? 0) + end, text: part }, remaining)
+        operationSignal, { start: (fragment?.start ?? 0) + start, end: (fragment?.start ?? 0) + end, text: part })
       for (const draft of children) {
         const hint = draft.startHint ?? part.indexOf(draft.verbatimExcerpt)
         if (hint >= 0) drafts.push({ ...draft, startHint: start + hint })
@@ -1064,13 +1069,8 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     event => event.type === 'product/model-result-v1' && event.data.candidatePageId === page.candidatePageId
       ? event.data.status === 'completed' ? event.data.text : null : undefined,
     event => event.type === 'product/model-request-v1' && event.data.candidatePageId === page.candidatePageId)
-  if (replay !== undefined) {
-    const drafts = parseDrafts(replay)
-    if (drafts.length > maximumDrafts) throw new RangeError('Fragment exceeded its evidence draft allowance')
-    return drafts
-  }
+  if (replay !== undefined) return parseDrafts(replay)
   const messages: RequestUserInput[] = [{ role: 'user', content: [{ type: 'text', text: user }] }]
-  const outputTokens = prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS
   if (prepared.context !== undefined
     && estimateContent([{ type: 'text', text: system }]) + ROLE_OVERHEAD
       + estimateContent([{ type: 'text', text: user }]) + ROLE_OVERHEAD
@@ -1102,9 +1102,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     }
     if (finish.kind === 'aborted') throw new Error('Evidence model request was aborted')
     if (finish.kind !== 'stop') throw new Error(`Evidence model ended with ${finish.kind}`)
-    const drafts = parseDrafts(output)
-    if (drafts.length > maximumDrafts) throw new RangeError('Fragment exceeded its evidence draft allowance')
-    return drafts
+    return parseDrafts(output)
   }
   let drafts: readonly ProductEvidenceDraft[]
   try { drafts = await awaitProductModel(collect, operationSignal) }
@@ -1176,12 +1174,19 @@ async function reviewEvidence(ctx: Context, session: Session, config: LlmCallCon
   await persist()
   const assembler = new BlockAssembler()
   let output = ''
+  const startedAt = performance.now()
+  let firstChunkAtMs: number | undefined
+  let firstTextAtMs: number | undefined
+  let chunkCount = 0
   try {
     for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
       messages, sessionId: session.id, traceId, signal: operationSignal }))) {
       operationSignal.throwIfAborted()
+      firstChunkAtMs ??= Math.round(performance.now() - startedAt)
+      chunkCount++
       assembler.push(chunk)
       output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
+      if (output.length > 0) firstTextAtMs ??= Math.round(performance.now() - startedAt)
     }
     const finish = assembler.finish
     if (finish.kind === 'error') {
@@ -1199,7 +1204,8 @@ async function reviewEvidence(ctx: Context, session: Session, config: LlmCallCon
     }
     const reviews = parseReviews(output)
     session.append('product/claim-review-result-v1', { planId: plan.planId,
-      status: 'completed', text: output, error: null })
+      status: 'completed', text: output, error: null,
+      timing: modelAttemptTiming(startedAt, firstChunkAtMs, firstTextAtMs, chunkCount, output.length, deadline) })
     await persist()
     return reviews
   } catch (error) {
@@ -1208,7 +1214,8 @@ async function reviewEvidence(ctx: Context, session: Session, config: LlmCallCon
       : error instanceof LlmError && (error.code === 'TRANSPORT' || error.code === 'TIMEOUT'
         || error.code === 'SERVER') ? new ProductTransientReviewError(error.code) : error
     session.append('product/claim-review-result-v1', { planId: plan.planId,
-      status: 'failed', text: output, error: failure instanceof Error ? failure.message : String(failure) })
+      status: 'failed', text: output, error: failure instanceof Error ? failure.message : String(failure),
+      timing: modelAttemptTiming(startedAt, firstChunkAtMs, firstTextAtMs, chunkCount, output.length, deadline) })
     await persist()
     if (recoverableReviewModelFailure(failure)) {
       throw new RecoverableProductReviewOutputError(failure instanceof Error ? failure.message : String(failure),
@@ -1254,7 +1261,7 @@ async function compareClaimSources(ctx: Context, session: Session, config: LlmCa
     const prepared = await llm.prepareCall(config,
       operationSignal)
     if (!fitsProductModelInput(CROSS_CHECK_SYSTEM, user, prepared.context?.contextWindow,
-      prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
+      prepared.config.maxTokens ?? DEFAULT_MODEL_OUTPUT_RESERVE_TOKENS)) {
       if (batch.length < 2) throw new RangeError('Product comparison exceeds the configured model context')
       const middle = Math.ceil(batch.length / 2)
       const left = await compareClaimSources(ctx, session, config, plan, claim, questionId,
@@ -1388,26 +1395,18 @@ function parseReviews(text: string): readonly ProductSemanticReview[] {
 }
 
 /**
- * Parse model proposals while preserving exact fragment-relative hints for repeated excerpts.
- * @param text - Complete JSON response from the evidence model.
- * @returns Bounded proposals for source verification.
- */
-/**
- * Parse bounded model-selected source IDs before verifying them against saved text.
+ * Parse model-selected source IDs before verifying them against saved text.
  * @param text - Complete model JSON response.
- * @param maximumSelections - Approved number of proposals in this request.
  * @returns Untrusted selections for source-bound verification.
  */
-export function parsePassageSelections(text: string, maximumSelections: number): readonly ProductPassageSelection[] {
+export function parsePassageSelections(text: string): readonly ProductPassageSelection[] {
   const value: unknown = JSON.parse(text)
-  if (!Array.isArray(value) || value.length > maximumSelections || maximumSelections < 0
-    || maximumSelections > 8) throw new RangeError('Passage model exceeded its selection allowance')
+  if (!Array.isArray(value)) throw new RangeError('Passage model must return an array')
   return value.map((item: unknown): ProductPassageSelection => {
     if (!record(item) || !Array.isArray(item.passageIds) || item.passageIds.length < 1
       || item.passageIds.length > 3
       || !item.passageIds.every(id => typeof id === 'string' && id.length > 0 && id.length <= 100)
       || typeof item.sourcedStatement !== 'string' || !item.sourcedStatement.trim()
-      || item.sourcedStatement.length > 600
       || !Array.isArray(item.questionIds) || item.questionIds.length === 0
       || !item.questionIds.every(id => typeof id === 'string' && id.length <= 200)) {
       throw new RangeError('Passage model returned an invalid selection')
@@ -1417,6 +1416,7 @@ export function parsePassageSelections(text: string, maximumSelections: number):
   })
 }
 
+/** Parse model proposals while preserving exact fragment-relative hints for repeated excerpts. */
 export function parseDrafts(text: string): readonly ProductEvidenceDraft[] {
   const value: unknown = JSON.parse(text)
   if (!Array.isArray(value)) throw new RangeError('Evidence model must return an array')
@@ -1442,7 +1442,7 @@ function recoverableEvidenceModelFailure(error: unknown): boolean {
   if (!(error instanceof Error)) return false
   return /^Evidence model ended with /u.test(error.message)
     || error instanceof RangeError
-      && /^(Evidence response exceeds|Evidence model |Fragment exceeded|Passage model |Passage response exceeds)/u
+      && /^(Evidence model |Passage model )/u
         .test(error.message)
 }
 
@@ -1465,6 +1465,10 @@ function recoverableComparisonModelFailure(error: unknown): boolean {
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isLocalTimeout(error: unknown): boolean {
+  return error instanceof Error && error.name === 'TimeoutError'
 }
 
 /** Reserve the configured response budget and serialization overhead before dispatch. */

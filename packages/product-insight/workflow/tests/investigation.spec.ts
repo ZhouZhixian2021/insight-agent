@@ -57,9 +57,64 @@ describe('approved product investigation', () => {
   it('validates passage selections before resolving source positions', () => {
     const valid = { passageIds: ['0:10', '30:40'], sourcedStatement: 'Price applies in the US.',
       questionIds: [String(questionId)] }
-    expect(parsePassageSelections(JSON.stringify([valid]), 2)).toEqual([valid])
-    expect(() => parsePassageSelections(JSON.stringify([{ ...valid, passageIds: [] }]), 2)).toThrow()
-    expect(() => parsePassageSelections(JSON.stringify([{ ...valid, sourcedStatement: '' }]), 2)).toThrow()
+    expect(parsePassageSelections(JSON.stringify([valid]))).toEqual([valid])
+    expect(parsePassageSelections(JSON.stringify(Array.from({ length: 9 }, (_, index) => ({ ...valid,
+      sourcedStatement: `Statement ${index}` }))))).toHaveLength(9)
+    expect(parsePassageSelections(JSON.stringify([{ ...valid, sourcedStatement: 'Detail '.repeat(100) }])))
+      .toHaveLength(1)
+    expect(() => parsePassageSelections(JSON.stringify([{ ...valid, passageIds: [] }]))).toThrow()
+    expect(() => parsePassageSelections(JSON.stringify([{ ...valid, sourcedStatement: '' }]))).toThrow()
+  })
+
+  it('keeps more than eight first-round passage selections from one page', async () => {
+    const body = 'Example supports export.'
+    const proposed = vi.fn<NonNullable<ProductInvestigationAdapters['proposePassageEvidence']>>(async (
+      _page, _text, passages, question) => question.questionId === questionId
+      ? Array.from({ length: 9 }, (_, index) => ({ passageIds: [passages[0]!.id],
+        sourcedStatement: `Example supports export option ${index + 1}.`, questionIds: [question.questionId] })) : [])
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'product-passage-model', version: '2' } }, {
+      ...adapters,
+      web: { ...adapters.web, fetch: async request => ({ url: request.url, statusCode: 200,
+        truncated: false, body: { kind: 'text', content: body } }) },
+      proposePassageEvidence: proposed,
+    })
+    expect(proposed).toHaveBeenCalledTimes(2)
+    expect(result.evidence).toHaveLength(9)
+  })
+
+  it('checks both halves when a passage selection must be split', async () => {
+    const body = 'Example supports export.\n\nExample costs $10.'
+    const sizes: number[] = []
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'product-passage-model', version: '2' } }, { ...adapters,
+      web: { ...adapters.web, fetch: async request => ({ url: request.url, statusCode: 200,
+        truncated: false, body: { kind: 'text', content: body } }) },
+      passageRetriever: { retrieve: async passages => passages.slice(0, 2) },
+      proposePassageEvidence: async (_page, _text, passages, question) => {
+        sizes.push(passages.length)
+        if (passages.length > 1) throw new RangeError('Passage model returned an incomplete selection')
+        return [{ passageIds: [passages[0]!.id], sourcedStatement: passages[0]!.text.trim(),
+          questionIds: [question.questionId] }]
+      },
+      recoverEvidenceFailure: error => error instanceof RangeError,
+    })
+    expect(sizes).toEqual([2, 1, 1, 2, 1, 1])
+    expect(result.evidence).toHaveLength(4)
+    expect(result.run.failures.filter(failure => failure.stage === 'extraction')).toHaveLength(0)
+  })
+
+  it('keeps more than eight first-round legacy excerpts from one page', async () => {
+    const excerpts = Array.from({ length: 9 }, (_, index) => `Example export option ${index + 1}.`)
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'product-model', version: '1' } }, {
+      ...adapters,
+      web: { ...adapters.web, fetch: async request => ({ url: request.url, statusCode: 200,
+        truncated: false, body: { kind: 'text', content: excerpts.join('\n') } }) },
+      proposeEvidence: async () => excerpts.map(verbatimExcerpt => ({ verbatimExcerpt,
+        sourcedStatement: verbatimExcerpt, questionIds: [questionId] })),
+    })
+    expect(result.evidence).toHaveLength(9)
   })
 
   it('resumes question-targeted extraction with two exact excerpts for one condition', async () => {
@@ -279,6 +334,15 @@ describe('approved product investigation', () => {
       ? { ...snapshot, declaredPublisher: 'Official Newsroom (China)' } : snapshot)
     expect(evaluateProductReport({ ...reportInput, pages: { ...result.pages,
       snapshots: { ...result.pages.snapshots, items: officialSnapshots } } }).status).toBe('ready')
+    const withoutPublisherMetadata = result.pages.snapshots.items.map((snapshot) => {
+      if (snapshot.status !== 'available' || !result.discovery.candidates.items.some(page =>
+        page.candidatePageId === snapshot.candidatePageId && page.url.includes('review.test'))) return snapshot
+      const { declaredPublisher, ...without } = snapshot
+      expect(declaredPublisher).toBe('Review Test')
+      return without
+    })
+    expect(evaluateProductReport({ ...reportInput, pages: { ...result.pages,
+      snapshots: { ...result.pages.snapshots, items: withoutPublisherMetadata } } }).status).toBe('ready')
     for (const changed of [
       { declaredPublisher: 'Another Publisher' }, { sourceRegionLabel: 'EU' },
       { productVersionLabel: 'v2' }, { sourceUpdatedAt: '2026-09-01T00:00:00.000Z' },
@@ -436,8 +500,8 @@ describe('approved product investigation', () => {
     expect(proposeEvidence.mock.calls[2]?.[1]).toBe(body.slice(10_501))
     expect(versionTwo.evidence.map(item => item.locator)).toEqual([...result.evidence].reverse().map(item => item.locator))
     const legacy = await runProductInvestigation({ ...input, plan }, resumable)
-    expect(legacy.pages.snapshots.status).toBe('failed')
-    expect(proposeEvidence).toHaveBeenCalledTimes(3)
+    expect(legacy.pages.snapshots.status).toBe('success')
+    expect(proposeEvidence).toHaveBeenCalledTimes(5)
     const partial = await runProductInvestigation(input, { ...resumable,
       proposeEvidence: async (page, text, questions) => {
         if (text.includes('costs $10')) throw new Error('Second fragment unavailable')
@@ -501,7 +565,7 @@ describe('approved product investigation', () => {
       ...firstCheckpoint, schemaVersion: 1 } }, resumable)).rejects.toThrow(/invalid stage cursor/u)
   })
 
-  it('prioritizes questions without excerpts and preserves the order and allowances across source revalidation', async () => {
+  it('prioritizes questions without excerpts and preserves the order across source revalidation', async () => {
     const official = 'https://example.com/features'
     const review = 'https://review.test/example'
     const feature = 'Example supports export.'
@@ -534,19 +598,18 @@ describe('approved product investigation', () => {
     expect(reconciled.checkpoint).toMatchObject({ nextIndex: 0, fragmentIndex: 1, fragmentOrder: saved.fragmentOrder })
     const result = await runProductInvestigation({ ...input, checkpoint: reconciled.checkpoint, sourceRevalidation: fresh },
       { ...setup, saveCheckpoint: async () => {} })
-    expect(proposeEvidence.mock.calls.filter(call => call[0].url === review).map(call => [call[4]?.start, call[5]]))
-      .toEqual([[42_004, 1], [0, 2], [10_501, 2], [21_002, 2], [31_503, 1]])
+    expect(proposeEvidence.mock.calls.filter(call => call[0].url === review).map(call => call[4]?.start))
+      .toEqual([42_004, 0, 10_501, 21_002, 31_503])
     expect(result.evidence.find(item => item.verbatimExcerpt === price))
       .toEqual(saved.evidence.find(item => item.verbatimExcerpt === price))
   })
 
   it('splits a failed evidence-model window once and keeps successful child evidence', async () => {
     const body = `Example supports export.${'x'.repeat(9_500)}Example costs $10.`
-    const calls: { readonly length: number; readonly allowance?: number; readonly start?: number }[] = []
+    const calls: { readonly length: number; readonly start?: number }[] = []
     const proposeEvidence: ProductInvestigationAdapters['proposeEvidence'] = async (
-      _page, text, questions, _signal, fragment, allowance) => {
-      calls.push({ length: text.length, ...allowance === undefined ? {} : { allowance },
-        ...fragment === undefined ? {} : { start: fragment.start } })
+      _page, text, questions, _signal, fragment) => {
+      calls.push({ length: text.length, ...fragment === undefined ? {} : { start: fragment.start } })
       if (text.length > 7_000) throw new SyntaxError('Evidence response was malformed')
       return [
         ...text.includes('Example supports export.')
@@ -564,7 +627,7 @@ describe('approved product investigation', () => {
     const input = { product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }
     const result = await runProductInvestigation(input, recovery)
-    expect(calls.map(call => call.allowance)).toEqual([8, 4, 4])
+    expect(calls).toHaveLength(3)
     expect(calls[1]?.length).toBeLessThan(calls[0]!.length)
     expect(calls[2]?.length).toBeLessThan(calls[0]!.length)
     expect(calls[2]?.start).toBeGreaterThan(0)
@@ -573,9 +636,9 @@ describe('approved product investigation', () => {
     ])
     expect(result.run.failures).toHaveLength(0)
     const partial = await runProductInvestigation(input, { ...recovery,
-      proposeEvidence: async (page, text, questions, signal, fragment, allowance) => {
+      proposeEvidence: async (page, text, questions, signal, fragment) => {
         if (text.length <= 7_000 && text.includes('costs $10')) throw new Error('Recovery child unavailable')
-        return proposeEvidence(page, text, questions, signal, fragment, allowance)
+        return proposeEvidence(page, text, questions, signal, fragment)
       } })
     expect(partial.evidence).toHaveLength(1)
     expect(partial.run.failures[0]?.stage).toBe('extraction')
@@ -607,7 +670,7 @@ describe('approved product investigation', () => {
     const temporary = new Error('Transient model failure')
     const seen = new Set<number>()
     const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (
-      _page, _text, _questions, _signal, fragment, _allowance) => {
+      _page, _text, _questions, _signal, fragment) => {
       if (_text.length === 12_000 && (fragment?.start ?? 0) < 31_503) throw new SyntaxError('Invalid evidence output')
       if (fragment !== undefined && fragment.start >= 31_503 && !seen.has(fragment.start)) {
         seen.add(fragment.start)
@@ -842,6 +905,29 @@ describe('approved product investigation', () => {
     expect(itemSizes).toEqual([4, 1, 1, 1, 1])
     expect(salvaged.reviews).toHaveLength(4)
     expect(salvaged.run.failures.filter(failure => failure.stage === 'analysis')).toHaveLength(0)
+  })
+
+  it('commits each reviewed item before starting the next singleton batch', async () => {
+    const statements = ['Example supports export.', 'Example supports import.',
+      'Example costs $10.', 'Example offers a trial.']
+    const sizes: number[] = []
+    const checkpoints: number[] = []
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters, reviewBatchSize: 1,
+      web: { ...adapters.web, fetch: async request => ({ url: request.url, statusCode: 200,
+        truncated: false, body: { kind: 'text', content: statements.join(' ') } }) },
+      proposeEvidence: async (_page, _text, questions) => statements.map(statement => ({
+        verbatimExcerpt: statement, sourcedStatement: statement, questionIds: [questions[0]!.questionId] })),
+      reviewEvidence: async (items, questions) => {
+        sizes.push(items.length)
+        return adapters.reviewEvidence(items, questions)
+      },
+      saveCheckpoint: async (checkpoint) => {
+        if (checkpoint.stage === 'claims') checkpoints.push(checkpoint.nextIndex)
+      } })
+    expect(sizes).toEqual([1, 1, 1, 1])
+    expect(checkpoints).toEqual([1, 2, 3, 4])
+    expect(result.reviews).toHaveLength(4)
   })
 
   it('retains completed cross-source batches and recovers one failed batch in two halves', async () => {
@@ -1166,6 +1252,8 @@ describe('product plan approval handoff', () => {
     expect(first.plan.approval).toMatchObject({ status: 'approved', approvedPlanVersion: 1 })
     expect(first.plan.questions).toHaveLength(2)
     expect(first.plan.limits?.maximumPageCharacters).toBeUndefined()
+    expect(productPlanFromApproval({ ...input, markdown: markdown({ ...payload,
+      limits: { maximumCandidatePages: 30 } }) }).plan.limits).toEqual({ maximumCandidatePages: 30 })
     expect(first.plan.limits?.maximumGapSearches).toBeUndefined()
     expect(productPlanFromApproval({ ...input, markdown: markdown({ ...payload,
       limits: { ...payload.limits, maximumPageCharacters: 48_000 } }) }).plan.limits?.maximumPageCharacters)
@@ -1188,7 +1276,7 @@ describe('product plan approval handoff', () => {
       questions: ['Only one?'] }))).toThrow(/two to five/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload, limits: undefined }))).toThrow(/limits/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
-      limits: { maximumCandidatePages: 13, maximumElapsedMinutes: 10 } }))).toThrow(/at most 12/u)
+      limits: { maximumCandidatePages: 31 } }))).toThrow(/at most 30/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
       limits: { ...payload.limits, maximumPageCharacters: -1 } }))).toThrow(/positive/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...payload,
