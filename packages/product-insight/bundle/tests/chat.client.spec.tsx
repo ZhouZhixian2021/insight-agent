@@ -20,6 +20,16 @@ const labels: Record<string, string> = { draft: '调查草稿', pages: '来源�
   htmlFootnotes: '脚注', title: '产品洞察调查', noReport: '无报告' }
 const t = ((key: string) => labels[key] ?? key) as never
 
+it('shows four stages without an independent corroboration step for new investigations', () => {
+  render(<ProductRunCard t={t} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
+    stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,
+    failures: 0, elapsedMilliseconds: 1, reasons: [] } } as never} />)
+  expect(screen.getByText('语义审核')).toBeTruthy()
+  expect(screen.getByText('报告生成')).toBeTruthy()
+  expect(screen.queryByText('独立佐证')).toBeNull()
+  expect(screen.queryByText('跨来源核验')).toBeNull()
+})
+
 it('projects approved product stages and the saved report into one Chat card', () => {
   const events = [
     { type: 'turn/start', data: { turn: 1 } },
@@ -112,4 +122,18 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect(create).toHaveBeenCalledOnce()
   expect((click.mock.instances[0] as HTMLAnchorElement)?.download).toBe('product-insight-report.html')
   vi.runAllTimers()
+})
+
+
+it('renders sentence citations as superscript links in exported HTML', () => {
+  const run = { callId: 'cite', title: '报告', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0, failures: 0,
+    elapsedMilliseconds: 10, deliveryStatus: 'final', reasons: [],
+    report: '# 报告\n\n## 综合回答\n\n支持导出。[^product-source-1]费用尚未确认。\n\n[^product-source-1]: [查看来源原文](https://example.com/export)\n\n## 证据附录\n\n已保存原文。' } as const
+  const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
+  const citation = doc.querySelector('a[href="https://example.com/export"]')!
+  expect(citation).not.toBeNull()
+  expect(citation.textContent).toBe('¹')
+  expect(citation.parentElement?.textContent).toContain('支持导出。¹费用尚未确认。')
+  expect(doc.body.textContent).not.toContain('[^product-source-1]')
 })

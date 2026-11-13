@@ -34,6 +34,6 @@ export const PRODUCT_WRITING_INSTRUCTION = 'Write evidence-led Simplified Chines
   + 'Do not invent features, measurements, prices or recommendations. Missing evidence means a gap in this investigation. '
   + 'Use the supplied limitations to explain partial answers. A single source is not independent confirmation. '
   + 'Write useful prose even when delivery checks are incomplete; never claim missing verification has passed. '
-  + 'Return only a JSON array with one object per question: questionId, text, and evidenceIds containing all supplied IDs for that question. '
-  + 'Use plain text, with paragraph breaks when useful, without URLs or markup. Allocate the available output budget '
+  + 'Return only a JSON array with one object per question: questionId, text, and evidenceIds containing only the distinct IDs actually cited in text. '
+  + 'Place [[cite:EVIDENCE_ID]] immediately after each factual sentence or clause supported by that evidence. Use multiple markers when needed. Never collect all citations at the end of an answer. Use only IDs supplied for that question; do not force unused evidence into the answer. Use plain text with paragraph breaks, no URLs or markup other than these citation markers. Allocate the available output budget '
   + 'across all questions; finish the complete JSON rather than padding or truncating an answer.'

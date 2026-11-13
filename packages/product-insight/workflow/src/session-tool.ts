@@ -23,7 +23,7 @@ import { latestProductBackgroundRun, type ProductBackgroundRunState } from './ba
 import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, ProductInvestigationResult,
   runApprovedProductInvestigation } from './index.ts'
 import type { ProductSemanticReview } from './claim-review.ts'
-import { checkCrossSourceJudgments, comparisonEvidence, type ProductCrossSourceJudgment,
+import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
 import { type ProductSynthesisInput } from './report.ts'
 import { PRODUCT_PASSAGE_READING_INSTRUCTION, PRODUCT_READING_INSTRUCTION,
@@ -614,11 +614,11 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     activeCheckpoint = decision.checkpoint
     await saveCheckpoint(activeCheckpoint)
     sourceRevalidation = fresh
-    if (!decision.unchanged) onProgress('部分来源发生变化，正在重新核对相关证据和结论')
+    if (!decision.unchanged) onProgress('部分来源变化或无法复核，将依据已保存快照继续并披露限制')
   }
   if (recovered === undefined) onProgress('正在搜索和读取产品资料')
   else if (sourceRevalidation !== undefined) onProgress(
-    `来源未变化，正在从${({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
+    `正在依据保存快照从${({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
   const usePassages = activeCheckpoint === undefined || activeCheckpoint.schemaVersion === 4
   const result = await runInvestigation({ sessionId: key, events,
     maxResultsPerQuery: 60, extractionMethod: usePassages
@@ -858,13 +858,20 @@ export function parseProductSynthesis(text: string, input: ProductSynthesisInput
       throw new ProductSynthesisOutputError('invalid_output')
     }
     const question = input.questions.find(question => question.questionId === item.questionId)
-    // A stray identifier must not discard prose whose remaining citations are all real.
-    const cited = new Set(item.evidenceIds
-      .filter((id): id is string => typeof id === 'string'
-        && question?.evidence.some(reference => reference.evidenceId === id) === true))
-    if (!question || paragraphs.has(item.questionId)
-      || cited.size !== question.evidence.length
-      || question.evidence.some(reference => !cited.has(reference.evidenceId))) {
+    const listed = new Set(item.evidenceIds)
+    if (!question || paragraphs.has(item.questionId) || listed.size !== item.evidenceIds.length
+      || item.evidenceIds.some(id => typeof id !== 'string')) {
+      throw new ProductSynthesisOutputError('invalid_output')
+    }
+    // Ignore unused stray metadata IDs; a forged marker in the prose still fails below.
+    const ids = new Set(item.evidenceIds.filter(id => question.evidence.some(reference => reference.evidenceId === id)))
+    if (ids.size === 0) {
+      throw new ProductSynthesisOutputError('invalid_output')
+    }
+    const markers = [...item.text.matchAll(/\[\[cite:([^\]\s]+)\]\]/gu)]
+    const cited = new Set(markers.map(match => match[1]))
+    if (cited.size !== ids.size || [...cited].some(id => !ids.has(id))
+      || item.text.replace(/\[\[cite:([^\]\s]+)\]\]/gu, '').includes('[[cite:')) {
       throw new ProductSynthesisOutputError('invalid_output')
     }
     paragraphs.set(item.questionId, item.text.trim().replace(/\r\n?/gu, '\n'))
@@ -873,67 +880,23 @@ export function parseProductSynthesis(text: string, input: ProductSynthesisInput
 }
 
 /**
- * Reuse a checkpoint only when every selected page keeps its content and declared scope.
+ * Retain the saved source snapshots and report whether fresh observations still match.
  * @param saved - Last complete checkpoint from the approved plan.
  * @param fresh - Newly fetched observations of its selected pages.
  * @param elapsedMilliseconds - Accumulated active time including this fetch.
- * @returns The retained or reset checkpoint and whether its evidence remains usable.
+ * @returns The retained checkpoint and whether every selected source was confirmed unchanged.
  */
 export function reconcileProductSourceRevalidation(saved: ProductInvestigationCheckpoint,
   fresh: ProductPageFetchResult, elapsedMilliseconds: number): {
   readonly checkpoint: ProductInvestigationCheckpoint
   readonly unchanged: boolean
 } {
-  if (fresh.cancelled || fresh.snapshots.failures.length > 0) {
-    throw new Error('Product source revalidation failed; saved evidence was not reused')
-  }
-  const previous = new Map(saved.pages.snapshots.items.map(item => [item.candidatePageId, item]))
-  const checked = new Map(fresh.snapshots.items.map(item => [item.candidatePageId, item]))
-  const selected = saved.discovery.candidates.items.filter(page => page.screening.status === 'selected')
-  if (checked.size !== selected.length || fresh.snapshots.items.length !== checked.size
-    || selected.some(page => checked.get(page.candidatePageId)?.status !== 'available')) {
-    throw new Error('Product source revalidation did not cover every selected page')
-  }
-  const reusable = new Set(selected.map(page => page.candidatePageId)
-    .filter(id => sameProductPageFacts(previous.get(id), checked.get(id))))
-  if (reusable.size === selected.length) return { checkpoint: { ...saved, elapsedMilliseconds }, unchanged: true }
-
-  const oldSnapshots = saved.pages.snapshots.items
-  const completedCount = saved.stage === 'pages' ? 0 : saved.stage === 'evidence' ? saved.nextIndex : oldSnapshots.length
-  const complete = oldSnapshots.slice(0, completedCount).filter(snapshot => reusable.has(snapshot.candidatePageId))
-  const partial = saved.fragmentIndex === undefined && saved.passageQuestionIndex === undefined
-    ? undefined : oldSnapshots[saved.nextIndex]
-  const retainedPartial = partial !== undefined && reusable.has(partial.candidatePageId) ? partial : undefined
-  const fragmentIndex = retainedPartial === undefined ? undefined : saved.fragmentIndex
-  const passageQuestionIndex = retainedPartial === undefined ? undefined : saved.passageQuestionIndex
-  const retainedSnapshots = [...complete, ...retainedPartial === undefined ? [] : [retainedPartial]]
-  const retainedPages = new Set(retainedSnapshots.map(snapshot => snapshot.candidatePageId))
-  const snapshots = [...retainedSnapshots, ...fresh.snapshots.items.filter(snapshot => !retainedPages.has(snapshot.candidatePageId))]
-  const retainedEvidence = saved.evidence.filter(item => retainedPages.has(item.candidatePageId))
-  const retainedEvidenceIds = new Set(retainedEvidence.map(item => item.evidenceId))
-  const reviews = saved.reviews.filter(review => retainedEvidenceIds.has(review.evidenceId))
-  const reviewedIds = new Set(reviews.map(review => review.evidenceId))
-  const evidence = [...retainedEvidence.filter(item => reviewedIds.has(item.evidenceId)),
-    ...retainedEvidence.filter(item => !reviewedIds.has(item.evidenceId))]
-  const claims = saved.claims.filter(claim => claim.evidenceLinks.every(link => reviewedIds.has(link.evidenceId)))
-  const savedComparisons = new Map([...saved.priorVerifications ?? [], ...saved.verifications].map(item => [item.questionId, item]))
-  const priorVerifications = [...savedComparisons.values()].flatMap((item) => {
-    const claim = claims.find(candidate => candidate.claimId === item.claimId)
-    if (!item.complete || claim === undefined) return []
-    const candidates = new Set(comparisonEvidence(item.questionId, claim, claims, evidence).map(candidate => candidate.evidenceId))
-    return [{ ...item, judgments: item.judgments.filter(judgment => candidates.has(judgment.evidenceId)) }]
-  })
-  const { fragmentIndex: _oldFragment, fragmentOrder, passageQuestionIndex: _oldQuestion,
-    priorVerifications: _oldComparisons, ...resettable } = saved
-  return { unchanged: false, checkpoint: { ...resettable,
-    stage: complete.length > 0 || retainedPartial !== undefined ? 'evidence' : 'pages', nextIndex: complete.length,
-    ...fragmentIndex === undefined ? {} : { fragmentIndex, ...fragmentOrder === undefined ? {} : { fragmentOrder } },
-    ...passageQuestionIndex === undefined ? {} : { passageQuestionIndex },
-    elapsedMilliseconds,
-    pages: { ...fresh, snapshots: { ...fresh.snapshots, items: snapshots } }, evidence, reviews, claims, verifications: [],
-    ...priorVerifications.length === 0 ? {} : { priorVerifications },
-    failures: [...saved.discovery.candidates.failures, ...saved.failures.filter(failure => failure.stage === 'extraction'
-      && failure.candidatePageId !== undefined && retainedPages.has(failure.candidatePageId))] } }
+  if (fresh.cancelled) throw new Error('Product source revalidation was interrupted')
+  const unchanged = fresh.snapshots.failures.length === 0
+    && saved.discovery.candidates.items.filter(page => page.screening.status === 'selected').every(page =>
+      sameProductPageFacts(saved.pages.snapshots.items.find(item => item.candidatePageId === page.candidatePageId),
+        fresh.snapshots.items.find(item => item.candidatePageId === page.candidatePageId)))
+  return { checkpoint: { ...saved, elapsedMilliseconds }, unchanged }
 }
 
 async function proposePassageEvidence(ctx: Context, session: Session, config: LlmCallConfig,

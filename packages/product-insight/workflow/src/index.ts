@@ -10,9 +10,9 @@ import { createEvidenceGapId, createProductBatchResult, createProductFailureId, 
 } from '@deepseek-ai/dsh-product-insight-model'
 import { discoverCandidatePages, extractProductPageEvidence, extractProductPassageEvidence, fetchProductPages,
   hasProductCandidateCapacity, indexProductPagePassages, keywordProductPassageRetriever,
-  isProductGapSearch, productCorroborationDomains,
+  isProductGapSearch,
   rankProductPageFragments, rankProductPagePassages,
-  resolveProductPageCharacterLimit, sameProductPageFacts, selectProductGapFragment, splitProductPageText,
+  resolveProductPageCharacterLimit, selectProductGapFragment, splitProductPageText,
   splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS,
   type ProductDiscoveryResult, type ProductEvidenceDraft, type ProductPageFetchAdapters, type ProductPageFetchResult,
@@ -22,7 +22,7 @@ import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval } from './approved-plan.ts'
 import { adoptEvidenceQuestions, claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
-import { assessProductCorroboration, assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
+import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
   type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
@@ -146,14 +146,14 @@ export interface ProductInvestigationAdapters {
   /** Retry a transient review, review items individually after output exhaustion, or split other incomplete output. */
   readonly recoverReviewFailure?: (error: unknown) => boolean | 'retry' | 'individual'
   readonly saveClaims: (claims: readonly ProductClaim[]) => Promise<void>
-  /** Retry transient transport failures or split incomplete output into smaller comparison batches. */
+  /** Legacy adapter hook; new investigations do not dispatch independent comparisons. */
   readonly recoverComparisonFailure?: (error: unknown) => boolean | 'retry'
-  /** Compare at most eight candidates; split children retain their original batch index. */
+  /** Legacy comparison adapter retained for callers; not invoked by the investigation runner. */
   readonly compareClaim: (claim: ProductClaim, questionId: ProductQuestionId,
     candidates: readonly ProductEvidence[], evidence: readonly ProductEvidence[],
     pages: readonly CandidatePage[], batchIndex: number,
     signal?: AbortSignal) => Promise<readonly ProductCrossSourceJudgment[]>
-  /** Persist each question's settled comparison before report delivery consumes it. */
+  /** Legacy persistence hook; historical comparison events remain readable. */
   readonly saveVerification: (verification: ProductQuestionVerification) => Promise<void>
   /** Generate one cited paragraph per approved question when delivery checks pass. */
   readonly synthesizeReport?: (input: ProductSynthesisInput, signal?: AbortSignal) => Promise<ReadonlyMap<string, string>>
@@ -224,17 +224,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const checkpointVersion = input.checkpoint?.schemaVersion ?? (adapters.proposePassageEvidence === undefined ? 3 : 4)
   const fragmentOverlapCharacters = input.checkpoint === undefined
     ? PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS : input.checkpoint.fragmentOverlapCharacters ?? 0
-  if (input.sourceRevalidation !== undefined) {
-    if (input.checkpoint === undefined || input.sourceRevalidation.cancelled
-      || input.sourceRevalidation.snapshots.failures.length > 0) {
-      throw new RangeError('Product source revalidation requires a complete recovery checkpoint')
-    }
-    const saved = new Map(input.checkpoint.pages.snapshots.items.map(item => [item.candidatePageId, item]))
-    const checked = new Map(input.sourceRevalidation.snapshots.items.map(item => [item.candidatePageId, item]))
-    if (input.checkpoint.discovery.candidates.items.some(page => page.screening.status === 'selected'
-      && !sameProductPageFacts(saved.get(page.candidatePageId), checked.get(page.candidatePageId)))) {
-      throw new RangeError('Product recovery source changed before investigation resumed')
-    }
+  if (input.sourceRevalidation !== undefined && input.checkpoint === undefined) {
+    throw new RangeError('Product source revalidation requires a recovery checkpoint')
   }
   const runId = createProductRunId()
   const startedAt = adapters.now()
@@ -267,7 +258,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const reviews: ProductSemanticReview[] = [...input.checkpoint?.reviews ?? []]
   const claims: ProductClaim[] = [...input.checkpoint?.claims ?? []]
   const verifications: ProductQuestionVerification[] = [...input.checkpoint?.verifications ?? []]
-  let priorVerifications = input.checkpoint?.priorVerifications
+  const priorVerifications = input.checkpoint?.priorVerifications
   const checkpoint = async (stage: ProductInvestigationCheckpoint['stage'], nextIndex: number,
     fragment?: { index: number; order: readonly number[] }, passageQuestionIndex?: number): Promise<void> => {
     const saved: ProductInvestigationCheckpoint = { schemaVersion: checkpointVersion,
@@ -410,8 +401,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       }
     }
   }
-  const searchForGaps = async (gapQuestionIds: readonly ProductQuestionId[],
-    corroborationFor?: ReadonlyMap<ProductQuestionId, CandidatePage['candidatePageId']>): Promise<number | undefined> => {
+  const searchForGaps = async (gapQuestionIds: readonly ProductQuestionId[]): Promise<number | undefined> => {
     const selectedBefore = new Set(discovery.candidates.items.filter(page => page.screening.status === 'selected')
       .map(page => page.candidatePageId))
     const previousSnapshots = pages.snapshots.items.length
@@ -419,8 +409,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     const unavailablePages = new Set(pages.snapshots.items.filter(snapshot => snapshot.status === 'failed')
       .map(snapshot => snapshot.candidatePageId))
     discovery = await discoverCandidatePages({ product: input.product, plan: input.plan,
-      maxResultsPerQuery: input.maxResultsPerQuery, existing: discovery, gapQuestionIds, unavailablePages,
-      ...corroborationFor === undefined ? {} : { corroborationFor } },
+      maxResultsPerQuery: input.maxResultsPerQuery, existing: discovery, gapQuestionIds, unavailablePages },
     { web: adapters.web, now: adapters.now }, operationSignal)
     failures.push(...discovery.candidates.failures.slice(previousDiscoveryFailures))
     if (operationSignal?.aborted) return undefined
@@ -540,18 +529,17 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       if (operationSignal?.aborted) break
       const batch = evidence.slice(offset, offset + reviewBatchSize)
       const admitReviews = (items: readonly ProductEvidence[], judged: readonly ProductSemanticReview[]): void => {
-        // An empty response is an incomplete review, not a repeated one; the caller records the failure.
-        if (judged.length === 0 && items.length > 0) claimsFromSemanticReview(input.plan, items, judged)
-        const fresh = judged.filter(review => !reviewedIds.has(review.evidenceId))
-        if (fresh.length === 0) return
-        const freshIds = new Set(fresh.map(review => review.evidenceId))
-        const freshItems = items.filter(item => freshIds.has(item.evidenceId))
-        const admittedReviews = adoptEvidenceQuestions(freshItems, fresh)
-        claims.push(...claimsFromSemanticReview(input.plan, freshItems, admittedReviews))
-        for (const review of admittedReviews) {
-          reviewedIds.add(review.evidenceId)
-          reviews.push(review)
+        const unresolved: string[] = []
+        for (const item of items) {
+          if (reviews.some(review => review.evidenceId === item.evidenceId)) continue
+          const matches = adoptEvidenceQuestions([item], judged.filter(review => review.evidenceId === item.evidenceId))
+          try {
+            const admitted = claimsFromSemanticReview(input.plan, [item], matches)
+            reviews.push(...matches)
+            claims.push(...admitted)
+          } catch { unresolved.push(item.evidenceId) }
         }
+        if (unresolved.length) throw new RangeError(`Missing or invalid semantic judgments: ${unresolved.join(', ')}`)
       }
       try {
         const batchReviews = await retryProductTransport(active => adapters.reviewEvidence(batch, input.plan.questions,
@@ -651,8 +639,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           const ranked = rankProductPagePassages(indexProductPagePassages(text), question.text)
           const window = ranked.length > 3 ? ranked.slice(3) : ranked
           await extractPassages(questionPage, snapshot, text, question,
-            async exclude => window.filter(passage => !exclude.has(passage.id)).slice(0, 6)
-              .toSorted((left, right) => left.start - right.start),
+            exclude => Promise.resolve(window.filter(passage => !exclude.has(passage.id)).slice(0, 6)
+              .toSorted((left, right) => left.start - right.start)),
             readBudget, 'Gap passages')
         } else {
           await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, 'Gap fragment',
@@ -692,99 +680,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       else await checkpoint('pages', 0)
       continue
     }
-    const selectedClaims = keyProductClaims(input.plan, claims, evidence, discovery.candidates.items)
-    const verificationStart = currentCheckpoint?.stage === 'verification' ? currentCheckpoint.nextIndex : 0
-    for (let index = verificationStart; index < selectedClaims.length; index++) {
-      if (operationSignal?.aborted) break
-      const selected = selectedClaims[index]
-      if (selected === undefined) throw new RangeError('Recovery question index exceeds selected claims')
-      const candidates = comparisonEvidence(selected.questionId, selected.claim, claims, evidence)
-      const prior = priorVerifications?.find(item => item.questionId === selected.questionId
-        && item.claimId === selected.claim.claimId && item.complete)
-      const judgments: ProductCrossSourceJudgment[] = [...prior?.judgments ?? []]
-      const settledIds = new Set(judgments.map(item => item.evidenceId))
-      const pending = candidates.filter(item => !settledIds.has(item.evidenceId))
-      let complete = true
-      for (let offset = 0; offset < pending.length; offset += 8) {
-        if (operationSignal?.aborted) break
-        const batch = pending.slice(offset, offset + 8)
-        const batchIndex = offset / 8
-        const compare = async (items: readonly ProductEvidence[]): Promise<void> => {
-          const compared = await retryProductTransport(active => adapters.compareClaim(selected.claim,
-            selected.questionId, items, evidence, discovery.candidates.items, batchIndex, active),
-          error => adapters.recoverComparisonFailure?.(error) === 'retry', operationSignal)
-          operationSignal?.throwIfAborted()
-          checkCrossSourceJudgments(items, compared)
-          judgments.push(...compared)
-        }
-        try {
-          await compare(batch)
-        } catch (error) {
-          if (operationSignal?.aborted) break
-          if (batch.length >= 2 && adapters.recoverComparisonFailure?.(error) === true) {
-            const middle = Math.ceil(batch.length / 2)
-            for (const [childIndex, child] of [batch.slice(0, middle), batch.slice(middle)].entries()) {
-              if (operationSignal?.aborted) break
-              try { await compare(child) }
-              catch (childError) {
-                if (operationSignal?.aborted) break
-                complete = false
-                failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                  category: 'unknown', message: `Comparison batch ${batchIndex + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
-                    ? childError.message : String(childError)}`,
-                  retryable: true, occurredAt: adapters.now() })
-              }
-            }
-          } else {
-            complete = false
-            failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-              category: 'unknown', message: `Comparison batch ${batchIndex + 1}: ${error instanceof Error
-                ? error.message : String(error)}`,
-              retryable: true, occurredAt: adapters.now() })
-          }
-        }
-      }
-      if (operationSignal?.aborted) break
-      const verification: ProductQuestionVerification = { questionId: selected.questionId,
-        claimId: selected.claim.claimId, complete, judgments }
-      verifications.push(verification)
-      if (index + 1 === selectedClaims.length) priorVerifications = undefined
-      await checkpoint('verification', index + 1)
-      await adapters.saveVerification(verification)
-    }
-    const remainingCorroborationSearches = maximumGapSearches - gapAttempts.length
-    if (!operationSignal?.aborted && remainingCorroborationSearches > 0
-      && !gapAttempts.some(search => search.reason === 'corroboration_gap')
-      && hasProductCandidateCapacity(discovery.candidates.items, input.plan.limits?.maximumCandidatePages ?? 0)) {
-      const context = { product: input.product, plan: input.plan, pages: byPage,
-        evidence: new Map(evidence.map(item => [item.evidenceId, item])),
-        snapshots: new Map(pages.snapshots.items.map(snapshot => [snapshot.candidatePageId, snapshot])) }
-      const targets = new Map<ProductQuestionId, CandidatePage['candidatePageId']>()
-      for (const [index, selected] of selectedClaims.entries()) {
-        if (targets.size >= remainingCorroborationSearches) break
-        if (gapAttempts.some(search => search.questionId === selected.questionId)) continue
-        const verification = verifications[index]
-        if (!verification?.complete) continue
-        try { checkCrossSourceJudgments(comparisonEvidence(selected.questionId, selected.claim, claims, evidence), verification.judgments) }
-        catch { continue }
-        const result = assessProductCorroboration(context, selected.claim, verification.judgments)
-        if (!result.corroborated && result.primaryPage !== undefined
-          && productCorroborationDomains(input.product, input.plan, result.primaryPage).length > 0) {
-          targets.set(selected.questionId, result.primaryPage.candidatePageId)
-        }
-      }
-      if (targets.size > 0) {
-        const previousSnapshots = await searchForGaps([...targets.keys()], targets)
-        if (operationSignal?.aborted) break
-        if (previousSnapshots !== undefined) {
-          priorVerifications = [...verifications]
-          verifications.length = 0
-          await checkpoint('evidence', previousSnapshots)
-          continue
-        }
-        await checkpoint('verification', selectedClaims.length)
-      }
-    }
+    // Source support has been reviewed above. No separate corroboration calls or searches.
     break
   }
   const gaps: ProductEvidenceGap[] = input.plan.questions.filter(question =>

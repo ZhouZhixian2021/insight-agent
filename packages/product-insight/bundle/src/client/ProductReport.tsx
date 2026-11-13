@@ -1,6 +1,17 @@
 import { MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ComponentProps } from 'react'
 
+/** Turn generated source footnotes into clickable superscript links without trusting raw HTML. */
+function sentenceCitations(text: string): string {
+  const sources = new Map<string, string>()
+  const body = text.replace(/^\[\^(product-source-\d+)\]: \[查看来源原文\]\((https?:\/\/[^\s)]+)\)\s*$/gmu,
+    (_line, id: string, url: string) => { sources.set(id, url); return '' })
+  return body.replace(/\[\^(product-source-(\d+))\]/gu, (original, id: string, number: string) => {
+    const url = sources.get(id)
+    return url === undefined ? original : `[${number.replace(/\d/gu, digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'.charAt(Number(digit)))}](${url})`
+  })
+}
+
 const appendixTitles = new Set(['证据附录', '检索与取证范围', '原始交付诊断'])
 
 /** Render saved product prose first; keep evidence and diagnostics expandable without discarding them. */
@@ -9,7 +20,7 @@ export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownTe
   let current = ''
   let title: string | undefined
   let fence: string | undefined
-  for (const line of text.split('\n')) {
+  for (const line of sentenceCitations(text).split('\n')) {
     const marker = /^\s*(`{3,}|~{3,})/u.exec(line)?.[1]
     if (marker !== undefined) {
       if (fence === undefined) fence = marker

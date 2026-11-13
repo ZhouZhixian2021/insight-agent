@@ -49,10 +49,7 @@ export function claimsFromSemanticReview(plan: ProductPlan, evidence: readonly P
       || review.rationale.length > 600 || !['supported', 'unsupported', 'uncertain'].includes(review.verdict)
       || new Set(review.questionIds).size !== review.questionIds.length
       || review.questionIds.some(id => !plan.questions.some(question => question.questionId === id))
-      // A supported statement may also answer an approved question the excerpt was not read for,
-      // yet it stays linked to the question that retrieved it.
-      || review.verdict === 'supported'
-        && !review.questionIds.some(id => item.questionIds.includes(id))) {
+      || review.verdict === 'supported' && review.questionIds.length === 0) {
       throw new RangeError('Semantic review contains an unknown, repeated or invalid judgment')
     }
     seen.add(review.evidenceId)

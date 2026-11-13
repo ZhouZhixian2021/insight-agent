@@ -38,10 +38,11 @@ describe('semantic review admission', () => {
     expect(claims).toEqual([])
   })
 
-  it('rejects a judgment that answers only a question the excerpt was not collected for', () => {
-    expect(() => claimsFromSemanticReview(plan, [evidence],
-      [{ evidenceId: evidence.evidenceId, verdict: 'supported', questionIds: [second], rationale: 'Other question.' }]))
-      .toThrow(/invalid judgment/u)
+  it('allows a reviewed association to another approved question without changing extraction associations', () => {
+    const claims = claimsFromSemanticReview(plan, [evidence],
+      [{ evidenceId: evidence.evidenceId, verdict: 'supported', questionIds: [second], rationale: 'Other question.' }])
+    expect(claims[0]?.questionIds).toEqual([second])
+    expect(evidence.questionIds).toEqual([first])
   })
 
   it('keeps an approved extra question alongside the excerpt question', () => {
