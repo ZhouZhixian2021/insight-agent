@@ -17,8 +17,7 @@
               - id: product-web
                 name: '@deepseek-ai/dsh-web'
                 config:
-                  # Temporary 2026-11-10 switch: set back to product-free-search after its live search failures are fixed.
-                  searchProvider: product-installed-search
+                  searchProvider: product-free-search
                   fetchProvider: product-public-page
               - id: product-free-web
                 name: '@deepseek-ai/dsh-product-insight-source'
