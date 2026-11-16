@@ -1,0 +1,122 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/claim-review-result-v1",
+      "kind": "event",
+      "event": "product/claim-review-result-v1",
+      "surface": false,
+      "digest": "45fb4bcb0f6900d00c6da947c126aef777bb2d6fb00da465514bb4f3388f4825",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 9,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 10,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "error",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "requestSeq",
+                "type": 5,
+                "optional": true
+              },
+              {
+                "name": "status",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "union",
+            "types": [
+              7,
+              8
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "completed"
+          },
+          {
+            "kind": "literal",
+            "value": "failed"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/claim-review-result-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

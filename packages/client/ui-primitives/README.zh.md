@@ -22,6 +22,8 @@ kind: "package-library"
 
 -----
 
+裸网址的自动链接在中文标点处结束，避免后续说明被吞入链接；显式 Markdown 链接保留完整网址。
+
 <a id="use-this-package"></a>
 ## 使用本包
 
