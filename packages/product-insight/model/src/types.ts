@@ -59,7 +59,28 @@ export interface ProductPlanLimits {
   readonly maximumGapReads?: number
 }
 
-/** Publisher and host identity reviewed by the user before external pages are used for corroboration. */
+/** One stable direction an approved investigation is limited to. */
+export type ProductFocusCategoryId =
+  | 'performance'
+  | 'comparison'
+  | 'commercial'
+  | 'availability'
+  | 'ecosystem'
+  | 'usage'
+  | 'support'
+  | 'risk'
+
+/** Directions the user confirmed from preset categories, plus any wording they added. */
+export interface ProductPlanFocus {
+  readonly categories: readonly ProductFocusCategoryId[]
+  readonly custom?: readonly string[]
+}
+
+/**
+ * Named host the user decided to read: a publisher registered by a legacy
+ * plan, or a site the user named for this investigation. Discovery no longer
+ * requires one, and a page on any other host stays readable.
+ */
 export interface ProductSourcePublisher {
   readonly name: string
   readonly domain: string
@@ -81,7 +102,12 @@ export interface ProductPlan {
   readonly questions: readonly ProductQuestion[]
   readonly scope: string
   readonly limits?: ProductPlanLimits
+  /** Confirmed directions for plans written after the focus vocabulary existed; absent on legacy plans. */
+  readonly focus?: ProductPlanFocus
+  /** Legacy per-domain publisher allowlist; discovery reads only these hosts for such plans. */
   readonly sourcePublishers?: readonly ProductSourcePublisher[]
+  /** Sites the user asked to read in addition to search discovery; never restricts other hosts. */
+  readonly additionalSites?: readonly ProductSourcePublisher[]
   readonly sourceCriteria?: ProductSourceCriteria
   readonly approval: ProductPlanApproval
 }

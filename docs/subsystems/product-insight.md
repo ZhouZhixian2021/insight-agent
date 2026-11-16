@@ -15,7 +15,7 @@ The [product-insight model](../../packages/product-insight/model/README.md) defi
 
 | Record | Meaning |
 | --- | --- |
-| `Product` and `ProductPlan` | Stable product identity and a versioned investigation scope. Approval names the exact plan version and may set a per-page text limit, bounded question-gap searches, accepted external publishers, region, version, and source-date requirements. |
+| `Product` and `ProductPlan` | Stable product identity and a versioned investigation scope. Approval names the exact plan version and may set a per-page text limit, bounded question-gap searches, the focus directions the user confirmed from the fixed vocabulary, sites the user named, region, version, and source-date requirements. |
 | `CandidatePage` | A discovered URL, its source role, question links, and A's explained screening decision. |
 | `SourceSnapshot` | One observed page-fetch attempt. Available content has a storage reference, content hash, and optional page-declared publisher, dates, region, and version; failure has a failure ID instead. Published, updated, and observed dates remain distinct. |
 | `ProductEvidence` | An exact excerpt and location tied to a successful page snapshot, its content hash, and the question it addresses. A PDF text range also records the physical page used by the citation link. |

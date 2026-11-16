@@ -65,7 +65,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       .map(item => evidence.get(item.evidenceId)).find((item) => {
         const page = item === undefined ? undefined : pages.get(item.candidatePageId)
         return item?.questionIds.includes(question.questionId)
-          && page?.publisher?.toLocaleLowerCase() !== primaryPage?.publisher?.toLocaleLowerCase()
+          && sitePublisher(page) !== sitePublisher(primaryPage)
           && distinctProductSites(primaryPage, page)
       })
     const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => gap.missingContent)
@@ -83,10 +83,10 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       const snapshot = snapshots.get(item.candidatePageId)
       if (page === undefined || snapshot?.status !== 'available') continue
       const host = new URL(page.url).hostname.toLowerCase()
-      const approved = input.plan.sourcePublishers?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
-      if (approved && snapshot.declaredPublisher?.toLocaleLowerCase() !== approved.name.toLocaleLowerCase()) {
+      const reviewed = reviewedSite(input.plan, host)
+      if (reviewed && snapshot.declaredPublisher?.toLocaleLowerCase() !== reviewed.name.toLocaleLowerCase()) {
         limitations.push(`来源“${page.title ?? page.url}”的页面发布方未确定：${snapshot.declaredPublisher === undefined
-          ? '未提取到发布方声明' : '页面声明与计划登记名称不一致'}；按已批准域名纳入，结论仍须由原文支持。`)
+          ? '未提取到发布方声明' : '页面声明与计划登记名称不一致'}；按已登记站点纳入，结论仍须由原文支持。`)
       }
     }
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
@@ -112,6 +112,7 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
     }
   }
   const items = input.evidence.filter(item => item.questionIds.includes(questionId))
+  const unregisteredSites = new Set<string>()
   for (const item of items) {
     const page = input.discovery.candidates.items.find(page => page.candidatePageId === item.candidatePageId)
     const snapshot = input.pages.snapshots.items.find(snapshot => snapshot.candidatePageId === item.candidatePageId)
@@ -134,8 +135,41 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
       input.sourceRevalidation.snapshots.items.find(value => value.candidatePageId === item.candidatePageId))) {
       notes.push(`来源“${label}”在恢复时发生变化或无法重新确认；本报告依据原保存快照，不代表网页当前内容。`)
     }
+    const host = sourceHost(page?.url)
+    if (input.plan.focus !== undefined && host !== undefined && !isOfficialHost(input.product, host)
+      && reviewedSite(input.plan, host) === undefined) unregisteredSites.add(host)
+  }
+  if (unregisteredSites.size > 0) {
+    const hosts = [...unregisteredSites]
+    notes.push(`本题另有 ${hosts.length} 个未登记的外部站点（${hosts.slice(0, 3).join('、')}${hosts.length > 3 ? ' 等' : ''}），`
+      + '按已确认的关注方向纳入；站点身份未经用户逐一审核，结论仅按原文实际内容理解。')
   }
   return [...new Set(notes)]
+}
+
+/** The site the plan names, either a legacy allowlist entry or a site the user added. */
+function reviewedSite(plan: ProductPlan, host: string) {
+  return (plan.focus === undefined ? plan.sourcePublishers : plan.additionalSites)
+    ?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
+}
+
+function sourceHost(url: string | undefined): string | undefined {
+  if (url === undefined) return undefined
+  try { return new URL(url).hostname.toLowerCase() }
+  catch { return undefined }
+}
+
+/** Compare publishers by page label when a plan registers one, otherwise by host. */
+function sitePublisher(page: CandidatePage | undefined): string | undefined {
+  if (page === undefined) return undefined
+  return (page.publisher ?? sourceHost(page.url))?.toLocaleLowerCase()
+}
+
+function isOfficialHost(product: Product, host: string): boolean {
+  try {
+    const official = new URL(product.officialUrl).hostname.toLowerCase()
+    return host === official || host.endsWith(`.${official}`)
+  } catch { return false }
 }
 
 /** Insert validated prose with links resolved from the captured evidence. */

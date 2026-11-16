@@ -31,7 +31,7 @@ This package runs an approved `ProductPlan` through bounded discovery, page acqu
 <a id="use-this-package"></a>
 ## Use this package
 
-Read the latest explicitly approved native or PTC plan result from durable Session events with `latestApprovedProductPlan()`, then use `productPlanFromApproval()` to reconstruct the exact identity and reviewed plan. Parsing alone does not approve execution. New plans allow up to 30 candidate pages and omit elapsed-time and canonical-page character limits. Explicit limits in historical plans remain enforced.
+Read the latest explicitly approved native or PTC plan result from durable Session events with `latestApprovedProductPlan()`, then use `productPlanFromApproval()` to reconstruct the exact identity and reviewed plan. Parsing alone does not approve execution. The structured block accepts version 1, the legacy publisher allowlist that historical plans keep using, and version 2, which requires `focus` with the directions the user confirmed from the fixed vocabulary plus any custom wording. Version 2 rejects `sourcePublishers` and accepts `additionalSites` only as sites the user named. New plans allow up to 30 candidate pages and omit elapsed-time and canonical-page character limits. Explicit limits in historical plans remain enforced.
 
 -----
 
@@ -86,7 +86,7 @@ Extraction is page-local and may span multiple capacity-sized requests. Semantic
 
 - **Process-local jobs** — The task continues after its starting tool call ends while the owning Agent remains active. After a process restart, the live job is gone and its saved task record is reported as interrupted. A new explicit call can resume committed work for the same approved plan. An uncommitted model response may need another call; automatic continuation and an independent progress page are not implemented.
 - **Revalidation scope** — Resumption re-fetches selected URLs but retains saved snapshots, evidence and reviews even when a source changes or cannot be fetched. Reports disclose that they describe captured content, not necessarily the current page. Cancellation still interrupts resumption.
-- **Source limitations** — Domain approval, region, version, date and snapshot mismatches are report disclosures, not standalone draft reasons. Discovery still screens domains before fetching. Statements without semantic support or a matching saved snapshot do not enter confirmed prose; a report with no supported statements explicitly leaves questions unanswered. No evidence still blocks report creation.
+- **Source limitations** — A focus plan no longer ties source eligibility to a registered domain: pages outside the official site are read, cited, and disclosed per question as unregistered sites. For legacy plans, domain approval, region, version, date and snapshot mismatches remain report disclosures rather than standalone draft reasons. Discovery still screens candidates before fetching. Statements without semantic support or a matching saved snapshot do not enter confirmed prose; a report with no supported statements explicitly leaves questions unanswered. No evidence still blocks report creation.
 
 <a id="dev-note"></a>
 ### Dev Note

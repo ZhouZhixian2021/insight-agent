@@ -210,6 +210,50 @@ describe('product page discovery', () => {
   })
 })
 
+describe('focus-directed discovery', () => {
+  const focusPlan: ProductPlan = { ...plan, focus: { categories: ['performance', 'commercial'] } }
+
+  it('reads an unregistered host that names the product and defers the rest to review', async () => {
+    const result = await discoverCandidatePages({ product, plan: focusPlan, maxResultsPerQuery: 5 }, {
+      now, web: { search: async () => ({ sources: [
+        { url: 'https://review.test/example', title: 'Example review' },
+        { url: 'https://unknown.test/article', title: 'Unrelated article' }], truncated: false }) },
+    })
+    expect(result.candidates.items).toMatchObject([
+      { url: 'https://review.test/example', sourceType: 'other', screening: { status: 'selected' } },
+      { url: 'https://unknown.test/article', screening: { status: 'needs_review' } },
+    ])
+    expect(result.candidates.items[0]?.screening.reason).toContain('confirmed focus directions')
+    expect(result.candidates.items[1]?.screening.reason).toContain('does not name the product')
+  })
+
+  it('reads a site the user named without requiring a product-name match', async () => {
+    const result = await discoverCandidatePages({ product,
+      plan: { ...focusPlan, additionalSites: [{ name: 'Vendor docs', domain: 'docs.review.test' }] },
+      maxResultsPerQuery: 5 }, { now, web: { search: async () => ({ sources: [
+      { url: 'https://docs.review.test/spec', title: 'Specifications' }], truncated: false }) } })
+    expect(result.candidates.items[0]).toMatchObject({ publisher: 'Vendor docs',
+      screening: { status: 'selected' } })
+  })
+
+  it('searches an unanswered question across the open web instead of a reviewed host', async () => {
+    const scoped: ProductPlan = { ...focusPlan, limits: { maximumCandidatePages: 3, maximumGapSearches: 1 } }
+    const queries: string[] = []
+    const web = { search: async ({ query }: { query: string }) => {
+      queries.push(query)
+      return { sources: queries.length === 2
+        ? [{ url: 'https://review.test/price', title: 'Example price review' }]
+        : [{ url: 'https://example.com/features' }], truncated: false }
+    } }
+    const initial = await discoverCandidatePages({ product, plan: scoped, maxResultsPerQuery: 4 }, { web, now })
+    const updated = await discoverCandidatePages({ product, plan: scoped, maxResultsPerQuery: 4,
+      existing: initial, gapQuestionIds: [second] }, { web, now })
+    expect(queries[2]).not.toContain('site:')
+    expect(updated.candidates.items.find(page => page.url === 'https://review.test/price'))
+      .toMatchObject({ questionIds: [second], screening: { status: 'selected' } })
+  })
+})
+
 
 it('requests sixty links before screening, keeping unapproved domains out of page reading', async () => {
   const result = await discoverCandidatePages({ product,

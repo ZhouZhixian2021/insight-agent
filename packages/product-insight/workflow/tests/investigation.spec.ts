@@ -125,6 +125,21 @@ describe('approved product investigation', () => {
     expect(report).not.toContain('置信度：低')
   })
 
+  it('delivers an unregistered external source under the confirmed directions', async () => {
+    const external = 'https://review.test/example'
+    const focusPlan: ProductPlan = { schemaVersion: 1, planId: plan.planId, version: 1, productId,
+      questions: plan.questions, scope: plan.scope, approval: plan.approval,
+      focus: { categories: ['performance'] } }
+    const result = await runProductInvestigation({ product, plan: focusPlan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      web: { search: async () => ({ sources: [{ url: external, title: 'Example review' }], truncated: false }),
+        fetch: async () => ({ url: external, statusCode: 200, truncated: false,
+          body: { kind: 'text', content: 'Example supports export.' } }) } })
+    expect(result.evidence).toHaveLength(1)
+    expect(result.delivery.status).toBe('final')
+    expect(reports.at(-1)).toContain('未登记的外部站点')
+  })
+
   it('delivers a grounded report with unanswered questions and missing independent support disclosed', async () => {
     const synthesizeReport = vi.fn<NonNullable<ProductInvestigationAdapters['synthesizeReport']>>(async (material) => {
       expect(material.questions).toHaveLength(1)
@@ -1146,6 +1161,39 @@ describe('product plan approval handoff', () => {
       limits: { ...payload.limits, maximumGapSearches: 2 } }) }).plan.limits?.maximumGapSearches)
       .toBe(2)
     expect(first.plan.planId).not.toBe(productPlanFromApproval({ ...input, identity: 'tool-call-2' }).plan.planId)
+  })
+
+  const focusPayload = { ...payload, schemaVersion: 2,
+    focus: { categories: ['performance', 'commercial'], custom: ['弱网下的稳定性'] } }
+
+  it('accepts a version 2 focus plan and records the confirmed directions', () => {
+    const approved = productPlanFromApproval({ sessionId: 'session-1', identity: 'call-focus',
+      markdown: markdown(focusPayload), reviewedAt: '2026-11-15T00:00:00Z' })
+    expect(approved.plan.focus).toEqual({ categories: ['performance', 'commercial'],
+      custom: ['弱网下的稳定性'] })
+    expect(approved.plan.sourcePublishers).toBeUndefined()
+    expect(approved.plan.additionalSites).toBeUndefined()
+    expect(productPlanFromApproval({ sessionId: 'session-1', identity: 'call-site',
+      markdown: markdown({ ...focusPayload, additionalSites: [{ name: 'Vendor docs', domain: 'docs.review.test' }] }),
+      reviewedAt: '2026-11-15T00:00:00Z' }).plan.additionalSites)
+      .toEqual([{ name: 'Vendor docs', domain: 'docs.review.test' }])
+  })
+
+  it('rejects a version 2 plan without a known direction or with a site allowlist', () => {
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, focus: undefined })))
+      .toThrow(/focus must be an object/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, focus: { categories: [] } })))
+      .toThrow(/one to eight/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, focus: { categories: ['vibes'] } })))
+      .toThrow(/vocabulary/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, focus: { categories: ['risk', 'risk'] } })))
+      .toThrow(/distinct/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload,
+      sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }] }))).toThrow(/unsupported/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload,
+      additionalSites: [{ name: 'Mirror', domain: 'example.com' }] }))).toThrow(/overlaps product\.officialUrl/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, schemaVersion: 3 })))
+      .toThrow(/schemaVersion must be 1 or 2/u)
   })
 
   it('rejects missing, duplicate or malformed structured blocks', () => {
