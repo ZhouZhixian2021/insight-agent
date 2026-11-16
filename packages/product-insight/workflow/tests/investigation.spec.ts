@@ -1120,9 +1120,12 @@ describe('product plan approval handoff', () => {
       reviewedAt: '1970-01-01T00:00:00.004Z' })
   })
 
-  it('starts the bounded investigation from the approved Session event', async () => {
+  it('reads planning-search pages after approval even when background search returns no links', async () => {
     const approvedPlan = markdown(payload)
     const events = [
+      { type: 'tool/call', time: 0, data: { name: 'web_search', callId: 'planning-search', arguments: '{}' } },
+      { type: 'tool/result', time: 0, data: { message: { toolCallId: 'planning-search', isError: false },
+        meta: { sources: [{ url: 'https://example.com/features', title: 'Example features' }] } } },
       { type: 'tool/call', time: 1, data: { name: 'exit_plan_mode', callId: 'approved-call',
         arguments: JSON.stringify({ plan: approvedPlan }) } },
       { type: 'tool/result', time: 2, data: { message: { toolCallId: 'approved-call', isError: false },
@@ -1130,7 +1133,7 @@ describe('product plan approval handoff', () => {
     ] as SessionEvent[]
     const input = { sessionId: 'session-1', events, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }
-    const search = vi.fn((...args: Parameters<typeof adapters.web.search>) => adapters.web.search(...args))
+    const search = vi.fn(async () => ({ sources: [], truncated: false }))
     const adapted: ProductInvestigationAdapters = { ...adapters, web: { ...adapters.web, search },
       proposeEvidence: async (_page, _text, questions) => [{ verbatimExcerpt: 'Example supports export.',
         sourcedStatement: 'Example supports export.',

@@ -88,6 +88,19 @@ describe('product page evidence', () => {
     expect(impossible.sourceUpdatedAt).toBeUndefined()
   })
 
+  it('fetches legacy needs-review candidates but never excluded pages', async () => {
+    const requested: string[] = []
+    const result = await fetchProductPages([
+      { ...candidate, screening: { ...candidate.screening, status: 'needs_review' } },
+      { ...candidate, candidatePageId: brandString<CandidatePageId>('excluded'),
+        url: 'https://example.com/excluded', screening: { ...candidate.screening, status: 'excluded' } },
+    ], { now: () => '2026-11-06T00:00:00Z',
+      web: { fetch: async ({ url }) => { requested.push(url); return fetched } },
+      saveText: async () => 'store:legacy' })
+    expect(requested).toEqual([candidate.url])
+    expect(result.snapshots.items).toMatchObject([{ candidatePageId, status: 'available' }])
+  })
+
   it('persists complete page text before publishing a source snapshot', async () => {
     const saved: string[] = []
     const result = await fetchProductPages([candidate], { now: () => '2026-11-06T00:00:00Z',
@@ -205,10 +218,10 @@ See https://example.com/legal.` } }, 36_000)
   })
 
   it('stops dispatch on cancellation and waits for active fetches without saving their text', async () => {
-    const pages = Array.from({ length: 5 }, (_, index) => ({ ...candidate,
+    const pages = Array.from({ length: 10 }, (_, index) => ({ ...candidate,
       candidatePageId: brandString<CandidatePageId>(`page-${index}`), url: `https://example.com/${index}` }))
     const gates = new Map(pages.map(page => [page.url, Promise.withResolvers<undefined>()]))
-    const fourthStarted = Promise.withResolvers<undefined>()
+    const ninthStarted = Promise.withResolvers<undefined>()
     const abort = new AbortController()
     const started: string[] = []
     const finished: string[] = []
@@ -218,7 +231,7 @@ See https://example.com/legal.` } }, 36_000)
       web: { fetch: async ({ url }, signal) => {
         expect(signal).toBe(abort.signal)
         started.push(url)
-        if (started.length === 4) fourthStarted.resolve(undefined)
+        if (started.length === 9) ninthStarted.resolve(undefined)
         await gates.get(url)?.promise
         finished.push(url)
         return { ...fetched, url }
@@ -226,14 +239,14 @@ See https://example.com/legal.` } }, 36_000)
       saveText: async (page) => { saved.push(page.url); return `store:${page.candidatePageId}` },
     }, abort.signal)
     try {
-      expect(started).toEqual(pages.slice(0, 3).map(page => page.url))
+      expect(started).toEqual(pages.slice(0, 8).map(page => page.url))
       gates.get(started[0]!)?.resolve(undefined)
-      await fourthStarted.promise
+      await ninthStarted.promise
       abort.abort()
       for (const gate of gates.values()) gate.resolve(undefined)
       const result = await run
       expect(result.cancelled).toBe(true)
-      expect(started).toEqual(pages.slice(0, 4).map(page => page.url))
+      expect(started).toEqual(pages.slice(0, 9).map(page => page.url))
       expect(finished).toEqual(started)
       expect(saved).toEqual(started.slice(0, 1))
       expect(result.snapshots.items).toMatchObject([

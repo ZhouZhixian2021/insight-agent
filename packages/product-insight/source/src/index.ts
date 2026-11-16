@@ -41,6 +41,8 @@ export interface ProductDiscoveryInput {
   readonly product: Product
   readonly plan: ProductPlan
   readonly maxResultsPerQuery: number
+  /** Observed planning-search links; screened and deduplicated with background results. */
+  readonly initialSources?: WebSearchResult['sources']
   /** A completed first pass whose candidates and queries remain within the same approved plan. */
   readonly existing?: ProductDiscoveryResult
   /** Approved questions selected for one additional search each. */
@@ -133,10 +135,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     throw new RangeError('Product officialUrl must be HTTP(S)')
   }
   const candidateLimit = maximum ?? Number.POSITIVE_INFINITY
-  const reservedGapSlots = gap === undefined && Number.isFinite(candidateLimit)
-    ? Math.min(plan.limits?.maximumGapSearches ?? 0, Math.max(0, candidateLimit - 1)) : 0
-  const reviewLimit = candidateLimit - reservedGapSlots
-  const priorities = ['selected', 'needs_review', 'excluded'] as const
+  const priorities = ['selected', 'excluded'] as const
   /** Plans that carry confirmed focus directions search every site, not a reviewed host list. */
   const focusDriven = plan.focus !== undefined
   /** Legacy plans allowlist `sourcePublishers`; a focus plan only adds sites the user named. */
@@ -167,10 +166,6 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       }
       return 'ignored'
     }
-    if (prior === undefined && gap === undefined && screening.status === 'needs_review'
-      && [...candidates.values()].filter(page => page.screening.status === 'needs_review').length >= reviewLimit) {
-      return 'ignored'
-    }
     if (prior === undefined && candidates.size >= candidateLimit) {
       if (gap === undefined || screening.status !== 'selected') return 'limit'
       const replaced = [...candidates].findLast(([, page]) => page.screening.status !== 'selected')
@@ -185,6 +180,15 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       ...(officialPage ? { publisher: product.developer }
         : registeredSite === undefined ? {} : { publisher: registeredSite.name }), discoveryChannel: 'web' })
     return prior === undefined ? 'recorded' : 'ignored'
+  }
+  if (gap === undefined && !signal?.aborted) {
+    // A concrete official page is an explicit reading lead, not only a host identity.
+    const seeds = [...official.pathname !== '/' ? [{ url: product.officialUrl }] : [], ...input.initialSources ?? []]
+    for (const seed of seeds) {
+      const screened = screenSource(seed)
+      if (screened.screening.status === 'excluded') continue
+      for (const question of plan.questions) recordSource(screened, question.questionId)
+    }
   }
   for (const question of gap === undefined ? plan.questions
     : plan.questions.filter(item => gap.includes(item.questionId))) {
@@ -271,7 +275,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
  * @returns Whether there is room for one more selected page.
  */
 export function hasProductCandidateCapacity(candidates: readonly CandidatePage[], maximum: number): boolean {
-  return candidates.filter(page => page.screening.status === 'selected').length < maximum
+  return candidates.filter(page => page.screening.status !== 'excluded').length < maximum
 }
 
 /**
@@ -303,7 +307,7 @@ function gapSearchDomain(domains: readonly string[], candidates: readonly Candid
   for (const domain of domains) {
     const count = candidates.filter((page) => {
       const host = parseCandidateUrl(page.url)?.hostname
-      return page.screening.status === 'selected' && withinDomain(host, domain)
+      return page.screening.status !== 'excluded' && withinDomain(host, domain)
     }).length
     if (count < fewest || count === fewest && best !== undefined && tried.has(best) && !tried.has(domain)) {
       best = domain
@@ -341,7 +345,7 @@ function candidateKey(url: string, parsed = parseCandidateUrl(url)): string {
  */
 function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean,
   registeredSite: boolean, focusDriven: boolean):
-Pick<CandidatePage['screening'], 'status' | 'reason'> {
+{ status: 'selected' | 'excluded'; reason: string } {
   if (parsed === null) return { status: 'excluded', reason: 'Search result URL is not a valid HTTP(S) URL.' }
   if (officialPage) {
     return { status: 'selected', reason: 'URL matches the approved official host; check product relevance against the page text.' }
@@ -353,13 +357,13 @@ Pick<CandidatePage['screening'], 'status' | 'reason'> {
     if (named) {
       return { status: 'selected', reason: 'Search metadata names the product; the page is read under the confirmed focus directions.' }
     }
-    return { status: 'needs_review', reason: 'Host is outside the official site and the search metadata does not name the product.' }
+    return { status: 'selected', reason: 'Valid search result admitted for full-text product relevance checking.' }
   }
   if (!registeredSite) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
   if (named) {
     return { status: 'selected', reason: 'Search metadata names the product and its host matches a user-approved publisher domain.' }
   }
-  return { status: 'needs_review', reason: 'Publisher and product relevance need page review.' }
+  return { status: 'selected', reason: 'Approved publisher admitted for full-text product relevance checking.' }
 }
 
 /** Two hosts are distinct sites when neither names the other as a parent domain. */

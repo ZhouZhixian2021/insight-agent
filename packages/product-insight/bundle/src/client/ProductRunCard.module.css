@@ -15,6 +15,7 @@
 .details summary, .report summary { cursor: pointer; }
 .details ul { margin-bottom: 0; }
 .reportHeader { margin-bottom: 10px; }
+.prose a[data-product-citation] { position: relative; top: -0.5em; font-size: 0.72em; line-height: 0; vertical-align: baseline; text-decoration: none; border-bottom: 0; white-space: nowrap; margin-inline: 0.08em; font-weight: 400; }
 .reportActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .report button { padding: 6px 10px; color: inherit; background: var(--dsw-alias-bg-layer-1); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; font: inherit; cursor: pointer; }
 .report pre { max-height: 520px; margin-bottom: 0; padding: 12px; overflow: auto; white-space: pre-wrap; background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }

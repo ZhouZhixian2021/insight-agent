@@ -767,7 +767,7 @@ export function reconcileProductSourceRevalidation(saved: ProductInvestigationCh
 } {
   if (fresh.cancelled) throw new Error('Product source revalidation was interrupted')
   const unchanged = fresh.snapshots.failures.length === 0
-    && saved.discovery.candidates.items.filter(page => page.screening.status === 'selected').every(page =>
+    && saved.discovery.candidates.items.filter(page => page.screening.status !== 'excluded').every(page =>
       sameProductPageFacts(saved.pages.snapshots.items.find(item => item.candidatePageId === page.candidatePageId),
         fresh.snapshots.items.find(item => item.candidatePageId === page.candidatePageId)))
   return { checkpoint: { ...saved, elapsedMilliseconds }, unchanged }

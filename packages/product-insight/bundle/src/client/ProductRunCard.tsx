@@ -268,6 +268,7 @@ a{color:var(--accent);text-underline-offset:3px;overflow-wrap:anywhere}.header{m
 .summary div{padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:6px}.summary dt{color:var(--muted);font-size:13px}.summary dd{margin:3px 0 0;font-weight:650}
 .notice{border-left:4px solid #bd833b;padding:8px 18px;background:#fff9ee;margin:18px 0}.layout{max-width:1120px;margin:auto;display:grid;grid-template-columns:210px minmax(0,1fr);gap:30px;padding:0 28px 60px}
 nav{position:sticky;top:24px;align-self:start;max-height:90vh;overflow:auto;font-size:13px}nav h2{font-size:15px}nav ul{list-style:none;padding:0}nav li{margin:9px 0}nav a{text-decoration:none;color:var(--muted)}
+a.product-citation{position:relative;top:-0.5em;font-size:0.72em;line-height:0;vertical-align:baseline;text-decoration:none;border-bottom:0;white-space:nowrap;margin-inline:0.08em;font-weight:400}
 article{min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:30px 40px 48px}h1,h2,h3,h4{line-height:1.5}h2{font-size:23px;margin:42px 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}
 p{margin:14px 0;overflow-wrap:anywhere}li{margin:6px 0}ul,ol{padding-left:1.5em}table{border-collapse:collapse;display:block;overflow-x:auto;max-width:100%;font-size:14px;margin:22px 0}
 th,td{border-bottom:1px solid var(--line);padding:11px;vertical-align:top;min-width:100px}th{background:#edf3f2;text-align:left}tr:nth-child(even){background:#f8faf9}
@@ -300,6 +301,7 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
       const href = node.getAttribute('href')
       if (href !== null && (/^#[\w:.-]+$/u.test(href) || /^https?:\/\//iu.test(href))) {
         attributes = ` href="${escapeHtml(href)}"${href.startsWith('#') ? '' : ' target="_blank" rel="noopener noreferrer"'}`
+        if (/^\[\d+\]$/u.test(node.textContent ?? '')) attributes += ' class="product-citation"'
       }
     }
     return ['BR', 'HR'].includes(node.tagName) ? `<${tag}>` : `<${tag}${attributes}>${children}</${tag}>`

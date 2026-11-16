@@ -1,14 +1,16 @@
 import { MarkdownText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ComponentProps } from 'react'
+import css from './ProductRunCard.module.css'
 
 /** Turn generated source footnotes into clickable superscript links without trusting raw HTML. */
 function sentenceCitations(text: string): string {
   const sources = new Map<string, string>()
   const body = text.replace(/^\[\^(product-source-\d+)\]: \[查看来源原文\]\((https?:\/\/[^\s)]+)\)\s*$/gmu,
     (_line, id: string, url: string) => { sources.set(id, url); return '' })
-  return body.replace(/\[\^(product-source-(\d+))\]/gu, (original, id: string, number: string) => {
+  const positioned = body.replace(/([。！？；.!?;])((?:\[\^product-source-\d+\])+)/gu, '$2$1')
+  return positioned.replace(/\[\^(product-source-(\d+))\]/gu, (original, id: string, number: string) => {
     const url = sources.get(id)
-    return url === undefined ? original : `[${number.replace(/\d/gu, digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'.charAt(Number(digit)))}](${url})`
+    return url === undefined ? original : `[\\[${number}\\]](${url})`
   })
 }
 
@@ -34,9 +36,14 @@ export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownTe
     } else current += `${line}\n`
   }
   if (current) sections.push({ text: current, ...(title === undefined ? {} : { title }) })
-  return <>{sections.map((section, index) => section.title === undefined
-    ? <MarkdownText key={index} text={section.text} labels={labels} />
-    : <details key={index}><summary>{section.title}</summary>
-      <MarkdownText text={section.text} labels={labels} />
-    </details>)}</>
+  return <div className={css.prose} ref={(element) => {
+    // The shared Markdown renderer owns anchors; decorate only numbered report citations.
+    element?.querySelectorAll('a').forEach((anchor) => {
+      if (/^\[\d+\]$/u.test(anchor.textContent ?? '')) anchor.setAttribute('data-product-citation', '')
+    })
+  }}>{sections.map((section, index) => section.title === undefined
+      ? <MarkdownText key={index} text={section.text} labels={labels} />
+      : <details key={index}><summary>{section.title}</summary>
+        <MarkdownText text={section.text} labels={labels} />
+      </details>)}</div>
 }
