@@ -7,6 +7,7 @@ import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { processGroupDefinition } from '../../../client/ui-chat/src/client/conversation-nodes/process-groups.ts'
 import { chatViewDefinition } from '../../../client/ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
 import { exportProductHtml, ProductRunCard, productChatDefinition } from '../src/client/index.ts'
+import { ProductReport } from '../src/client/ProductReport.tsx'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
@@ -122,7 +123,18 @@ it('renders sentence citations as superscript links in exported HTML', () => {
   const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
   const citation = doc.querySelector('a[href="https://example.com/export"]')!
   expect(citation).not.toBeNull()
-  expect(citation.textContent).toBe('¹')
-  expect(citation.parentElement?.textContent).toContain('支持导出。¹费用尚未确认。')
+  expect(citation.textContent).toBe('[1]')
+  expect(citation.className).toBe('product-citation')
+  expect(citation.parentElement?.textContent).toContain('支持导出[1]。费用尚未确认。')
   expect(doc.body.textContent).not.toContain('[^product-source-1]')
+})
+
+it('keeps adjacent and multi-digit citations at the sentence end without styling ordinary links', () => {
+  render(<ProductReport text={'支持导出。[^product-source-5][^product-source-12]另一句。\n\n[产品官网](https://example.com)\n\n[^product-source-5]: [查看来源原文](https://example.com/a)\n[^product-source-12]: [查看来源原文](https://example.com/b)'}
+    labels={{ code: { copyLabel: '复制', copiedLabel: '已复制' }, footnotes: '脚注' }} />)
+  const citation = screen.getByRole('link', { name: '[5]' })
+  expect(citation.hasAttribute('data-product-citation')).toBe(true)
+  expect(citation.parentElement?.textContent).toContain('支持导出[5][12]。另一句。')
+  expect(screen.getByRole('link', { name: '[12]' }).getAttribute('href')).toBe('https://example.com/b')
+  expect(screen.getByRole('link', { name: '产品官网' }).hasAttribute('data-product-citation')).toBe(false)
 })

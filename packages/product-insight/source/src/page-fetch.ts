@@ -38,12 +38,12 @@ export function sameProductPageFacts(saved: SourceSnapshot | undefined, fetched:
     && saved.sourceRegionLabel === fetched.sourceRegionLabel && saved.declaredPublisher === fetched.declaredPublisher
 }
 
-const PRODUCT_PAGE_FETCH_CONCURRENCY = 3
+const PRODUCT_PAGE_FETCH_CONCURRENCY = 8
 
 /**
- * Fetch up to three selected pages concurrently, then persist text and settle snapshots in candidate order.
+ * Fetch up to eight selected pages concurrently, then persist text and settle snapshots in candidate order.
  * A failed page retains its own failed snapshot and successful siblings remain available.
- * @param candidates - Discovered pages; only selected pages are fetched.
+ * @param candidates - Discovered pages; selected pages and legacy needs-review pages are fetched.
  * @param adapters - Web fetch, durable text storage, and clock.
  * @param signal - Optional cancellation stops dispatch and is propagated to active fetches, which are awaited before returning.
  * @param maximumCharacters - Optional approved text bound applied during preparation before persistence.
@@ -77,7 +77,7 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
       return { error }
     }
   }
-  const selected = candidates.filter(candidate => candidate.screening.status === 'selected')
+  const selected = candidates.filter(candidate => candidate.screening.status !== 'excluded')
   const start = (candidate: CandidatePage) => ({ candidate, acquired: acquire(candidate) })
   const pending = selected.slice(0, PRODUCT_PAGE_FETCH_CONCURRENCY).map(start)
   let nextIndex = pending.length

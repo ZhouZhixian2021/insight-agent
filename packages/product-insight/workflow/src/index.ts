@@ -20,6 +20,7 @@ import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages, 
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval } from './approved-plan.ts'
+import { planningSearchSources } from './planning-sources.ts'
 import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
@@ -73,6 +74,8 @@ export interface ProductInvestigationInput {
   readonly product: Product
   readonly plan: ProductPlan
   readonly maxResultsPerQuery: number
+  /** Observed preliminary search links from the same planning turn. */
+  readonly initialSources?: WebSearchResult['sources']
   readonly extractionMethod: ProductEvidence['extractionMethod']
   /** A durable checkpoint for this exact approved plan; absence starts fresh. */
   readonly checkpoint?: ProductInvestigationCheckpoint
@@ -184,6 +187,7 @@ export async function runApprovedProductInvestigation(input: {
   if (approved === undefined) throw new RangeError('Product investigation requires explicit plan approval')
   const { product, plan } = productPlanFromApproval({ sessionId: input.sessionId, ...approved })
   return runProductInvestigation({ product, plan, maxResultsPerQuery: input.maxResultsPerQuery,
+    initialSources: planningSearchSources(input.events, approved.identity),
     extractionMethod: input.extractionMethod,
     ...input.checkpoint === undefined ? {} : { checkpoint: input.checkpoint },
     ...input.sourceRevalidation === undefined ? {} : { sourceRevalidation: input.sourceRevalidation } }, adapters, signal)
@@ -327,7 +331,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     }
   }
   const searchForGaps = async (gapQuestionIds: readonly ProductQuestionId[]): Promise<number | undefined> => {
-    const selectedBefore = new Set(discovery.candidates.items.filter(page => page.screening.status === 'selected')
+    const selectedBefore = new Set(discovery.candidates.items.filter(page => page.screening.status !== 'excluded')
       .map(page => page.candidatePageId))
     const previousSnapshots = pages.snapshots.items.length
     const previousDiscoveryFailures = discovery.candidates.failures.length
@@ -338,7 +342,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     { web: adapters.web, now: adapters.now }, operationSignal)
     failures.push(...discovery.candidates.failures.slice(previousDiscoveryFailures))
     if (operationSignal?.aborted) return undefined
-    const additions = discovery.candidates.items.filter(page => page.screening.status === 'selected'
+    const additions = discovery.candidates.items.filter(page => page.screening.status !== 'excluded'
       && !selectedBefore.has(page.candidatePageId))
     if (additions.length === 0) {
       await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
@@ -489,7 +493,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         if (operationSignal?.aborted) break
         if (snapshot.status !== 'available') continue
         const page = byPage.get(snapshot.candidatePageId)
-        if (page?.screening.status !== 'selected' || !assessProductSource(input.product, input.plan, page, snapshot).eligible) continue
+        if (page === undefined || page.screening.status === 'excluded' || !assessProductSource(input.product, input.plan, page, snapshot).eligible) continue
         try {
           const text = await adapters.readText(snapshot.contentRef)
           if (text.length === 0 || text.length > maximumPageCharacters) throw new RangeError('Saved page text is out of bounds')

@@ -231,7 +231,7 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
   const reviewsById = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const latestByPage = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
-  if (input.discovery.candidates.items.some(page => page.screening.status === 'selected'
+  if (input.discovery.candidates.items.some(page => page.screening.status !== 'excluded'
     && !latestByPage.has(page.candidatePageId))) {
     reasons.push('A selected product page has no settled source snapshot.')
   }
@@ -426,15 +426,14 @@ function productDeliveryReason(reason: string): string {
 
 /** Show settled search and acquisition facts without treating search metadata as evidence. */
 function renderDiscoveryDisclosure(input: ProductReportInput): string[] {
-  const selected = input.discovery.candidates.items.filter(page => page.screening.status === 'selected')
+  const selected = input.discovery.candidates.items.filter(page => page.screening.status !== 'excluded')
   const snapshots = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   const available = selected.filter(page => snapshots.get(page.candidatePageId)?.status === 'available').length
   const failed = selected.filter(page => snapshots.get(page.candidatePageId)?.status === 'failed').length
   const pending = selected.length - available - failed
-  const needsReview = input.discovery.candidates.items.filter(page => page.screening.status === 'needs_review').length
   const lines = ['## 检索与取证范围', '',
     '搜索结果仅用于发现候选网页；下文引用来自已获取并核对的网页正文。检索未报告截断也不代表覆盖全部公开资料。', '',
-    `候选网页 ${input.discovery.candidates.items.length} 个；入选 ${selected.length} 个；已获取正文 ${available} 个；获取失败 ${failed} 个；未完成获取 ${pending} 个；待审 ${needsReview} 个。`, '']
+    `候选网页 ${input.discovery.candidates.items.length} 个；入选 ${selected.length} 个；已获取正文 ${available} 个；获取失败 ${failed} 个；未完成获取 ${pending} 个。`, '']
   if (input.failures.length) {
     const stages: Record<string, string> = { discovery: '网页发现', screening: '网页筛选', fetch: '正文获取', extraction: '证据提取',
       analysis: '语义审核与分析', report: '报告生成' }

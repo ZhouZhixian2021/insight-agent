@@ -15,6 +15,26 @@ const plan: ProductPlan = { schemaVersion: 1, planId, productId, version: 1, sco
 const now = () => '2026-11-05T00:00:00Z'
 
 describe('product page discovery', () => {
+  it('merges planning links and the concrete official page with new results within the shared cap', async () => {
+    const result = await discoverCandidatePages({
+      product: { ...product, officialUrl: 'https://example.com/release' },
+      plan: { ...plan, focus: { categories: ['performance'] }, limits: { maximumCandidatePages: 3 } },
+      maxResultsPerQuery: 5,
+      initialSources: [{ url: 'https://example.com/release?utm_source=planning#part' },
+        { url: 'https://review.test/article', title: 'Preliminary result' }, { url: 'javascript:alert(1)' }],
+    }, { now, web: { search: async () => ({ sources: [
+      { url: 'https://review.test/article#section' }, { url: 'https://example.com/specs' },
+      { url: 'https://example.com/extra' },
+    ], truncated: false }) } })
+    expect(result.candidates.items.map(page => page.url)).toEqual([
+      'https://example.com/release', 'https://review.test/article', 'https://example.com/specs',
+    ])
+    expect(result.candidates.items.every(page => page.screening.status === 'selected')).toBe(true)
+    expect(result.candidates.items[0]?.questionIds).toEqual([first, second])
+    expect(result.searches).toHaveLength(2)
+    expect(result.searches.every(search => search.truncated)).toBe(true)
+  })
+
   it('rejects a plan whose current version is not approved', async () => {
     let called = false
     await expect(discoverCandidatePages({ product, plan: { ...plan, version: 2 }, maxResultsPerQuery: 5 },
@@ -118,54 +138,16 @@ describe('product page discovery', () => {
     expect(result.searches).toMatchObject([{ recordedCount: 1, truncated: true }, { recordedCount: 1, truncated: true }])
   })
 
-  it('uses a full review-only pool for follow-up without exceeding the approved candidate limit', async () => {
-    const apple: Product = { ...product, name: 'Apple fall lineup (phone, tablet, desktop)', developer: 'Apple',
-      officialUrl: 'https://www.apple.com/' }
-    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2, maximumGapSearches: 1 },
-      sourcePublishers: [{ name: 'Regional', domain: 'www.apple.com.cn' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
-    const regional = 'https://www.apple.com.cn/newsroom/phone'
-    const official = 'https://www.apple.com/newsroom/phone'
-    const queries: string[] = []
-    const web = { search: async ({ query }: { query: string }) => {
-      queries.push(query)
-      return { sources: query.includes('site:')
-        ? [{ url: regional, title: apple.name }, { url: official, title: 'New devices arrive this fall' }]
-        : [{ url: regional }, { url: 'https://unrelated.test/article' }], truncated: false }
-    } }
-    const initial = await discoverCandidatePages({ product: apple, plan: scoped, maxResultsPerQuery: 2 }, { web, now })
-    expect(initial.candidates.items.map(item => item.screening.status)).toEqual(['needs_review'])
-    const updated = await discoverCandidatePages({ product: apple, plan: scoped, maxResultsPerQuery: 2,
-      existing: initial, gapQuestionIds: [first] }, { web, now })
-    expect(queries).toHaveLength(3)
-    expect(queries[2]).toContain('site:www.apple.com')
-    expect(updated.candidates.items).toMatchObject([
-      { url: regional, screening: { status: 'needs_review' } },
-      { url: official, publisher: 'Apple', sourceType: 'official_product_page', screening: { status: 'selected' } },
-    ])
-    expect(updated.searches[2]).toMatchObject({ reason: 'evidence_gap', status: 'success', recordedCount: 1 })
-  })
-
-  it('keeps follow-up room and admits an approved publisher that names the brand', async () => {
-    const vivo: Product = { ...product, name: 'vivo latest product lineup', developer: 'vivo',
-      officialUrl: 'https://www.vivo.com.cn/' }
-    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 8, maximumGapSearches: 2 },
-      sourcePublishers: [{ name: 'Review Test', domain: 'review.test' }, { name: 'Unrelated', domain: 'unrelated.test' }] }
-    const web = { search: async ({ query }: { query: string }) => ({ sources: query.includes('site:www.vivo.com.cn')
-      ? Array.from({ length: 5 }, (_, index) => ({ url: `https://www.vivo.com.cn/product-${index}` }))
-      : query.includes('site:review.test')
-        ? [{ url: 'https://review.test/x500', title: 'vivo X500 specifications' }]
-        : Array.from({ length: 8 }, (_, index) => ({ url: `https://unrelated.test/article-${index}` })),
-    truncated: false }) }
-    const initial = await discoverCandidatePages({ product: vivo, plan: scoped, maxResultsPerQuery: 8 }, { web, now })
-    expect(initial.candidates.items).toHaveLength(6)
-    expect(initial.candidates.items.every(page => page.screening.status === 'needs_review')).toBe(true)
-    const updated = await discoverCandidatePages({ product: vivo, plan: scoped, maxResultsPerQuery: 8,
-      existing: initial, gapQuestionIds: [first, second] }, { web, now })
-    expect(updated.candidates.items).toHaveLength(8)
-    expect(updated.candidates.items.filter(page => page.screening.status === 'selected')).toHaveLength(6)
-    expect(updated.candidates.items.find(page => page.url === 'https://review.test/x500'))
-      .toMatchObject({ publisher: 'Review Test', screening: { status: 'selected' } })
-    expect(updated.searches.slice(2)).toMatchObject([{ recordedCount: 5 }, { recordedCount: 1 }])
+  it('admits approved publishers without product-name matches within the candidate limit', async () => {
+    const scoped: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2 },
+      sourcePublishers: [{ name: 'Review', domain: 'review.test' }] }
+    const result = await discoverCandidatePages({ product, plan: scoped, maxResultsPerQuery: 5 }, {
+      now, web: { search: async () => ({ sources: [1, 2, 3].map(id =>
+        ({ url: `https://review.test/article-${id}`, title: 'Unmatched title' })), truncated: false }) },
+    })
+    expect(result.candidates.items).toHaveLength(2)
+    expect(result.candidates.items.every(page => page.screening.status === 'selected')).toBe(true)
+    expect(result.searches.every(search => search.truncated)).toBe(true)
   })
 
   it('tries the official host after a failed acquisition and rotates equally uncovered approved hosts', async () => {
@@ -213,7 +195,7 @@ describe('product page discovery', () => {
 describe('focus-directed discovery', () => {
   const focusPlan: ProductPlan = { ...plan, focus: { categories: ['performance', 'commercial'] } }
 
-  it('reads an unregistered host that names the product and defers the rest to review', async () => {
+  it('admits valid external pages even without a product-name match', async () => {
     const result = await discoverCandidatePages({ product, plan: focusPlan, maxResultsPerQuery: 5 }, {
       now, web: { search: async () => ({ sources: [
         { url: 'https://review.test/example', title: 'Example review' },
@@ -221,10 +203,10 @@ describe('focus-directed discovery', () => {
     })
     expect(result.candidates.items).toMatchObject([
       { url: 'https://review.test/example', sourceType: 'other', screening: { status: 'selected' } },
-      { url: 'https://unknown.test/article', screening: { status: 'needs_review' } },
+      { url: 'https://unknown.test/article', screening: { status: 'selected' } },
     ])
     expect(result.candidates.items[0]?.screening.reason).toContain('confirmed focus directions')
-    expect(result.candidates.items[1]?.screening.reason).toContain('does not name the product')
+    expect(result.candidates.items[1]?.screening.reason).toContain('full-text product relevance checking')
   })
 
   it('reads a site the user named without requiring a product-name match', async () => {
