@@ -53,9 +53,9 @@ export interface ProductPlanLimits {
   readonly maximumElapsedMinutes?: number
   /** Approved full-text characters per selected page; omission retains the 12,000-character legacy bound. */
   readonly maximumPageCharacters?: number
-  /** Additional searches for unanswered questions or missing independent support. Omission disables follow-up search. */
+  /** Historical approved search allowance; current investigations never spend it. */
   readonly maximumGapSearches?: number
-  /** Additional reads of saved source fragments after semantic review. Omission disables them. */
+  /** Historical approved reread allowance; current investigations never spend it. */
   readonly maximumGapReads?: number
 }
 

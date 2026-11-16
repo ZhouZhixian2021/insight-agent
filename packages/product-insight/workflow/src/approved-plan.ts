@@ -150,11 +150,11 @@ function parseQuestions(value: Record<string, unknown>): string[] {
   return questions
 }
 
-function parseLimits(value: Record<string, unknown>, questionCount: number):
+function parseLimits(value: Record<string, unknown>, questionCount: number, legacyGapLimits: boolean):
 ProductPlanLimits & { readonly maximumCandidatePages: number } {
   if (!isRecord(value.limits)) throw new RangeError('Product plan limits must be an object')
   exactKeys(value.limits, ['maximumCandidatePages', 'maximumElapsedMinutes',
-    'maximumPageCharacters', 'maximumGapSearches', 'maximumGapReads'], 'Product plan limits')
+    'maximumPageCharacters', ...(legacyGapLimits ? ['maximumGapSearches', 'maximumGapReads'] : [])], 'Product plan limits')
   const limits: ProductPlanLimits & { readonly maximumCandidatePages: number } = {
     maximumCandidatePages: positiveInteger(value.limits.maximumCandidatePages, 'maximumCandidatePages'),
     ...value.limits.maximumElapsedMinutes === undefined ? {} : {
@@ -188,7 +188,7 @@ function parseLegacyPlan(value: Record<string, unknown>): ReviewedProductPlan {
   const { official, ...product } = parseIdentity(value)
   const scope = nonEmpty(value.scope, 'Product scope')
   const questions = parseQuestions(value)
-  const limits = parseLimits(value, questions.length)
+  const limits = parseLimits(value, questions.length, true)
   let sourcePublishers: ProductSourcePublisher[] | undefined
   if (value.sourcePublishers !== undefined) {
     sourcePublishers = parseNamedHosts(value.sourcePublishers, limits.maximumCandidatePages,
@@ -207,7 +207,7 @@ function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
   const scope = nonEmpty(value.scope, 'Product scope')
   const focus = parseFocus(value.focus)
   const questions = parseQuestions(value)
-  const limits = parseLimits(value, questions.length)
+  const limits = parseLimits(value, questions.length, false)
   let additionalSites: ProductSourcePublisher[] | undefined
   if (value.additionalSites !== undefined) {
     additionalSites = parseNamedHosts(value.additionalSites, limits.maximumCandidatePages,

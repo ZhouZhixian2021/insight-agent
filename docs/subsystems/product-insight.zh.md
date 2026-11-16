@@ -15,13 +15,14 @@ kind: "subsystem"
 
 | 记录 | 含义 |
 | --- | --- |
-| `Product` 与 `ProductPlan` | 稳定的产品身份和带版本的调查范围；审批指向准确的计划版本，也可设置每页正文上限、问题缺口补搜次数、用户从固定词表确认的关注方向、用户点名的站点，以及地区、版本和来源日期要求。 |
+| `Product` 与 `ProductPlan` | 稳定的产品身份和带版本的调查范围；审批指向准确的计划版本，也可设置每页正文上限、历史计划的补查额度、用户从固定词表确认的关注方向、用户点名的站点，以及地区、版本和来源日期要求。 |
 | `CandidatePage` | 已发现的网址、来源角色、关联问题及 A 给出的筛选决定和理由。 |
+| `SearchObservation` | 搜索页渲染后的有界文本与带编号链接。识别模型只能选择已观察到的链接编号；该记录不作为报告证据。 |
 | `SourceSnapshot` | 一次网页获取观察。成功时保存正文位置、内容校验值，以及可选的页面自报发布方、日期、地区和版本；失败时保存失败 ID。发布日期、更新日期与获取日期分别记录。 |
 | `ProductEvidence` | 指向成功快照、内容校验值和调查问题的准确原文及位置。PDF 文本范围还记录引用链接使用的物理页码。 |
 | `ProductClaim` 与 `ProductEvidenceGap` | 带适用范围、可信理由和证据关联的结论，或具体的资料缺口。 |
 | `ProductRun` 与 `ProductReportDelivery` | 处理结果与报告交付决定分开；部分成功可保留有用证据，阻止交付时不产生报告文件。 |
-| `ProductInvestigationCheckpoint` | 完整保留截至阶段位置及可选的页内片段位置的发现、网页、证据、审核、结论与比对事实，并绑定一份获批计划及累计实际运行时间。版本 1 和 2 都按原文顺序续跑，分别使用连续片段和重叠片段。版本 3 使用重叠片段，以规范化正文的起始偏移记录未完成网页的排序派发顺序。可选的 `gapReadCompleted` 记录已结束的正文补读轮次。`priorVerifications` 在处理新佐证网页或复核后发生变化的来源时保留仍然有效的比对。 |
+| `ProductInvestigationCheckpoint` | 完整保留截至阶段位置及可选的页内片段位置的发现、网页、证据、审核、结论与比对事实，并绑定一份获批计划及累计实际运行时间。版本 1 和 2 都按原文顺序续跑，分别使用连续片段和重叠片段。版本 3 使用重叠片段，以规范化正文的起始偏移记录未完成网页的排序派发顺序。历史可选字段 `gapReadCompleted` 记录已结束的正文补读轮次。`priorVerifications` 在处理新佐证网页或复核后发生变化的来源时保留仍然有效的比对。 |
 
 跨包 ID 均为品牌化字符串。持续更新的在线服务可能没有公开产品版本号，因此该字段可选；网页内容身份由实际获取的时间与校验值确定。
 
@@ -30,6 +31,36 @@ kind: "subsystem"
 `isExecutableProductPlan()` 检查当前计划版本是否获批。`createProductBatchResult()` 根据实际成功项与失败记录区分成功、部分成功和失败；没有错误的空结果仍是成功。`checkProductClaimFreshness()` 将结论所用计划和资料校验值与当前证据及最新网页快照比较。已知变化返回 `stale`，缺少当前观察返回 `unverifiable`；`current` 本身不证明结论语义正确，也不批准报告交付。
 
 模型包不校验不可信的传输数据、不获取网页、不判断原文是否支持结论、不持久化事件，也不渲染报告。这些操作由生产和消费记录的包负责。
+
+<!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
+
+<a id="cordis-surface"></a>
+
+## Cordis API
+
+Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
+
+<a id="product-events"></a>
+
+### `product/*` events
+
+<a id="productsearch-recognize--serial"></a>
+
+#### `product/search-recognize` — serial
+
+Select organic result link IDs from untrusted rendered search content.
+
+```ts cordis-catalog
+/** Select organic result link IDs from untrusted rendered search content.
+ * @mode serial
+ * @param observation - Bounded page facts, never evidence.
+ * @param signal - Shared operation deadline and cancellation.
+ */
+'product/search-recognize'(observation: SearchObservation, signal: AbortSignal): Promise<readonly number[] | undefined>
+```
+
+Source: [`packages/product-insight/source/src/search-recovery.ts`](../../packages/product-insight/source/src/search-recovery.ts)
+<!-- END GENERATED cordis-surface -->
 
 ## 依赖方向
 
