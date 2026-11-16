@@ -11,11 +11,11 @@ export interface ProductSemanticReview {
 }
 
 /**
- * Validate explicit judgments against the approved questions and source evidence.
+ * Validate source-support judgments; retain extraction question IDs only as discovery hints.
  * @param plan - Approved plan whose questions can receive conclusions.
  * @param evidence - Exact source excerpts submitted for review.
  * @param reviews - One model judgment for each evidence item.
- * @returns Source-bound claims for supported, question-linked statements.
+ * @returns Source-bound claims for supported statements, including reviews with no question IDs.
  */
 export function claimsFromSemanticReview(plan: ProductPlan, evidence: readonly ProductEvidence[],
   reviews: readonly ProductSemanticReview[]): readonly ProductClaim[] {
@@ -30,14 +30,13 @@ export function claimsFromSemanticReview(plan: ProductPlan, evidence: readonly P
     if (item === undefined || seen.has(review.evidenceId) || !review.rationale.trim()
       || review.rationale.length > 600 || !['supported', 'unsupported', 'uncertain'].includes(review.verdict)
       || new Set(review.questionIds).size !== review.questionIds.length
-      || review.questionIds.some(id => !plan.questions.some(question => question.questionId === id))
-      || (review.verdict === 'supported') !== (review.questionIds.length > 0)) {
+      || review.questionIds.some(id => !plan.questions.some(question => question.questionId === id))) {
       throw new RangeError('Semantic review contains an unknown, repeated or invalid judgment')
     }
     seen.add(review.evidenceId)
     if (review.verdict !== 'supported') continue
     claims.push({ schemaVersion: 1, claimId: createProductClaimId(), text: item.sourcedStatement,
-      scope: plan.scope, questionIds: review.questionIds, confidence: 'low',
+      scope: plan.scope, questionIds: item.questionIds, confidence: 'low',
       confidenceReasons: [review.rationale, 'One source excerpt supports this statement; independent confirmation is unavailable.'],
       evidenceLinks: [{ evidenceId: item.evidenceId, relation: 'supports', rationale: review.rationale }],
       evidenceSnapshot: { planId: plan.planId, planVersion: plan.version,
