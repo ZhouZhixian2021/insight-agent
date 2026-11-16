@@ -39,7 +39,7 @@ export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownTe
   return <div className={css.prose} ref={(element) => {
     // The shared Markdown renderer owns anchors; decorate only numbered report citations.
     element?.querySelectorAll('a').forEach((anchor) => {
-      if (/^\[\d+\]$/u.test(anchor.textContent ?? '')) anchor.setAttribute('data-product-citation', '')
+      if (/^\[\d+\]$/u.test(anchor.textContent)) anchor.setAttribute('data-product-citation', '')
     })
   }}>{sections.map((section, index) => section.title === undefined
       ? <MarkdownText key={index} text={section.text} labels={labels} />

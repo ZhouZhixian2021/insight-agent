@@ -786,9 +786,9 @@ describe('approved product investigation', () => {
       && failure.message.includes('Missing or invalid'))).toBe(true)
   })
 
-  it('uses approved gap search after an incomplete semantic review', async () => {
+  it('leaves unanswered questions for a later investigation despite legacy gap allowances', async () => {
     const scopedPlan = { ...plan, limits: { maximumCandidatePages: 2,
-      maximumElapsedMinutes: 10, maximumGapSearches: 1 } }
+      maximumElapsedMinutes: 10, maximumGapSearches: 1, maximumGapReads: 1 } }
     const search = vi.fn(async (request: { readonly query: string }) => ({ sources: [{
       url: request.query.includes('site:') ? 'https://review.test/example' : 'https://example.com/features',
       title: 'Example product' }], truncated: false }))
@@ -799,8 +799,9 @@ describe('approved product investigation', () => {
           request.url.includes('review.test') ? 'Review Test' : 'Example Inc') } }) },
       reviewEvidence: async () => [] })
     expect(result.run.failures.some(failure => failure.stage === 'analysis')).toBe(true)
-    expect(result.discovery.searches.some(item => item.reason === 'evidence_gap')).toBe(true)
-    expect(search).toHaveBeenCalledTimes(3)
+    expect(result.discovery.searches.some(item => item.reason === 'evidence_gap')).toBe(false)
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(result.gaps).toHaveLength(2)
     expect(result.delivery.status).toBe('final')
   })
 
@@ -908,134 +909,16 @@ describe('approved product investigation', () => {
     expect(result.run.failures.some(failure => failure.stage === 'analysis')).toBe(true)
   })
 
-  it('searches an unanswered question once within the approved allowance and resumes its new page', async () => {
-    const boundedPlan: ProductPlan = { ...plan,
-      limits: { maximumCandidatePages: 2, maximumElapsedMinutes: 10, maximumGapSearches: 1 } }
-    const input = { product, plan: boundedPlan, maxResultsPerQuery: 4,
-      extractionMethod: { name: 'review', version: '1' } }
-    const search = vi.fn(async (request: { readonly query: string }) => ({ sources: [request.query.includes('site:')
-      ? { url: 'https://review.test/example', title: 'Example price review' }
-      : { url: 'https://example.com/features', title: 'Example features' }], truncated: false }))
-    const fetch = vi.fn(async (request: { readonly url: string }) => ({ url: request.url,
-      statusCode: 200, truncated: false, body: { kind: 'html' as const,
-        content: request.url.includes('review.test')
-          ? pageHtml('Example costs $10.', 'Review Test')
-          : pageHtml('Example supports export.', 'Example Inc') } }))
-    let saved: ProductInvestigationCheckpoint | undefined
-    const setup: ProductInvestigationAdapters = { ...adapters, web: { search, fetch },
-      proposeEvidence: async (_page, text, questions) => text.includes('costs $10')
-        ? [{ verbatimExcerpt: 'Example costs $10.', sourcedStatement: 'Example costs $10.',
-          questionIds: [questions.find(question => question.questionId === otherQuestionId)!.questionId] }]
-        : [{ verbatimExcerpt: 'Example supports export.', sourcedStatement: 'Example supports export.',
-          questionIds: [questions.find(question => question.questionId === questionId)!.questionId] }],
-      saveCheckpoint: async (checkpoint) => {
-        saved = checkpoint
-        if (checkpoint.stage === 'evidence' && checkpoint.nextIndex === 1
-          && checkpoint.discovery.searches.length === 3) throw new Error('Restart after gap search')
-      } }
-    await expect(runProductInvestigation(input, setup)).rejects.toThrow('Restart after gap search')
-    expect(search).toHaveBeenCalledTimes(3)
-    expect(search.mock.calls[2]?.[0].query).toContain('site:review.test')
-    expect(fetch).toHaveBeenCalledTimes(2)
-    expect(saved).toMatchObject({ stage: 'evidence', nextIndex: 1,
-      discovery: { searches: [{}, {}, { reason: 'evidence_gap' }] },
-      evidence: [{}], reviews: [{}], claims: [{}] })
-    if (saved === undefined) throw new Error('Gap checkpoint was not saved')
-    const resumed = await runProductInvestigation({ ...input, checkpoint: saved }, {
-      ...setup, saveCheckpoint: async () => {} })
-    expect(search).toHaveBeenCalledTimes(3)
-    expect(fetch).toHaveBeenCalledTimes(2)
-    expect(resumed.discovery.candidates.items).toHaveLength(2)
-    expect(resumed.discovery.searches.filter(search => search.reason === 'corroboration_gap')).toHaveLength(0)
-    expect(resumed.evidence).toHaveLength(2)
-    expect(resumed.claims).toHaveLength(2)
-    expect(resumed.gaps).toHaveLength(0)
-    expect(resumed.delivery.status).toBe('final')
-    expect(reports.at(-1)).toContain('针对资料缺口补充搜索')
-
-    const oldPlan = { ...boundedPlan,
-      limits: { maximumCandidatePages: 2, maximumElapsedMinutes: 10 } }
-    const old = await runProductInvestigation({ ...input, plan: oldPlan }, {
-      ...setup, saveCheckpoint: async () => {} })
-    expect(old.discovery.searches).toHaveLength(2)
-    expect(old.gaps).toHaveLength(1)
-
-    const empty = await runProductInvestigation(input, { ...setup,
-      web: { ...setup.web, search: request => request.query.includes('site:')
-        ? Promise.resolve({ sources: [], truncated: false }) : search(request) },
-      saveCheckpoint: async () => {} })
-    expect(empty.discovery.searches).toHaveLength(3)
-    expect(empty.discovery.searches[2]).toMatchObject({ reason: 'evidence_gap', recordedCount: 0 })
-  })
-
-  it('uses a saved-page gap read after a gap search brings in the first readable page', async () => {
-    const scoped: ProductPlan = { ...plan,
-      questions: [{ questionId, text: 'Example supports export?' }, plan.questions[1]!],
-      limits: { maximumCandidatePages: 2, maximumGapSearches: 1, maximumGapReads: 1 } }
-    const checkpoints: ProductInvestigationCheckpoint[] = []
-    let calls = 0
-    const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (_page, _text, questions) =>
-      ++calls === 1 ? [] : [{ verbatimExcerpt: 'Example supports export.',
-        sourcedStatement: 'Example supports export.', questionIds: [questions[0]!.questionId] }])
-    const result = await runProductInvestigation({ product, plan: scoped, maxResultsPerQuery: 2,
+  it('does not reread saved pages for an unanswered question', async () => {
+    const scopedPlan: ProductPlan = { ...plan, limits: { maximumCandidatePages: 2, maximumGapReads: 1 } }
+    const proposeEvidence = vi.fn(async () => [])
+    const search = vi.fn((...args: Parameters<typeof adapters.web.search>) => adapters.web.search(...args))
+    const result = await runProductInvestigation({ product, plan: scopedPlan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
-      web: { search: async ({ query }) => ({ sources: query.includes('site:')
-        ? [{ url: 'https://example.com/features', title: 'Example features' }]
-        : [{ url: 'https://unrelated.test/article' }], truncated: false }),
-      fetch: async () => ({ url: 'https://example.com/features', statusCode: 200, truncated: false,
-        body: { kind: 'html', content: pageHtml('Example supports export.', 'Example Inc') } }) },
-      proposeEvidence, saveCheckpoint: async (checkpoint) => { checkpoints.push(checkpoint) } })
-    expect(result.discovery.searches.filter(search => search.reason === 'evidence_gap')).toHaveLength(1)
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
-    expect(result.evidence).toHaveLength(1)
-    expect(checkpoints.find(checkpoint => checkpoint.pages.snapshots.items.length === 0)?.gapReadCompleted)
-      .toBeUndefined()
-    expect(checkpoints.at(-1)?.gapReadCompleted).toBe(true)
-  })
-
-  it('resumes the new gap evidence at review without reopening the saved page for extraction', async () => {
-    const boundedPlan: ProductPlan = { ...plan,
-      limits: { maximumCandidatePages: 1, maximumGapReads: 1, maximumElapsedMinutes: 10 } }
-    const input = { product, plan: boundedPlan, maxResultsPerQuery: 4, extractionMethod: { name: 'review', version: '1' } }
-    const content = `Example supports export. ${'General information. '.repeat(200)}Example costs $10.`
-    const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (_page, _text, questions) =>
-      questions[0]?.questionId === otherQuestionId
-        ? [{ verbatimExcerpt: 'Example costs $10.', sourcedStatement: 'Example costs $10.', questionIds: [otherQuestionId] }]
-        : [{ verbatimExcerpt: 'Example supports export.', sourcedStatement: 'Example supports export.', questionIds: [questionId] }])
-    const reviewEvidence = vi.fn(adapters.reviewEvidence)
-    let saved: ProductInvestigationCheckpoint | undefined
-    const setup: ProductInvestigationAdapters = { ...adapters, proposeEvidence, reviewEvidence,
-      web: { ...adapters.web, fetch: async request => ({ url: request.url, statusCode: 200, truncated: false,
-        body: { kind: 'html', content: pageHtml(content, 'Example Inc') } }) },
-      saveCheckpoint: async (checkpoint) => {
-        if (checkpoint.gapReadCompleted) {
-          saved = checkpoint
-          throw new Error('Restart after gap read')
-        }
-      } }
-    await expect(runProductInvestigation(input, setup)).rejects.toThrow('Restart after gap read')
-    expect(saved).toMatchObject({ stage: 'claims', nextIndex: 1, gapReadCompleted: true, evidence: [
-      { questionIds: [questionId] }, { questionIds: [otherQuestionId],
-        locator: { kind: 'text_range', start: content.indexOf('Example costs $10.') } },
-    ], reviews: [{ questionIds: [questionId] }] })
-    if (saved === undefined) throw new Error('Gap read checkpoint was not saved')
-    const result = await runProductInvestigation({ ...input, checkpoint: saved }, { ...setup, saveCheckpoint: async () => {} })
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
-    expect(reviewEvidence.mock.calls.map(([items]) => items.map(item => item.questionIds)))
-      .toEqual([[[questionId]], [[otherQuestionId]]])
-    expect(result.gaps).toHaveLength(0)
-
-    const temporary = new Error('Gap extraction timed out')
-    const failGapRead = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (...args) => {
-      if (args[2][0]?.questionId === otherQuestionId) throw temporary
-      return proposeEvidence(...args)
-    })
-    const exhausted = await runProductInvestigation(input, { ...setup, proposeEvidence: failGapRead,
-      saveCheckpoint: async () => {}, recoverEvidenceFailure: error => error === temporary ? 'retry' : false })
-    expect(failGapRead).toHaveBeenCalledTimes(2)
-    expect(exhausted.gaps.map(gap => gap.questionId)).toEqual([otherQuestionId])
-    expect(exhausted.run.failures).toMatchObject([{ stage: 'extraction',
-      message: 'Targeted extraction from a saved source did not complete.' }])
+      web: { ...adapters.web, search }, proposeEvidence })
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(proposeEvidence).toHaveBeenCalledTimes(1)
+    expect(result.gaps).toHaveLength(2)
   })
 
   it('resumes legacy verification checkpoints without further comparisons or corroboration searches', async () => {
@@ -1197,6 +1080,10 @@ describe('product plan approval handoff', () => {
       additionalSites: [{ name: 'Mirror', domain: 'example.com' }] }))).toThrow(/overlaps product\.officialUrl/u)
     expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, schemaVersion: 3 })))
       .toThrow(/schemaVersion must be 1 or 2/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload,
+      limits: { ...focusPayload.limits, maximumGapSearches: 1 } }))).toThrow(/unsupported/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload,
+      limits: { ...focusPayload.limits, maximumGapReads: 1 } }))).toThrow(/unsupported/u)
   })
 
   it('rejects missing, duplicate or malformed structured blocks', () => {

@@ -244,6 +244,7 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
   'schedule': 'schedule.md',
   'llm': 'llm-streaming.md',
   'permission-presets': 'permission-presets.md',
+  'product': 'product-insight.md',
   'session': 'session.md',
   'settings': 'settings.md',
   'skills': 'skills.md',
@@ -287,6 +288,7 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
  * appear on more than one page.
  */
 export const LINK_MAP: Readonly<Record<string, string>> = {
+  SearchObservation: 'product-insight.md',
   AcademicBackgroundRunCancelRequest: 'academic-insight.md',
   AcademicBackgroundRunKey: 'academic-insight.md',
   AcademicBackgroundRunSummary: 'academic-insight.md',
