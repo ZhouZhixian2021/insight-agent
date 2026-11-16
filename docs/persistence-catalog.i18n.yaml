@@ -9,8 +9,8 @@
   en: 1387c4505dde2faf
   zh: 48570fa1c13d6910
 /session-persistence-event-catalog/persistence-type-fingerprints:
-  en: 89748e8be01c18ef
-  zh: 24385cc164f0cf9a
+  en: a02614fd4c18995c
+  zh: cdf36eb64bfaee56
 /session-persistence-event-catalog/event-envelope:
   en: 689f781d95689e20
   zh: 602f6a7f0835d698
@@ -2976,8 +2976,8 @@
   en: 9e8f3dcebb43b4c8
   zh: 0d7674f15b78b811
 /session-persistence-event-catalog/resolved-persistence-types/productinvestigationcheckpoint:
-  en: d0bfa7ead33afc0a
-  zh: b50e914fcff68f65
+  en: 0fdb112c86801964
+  zh: 8fae81fd1300eb41
 /session-persistence-event-catalog/resolved-persistence-types/productpagefetchresult:
   en: 1f2075380be51896
   zh: 5cdb350d7650d4ea
@@ -4485,11 +4485,11 @@
   en: 7beb5a3210ef117c
   zh: bd8406f20a85577b
 /session-persistence-event-catalog/resolved-persistence-types/pause-publicationdate-status:
-  en: 654e32396341f312
-  zh: adf8395e8ac04771
+  en: 42a111092dd0dc4c
+  zh: 6832b5ad7fbde85f
 /session-persistence-event-catalog/resolved-persistence-types/planid-reasons-reportref-runid:
-  en: 7234a1d8f0bed1fc
-  zh: e1dc8c4496448da5
+  en: 64c1f1e4a03cbdc4
+  zh: df46a51798c91459
 /session-persistence-event-catalog/resolved-persistence-types/planid-verification:
   en: b07c003897592a3c
   zh: 5bfdc71d5d28d5f8
@@ -4503,8 +4503,14 @@
   en: fb3b76ee79a40d0c
   zh: 1067d6764a3bd821
 /session-persistence-event-catalog/resolved-persistence-types/question-windowindexes-workversionid~2:
-  en: ca9a0605eaf22a0d
-  zh: 65211ffcab897225
+  en: 5185338f6bc05c91
+  zh: 4fe3d85cf7987d07
+/session-persistence-event-catalog/resolved-persistence-types/questionid-text:
+  en: 54d6ab7044351e9b
+  zh: 3a64cff6c501fdbf
+/session-persistence-event-catalog/resolved-persistence-types/questionid-text~2:
+  en: a454de4678f506fb
+  zh: 8357f198b4083c4d
 /session-persistence-event-catalog/resolved-persistence-types/quote-reason-ruleid-status:
   en: aa1f5728a68ed566
   zh: 64a51615b317d0e7
@@ -4893,11 +4899,11 @@
   en: cdcd160205c3567d
   zh: 41af5225489fdb4b
 /session-persistence-event-catalog/resolved-persistence-types/type-product-report-v1:
-  en: 1bf19fe9e3c8ce3e
-  zh: b962b5ae1cbb5ff0
+  en: da14fd80edd3659e
+  zh: 21b067fa0f599fb5
 /session-persistence-event-catalog/resolved-persistence-types/type-product-run-settlement-v1:
-  en: cb874b46e3060343
-  zh: ba2e4b0e508209c1
+  en: ff38d10b533f0b53
+  zh: ace6547863a7730c
 /session-persistence-event-catalog/resolved-persistence-types/type-product-search-recognition-request-v1:
   en: f56de34918afb86e
   zh: 22d7f05a98837ad8

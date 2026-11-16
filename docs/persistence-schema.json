@@ -69135,7 +69135,7 @@
       "kind": "event",
       "event": "product/run-settlement-v1",
       "surface": false,
-      "digest": "1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c",
+      "digest": "2befc74bb11f85062aea038c98a163849e829a752dbeb7b06408f6fc1ed2ce7d",
       "schema": {
         "root": 0,
         "nodes": [
@@ -69149,22 +69149,22 @@
               },
               {
                 "name": "ignorable",
-                "type": 10,
+                "type": 12,
                 "optional": true
               },
               {
                 "name": "seq",
-                "type": 11,
+                "type": 13,
                 "optional": false
               },
               {
                 "name": "time",
-                "type": 11,
+                "type": 13,
                 "optional": false
               },
               {
                 "name": "type",
-                "type": 12,
+                "type": 14,
                 "optional": false
               }
             ],
@@ -69197,6 +69197,11 @@
                 "name": "status",
                 "type": 6,
                 "optional": false
+              },
+              {
+                "name": "unansweredQuestions",
+                "type": 10,
+                "optional": true
               }
             ],
             "indices": []
@@ -69239,6 +69244,26 @@
           {
             "kind": "literal",
             "value": "final"
+          },
+          {
+            "kind": "array",
+            "element": 11
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "questionId",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "text",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
           },
           {
             "kind": "literal",
@@ -82257,11 +82282,6 @@
       ]
     },
     {
-      "digest": "1cd5fe82652a51250290b3dcf6b89265a3b176891981fc591e5c65629397d43c",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "1cde1bedde79c5e8a56aee9c05c8e0a579cf5bc611deb85b93fa331a16ca978f",
       "names": [
         "packages/compaction/compaction-image-offload/src/projection.ts#ImageOffloadTarget"
@@ -82883,6 +82903,11 @@
     },
     {
       "digest": "2be16a1d09f5f4d494c01a9a0ad68aa32a538d15ad8dc78c89a785ba6caacccc",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "2befc74bb11f85062aea038c98a163849e829a752dbeb7b06408f6fc1ed2ce7d",
       "names": [],
       "sources": []
     },
@@ -83827,7 +83852,7 @@
         "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
       ],
       "sources": [
-        "packages/product-insight/workflow/src/index.ts:87"
+        "packages/product-insight/workflow/src/index.ts:86"
       ]
     },
     {
@@ -84876,6 +84901,11 @@
       "sources": []
     },
     {
+      "digest": "5d88b23e8a1c30708387ac74c925f0d3c3839e7961a74ada636f920ac3fbd44f",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "5d91a8ca31923a3ecc945a9c11f41b35030d0a858355d4d82d8304fc9afeb449",
       "names": [],
       "sources": []
@@ -85495,13 +85525,6 @@
       "names": [],
       "sources": [
         "packages/academic/workflow/src/coverage-types.ts:82"
-      ]
-    },
-    {
-      "digest": "6ee18c5f659d82fb1184649ea0e32b41f8aab1e1f30dead4972478fcb51ef443",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:134"
       ]
     },
     {
@@ -89095,6 +89118,13 @@
       "sources": []
     },
     {
+      "digest": "d90920b14d3d321466273fbe9cf903f9e4fcac8f4f1ab67a63e81330ad50565e",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:141"
+      ]
+    },
+    {
       "digest": "d9196086e41e4dd5c2ce87f5c25529c8112a1731d258cf0728747d41a9ee3241",
       "names": [],
       "sources": []
@@ -90153,6 +90183,13 @@
       "digest": "f103cc37867cbcf0e421224e00e7248a44719146fb9f236c78c5aefca6bd9c83",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "f14ae6587bdefc0e2a6763d7adfcb1a3f5b6d4a89cb6d12f0763780b88515d7f",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:134"
+      ]
     },
     {
       "digest": "f14df03567a7e873c9d338c9f56b96639c3b9536a4008f52df13055b48f915fe",

@@ -11,9 +11,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This bundle adds Product Insight to the Web agent preset selector. The preset screens the request briefly, then asks once for two answers in a single card: the focus directions from a fixed multi-select vocabulary (performance, comparison, commercial information, and five more, plus their own wording), and whether the user wants to name any site themselves. It presents an investigation plan bounded by those directions and adds only the sites the user named. After approval, the host starts a Session-owned background job for Web discovery, page acquisition, exact excerpt checks, semantic support review, cross-site comparison, and report delivery checks. An inline transcript card projects those Session events into live stages, counters, blockers, and the saved Markdown report, so progress remains visible without relying on an Agent status message. The job saves a cited report when ready or a draft with blockers; evidence, comparison, claim, report, and task-state records remain in the owning Session.
-
-The product preset owns an isolated Web registry with product-free-search and product-public-page. Planning tools and background investigation use these providers without requiring dsh-web-tools; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
+Product Insight appears in the Web preset selector. It asks users to confirm investigation directions and optional sites, then submits a bounded plan for approval. After approval, a background job searches and reads pages, checks source excerpts, and saves a cited report or a draft with explicit gaps. The transcript card displays progress and lets users start a narrower follow-up from an unanswered question. The preset uses its own public Web providers; changing its configuration requires restarting the service and opening a new conversation.
 
 ## Table of Contents
 
@@ -29,7 +27,9 @@ The product preset owns an isolated Web registry with product-free-search and pr
 <a id="use-this-package"></a>
 ## Use this package
 
-The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent screens the request briefly and asks once for two answers in one card: the focus directions as a multi-select, and whether they want to read any site of their own; the plan then presents the product, scope, confirmed directions, any site they named, questions, source approach, any region, version or source-date requirements, candidate-page, per-page text, gap-search and elapsed-time limits, and expected result with a structured execution block. Focus directions come from the fixed vocabulary (performance, comparison, commercial information, availability, ecosystem, usage conditions, support, risk) and the user may add their own wording. The plan constrains directions, not websites: the official site is the only fixed domain through `product.officialUrl`, other pages are discovered by search and read by direction relevance, and `additionalSites` takes only sites the user names in conversation. The user can approve or request revisions. After approval, the transcript shows a four-stage Product Insight card for page acquisition, evidence extraction, semantic review, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
+The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent screens the request briefly and asks once for two answers in one card: the focus directions as a multi-select, and whether they want to read any site of their own; the plan then presents the product, scope, confirmed directions, any site they named, questions, source approach, any region, version or source-date requirements, candidate-page limit, and expected result with a structured execution block. Focus directions come from the fixed vocabulary (performance, comparison, commercial information, availability, ecosystem, usage conditions, support, risk) and the user may add their own wording. The plan constrains directions, not websites: the official site is the only fixed domain through `product.officialUrl`, other pages are discovered by search and read by direction relevance, and `additionalSites` takes only sites the user names in conversation. The user can approve or request revisions. After approval, the transcript shows a four-stage Product Insight card for page acquisition, evidence extraction, semantic review, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
+
+After a run settles, its transcript card lists questions with no admitted conclusion. Each question can fill an editable follow-up in the empty composer; an existing draft stays intact. Sending that follow-up begins a new plan review and, after approval, a separate investigation. Historical runs without structured unanswered questions keep their saved report without follow-up controls.
 
 -----
 
@@ -56,13 +56,11 @@ The shipped Web profile loads this bundle after the Academic bundle. Select **Pr
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through the product preset plugins. During planning, the agent must identify the product and questions, describe the verification approach and candidate-page, per-page text, gap-search and elapsed-time limits, and present the complete plan with one structured block through `exit_plan_mode`. After approval, the host starts the investigation and the transcript displays the saved report or draft with explicit gaps. `run_product_investigation` is reserved for an explicit resume request; `cancel_product_investigation` stops the active task on request. These tools end their turn instead of asking the model to rewrite the result.
+Indirectly, through the product preset plugins that supply planning instructions and tools.
 
 #### KV Cache effect
 
-Selecting this preset changes its persona, planning instructions, and tool schemas relative to another preset; repeated turns in one session keep the same composition.
-
-Chat renders formatted report text. Evidence and diagnostic appendices are collapsed by default and remain available in Markdown and self-contained HTML downloads. Rendering does not call a model or change delivery decisions.
+The preset changes the persona and available tools; later turns in the same conversation retain that composition.
 
 ## Known Limitations and Deferred Work
 

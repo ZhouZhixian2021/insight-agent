@@ -47,6 +47,7 @@ export interface ProductChatRun {
   readonly elapsedMilliseconds: number
   readonly deliveryStatus?: DeliveryStatus
   readonly reasons: readonly string[]
+  readonly unansweredQuestions?: readonly { readonly questionId: string; readonly text: string }[]
   readonly trace?: readonly ProductTraceEntry[]
   readonly report?: string
 }
@@ -173,6 +174,9 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       return { ...state, ...(planId === undefined ? {} : { planId }), runState: 'completed', stage: 6,
         ...(data.status === 'blocked' || data.status === 'draft' || data.status === 'final'
           ? { deliveryStatus: data.status } : {}),
+        ...(Array.isArray(data.unansweredQuestions) ? { unansweredQuestions: data.unansweredQuestions.flatMap(item =>
+          record(item) && typeof item.questionId === 'string' && typeof item.text === 'string'
+            ? [{ questionId: item.questionId, text: item.text }] : []) } : {}),
         reasons: Array.isArray(data.reasons) ? data.reasons.filter((item): item is string => typeof item === 'string') : state.reasons }
     default: return state
   }
@@ -225,6 +229,9 @@ const zh = {
   trace: '研究过程与 Trace', traceDownload: '下载 Trace', all: '全部', traceStatus: '调用状态',
   traceNote: '仅展示已记录事件；字符数不是 token 数，调用成功不代表结论审核通过。',
   noReport: '调查已结算，但没有保存报告正文。',
+  unanswered: '未回答的问题', followUp: '继续调查这个问题', draftOccupied: '输入框已有草稿，请先发送或清空。',
+  followUpReady: '追问已填入输入框，修改后发送即可。',
+  followUpPrompt: '请针对上次“{title}”调查中未回答的问题继续调查：{question}\n\n请先制定范围更窄的新计划，核对原网页正文与引用；如果我提供了来源线索，请优先检查。不要把旧报告或搜索摘要直接当作新证据。',
 } as const
 type ProductRunKey = keyof typeof zh
 const en: Record<ProductRunKey, string> = {
@@ -238,6 +245,31 @@ const en: Record<ProductRunKey, string> = {
   trace: 'Research process and Trace', traceDownload: 'Download Trace', all: 'All', traceStatus: 'Call status',
   traceNote: 'Recorded events only; character counts are not tokens. Successful calls do not establish valid conclusions.',
   noReport: 'The investigation settled without a saved report body.',
+  unanswered: 'Unanswered questions', followUp: 'Investigate this question',
+  draftOccupied: 'The composer has a draft. Send or clear it first.',
+  followUpReady: 'The follow-up is in the composer. Edit and send it when ready.',
+  followUpPrompt: 'Continue investigating this unanswered question from “{title}”: {question}\n\nFirst prepare a narrower new plan. Check source pages and citations; prioritize any source leads I provide. Do not treat the previous report or search snippets as new evidence.',
+}
+
+function ProductFollowUpQuestions({ run, t, useInput, inputActions }: Pick<ChatNodeViewProps<'product-insight-run'>,
+  'useInput' | 'inputActions'> & { run: ProductChatRun } & PropsLocale<'productRun'>) {
+  const input = useInput(state => state)
+  const [notice, setNotice] = useState('')
+  return <section className={css.details} aria-label={t('unanswered')}>
+    <strong>{t('unanswered')}</strong>
+    <ul className={css.followUps}>{run.unansweredQuestions?.map(question => <li key={question.questionId}>
+      <span>{question.text}</span>
+      <button type="button" onClick={() => {
+        if (input.draft.length > 0 || input.attachmentIds.length > 0) { setNotice(t('draftOccupied')); return }
+        const prompt = t('followUpPrompt').replace(/\{(title|question)\}/gu,
+          (_match, key: string) => key === 'title' ? run.title || t('title') : question.text)
+        inputActions.setDraft(prompt)
+        inputActions.persistDraft()
+        setNotice(t('followUpReady'))
+      }}>{t('followUp')}</button>
+    </li>)}</ul>
+    {notice && <p role="status">{notice}</p>}
+  </section>
 }
 
 function downloadProductTrace(run: ProductChatRun): void {
@@ -342,7 +374,8 @@ function stageState(run: ProductChatRun, index: number): 'pending' | 'active' | 
 }
 
 /** Render durable product workflow stages and the saved report without invoking the Agent. */
-export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insight-run'>, 'node'> & PropsLocale<'productRun'>) {
+export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNodeViewProps<'product-insight-run'>,
+  'node' | 'useInput' | 'inputActions'> & PropsLocale<'productRun'>) {
   const run = node.data
   const [traceStatus, setTraceStatus] = useState('all')
   const stages: readonly (readonly [ProductRunKey, number])[] = [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
@@ -378,6 +411,8 @@ export function ProductRunCard({ node, t }: Pick<ChatNodeViewProps<'product-insi
     {run.reasons.length > 0 && <details className={css.details}>
       <summary>{t('blockers')} · {run.reasons.length}</summary><ul>{run.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
     </details>}
+    {run.runState === 'completed' && run.report !== undefined && run.unansweredQuestions?.length
+      ? <ProductFollowUpQuestions run={run} t={t} useInput={useInput} inputActions={inputActions} /> : null}
     {run.report !== undefined ? <section className={css.report}>
       <div className={css.reportHeader}><strong>{t(run.deliveryStatus ?? 'draft')}</strong>
         <div className={css.reportActions}>

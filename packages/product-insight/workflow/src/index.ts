@@ -3,15 +3,14 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-tools'
-import { createEvidenceGapId, createProductBatchResult, createProductFailureId, createProductReportId, createProductRunId,
+import { createEvidenceGapId, createProductFailureId, createProductReportId, createProductRunId,
   isExecutableProductPlan, type AvailableSourceSnapshot, type CandidatePage, type Product,
   type ProductClaim, type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan,
   type ProductReportDelivery, type ProductRun, type ProductQuestionId, type SourceSnapshot,
 } from '@deepseek-ai/dsh-product-insight-model'
-import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages, hasProductCandidateCapacity,
-  isProductGapSearch,
+import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages,
   rankProductPageFragments,
-  resolveProductPageCharacterLimit, selectProductGapFragment, splitProductPageText,
+  resolveProductPageCharacterLimit, splitProductPageText,
   splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS,
   type ProductDiscoveryResult, type ProductEvidenceDraft, type ProductPageFetchAdapters, type ProductPageFetchResult,
@@ -22,7 +21,7 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval } from './approved-plan.ts'
 import { planningSearchSources } from './planning-sources.ts'
 import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
-import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
+import { checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
   type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
@@ -204,16 +203,6 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   adapters: ProductInvestigationAdapters, signal?: AbortSignal): Promise<ProductInvestigationResult> {
   if (!isExecutableProductPlan(input.plan)) throw new RangeError('Product investigation requires the approved plan version')
   const maximumPageCharacters = resolveProductPageCharacterLimit(input.plan)
-  const maximumGapSearches = input.plan.limits?.maximumGapSearches ?? 0
-  const maximumGapReads = input.plan.limits?.maximumGapReads ?? 0
-  if (!Number.isSafeInteger(maximumGapReads) || maximumGapReads < 0 || maximumGapReads > input.plan.questions.length) {
-    throw new RangeError('Product gap reads exceed the approved questions')
-  }
-  if (!Number.isSafeInteger(maximumGapSearches) || maximumGapSearches < 0
-    || maximumGapSearches > input.plan.questions.length
-    || maximumGapSearches > 0 && input.plan.limits?.maximumCandidatePages === undefined) {
-    throw new RangeError('Product gap search requires an approved search and candidate-page allowance')
-  }
   if (input.checkpoint !== undefined) validateProductCheckpoint(input, input.checkpoint)
   const checkpointVersion = input.checkpoint?.schemaVersion ?? 3
   const fragmentOverlapCharacters = input.checkpoint === undefined
@@ -238,13 +227,12 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     : AbortSignal.timeout(Math.min(Math.ceil(remainingMilliseconds), 2_147_483_647))
   const operationSignal = deadline === undefined ? signal : signal === undefined
     ? deadline : AbortSignal.any([signal, deadline])
-  let discovery = input.checkpoint?.discovery
+  const discovery = input.checkpoint?.discovery
     ?? await discoverCandidatePages(input, { web: adapters.web, now: adapters.now }, operationSignal)
-  let pages = input.checkpoint?.pages
+  const pages = input.checkpoint?.pages
     ?? await fetchProductPages(discovery.candidates.items, adapters, operationSignal, maximumPageCharacters)
-  let sourceRevalidation = input.sourceRevalidation
+  const sourceRevalidation = input.sourceRevalidation
   let currentCheckpoint = input.checkpoint
-  let gapReadCompleted = currentCheckpoint?.gapReadCompleted === true
   const evidence: ProductEvidence[] = [...input.checkpoint?.evidence ?? []]
   const evidenceFingerprints = new Set(evidence.map(productEvidenceFingerprint))
   const failures: ProductFailure[] = [...input.checkpoint?.failures
@@ -261,7 +249,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       ...fragment === undefined ? {} : { fragmentIndex: fragment.index },
       ...fragmentOverlapCharacters === 0 ? {} : { fragmentOverlapCharacters },
       ...fragment === undefined || checkpointVersion !== 3 ? {} : { fragmentOrder: fragment.order },
-      ...gapReadCompleted ? { gapReadCompleted: true } : {},
+      ...currentCheckpoint?.gapReadCompleted ? { gapReadCompleted: true } : {},
       ...priorVerifications === undefined ? {} : { priorVerifications },
       elapsedMilliseconds: elapsedMilliseconds(), discovery, pages,
       evidence: [...evidence], reviews: [...reviews], claims: [...claims],
@@ -330,40 +318,11 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       }
     }
   }
-  const searchForGaps = async (gapQuestionIds: readonly ProductQuestionId[]): Promise<number | undefined> => {
-    const selectedBefore = new Set(discovery.candidates.items.filter(page => page.screening.status !== 'excluded')
-      .map(page => page.candidatePageId))
-    const previousSnapshots = pages.snapshots.items.length
-    const previousDiscoveryFailures = discovery.candidates.failures.length
-    const unavailablePages = new Set(pages.snapshots.items.filter(snapshot => snapshot.status === 'failed')
-      .map(snapshot => snapshot.candidatePageId))
-    discovery = await discoverCandidatePages({ product: input.product, plan: input.plan,
-      maxResultsPerQuery: input.maxResultsPerQuery, existing: discovery, gapQuestionIds, unavailablePages },
-    { web: adapters.web, now: adapters.now }, operationSignal)
-    failures.push(...discovery.candidates.failures.slice(previousDiscoveryFailures))
-    if (operationSignal?.aborted) return undefined
-    const additions = discovery.candidates.items.filter(page => page.screening.status !== 'excluded'
-      && !selectedBefore.has(page.candidatePageId))
-    if (additions.length === 0) {
-      await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
-      return undefined
-    }
-    const fetched = await fetchProductPages(additions, adapters, operationSignal, maximumPageCharacters)
-    const append = (existing: ProductPageFetchResult): ProductPageFetchResult => ({ snapshots: createProductBatchResult(
-      [...existing.snapshots.items, ...fetched.snapshots.items],
-      [...existing.snapshots.failures, ...fetched.snapshots.failures]),
-    cancelled: existing.cancelled || fetched.cancelled })
-    failures.push(...fetched.snapshots.failures)
-    pages = append(pages)
-    if (sourceRevalidation !== undefined) sourceRevalidation = append(sourceRevalidation)
-    await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
-    return fetched.snapshots.items.some(snapshot => snapshot.status === 'available') ? previousSnapshots : undefined
-  }
   if (input.checkpoint === undefined) {
     await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
     if (!discovery.cancelled && !pages.cancelled && !operationSignal?.aborted) await checkpoint('pages', 0)
   }
-  while (true) {
+  {
     const byPage = new Map(discovery.candidates.items.map(page => [page.candidatePageId, page]))
     const extractionStart = currentCheckpoint === undefined || currentCheckpoint.stage === 'pages' ? 0
       : currentCheckpoint.stage === 'evidence' ? currentCheckpoint.nextIndex : pages.snapshots.items.length
@@ -501,84 +460,6 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     const settledReviews = await Promise.allSettled(Array.from({ length: 3 }, () => reviewWorker()))
     for (const result of settledReviews) if (result.status === 'rejected') throw result.reason
     await adapters.saveClaims(claims)
-    const unanswered = input.plan.questions.filter(question => !claims.some(claim => claim.questionIds.includes(question.questionId)))
-    const canFillGaps = (): boolean => !operationSignal?.aborted
-      && currentCheckpoint?.stage !== 'verification'
-    const gapAttempts = discovery.searches.filter(isProductGapSearch)
-    const gapQuestions = unanswered.filter(question => !gapAttempts.some(search => search.questionId === question.questionId))
-    const remainingGapSearches = maximumGapSearches - gapAttempts.length
-    const canSearchGaps = remainingGapSearches > 0 && gapQuestions.length > 0
-      && hasProductCandidateCapacity(discovery.candidates.items, input.plan.limits?.maximumCandidatePages ?? 0)
-    if (canFillGaps() && !canSearchGaps && !gapReadCompleted && maximumGapReads > 0 && unanswered.length > 0) {
-      const previousEvidenceCount = evidence.length
-      const sources: { page: CandidatePage; snapshot: AvailableSourceSnapshot; text: string }[] = []
-      for (const snapshot of pages.snapshots.items) {
-        if (operationSignal?.aborted) break
-        if (snapshot.status !== 'available') continue
-        const page = byPage.get(snapshot.candidatePageId)
-        if (page === undefined || page.screening.status === 'excluded' || !assessProductSource(input.product, input.plan, page, snapshot).eligible) continue
-        try {
-          const text = await adapters.readText(snapshot.contentRef)
-          if (text.length === 0 || text.length > maximumPageCharacters) throw new RangeError('Saved page text is out of bounds')
-          sources.push({ page, snapshot, text })
-        } catch {
-          if (operationSignal?.aborted) break
-          failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
-            category: 'unknown', message: 'Saved source text could not be read for gap extraction.',
-            retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-        }
-      }
-      const readBudget = { remaining: maximumGapReads }
-      let linksChanged = false
-      for (const question of unanswered) {
-        if (operationSignal?.aborted || readBudget.remaining === 0) break
-        const target = sources.flatMap((source) => {
-          const match = selectProductGapFragment(source.text, question.text)
-          return match === undefined ? [] : [{ ...source, ...match, allowance: Number.MAX_SAFE_INTEGER }]
-        }).toSorted((left, right) => right.score - left.score)[0]
-        if (target === undefined) continue
-        readBudget.remaining -= 1
-        const { page, snapshot, text, fragment, allowance } = target
-        const questionPage = { ...page, questionIds: [question.questionId] }
-        const before = evidence.length
-        await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, allowance, 'Gap fragment',
-          readBudget, false)
-        if (operationSignal?.aborted) break
-        const linked = byPage.get(page.candidatePageId) ?? page
-        if (evidence.length > before && !linked.questionIds.includes(question.questionId)) {
-          byPage.set(page.candidatePageId, { ...linked, questionIds: [...linked.questionIds, question.questionId] })
-          linksChanged = true
-        }
-      }
-      if (linksChanged) {
-        const items = [...byPage.values()]
-        discovery = { ...discovery, candidates: { ...discovery.candidates, items } }
-        await adapters.savePages(items, pages.snapshots.items)
-      }
-      if (operationSignal?.aborted) break
-      gapReadCompleted = readBudget.remaining < maximumGapReads
-      if (previousEvidenceCount > 0) await checkpoint('claims', previousEvidenceCount)
-      else if (pages.snapshots.items.length > 0) await checkpoint('evidence', pages.snapshots.items.length)
-      else await checkpoint('pages', 0)
-      if (evidence.length > previousEvidenceCount) continue
-    }
-    if (canFillGaps() && canSearchGaps) {
-      const previousSnapshots = await searchForGaps(gapQuestions.slice(0, remainingGapSearches).map(question => question.questionId))
-      if (operationSignal?.aborted) break
-      if (previousSnapshots !== undefined) {
-        const reviewed = new Set(reviews.map(review => review.evidenceId))
-        evidence.sort((left, right) => Number(reviewed.has(right.evidenceId)) - Number(reviewed.has(left.evidenceId)))
-        verifications.length = 0
-        await checkpoint(previousSnapshots === 0 ? 'pages' : 'evidence', previousSnapshots)
-        continue
-      }
-      if (evidence.length > 0) await checkpoint('claims', evidence.length)
-      else if (pages.snapshots.items.length > 0) await checkpoint('evidence', pages.snapshots.items.length)
-      else await checkpoint('pages', 0)
-      continue
-    }
-    // Source support has been reviewed above. No separate corroboration calls or searches.
-    break
   }
   const gaps: ProductEvidenceGap[] = input.plan.questions.filter(question =>
     !claims.some(item => item.questionIds.includes(question.questionId))).map(question => ({

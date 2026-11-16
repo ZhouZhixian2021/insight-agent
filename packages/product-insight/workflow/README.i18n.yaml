@@ -6,38 +6,50 @@
   en: c449168549923ac0
   zh: 0fd82cd3009105da
 /deepseek-ai-dsh-product-insight-workflow:
-  en: 41105fd66bbc4af0
-  zh: 028f9823b87cea3b
+  en: d852b1905a1bbe48
+  zh: ca681249299c3b77
 /deepseek-ai-dsh-product-insight-workflow/summary:
-  en: 978e70e31aac12a5
-  zh: fe97b5a33153fd9f
+  en: 09df35601f38ec71
+  zh: 896d5b27d0dbefcf
 /deepseek-ai-dsh-product-insight-workflow/table-of-contents:
   en: d152484eb41ac6b4
   zh: f0f7f88fe2f53b05
 /deepseek-ai-dsh-product-insight-workflow/use-this-package:
-  en: a360d1d76d787eed
-  zh: 7bbfc35e68dfffec
+  en: 0a5458bd099023e3
+  zh: c267d91de4835647
 /deepseek-ai-dsh-product-insight-workflow/understand-the-implementation:
-  en: cb85fe16d1ff2d04
-  zh: 8e9bb495a6834e43
+  en: 2558a14c67470a0f
+  zh: ab2386b713779fa5
 /deepseek-ai-dsh-product-insight-workflow/further-exploration:
   en: e386e19c24138a3c
   zh: 0d8c7e4fc80d4c57
 /deepseek-ai-dsh-product-insight-workflow/model-experience:
-  en: 28511cef72537f67
-  zh: b593a3576d0ed976
-/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction:
-  en: cb04cbc41b05332f
-  zh: 38a973fed7f72395
-/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/what-the-model-sees:
-  en: 7c2770a851964d82
-  zh: 4f1b2c08a105570b
-/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/token-effect:
-  en: 52bb04fb8b0d8f1d
-  zh: 124a095ab9065a96
-/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction/kv-cache-effect:
-  en: eb9568d0117d578c
-  zh: 7db316e83831c674
+  en: fa744df6933332a0
+  zh: eac0aabe37857fe3
+/deepseek-ai-dsh-product-insight-workflow/model-experience/search-recognition:
+  en: 23a1a0aca515e702
+  zh: 80d7e1b672420102
+/deepseek-ai-dsh-product-insight-workflow/model-experience/search-recognition/what-the-model-sees:
+  en: b3812680395dee5c
+  zh: 3175ba80fcbdb63d
+/deepseek-ai-dsh-product-insight-workflow/model-experience/search-recognition/token-effect:
+  en: 1601175cce08d8bd
+  zh: 976a51600e7fc4e4
+/deepseek-ai-dsh-product-insight-workflow/model-experience/search-recognition/kv-cache-effect:
+  en: d17a5d34d08e2c3d
+  zh: 8d1e36199a39c193
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing:
+  en: 9b9060bdf390e992
+  zh: 41f5b686ec34d305
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/what-the-model-sees:
+  en: 7d8dcefcc830c2ca
+  zh: 81ad814f2fee62ee
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/token-effect:
+  en: 1c024240abbbdcb6
+  zh: c3795c3450aba3ea
+/deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/kv-cache-effect:
+  en: de28a50223210d67
+  zh: 4bf7ccbb3e913482
 /deepseek-ai-dsh-product-insight-workflow/known-limitations-and-deferred-work:
   en: 01dc2fe89a0e28a7
   zh: bd6a0fdb85f27ff0

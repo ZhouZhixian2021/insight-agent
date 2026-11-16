@@ -18,8 +18,15 @@ const labels: Record<string, string> = { draft: '调查草稿', pages: '来源�
   evidenceCount: '有效证据', claimCount: '已审核结论', verificationCount: '跨来源核验', failureCount: '失败操作',
   elapsed: '已用时', seconds: '秒', blockers: '未达标原因', reportContent: '报告正文', download: '下载 Markdown',
   downloadHtml: '下载 HTML', htmlContents: '目录', htmlSummary: '调查摘要', htmlCopy: '复制代码', htmlCopied: '已复制',
-  htmlFootnotes: '脚注', title: '产品洞察调查', noReport: '无报告' }
+  htmlFootnotes: '脚注', title: '产品洞察调查', noReport: '无报告',
+  followUpPrompt: '继续调查“{title}”中未回答的问题：{question}', followUp: '继续调查这个问题' }
 const t = ((key: string) => labels[key] ?? key) as never
+const setDraft = vi.fn()
+const persistDraft = vi.fn()
+const submit = vi.fn()
+const inputActions = { setDraft, persistDraft, submit } as never
+const useInput = ((selector: (state: { draft: string; attachmentIds: string[] }) => unknown) =>
+  selector({ draft: '', attachmentIds: [] })) as never
 
 it('keeps Chinese prose outside automatically linked domains in reports and HTML exports', () => {
   const report = '# 报告\n\n资料来源：www.apple.com.cn、www.macworld.com），按材料内容说明限制。\n\n'
@@ -61,13 +68,29 @@ it('pairs concurrent review Trace results with their exact requests', () => {
 })
 
 it('shows four stages without an independent corroboration step for new investigations', () => {
-  render(<ProductRunCard t={t} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
+  render(<ProductRunCard t={t} useInput={useInput} inputActions={inputActions} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
     stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,
     failures: 0, elapsedMilliseconds: 1, reasons: [] } } as never} />)
   expect(screen.getByText('语义审核')).toBeTruthy()
   expect(screen.getByText('报告生成')).toBeTruthy()
   expect(screen.queryByText('独立佐证')).toBeNull()
   expect(screen.queryByText('跨来源核验')).toBeNull()
+  expect(screen.queryByRole('button', { name: '继续调查这个问题' })).toBeNull()
+})
+
+it('keeps an existing composer draft when a settled question is selected', () => {
+  setDraft.mockClear()
+  const occupiedInput = ((selector: (state: { draft: string; attachmentIds: string[] }) => unknown) =>
+    selector({ draft: '已有草稿', attachmentIds: [] })) as never
+  render(<ProductRunCard t={t} useInput={occupiedInput} inputActions={inputActions} node={{ id: 'run', data: {
+    planId, callId: 'call', title: 'Product', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 1, availablePages: 1, evidence: 1, claims: 0, verifications: 0,
+    failures: 0, elapsedMilliseconds: 1, reasons: [], report: '# 草稿',
+    unansweredQuestions: [{ questionId: 'q1', text: '待回答问题' }],
+  } } as never} />)
+  fireEvent.click(screen.getByRole('button', { name: '继续调查这个问题' }))
+  expect(setDraft).not.toHaveBeenCalled()
+  expect(screen.getByRole('status').textContent).toContain('draftOccupied')
 })
 
 it('projects approved product stages and the saved report into one Chat card', () => {
@@ -93,7 +116,8 @@ it('projects approved product stages and the saved report into one Chat card', (
     { type: 'product/verification-v1', data: { planId, verification: {} } },
     { type: 'product/report-v1', data: { planId, contentRef: `${planId}:report`, markdown: '# 调查草稿\n\n已保存正文。' } },
     { type: 'product/run-settlement-v1', data: { planId, runId: 'run-1', status: 'draft',
-      reportRef: `${planId}:report`, reasons: ['缺少独立佐证'] } },
+      reportRef: `${planId}:report`, reasons: ['缺少独立佐证'],
+      unansweredQuestions: [{ questionId: `${planId}:question:2`, text: '第二个问题是什么？' }] } },
     { type: 'product/background-run-v1', data: { planId, jobId: 'job-1', state: 'completed',
       startedAt: '2026-11-09T00:00:00Z', updatedAt: '2026-11-09T00:01:00Z',
       reportRef: `${planId}:report`, deliveryStatus: 'draft', error: null } },
@@ -110,7 +134,7 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(node.data).toMatchObject({ approved: true, runState: 'completed', deliveryStatus: 'draft',
     candidatePages: 3, availablePages: 2, evidence: 4, claims: 2, verifications: 1,
     failures: 1, elapsedMilliseconds: 12_400, report: '# 调查草稿\n\n已保存正文。' })
-  render(<ProductRunCard node={node as never} t={t} />)
+  render(<ProductRunCard node={node as never} t={t} useInput={useInput} inputActions={inputActions} />)
   expect(screen.getByText('华为产品调查计划')).toBeTruthy()
   expect(screen.getByText('缺少独立佐证')).toBeTruthy()
   expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeTruthy()
@@ -120,6 +144,10 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(screen.getAllByText('已完成').filter(element => element.tagName === 'SMALL')).toHaveLength(5)
   expect(screen.getByRole('button', { name: 'traceDownload' })).toBeTruthy()
   expect(screen.getAllByText(/product\/model-request-v1/u).length).toBeGreaterThan(0)
+  fireEvent.click(screen.getByRole('button', { name: '继续调查这个问题' }))
+  expect(setDraft).toHaveBeenCalledWith(expect.stringContaining('第二个问题是什么？'))
+  expect(persistDraft).toHaveBeenCalled()
+  expect(submit).not.toHaveBeenCalled()
 })
 
 it('exports and downloads a self-contained safe HTML report', () => {
@@ -146,7 +174,7 @@ it('exports and downloads a self-contained safe HTML report', () => {
   vi.stubGlobal('URL', { createObjectURL: create, revokeObjectURL: vi.fn() })
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   const node = { id: 'call', data: run }
-  render(<ProductRunCard node={node as never} t={t} />)
+  render(<ProductRunCard node={node as never} t={t} useInput={useInput} inputActions={inputActions} />)
   fireEvent.click(screen.getByRole('button', { name: '下载 HTML' }))
   expect(create).toHaveBeenCalledOnce()
   expect((click.mock.instances[0] as HTMLAnchorElement)?.download).toBe('product-insight-report.html')

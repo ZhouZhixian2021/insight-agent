@@ -137,6 +137,8 @@ declare module '@deepseek-ai/dsh-session/types' {
       status: 'draft' | 'blocked' | 'final'
       reportRef: string | null
       reasons: string[]
+      /** Questions without an admitted conclusion, for an optional new investigation. */
+      unansweredQuestions?: readonly { questionId: string; text: string }[]
     }
   }
 }
@@ -590,7 +592,9 @@ async function performProductInvestigation(ctx: Context, session: Session, model
   if (!signal.aborted) {
     session.append('product/run-settlement-v1', { planId: plan.planId, runId: result.run.runId,
       status: result.delivery.status, reportRef: result.delivery.report?.contentRef ?? null,
-      reasons: [...result.delivery.reasons] })
+      reasons: [...result.delivery.reasons], unansweredQuestions: result.gaps.map(gap => ({
+        questionId: gap.questionId, text: gap.missingContent,
+      })) })
     await persist()
   }
   return { result }
