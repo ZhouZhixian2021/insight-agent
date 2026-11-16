@@ -9,9 +9,11 @@ kind: "package-reference"
 
 ## 概述
 
-通过 `ctx.web` 使用 `dsh-web-fetch-http`，可在不发送凭据的情况下获取公开 HTTP(S) 资源。它返回有界的解码文本或 PDF 字节及响应状态，包括非 2xx 状态；私有网址和不支持的二进制类型会被拒绝。面向模型的 `web_fetch` 工具由 `dsh-tool-web` 提供，并拒绝 PDF 字节。
+有了 `dsh-web-fetch-http`，harness 可以通过 web 服务（`ctx.web`）抓取公共 HTTP(S) 资源，并在不发送凭据的情况下获得状态码与有界内容。HTML/文本会被解码；PDF 保留为字节供程序消费方使用。它把非 2xx 响应作为结果而非错误返回，并拒绝非公开目标与不支持的二进制类型。面向模型的 `web_fetch` 工具位于 `dsh-tool-web`，并会有意拒绝 PDF 字节。
 
-程序调用方可设置 `HttpFetchLimits.http1Only` 以兼容代理。JavaScript 和 ECMAScript 响应仍作为文本供受保护的浏览器渲染；网址、重定向、取消和响应大小限制继续生效。
+JavaScript 和 ECMAScript 响应 MIME 类型按文本保留，供受保护的浏览器资源读取渲染公开网页；仍遵守相同的网址与响应大小限制。
+
+程序调用方可设置 `HttpFetchLimits.http1Only` 以兼容代理。它为请求创建 HTTP/1.1 代理连接，在读取完成或失败后释放，不更改全局代理策略。未设置时保留原有传输方式；网址、重定向、取消和响应大小限制继续生效。
 
 ## 目录
 

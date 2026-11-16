@@ -2,9 +2,10 @@
 import { createHash } from 'node:crypto'
 
 import { brandString } from '@deepseek-ai/dsh-brand'
+import { isProductFocusCategoryId } from '@deepseek-ai/dsh-product-insight-model'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
-import type { Product, ProductId, ProductPlan, ProductPlanId, ProductPlanLimits,
-  ProductQuestionId, ProductSourceCriteria, ProductSourcePublisher } from '@deepseek-ai/dsh-product-insight-model'
+import type { Product, ProductFocusCategoryId, ProductId, ProductPlan, ProductPlanFocus, ProductPlanId,
+  ProductPlanLimits, ProductQuestionId, ProductSourceCriteria, ProductSourcePublisher } from '@deepseek-ai/dsh-product-insight-model'
 
 const PLAN_FENCE = 'product-insight-plan-json'
 
@@ -21,6 +22,18 @@ export interface ApprovedProductPlan {
   readonly product: Product
   readonly plan: ProductPlan
   readonly approvalIdentity: string
+}
+
+/** Reviewed plan content that has not been approved yet. */
+export interface ReviewedProductPlan {
+  readonly product: Pick<Product, 'name' | 'developer' | 'officialUrl'>
+  readonly scope: string
+  readonly questions: readonly string[]
+  readonly limits: ProductPlanLimits
+  readonly focus?: ProductPlanFocus
+  readonly sourcePublishers?: readonly ProductSourcePublisher[]
+  readonly additionalSites?: readonly ProductSourcePublisher[]
+  readonly sourceCriteria?: ProductSourceCriteria
 }
 
 /**
@@ -82,7 +95,9 @@ export function productPlanFromApproval(input: ApprovedProductPlanInput): Approv
         questionId: brandString<ProductQuestionId>(`${planId}:question:${index + 1}`), text,
       })),
       limits: payload.limits,
+      ...payload.focus === undefined ? {} : { focus: payload.focus },
       ...payload.sourcePublishers === undefined ? {} : { sourcePublishers: payload.sourcePublishers },
+      ...payload.additionalSites === undefined ? {} : { additionalSites: payload.additionalSites },
       ...payload.sourceCriteria === undefined ? {} : { sourceCriteria: payload.sourceCriteria },
       approval: { status: 'approved', approvedPlanVersion: 1,
         reviewedBy: 'session-user', reviewedAt: input.reviewedAt, comment: null } },
@@ -92,27 +107,25 @@ export function productPlanFromApproval(input: ApprovedProductPlanInput): Approv
 
 /**
  * Validate one structured block before review without granting approval.
- * External publisher domains cannot overlap the official host or its parent and child domains.
+ * Schema version 1 keeps the reviewed publisher allowlist and its overlap rules.
+ * Schema version 2 requires confirmed focus categories, rejects that allowlist,
+ * and treats a named site list as an addition rather than a restriction.
  * @param markdown - Proposed plan text containing one structured JSON block.
- * @returns Validated product, questions, scope, limits, and optional source criteria.
+ * @returns Validated product, questions, scope, limits, focus, named sites, and source criteria.
  */
-export function parseProductPlanMarkdown(markdown: string): {
-  readonly product: Pick<Product, 'name' | 'developer' | 'officialUrl'>
-  readonly scope: string
-  readonly questions: readonly string[]
-  readonly limits: ProductPlanLimits
-  readonly sourcePublishers?: readonly ProductSourcePublisher[]
-  readonly sourceCriteria?: ProductSourceCriteria
-} {
+export function parseProductPlanMarkdown(markdown: string): ReviewedProductPlan {
   const matches = [...markdown.matchAll(/(?:^|\n)```product-insight-plan-json\s*\n([\s\S]*?)\n```(?=\n|$)/gu)]
   if (matches.length !== 1) throw new RangeError(`Plan must contain exactly one ${PLAN_FENCE} block`)
   let value: unknown
   try { value = JSON.parse(matches[0]?.[1] ?? '') }
   catch { throw new RangeError('Product plan block must contain valid JSON') }
   if (!isRecord(value)) throw new RangeError('Product plan must be an object')
-  exactKeys(value, ['schemaVersion', 'product', 'scope', 'questions', 'limits',
-    'sourcePublishers', 'sourceCriteria'], 'Product plan')
-  if (value.schemaVersion !== 1) throw new RangeError('Product plan schemaVersion must be 1')
+  if (value.schemaVersion === 1) return parseLegacyPlan(value)
+  if (value.schemaVersion === 2) return parseFocusPlan(value)
+  throw new RangeError('Product plan schemaVersion must be 1 or 2')
+}
+
+function parseIdentity(value: Record<string, unknown>): Pick<Product, 'name' | 'developer' | 'officialUrl'> & { official: URL } {
   if (!isRecord(value.product)) throw new RangeError('Product identity must be an object')
   exactKeys(value.product, ['name', 'developer', 'officialUrl'], 'Product identity')
   const name = nonEmpty(value.product.name, 'Product name')
@@ -124,17 +137,25 @@ export function parseProductPlanMarkdown(markdown: string): {
   if (!['http:', 'https:'].includes(official.protocol) || official.username || official.password) {
     throw new RangeError('Product officialUrl must be an HTTP(S) URL without credentials')
   }
-  const scope = nonEmpty(value.scope, 'Product scope')
+  return { name, developer, officialUrl: official.href, official }
+}
+
+function parseQuestions(value: Record<string, unknown>): string[] {
   if (!Array.isArray(value.questions) || value.questions.length < 2 || value.questions.length > 5) {
     throw new RangeError('Product plan requires two to five questions')
   }
   const questions: string[] = []
   for (const question of value.questions) questions.push(nonEmpty(question, 'Product question'))
   if (new Set(questions).size !== questions.length) throw new RangeError('Product plan questions must be distinct')
+  return questions
+}
+
+function parseLimits(value: Record<string, unknown>, questionCount: number):
+ProductPlanLimits & { readonly maximumCandidatePages: number } {
   if (!isRecord(value.limits)) throw new RangeError('Product plan limits must be an object')
   exactKeys(value.limits, ['maximumCandidatePages', 'maximumElapsedMinutes',
     'maximumPageCharacters', 'maximumGapSearches', 'maximumGapReads'], 'Product plan limits')
-  const limits = {
+  const limits: ProductPlanLimits & { readonly maximumCandidatePages: number } = {
     maximumCandidatePages: positiveInteger(value.limits.maximumCandidatePages, 'maximumCandidatePages'),
     ...value.limits.maximumElapsedMinutes === undefined ? {} : {
       maximumElapsedMinutes: positiveNumber(value.limits.maximumElapsedMinutes, 'maximumElapsedMinutes'),
@@ -149,70 +170,143 @@ export function parseProductPlanMarkdown(markdown: string): {
       maximumGapReads: positiveInteger(value.limits.maximumGapReads, 'maximumGapReads'),
     },
   }
-  if (limits.maximumCandidatePages > 30) throw new RangeError('maximumCandidatePages must be at most 30')
-  if (limits.maximumGapSearches !== undefined && limits.maximumGapSearches > value.questions.length) {
+  if (limits.maximumCandidatePages > 30) {
+    throw new RangeError('maximumCandidatePages must be at most 30')
+  }
+  if (limits.maximumGapSearches !== undefined && limits.maximumGapSearches > questionCount) {
     throw new RangeError('maximumGapSearches must not exceed the number of approved questions')
   }
-  if (limits.maximumGapReads !== undefined && limits.maximumGapReads > questions.length) {
+  if (limits.maximumGapReads !== undefined && limits.maximumGapReads > questionCount) {
     throw new RangeError('maximumGapReads must not exceed the number of approved questions')
   }
+  return limits
+}
+
+function parseLegacyPlan(value: Record<string, unknown>): ReviewedProductPlan {
+  exactKeys(value, ['schemaVersion', 'product', 'scope', 'questions', 'limits',
+    'sourcePublishers', 'sourceCriteria'], 'Product plan')
+  const { official, ...product } = parseIdentity(value)
+  const scope = nonEmpty(value.scope, 'Product scope')
+  const questions = parseQuestions(value)
+  const limits = parseLimits(value, questions.length)
   let sourcePublishers: ProductSourcePublisher[] | undefined
   if (value.sourcePublishers !== undefined) {
-    if (!Array.isArray(value.sourcePublishers) || value.sourcePublishers.length > limits.maximumCandidatePages) {
-      throw new RangeError('sourcePublishers must fit the approved candidate-page limit')
-    }
-    sourcePublishers = value.sourcePublishers.map((entry: unknown): ProductSourcePublisher => {
-      if (!isRecord(entry)) throw new RangeError('sourcePublishers entries must be objects')
-      exactKeys(entry, ['name', 'domain'], 'Source publisher')
-      const publisherName = nonEmpty(entry.name, 'Source publisher name')
-      const domain = nonEmpty(entry.domain, 'Source publisher domain').toLowerCase()
-      let normalizedHost: string | undefined
-      try { normalizedHost = new URL(`https://${domain}`).hostname }
-      catch { /* A malformed hostname is rejected below. */ }
-      if (domain === official.hostname || domain.endsWith(`.${official.hostname}`)
-        || official.hostname.endsWith(`.${domain}`)) {
-        throw new RangeError('Source publisher domain overlaps product.officialUrl; list external publishers only')
-      }
-      if (publisherName.length > 200 || publisherName.toLocaleLowerCase() === developer.toLocaleLowerCase()
-        || domain.length > 253 || !/^[a-z0-9.-]+$/u.test(domain)
-        || domain.startsWith('.') || domain.endsWith('.') || !domain.includes('.')
-        || normalizedHost !== domain) {
-        throw new RangeError('Source publisher domain must be a distinct bare hostname')
-      }
-      return { name: publisherName, domain }
-    })
-    const publishers = sourcePublishers
-    if (new Set(publishers.map(item => item.domain)).size !== publishers.length
-      || new Set(publishers.map(item => item.name.toLowerCase())).size !== publishers.length
-      || publishers.some((publisher, index) => publishers.some((other, otherIndex) =>
-        index !== otherIndex && publisher.domain.endsWith(`.${other.domain}`)))) {
-      throw new RangeError('sourcePublishers must have distinct domains and names')
-    }
+    sourcePublishers = parseNamedHosts(value.sourcePublishers, limits.maximumCandidatePages,
+      official, product.developer, 'Source publisher')
   }
-  let sourceCriteria: ProductSourceCriteria | undefined
-  if (value.sourceCriteria !== undefined) {
-    if (!isRecord(value.sourceCriteria)) throw new RangeError('sourceCriteria must be an object')
-    exactKeys(value.sourceCriteria, ['region', 'productVersion', 'minimumSourceDate'], 'Source criteria')
-    const region = value.sourceCriteria.region === undefined ? undefined : nonEmpty(value.sourceCriteria.region, 'Source region')
-    const productVersion = value.sourceCriteria.productVersion === undefined ? undefined
-      : nonEmpty(value.sourceCriteria.productVersion, 'Source productVersion')
-    const minimumSourceDate = value.sourceCriteria.minimumSourceDate === undefined ? undefined
-      : nonEmpty(value.sourceCriteria.minimumSourceDate, 'minimumSourceDate')
-    if (region !== undefined && region.length > 120 || productVersion !== undefined && productVersion.length > 120) {
-      throw new RangeError('Source region and productVersion must be at most 300 characters')
-    }
-    if (minimumSourceDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/u.test(minimumSourceDate)
-      || !Number.isFinite(Date.parse(minimumSourceDate))
-      || new Date(minimumSourceDate).toISOString().slice(0, 10) !== minimumSourceDate)) {
-      throw new RangeError('minimumSourceDate must be a valid YYYY-MM-DD date')
-    }
-    sourceCriteria = { ...region === undefined ? {} : { region },
-      ...productVersion === undefined ? {} : { productVersion },
-      ...minimumSourceDate === undefined ? {} : { minimumSourceDate } }
-  }
-  return { product: { name, developer, officialUrl: official.href }, scope, questions, limits,
+  const sourceCriteria = parseSourceCriteria(value)
+  return { product, scope, questions, limits,
     ...sourcePublishers === undefined ? {} : { sourcePublishers },
     ...sourceCriteria === undefined ? {} : { sourceCriteria } }
+}
+
+function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
+  exactKeys(value, ['schemaVersion', 'product', 'scope', 'focus', 'questions', 'limits',
+    'additionalSites', 'sourceCriteria'], 'Product plan')
+  const { official, ...product } = parseIdentity(value)
+  const scope = nonEmpty(value.scope, 'Product scope')
+  const focus = parseFocus(value.focus)
+  const questions = parseQuestions(value)
+  const limits = parseLimits(value, questions.length)
+  let additionalSites: ProductSourcePublisher[] | undefined
+  if (value.additionalSites !== undefined) {
+    additionalSites = parseNamedHosts(value.additionalSites, limits.maximumCandidatePages,
+      official, product.developer, 'Additional site')
+  }
+  const sourceCriteria = parseSourceCriteria(value)
+  return { product, scope, questions, limits, focus,
+    ...additionalSites === undefined ? {} : { additionalSites },
+    ...sourceCriteria === undefined ? {} : { sourceCriteria } }
+}
+
+function parseFocus(value: unknown): ProductPlanFocus {
+  if (!isRecord(value)) throw new RangeError('Product plan focus must be an object')
+  exactKeys(value, ['categories', 'custom'], 'Product plan focus')
+  if (!Array.isArray(value.categories) || value.categories.length === 0 || value.categories.length > 8) {
+    throw new RangeError('Product plan focus requires one to eight categories')
+  }
+  const categories: ProductFocusCategoryId[] = []
+  for (const category of value.categories) {
+    if (!isProductFocusCategoryId(category)) {
+      throw new RangeError(`Product plan focus category is not part of the vocabulary: ${String(category)}`)
+    }
+    categories.push(category)
+  }
+  if (new Set(categories).size !== categories.length) {
+    throw new RangeError('Product plan focus categories must be distinct')
+  }
+  let custom: string[] | undefined
+  if (value.custom !== undefined) {
+    if (!Array.isArray(value.custom) || value.custom.length === 0 || value.custom.length > 5) {
+      throw new RangeError('Product plan focus custom entries must be one to five')
+    }
+    custom = value.custom.map((entry: unknown) => nonEmpty(entry, 'Product focus custom entry'))
+    if (custom.some(entry => entry.length > 200)) {
+      throw new RangeError('Product focus custom entries must be at most 200 characters')
+    }
+    if (new Set(custom).size !== custom.length) throw new RangeError('Product focus custom entries must be distinct')
+  }
+  return { categories, ...custom === undefined ? {} : { custom } }
+}
+
+/**
+ * Validate user-named hosts: bare hostnames, distinct names and domains, no
+ * overlap with the official host, and no more entries than the page limit.
+ */
+function parseNamedHosts(value: unknown, maximumPages: number, official: URL, developer: string,
+  label: string): ProductSourcePublisher[] {
+  if (!Array.isArray(value) || value.length > maximumPages) {
+    throw new RangeError(`${label} entries must fit the approved candidate-page limit`)
+  }
+  const hosts = value.map((entry: unknown): ProductSourcePublisher => {
+    if (!isRecord(entry)) throw new RangeError(`${label} entries must be objects`)
+    exactKeys(entry, ['name', 'domain'], label)
+    const name = nonEmpty(entry.name, `${label} name`)
+    const domain = nonEmpty(entry.domain, `${label} domain`).toLowerCase()
+    let normalizedHost: string | undefined
+    try { normalizedHost = new URL(`https://${domain}`).hostname }
+    catch { /* A malformed hostname is rejected below. */ }
+    if (domain === official.hostname || domain.endsWith(`.${official.hostname}`)
+      || official.hostname.endsWith(`.${domain}`)) {
+      throw new RangeError(`${label} domain overlaps product.officialUrl; list other hosts only`)
+    }
+    if (name.length > 200 || name.toLocaleLowerCase() === developer.toLocaleLowerCase()
+      || domain.length > 253 || !/^[a-z0-9.-]+$/u.test(domain)
+      || domain.startsWith('.') || domain.endsWith('.') || !domain.includes('.')
+      || normalizedHost !== domain) {
+      throw new RangeError(`${label} domain must be a distinct bare hostname`)
+    }
+    return { name, domain }
+  })
+  if (new Set(hosts.map(item => item.domain)).size !== hosts.length
+    || new Set(hosts.map(item => item.name.toLowerCase())).size !== hosts.length
+    || hosts.some((host, index) => hosts.some((other, otherIndex) =>
+      index !== otherIndex && host.domain.endsWith(`.${other.domain}`)))) {
+    throw new RangeError(`${label} entries must have distinct domains and names`)
+  }
+  return hosts
+}
+
+function parseSourceCriteria(value: Record<string, unknown>): ProductSourceCriteria | undefined {
+  if (value.sourceCriteria === undefined) return undefined
+  if (!isRecord(value.sourceCriteria)) throw new RangeError('sourceCriteria must be an object')
+  exactKeys(value.sourceCriteria, ['region', 'productVersion', 'minimumSourceDate'], 'Source criteria')
+  const region = value.sourceCriteria.region === undefined ? undefined : nonEmpty(value.sourceCriteria.region, 'Source region')
+  const productVersion = value.sourceCriteria.productVersion === undefined ? undefined
+    : nonEmpty(value.sourceCriteria.productVersion, 'Source productVersion')
+  const minimumSourceDate = value.sourceCriteria.minimumSourceDate === undefined ? undefined
+    : nonEmpty(value.sourceCriteria.minimumSourceDate, 'minimumSourceDate')
+  if (region !== undefined && region.length > 120 || productVersion !== undefined && productVersion.length > 120) {
+    throw new RangeError('Source region and productVersion must be at most 300 characters')
+  }
+  if (minimumSourceDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/u.test(minimumSourceDate)
+    || !Number.isFinite(Date.parse(minimumSourceDate))
+    || new Date(minimumSourceDate).toISOString().slice(0, 10) !== minimumSourceDate)) {
+    throw new RangeError('minimumSourceDate must be a valid YYYY-MM-DD date')
+  }
+  return { ...region === undefined ? {} : { region },
+    ...productVersion === undefined ? {} : { productVersion },
+    ...minimumSourceDate === undefined ? {} : { minimumSourceDate } }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

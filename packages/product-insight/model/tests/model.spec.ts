@@ -1,7 +1,8 @@
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { describe, expect, it } from 'vitest'
 import {
-  checkProductClaimFreshness, createProductBatchResult, isExecutableProductPlan,
+  checkProductClaimFreshness, createProductBatchResult, isExecutableProductPlan, isProductFocusCategoryId,
+  PRODUCT_FOCUS_CATEGORY_IDS,
   type CandidatePageId, type ProductClaim, type ProductClaimId, type ProductEvidence, type ProductEvidenceId,
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductPlanId,
   type ProductQuestionId, type ProductId, type SourceSnapshot, type SourceSnapshotId,
@@ -91,5 +92,15 @@ describe('product claim freshness', () => {
   it('treats a changed plan as stale and missing evidence as unverifiable', () => {
     expect(checkProductClaimFreshness(claim, { ...plan, version: 3 }, currentEvidence, currentPages).status).toBe('stale')
     expect(checkProductClaimFreshness(claim, plan, new Map(), currentPages).status).toBe('unverifiable')
+  })
+})
+
+describe('focus vocabulary', () => {
+  it('names exactly the categories a plan may record', () => {
+    expect(PRODUCT_FOCUS_CATEGORY_IDS).toEqual(['performance', 'comparison', 'commercial',
+      'availability', 'ecosystem', 'usage', 'support', 'risk'])
+    expect(PRODUCT_FOCUS_CATEGORY_IDS.every(isProductFocusCategoryId)).toBe(true)
+    expect(isProductFocusCategoryId('vibes')).toBe(false)
+    expect(isProductFocusCategoryId(1)).toBe(false)
   })
 })

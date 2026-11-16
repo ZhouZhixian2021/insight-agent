@@ -352,7 +352,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-product-insight-bundle` | no | Selectable product insight agent preset over the shared Web tools |
-| `@deepseek-ai/dsh-product-insight-workflow` | yes | Approved product investigation orchestration |
+| `@deepseek-ai/dsh-product-insight-workflow` | no | Approved product investigation orchestration |
 
 ## ptc-runtime
 

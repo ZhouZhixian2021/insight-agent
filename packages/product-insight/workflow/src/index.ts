@@ -1,6 +1,6 @@
 /** Bounded product investigation from an approved plan through cited report delivery. */
+import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
-import { retryProductTransport } from './transport-retry.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-tools'
 import { createEvidenceGapId, createProductBatchResult, createProductFailureId, createProductReportId, createProductRunId,
@@ -8,20 +8,19 @@ import { createEvidenceGapId, createProductBatchResult, createProductFailureId, 
   type ProductClaim, type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan,
   type ProductReportDelivery, type ProductRun, type ProductQuestionId, type SourceSnapshot,
 } from '@deepseek-ai/dsh-product-insight-model'
-import { discoverCandidatePages, extractProductPageEvidence, extractProductPassageEvidence, fetchProductPages,
-  hasProductCandidateCapacity, indexProductPagePassages, keywordProductPassageRetriever,
+import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages, hasProductCandidateCapacity,
   isProductGapSearch,
-  rankProductPageFragments, rankProductPagePassages,
+  rankProductPageFragments,
   resolveProductPageCharacterLimit, selectProductGapFragment, splitProductPageText,
   splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS,
   type ProductDiscoveryResult, type ProductEvidenceDraft, type ProductPageFetchAdapters, type ProductPageFetchResult,
-  type ProductPageFragment, type ProductPagePassage, type ProductPassageRetriever, type ProductPassageSelection,
+  type ProductPageFragment,
 } from '@deepseek-ai/dsh-product-insight-source'
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval } from './approved-plan.ts'
-import { adoptEvidenceQuestions, claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
+import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-review.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
@@ -41,7 +40,6 @@ export { evaluateProductReport, prepareProductReport } from './report.ts'
 export type { ProductReportAssessment, ProductReportInput } from './report.ts'
 
 const MAXIMUM_PAGE_EXTRACTION_CALLS = 12
-const EMPTY_PASSAGE_IDS: ReadonlySet<string> = new Set()
 
 /** Cordis plugin name for validation of proposed product plans. */
 export const name = 'product-insight-workflow'
@@ -84,8 +82,8 @@ export interface ProductInvestigationInput {
 
 /** Complete retained work through one committed page, review batch, or question. */
 export interface ProductInvestigationCheckpoint {
-  /** Version 4 selects exact passages per question; versions 1–3 retain their saved window order. */
-  readonly schemaVersion: 1 | 2 | 3 | 4
+  /** Version 3 ranks overlapping windows. Versions 1 and 2 resume in source order. */
+  readonly schemaVersion: 1 | 2 | 3
   readonly planId: ProductPlan['planId']
   readonly planVersion: number
   readonly productId: Product['productId']
@@ -98,8 +96,6 @@ export interface ProductInvestigationCheckpoint {
   readonly fragmentOverlapCharacters?: number
   /** Version 3 in-page cursors retain the dispatch permutation as source start offsets. */
   readonly fragmentOrder?: readonly number[]
-  /** Settled questions in the current page under version 4 passage selection. */
-  readonly passageQuestionIndex?: number
   /** The approved pass over saved fragments has settled. */
   readonly gapReadCompleted?: true
   /** Settled comparisons retained while appended corroboration pages are processed. */
@@ -125,12 +121,8 @@ export interface ProductInvestigationAdapters {
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
     readonly text: string
-  }[], signal?: AbortSignal, fragment?: ProductPageFragment) => Promise<readonly ProductEvidenceDraft[]>
-  /** Version 4 model selection of exact passages already shown for one approved question. */
-  readonly proposePassageEvidence?: (page: CandidatePage, text: string, passages: readonly ProductPagePassage[],
-    question: ProductPlan['questions'][number], signal?: AbortSignal) => Promise<readonly ProductPassageSelection[]>
-  /** Future semantic retrieval hook; omitted in current runs, which use keyword ranking. */
-  readonly passageRetriever?: ProductPassageRetriever
+  }[], signal?: AbortSignal, fragment?: ProductPageFragment,
+    maximumDrafts?: number) => Promise<readonly ProductEvidenceDraft[]>
   /** Return 'retry' for a transient model failure or true to allow splitting a failed window. Omission leaves failures unrecovered. */
   readonly recoverEvidenceFailure?: (error: unknown) => boolean | 'retry'
   /** Persist accepted excerpts before any semantic review or report uses their identities. */
@@ -141,13 +133,11 @@ export interface ProductInvestigationAdapters {
   readonly saveCheckpoint: (checkpoint: ProductInvestigationCheckpoint) => Promise<void>
   readonly reviewEvidence: (evidence: readonly ProductEvidence[], questions: ProductPlan['questions'],
     signal?: AbortSignal) => Promise<readonly ProductSemanticReview[]>
-  /** Runtime review batch size; recorded checkpoints retain their evidence cursor. */
-  readonly reviewBatchSize?: number
-  /** Retry a transient review, review items individually after output exhaustion, or split other incomplete output. */
-  readonly recoverReviewFailure?: (error: unknown) => boolean | 'retry' | 'individual'
+  /** Opt in review failures that may be resolved by two smaller evidence batches. */
+  readonly recoverReviewFailure?: (error: unknown) => boolean
   readonly saveClaims: (claims: readonly ProductClaim[]) => Promise<void>
   /** Legacy adapter hook; new investigations do not dispatch independent comparisons. */
-  readonly recoverComparisonFailure?: (error: unknown) => boolean | 'retry'
+  readonly recoverComparisonFailure?: (error: unknown) => boolean
   /** Legacy comparison adapter retained for callers; not invoked by the investigation runner. */
   readonly compareClaim: (claim: ProductClaim, questionId: ProductQuestionId,
     candidates: readonly ProductEvidence[], evidence: readonly ProductEvidence[],
@@ -221,7 +211,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     throw new RangeError('Product gap search requires an approved search and candidate-page allowance')
   }
   if (input.checkpoint !== undefined) validateProductCheckpoint(input, input.checkpoint)
-  const checkpointVersion = input.checkpoint?.schemaVersion ?? (adapters.proposePassageEvidence === undefined ? 3 : 4)
+  const checkpointVersion = input.checkpoint?.schemaVersion ?? 3
   const fragmentOverlapCharacters = input.checkpoint === undefined
     ? PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS : input.checkpoint.fragmentOverlapCharacters ?? 0
   if (input.sourceRevalidation !== undefined && input.checkpoint === undefined) {
@@ -260,14 +250,13 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const verifications: ProductQuestionVerification[] = [...input.checkpoint?.verifications ?? []]
   const priorVerifications = input.checkpoint?.priorVerifications
   const checkpoint = async (stage: ProductInvestigationCheckpoint['stage'], nextIndex: number,
-    fragment?: { index: number; order: readonly number[] }, passageQuestionIndex?: number): Promise<void> => {
+    fragment?: { index: number; order: readonly number[] }): Promise<void> => {
     const saved: ProductInvestigationCheckpoint = { schemaVersion: checkpointVersion,
       planId: input.plan.planId, planVersion: input.plan.version,
       productId: input.product.productId, stage, nextIndex,
       ...fragment === undefined ? {} : { fragmentIndex: fragment.index },
-      ...checkpointVersion === 4 || fragmentOverlapCharacters === 0 ? {} : { fragmentOverlapCharacters },
+      ...fragmentOverlapCharacters === 0 ? {} : { fragmentOverlapCharacters },
       ...fragment === undefined || checkpointVersion !== 3 ? {} : { fragmentOrder: fragment.order },
-      ...passageQuestionIndex === undefined ? {} : { passageQuestionIndex },
       ...gapReadCompleted ? { gapReadCompleted: true } : {},
       ...priorVerifications === undefined ? {} : { priorVerifications },
       elapsedMilliseconds: elapsedMilliseconds(), discovery, pages,
@@ -277,7 +266,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     currentCheckpoint = saved
   }
   const admitDrafts = (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    drafts: readonly ProductEvidenceDraft[], range: ProductPageFragment, label: string): void => {
+    drafts: readonly ProductEvidenceDraft[], range: ProductPageFragment, allowance: number, label: string): void => {
+    if (drafts.length > allowance) throw new RangeError('Fragment exceeded its evidence draft allowance')
     const located = drafts.map(draft => locateProductDraft(draft, range))
     const extracted = extractProductPageEvidence(page, snapshot, text, located, input.extractionMethod)
     for (const item of extracted.evidence) {
@@ -292,111 +282,46 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         retryable: false, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
     }
   }
-  const extractPassages = async (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    question: ProductPlan['questions'][number],
-    retrieve: (exclude: ReadonlySet<string>) => Promise<readonly ProductPagePassage[]>,
-    budget: { remaining: number }, label: string): Promise<void> => {
-    const propose = adapters.proposePassageEvidence
-    if (propose === undefined) throw new RangeError('Passage extraction adapter is unavailable for this checkpoint')
-    const attempt = async (passages: readonly ProductPagePassage[], active: AbortSignal): Promise<void> => {
-      active.throwIfAborted()
-      const selections = await propose(page, text, passages, question, active)
-      active.throwIfAborted()
-      const extracted = extractProductPassageEvidence({ ...page, questionIds: [question.questionId] }, snapshot,
-        text, passages, selections, input.extractionMethod)
-      for (const item of extracted.evidence) {
-        const fingerprint = productEvidenceFingerprint(item)
-        if (evidenceFingerprints.has(fingerprint)) continue
-        evidenceFingerprints.add(fingerprint)
-        evidence.push(item)
-      }
-      for (const rejected of extracted.rejected) failures.push({ schemaVersion: 1,
-        failureId: createProductFailureId(), stage: 'extraction', category: 'parse_failed',
-        message: `${label}, selection ${rejected.selectionIndex}: ${rejected.reason}`, retryable: false,
-        occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-    }
-    const retryState = { transportRetried: false }
-    const run = (passages: readonly ProductPagePassage[]) => retryProductTransport(
-      active => attempt(passages, active), error => adapters.recoverEvidenceFailure?.(error) === 'retry',
-      operationSignal, { onRetry: () => {
-        if (budget.remaining <= 0) return false
-        budget.remaining--
-        retryState.transportRetried = true
-        return true
-      } })
-    const recover = async (passages: readonly ProductPagePassage[], scope: string): Promise<void> => {
-      try { await run(passages) }
-      catch (error) {
-        if (operationSignal?.aborted) return
-        const recovery = adapters.recoverEvidenceFailure?.(error)
-        if ((recovery === true || recovery === 'retry') && passages.length > 1 && budget.remaining >= 2) {
-          const middle = Math.ceil(passages.length / 2)
-          budget.remaining -= 2
-          await recover(passages.slice(0, middle), `${scope}, recovery 1`)
-          await recover(passages.slice(middle), `${scope}, recovery 2`)
-          return
-        }
-        failures.push({ schemaVersion: 1, failureId: createProductFailureId(),
-          stage: 'extraction', category: 'unknown',
-          message: `${scope}: ${error instanceof Error ? error.message : String(error)}`,
-          retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-      }
-    }
-    const first = await retrieve(EMPTY_PASSAGE_IDS)
-    if (first.length === 0) return
-    const admittedBefore = evidence.length
-    const failuresBefore = failures.length
-    await recover(first, label)
-    if (evidence.length > admittedBefore || failures.length > failuresBefore
-      || budget.remaining < 1 || operationSignal?.aborted) return
-    const next = await retrieve(new Set(first.map(passage => passage.id)))
-    if (next.length === 0) return
-    budget.remaining -= 1
-    await recover(next, `${label}, next passages`)
-  }
   const extractFragment = async ({ page, snapshot, text }: {
     page: CandidatePage
     snapshot: AvailableSourceSnapshot
     text: string
   }, questions: ProductPlan['questions'], fragment: ProductPageFragment,
-  label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
-    const propose = async (range: ProductPageFragment, rangeLabel: string,
-      active: AbortSignal): Promise<void> => {
-      active.throwIfAborted()
-      const drafts = await adapters.proposeEvidence(page, range.text, questions, active, range)
-      active.throwIfAborted()
-      admitDrafts(page, snapshot, text, drafts, range, rangeLabel)
+  maximumDrafts: number, label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
+    const propose = async (range: ProductPageFragment, allowance: number, rangeLabel: string): Promise<void> => {
+      operationSignal?.throwIfAborted()
+      const drafts = await adapters.proposeEvidence(page, range.text, questions, operationSignal, range, allowance)
+      operationSignal?.throwIfAborted()
+      admitDrafts(page, snapshot, text, drafts, range, allowance, rangeLabel)
     }
-    const retryState = { transportRetried: false }
-    const run = (range: ProductPageFragment, rangeLabel: string) => retryProductTransport(
-      active => propose(range, rangeLabel, active),
-      error => adapters.recoverEvidenceFailure?.(error) === 'retry',
-      operationSignal, { onRetry: () => {
-        if (recoveryBudget.remaining <= 0) return false
-        recoveryBudget.remaining--
-        retryState.transportRetried = true
-        return true
-      } })
     const recordFailure = (error: unknown, rangeLabel: string): void => {
-      if (operationSignal !== undefined && operationSignal.aborted) return
+      if (operationSignal?.aborted) return
       failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
         category: 'unknown', message: allowSplit ? `${rangeLabel}: ${error instanceof Error ? error.message : String(error)}`
           : 'Targeted extraction from a saved source did not complete.',
         retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
     }
-    try { await run(fragment, label) }
+    try { await propose(fragment, maximumDrafts, label) }
     catch (error) {
       if (operationSignal?.aborted) return
       const recovery = adapters.recoverEvidenceFailure?.(error)
-      const children = allowSplit && recovery === true && !retryState.transportRetried
-        && recoveryBudget.remaining >= 2
+      if (recovery === 'retry' && recoveryBudget.remaining >= 1) {
+        recoveryBudget.remaining -= 1
+        try {
+          await delay(500, undefined, { signal: operationSignal })
+          await propose(fragment, maximumDrafts, label)
+        } catch (retryError) { recordFailure(retryError, label) }
+        return
+      }
+      const children = allowSplit && maximumDrafts >= 2 && recovery === true && recoveryBudget.remaining >= 2
         ? splitFailedProductFragment(fragment) : null
       if (children === null) { recordFailure(error, label); return }
       recoveryBudget.remaining -= children.length
       for (const [childIndex, child] of children.entries()) {
         if (operationSignal?.aborted) break
+        const allowance = childIndex === 0 ? Math.ceil(maximumDrafts / 2) : Math.floor(maximumDrafts / 2)
         const childLabel = `${label}, recovery ${childIndex + 1}`
-        try { await run(child, childLabel) }
+        try { await propose(child, allowance, childLabel) }
         catch (childError) { recordFailure(childError, childLabel) }
       }
     }
@@ -459,28 +384,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           continue
         }
         const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
-        if (checkpointVersion === 4) {
-          const passages = indexProductPagePassages(text)
-          const questionStart = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
-            ? currentCheckpoint.passageQuestionIndex ?? 0 : 0
-          if (questionStart > questions.length) throw new RangeError('Recovery question cursor exceeds captured page')
-          const budget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - questions.length - questionStart }
-          for (let questionIndex = questionStart; questionIndex < questions.length; questionIndex++) {
-            if (operationSignal?.aborted) break
-            const question = questions[questionIndex]
-            if (question === undefined) throw new RangeError('Recovery question cursor exceeds captured page')
-            const retriever = adapters.passageRetriever ?? keywordProductPassageRetriever
-            await extractPassages(page, snapshot, text, question,
-              exclude => retriever.retrieve(passages, question.text, 6, operationSignal, exclude),
-              budget, `Question ${questionIndex + 1}`)
-            if (operationSignal?.aborted) break
-            if (questionIndex + 1 < questions.length) await checkpoint('evidence', index, undefined, questionIndex + 1)
-            else await checkpoint('evidence', index + 1)
-          }
-          if (questions.length === 0) await checkpoint('evidence', index + 1)
-          continue
-        }
-        const sourceFragments = splitProductPageText(text, fragmentOverlapCharacters)
+        const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
+          ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
         const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
           ? currentCheckpoint : undefined
         const fragmentStart = savedPage?.fragmentIndex ?? 0
@@ -499,16 +404,17 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
           const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
           const fragment = sourceFragments[sourceIndex]
           if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
-          return fragment
+          return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
         })
         // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
-        const spent = fragmentStart * 2
+        const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
         const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
         for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
           if (operationSignal?.aborted) break
           const current = fragments[fragmentIndex]
           if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
-          await extractFragment({ page, snapshot, text }, questions, current,
+          const { fragment, maximumDrafts } = current
+          await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
             `Fragment ${fragmentIndex + 1}`, recoveryBudget, true)
           if (operationSignal?.aborted) break
           if (fragmentIndex + 1 < fragments.length) await checkpoint('evidence', index, { index: fragmentIndex + 1, order })
@@ -518,21 +424,16 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       else await checkpoint('evidence', index + 1)
     }
     await adapters.saveEvidence(evidence)
-    const reviewedIds = new Set(reviews.map(review => review.evidenceId))
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex
-      : currentCheckpoint?.stage === 'verification' ? evidence.length : reviewedIds.size
-    const reviewBatchSize = adapters.reviewBatchSize ?? 8
-    if (!Number.isSafeInteger(reviewBatchSize) || reviewBatchSize < 1 || reviewBatchSize > 8) {
-      throw new RangeError('Product review batch size must be between one and eight')
-    }
-    for (let offset = reviewStart; offset < evidence.length; offset += reviewBatchSize) {
+      : currentCheckpoint?.stage === 'verification' ? evidence.length : reviews.length
+    for (let offset = reviewStart; offset < evidence.length; offset += 8) {
       if (operationSignal?.aborted) break
-      const batch = evidence.slice(offset, offset + reviewBatchSize)
+      const batch = evidence.slice(offset, offset + 8)
       const admitReviews = (items: readonly ProductEvidence[], judged: readonly ProductSemanticReview[]): void => {
         const unresolved: string[] = []
         for (const item of items) {
           if (reviews.some(review => review.evidenceId === item.evidenceId)) continue
-          const matches = adoptEvidenceQuestions([item], judged.filter(review => review.evidenceId === item.evidenceId))
+          const matches = judged.filter(review => review.evidenceId === item.evidenceId)
           try {
             const admitted = claimsFromSemanticReview(input.plan, [item], matches)
             reviews.push(...matches)
@@ -542,34 +443,12 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         if (unresolved.length) throw new RangeError(`Missing or invalid semantic judgments: ${unresolved.join(', ')}`)
       }
       try {
-        const batchReviews = await retryProductTransport(active => adapters.reviewEvidence(batch, input.plan.questions,
-          active), error => adapters.recoverReviewFailure?.(error) === 'retry', operationSignal)
+        const batchReviews = await adapters.reviewEvidence(batch, input.plan.questions, operationSignal)
         operationSignal?.throwIfAborted()
         admitReviews(batch, batchReviews)
       } catch (error) {
         if (operationSignal?.aborted) break
-        const recovery = adapters.recoverReviewFailure?.(error)
-        if (recovery === 'retry') {
-          failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-            category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, retry exhausted: ${error instanceof Error
-              ? error.message : String(error)}`,
-            retryable: true, occurredAt: adapters.now() })
-        } else if (recovery === 'individual' && batch.length >= 2) {
-          for (const [itemIndex, item] of batch.entries()) {
-            if (operationSignal?.aborted) break
-            try {
-              const judged = await adapters.reviewEvidence([item], input.plan.questions, operationSignal)
-              operationSignal?.throwIfAborted()
-              admitReviews([item], judged)
-            } catch (itemError) {
-              if (operationSignal?.aborted) break
-              failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, item ${itemIndex + 1}: ${itemError instanceof Error
-                  ? itemError.message : String(itemError)}`,
-                retryable: true, occurredAt: adapters.now() })
-            }
-          }
-        } else if (batch.length >= 2 && recovery) {
+        if (batch.length >= 2 && adapters.recoverReviewFailure?.(error)) {
           const middle = Math.ceil(batch.length / 2)
           for (const [childIndex, child] of [batch.slice(0, middle), batch.slice(middle)].entries()) {
             if (operationSignal?.aborted) break
@@ -580,7 +459,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             } catch (childError) {
               if (operationSignal?.aborted) break
               failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
+                category: 'unknown', message: `Review batch ${offset / 8 + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
                   ? childError.message : String(childError)}`,
                 retryable: true, occurredAt: adapters.now() })
             }
@@ -628,24 +507,15 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         if (operationSignal?.aborted || readBudget.remaining === 0) break
         const target = sources.flatMap((source) => {
           const match = selectProductGapFragment(source.text, question.text)
-          return match === undefined ? [] : [{ ...source, ...match }]
+          return match === undefined ? [] : [{ ...source, ...match, allowance: Number.MAX_SAFE_INTEGER }]
         }).toSorted((left, right) => right.score - left.score)[0]
         if (target === undefined) continue
         readBudget.remaining -= 1
-        const { page, snapshot, text, fragment } = target
+        const { page, snapshot, text, fragment, allowance } = target
         const questionPage = { ...page, questionIds: [question.questionId] }
         const before = evidence.length
-        if (checkpointVersion === 4) {
-          const ranked = rankProductPagePassages(indexProductPagePassages(text), question.text)
-          const window = ranked.length > 3 ? ranked.slice(3) : ranked
-          await extractPassages(questionPage, snapshot, text, question,
-            exclude => Promise.resolve(window.filter(passage => !exclude.has(passage.id)).slice(0, 6)
-              .toSorted((left, right) => left.start - right.start)),
-            readBudget, 'Gap passages')
-        } else {
-          await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, 'Gap fragment',
-            readBudget, false)
-        }
+        await extractFragment({ page: questionPage, snapshot, text }, [question], fragment, allowance, 'Gap fragment',
+          readBudget, false)
         if (operationSignal?.aborted) break
         const linked = byPage.get(page.candidatePageId) ?? page
         if (evidence.length > before && !linked.questionIds.includes(question.questionId)) {
@@ -774,8 +644,7 @@ function locateProductDraft(draft: ProductEvidenceDraft, fragment: ProductPageFr
 
 /** Suppress identical source statements proposed by adjacent overlapping windows, including after recovery. */
 function productEvidenceFingerprint(item: ProductEvidence): string {
-  return JSON.stringify([item.candidatePageId, item.locator,
-    item.schemaVersion === 2 ? item.supportingExcerpts.map(span => span.locator) : [], item.sourcedStatement,
+  return JSON.stringify([item.candidatePageId, item.locator, item.sourcedStatement,
     [...item.questionIds].sort()])
 }
 
@@ -788,7 +657,7 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
   checkpoint: ProductInvestigationCheckpoint): void {
   const version: unknown = checkpoint.schemaVersion
   const gapReadCompleted: unknown = checkpoint.gapReadCompleted
-  if ((version !== 1 && version !== 2 && version !== 3 && version !== 4) || checkpoint.planId !== input.plan.planId
+  if ((version !== 1 && version !== 2 && version !== 3) || checkpoint.planId !== input.plan.planId
     || checkpoint.planVersion !== input.plan.version || checkpoint.productId !== input.product.productId
     || gapReadCompleted !== undefined && (gapReadCompleted !== true || (input.plan.limits?.maximumGapReads ?? 0) <= 0)
     || !Number.isSafeInteger(checkpoint.nextIndex) || checkpoint.nextIndex < 0
@@ -829,7 +698,7 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
   const characterLimit = resolveProductPageCharacterLimit(input.plan)
   const maximumFragments = 1 + Math.ceil(Math.max(0, characterLimit - PRODUCT_PAGE_FRAGMENT_CHARACTERS)
     / (PRODUCT_PAGE_FRAGMENT_CHARACTERS - overlap - 1))
-  const overlapValid = version === 1 || version === 4 ? checkpoint.fragmentOverlapCharacters === undefined
+  const overlapValid = version === 1 ? checkpoint.fragmentOverlapCharacters === undefined
     : checkpoint.fragmentOverlapCharacters === PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS
   const orderValid = version === 3 && fragmentIndex !== undefined
     ? Array.isArray(order) && order.length > fragmentIndex && order.length <= maximumFragments
@@ -840,22 +709,12 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
     && Number.isSafeInteger(fragmentIndex) && fragmentIndex > 0
     && fragmentIndex <= maximumFragments
     && checkpoint.nextIndex < snapshots.length && snapshots[checkpoint.nextIndex]?.status === 'available'
-  const passageIndex = checkpoint.passageQuestionIndex
-  const currentSnapshot = snapshots[checkpoint.nextIndex]
-  const currentPage = pages.find(page => page.candidatePageId === currentSnapshot?.candidatePageId)
-  const questionCount = input.plan.questions.filter(question => currentPage?.questionIds.includes(question.questionId)).length
-  const passageCursorValid = version === 4
-    ? fragmentIndex === undefined && order === undefined && (passageIndex === undefined
-      || checkpoint.stage === 'evidence' && Number.isSafeInteger(passageIndex)
-        && passageIndex > 0 && passageIndex < questionCount && currentSnapshot?.status === 'available')
-    : passageIndex === undefined
   const stageValid = checkpoint.stage === 'pages'
     ? checkpoint.nextIndex === 0 && checkpoint.evidence.length === 0
       && checkpoint.reviews.length === 0 && checkpoint.claims.length === 0
       && checkpoint.verifications.length === 0
     : checkpoint.stage === 'evidence'
-      ? (fragmentIndex === undefined && passageIndex === undefined
-        ? checkpoint.nextIndex > 0 && checkpoint.nextIndex <= snapshots.length
+      ? (fragmentIndex === undefined ? checkpoint.nextIndex > 0 && checkpoint.nextIndex <= snapshots.length
         : checkpoint.nextIndex < snapshots.length)
         && checkpoint.evidence.slice(0, checkpoint.reviews.length)
           .every(item => checkpoint.reviews.some(review => review.evidenceId === item.evidenceId))
@@ -870,7 +729,7 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
             return chosen !== undefined && item.questionId === chosen.questionId
               && item.claimId === chosen.claim.claimId
           })
-  if (!overlapValid || !orderValid || !fragmentCursorValid || !passageCursorValid || !stageValid) {
+  if (!overlapValid || !orderValid || !fragmentCursorValid || !stageValid) {
     throw new RangeError('Product recovery checkpoint has an invalid stage cursor')
   }
 }

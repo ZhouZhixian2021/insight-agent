@@ -59,7 +59,28 @@ export interface ProductPlanLimits {
   readonly maximumGapReads?: number
 }
 
-/** Publisher and host identity reviewed by the user before external pages are used for corroboration. */
+/** One stable direction an approved investigation is limited to. */
+export type ProductFocusCategoryId =
+  | 'performance'
+  | 'comparison'
+  | 'commercial'
+  | 'availability'
+  | 'ecosystem'
+  | 'usage'
+  | 'support'
+  | 'risk'
+
+/** Directions the user confirmed from preset categories, plus any wording they added. */
+export interface ProductPlanFocus {
+  readonly categories: readonly ProductFocusCategoryId[]
+  readonly custom?: readonly string[]
+}
+
+/**
+ * Named host the user decided to read: a publisher registered by a legacy
+ * plan, or a site the user named for this investigation. Discovery no longer
+ * requires one, and a page on any other host stays readable.
+ */
 export interface ProductSourcePublisher {
   readonly name: string
   readonly domain: string
@@ -81,7 +102,12 @@ export interface ProductPlan {
   readonly questions: readonly ProductQuestion[]
   readonly scope: string
   readonly limits?: ProductPlanLimits
+  /** Confirmed directions for plans written after the focus vocabulary existed; absent on legacy plans. */
+  readonly focus?: ProductPlanFocus
+  /** Legacy per-domain publisher allowlist; discovery reads only these hosts for such plans. */
   readonly sourcePublishers?: readonly ProductSourcePublisher[]
+  /** Sites the user asked to read in addition to search discovery; never restricts other hosts. */
+  readonly additionalSites?: readonly ProductSourcePublisher[]
   readonly sourceCriteria?: ProductSourceCriteria
   readonly approval: ProductPlanApproval
 }
@@ -160,8 +186,9 @@ export type ProductSourceLocator =
   | { readonly kind: 'heading'; readonly heading: string; readonly occurrence: number }
   | { readonly kind: 'text_range'; readonly start: number; readonly end: number; readonly pdfPage?: number }
 
-/** Fields shared by historical and multi-excerpt source evidence. */
-interface ProductEvidenceFields {
+/** Original page text tied to the exact observed content and investigation question. */
+export interface ProductEvidence {
+  readonly schemaVersion: 1
   readonly evidenceId: ProductEvidenceId
   readonly candidatePageId: CandidatePageId
   readonly sourceSnapshotId: SourceSnapshotId
@@ -173,27 +200,6 @@ interface ProductEvidenceFields {
   readonly extractionMethod: { readonly name: string; readonly version: string }
   readonly qualityNotes?: readonly string[]
 }
-
-/** One contiguous excerpt retained by existing investigations. */
-export interface ProductEvidenceV1 extends ProductEvidenceFields {
-  readonly schemaVersion: 1
-}
-
-/** One additional exact excerpt needed to interpret the primary excerpt. */
-export interface ProductSupportingExcerpt {
-  readonly verbatimExcerpt: string
-  readonly locator: Extract<ProductSourceLocator, { readonly kind: 'text_range' }>
-}
-
-/** Source evidence whose several exact positions jointly support one statement. */
-export interface ProductEvidenceV2 extends ProductEvidenceFields {
-  readonly schemaVersion: 2
-  readonly locator: Extract<ProductSourceLocator, { readonly kind: 'text_range' }>
-  readonly supportingExcerpts: readonly ProductSupportingExcerpt[]
-}
-
-/** Source-bound evidence in either persisted representation. */
-export type ProductEvidence = ProductEvidenceV1 | ProductEvidenceV2
 
 /** The role one evidence record plays for a conclusion. */
 export type ProductEvidenceRelation = 'supports' | 'contradicts' | 'background'

@@ -16,12 +16,6 @@ export type { PreparedProductPage, ProductEvidenceDraft, ProductEvidenceExtracti
   ProductPageFragment, RejectedProductEvidenceDraft } from './page-content.ts'
 export { fetchProductPages, sameProductPageFacts } from './page-fetch.ts'
 export type { ProductPageFetchAdapters, ProductPageFetchResult } from './page-fetch.ts'
-export { indexProductPagePassages, keywordProductPassageRetriever, rankProductPagePassages, selectProductQuestionPassages,
-  extractProductPassageEvidence } from './passage-index.ts'
-export type { ProductPagePassage, ProductPassageRetriever, ProductPassageSelection,
-  RejectedProductPassageSelection } from './passage-index.ts'
-export { evaluateProductPassageRetrieval } from './passage-evaluation.ts'
-export type { ProductPassageEvaluationCase, ProductPassageEvaluationResult } from './passage-evaluation.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */
 export interface ProductSearchAttempt {
@@ -79,7 +73,7 @@ export interface ProductDiscoveryAdapters {
 
 /**
  * Resolve the reviewed per-page source bound before any fetch or model work.
- * @param plan - Approved plan, including any explicit page allowance.
+ * @param plan - Approved plan, including its optional expanded page allowance.
  * @returns Maximum complete canonical text characters per selected page.
  */
 export function resolveProductPageCharacterLimit(plan: ProductPlan): number {
@@ -122,14 +116,14 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     || [...input.corroborationFor?.keys() ?? []].some(id => !gap?.includes(id))) {
     throw new RangeError('Product gap search exceeds the approved questions or search allowance')
   }
-  const official = new URL(product.officialUrl)
-  const candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url, official.hostname), page]))
+  const candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url), page]))
   const failures: ProductFailure[] = [...input.existing?.candidates.failures ?? []]
   const searches: ProductSearchAttempt[] = [...input.existing?.searches ?? []]
   const initialBatches: {
     search: { questionId: ProductQuestionId; recordedCount: number; truncated: boolean }
     sources: ReturnType<typeof screenSource>[]
   }[] = []
+  const official = new URL(product.officialUrl)
   const startedAt = Date.parse(adapters.now())
   const maximumElapsedMinutes = plan.limits?.maximumElapsedMinutes
   if (maximumElapsedMinutes !== undefined && (!Number.isFinite(maximumElapsedMinutes) || maximumElapsedMinutes <= 0)) {
@@ -143,25 +137,27 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     ? Math.min(plan.limits?.maximumGapSearches ?? 0, Math.max(0, candidateLimit - 1)) : 0
   const reviewLimit = candidateLimit - reservedGapSlots
   const priorities = ['selected', 'needs_review', 'excluded'] as const
+  /** Plans that carry confirmed focus directions search every site, not a reviewed host list. */
+  const focusDriven = plan.focus !== undefined
+  /** Legacy plans allowlist `sourcePublishers`; a focus plan only adds sites the user named. */
+  const namedSites = focusDriven ? plan.additionalSites : plan.sourcePublishers
   function screenSource(source: WebSearchResult['sources'][number]) {
     const parsed = parseCandidateUrl(source.url)
-    const officialSite = parsed !== null && withinOfficialSite(parsed.hostname, official.hostname)
-    const officialRoot = officialSite && parsed?.pathname === '/'
-    const officialPage = officialSite && !officialRoot
-    const approvedPublisher = parsed === null ? undefined : plan.sourcePublishers?.find(item => withinDomain(parsed.hostname, item.domain))
-    const leadingBrand = approvedPublisher === undefined ? undefined
+    const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
+    const registeredSite = parsed === null ? undefined : namedSites?.find(item => withinDomain(parsed.hostname, item.domain))
+    const leadingBrand = registeredSite === undefined ? undefined
       : /^[a-z][a-z0-9-]{2,}/iu.exec(product.name)?.[0].toLocaleLowerCase()
     const named = [source.title, source.snippet, parsed?.hostname, parsed?.pathname].some(part =>
       part !== undefined && [product.name, ...product.aliases ?? []].some(name =>
         name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
       || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
         part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
-    return { source, parsed, officialPage, approvedPublisher,
-      screening: screenCandidate(parsed, officialPage, officialRoot, named, approvedPublisher !== undefined) }
+    return { source, parsed, officialPage, registeredSite,
+      screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven) }
   }
-  const recordSource = ({ source, parsed, officialPage, approvedPublisher, screening }: ReturnType<typeof screenSource>,
+  const recordSource = ({ source, parsed, officialPage, registeredSite, screening }: ReturnType<typeof screenSource>,
     questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' => {
-    const key = candidateKey(source.url, official.hostname, parsed)
+    const key = candidateKey(source.url, parsed)
     const prior = candidates.get(key)
     const promoted = gap !== undefined && prior !== undefined && prior.screening.status !== 'selected'
       && screening.status === 'selected'
@@ -187,7 +183,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       sourceType: officialPage ? 'official_product_page' : 'other', discoveredAt: prior?.discoveredAt ?? adapters.now(),
       questionIds: [...new Set([...prior?.questionIds ?? [], questionId])], screening: { ...screening, screenedAt: adapters.now() },
       ...(officialPage ? { publisher: product.developer }
-        : approvedPublisher === undefined ? {} : { publisher: approvedPublisher.name }), discoveryChannel: 'web' })
+        : registeredSite === undefined ? {} : { publisher: registeredSite.name }), discoveryChannel: 'web' })
     return prior === undefined ? 'recorded' : 'ignored'
   }
   for (const question of gap === undefined ? plan.questions
@@ -195,17 +191,20 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     const primaryId = input.corroborationFor?.get(question.questionId)
     const retained = [...candidates.values()]
     const primary = primaryId === undefined ? undefined : retained.find(page => page.candidatePageId === primaryId)
-    const domains = primaryId === undefined ? [official.hostname, ...plan.sourcePublishers?.map(item => item.domain) ?? []]
-      : primary === undefined ? [] : productCorroborationDomains(product, plan, primary)
+    const primaryHost = primary === undefined ? undefined : parseCandidateUrl(primary.url)?.hostname
+    // A focus plan searches the open web; only a legacy plan searches inside its reviewed hosts.
+    const domains = focusDriven ? []
+      : primaryId === undefined ? [official.hostname, ...plan.sourcePublishers?.map(item => item.domain) ?? []]
+        : primary === undefined ? [] : productCorroborationDomains(product, plan, primary)
     const domain = gap === undefined ? undefined : gapSearchDomain(domains,
       retained.filter(page => !input.unavailablePages?.has(page.candidatePageId)), triedDomains)
-    if (gap !== undefined && domain === undefined) continue
+    if (gap !== undefined && domain === undefined && !focusDriven) continue
+    if (primaryId !== undefined && primary === undefined) continue
     const reason = primaryId === undefined ? 'evidence_gap' : 'corroboration_gap'
     const terms = domain === undefined ? [] : [...productQuestionTerms(question.text)]
-    const query = [product.name,
-      domain === undefined ? question.text : terms.join(' ') || question.text,
-      plan.sourceCriteria?.productVersion, plan.sourceCriteria?.region,
-      ...domain === undefined ? [] : [`site:${domain}`]].filter(Boolean).join(' ').trim()
+    const query = (domain === undefined ? [product.name, question.text, plan.scope]
+      : [product.name, terms.join(' ') || question.text, plan.sourceCriteria?.productVersion,
+        plan.sourceCriteria?.region, `site:${domain}`]).filter(Boolean).join(' ').trim()
     const elapsed = maximumElapsedMinutes !== undefined
       && Date.parse(adapters.now()) - startedAt >= maximumElapsedMinutes * 60_000
     if (signal?.aborted || elapsed || gap !== undefined && !hasProductCandidateCapacity(retained, candidateLimit)) {
@@ -226,6 +225,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         for (const source of sources.toSorted((left, right) => priorities.indexOf(left.screening.status)
           - priorities.indexOf(right.screening.status))) {
           if (domain !== undefined && !withinDomain(source.parsed?.hostname, domain)) continue
+          if (focusDriven && primaryHost !== undefined && !distinctHosts(primaryHost, source.parsed?.hostname)) continue
           const outcome = recordSource(source, question.questionId)
           if (outcome === 'limit') { search.truncated = true; break }
           if (outcome === 'recorded') search.recordedCount += 1
@@ -276,6 +276,7 @@ export function hasProductCandidateCapacity(candidates: readonly CandidatePage[]
 
 /**
  * Find eligible search domains outside the key source's approved publisher and site.
+ * Legacy plans only: a focus plan corroborates across any other site instead.
  * @param product Product identity and official website.
  * @param plan Approved plan defining eligible external publisher domains.
  * @param primary Candidate page supplying the key statement.
@@ -292,21 +293,6 @@ export function productCorroborationDomains(product: Product, plan: ProductPlan,
 
 function withinDomain(host: string | undefined, domain: string): boolean {
   return host === domain || (host?.endsWith(`.${domain}`) ?? false)
-}
-
-/**
- * Match a host against the approved official site rather than one host name.
- * The approved host, its subdomains, its registered domain, and one country-code suffix of that
- * domain all belong to the maker, so a country site such as `www.apple.com.cn` is official too.
- * A two-label suffix such as `apple.com.co.uk` is not, because it can be registered by anyone.
- */
-function withinOfficialSite(host: string | undefined, officialHost: string): boolean {
-  if (host === undefined) return false
-  if (withinDomain(host, officialHost)) return true
-  const domain = officialHost.replace(/^www\./u, '')
-  if (domain === officialHost && !domain.includes('.')) return false
-  if (withinDomain(host, domain)) return true
-  return new RegExp(`(^|\\.)${domain.replaceAll('.', '\\.')}\\.[a-z]{2}$`, 'u').test(host)
 }
 
 /** Prefer an approved host with the fewest selected pages, breaking ties in favor of untried hosts. */
@@ -344,35 +330,42 @@ function dedupUrl(url: URL): string {
   return normalized.href
 }
 
-/**
- * Collapse an official page's country mirror onto one candidate, so `/tw/newsroom/x/` and
- * `/newsroom/x/` do not both consume the pool. Two further path segments are required, which keeps
- * a real two-letter product section such as `/tv/home/` distinct from `/home/`.
- */
-function candidateKey(url: string, officialHost: string, parsed = parseCandidateUrl(url)): string {
-  if (parsed === null) return `invalid:${url}`
-  const normalized = new URL(dedupUrl(parsed))
-  if (withinOfficialSite(normalized.hostname, officialHost)
-    && /^\/[a-z]{2}(?:\/[^/]+){2,}\/?$/u.test(normalized.pathname)) {
-    normalized.pathname = normalized.pathname.replace(/^\/[a-z]{2}/u, '')
-  }
-  return normalized.href
+function candidateKey(url: string, parsed = parseCandidateUrl(url)): string {
+  return parsed === null ? `invalid:${url}` : dedupUrl(parsed)
 }
 
-function screenCandidate(parsed: URL | null, officialPage: boolean, officialRoot: boolean, named: boolean,
-  approvedPublisher: boolean): Pick<CandidatePage['screening'], 'status' | 'reason'> {
+/**
+ * Screen one search result. A focus plan keeps every reachable page and judges
+ * it by product relevance, because the user approved directions rather than a
+ * host list; a legacy plan still drops hosts outside its reviewed allowlist.
+ */
+function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean,
+  registeredSite: boolean, focusDriven: boolean):
+Pick<CandidatePage['screening'], 'status' | 'reason'> {
   if (parsed === null) return { status: 'excluded', reason: 'Search result URL is not a valid HTTP(S) URL.' }
   if (officialPage) {
-    return { status: 'selected', reason: 'URL matches the approved official site; check product relevance against the page text.' }
+    return { status: 'selected', reason: 'URL matches the approved official host; check product relevance against the page text.' }
   }
-  if (officialRoot) {
-    return { status: 'excluded', reason: 'The official site root identifies no product; not fetched.' }
+  if (focusDriven) {
+    if (registeredSite) {
+      return { status: 'selected', reason: 'Host was named for this investigation; read it under the confirmed focus directions.' }
+    }
+    if (named) {
+      return { status: 'selected', reason: 'Search metadata names the product; the page is read under the confirmed focus directions.' }
+    }
+    return { status: 'needs_review', reason: 'Host is outside the official site and the search metadata does not name the product.' }
   }
-  if (!approvedPublisher) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
+  if (!registeredSite) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
   if (named) {
     return { status: 'selected', reason: 'Search metadata names the product and its host matches a user-approved publisher domain.' }
   }
   return { status: 'needs_review', reason: 'Publisher and product relevance need page review.' }
+}
+
+/** Two hosts are distinct sites when neither names the other as a parent domain. */
+function distinctHosts(left: string | undefined, right: string | undefined): boolean {
+  if (left === undefined || right === undefined) return false
+  return left !== right && !left.endsWith(`.${right}`) && !right.endsWith(`.${left}`)
 }
 
 function productFailure(stage: ProductFailure['stage'], category: ProductFailure['category'],

@@ -11,9 +11,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This bundle adds Product Insight to the Web agent preset selector. After plan approval, a Session-owned background job searches approved sources, extracts and reviews evidence, checks independent support, and saves a cited report or a draft with blockers. A transcript card shows live stages, counts, Trace and the saved report.
+This bundle adds Product Insight to the Web agent preset selector. The preset screens the request briefly, then asks once for two answers in a single card: the focus directions from a fixed multi-select vocabulary (performance, comparison, commercial information, and five more, plus their own wording), and whether the user wants to name any site themselves. It presents an investigation plan bounded by those directions and adds only the sites the user named. After approval, the host starts a Session-owned background job for Web discovery, page acquisition, exact excerpt checks, semantic support review, cross-site comparison, and report delivery checks. An inline transcript card projects those Session events into live stages, counters, blockers, and the saved Markdown report, so progress remains visible without relying on an Agent status message. The job saves a cited report when ready or a draft with blockers; evidence, comparison, claim, report, and task-state records remain in the owning Session.
 
-The preset currently selects local multi-engine `product-free-search` and `product-public-page` acquisition; the installed-plugin search bridge remains available for explicit selection.
+The product preset owns an isolated Web registry with product-free-search and product-public-page. Planning tools and background investigation use these providers without requiring dsh-web-tools; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ The preset currently selects local multi-engine `product-free-search` and `produ
 <a id="use-this-package"></a>
 ## Use this package
 
-The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent presents the product, scope, questions, source approach, approved external publishers and any region, version or source-date requirements, candidate-page, per-page text, gap-search and elapsed-time limits, and expected result with a structured execution block. The official site is approved through `product.officialUrl`; `sourcePublishers` lists only external publishers with domains that do not overlap the official host. The user can approve or request revisions. After approval, the transcript shows a four-stage Product Insight card for page acquisition, evidence extraction, semantic review, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
+The shipped Web profile loads this bundle after the Academic bundle. Select **Product Insight / 产品洞察** when starting a new task. The agent screens the request briefly and asks once for two answers in one card: the focus directions as a multi-select, and whether they want to read any site of their own; the plan then presents the product, scope, confirmed directions, any site they named, questions, source approach, any region, version or source-date requirements, candidate-page, per-page text, gap-search and elapsed-time limits, and expected result with a structured execution block. Focus directions come from the fixed vocabulary (performance, comparison, commercial information, availability, ecosystem, usage conditions, support, risk) and the user may add their own wording. The plan constrains directions, not websites: the official site is the only fixed domain through `product.officialUrl`, other pages are discovered by search and read by direction relevance, and `additionalSites` takes only sites the user names in conversation. The user can approve or request revisions. After approval, the transcript shows a four-stage Product Insight card for page acquisition, evidence extraction, semantic review, and report generation. It also shows counts and blockers, and exposes the saved report for reading or Markdown download. Approval concludes the planning turn. The host starts the saved plan once, and the transcript displays its progress and canonical report without a completion-triggered chat response. If that task is interrupted, another explicit call for the same approved plan resumes committed work, including completed page fragments; a later investigation request starts with a new plan. Search and fetch use the configured DSH Web providers.
 
 -----
 
@@ -39,9 +39,7 @@ The shipped Web profile loads this bundle after the Academic bundle. Select **Pr
 <details>
 <summary>Implementation details — click to expand</summary>
 
-[The preset patch](presets/product.patch.yml) declares the persona, plan mode, question tool, provider-neutral Web tools, and the product workflow plugin. A proposed `product-insight-plan-json` block is checked before review. The workflow tool rechecks the durable approval before using Web and model services. [The Web patch](web.patch.yml) injects the feature-owned transcript projection. It folds durable product workflow events through the Conversation Definition/slot boundary, so live updates and replayed sessions render the same card without changing a shared framework prompt or UI component.
-
-The product preset owns an isolated Web registry. Planning tools and background investigation use local `product-free-search` while retaining `product-public-page` for page retrieval. Search recognition and background model calls use the session-selected model without a backup route. The installed `dsh-web-tools` search bridge remains available for explicit selection; other presets retain their own search configuration. Restart the server and create a new product-insight conversation after changing this preset.
+[The preset patch](presets/product.patch.yml) declares the persona, plan mode, question tool, provider-neutral Web tools, and the product workflow plugin. The planning section requires one `ask_user_question` call whose two questions confirm the focus directions and offer to add the user's own sites before a plan exists, and a proposed `product-insight-plan-json` block is checked before review; version 2 accepts only vocabulary direction ids and user-named sites. The workflow tool rechecks the durable approval before using Web and model services. [The Web patch](web.patch.yml) injects the feature-owned transcript projection. It folds durable product workflow events through the Conversation Definition/slot boundary, so live updates and replayed sessions render the same card without changing a shared framework prompt or UI component.
 
 </details>
 
@@ -64,9 +62,12 @@ Indirectly, through the product preset plugins. During planning, the agent must 
 
 Selecting this preset changes its persona, planning instructions, and tool schemas relative to another preset; repeated turns in one session keep the same composition.
 
+Chat renders formatted report text. Evidence and diagnostic appendices are collapsed by default and remain available in Markdown and self-contained HTML downloads. Rendering does not call a model or change delivery decisions.
+
 ## Known Limitations and Deferred Work
 
 - The background job remains process-local and belongs to the Agent. A process restart leaves its saved state readable as interrupted; an explicit new call resumes the latest complete checkpoint for that plan. Automatic continuation remains separate work. The transcript card is a Session projection rather than an independent task-control page. Final status does not require independent corroboration and does not establish publisher independence or product behavior. Historical comparison records remain readable.
+- Open direction-based discovery means external sites are no longer reviewed one by one: the report cites unregistered sites under the confirmed directions and discloses their count per question, so readers still judge site credibility themselves. Sites the user types into the question card enter the reading range through `additionalSites`; there is no pickable site list, and an approved plan cannot gain a site without cancelling and planning again.
 - The preset requires the Web and base bundles and a configured search provider.
 
 ### Dev Note
@@ -75,8 +76,6 @@ Selecting this preset changes its persona, planning instructions, and tool schem
 <summary>Working context for maintainers — click to expand</summary>
 
 Keep product transcript presentation in this bundle and durable investigation state in the workflow package. Add fields through Session events and the projection instead of coupling the card to an Agent response.
-
-Search route record: on 2026-11-10, vivo investigations received repeated HTTP 202 responses and unrecognized HTML from the free search endpoint, so the preset temporarily used the installed plugin. The preset has now been switched back to `product-free-search` as requested, while retaining the source plugin and `fetchProvider: product-public-page`; the installed-provider bridge remains selectable. Restart Web and use a new Product Insight conversation to verify both planning search and background discovery.
 
 </details>
 

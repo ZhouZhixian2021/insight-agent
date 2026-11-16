@@ -106,7 +106,17 @@ export function assessProductCorroboration(context: {
   return { primaryPage, primarySource, ineligible, corroborated }
 }
 
-/** Match observed source facts to user-approved publisher domains and explicit scope requirements. */
+/**
+ * Match observed source facts to the identity a plan authorizes. A legacy plan
+ * authorizes reviewed publisher domains only; a focus plan authorizes any page
+ * and identifies an unregistered site by its page declaration or host, so the
+ * report can disclose it instead of rejecting the evidence.
+ * @param product - Investigated product identity.
+ * @param plan - Approved plan defining the authorized source identity.
+ * @param page - Discovered candidate page holding the evidence.
+ * @param snapshot - Captured content for that page.
+ * @returns Eligibility, the identity used for cross-site comparison, and disclosure reasons.
+ */
 export function assessProductSource(product: Product, plan: ProductPlan, page: CandidatePage | undefined,
   snapshot: SourceSnapshot | undefined): ProductSourceEligibility {
   if (!page || snapshot?.status !== 'available' || snapshot.candidatePageId !== page.candidatePageId) {
@@ -114,11 +124,15 @@ export function assessProductSource(product: Product, plan: ProductPlan, page: C
   }
   const reasons: string[] = []
   let publisher: string | null = null
+  const focusDriven = plan.focus !== undefined
   try {
     const host = new URL(page.url).hostname.toLowerCase()
-    if (page.sourceType === 'official_product_page') {
+    const official = new URL(product.officialUrl).hostname.toLowerCase()
+    if (host === official || host.endsWith(`.${official}`)) {
       publisher = product.developer
-      // Discovery already matched the approved official site, country sites included; labels are not legal names.
+      // The approved official host establishes attribution; site labels are not legal company names.
+    } else if (focusDriven) {
+      publisher = page.publisher ?? snapshot.declaredPublisher ?? host
     } else {
       const approved = plan.sourcePublishers?.find(item => host === item.domain
         || host.endsWith(`.${item.domain}`))

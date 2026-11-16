@@ -67502,1235 +67502,11 @@
       }
     },
     {
-      "key": "event:product/checkpoint-v2",
-      "kind": "event",
-      "event": "product/checkpoint-v2",
-      "surface": false,
-      "digest": "0e36a5f3263ab61a8b3f6e9a98352544e326d63bd760563b8522c2c075475a03",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 77,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 103,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "claims",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "discovery",
-                "type": 26,
-                "optional": false
-              },
-              {
-                "name": "elapsedMilliseconds",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "evidence",
-                "type": 69,
-                "optional": false
-              },
-              {
-                "name": "failures",
-                "type": 29,
-                "optional": false
-              },
-              {
-                "name": "gapReadCompleted",
-                "type": 77,
-                "optional": true
-              },
-              {
-                "name": "nextIndex",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "pages",
-                "type": 78,
-                "optional": false
-              },
-              {
-                "name": "passageQuestionIndex",
-                "type": 20,
-                "optional": true
-              },
-              {
-                "name": "planId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "planVersion",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "priorVerifications",
-                "type": 85,
-                "optional": true
-              },
-              {
-                "name": "productId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "reviews",
-                "type": 92,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 97,
-                "optional": false
-              },
-              {
-                "name": "stage",
-                "type": 98,
-                "optional": false
-              },
-              {
-                "name": "verifications",
-                "type": 85,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 3
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "claimId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "confidence",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "confidenceReasons",
-                "type": 10,
-                "optional": false
-              },
-              {
-                "name": "evidenceLinks",
-                "type": 11,
-                "optional": false
-              },
-              {
-                "name": "evidenceSnapshot",
-                "type": 17,
-                "optional": false
-              },
-              {
-                "name": "questionIds",
-                "type": 21,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "scope",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "text",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "uncertainty",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "validity",
-                "type": 23,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "union",
-            "types": [
-              6,
-              7,
-              8,
-              9
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "low"
-          },
-          {
-            "kind": "literal",
-            "value": "medium"
-          },
-          {
-            "kind": "literal",
-            "value": "high"
-          },
-          {
-            "kind": "literal",
-            "value": "insufficient"
-          },
-          {
-            "kind": "tuple",
-            "elements": [
-              {
-                "type": 4,
-                "optional": false,
-                "rest": false
-              },
-              {
-                "type": 4,
-                "optional": false,
-                "rest": true
-              }
-            ]
-          },
-          {
-            "kind": "array",
-            "element": 12
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "rationale",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "relation",
-                "type": 13,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              14,
-              15,
-              16
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "supports"
-          },
-          {
-            "kind": "literal",
-            "value": "background"
-          },
-          {
-            "kind": "literal",
-            "value": "contradicts"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "evidenceItems",
-                "type": 18,
-                "optional": false
-              },
-              {
-                "name": "planId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "planVersion",
-                "type": 20,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 19
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "contentHash",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "array",
-            "element": 4
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          },
-          {
-            "kind": "union",
-            "types": [
-              24,
-              25
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "stale"
-          },
-          {
-            "kind": "literal",
-            "value": "current"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "cancelled",
-                "type": 27,
-                "optional": false
-              },
-              {
-                "name": "candidates",
-                "type": 28,
-                "optional": false
-              },
-              {
-                "name": "searches",
-                "type": 64,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "boolean"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "failures",
-                "type": 29,
-                "optional": false
-              },
-              {
-                "name": "items",
-                "type": 48,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "status",
-                "type": 60,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 30
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "category",
-                "type": 31,
-                "optional": false
-              },
-              {
-                "name": "failureId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "message",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "occurredAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "retryable",
-                "type": 27,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "stage",
-                "type": 41,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "authentication_failed"
-          },
-          {
-            "kind": "literal",
-            "value": "network_error"
-          },
-          {
-            "kind": "literal",
-            "value": "not_found"
-          },
-          {
-            "kind": "literal",
-            "value": "parse_failed"
-          },
-          {
-            "kind": "literal",
-            "value": "rate_limited"
-          },
-          {
-            "kind": "literal",
-            "value": "timeout"
-          },
-          {
-            "kind": "literal",
-            "value": "unknown"
-          },
-          {
-            "kind": "literal",
-            "value": "upstream_error"
-          },
-          {
-            "kind": "literal",
-            "value": "invalid_request"
-          },
-          {
-            "kind": "union",
-            "types": [
-              42,
-              43,
-              44,
-              45,
-              46,
-              47
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "fetch"
-          },
-          {
-            "kind": "literal",
-            "value": "discovery"
-          },
-          {
-            "kind": "literal",
-            "value": "report"
-          },
-          {
-            "kind": "literal",
-            "value": "screening"
-          },
-          {
-            "kind": "literal",
-            "value": "analysis"
-          },
-          {
-            "kind": "literal",
-            "value": "extraction"
-          },
-          {
-            "kind": "array",
-            "element": 49
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "discoveredAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "discoveryChannel",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "planId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "productId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "publisher",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "questionIds",
-                "type": 21,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "screening",
-                "type": 50,
-                "optional": false
-              },
-              {
-                "name": "sourceType",
-                "type": 55,
-                "optional": false
-              },
-              {
-                "name": "title",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "url",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "reason",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "screenedAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "status",
-                "type": 51,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              52,
-              53,
-              54
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "needs_review"
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": "excluded"
-          },
-          {
-            "kind": "union",
-            "types": [
-              56,
-              57,
-              58,
-              59
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "official_documentation"
-          },
-          {
-            "kind": "literal",
-            "value": "official_product_page"
-          },
-          {
-            "kind": "literal",
-            "value": "official_release_note"
-          },
-          {
-            "kind": "literal",
-            "value": "other"
-          },
-          {
-            "kind": "union",
-            "types": [
-              61,
-              62,
-              63
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "partial_success"
-          },
-          {
-            "kind": "literal",
-            "value": "success"
-          },
-          {
-            "kind": "literal",
-            "value": "failed"
-          },
-          {
-            "kind": "array",
-            "element": 65
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "failureId",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "query",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "questionId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "reason",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "recordedCount",
-                "type": 20,
-                "optional": true
-              },
-              {
-                "name": "returnedCount",
-                "type": 20,
-                "optional": true
-              },
-              {
-                "name": "status",
-                "type": 66,
-                "optional": false
-              },
-              {
-                "name": "truncated",
-                "type": 27,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              62,
-              63,
-              67,
-              68
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "skipped"
-          },
-          {
-            "kind": "literal",
-            "value": "cancelled"
-          },
-          {
-            "kind": "array",
-            "element": 70
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "contentHash",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "extractionMethod",
-                "type": 71,
-                "optional": false
-              },
-              {
-                "name": "locator",
-                "type": 72,
-                "optional": false
-              },
-              {
-                "name": "qualityNotes",
-                "type": 21,
-                "optional": true
-              },
-              {
-                "name": "questionIds",
-                "type": 21,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 74,
-                "optional": false
-              },
-              {
-                "name": "sourceSnapshotId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "sourcedStatement",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "supportingExcerpts",
-                "type": 75,
-                "optional": false
-              },
-              {
-                "name": "verbatimExcerpt",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "name",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "end",
-                "type": 20,
-                "optional": false
-              },
-              {
-                "name": "kind",
-                "type": 73,
-                "optional": false
-              },
-              {
-                "name": "pdfPage",
-                "type": 20,
-                "optional": true
-              },
-              {
-                "name": "start",
-                "type": 20,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "text_range"
-          },
-          {
-            "kind": "literal",
-            "value": 2
-          },
-          {
-            "kind": "array",
-            "element": 76
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "locator",
-                "type": 72,
-                "optional": false
-              },
-              {
-                "name": "verbatimExcerpt",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "cancelled",
-                "type": 27,
-                "optional": false
-              },
-              {
-                "name": "snapshots",
-                "type": 79,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "failures",
-                "type": 29,
-                "optional": false
-              },
-              {
-                "name": "items",
-                "type": 80,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "status",
-                "type": 60,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 81
-          },
-          {
-            "kind": "union",
-            "types": [
-              82,
-              84
-            ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "contentHash",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "contentRef",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "declaredPublisher",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "observedAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "productVersionLabel",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "sourcePublishedAt",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "sourceRegionLabel",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "sourceSnapshotId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "sourceUpdatedAt",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "status",
-                "type": 83,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "available"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "failureId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "observedAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "sourceSnapshotId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "status",
-                "type": 63,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 86
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "claimId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "complete",
-                "type": 27,
-                "optional": false
-              },
-              {
-                "name": "judgments",
-                "type": 87,
-                "optional": false
-              },
-              {
-                "name": "questionId",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 88
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "rationale",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "relation",
-                "type": 89,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              14,
-              16,
-              90,
-              91
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "uncertain"
-          },
-          {
-            "kind": "literal",
-            "value": "unrelated"
-          },
-          {
-            "kind": "array",
-            "element": 93
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "questionIds",
-                "type": 21,
-                "optional": false
-              },
-              {
-                "name": "rationale",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "verdict",
-                "type": 94,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              90,
-              95,
-              96
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "supported"
-          },
-          {
-            "kind": "literal",
-            "value": "unsupported"
-          },
-          {
-            "kind": "literal",
-            "value": 4
-          },
-          {
-            "kind": "union",
-            "types": [
-              99,
-              100,
-              101,
-              102
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "pages"
-          },
-          {
-            "kind": "literal",
-            "value": "verification"
-          },
-          {
-            "kind": "literal",
-            "value": "evidence"
-          },
-          {
-            "kind": "literal",
-            "value": "claims"
-          },
-          {
-            "kind": "literal",
-            "value": "product/checkpoint-v2"
-          }
-        ]
-      }
-    },
-    {
       "key": "event:product/claim-review-request-v1",
       "kind": "event",
       "event": "product/claim-review-request-v1",
       "surface": false,
-      "digest": "1b4178b82e387ab0e9d8b2fb19194979d6afbf230f7ab614cce23cb9ae37452a",
+      "digest": "607da22033187a771db7dd16a4230f1112b413d0e360ab4bc0ecd229679d58ec",
       "schema": {
         "root": 0,
         "nodes": [
@@ -68792,11 +67568,6 @@
                 "name": "system",
                 "type": 3,
                 "optional": false
-              },
-              {
-                "name": "traceId",
-                "type": 3,
-                "optional": true
               },
               {
                 "name": "user",
@@ -69235,7 +68006,7 @@
       "kind": "event",
       "event": "product/cross-check-request-v1",
       "surface": false,
-      "digest": "bc7a49642097e5741c45daf06e7e9dadeb98da20532c9f0eefc3ac2a3470dd12",
+      "digest": "980982f87e2d69b235035f880b888bf58a39fdc79a14e7c0e19086cc2d859c7a",
       "schema": {
         "root": 0,
         "nodes": [
@@ -69312,11 +68083,6 @@
                 "name": "system",
                 "type": 3,
                 "optional": false
-              },
-              {
-                "name": "traceId",
-                "type": 3,
-                "optional": true
               },
               {
                 "name": "user",
@@ -69719,230 +68485,11 @@
       }
     },
     {
-      "key": "event:product/evidence-v2",
-      "kind": "event",
-      "event": "product/evidence-v2",
-      "surface": false,
-      "digest": "c59db7efe0b9f34236123bab69f2727dd0490adb8fc83c427fe8c16a6b9aae58",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 13,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 7,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 7,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 14,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "items",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "planId",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 3
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "contentHash",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "evidenceId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "extractionMethod",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "locator",
-                "type": 6,
-                "optional": false
-              },
-              {
-                "name": "qualityNotes",
-                "type": 9,
-                "optional": true
-              },
-              {
-                "name": "questionIds",
-                "type": 9,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 10,
-                "optional": false
-              },
-              {
-                "name": "sourceSnapshotId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "sourcedStatement",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "supportingExcerpts",
-                "type": 11,
-                "optional": false
-              },
-              {
-                "name": "verbatimExcerpt",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "name",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "end",
-                "type": 7,
-                "optional": false
-              },
-              {
-                "name": "kind",
-                "type": 8,
-                "optional": false
-              },
-              {
-                "name": "pdfPage",
-                "type": 7,
-                "optional": true
-              },
-              {
-                "name": "start",
-                "type": 7,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "text_range"
-          },
-          {
-            "kind": "array",
-            "element": 4
-          },
-          {
-            "kind": "literal",
-            "value": 2
-          },
-          {
-            "kind": "array",
-            "element": 12
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "locator",
-                "type": 6,
-                "optional": false
-              },
-              {
-                "name": "verbatimExcerpt",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "literal",
-            "value": "product/evidence-v2"
-          }
-        ]
-      }
-    },
-    {
       "key": "event:product/model-request-v1",
       "kind": "event",
       "event": "product/model-request-v1",
       "surface": false,
-      "digest": "94e30b84cc66bcaf802d3aa8f87356b015b37ad8e66e1421c273ac4dfe9bbff1",
+      "digest": "bcf869589e89ec446564e88c2b765421feb69806b45ec150fda2ac4b1e6895b0",
       "schema": {
         "root": 0,
         "nodes": [
@@ -70009,11 +68556,6 @@
                 "name": "system",
                 "type": 2,
                 "optional": false
-              },
-              {
-                "name": "traceId",
-                "type": 2,
-                "optional": true
               },
               {
                 "name": "user",
@@ -70504,227 +69046,6 @@
       }
     },
     {
-      "key": "event:product/passage-model-request-v1",
-      "kind": "event",
-      "event": "product/passage-model-request-v1",
-      "surface": false,
-      "digest": "799d94be90467dbda8296b2ea34380caa9e503e4b13157f061c9ef755dd61d48",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 4,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 5,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "maxTokens",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "model",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "planId",
-                "type": 2,
-                "optional": true
-              },
-              {
-                "name": "provider",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "system",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "traceId",
-                "type": 2,
-                "optional": true
-              },
-              {
-                "name": "user",
-                "type": 2,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "literal",
-            "value": "product/passage-model-request-v1"
-          }
-        ]
-      }
-    },
-    {
-      "key": "event:product/passage-model-result-v1",
-      "kind": "event",
-      "event": "product/passage-model-result-v1",
-      "surface": false,
-      "digest": "600c6144ce369beaa29b3691824862a786919a1a95a7c494da99332a74b01e1f",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 8,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 9,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 9,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 10,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "error",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "planId",
-                "type": 2,
-                "optional": true
-              },
-              {
-                "name": "status",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "text",
-                "type": 2,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "union",
-            "types": [
-              2,
-              4
-            ]
-          },
-          {
-            "kind": "primitive",
-            "type": "null"
-          },
-          {
-            "kind": "union",
-            "types": [
-              6,
-              7
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "completed"
-          },
-          {
-            "kind": "literal",
-            "value": "failed"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "product/passage-model-result-v1"
-          }
-        ]
-      }
-    },
-    {
       "key": "event:product/report-v1",
       "kind": "event",
       "event": "product/report-v1",
@@ -71140,7 +69461,7 @@
       "kind": "event",
       "event": "product/source-text-v1",
       "surface": false,
-      "digest": "c2df876a58b87fbc381bfa9d19e8386fe12ae9fb5b4aef8e3c3e17e7ae484815",
+      "digest": "d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0",
       "schema": {
         "root": 0,
         "nodes": [
@@ -71194,11 +69515,6 @@
                 "optional": false
               },
               {
-                "name": "planId",
-                "type": 2,
-                "optional": true
-              },
-              {
                 "name": "text",
                 "type": 2,
                 "optional": false
@@ -71230,7 +69546,7 @@
       "kind": "event",
       "event": "product/synthesis-request-v1",
       "surface": false,
-      "digest": "c40c93ecd5c5647bc162f7c1d5bd9bb870e4cc52f28118386cb05cbbe288b11a",
+      "digest": "04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0",
       "schema": {
         "root": 0,
         "nodes": [
@@ -71302,11 +69618,6 @@
                 "name": "system",
                 "type": 6,
                 "optional": false
-              },
-              {
-                "name": "traceId",
-                "type": 6,
-                "optional": true
               },
               {
                 "name": "user",
@@ -82989,10 +81300,10 @@
     {
       "digest": "010e8c2d810cbedaebda73a1ca9451c9c5313776c436f11195cece66f843b5b0",
       "names": [
-        "packages/product-insight/model/src/types.ts#ProductEvidenceV1"
+        "packages/product-insight/model/src/types.ts#ProductEvidence"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:178"
+        "packages/product-insight/model/src/types.ts:164"
       ]
     },
     {
@@ -83004,14 +81315,6 @@
       "digest": "016e5ffc7e544fb7cf875be373c55598ba8c02e29ad05abd507aed629dd79ca2",
       "names": [],
       "sources": []
-    },
-    {
-      "digest": "017652c4c7518d23570ac0e17c17b46b8673c4d806187e0a3aa65d0987eecc2a",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:45",
-        "packages/product-insight/workflow/src/session-tool.ts:66"
-      ]
     },
     {
       "digest": "01c9fb335534c734eb48bdb01eb2dafae8427f3d1456c7f2ba11a7197d62072f",
@@ -83151,8 +81454,13 @@
         "packages/product-insight/source/src/index.ts#ProductDiscoveryResult"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:39"
+        "packages/product-insight/source/src/index.ts:33"
       ]
+    },
+    {
+      "digest": "04f3a8e8970b9e26b4f65e9f4c8837abf501118e838d10a0178016b2171884d0",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "05288f463e51003817e46b6509e29a3e048931c1e3219b564fb20fd830c409c8",
@@ -83353,7 +81661,7 @@
         "packages/product-insight/model/src/types.ts#ProductBatchResult"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:253"
+        "packages/product-insight/model/src/types.ts:233"
       ]
     },
     {
@@ -83368,6 +81676,13 @@
       ],
       "sources": [
         "packages/goal/goal/src/types.ts:20"
+      ]
+    },
+    {
+      "digest": "0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:40"
       ]
     },
     {
@@ -83427,11 +81742,6 @@
       "sources": []
     },
     {
-      "digest": "0e36a5f3263ab61a8b3f6e9a98352544e326d63bd760563b8522c2c075475a03",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "0e468712e54e6c49033016a8418408e8fd05a2fc9b10a2955595f8014fa633ce",
       "names": [],
       "sources": []
@@ -83486,7 +81796,7 @@
       "digest": "0f84006fb3e2b1e66a47ea24526c30a2568442024fb92958a90696d18aa1c458",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:115"
+        "packages/product-insight/workflow/src/session-tool.ts:77"
       ]
     },
     {
@@ -83736,7 +82046,7 @@
         "packages/product-insight/model/src/types.ts#ProductBatchResult"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:253"
+        "packages/product-insight/model/src/types.ts:233"
       ]
     },
     {
@@ -83879,11 +82189,6 @@
       "sources": []
     },
     {
-      "digest": "1b4178b82e387ab0e9d8b2fb19194979d6afbf230f7ab614cce23cb9ae37452a",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "1b5649238876e28811e80f10ec67a00c197ad3babd4ecc61a22b09064b88c597",
       "names": [],
       "sources": [
@@ -83990,13 +82295,6 @@
       "digest": "1d8798b1a5e8c545ee4dcd2b4e75c0b4c9ffd985e4744c6d1a1aab992f859721",
       "names": [],
       "sources": []
-    },
-    {
-      "digest": "1d87b2d84e8b24b4013ad101ad2664d9d22b21c57120aa1dd7802ae8a89c9ad4",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:89"
-      ]
     },
     {
       "digest": "1d8b910e2fa1adadd15375fd8fc330fd170876ad1132fa9dd3761384b557f7c4",
@@ -84188,7 +82486,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaim"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:223"
+        "packages/product-insight/model/src/types.ts:203"
       ]
     },
     {
@@ -84393,7 +82691,7 @@
       "digest": "267999acf534edb20dacd57a7bd713812021f71fbf3458aad03263342ca348fa",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:173"
+        "packages/product-insight/model/src/types.ts:174"
       ]
     },
     {
@@ -84855,11 +83153,6 @@
       "sources": []
     },
     {
-      "digest": "3523a40f94eea4a0f456db11a8372bd68b2f5a205fbd532d765361eb2e00a75c",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "3569d1c58fb289eb6f0397b3206f2b685a10f2cf4276b814e92dc068ef38f0f8",
       "names": [],
       "sources": []
@@ -84996,7 +83289,7 @@
       "digest": "3853091daa13317754e3ccdc68ee341da3331400a6f3a2a1c819562d193d0dd3",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:161"
+        "packages/product-insight/workflow/src/session-tool.ts:121"
       ]
     },
     {
@@ -85164,11 +83457,6 @@
       "sources": [
         "packages/academic/workflow/src/settlement-events.ts:23"
       ]
-    },
-    {
-      "digest": "3d223871838951116544c216e786f72b9c94c53a9a9d287908f44774049f2dfa",
-      "names": [],
-      "sources": []
     },
     {
       "digest": "3d7d07060a7be77984feb651ea2bf1925d3e0477911d9d3ed86330d1e8ca6182",
@@ -85525,8 +83813,12 @@
     },
     {
       "digest": "4885840396b2c2b9e38c6fddd76f3db43c29ab919f7511ecd1870ec874b86bea",
-      "names": [],
-      "sources": []
+      "names": [
+        "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
+      ],
+      "sources": [
+        "packages/product-insight/workflow/src/index.ts:84"
+      ]
     },
     {
       "digest": "488e7930a8704d9f69937786e651250b581b8086f5a7912981dd0841ee49ca63",
@@ -85883,11 +84175,6 @@
       "sources": []
     },
     {
-      "digest": "4dc977c0f78f253355700c6608c54e5b73d788dd9087bd8bbc0fd75a0c008bcf",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "4dcc73407f8df04f10c37610f7b14fffb58d0814641ea1f14929820d7fa1b6e4",
       "names": [
         "packages/academic/research-controller/src/candidate-review-model.ts#CandidateReviewModelRequest"
@@ -86018,21 +84305,16 @@
       "sources": []
     },
     {
-      "digest": "513bf1438354a5ab43184f484121f54f451e67b0cd5c6a725b61bf96587622e3",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "514b1ade2e727ad36d9de3bd41daa6eb773309ea374e0fd8b71b05561153d617",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:149"
-      ]
-    },
-    {
       "digest": "516da4cdd6d2f1e5ce488e648578ca51f40e458f707b803e5b24de870e799415",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:110"
+      ]
     },
     {
       "digest": "51edec100659da3a9bd9c3f6ba1180f5e64ec9a1585e5057080df45c180bd357",
@@ -86076,7 +84358,7 @@
         "packages/product-insight/model/src/types.ts#ProductEvidenceRelation"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:199"
+        "packages/product-insight/model/src/types.ts:179"
       ]
     },
     {
@@ -86326,7 +84608,7 @@
       "digest": "5842da8ceea55fda749bc9152d578e3e1da98b9f144cc64f4b486833ec24b7ee",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:87"
+        "packages/product-insight/workflow/src/session-tool.ts:62"
       ]
     },
     {
@@ -86401,7 +84683,7 @@
       "digest": "5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:170"
+        "packages/product-insight/workflow/src/session-tool.ts:130"
       ]
     },
     {
@@ -86560,7 +84842,7 @@
       ],
       "sources": [
         "packages/academic/model/src/results.ts:35",
-        "packages/product-insight/model/src/types.ts:250"
+        "packages/product-insight/model/src/types.ts:230"
       ]
     },
     {
@@ -86662,12 +84944,12 @@
       "sources": []
     },
     {
-      "digest": "600c6144ce369beaa29b3691824862a786919a1a95a7c494da99332a74b01e1f",
+      "digest": "60534ed5b9a2e0caf98da2472f3b535deeb2445e355e3154645db4959af55f0c",
       "names": [],
       "sources": []
     },
     {
-      "digest": "60534ed5b9a2e0caf98da2472f3b535deeb2445e355e3154645db4959af55f0c",
+      "digest": "607da22033187a771db7dd16a4230f1112b413d0e360ab4bc0ecd229679d58ec",
       "names": [],
       "sources": []
     },
@@ -87133,13 +85415,6 @@
       "sources": []
     },
     {
-      "digest": "6d0dc6b8355af4bcc1c4948a56007821989fd120190161a6156e088cc37b87d9",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:105"
-      ]
-    },
-    {
       "digest": "6d7bacc6ad247fd2edd597629a2182da7aa43f93d63735b2d5fbd9425c51f60c",
       "names": [
         "packages/academic/model/src/trace.ts#AcademicTraceDuration"
@@ -87216,7 +85491,7 @@
       "digest": "6ee18c5f659d82fb1184649ea0e32b41f8aab1e1f30dead4972478fcb51ef443",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:172"
+        "packages/product-insight/workflow/src/session-tool.ts:132"
       ]
     },
     {
@@ -87379,6 +85654,13 @@
       "sources": []
     },
     {
+      "digest": "72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:68"
+      ]
+    },
+    {
       "digest": "7309ea217ac28f1f2a5067f1cf3a0dc9c71fdea9610d3322199baf6d7e3e093b",
       "names": [],
       "sources": []
@@ -87423,13 +85705,6 @@
       ]
     },
     {
-      "digest": "743a70f197109bfe739f0c41967a4f0c6c2777735bccd2f9659e98c1e4b23fd1",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:124"
-      ]
-    },
-    {
       "digest": "74f71b302261084b9e018ab6af04d8ed1fa4c902288b6b56b290086732cfefa5",
       "names": [],
       "sources": [
@@ -87459,7 +85734,7 @@
       "digest": "75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:91"
+        "packages/product-insight/workflow/src/session-tool.ts:64"
       ]
     },
     {
@@ -87523,15 +85798,6 @@
       ]
     },
     {
-      "digest": "786d625e2fae75cf2198424aadcfd2da0087be941e256599795b823b66f27f43",
-      "names": [
-        "packages/product-insight/model/src/types.ts#ProductEvidenceV2"
-      ],
-      "sources": [
-        "packages/product-insight/model/src/types.ts:189"
-      ]
-    },
-    {
       "digest": "78759ecc8a93446a1f7b200c4ab79f5e7f761aa5cee66003668eaa9d823309ae",
       "names": [
         "packages/academic/model/src/trace.ts#AcademicTraceOperation"
@@ -87572,11 +85838,6 @@
       ]
     },
     {
-      "digest": "796398b729868461c34fc4a80587be92871b4509fd4cb700ec8cd95816c466b0",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "79650cfa10aa3c52440328d85e8a25f0ffadc8d7efd784e3c0819d8bb74a1985",
       "names": [],
       "sources": [
@@ -87590,11 +85851,6 @@
     },
     {
       "digest": "799231ac91869a6695666505343003905638e1b4d11349bff953d4dbfe3191ba",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "799d94be90467dbda8296b2ea34380caa9e503e4b13157f061c9ef755dd61d48",
       "names": [],
       "sources": []
     },
@@ -88172,7 +86428,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceLink"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:202"
+        "packages/product-insight/model/src/types.ts:182"
       ]
     },
     {
@@ -88469,7 +86725,7 @@
       "digest": "8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:147"
+        "packages/product-insight/workflow/src/session-tool.ts:108"
       ]
     },
     {
@@ -88599,7 +86855,7 @@
       "digest": "92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:122"
+        "packages/product-insight/workflow/src/session-tool.ts:84"
       ]
     },
     {
@@ -88681,11 +86937,6 @@
     },
     {
       "digest": "94c56aeb1564ad735eb773d88636b40761d063efa1610f1308004d32923f5378",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "94e30b84cc66bcaf802d3aa8f87356b015b37ad8e66e1421c273ac4dfe9bbff1",
       "names": [],
       "sources": []
     },
@@ -88784,6 +87035,11 @@
       "sources": [
         "packages/academic/workflow/src/progress.ts:137"
       ]
+    },
+    {
+      "digest": "980982f87e2d69b235035f880b888bf58a39fdc79a14e7c0e19086cc2d859c7a",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "9890113e97dd3541787bfe6704f2b223d3a890b5325ca0acae2b0398909b413e",
@@ -88927,13 +87183,6 @@
       "names": [],
       "sources": [
         "packages/web/web-search-deepseek/src/provider.ts:61"
-      ]
-    },
-    {
-      "digest": "9cdcfbf0647b2159bdb4a522f419969e19bf631d0a5a506b7b585e8c2dd7eab6",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:43"
       ]
     },
     {
@@ -89152,11 +87401,6 @@
     },
     {
       "digest": "a2be0f0cb59f0d4a06557d45847d1938aced238baa77a6da416e590b8b958553",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "a2e0a68af44948187b6db7b5950968f354a420e486eae4d57950b30e9f5be99e",
       "names": [],
       "sources": []
     },
@@ -90118,11 +88362,6 @@
       ]
     },
     {
-      "digest": "bc7a49642097e5741c45daf06e7e9dadeb98da20532c9f0eefc3ac2a3470dd12",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "bc9ff0cabcacd2320d79e46a933368dc37c2a9231dd1f822502d5d68e501e911",
       "names": [],
       "sources": []
@@ -90138,6 +88377,11 @@
       "sources": [
         "packages/core/session/src/types.ts:465"
       ]
+    },
+    {
+      "digest": "bcf869589e89ec446564e88c2b765421feb69806b45ec150fda2ac4b1e6895b0",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "bcfa771fc8bafb008a6be6731c632908b7d26d7a69a182be6ca483ce9e983dce",
@@ -90163,7 +88407,7 @@
       "digest": "be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:137"
+        "packages/product-insight/workflow/src/session-tool.ts:98"
       ]
     },
     {
@@ -90233,8 +88477,7 @@
       "digest": "c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:57",
-        "packages/product-insight/workflow/src/session-tool.ts:78"
+        "packages/product-insight/workflow/src/session-tool.ts:53"
       ]
     },
     {
@@ -90295,15 +88538,6 @@
       ]
     },
     {
-      "digest": "c1df2300dfe56703a40ca2b38e67d90139e18ef37ffd82be6f24278882247433",
-      "names": [
-        "packages/product-insight/model/src/types.ts#ProductSupportingExcerpt"
-      ],
-      "sources": [
-        "packages/product-insight/model/src/types.ts:183"
-      ]
-    },
-    {
       "digest": "c1f0f17b6493b85db6453bb30e01b208d703731b25bc1e68e5d4fc72eea9cdea",
       "names": [
         "packages/llm/llm/src/types.ts#ToolCallBlock"
@@ -90348,11 +88582,6 @@
       ]
     },
     {
-      "digest": "c2df876a58b87fbc381bfa9d19e8386fe12ae9fb5b4aef8e3c3e17e7ae484815",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "c2f49004d9ae38a964e80850c87bc6849d6a872091a1d43e99eedf00c641e2a3",
       "names": [],
       "sources": []
@@ -90363,11 +88592,6 @@
       "sources": [
         "packages/product-insight/model/src/types.ts:145"
       ]
-    },
-    {
-      "digest": "c40c93ecd5c5647bc162f7c1d5bd9bb870e4cc52f28118386cb05cbbe288b11a",
-      "names": [],
-      "sources": []
     },
     {
       "digest": "c4255df29b808fe7b67dd780c51e0883f55523390e5d2cb6e2c5677d7c49ad31",
@@ -90443,11 +88667,6 @@
       "sources": [
         "packages/util/values/src/index.ts:4"
       ]
-    },
-    {
-      "digest": "c59db7efe0b9f34236123bab69f2727dd0490adb8fc83c427fe8c16a6b9aae58",
-      "names": [],
-      "sources": []
     },
     {
       "digest": "c5f47125418488b12ed64e886d9aa5b9673328c3dfd68562d642566683a5ff92",
@@ -90754,11 +88973,6 @@
       ]
     },
     {
-      "digest": "d4bdf92b75be129140bc0deed9084a4e6cb3ae742c8d68904d3a1cd7ad0343d7",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "d4c799e3d51cae1040362ba4968efc484739e14416c9c1df20c2f108b4ef2eb5",
       "names": [],
       "sources": []
@@ -90945,6 +89159,11 @@
       "sources": []
     },
     {
+      "digest": "d9f87a8bbf89a400b86733fdf1e11147b698cf0636299f82c58ea5be63155bb0",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "d9ff136ee5c282e800a9f674c4a6c799da45daabfbcc97a50d9b8fe769fd29c7",
       "names": [],
       "sources": []
@@ -91106,6 +89325,13 @@
       "sources": []
     },
     {
+      "digest": "de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:86"
+      ]
+    },
+    {
       "digest": "de25352d2dc4196309bd84b5bac6319f6d5c898ea0e82bb5ae66c5738d0d426f",
       "names": [],
       "sources": []
@@ -91257,7 +89483,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceSnapshotItem"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:209"
+        "packages/product-insight/model/src/types.ts:189"
       ]
     },
     {
@@ -91335,6 +89561,13 @@
       "digest": "e31572180d6b28b73f073ad30ae19d5d82982d3daf984723984e23da1e7c459a",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "e355ee6a1067e87964f49d7a20c43786074f771b10f30d20e565f89b78b19743",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:42"
+      ]
     },
     {
       "digest": "e3756540363a7288e5d52528a8f4dccdba11b211999dfde5a76d80128cea4741",
@@ -91625,7 +89858,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceSnapshot"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:216"
+        "packages/product-insight/model/src/types.ts:196"
       ]
     },
     {
@@ -91755,7 +89988,7 @@
         "packages/product-insight/source/src/index.ts#ProductSearchAttempt"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:27"
+        "packages/product-insight/source/src/index.ts:21"
       ]
     },
     {

@@ -3,7 +3,7 @@ import { checkProductClaimFreshness, type CandidatePage, type Product, type Prod
   type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
 import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
-import { adoptEvidenceQuestions, type ProductSemanticReview } from './claim-review.ts'
+import type { ProductSemanticReview } from './claim-review.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   distinctProductSites, keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -39,9 +39,7 @@ export interface ProductSynthesisInput {
     readonly questionId: string
     readonly question: string
     readonly limitations?: readonly string[]
-    readonly evidence: readonly (Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'> & {
-      readonly supportingExcerpts?: readonly string[]
-    })[]
+    readonly evidence: readonly Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'>[]
   }[]
 }
 
@@ -49,8 +47,7 @@ export interface ProductSynthesisInput {
 export function productSynthesisInput(input: ProductReportInput): ProductSynthesisInput {
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const reviews = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
-    .map(item => [item.evidenceId, item]))
+  const reviews = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const snapshots = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   const claims = input.claims.filter(claim => validClaimLinks(input.plan, claim, evidence, reviews, pages)
     && checkProductClaimFreshness(claim, input.plan, evidence, snapshots).status === 'current',
@@ -68,7 +65,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       .map(item => evidence.get(item.evidenceId)).find((item) => {
         const page = item === undefined ? undefined : pages.get(item.candidatePageId)
         return item?.questionIds.includes(question.questionId)
-          && page?.publisher?.toLocaleLowerCase() !== primaryPage?.publisher?.toLocaleLowerCase()
+          && sitePublisher(page) !== sitePublisher(primaryPage)
           && distinctProductSites(primaryPage, page)
       })
     const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => gap.missingContent)
@@ -86,20 +83,17 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       const snapshot = snapshots.get(item.candidatePageId)
       if (page === undefined || snapshot?.status !== 'available') continue
       const host = new URL(page.url).hostname.toLowerCase()
-      const approved = input.plan.sourcePublishers?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
-      if (approved && snapshot.declaredPublisher?.toLocaleLowerCase() !== approved.name.toLocaleLowerCase()) {
+      const reviewed = reviewedSite(input.plan, host)
+      if (reviewed && snapshot.declaredPublisher?.toLocaleLowerCase() !== reviewed.name.toLocaleLowerCase()) {
         limitations.push(`来源“${page.title ?? page.url}”的页面发布方未确定：${snapshot.declaredPublisher === undefined
-          ? '未提取到发布方声明' : '页面声明与计划登记名称不一致'}；按已批准域名纳入，结论仍须由原文支持。`)
+          ? '未提取到发布方声明' : '页面声明与计划登记名称不一致'}；按已登记站点纳入，结论仍须由原文支持。`)
       }
     }
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
       evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
         && claims.some(claim => claim.questionIds.includes(question.questionId)
           && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))
-        .map(item => ({ evidenceId: item.evidenceId, sourcedStatement: item.sourcedStatement,
-          verbatimExcerpt: item.verbatimExcerpt,
-          ...item.schemaVersion === 2 && item.supportingExcerpts.length > 0
-            ? { supportingExcerpts: item.supportingExcerpts.map(span => span.verbatimExcerpt) } : {} })) }
+        .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
   })
   return { scope: input.plan.scope, questions,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
@@ -118,6 +112,7 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
     }
   }
   const items = input.evidence.filter(item => item.questionIds.includes(questionId))
+  const unregisteredSites = new Set<string>()
   for (const item of items) {
     const page = input.discovery.candidates.items.find(page => page.candidatePageId === item.candidatePageId)
     const snapshot = input.pages.snapshots.items.find(snapshot => snapshot.candidatePageId === item.candidatePageId)
@@ -140,8 +135,41 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
       input.sourceRevalidation.snapshots.items.find(value => value.candidatePageId === item.candidatePageId))) {
       notes.push(`来源“${label}”在恢复时发生变化或无法重新确认；本报告依据原保存快照，不代表网页当前内容。`)
     }
+    const host = sourceHost(page?.url)
+    if (input.plan.focus !== undefined && host !== undefined && !isOfficialHost(input.product, host)
+      && reviewedSite(input.plan, host) === undefined) unregisteredSites.add(host)
+  }
+  if (unregisteredSites.size > 0) {
+    const hosts = [...unregisteredSites]
+    notes.push(`本题另有 ${hosts.length} 个未登记的外部站点（${hosts.slice(0, 3).join('、')}${hosts.length > 3 ? ' 等' : ''}），`
+      + '按已确认的关注方向纳入；站点身份未经用户逐一审核，结论仅按原文实际内容理解。')
   }
   return [...new Set(notes)]
+}
+
+/** The site the plan names, either a legacy allowlist entry or a site the user added. */
+function reviewedSite(plan: ProductPlan, host: string) {
+  return (plan.focus === undefined ? plan.sourcePublishers : plan.additionalSites)
+    ?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
+}
+
+function sourceHost(url: string | undefined): string | undefined {
+  if (url === undefined) return undefined
+  try { return new URL(url).hostname.toLowerCase() }
+  catch { return undefined }
+}
+
+/** Compare publishers by page label when a plan registers one, otherwise by host. */
+function sitePublisher(page: CandidatePage | undefined): string | undefined {
+  if (page === undefined) return undefined
+  return (page.publisher ?? sourceHost(page.url))?.toLocaleLowerCase()
+}
+
+function isOfficialHost(product: Product, host: string): boolean {
+  try {
+    const official = new URL(product.officialUrl).hostname.toLowerCase()
+    return host === official || host.endsWith(`.${official}`)
+  } catch { return false }
 }
 
 /** Insert validated prose with links resolved from the captured evidence. */
@@ -200,8 +228,7 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     reasons.push('A source search refers to a question outside the approved plan.')
   }
   const evidenceById = new Map(input.evidence.map(item => [item.evidenceId, item]))
-  const admittedReviews = adoptEvidenceQuestions(input.evidence, input.reviews)
-  const reviewsById = new Map(admittedReviews.map(item => [item.evidenceId, item]))
+  const reviewsById = new Map(input.reviews.map(item => [item.evidenceId, item]))
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const latestByPage = new Map(input.pages.snapshots.items.map(item => [item.candidatePageId, item]))
   if (input.discovery.candidates.items.some(page => page.screening.status === 'selected'
@@ -289,8 +316,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
   synthesis?: string): string {
   if (assessment.status === 'blocked') throw new RangeError('A blocked product report has no renderable evidence')
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
-  const reviewById = new Map(adoptEvidenceQuestions(input.evidence, input.reviews)
-    .map(review => [review.evidenceId, review]))
+  const reviewById = new Map(input.reviews.map(review => [review.evidenceId, review]))
   const title = assessment.status === 'ready' ? '产品资料调查报告' : '产品资料调查草稿'
   const lines = [`# ${escape(input.product.name)} — ${title}`, '',
     `调查范围：${escape(input.plan.scope)}`, '',
@@ -358,8 +384,6 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       : review?.verdict === 'unsupported' ? '摘录不支持该陈述'
         : review?.verdict === 'uncertain' ? '支持关系仍不确定' : '尚未审核支持关系'
     lines.push(`### 证据 ${seen.size}`, '', `> ${escape(item.verbatimExcerpt)}`, '',
-      ...item.schemaVersion === 2 ? item.supportingExcerpts.flatMap(span =>
-        [`> ${escape(span.verbatimExcerpt)}`, '']) : [],
       `${state}；来源陈述：${escape(item.sourcedStatement)} [来源](${citationLink(page.url, item)})`, '')
     if (review) lines.push(`核对说明：${escape(review.rationale)}`, '')
   }

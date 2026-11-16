@@ -42,19 +42,4 @@ describe('TransportCapture', () => {
     await (await capture.fetch('https://example.test/')).text()
     expect(capture.snapshot().requestId).toBeUndefined()
   })
-
-  it('sends the product trace ID and records response timing and stream position without content', async () => {
-    const fetched = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(new ReadableStream<Uint8Array>({
-      start(controller) { controller.enqueue(new Uint8Array([1, 2, 3])); controller.close() },
-    }), { status: 200, headers: { 'content-type': 'text/event-stream', 'x-request-id': 'gateway-123' } }))
-    vi.stubGlobal('fetch', fetched)
-    const capture = new TransportCapture('client-123')
-    const response = await capture.fetch('https://example.test/private', { method: 'POST', body: 'secret prompt' })
-    await response.arrayBuffer()
-    expect(new Headers(fetched.mock.calls[0]?.[1]?.headers).get('x-request-id')).toBe('client-123')
-    expect(capture.snapshot()).toMatchObject({ status: 200, requestId: 'gateway-123', streamBytes: 3 })
-    expect(capture.snapshot().responseAtMs).toBeGreaterThanOrEqual(0)
-    expect(capture.snapshot().firstByteAtMs).toBeGreaterThanOrEqual(0)
-    expect(JSON.stringify(capture.snapshot())).not.toMatch(/secret|example\.test/u)
-  })
 })
