@@ -6,6 +6,8 @@ import { parseDuckDuckGoResults } from './free-search.ts'
 type Node = DefaultTreeAdapterTypes.Node
 /** Supported anonymous HTML search providers. */
 export type SearchEngine = 'duckduckgo' | 'bing' | 'yahoo'
+/** Discovery link plus the anonymous engine that returned it, so an empty page stays diagnosable. */
+export interface AttributedSearchSource extends WebSearchSource { readonly engine: SearchEngine }
 const endpoints = { duckduckgo: 'https://html.duckduckgo.com/html/', bing: 'https://www.bing.com/search', yahoo: 'https://uk.search.yahoo.com/search' }
 const attr = (node: Node, name: string): string => 'attrs' in node ? node.attrs.find(item => item.name === name)?.value ?? '' : ''
 const children = (node: Node): Node[] => 'childNodes' in node ? node.childNodes : []
@@ -105,17 +107,19 @@ export async function searchMultiple(query: string, maximum: number, engines: Se
   const details = outcomes.map((outcome, i) => outcome.status === 'fulfilled'
     ? `${engines[i]}: ${outcome.value.sources.length} 条${outcome.value.truncated ? '（已截断）' : ''}`
     : `${engines[i]}: ${outcome.reason instanceof WebError ? outcome.reason.code : 'WEB_PROVIDER_FAILED'} (${outcome.reason instanceof Error ? outcome.reason.message.slice(0, 200) : 'Unknown failure'})`)
-  const successes = outcomes.flatMap(outcome => outcome.status === 'fulfilled' ? [outcome.value] : [])
+  const successes = outcomes.flatMap((outcome, index) => outcome.status === 'fulfilled' && engines[index] !== undefined
+    ? [{ engine: engines[index], result: outcome.value }] : [])
   if (!successes.length) throw new WebError(`搜索来源均失败：${details.join('；')}`, 'WEB_PROVIDER_FAILED')
-  const sources = new Map<string, WebSearchSource>()
-  const count = Math.max(0, ...successes.map(result => result.sources.length))
-  for (let rank = 0; rank < count; rank++) for (const result of successes) {
+  const sources = new Map<string, AttributedSearchSource>()
+  const count = Math.max(0, ...successes.map(({ result }) => result.sources.length))
+  for (let rank = 0; rank < count; rank++) for (const { engine, result } of successes) {
     const source = result.sources[rank]
     if (!source) continue
     const url = targetUrl(source.url, 'duckduckgo')
-    if (url && !sources.has(url)) sources.set(url, { ...source, url })
+    if (url && !sources.has(url)) sources.set(url, { ...source, url, engine })
   }
   return { sources: [...sources.values()].slice(0, maximum),
-    truncated: sources.size > maximum || successes.length < engines.length || successes.some(result => result.truncated),
+    truncated: sources.size > maximum || successes.length < engines.length
+      || successes.some(({ result }) => result.truncated),
     content: `搜索来源状态（仅用于发现网页，不是正文证据）：${details.join('；')}。合并去重 ${sources.size} 条，保留 ${Math.min(maximum, sources.size)} 条。` }
 }

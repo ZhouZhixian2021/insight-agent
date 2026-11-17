@@ -1,7 +1,7 @@
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { describe, expect, it } from 'vitest'
 import type { Product, ProductId, ProductPlan, ProductPlanId, ProductQuestionId } from '@deepseek-ai/dsh-product-insight-model'
-import { discoverCandidatePages } from '../src/index.ts'
+import { discoverCandidatePages, productSearchQuery } from '../src/index.ts'
 
 const productId = brandString<ProductId>('product')
 const planId = brandString<ProductPlanId>('plan')
@@ -14,7 +14,47 @@ const plan: ProductPlan = { schemaVersion: 1, planId, productId, version: 1, sco
   approval: { status: 'approved', approvedPlanVersion: 1, reviewedBy: 'user', reviewedAt: '2026-11-05T00:00:00Z', comment: null } }
 const now = () => '2026-11-05T00:00:00Z'
 
+describe('product search query', () => {
+  it('stays under the engine limit and drops the scope prose', () => {
+    const query = productSearchQuery({ ...product, name: '苹果自研 M6 芯片（首代 2nm Apple silicon）' },
+      '苹果官方公布的 M6 规格是什么——制程、CPU/GPU/神经引擎核心数、内存带宽与能效表述，官方用哪些数据支撑相较上一代的大幅提升？')
+    expect(query.length).toBeLessThanOrEqual(60)
+    expect(query).not.toContain('Apple silicon')
+    expect(query).not.toContain('？')
+    expect(query).toContain('M6')
+  })
+
+  it('ranks ASCII product terms ahead of prose words', () => {
+    expect(productSearchQuery(product, 'How do CPU and GPU compare for gaming?'))
+      .toMatch(/^Example cpu gpu/u)
+  })
+
+  it('strips a trailing name annotation and terms the name already contains', () => {
+    expect(productSearchQuery({ ...product, name: 'Example (2026 edition)' }, 'Example features?'))
+      .toBe('Example features')
+  })
+})
+
 describe('product page discovery', () => {
+  it('attributes each search result to the engine that returned it', async () => {
+    const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
+      now, web: { search: async () => ({ sources: [
+        { url: 'https://review.test/specs', engine: 'yahoo' },
+        { url: 'https://example.com/specs' },
+      ], truncated: false }) },
+    })
+    expect(result.candidates.items.map(page => page.discoveryChannel)).toEqual(['web', 'web:yahoo'])
+  })
+
+  it('ignores planned links that only lead into site navigation', async () => {
+    const result = await discoverCandidatePages({
+      product, plan, maxResultsPerQuery: 5,
+      initialSources: [{ url: 'https://support.google.com/chrome' }, { url: 'https://example.com/' },
+        { url: 'https://example.com/sg/' }, { url: 'https://example.com/m6-specs' }],
+    }, { now, web: { search: async () => ({ sources: [], truncated: false }) } })
+    expect(result.candidates.items.map(page => page.url)).toEqual(['https://example.com/m6-specs'])
+  })
+
   it('merges planning links and the concrete official page with new results within the shared cap', async () => {
     const result = await discoverCandidatePages({
       product: { ...product, officialUrl: 'https://example.com/release' },
@@ -111,7 +151,7 @@ describe('product page discovery', () => {
       plan: { ...plan, limits: { maximumCandidatePages: 2 } }, maxResultsPerQuery: 5 }, {
       now, web: { search: async ({ query, maxResults }) => {
         expect(maxResults).toBe(5)
-        return { sources: (query.includes('Features?') ? [features, `${features}/more`] : [price, `${features}#details`])
+        return { sources: (query.includes('features') ? [features, `${features}/more`] : [price, `${features}#details`])
           .map(url => ({ url })), truncated: false }
       } },
     })
@@ -128,7 +168,7 @@ describe('product page discovery', () => {
   it('screens before allocating the approved candidate slots', async () => {
     const result = await discoverCandidatePages({ product,
       plan: { ...plan, limits: { maximumCandidatePages: 2 } }, maxResultsPerQuery: 5 }, {
-      now, web: { search: async ({ query }) => ({ sources: (query.includes('Features?')
+      now, web: { search: async ({ query }) => ({ sources: (query.includes('features')
         ? ['https://unrelated.test/article', 'https://example.com/features']
         : ['ftp://example.com/file', 'https://example.com/price']).map(url => ({ url })), truncated: false }) },
     })

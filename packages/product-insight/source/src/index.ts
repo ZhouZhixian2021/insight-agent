@@ -3,7 +3,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
   isExecutableProductPlan, type CandidatePage, type Product, type ProductBatchResult,
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductQuestionId,
 } from '@deepseek-ai/dsh-product-insight-model'
-import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms } from './page-content.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
@@ -62,9 +62,15 @@ export function isProductGapSearch(search: ProductSearchAttempt): boolean {
   return search.reason === 'evidence_gap' || search.reason === 'corroboration_gap'
 }
 
+/** Discovery link a provider may attribute to the anonymous engine that returned it. */
+export interface ProductSearchSource extends WebSearchSource {
+  readonly engine?: string
+}
+
 /** Search provider adapter; a DSH WebRuntime satisfies this interface. */
 export interface ProductSearchAdapter {
-  search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>
+  search(request: WebSearchRequest, signal?: AbortSignal):
+  Promise<WebSearchResult & { readonly sources: readonly ProductSearchSource[] }>
 }
 
 /** Clock injected by the caller so screening times follow the owning run. */
@@ -84,6 +90,46 @@ export function resolveProductPageCharacterLimit(plan: ProductPlan): number {
     throw new RangeError('maximumPageCharacters must be a positive safe integer')
   }
   return maximum
+}
+
+/** Character budget of one first-pass query; longer sentences make engines match rare words. */
+const PRODUCT_SEARCH_QUERY_CHARACTERS = 60
+/** Approved-question terms kept in one first-pass query. */
+const PRODUCT_SEARCH_QUERY_TERMS = 4
+
+/**
+ * Build the first-pass query of one approved question from the product name and its strongest question terms.
+ * Plan scope stays out of the query: engines match its prose instead of the product and return unrelated pages.
+ * @param product - Investigated product; a trailing parenthetical is annotation, not a search term.
+ * @param question - Approved question whose distinctive terms are ranked.
+ * @returns A keyword query of at most {@link PRODUCT_SEARCH_QUERY_CHARACTERS} characters.
+ */
+export function productSearchQuery(product: Product, question: string): string {
+  const name = product.name.replace(/\s*[（(][^）)]*[）)]/gu, ' ').trim()
+  const lowered = name.toLowerCase()
+  const terms = [...productQuestionTerms(question)]
+    .map((term, index) => ({ term, index, score: searchTermScore(term) }))
+    .filter(candidate => !lowered.includes(candidate.term))
+    .sort((left, right) => right.score - left.score || right.term.length - left.term.length
+      || left.index - right.index)
+    .slice(0, PRODUCT_SEARCH_QUERY_TERMS)
+    .sort((left, right) => left.index - right.index)
+    .map(candidate => candidate.term)
+  return capSearchQuery([name, ...terms].join(' '), PRODUCT_SEARCH_QUERY_CHARACTERS)
+}
+
+function searchTermScore(term: string): number {
+  const ascii = /^[a-z0-9]+$/u.test(term) ? 3 : 0
+  const digit = /\d/u.test(term) ? 2 : 0
+  const length = term.length >= 3 ? 1 : 0
+  return ascii + digit + length
+}
+
+function capSearchQuery(query: string, maximum: number): string {
+  const text = query.trim()
+  if (text.length <= maximum) return text
+  const boundary = text.lastIndexOf(' ', maximum)
+  return (boundary > 0 ? text.slice(0, boundary) : text.slice(0, maximum)).trim()
 }
 
 /**
@@ -140,7 +186,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   const focusDriven = plan.focus !== undefined
   /** Legacy plans allowlist `sourcePublishers`; a focus plan only adds sites the user named. */
   const namedSites = focusDriven ? plan.additionalSites : plan.sourcePublishers
-  function screenSource(source: WebSearchResult['sources'][number]) {
+  function screenSource(source: ProductSearchSource) {
     const parsed = parseCandidateUrl(source.url)
     const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
     const registeredSite = parsed === null ? undefined : namedSites?.find(item => withinDomain(parsed.hostname, item.domain))
@@ -151,10 +197,10 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
       || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
         part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
-    return { source, parsed, officialPage, registeredSite,
+    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source),
       screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven) }
   }
-  const recordSource = ({ source, parsed, officialPage, registeredSite, screening }: ReturnType<typeof screenSource>,
+  const recordSource = ({ source, parsed, officialPage, registeredSite, engine, screening }: ReturnType<typeof screenSource>,
     questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' => {
     const key = candidateKey(source.url, parsed)
     const prior = candidates.get(key)
@@ -178,12 +224,14 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       sourceType: officialPage ? 'official_product_page' : 'other', discoveredAt: prior?.discoveredAt ?? adapters.now(),
       questionIds: [...new Set([...prior?.questionIds ?? [], questionId])], screening: { ...screening, screenedAt: adapters.now() },
       ...(officialPage ? { publisher: product.developer }
-        : registeredSite === undefined ? {} : { publisher: registeredSite.name }), discoveryChannel: 'web' })
+        : registeredSite === undefined ? {} : { publisher: registeredSite.name }),
+      discoveryChannel: engine === undefined ? 'web' : `web:${engine}` })
     return prior === undefined ? 'recorded' : 'ignored'
   }
   if (gap === undefined && !signal?.aborted) {
     // A concrete official page is an explicit reading lead, not only a host identity.
     const seeds = [...official.pathname !== '/' ? [{ url: product.officialUrl }] : [], ...input.initialSources ?? []]
+      .filter(seed => !isNavigationSeed(seed.url))
     for (const seed of seeds) {
       const screened = screenSource(seed)
       if (screened.screening.status === 'excluded') continue
@@ -206,9 +254,9 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     if (primaryId !== undefined && primary === undefined) continue
     const reason = primaryId === undefined ? 'evidence_gap' : 'corroboration_gap'
     const terms = domain === undefined ? [] : [...productQuestionTerms(question.text)]
-    const query = (domain === undefined ? [product.name, question.text, plan.scope]
+    const query = domain === undefined ? productSearchQuery(product, question.text)
       : [product.name, terms.join(' ') || question.text, plan.sourceCriteria?.productVersion,
-        plan.sourceCriteria?.region, `site:${domain}`]).filter(Boolean).join(' ').trim()
+        plan.sourceCriteria?.region, `site:${domain}`].filter(Boolean).join(' ').trim()
     const elapsed = maximumElapsedMinutes !== undefined
       && Date.parse(adapters.now()) - startedAt >= maximumElapsedMinutes * 60_000
     if (signal?.aborted || elapsed || gap !== undefined && !hasProductCandidateCapacity(retained, candidateLimit)) {
@@ -325,6 +373,20 @@ function parseCandidateUrl(value: string): URL | null {
   } catch { return null }
 }
 
+/** Navigation paths and hosts whose pages lead a reader into the site rather than to product content. */
+const NAVIGATION_PATH = /^\/(?:support|help|login|signin|sign-in|account|cart|shop|store|search)(?:\/|$)/iu
+const NAVIGATION_HOST = /^(?:support|help|account|login|signin)\./iu
+/** A locale prefix alone addresses the site root of that market, not a page. */
+const LOCALE_ROOT_PATH = /^\/[a-z]{2}(?:[-_][a-z]{2,4})?\/?$/iu
+
+/** Whether a planned link names site navigation, which costs a candidate slot and yields no evidence. */
+function isNavigationSeed(value: string): boolean {
+  const url = parseCandidateUrl(value)
+  if (url === null) return false
+  return url.pathname === '/' || LOCALE_ROOT_PATH.test(url.pathname)
+    || NAVIGATION_HOST.test(url.hostname) || NAVIGATION_PATH.test(url.pathname)
+}
+
 function dedupUrl(url: URL): string {
   const normalized = new URL(url)
   normalized.hash = ''
@@ -343,6 +405,11 @@ function candidateKey(url: string, parsed = parseCandidateUrl(url)): string {
  * it by product relevance, because the user approved directions rather than a
  * host list; a legacy plan still drops hosts outside its reviewed allowlist.
  */
+/** Engine that returned one search source, when the provider attributes it; planning links carry none. */
+function searchSourceEngine(source: ProductSearchSource): string | undefined {
+  return typeof source.engine === 'string' ? source.engine : undefined
+}
+
 function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean,
   registeredSite: boolean, focusDriven: boolean):
 { status: 'selected' | 'excluded'; reason: string } {

@@ -26,6 +26,7 @@ describe('direct multiple-engine product search', () => {
     const fetch = vi.fn(async (url: string) => response(url.includes('duckduckgo') ? ddg : url.includes('bing') ? bing('https://example.com/spec') + bing('https://example.net/other') : yahoo))
     const result = await searchMultiple('Notion team permissions', 2, ['duckduckgo', 'bing', 'yahoo'], fetch)
     expect(result.sources.map(source => source.url)).toEqual(['https://example.com/spec', 'https://example.org/permissions'])
+    expect(result.sources.map(source => 'engine' in source ? source.engine : undefined)).toEqual(['duckduckgo', 'yahoo'])
     expect(result.truncated).toBe(true)
     expect(result.content).toContain('合并去重 3 条，保留 2 条')
     expect(result).toMatchSnapshot()
