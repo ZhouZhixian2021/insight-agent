@@ -200,6 +200,9 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source),
       screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven) }
   }
+  /** A site entry point sorts last, so a content page takes the candidate slot it would occupy. */
+  const isEntrySource = (source: ReturnType<typeof screenSource>): boolean =>
+    source.parsed !== null && (isNavigationPage(source.parsed) || isEntryPoint(source.parsed))
   const recordSource = ({ source, parsed, officialPage, registeredSite, engine, screening }: ReturnType<typeof screenSource>,
     questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' => {
     const key = candidateKey(source.url, parsed)
@@ -300,7 +303,8 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   // Keep scanning settled results after reaching the limit so duplicate pages retain every question link.
   for (const status of priorities) {
     const batches = initialBatches.map(({ search, sources }) => ({ search,
-      sources: sources.filter(source => source.screening.status === status) }))
+      sources: sources.filter(source => source.screening.status === status)
+        .toSorted((left, right) => Number(isEntrySource(left)) - Number(isEntrySource(right))) }))
     const ranks = Math.max(0, ...batches.map(({ sources }) => sources.length))
     for (let rank = 0; rank < ranks; rank += 1) {
       for (const { search, sources } of batches) {
