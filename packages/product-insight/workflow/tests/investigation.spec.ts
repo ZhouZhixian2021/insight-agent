@@ -54,6 +54,93 @@ const adapters: ProductInvestigationAdapters = { now: () => '2026-11-06T00:00:00
   saveReport: async (markdown) => { reports.push(markdown); return 'report:1' } }
 
 describe('approved product investigation', () => {
+  it('extracts three full pages concurrently and commits out-of-order results in page order', async () => {
+    const urls = Array.from({ length: 5 }, (_, index) => `https://example.com/page${index}`)
+    const gates = urls.map(() => Promise.withResolvers<undefined>())
+    const started: string[] = []
+    const checkpoints: ProductInvestigationCheckpoint[] = []
+    let active = 0, peak = 0
+    const setup: ProductInvestigationAdapters = { ...adapters,
+      web: { search: async () => ({ sources: urls.map(url => ({ url })), truncated: false }),
+        fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false,
+          body: { kind: 'text', content: 'Example supports export.' } }) },
+      proposeEvidence: async (page) => {
+        started.push(page.url)
+        peak = Math.max(peak, ++active)
+        await gates[urls.indexOf(page.url)]?.promise
+        active--
+        return [{ verbatimExcerpt: 'Example supports export.', sourcedStatement: page.url, questionIds: [questionId] }]
+      }, saveCheckpoint: async (saved) => { checkpoints.push(saved) } }
+    const input = { product, plan, maxResultsPerQuery: 5, extractionMethod: { name: 'test', version: '1' } }
+    const running = runProductInvestigation(input, setup)
+    await vi.waitFor(() => { expect(started).toHaveLength(3) })
+    gates[2]?.resolve(undefined)
+    gates[1]?.resolve(undefined)
+    await vi.waitFor(() => { expect(active).toBe(1) })
+    expect(checkpoints.at(-1)?.stage).toBe('pages')
+    gates[0]?.resolve(undefined)
+    await vi.waitFor(() => { expect(started).toHaveLength(5) })
+    gates[3]?.resolve(undefined)
+    gates[4]?.resolve(undefined)
+    const result = await running
+    expect(peak).toBe(3)
+    expect(result.evidence.map(item => item.sourcedStatement)).toEqual(urls)
+    const saved = checkpoints.find(item => item.stage === 'evidence' && item.nextIndex === 2)
+    if (!saved) throw new Error('Missing ordered extraction checkpoint')
+    expect(saved.evidence.map(item => item.sourcedStatement)).toEqual(urls.slice(0, 2))
+    const resumed = vi.fn(setup.proposeEvidence)
+    await runProductInvestigation({ ...input, checkpoint: saved }, { ...setup, proposeEvidence: resumed })
+    expect(resumed.mock.calls.map(([page]) => page.url)).toEqual(urls.slice(2))
+  })
+
+  it('stops launching extraction pages on cancellation and settles in-flight requests', async () => {
+    const controller = new AbortController()
+    let active = 0
+    const proposeEvidence = vi.fn<ProductInvestigationAdapters['proposeEvidence']>(async (_page, _text, _questions, signal) => {
+      active++
+      await new Promise<void>(resolve => signal?.addEventListener('abort', () => { resolve() }, { once: true }))
+      active--
+      signal?.throwIfAborted()
+      return []
+    })
+    const running = runProductInvestigation({ product, plan, maxResultsPerQuery: 5,
+      extractionMethod: { name: 'test', version: '1' } }, { ...adapters, proposeEvidence,
+      web: { search: async () => ({ sources: Array.from({ length: 5 }, (_, i) => ({ url: `https://example.com/p${i}` })),
+        truncated: false }), fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false,
+        body: { kind: 'text', content: 'Example supports export.' } }) } }, controller.signal)
+    await vi.waitFor(() => { expect(proposeEvidence).toHaveBeenCalledTimes(3) })
+    controller.abort()
+    const result = await running
+    expect(result.run.state).toBe('cancelled')
+    expect(active).toBe(0)
+    expect(proposeEvidence).toHaveBeenCalledTimes(3)
+  })
+  it('renders material-led sections with sentence citations and separate question coverage', async () => {
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      synthesizeReport: async material => ({ kind: 'insight', sections: [{ sectionId: 'S1', title: '能力与使用边界',
+        status: 'partial', text: `支持导出。[[cite:${material.questions[0]!.evidence[0]!.evidenceId}]]\n\n成本条件仍需核对。` }],
+      coverage: material.questions.map(q => ({ questionId: q.questionId, status: 'partial',
+        sectionIds: ['S1'], gap: '尚缺具体费用依据。' })), notices: [] }) })
+    expect(result.delivery.status).toBe('final')
+    const report = reports.at(-1)!
+    expect(report).toContain('### 能力与使用边界')
+    expect(report).toContain('支持导出。[^product-source-1]\n\n成本条件仍需核对。')
+    expect(report).toContain('[^product-source-1]: [查看来源原文](https://example.com/features)')
+    expect(report).toContain('## 调查问题覆盖情况')
+    expect(report).not.toContain('### What does it do?')
+    expect(report).not.toContain('### What does it cost?')
+    expect(report.indexOf('能力与使用边界')).toBeLessThan(report.indexOf('调查问题覆盖情况'))
+  })
+
+  it('keeps evidence fallback when narrative generation returns no usable sections', async () => {
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      synthesizeReport: async () => ({ kind: 'insight', sections: [], coverage: [], notices: [] }) })
+    expect(result.delivery.status).toBe('draft')
+    expect(reports.at(-1)).toContain('连贯正文尚未完成')
+    expect(reports.at(-1)).toContain('已核对的来源要点')
+  })
   it('keeps other report answers when one answer is absent or its citation cannot be rendered', async () => {
     await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
@@ -188,7 +275,8 @@ describe('approved product investigation', () => {
     expect(reports.at(-1)).toContain('搜索结果仅用于发现候选网页')
     const report = reports.at(-1)!
     expect(report).toContain('内容限制与未回答问题')
-    expect(report.indexOf('## 产品分析')).toBeLessThan(report.indexOf('## 证据附录'))
+    expect(report.indexOf('## 产品洞察')).toBeGreaterThan(0)
+    expect(report.indexOf('## 产品洞察')).toBeLessThan(report.indexOf('## 证据附录'))
     expect(report).not.toContain('关键来源陈述：')
     expect(report).not.toContain('置信度：低')
   })
@@ -259,7 +347,7 @@ describe('approved product investigation', () => {
     expect(result.claims).toHaveLength(0)
     expect(result.delivery.status).toBe('final')
     expect(synthesizeReport).not.toHaveBeenCalled()
-    expect(reports.at(-1)).toContain('现有材料不足以形成有依据的回答')
+    expect(reports.at(-1)).toContain('现有材料不足以形成有依据的产品判断')
     expect(reports.at(-1)).toContain('摘录不支持该陈述')
     expect(reports.at(-1)).not.toContain('交付未达标原因')
   })
@@ -311,8 +399,8 @@ describe('approved product investigation', () => {
     expect(markdown).toContain('检索覆盖受限')
     expect(markdown).toContain('记录未细分')
     expect(markdown).not.toContain('缺少符合要求的独立来源佐证')
-    expect(markdown).toContain('### What does it cost?')
-    expect(markdown).toContain('当前资料尚不足以回答这个问题')
+    expect(markdown).not.toContain('### What does it cost?')
+    expect(markdown).toContain('已核对的来源要点')
     expect(markdown).not.toContain('交付未达标原因')
     expect(markdown).not.toContain('private search diagnostic')
     const input = { product, plan, discovery: result.discovery, pages: result.pages,
@@ -349,7 +437,7 @@ describe('approved product investigation', () => {
     expect(result.delivery.status).toBe('final')
     expect(result.delivery.report?.claimIds).toHaveLength(2)
     expect(result.verifications).toHaveLength(0)
-    expect(reports.at(-1)).toContain('产品资料调查报告')
+    expect(reports.at(-1)).toContain('产品洞察报告')
     expect(reports.at(-1)).toContain('来源按实际获取记录列示')
     const changedEvidence = [{ ...result.evidence[0]!, contentHash: 'changed' }, ...result.evidence.slice(1)]
     expect(evaluateProductReport({ product, plan, discovery: result.discovery, pages: result.pages,
@@ -397,7 +485,7 @@ describe('approved product investigation', () => {
     expect(evaluateProductReport({ ...reportInput, plan: { ...plan, sourcePublishers: [] } }).status).toBe('ready')
   })
 
-  it('resumes each complete checkpoint without repeating prior source or model work', async () => {
+  it('resumes each complete checkpoint without repeating committed source or model work', async () => {
     let retained: ProductInvestigationCheckpoint | undefined
     const lastCheckpoint = (): ProductInvestigationCheckpoint => {
       if (retained === undefined) throw new Error('No recovery checkpoint was saved')
@@ -435,18 +523,19 @@ describe('approved product investigation', () => {
     await expect(runProductInvestigation(input, resumable)).rejects.toThrow('Simulated restart')
     expect(search).toHaveBeenCalledTimes(2)
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(proposeEvidence).toHaveBeenCalledTimes(1)
+    // Both pages started; only the first is committed at this checkpoint.
+    expect(proposeEvidence).toHaveBeenCalledTimes(2)
     interruptAt = 'claims:4'
     await expect(runProductInvestigation({ ...input, checkpoint: lastCheckpoint() }, resumable))
       .rejects.toThrow('Simulated restart')
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(proposeEvidence).toHaveBeenCalledTimes(3)
     expect(reviewEvidence).toHaveBeenCalledTimes(1)
     interruptAt = 'none'
     const result = await runProductInvestigation({ ...input, checkpoint: lastCheckpoint() }, resumable)
     expect(result.delivery.status).toBe('final')
     expect(search).toHaveBeenCalledTimes(2)
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(proposeEvidence).toHaveBeenCalledTimes(3)
     expect(reviewEvidence).toHaveBeenCalledTimes(1)
     expect(compareClaim).not.toHaveBeenCalled()
     const fresh = { ...result.pages, snapshots: { ...result.pages.snapshots,
@@ -458,7 +547,7 @@ describe('approved product investigation', () => {
       sourceRevalidation: fresh }, resumable)
     expect(checked.delivery.status).toBe('final')
     expect(reports.at(-1)).toContain('最近复核：')
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(proposeEvidence).toHaveBeenCalledTimes(3)
     expect(reviewEvidence).toHaveBeenCalledTimes(1)
     expect(compareClaim).not.toHaveBeenCalled()
     const changed = { ...fresh, snapshots: { ...fresh.snapshots,
@@ -484,7 +573,7 @@ describe('approved product investigation', () => {
     expect(rerun.delivery.status).toBe('final')
     expect(rerun.evidence).toEqual(result.evidence)
     expect(reports.at(-1)).toContain('依据原保存快照')
-    expect(proposeEvidence).toHaveBeenCalledTimes(2)
+    expect(proposeEvidence).toHaveBeenCalledTimes(3)
     expect(reviewEvidence).toHaveBeenCalledTimes(1)
   })
 
@@ -841,7 +930,7 @@ describe('approved product investigation', () => {
     expect(result.evidence).toHaveLength(1)
     expect(result.claims).toHaveLength(0)
     expect(result.gaps).toHaveLength(2)
-    expect(reports.at(-1)).toContain('尚无通过语义审核的来源陈述')
+    expect(reports.at(-1)).toContain('当前没有通过原文支持审核的材料')
     expect(reports.at(-1)).toContain('The excerpt does not establish the broader statement')
   })
 

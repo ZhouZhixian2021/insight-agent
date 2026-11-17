@@ -4,6 +4,7 @@ import { checkProductClaimFreshness, type CandidatePage, type Product, type Prod
 import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
 import type { ProductSemanticReview } from './claim-review.ts'
+import { insightEvidence, type ProductInsight } from './insight-output.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -131,12 +132,17 @@ function reviewedSite(plan: ProductPlan, host: string) {
 
 /** Insert validated prose with links resolved from the captured evidence. */
 export function renderProductSynthesis(input: ProductReportInput, material: ProductSynthesisInput,
-  paragraphs: ReadonlyMap<string, string>): string {
+  paragraphs: ReadonlyMap<string, string> | ProductInsight): string {
+  const narrative = 'kind' in paragraphs ? paragraphs : undefined
+  const prose = 'get' in paragraphs ? paragraphs : new Map(paragraphs.sections.map(section => [section.sectionId, section.text]))
+  const units = narrative === undefined ? material.questions : narrative.sections.map(section => ({
+    questionId: section.sectionId, question: section.title, evidence: insightEvidence(material), limitations: [],
+  }))
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page.url]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
   const footnotes = new Map<string, { number: number; url: string }>()
-  const sections = material.questions.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
-    const text = references.length === 0 ? '现有材料不足以形成有依据的回答。' : paragraphs.get(questionId)
+  const sections = units.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
+    const text = references.length === 0 && narrative === undefined ? '现有材料不足以形成有依据的回答。' : prose.get(questionId)
       ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
     const parts: string[] = []
@@ -147,20 +153,35 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
       const record = item === undefined ? undefined : evidence.get(item.evidenceId)
       const url = record === undefined ? undefined : pages.get(record.candidatePageId)
       if (!allowed.has(id) || record === undefined || url === undefined || !safeSourceUrl(url)) {
-        parts.push(escape(text.slice(offset, match.index)), '（该处引用记录或来源链接不可用，待核对）')
+        parts.push(escapeParagraphs(text.slice(offset, match.index)), '（该处引用记录或来源链接不可用，待核对）')
         offset = match.index + match[0].length
         continue
       }
       const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: citationLink(url, record) }
       footnotes.set(id, citation)
-      parts.push(escape(text.slice(offset, match.index)), `[^product-source-${citation.number}]`)
+      parts.push(escapeParagraphs(text.slice(offset, match.index)), `[^product-source-${citation.number}]`)
       offset = match.index + match[0].length
     }
-    parts.push(escape(text.slice(offset)))
+    parts.push(escapeParagraphs(text.slice(offset)))
     return [`### ${escape(question)}`, '', parts.join(''), '', ...limitations.map(note => `资料限制：${escape(note)}`), '']
   })
-  return ['## 综合回答', '', '正文上标对应具体句子的来源，点击可查看引用。', '', ...sections,
+  const coverage = narrative === undefined || narrative.coverage.length === 0 ? [] : ['## 调查问题覆盖情况', '',
+    ...narrative.coverage.flatMap((item) => {
+      const question = material.questions.find(q => q.questionId === item.questionId)
+      if (!question) return []
+      const titles = item.sectionIds.flatMap(id => narrative.sections.filter(s => s.sectionId === id).map(s => s.title))
+      return [`- ${escape(question.question)}：${({ answered: '已涉及', partial: '部分涉及', insufficient: '尚未形成完整讨论' })[item.status]}。`
+        + `${titles.length ? `相关章节：${titles.map(escape).join('、')}。` : ''}${item.gap ? `缺口：${escape(item.gap)}` : ''}`]
+    }), '']
+  return [narrative === undefined ? '## 综合回答' : '## 产品洞察', '', ...sections,
+    ...(narrative?.notices.filter(note => /[\u4e00-\u9fff]/u.test(note)).map(note => `生成说明：${escape(note)}`) ?? []),
+    ...coverage,
     ...[...footnotes.values()].map(({ number, url }) => `[^product-source-${number}]: [查看来源原文](${url})`), ''].join('\n')
+}
+
+/** Preserve model-authored paragraph boundaries while escaping untrusted Markdown and HTML. */
+function escapeParagraphs(value: string): string {
+  return value.replace(/\r\n?/gu, '\n').split('\n').map(escape).join('\n')
 }
 
 /**
@@ -275,7 +296,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
   if (assessment.status === 'blocked') throw new RangeError('A blocked product report has no renderable evidence')
   const pageById = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const reviewById = new Map(input.reviews.map(review => [review.evidenceId, review]))
-  const title = assessment.status === 'ready' ? '产品资料调查报告' : '产品资料调查草稿'
+  const title = assessment.status === 'ready' ? '产品洞察报告' : '产品洞察报告（草稿）'
   const lines = [`# ${escape(input.product.name)} — ${title}`, '',
     `调查范围：${escape(input.plan.scope)}`, '',
     '本报告依据本次获取的资料；来源说明和测试结论不等于对产品实际行为的独立验证。', '']
@@ -290,28 +311,17 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
   else {
     const material = productSynthesisInput(input)
     const usable = new Set(material.questions.flatMap(question => question.evidence.map(item => item.evidenceId)))
-    lines.push('## 产品分析', '', '以下为已核对的来源陈述；尚未完成连贯的模型综合，不据此推断普遍适用的选用建议。', '')
-    const shown = new Set<string>()
-    for (const question of input.plan.questions) {
-      const claims = input.claims.filter(claim => claim.questionIds.includes(question.questionId)
-        && claim.evidenceLinks.every(link => usable.has(link.evidenceId)))
-      lines.push(`### ${escape(question.text)}`, '')
-      const fresh = claims.filter(claim => !shown.has(claim.text))
-      for (const claim of fresh) {
-        if (shown.has(claim.text)) continue
-        const links = claim.evidenceLinks.flatMap((link) => {
-          const evidence = input.evidence.find(item => item.evidenceId === link.evidenceId)
-          const page = evidence === undefined ? undefined : pageById.get(evidence.candidatePageId)
-          return evidence === undefined || page === undefined || !safeSourceUrl(page.url) ? []
-            : [`[来源](${citationLink(page.url, evidence)})`]
-        })
-        if (links.length === 0) continue
-        lines.push(`${escape(claim.text)} ${[...new Set(links)].join(' ')}`, '')
-        shown.add(claim.text)
-      }
-      if (claims.length === 0) lines.push('尚无通过语义审核的来源陈述，当前资料尚不足以回答这个问题。', '')
-      else if (fresh.length === 0) lines.push('本题与前述问题共用来源陈述，尚无额外的独立发现。', '')
-    }
+    const seen = new Set<string>()
+    const points = input.claims.flatMap((claim) => {
+      if (seen.has(claim.text) || !claim.evidenceLinks.length || !claim.evidenceLinks.every(link => usable.has(link.evidenceId))) return []
+      seen.add(claim.text)
+      return [`${claim.text}${claim.evidenceLinks.map(link => `[[cite:${link.evidenceId}]]`).join('')}`]
+    })
+    lines.push('连贯正文尚未完成；以下仅保留已核对的来源要点，不将其视为完整洞察。', '')
+    if (points.length) lines.push(renderProductSynthesis(input, material, {
+      kind: 'insight', sections: [{ sectionId: 'S1', title: '已核对的来源要点', status: 'partial', text: points.join('\n\n') }],
+      coverage: [], notices: [],
+    }), '')
   }
   lines.push('## 内容限制与未回答问题', '',
     '- 结论仅适用于原文说明的版本、套餐、地区和测试条件；未说明的条件保持未知。',

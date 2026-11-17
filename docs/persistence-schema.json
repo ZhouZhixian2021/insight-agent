@@ -68490,6 +68490,157 @@
       }
     },
     {
+      "key": "event:product/extraction-inspection-v1",
+      "kind": "event",
+      "event": "product/extraction-inspection-v1",
+      "surface": false,
+      "digest": "a19e7b023b77a837b055c4da9f94a2c143b724c644750e31c38f41236b7c489c",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 12,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 13,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "accepted",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "candidatePageId",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "error",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "issues",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "reusedFrom",
+                "type": 3,
+                "optional": true
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              5
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "array",
+            "element": 7
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "index",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 3,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              9,
+              10,
+              11
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "repair"
+          },
+          {
+            "kind": "literal",
+            "value": "reuse"
+          },
+          {
+            "kind": "literal",
+            "value": "validation"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/extraction-inspection-v1"
+          }
+        ]
+      }
+    },
+    {
       "key": "event:product/model-request-v1",
       "kind": "event",
       "event": "product/model-request-v1",
@@ -81490,7 +81641,7 @@
       "digest": "035a4f4cb153fa0ec652d4f792b28f132e7cbe3238d4174f06cebcd657fe6eaf",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:77"
+        "packages/product-insight/workflow/src/session-tool.ts:89"
       ]
     },
     {
@@ -81769,7 +81920,7 @@
       "digest": "0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:40"
+        "packages/product-insight/workflow/src/session-tool.ts:42"
       ]
     },
     {
@@ -83305,6 +83456,11 @@
       "sources": []
     },
     {
+      "digest": "37c2ad4bd50577d037ceb41a8e172a52ecf31e6eda7c0d1665fad7dbeede9c1e",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "37cbc9cf06d494cfe5c67f078af1605eacb8e4c2c853e9e26455b73de0ee7ccf",
       "names": [],
       "sources": []
@@ -83406,6 +83562,11 @@
     },
     {
       "digest": "39fbf3beec773283ce70e21164f3ac2176df3c82f61fa4120322b3ab3f310d95",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "3a05a53ec18c06097d42bbee1b61ae2e8275ca4435c3c4e125e0aa10c100ae02",
       "names": [],
       "sources": []
     },
@@ -83734,7 +83895,7 @@
       "digest": "44064bb7cd1fcef329bdf987d8c2e47608a158cbcff1e54181f2d77b1a7854ab",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:131"
+        "packages/product-insight/workflow/src/session-tool.ts:143"
       ]
     },
     {
@@ -83897,7 +84058,7 @@
         "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
       ],
       "sources": [
-        "packages/product-insight/workflow/src/index.ts:86"
+        "packages/product-insight/workflow/src/index.ts:88"
       ]
     },
     {
@@ -84393,7 +84554,7 @@
       "digest": "5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:112"
+        "packages/product-insight/workflow/src/session-tool.ts:124"
       ]
     },
     {
@@ -84688,7 +84849,7 @@
       "digest": "5842da8ceea55fda749bc9152d578e3e1da98b9f144cc64f4b486833ec24b7ee",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:62"
+        "packages/product-insight/workflow/src/session-tool.ts:74"
       ]
     },
     {
@@ -84763,7 +84924,7 @@
       "digest": "5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:138"
+        "packages/product-insight/workflow/src/session-tool.ts:150"
       ]
     },
     {
@@ -85668,6 +85829,11 @@
       ]
     },
     {
+      "digest": "715a6484e012f576dcdcdc23171221cfe4b83a5c065e3f3d26bd111592cb110b",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "7180844e1066230c5e891f1b9ccd942423b0fe48aac6ded7eef2a285b288a732",
       "names": [],
       "sources": []
@@ -85735,7 +85901,7 @@
       "digest": "72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:68"
+        "packages/product-insight/workflow/src/session-tool.ts:80"
       ]
     },
     {
@@ -85812,7 +85978,7 @@
       "digest": "75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:64"
+        "packages/product-insight/workflow/src/session-tool.ts:76"
       ]
     },
     {
@@ -85923,6 +86089,13 @@
       ]
     },
     {
+      "digest": "7975486284f2851e9d8355e5c3386cd20351ae3515b6bb32ccc06bc2f4b21f6a",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:64"
+      ]
+    },
+    {
       "digest": "797feb241fff6f45b0905dc6b99439a03c70b2017351942d3bf16a0a25e876fe",
       "names": [],
       "sources": []
@@ -86015,7 +86188,7 @@
       "digest": "7b72679f88690cda9ff470a30adda6f8c9c3ce047ff8d2a44c2fad62bb916759",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:123"
+        "packages/product-insight/workflow/src/session-tool.ts:135"
       ]
     },
     {
@@ -86810,7 +86983,7 @@
       "digest": "8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:110"
+        "packages/product-insight/workflow/src/session-tool.ts:122"
       ]
     },
     {
@@ -86940,7 +87113,7 @@
       "digest": "92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:86"
+        "packages/product-insight/workflow/src/session-tool.ts:98"
       ]
     },
     {
@@ -87438,6 +87611,11 @@
     },
     {
       "digest": "a16e567c8cd2c55cf1e911aed3c200c4e1f6febb1459ff2a9e7adf159afb68cb",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "a19e7b023b77a837b055c4da9f94a2c143b724c644750e31c38f41236b7c489c",
       "names": [],
       "sources": []
     },
@@ -88226,7 +88404,7 @@
       "digest": "b584979e40bb5db4bb401cd31cbf903caf4fc9644f2c139dd559b9697788cc61",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:133"
+        "packages/product-insight/workflow/src/session-tool.ts:145"
       ]
     },
     {
@@ -88491,6 +88669,13 @@
       "sources": []
     },
     {
+      "digest": "bd767c9c20e550f33fb58313e930037dae8d5b10705511262a135826fdeaf7e9",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:69"
+      ]
+    },
+    {
       "digest": "be17bcc06c5cddacc905dbf7cc64dbfa2e7ec352ef7e7780f184ddc516b55bbc",
       "names": [],
       "sources": []
@@ -88499,7 +88684,7 @@
       "digest": "be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:100"
+        "packages/product-insight/workflow/src/session-tool.ts:112"
       ]
     },
     {
@@ -88569,7 +88754,7 @@
       "digest": "c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:53"
+        "packages/product-insight/workflow/src/session-tool.ts:55"
       ]
     },
     {
@@ -89185,7 +89370,7 @@
       "digest": "d90920b14d3d321466273fbe9cf903f9e4fcac8f4f1ab67a63e81330ad50565e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:147"
+        "packages/product-insight/workflow/src/session-tool.ts:159"
       ]
     },
     {
@@ -89211,6 +89396,11 @@
       "sources": [
         "packages/academic/model/src/query-workflow.ts:314"
       ]
+    },
+    {
+      "digest": "d92dc272d49a066b4db384038f5fba91fe1c376737da2c54cc99e27a424a4f61",
+      "names": [],
+      "sources": []
     },
     {
       "digest": "d9586cdd03e31f1829e5df18ad796fb2662bfefe4b3d48b475390ae95e6f354a",
@@ -89432,7 +89622,7 @@
       "digest": "de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:88"
+        "packages/product-insight/workflow/src/session-tool.ts:100"
       ]
     },
     {
@@ -89670,7 +89860,7 @@
       "digest": "e355ee6a1067e87964f49d7a20c43786074f771b10f30d20e565f89b78b19743",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:42"
+        "packages/product-insight/workflow/src/session-tool.ts:44"
       ]
     },
     {
@@ -90257,7 +90447,7 @@
       "digest": "f14ae6587bdefc0e2a6763d7adfcb1a3f5b6d4a89cb6d12f0763780b88515d7f",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:140"
+        "packages/product-insight/workflow/src/session-tool.ts:152"
       ]
     },
     {

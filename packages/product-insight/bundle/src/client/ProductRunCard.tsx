@@ -131,6 +131,9 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       ...typeof data.error === 'string' ? { error: data.error } : {},
       ...Array.isArray(data.failures) ? { details: data.failures } : {},
       ...record(data.validation) ? { details: data.validation } : {},
+      ...event.type === 'product/extraction-inspection-v1' ? { details: {
+        kind: data.kind, accepted: data.accepted, issues: data.issues, reusedFrom: data.reusedFrom,
+      } } : {},
     }] }
   }
   const planId = typeof data.planId === 'string' ? data.planId : state.planId

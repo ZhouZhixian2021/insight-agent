@@ -17,6 +17,7 @@ import type {} from '@deepseek-ai/dsh-session-query'
 import { estimateContent, ROLE_OVERHEAD } from '@deepseek-ai/dsh-token-meter/estimate'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 
+import { extractionQuestions, extractionReuseKey, inspectExtraction, type DraftInspection, type DraftIssue } from './extraction-output.ts'
 import { latestApprovedProductPlan, productPlanFromApproval } from './approved-plan.ts'
 import { latestProductBackgroundRun, type ProductBackgroundRunState } from './background-run.ts'
 import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, ProductInvestigationResult,
@@ -25,7 +26,8 @@ import type { ProductSemanticReview } from './claim-review.ts'
 import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
 import { type ProductSynthesisInput } from './report.ts'
-import { inspectProductSynthesis, repairProductSynthesis, synthesisRequest, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
+import { inspectInsight, insightRequest, insightRepairIssues, repairInsight, type ProductInsight } from './insight-output.ts'
+import { inspectProductSynthesis, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
 import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from './writing.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
@@ -56,6 +58,16 @@ declare module '@deepseek-ai/dsh-session/types' {
       candidatePageId: string
       status: 'completed' | 'failed'
       text: string
+      error: string | null
+    }
+    /** Item-level extraction outcomes and exact-text reuse; never a model request. */
+    'product/extraction-inspection-v1': {
+      planId: string
+      candidatePageId: string
+      kind: 'validation' | 'repair' | 'reuse'
+      accepted: number
+      issues: readonly { index: number; reason: string }[]
+      reusedFrom?: string
       error: string | null
     }
     /** Accepted source records committed before semantic review. */
@@ -520,6 +532,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
   if (recovered === undefined) onProgress('正在搜索和读取产品资料')
   else if (sourceRevalidation !== undefined) onProgress(
     `正在依据保存快照从${({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
+  const extractionCache = new Map<string, { pageId: string; drafts: readonly ProductEvidenceDraft[] }>()
   const result = await runInvestigation({ sessionId: key, events,
     maxResultsPerQuery: 60, extractionMethod: { name: 'product-model', version: '1' },
     ...activeCheckpoint === undefined ? {} : { checkpoint: activeCheckpoint },
@@ -533,7 +546,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     savePages, saveCheckpoint,
     proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
       proposeEvidence(ctx, session, model, page, text, questions, persist, events,
-        requestSignal, fragment, maximumDrafts),
+        requestSignal, fragment, maximumDrafts, extractionCache),
     recoverEvidenceFailure: (error) => {
       if (fatal !== undefined) return false
       return error instanceof ProductTransientModelError ? 'retry' : error instanceof RecoverableProductEvidenceOutputError
@@ -602,32 +615,17 @@ async function performProductInvestigation(ctx: Context, session: Session, model
 
 async function synthesizeProductReport(ctx: Context, session: Session, config: LlmCallConfig, plan: ProductPlan,
   input: ProductSynthesisInput, persist: () => Promise<void>, events: readonly SessionEvent[],
-  signal?: AbortSignal): Promise<ReadonlyMap<string, string>> {
+  signal?: AbortSignal): Promise<ProductInsight> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product synthesis model service is unavailable')
   const capacity = await llm.prepareCall(config, signal)
-  const serialized = synthesisRequest(input, synthesisAliases(input))
+  const aliases = synthesisAliases(input)
+  const serialized = insightRequest(input, aliases)
   if (!fitsProductModelInput(SYNTHESIS_SYSTEM, serialized, capacity.context?.contextWindow,
     capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
-    const groups: ProductSynthesisInput[] = []
-    if (input.questions.length > 1) {
-      groups.push(...input.questions.map(question => ({ ...input, questions: [question] })))
-    } else {
-      const question = input.questions[0]
-      if (!question || question.evidence.length < 2) throw new RangeError('A product evidence item exceeds model synthesis capacity')
-      const middle = Math.ceil(question.evidence.length / 2)
-      groups.push(...[question.evidence.slice(0, middle), question.evidence.slice(middle)]
-        .map(evidence => ({ ...input, questions: [{ ...question, evidence }] })))
-    }
-    const combined = new Map<string, string>()
-    for (const group of groups) {
-      const paragraphs = await synthesizeProductReport(ctx, session, config, plan, group, persist, events, signal)
-      for (const [id, paragraph] of paragraphs) combined.set(id,
-        [combined.get(id), paragraph].filter(Boolean).join('\n\n'))
-    }
-    return combined
+    throw new RangeError('The deduplicated evidence pool exceeds report context capacity; no question-wise report is substituted')
   }
-  return repairProductSynthesis(input, async (user, ordinal, subset, aliases): Promise<SynthesisResponse> => {
+  return repairInsight(input, async (user, ordinal, knownSections, target): Promise<SynthesisResponse> => {
     signal?.throwIfAborted()
     const prepared = capacity
     const { provider, model, maxTokens = 4096, reasoningEffort } = prepared.config
@@ -676,17 +674,22 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
         } else if (!state.finished || finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
           error = 'invalid_output'
         }
-        if (error === null && inspectProductSynthesis(output, subset, aliases).issues.length > 0) error = 'invalid_output'
+        if (error === null && insightRepairIssues(inspectInsight(output, input, aliases, knownSections), target).length > 0) {
+          error = 'invalid_output'
+        }
       }
     } catch (cause) {
       error = 'request_failed'
       failureCode = signal?.aborted ? 'ABORTED' : cause instanceof ProductTransientModelError ? cause.code : undefined
     }
     const response: SynthesisResponse = { text: output, error, ...failureCode === undefined ? {} : { failureCode } }
-    const inspection = inspectProductSynthesis(output, subset, aliases)
+    const inspection = inspectInsight(output, input, aliases, knownSections)
+    const issues = insightRepairIssues(inspection, target)
     session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, ...response,
-      validation: { acceptedQuestionIds: [...inspection.answers.keys()],
-        issues: inspection.issues.map(({ questionId, reasons }) => ({ questionId, reasons })), notes: inspection.notes } })
+      validation: { acceptedQuestionIds: inspection.coverage.map(item => item.questionId),
+        issues: issues.filter(issue => issue.kind === 'coverage').map(({ id, reasons }) => ({ questionId: id, reasons })),
+        notes: [...inspection.notices, ...issues.filter(issue => issue.kind !== 'coverage')
+          .map(issue => `${issue.kind} ${issue.id}: ${issue.reasons.join(' ')}`)] } })
     await persist()
     signal?.throwIfAborted()
     return response
@@ -728,19 +731,41 @@ export function reconcileProductSourceRevalidation(saved: ProductInvestigationCh
   return { checkpoint: { ...saved, elapsedMilliseconds }, unchanged }
 }
 
-async function proposeEvidence(ctx: Context, session: Session, config: LlmCallConfig,
+/**
+ * Extract from saved text, retaining valid siblings and repairing invalid entries once.
+ * @param ctx - Model runtime owner.
+ * @param session - Investigation event owner.
+ * @param config - Approved model configuration.
+ * @param page - Source identity for this extraction.
+ * @param text - Saved source text without truncation.
+ * @param questions - Questions selected for this page.
+ * @param persist - Commit pending Session events.
+ * @param events - Saved requests and results eligible for exact replay.
+ * @param signal - Investigation cancellation.
+ * @param fragment - Full-source coordinates of the supplied text.
+ * @param maximumDrafts - Remaining allowance of an explicit historical plan.
+ * @param cache - Current investigation's clean exact-text outputs.
+ * @param repair - Rejected entries for one repair attempt; valid siblings are excluded.
+ * @returns Drafts with full question IDs for independent source verification.
+ */
+export async function proposeEvidence(ctx: Context, session: Session, config: LlmCallConfig,
   page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
     readonly text: string
   }[], persist: () => Promise<void>, events: readonly SessionEvent[],
-  signal?: AbortSignal, fragment?: ProductPageFragment, maximumDrafts = Number.MAX_SAFE_INTEGER): Promise<readonly ProductEvidenceDraft[]> {
+  signal?: AbortSignal, fragment?: ProductPageFragment, maximumDrafts = Number.MAX_SAFE_INTEGER,
+  cache?: Map<string, { pageId: string; drafts: readonly ProductEvidenceDraft[] }>,
+  repair?: readonly DraftIssue[]): Promise<readonly ProductEvidenceDraft[]> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product evidence model service is unavailable')
   const deadline = new AbortController().signal
   const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
-  const user = JSON.stringify({ sourceUrl: page.url, questions, pageText: text,
+  const user = JSON.stringify({ sourceUrl: page.url, questions: extractionQuestions(questions), pageText: text,
+    ...repair === undefined ? {} : { repair: repair.map(issue => ({
+      repairIndex: issue.index, reason: issue.reason, draft: issue.value })) },
     ...fragment === undefined ? {} : { sourceRange: { start: fragment.start, end: fragment.end } } })
-  const system = text.includes('\f') ? `${SYSTEM} Form feeds mark PDF page boundaries. Excerpts must stay within one page.` : SYSTEM
+  const system = (text.includes('\f') ? `${SYSTEM} Form feeds mark PDF page boundaries. Excerpts must stay within one page.` : SYSTEM)
+    + (repair === undefined ? '' : ' Repair only the supplied invalid drafts using the source text. Return one corrected object per repairIndex, including that exact repairIndex. Do not extract new facts or repeat other drafts. If a draft cannot be supported, omit it.')
   const prepared = await awaitProductModel(() => llm.prepareCall(config, operationSignal), operationSignal).catch((error: unknown) => {
     signal?.throwIfAborted()
     if (deadline.aborted) throw new ProductTransientModelError('TIMEOUT', { cause: error })
@@ -752,18 +777,54 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
   const fits = fitsProductModelInput(system, user, prepared.context?.contextWindow,
     prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)
   if (!fits) {
+    if (repair !== undefined) throw new RangeError('Evidence repair input exceeds the model context window')
     const middle = productTextMiddle(text)
     const drafts: ProductEvidenceDraft[] = []
     for (const [start, end] of [[0, middle], [middle, text.length]] as const) {
       const part = text.slice(start, end)
       const children = await proposeEvidence(ctx, session, config, page, part, questions, persist, events,
-        operationSignal, { start: (fragment?.start ?? 0) + start, end: (fragment?.start ?? 0) + end, text: part })
+        operationSignal, { start: (fragment?.start ?? 0) + start, end: (fragment?.start ?? 0) + end, text: part }, maximumDrafts, cache)
       for (const draft of children) {
         const hint = draft.startHint ?? part.indexOf(draft.verbatimExcerpt)
         if (hint >= 0) drafts.push({ ...draft, startHint: start + hint })
       }
     }
     return drafts
+  }
+  const reuseKey = extractionReuseKey(page, text, questions, { config: prepared.config, system },
+    fragment === undefined ? undefined : { start: fragment.start, end: fragment.end })
+  const reused = repair === undefined ? cache?.get(reuseKey) : undefined
+  if (reused !== undefined && reused.drafts.length <= maximumDrafts) {
+    session.append('product/extraction-inspection-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
+      kind: 'reuse', accepted: reused.drafts.length, issues: [], reusedFrom: reused.pageId, error: null })
+    await persist()
+    return reused.drafts
+  }
+  const accept = async (inspection: DraftInspection): Promise<readonly ProductEvidenceDraft[]> => {
+    if (inspection.drafts.length > maximumDrafts) throw new RangeError('Fragment exceeded its evidence draft allowance')
+    session.append('product/extraction-inspection-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
+      kind: repair === undefined ? 'validation' : 'repair', accepted: inspection.drafts.length,
+      issues: inspection.issues.map(({ index, reason }) => ({ index, reason })),
+      error: repair !== undefined && inspection.issues.length > 0 ? 'Some extraction drafts remain invalid after repair' : null })
+    await persist()
+    if (inspection.issues.length === 0) {
+      if (repair === undefined) cache?.set(reuseKey, { pageId: page.candidatePageId, drafts: inspection.drafts })
+      return inspection.drafts
+    }
+    if (repair !== undefined) return inspection.drafts
+    let repaired: readonly ProductEvidenceDraft[]
+    try {
+      repaired = await proposeEvidence(ctx, session, config, page, text, questions, persist, events,
+        operationSignal, fragment, maximumDrafts - inspection.drafts.length, undefined, inspection.issues)
+    } catch (error) {
+      operationSignal.throwIfAborted()
+      session.append('product/extraction-inspection-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
+        kind: 'repair', accepted: 0, issues: inspection.issues.map(({ index, reason }) => ({ index, reason })),
+        error: error instanceof Error ? error.message : String(error) })
+      await persist()
+      return inspection.drafts
+    }
+    return [...inspection.drafts, ...repaired]
   }
   const replay = completedProductModelText(events,
     event => event.type === 'product/model-request-v1' && event.data.candidatePageId === page.candidatePageId
@@ -773,9 +834,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
       ? event.data.status === 'completed' ? event.data.text : null : undefined,
     event => event.type === 'product/model-request-v1' && event.data.candidatePageId === page.candidatePageId)
   if (replay !== undefined) {
-    const drafts = parseDrafts(replay)
-    if (drafts.length > maximumDrafts) throw new RangeError('Fragment exceeded its evidence draft allowance')
-    return drafts
+    return accept(inspectExtraction(replay, questions, repair))
   }
   const messages: RequestUserInput[] = [{ role: 'user', content: [{ type: 'text', text: user }] }]
   const outputTokens = prepared.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS
@@ -791,7 +850,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
   await persist()
   const assembler = new BlockAssembler()
   let output = ''
-  const collect = async (): Promise<readonly ProductEvidenceDraft[]> => {
+  const collect = async (): Promise<DraftInspection> => {
     operationSignal.throwIfAborted()
     for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
       messages, sessionId: session.id, signal: operationSignal }))) {
@@ -809,12 +868,10 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
     }
     if (finish.kind === 'aborted') throw new Error('Evidence model request was aborted')
     if (finish.kind !== 'stop') throw new Error(`Evidence model ended with ${finish.kind}`)
-    const drafts = parseDrafts(output)
-    if (drafts.length > maximumDrafts) throw new RangeError('Fragment exceeded its evidence draft allowance')
-    return drafts
+    return inspectExtraction(output, questions, repair)
   }
-  let drafts: readonly ProductEvidenceDraft[]
-  try { drafts = await awaitProductModel(collect, operationSignal) }
+  let inspection: DraftInspection
+  try { inspection = await awaitProductModel(collect, operationSignal) }
   catch (error) {
     const failure = deadline.aborted && !signal?.aborted && !(error instanceof ProductTransientModelError)
       ? new ProductTransientModelError('TIMEOUT', { cause: error }) : error
@@ -830,7 +887,7 @@ async function proposeEvidence(ctx: Context, session: Session, config: LlmCallCo
   session.append('product/model-result-v1', { planId: page.planId, candidatePageId: page.candidatePageId,
     status: 'completed', text: output, error: null })
   await persist()
-  return drafts
+  return accept(inspection)
 }
 
 async function reviewEvidence(ctx: Context, session: Session, config: LlmCallConfig,

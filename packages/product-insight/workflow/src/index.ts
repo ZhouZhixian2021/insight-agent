@@ -1,4 +1,5 @@
 /** Bounded product investigation from an approved plan through cited report delivery. */
+import type { ProductInsight } from './insight-output.ts'
 import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
@@ -40,6 +41,7 @@ export { evaluateProductReport, prepareProductReport } from './report.ts'
 export type { ProductReportAssessment, ProductReportInput } from './report.ts'
 
 const MAXIMUM_PAGE_EXTRACTION_CALLS = 12
+const PRODUCT_EXTRACTION_CONCURRENCY = 3
 
 /** Cordis plugin name for validation of proposed product plans. */
 export const name = 'product-insight-workflow'
@@ -147,8 +149,8 @@ export interface ProductInvestigationAdapters {
     signal?: AbortSignal) => Promise<readonly ProductCrossSourceJudgment[]>
   /** Legacy persistence hook; historical comparison events remain readable. */
   readonly saveVerification: (verification: ProductQuestionVerification) => Promise<void>
-  /** Generate one cited paragraph per approved question when delivery checks pass. */
-  readonly synthesizeReport?: (input: ProductSynthesisInput, signal?: AbortSignal) => Promise<ReadonlyMap<string, string>>
+  /** Generate material-led report sections; legacy question maps remain accepted by custom adapters. */
+  readonly synthesizeReport?: (input: ProductSynthesisInput, signal?: AbortSignal) => Promise<ReadonlyMap<string, string> | ProductInsight>
   readonly saveReport: (markdown: string) => Promise<string>
   readonly now: () => string
 }
@@ -241,6 +243,9 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const claims: ProductClaim[] = [...input.checkpoint?.claims ?? []]
   const verifications: ProductQuestionVerification[] = [...input.checkpoint?.verifications ?? []]
   const priorVerifications = input.checkpoint?.priorVerifications
+  // Keep a bounded look-ahead window. Commit in page order so existing recovery cursors remain valid.
+  type PrefetchedDrafts = { drafts: readonly ProductEvidenceDraft[] } | { error: unknown }
+  const prefetched = new Map<string, Promise<PrefetchedDrafts>>()
   const checkpoint = async (stage: ProductInvestigationCheckpoint['stage'], nextIndex: number,
     fragment?: { index: number; order: readonly number[] }): Promise<void> => {
     const saved: ProductInvestigationCheckpoint = { schemaVersion: checkpointVersion,
@@ -282,7 +287,12 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   maximumDrafts: number, label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
     const propose = async (range: ProductPageFragment, allowance: number, rangeLabel: string): Promise<void> => {
       operationSignal?.throwIfAborted()
-      const drafts = await adapters.proposeEvidence(page, range.text, questions, operationSignal, range, allowance)
+      const pending = prefetched.get(page.candidatePageId)
+      prefetched.delete(page.candidatePageId)
+      const result = pending === undefined ? undefined : await pending
+      if (result !== undefined && 'error' in result) throw result.error
+      const drafts = result?.drafts
+        ?? await adapters.proposeEvidence(page, range.text, questions, operationSignal, range, allowance)
       operationSignal?.throwIfAborted()
       admitDrafts(page, snapshot, text, drafts, range, allowance, rangeLabel)
     }
@@ -326,65 +336,95 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     const byPage = new Map(discovery.candidates.items.map(page => [page.candidatePageId, page]))
     const extractionStart = currentCheckpoint === undefined || currentCheckpoint.stage === 'pages' ? 0
       : currentCheckpoint.stage === 'evidence' ? currentCheckpoint.nextIndex : pages.snapshots.items.length
-    for (let index = extractionStart; index < pages.snapshots.items.length; index++) {
-      if (operationSignal?.aborted) break
-      const snapshot = pages.snapshots.items[index]
-      if (snapshot === undefined) throw new RangeError('Recovery page index exceeds captured snapshots')
-      if (snapshot.status === 'available') {
+    const prefetchPages = (start: number): void => {
+      // Historical explicitly windowed plans keep their fragment-level cursor and dispatch order.
+      if (input.plan.limits?.maximumPageCharacters !== undefined || operationSignal?.aborted) return
+      for (let next = start; next < pages.snapshots.items.length && prefetched.size < PRODUCT_EXTRACTION_CONCURRENCY; next++) {
+        const snapshot = pages.snapshots.items[next]
+        if (snapshot?.status !== 'available' || prefetched.has(snapshot.candidatePageId)) continue
         const page = byPage.get(snapshot.candidatePageId)
         if (page === undefined) throw new RangeError('Saved page has no discovered candidate')
-        let text: string
-        try {
-          text = await adapters.readText(snapshot.contentRef)
-          if (text.length > maximumPageCharacters) throw new RangeError('Saved product page exceeds the approved text limit')
-          if (text.length === 0) throw new RangeError('Saved product page has no readable text')
-        } catch (error) {
-          if (operationSignal?.aborted) break
-          failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
-            category: 'unknown', message: error instanceof Error ? error.message : String(error),
-            retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-          await checkpoint('evidence', index + 1)
-          continue
+        const request = async (): Promise<readonly ProductEvidenceDraft[]> => {
+          operationSignal?.throwIfAborted()
+          const text = await adapters.readText(snapshot.contentRef)
+          operationSignal?.throwIfAborted()
+          if (!text.length || text.length > maximumPageCharacters) throw new RangeError('Saved product page text is invalid')
+          const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
+          return adapters.proposeEvidence(page, text, questions, operationSignal,
+            { start: 0, end: text.length, text }, Number.MAX_SAFE_INTEGER)
         }
-        const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
-        const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
-          ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
-        const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
-          ? currentCheckpoint : undefined
-        const fragmentStart = savedPage?.fragmentIndex ?? 0
-        let order = savedPage?.fragmentOrder
-        if (order === undefined && checkpointVersion === 3) {
-          const covered = new Set(evidence.flatMap(item => item.questionIds))
-          const priority = questions.toSorted((left, right) => Number(covered.has(left.questionId)) - Number(covered.has(right.questionId)))
-          order = rankProductPageFragments(sourceFragments, priority.map(question => question.text)).map(fragment => fragment.start)
-        }
-        order ??= sourceFragments.map(fragment => fragment.start)
-        if (order.length !== sourceFragments.length || new Set(order).size !== order.length) {
-          throw new RangeError('Recovery fragment order does not match captured source text')
-        }
-        if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
-        const fragments = order.map((start) => {
-          const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
-          const fragment = sourceFragments[sourceIndex]
-          if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
-          return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
-        })
-        // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
-        const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
-        const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
-        for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
-          if (operationSignal?.aborted) break
-          const current = fragments[fragmentIndex]
-          if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
-          const { fragment, maximumDrafts } = current
-          await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
-            `Fragment ${fragmentIndex + 1}`, recoveryBudget, true)
-          if (operationSignal?.aborted) break
-          if (fragmentIndex + 1 < fragments.length) await checkpoint('evidence', index, { index: fragmentIndex + 1, order })
-          else await checkpoint('evidence', index + 1)
-        }
+        // Attach rejection handling immediately, including for results waiting behind a slower earlier page.
+        prefetched.set(page.candidatePageId, request().then(drafts => ({ drafts }), (error: unknown) => ({ error })))
       }
-      else await checkpoint('evidence', index + 1)
+    }
+    try {
+      for (let index = extractionStart; index < pages.snapshots.items.length; index++) {
+        if (operationSignal?.aborted) break
+        prefetchPages(index)
+        const snapshot = pages.snapshots.items[index]
+        if (snapshot === undefined) throw new RangeError('Recovery page index exceeds captured snapshots')
+        if (snapshot.status === 'available') {
+          const page = byPage.get(snapshot.candidatePageId)
+          if (page === undefined) throw new RangeError('Saved page has no discovered candidate')
+          let text: string
+          try {
+            text = await adapters.readText(snapshot.contentRef)
+            if (text.length > maximumPageCharacters) {
+              throw new RangeError('Saved product page exceeds the approved text limit')
+            }
+            if (text.length === 0) throw new RangeError('Saved product page has no readable text')
+          } catch (error) {
+            if (operationSignal?.aborted) break
+            failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
+              category: 'unknown', message: error instanceof Error ? error.message : String(error),
+              retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
+            await checkpoint('evidence', index + 1)
+            continue
+          }
+          const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
+          const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
+            ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
+          const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
+            ? currentCheckpoint : undefined
+          const fragmentStart = savedPage?.fragmentIndex ?? 0
+          let order = savedPage?.fragmentOrder
+          if (order === undefined && checkpointVersion === 3) {
+            const covered = new Set(evidence.flatMap(item => item.questionIds))
+            const priority = questions.toSorted((left, right) =>
+              Number(covered.has(left.questionId)) - Number(covered.has(right.questionId)))
+            order = rankProductPageFragments(sourceFragments, priority.map(question => question.text)).map(fragment => fragment.start)
+          }
+          order ??= sourceFragments.map(fragment => fragment.start)
+          if (order.length !== sourceFragments.length || new Set(order).size !== order.length) {
+            throw new RangeError('Recovery fragment order does not match captured source text')
+          }
+          if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
+          const fragments = order.map((start) => {
+            const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
+            const fragment = sourceFragments[sourceIndex]
+            if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
+            return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
+          })
+          // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
+          const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
+          const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
+          for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
+            if (operationSignal?.aborted) break
+            const current = fragments[fragmentIndex]
+            if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
+            const { fragment, maximumDrafts } = current
+            await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
+              `Fragment ${fragmentIndex + 1}`, recoveryBudget, true)
+            if (operationSignal?.aborted) break
+            if (fragmentIndex + 1 < fragments.length) await checkpoint('evidence', index, { index: fragmentIndex + 1, order })
+            else await checkpoint('evidence', index + 1)
+          }
+        }
+        else await checkpoint('evidence', index + 1)
+      }
+    } finally {
+      await Promise.allSettled(prefetched.values())
+      prefetched.clear()
     }
     await adapters.saveEvidence(evidence)
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex
@@ -475,10 +515,14 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   if (adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
     try {
       const material = productSynthesisInput(reportInput)
-      const writable = { ...material, questions: material.questions.filter(question => question.evidence.length > 0) }
-      const paragraphs = writable.questions.length === 0 ? new Map<string, string>()
-        : await adapters.synthesizeReport(writable, operationSignal)
+      const paragraphs: ReadonlyMap<string, string> | ProductInsight = material.questions.every(question => question.evidence.length === 0)
+        ? { kind: 'insight', sections: [{ sectionId: 'S1', title: '目前能够确认的范围', status: 'insufficient',
+          text: '现有材料不足以形成有依据的产品判断。' }], coverage: material.questions.map(question => ({
+          questionId: question.questionId, status: 'insufficient', sectionIds: ['S1'], gap: '尚无通过原文支持检查的陈述。',
+        })), notices: [] }
+        : await adapters.synthesizeReport(material, operationSignal)
       operationSignal?.throwIfAborted()
+      if ('kind' in paragraphs && paragraphs.sections.length === 0) throw new Error('No usable insight sections were generated')
       const synthesis = renderProductSynthesis(reportInput, material, paragraphs)
       const markdown = renderProductReport(reportInput, initialAssessment, synthesis)
       synthesizedMarkdown = markdown

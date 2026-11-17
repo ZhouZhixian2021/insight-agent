@@ -82,3 +82,5 @@ Product mode owns its job controller and does not mount the generic job-completi
 Generated sentence citations render as clickable superscript numbers in chat and exported HTML, linking to the corresponding source. Markdown downloads retain numbered footnotes. The synthesis model supplies citation positions and the workflow validates their identities; historical paragraph-end links are not relocated automatically.
 
 Synthesis Trace details expose accepted question IDs, per-question validation failures and automatic normalization notes when recorded. Older results without these diagnostics remain readable.
+
+Report coverage, evidence and search-scope appendices are collapsed in chat and HTML exports. New reports use Markdown section headings; the renderer also recognizes the historical coverage wrapper without enabling arbitrary HTML.

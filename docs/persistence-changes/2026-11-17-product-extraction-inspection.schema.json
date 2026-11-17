@@ -1,0 +1,157 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/extraction-inspection-v1",
+      "kind": "event",
+      "event": "product/extraction-inspection-v1",
+      "surface": false,
+      "digest": "a19e7b023b77a837b055c4da9f94a2c143b724c644750e31c38f41236b7c489c",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 12,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 13,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "accepted",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "candidatePageId",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "error",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "issues",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "kind",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "reusedFrom",
+                "type": 3,
+                "optional": true
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              5
+            ]
+          },
+          {
+            "kind": "primitive",
+            "type": "null"
+          },
+          {
+            "kind": "array",
+            "element": 7
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "index",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "reason",
+                "type": 3,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              9,
+              10,
+              11
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "repair"
+          },
+          {
+            "kind": "literal",
+            "value": "reuse"
+          },
+          {
+            "kind": "literal",
+            "value": "validation"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "literal",
+            "value": "product/extraction-inspection-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}
