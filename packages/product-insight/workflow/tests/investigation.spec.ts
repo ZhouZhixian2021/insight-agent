@@ -54,6 +54,17 @@ const adapters: ProductInvestigationAdapters = { now: () => '2026-11-06T00:00:00
   saveReport: async (markdown) => { reports.push(markdown); return 'report:1' } }
 
 describe('approved product investigation', () => {
+  it('keeps other report answers when one answer is absent or its citation cannot be rendered', async () => {
+    await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
+      extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
+      synthesizeReport: async material => new Map([[String(questionId),
+        `保留已有回答。[[cite:${material.questions[0]?.evidence[0]?.evidenceId}]]另一个引用待核对。[[cite:missing]]`]]) })
+    expect(reports.at(-1)).toContain('保留已有回答。')
+    expect(reports.at(-1)).toContain('该处引用记录或来源链接不可用')
+    expect(reports.at(-1)).toContain('本题报告生成未完成')
+    expect(reports.at(-1)).not.toContain('[[cite:missing]]')
+  })
+
   it('admits source-supported background without review question IDs and offers it to every answer', async () => {
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 4,
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters,

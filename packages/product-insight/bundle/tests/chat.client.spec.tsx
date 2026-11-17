@@ -67,6 +67,28 @@ it('pairs concurrent review Trace results with their exact requests', () => {
   ] })
 })
 
+it('exposes per-question synthesis validation in Trace without requiring it on historical events', () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const validation = { acceptedQuestionIds: ['q1'], issues: [{ questionId: 'q2', reasons: ['Unknown evidence ID.'] }],
+    notes: ['Normalized reference list.'] }
+  const events = [
+    { seq: 1, time: 0, type: 'tool/call', data: { name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
+    { seq: 2, time: 10, type: 'product/synthesis-request-v1', data: { planId, user: 'first' } },
+    { seq: 3, time: 20, type: 'product/synthesis-result-v1', data: { planId, requestSeq: 2, text: '[]', error: 'invalid_output', validation } },
+    { seq: 4, time: 30, type: 'product/synthesis-request-v1', data: { planId, user: 'repair q2' } },
+    { seq: 5, time: 40, type: 'product/synthesis-result-v1', data: { planId, requestSeq: 4, text: '[]', error: null } },
+  ]
+  assembler.replaceWindow(events.map(event => ({ type: 'event', event })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+  expect(node.data).toMatchObject({ trace: [
+    { seq: 2, durationMilliseconds: 10 }, { seq: 3, details: validation },
+    { seq: 4, durationMilliseconds: 10 }, { seq: 5, status: 'completed' },
+  ] })
+})
+
 it('shows four stages without an independent corroboration step for new investigations', () => {
   render(<ProductRunCard t={t} useInput={useInput} inputActions={inputActions} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
     stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,
