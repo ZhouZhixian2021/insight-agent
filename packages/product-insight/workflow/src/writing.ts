@@ -5,6 +5,7 @@ export const PRODUCT_READING_INSTRUCTION = 'Extract evidence about the specified
   + 'Keep enough exact source context to preserve conditions, mechanisms, exceptions and results. '
   + 'When an excerpt repeats in pageText, include startHint as its zero-based character offset within pageText. '
   + 'Each sourcedStatement must state only the product fact directly expressed by that excerpt, accurately and fully without a fixed character target. '
+  + 'Write every sourcedStatement in Simplified Chinese while keeping verbatimExcerpt exactly as the page states it. '
   + 'Prioritize complementary facts that answer the approved questions: capability, implementation mechanism, '
   + 'deployment requirements, measured results, cost conditions and limitations. Keep negation and exceptions with the fact. '
   + 'Preserve version, edition, region, date, units, workload, baseline and test environment whenever stated. '
