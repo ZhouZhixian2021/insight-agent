@@ -1,7 +1,6 @@
 /** Session-backed product investigation tools mounted only by the product preset. */
 import { createHash } from 'node:crypto'
 import { addAbortListener } from 'node:events'
-import { setTimeout as delay } from 'node:timers/promises'
 import { isDeepStrictEqual } from 'node:util'
 
 import type { Context } from '@deepseek-ai/cordis'
@@ -26,6 +25,7 @@ import type { ProductSemanticReview } from './claim-review.ts'
 import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
 import { type ProductSynthesisInput } from './report.ts'
+import { inspectProductSynthesis, repairProductSynthesis, synthesisRequest, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
 import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from './writing.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
@@ -127,6 +127,12 @@ declare module '@deepseek-ai/dsh-session/types' {
       text: string
       error: 'invalid_output' | 'output_limit' | 'request_failed' | null
       failureCode?: 'TRANSPORT' | 'TIMEOUT' | 'ABORTED'
+      /** Optional diagnostics; historical results are inspected again from their saved output. */
+      validation?: {
+        acceptedQuestionIds: readonly string[]
+        issues: readonly { questionId: string; reasons: readonly string[] }[]
+        notes: readonly string[]
+      }
     }
     /** Cited evidence draft saved before its run settles. */
     'product/report-v1': { contentRef: string; planId: string; markdown: string }
@@ -154,12 +160,6 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
 const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
 const SYNTHESIS_SYSTEM = PRODUCT_WRITING_INSTRUCTION
-
-class ProductSynthesisOutputError extends Error {
-  constructor(readonly code: 'invalid_output' | 'output_limit', options?: ErrorOptions) {
-    super(code, options)
-  }
-}
 
 class ProductTransientModelError extends Error {
   constructor(readonly code: 'TRANSPORT' | 'TIMEOUT', options?: ErrorOptions) {
@@ -606,7 +606,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product synthesis model service is unavailable')
   const capacity = await llm.prepareCall(config, signal)
-  const serialized = JSON.stringify(input)
+  const serialized = synthesisRequest(input, synthesisAliases(input))
   if (!fitsProductModelInput(SYNTHESIS_SYSTEM, serialized, capacity.context?.contextWindow,
     capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
     const groups: ProductSynthesisInput[] = []
@@ -627,31 +627,19 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
     }
     return combined
   }
-  const attempt = async (ordinal: 1 | 2, retry?: ProductSynthesisOutputError['code']): Promise<ReadonlyMap<string, string>> => {
-    const deadline = new AbortController().signal
-    const operationSignal = signal === undefined ? deadline : AbortSignal.any([signal, deadline])
-    const user = JSON.stringify(retry === undefined ? input : { ...input,
-      correction: retry === 'output_limit'
-        ? 'The previous answer exceeded the output budget. Regenerate the complete array with less repetition; preserve conditions and limitations for every question.'
-        : 'The previous answer failed JSON or evidence reference validation. Regenerate the entire array with the exact IDs.' })
-    const prepared = await llm.prepareCall(config, operationSignal)
-    operationSignal.throwIfAborted()
+  return repairProductSynthesis(input, async (user, ordinal, subset, aliases): Promise<SynthesisResponse> => {
+    signal?.throwIfAborted()
+    const prepared = capacity
     const { provider, model, maxTokens = 4096, reasoningEffort } = prepared.config
     const request = events.findLast(event => event.type === 'product/synthesis-request-v1'
       && event.data.planId === plan.planId && event.data.user === user && event.data.system === SYNTHESIS_SYSTEM
       && event.data.provider === provider && event.data.model === model && event.data.maxTokens === maxTokens
-      && (event.data.attempt === ordinal || event.data.attempt === undefined && (ordinal === 1 || retry !== undefined))
+      && (event.data.attempt === ordinal || event.data.attempt === undefined && ordinal === 1)
       && event.data.reasoningEffort === reasoningEffort)
     const replay = request === undefined ? undefined : events.findLast(event =>
       event.type === 'product/synthesis-result-v1' && event.data.requestSeq === request.seq)
-    if (replay?.type === 'product/synthesis-result-v1') {
-      if (replay.data.error === null) return parseProductSynthesis(replay.data.text, input)
-      if (replay.data.error !== 'request_failed') throw new ProductSynthesisOutputError(replay.data.error)
-      if (replay.data.failureCode === 'TRANSPORT' || replay.data.failureCode === 'TIMEOUT') {
-        throw new ProductTransientModelError(replay.data.failureCode)
-      }
-      if (replay.data.failureCode !== 'ABORTED' && request?.type === 'product/synthesis-request-v1'
-        && request.data.attempt !== undefined) throw new Error('Product synthesis model request failed')
+    if (replay?.type === 'product/synthesis-result-v1' && replay.data.failureCode !== 'ABORTED') {
+      return replay.data
     }
     const { seq: requestSeq } = session.append('product/synthesis-request-v1', { planId: plan.planId,
       provider, model, user, system: SYNTHESIS_SYSTEM, maxTokens, attempt: ordinal,
@@ -660,57 +648,49 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
     const messages: RequestUserInput[] = [{ role: 'user', content: [{ type: 'text', text: user }] }]
     const assembler = new BlockAssembler()
     let output = ''
-    let finished = false
-    let paragraphs: ReadonlyMap<string, string>
-    const collect = async (): Promise<ReadonlyMap<string, string>> => {
-      operationSignal.throwIfAborted()
-      for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system: SYNTHESIS_SYSTEM,
-        messages, sessionId: session.id, signal: operationSignal }))) {
-        operationSignal.throwIfAborted()
-        assembler.push(chunk)
-        if (chunk.type === 'finish') finished = true
-        const text = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-        output = text
+    const state = { finished: false }
+    let error: SynthesisResponse['error'] = null
+    let failureCode: SynthesisResponse['failureCode']
+    try {
+      if (!fitsProductModelInput(SYNTHESIS_SYSTEM, user, capacity.context?.contextWindow, maxTokens)) {
+        // Never silently trim repair evidence or exceed the model's context capacity.
+        error = 'output_limit'
+      } else {
+        const operationSignal = signal ?? new AbortController().signal
+        await awaitProductModel(async () => {
+          for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system: SYNTHESIS_SYSTEM,
+            messages, sessionId: session.id, signal: operationSignal }))) {
+            operationSignal.throwIfAborted()
+            assembler.push(chunk)
+            if (chunk.type === 'finish') state.finished = true
+            output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
+          }
+        }, operationSignal)
+        const finish = assembler.finish
+        if (finish.kind === 'max-tokens') error = 'output_limit'
+        else if (finish.kind === 'error' || finish.kind === 'aborted') {
+          error = 'request_failed'
+          if (finish.kind === 'error' && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT')) {
+            failureCode = finish.failure.code
+          }
+        } else if (!state.finished || finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
+          error = 'invalid_output'
+        }
+        if (error === null && inspectProductSynthesis(output, subset, aliases).issues.length > 0) error = 'invalid_output'
       }
-      operationSignal.throwIfAborted()
-      if (assembler.finish.kind === 'max-tokens') throw new ProductSynthesisOutputError('output_limit')
-      const finish = assembler.finish
-      if (finish.kind === 'error' && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT')) {
-        throw new ProductTransientModelError(finish.failure.code)
-      }
-      if (finish.kind === 'error' || finish.kind === 'aborted') {
-        throw new Error('Product synthesis model request failed')
-      }
-      if (!finished || assembler.finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
-        throw new ProductSynthesisOutputError('invalid_output')
-      }
-      return parseProductSynthesis(output, input)
+    } catch (cause) {
+      error = 'request_failed'
+      failureCode = signal?.aborted ? 'ABORTED' : cause instanceof ProductTransientModelError ? cause.code : undefined
     }
-    try { paragraphs = await awaitProductModel(collect, operationSignal) }
-    catch (error) {
-      const failureCode = signal?.aborted ? 'ABORTED' : deadline.aborted ? 'TIMEOUT'
-        : error instanceof ProductTransientModelError ? error.code : undefined
-      session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, text: output,
-        error: failureCode === undefined && error instanceof ProductSynthesisOutputError ? error.code : 'request_failed',
-        ...failureCode === undefined ? {} : { failureCode } })
-      await persist()
-      if (failureCode === 'TIMEOUT' && !(error instanceof ProductTransientModelError)) {
-        throw new ProductTransientModelError(failureCode, { cause: error })
-      }
-      throw error
-    }
-    session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, text: output, error: null })
+    const response: SynthesisResponse = { text: output, error, ...failureCode === undefined ? {} : { failureCode } }
+    const inspection = inspectProductSynthesis(output, subset, aliases)
+    session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, ...response,
+      validation: { acceptedQuestionIds: [...inspection.answers.keys()],
+        issues: inspection.issues.map(({ questionId, reasons }) => ({ questionId, reasons })), notes: inspection.notes } })
     await persist()
-    return paragraphs
-  }
-  try { return await attempt(1) }
-  catch (error) {
     signal?.throwIfAborted()
-    if (error instanceof ProductSynthesisOutputError) return attempt(2, error.code)
-    if (!(error instanceof ProductTransientModelError)) throw error
-    await delay(500, undefined, signal === undefined ? undefined : { signal })
-    return attempt(2)
-  }
+    return response
+  }, signal)
 }
 
 async function awaitProductModel<T>(run: () => Promise<T>, signal: AbortSignal): Promise<T> {
@@ -721,37 +701,11 @@ async function awaitProductModel<T>(run: () => Promise<T>, signal: AbortSignal):
   finally { listener[Symbol.dispose]() }
 }
 
-/** Validate complete, bounded model prose and exact evidence identities before rendering. */
+/** Normalize complete report answers; partial recovery and targeted repair use the per-question inspector. */
 export function parseProductSynthesis(text: string, input: ProductSynthesisInput): ReadonlyMap<string, string> {
-  let value: unknown
-  try { value = JSON.parse(text) }
-  catch (error) { throw new ProductSynthesisOutputError('invalid_output', { cause: error }) }
-  if (!Array.isArray(value) || value.length !== input.questions.length) throw new ProductSynthesisOutputError('invalid_output')
-  const paragraphs = new Map<string, string>()
-  for (const entry of value) {
-    const item: unknown = entry
-    if (!record(item) || Object.keys(item).length !== 3 || typeof item.questionId !== 'string'
-      || typeof item.text !== 'string' || !item.text.trim()
-      || /(?:https?:|ftp:|www\.)/iu.test(item.text) || !Array.isArray(item.evidenceIds)) {
-      throw new ProductSynthesisOutputError('invalid_output')
-    }
-    const question = input.questions.find(question => question.questionId === item.questionId)
-    const ids = new Set(item.evidenceIds)
-    if (!question || paragraphs.has(item.questionId)
-      || ids.size === 0 && item.text.trim() !== '现有材料不足以形成有依据的回答。'
-      || ids.size !== item.evidenceIds.length
-      || item.evidenceIds.some(id => !question.evidence.some(reference => reference.evidenceId === id))) {
-      throw new ProductSynthesisOutputError('invalid_output')
-    }
-    const markers = [...item.text.matchAll(/\[\[cite:([^\]\s]+)\]\]/gu)]
-    const cited = new Set(markers.map(match => match[1]))
-    if (cited.size !== ids.size || [...cited].some(id => !ids.has(id))
-      || item.text.replace(/\[\[cite:([^\]\s]+)\]\]/gu, '').includes('[[cite:')) {
-      throw new ProductSynthesisOutputError('invalid_output')
-    }
-    paragraphs.set(item.questionId, item.text.trim().replace(/\r\n?/gu, '\n'))
-  }
-  return paragraphs
+  const inspected = inspectProductSynthesis(text, input)
+  if (inspected.issues.length) throw new Error(inspected.issues.map(issue => `${issue.questionId}: ${issue.reasons.join(' ')}`).join('\n'))
+  return inspected.answers
 }
 
 /**

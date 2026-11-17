@@ -86,11 +86,11 @@ The reading model receives the source URL, approved questions and complete canon
 
 #### Token effect
 
-The workflow splits extraction, review and synthesis requests when context capacity requires it. It does not impose a product-specific output-token cap or an additional 60-second model deadline. Malformed synthesis output may be generated once more; network timeouts and cancellation still apply.
+The workflow splits extraction, review and synthesis requests when context capacity requires it. It does not impose a product-specific output-token cap or an additional 60-second model deadline. The [synthesis output handler](src/synthesis-output.ts) validates answers independently. It normalizes unambiguous wrappers, citation syntax, unique ID prefixes and redundant reference lists; E-number aliases resolve to saved evidence IDs. Valid answers survive malformed siblings, truncated output and transport failures. Only rejected questions receive one repair request with their existing drafts and precise errors. A transport failure with no usable answer retries the original request once. Unresolved questions show generation-failure notices rather than claiming evidence is absent. Coverage statuses permit natural gap explanations; they do not certify factual accuracy. Model context and cancellation still apply.
 
 #### KV Cache effect
 
-Extraction is page-local; review uses batches of at most eight evidence items. Each request and response is saved for trace and recovery, and a new user-directed follow-up runs under a new approved plan.
+Extraction is page-local; review uses batches of at most 24 evidence items with three concurrent batches. Each request and response is saved for trace and recovery, including accepted question IDs, repair reasons and normalization notes for synthesis; historical results without these optional diagnostics are re-inspected from raw output, and a new user-directed follow-up runs under a new approved plan.
 
 ## Known Limitations and Deferred Work
 

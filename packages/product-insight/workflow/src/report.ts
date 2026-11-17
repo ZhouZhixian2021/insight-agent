@@ -137,7 +137,7 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
   const footnotes = new Map<string, { number: number; url: string }>()
   const sections = material.questions.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
     const text = references.length === 0 ? '现有材料不足以形成有依据的回答。' : paragraphs.get(questionId)
-    if (text === undefined) throw new RangeError('Product synthesis is missing an approved answer')
+      ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
     const parts: string[] = []
     let offset = 0
@@ -147,7 +147,9 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
       const record = item === undefined ? undefined : evidence.get(item.evidenceId)
       const url = record === undefined ? undefined : pages.get(record.candidatePageId)
       if (!allowed.has(id) || record === undefined || url === undefined || !safeSourceUrl(url)) {
-        throw new RangeError('Product synthesis citation is outside its question evidence')
+        parts.push(escape(text.slice(offset, match.index)), '（该处引用记录或来源链接不可用，待核对）')
+        offset = match.index + match[0].length
+        continue
       }
       const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: citationLink(url, record) }
       footnotes.set(id, citation)
