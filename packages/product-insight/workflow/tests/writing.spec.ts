@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createProductEvidenceId } from '@deepseek-ai/dsh-product-insight-model'
 import { parseProductSynthesis } from '../src/session-tool.ts'
 import type { ProductSynthesisInput } from '../src/report.ts'
-import { PRODUCT_READING_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from '../src/writing.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from '../src/writing.ts'
 
 const ids = [createProductEvidenceId(), createProductEvidenceId()]
 const input: ProductSynthesisInput = { scope: '企业版离线部署', questions: [{ questionId: 'deployment',
@@ -14,6 +14,11 @@ const output = (text: string, evidenceIds: readonly string[] = ids) => JSON.stri
 ])
 
 describe('product evidence-led writing', () => {
+  it('permits an explicit unanswered question without fabricating references to available background', () => {
+    expect(parseProductSynthesis(output('现有材料不足以形成有依据的回答。', []), input).get('deployment'))
+      .toBe('现有材料不足以形成有依据的回答。')
+    expect(() => parseProductSynthesis(output('支持全部部署模式。', []), input)).toThrow()
+  })
   it('preserves technical paragraphs beyond the old brevity limit within the overall output budget', () => {
     const text = `${'企业版支持离线部署，但不代表社区版具有相同能力。'.repeat(30)}\n\n当前资料未说明硬件需求。`
     expect(text.length).toBeGreaterThan(500)
@@ -37,6 +42,7 @@ describe('product evidence-led writing', () => {
   })
 
   it('pins the product reading and writing instructions', () => {
-    expect({ reading: PRODUCT_READING_INSTRUCTION, writing: PRODUCT_WRITING_INSTRUCTION }).toMatchSnapshot()
+    expect({ reading: PRODUCT_READING_INSTRUCTION, review: PRODUCT_REVIEW_INSTRUCTION,
+      writing: PRODUCT_WRITING_INSTRUCTION }).toMatchSnapshot()
   })
 })

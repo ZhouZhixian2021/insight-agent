@@ -5,7 +5,7 @@ import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
 import type { ProductSemanticReview } from './claim-review.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
-  distinctProductSites, keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
+  keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
 
 /** Ready means the approved investigation is complete enough to deliver, not independently true. */
@@ -56,29 +56,16 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
   const keys = keyProductClaims(input.plan, claims, input.evidence, input.discovery.candidates.items)
   const questions = input.plan.questions.map((question) => {
     const claim = keys.find(item => item.questionId === question.questionId)?.claim
-    const primaryId = claim?.evidenceLinks[0]?.evidenceId
-    const primary = primaryId === undefined ? undefined : evidence.get(primaryId)
-    const primaryPage = primary === undefined ? undefined : pages.get(primary.candidatePageId)
     const verification = input.verifications.find(item => item.questionId === question.questionId
       && item.claimId === claim?.claimId && item.complete)
-    const support = verification?.judgments.filter(item => item.relation === 'supports' && eligibleIds.has(item.evidenceId))
-      .map(item => evidence.get(item.evidenceId)).find((item) => {
-        const page = item === undefined ? undefined : pages.get(item.candidatePageId)
-        return item?.questionIds.includes(question.questionId)
-          && sitePublisher(page) !== sitePublisher(primaryPage)
-          && distinctProductSites(primaryPage, page)
-      })
-    const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => gap.missingContent)
+    const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => `提取阶段记录的待确认缺口（请根据本次全部材料重新判断）：${gap.missingContent}`)
     limitations.push(...sourceDisclosures(input, question.questionId))
-    if (!primary) limitations.push('当前没有满足来源、原文关联与审核要求的材料，尚不能回答本题。')
-    else if (!support) limitations.push('当前说法有来源摘录支持，但缺少符合要求的独立来源佐证；不能视为独立实测结论。')
+    if (eligibleIds.size === 0) limitations.push('当前没有通过原文支持审核的材料，尚不能回答本题。')
     for (const judgment of verification?.judgments ?? []) {
       if (judgment.relation === 'contradicts') limitations.push(`跨来源比较提示可能存在冲突：${judgment.rationale} 应保留各自的产品与测试条件，不能合并为一致结论。`)
       if (judgment.relation === 'uncertain') limitations.push(`跨来源比较尚不确定：${judgment.rationale} 未完整佐证不等于原始陈述错误。`)
     }
-    for (const item of input.evidence.filter(item => eligibleIds.has(item.evidenceId)
-      && claims.some(claim => claim.questionIds.includes(question.questionId)
-        && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))) {
+    for (const item of input.evidence.filter(item => eligibleIds.has(item.evidenceId))) {
       const page = pages.get(item.candidatePageId)
       const snapshot = snapshots.get(item.candidatePageId)
       if (page === undefined || snapshot?.status !== 'available') continue
@@ -90,9 +77,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       }
     }
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
-      evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId)
-        && claims.some(claim => claim.questionIds.includes(question.questionId)
-          && claim.evidenceLinks.some(link => link.evidenceId === item.evidenceId)))
+      evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId))
         .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
   })
   return { scope: input.plan.scope, questions,
@@ -112,7 +97,6 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
     }
   }
   const items = input.evidence.filter(item => item.questionIds.includes(questionId))
-  const unregisteredSites = new Set<string>()
   for (const item of items) {
     const page = input.discovery.candidates.items.find(page => page.candidatePageId === item.candidatePageId)
     const snapshot = input.pages.snapshots.items.find(snapshot => snapshot.candidatePageId === item.candidatePageId)
@@ -135,14 +119,6 @@ function sourceDisclosures(input: ProductReportInput, questionId: ProductPlan['q
       input.sourceRevalidation.snapshots.items.find(value => value.candidatePageId === item.candidatePageId))) {
       notes.push(`来源“${label}”在恢复时发生变化或无法重新确认；本报告依据原保存快照，不代表网页当前内容。`)
     }
-    const host = sourceHost(page?.url)
-    if (input.plan.focus !== undefined && host !== undefined && !isOfficialHost(input.product, host)
-      && reviewedSite(input.plan, host) === undefined) unregisteredSites.add(host)
-  }
-  if (unregisteredSites.size > 0) {
-    const hosts = [...unregisteredSites]
-    notes.push(`本题另有 ${hosts.length} 个未登记的外部站点（${hosts.slice(0, 3).join('、')}${hosts.length > 3 ? ' 等' : ''}），`
-      + '按已确认的关注方向纳入；站点身份未经用户逐一审核，结论仅按原文实际内容理解。')
   }
   return [...new Set(notes)]
 }
@@ -153,25 +129,6 @@ function reviewedSite(plan: ProductPlan, host: string) {
     ?.find(source => host === source.domain || host.endsWith(`.${source.domain}`))
 }
 
-function sourceHost(url: string | undefined): string | undefined {
-  if (url === undefined) return undefined
-  try { return new URL(url).hostname.toLowerCase() }
-  catch { return undefined }
-}
-
-/** Compare publishers by page label when a plan registers one, otherwise by host. */
-function sitePublisher(page: CandidatePage | undefined): string | undefined {
-  if (page === undefined) return undefined
-  return (page.publisher ?? sourceHost(page.url))?.toLocaleLowerCase()
-}
-
-function isOfficialHost(product: Product, host: string): boolean {
-  try {
-    const official = new URL(product.officialUrl).hostname.toLowerCase()
-    return host === official || host.endsWith(`.${official}`)
-  } catch { return false }
-}
-
 /** Insert validated prose with links resolved from the captured evidence. */
 export function renderProductSynthesis(input: ProductReportInput, material: ProductSynthesisInput,
   paragraphs: ReadonlyMap<string, string>): string {
@@ -180,7 +137,7 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
   const footnotes = new Map<string, { number: number; url: string }>()
   const sections = material.questions.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
     const text = references.length === 0 ? '现有材料不足以形成有依据的回答。' : paragraphs.get(questionId)
-    if (text === undefined) throw new RangeError('Product synthesis is missing an approved answer')
+      ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
     const parts: string[] = []
     let offset = 0
@@ -190,7 +147,9 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
       const record = item === undefined ? undefined : evidence.get(item.evidenceId)
       const url = record === undefined ? undefined : pages.get(record.candidatePageId)
       if (!allowed.has(id) || record === undefined || url === undefined || !safeSourceUrl(url)) {
-        throw new RangeError('Product synthesis citation is outside its question evidence')
+        parts.push(escape(text.slice(offset, match.index)), '（该处引用记录或来源链接不可用，待核对）')
+        offset = match.index + match[0].length
+        continue
       }
       const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: citationLink(url, record) }
       footnotes.set(id, citation)
@@ -270,7 +229,7 @@ function validClaimLinks(plan: ProductPlan, claim: ProductClaim,
   evidenceById: ReadonlyMap<ProductEvidence['evidenceId'], ProductEvidence>,
   reviewsById: ReadonlyMap<ProductEvidence['evidenceId'], ProductSemanticReview>,
   pageById: ReadonlyMap<CandidatePage['candidatePageId'], CandidatePage>): boolean {
-  if (claim.questionIds.length === 0 || claim.evidenceLinks.length === 0
+  if (claim.evidenceLinks.length === 0
     || claim.confidence === 'insufficient' || claim.scope !== plan.scope
     || claim.questionIds.some(id => !plan.questions.some(question => question.questionId === id))
     || claim.evidenceSnapshot.evidenceItems.length !== claim.evidenceLinks.length
@@ -282,7 +241,6 @@ function validClaimLinks(plan: ProductPlan, claim: ProductClaim,
     const review = reviewsById.get(link.evidenceId)
     if (!evidence || !review || link.relation !== 'supports' || review.verdict !== 'supported'
       || claim.text !== evidence.sourcedStatement || !link.rationale.trim()
-      || claim.questionIds.some(id => !review.questionIds.includes(id))
       || !claim.evidenceSnapshot.evidenceItems.some(item => item.evidenceId === link.evidenceId
         && item.candidatePageId === evidence.candidatePageId)
       || !safeSourceUrl(pageById.get(evidence.candidatePageId)?.url)) return false

@@ -28,6 +28,67 @@ const inputActions = { setDraft, persistDraft, submit } as never
 const useInput = ((selector: (state: { draft: string; attachmentIds: string[] }) => unknown) =>
   selector({ draft: '', attachmentIds: [] })) as never
 
+it('keeps Chinese prose outside automatically linked domains in reports and HTML exports', () => {
+  const report = '# 报告\n\n资料来源：www.apple.com.cn、www.macworld.com），按材料内容说明限制。\n\n'
+    + '转义域名：www\\.apple\\.com\\.cn、www\\.macworld\\.com），普通说明。\n\n'
+    + '[具体来源](https://example.com/中文路径?q=一、二)'
+  const run = { callId: 'call', title: '报告', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 2, availablePages: 2, evidence: 2, claims: 2, verifications: 0, failures: 0,
+    elapsedMilliseconds: 1, deliveryStatus: 'final', reasons: [], report } as const
+  render(<ProductReport text={report} labels={{ code: { copyLabel: '复制', copiedLabel: '已复制' }, footnotes: '来源' }} />)
+  for (const anchor of screen.getAllByRole('link')) {
+    expect(anchor.textContent).not.toMatch(/按材料|普通说明|），/u)
+  }
+  const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
+  expect(doc.body.textContent).toContain('www.apple.com.cn、www.macworld.com），按材料内容说明限制。')
+  const explicit = [...doc.querySelectorAll('a')].find(anchor => anchor.textContent === '具体来源')
+  expect(decodeURI(explicit?.getAttribute('href') ?? '')).toBe('https://example.com/中文路径?q=一、二')
+  for (const anchor of doc.querySelectorAll('a')) expect(anchor.textContent).not.toMatch(/按材料|普通说明|），/u)
+})
+
+it('pairs concurrent review Trace results with their exact requests', () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const events = [
+    { seq: 1, time: 0, type: 'tool/call', data: { name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
+    { seq: 2, time: 10, type: 'product/claim-review-request-v1', data: { planId, user: 'first' } },
+    { seq: 3, time: 20, type: 'product/claim-review-request-v1', data: { planId, user: 'second' } },
+    { seq: 4, time: 60, type: 'product/claim-review-result-v1', data: { planId, requestSeq: 2, status: 'completed', text: '[]', error: null } },
+    { seq: 5, time: 90, type: 'product/claim-review-result-v1', data: { planId, requestSeq: 3, status: 'completed', text: '[]', error: null } },
+  ]
+  assembler.replaceWindow(events.map(event => ({ type: 'event', event })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+  expect(node.data).toMatchObject({ trace: [
+    { seq: 2, durationMilliseconds: 50, status: 'completed' },
+    { seq: 3, durationMilliseconds: 70, status: 'completed' },
+    { seq: 4, durationMilliseconds: 50 }, { seq: 5, durationMilliseconds: 70 },
+  ] })
+})
+
+it('exposes per-question synthesis validation in Trace without requiring it on historical events', () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const validation = { acceptedQuestionIds: ['q1'], issues: [{ questionId: 'q2', reasons: ['Unknown evidence ID.'] }],
+    notes: ['Normalized reference list.'] }
+  const events = [
+    { seq: 1, time: 0, type: 'tool/call', data: { name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
+    { seq: 2, time: 10, type: 'product/synthesis-request-v1', data: { planId, user: 'first' } },
+    { seq: 3, time: 20, type: 'product/synthesis-result-v1', data: { planId, requestSeq: 2, text: '[]', error: 'invalid_output', validation } },
+    { seq: 4, time: 30, type: 'product/synthesis-request-v1', data: { planId, user: 'repair q2' } },
+    { seq: 5, time: 40, type: 'product/synthesis-result-v1', data: { planId, requestSeq: 4, text: '[]', error: null } },
+  ]
+  assembler.replaceWindow(events.map(event => ({ type: 'event', event })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+  expect(node.data).toMatchObject({ trace: [
+    { seq: 2, durationMilliseconds: 10 }, { seq: 3, details: validation },
+    { seq: 4, durationMilliseconds: 10 }, { seq: 5, status: 'completed' },
+  ] })
+})
+
 it('shows four stages without an independent corroboration step for new investigations', () => {
   render(<ProductRunCard t={t} useInput={useInput} inputActions={inputActions} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
     stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,

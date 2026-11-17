@@ -389,9 +389,15 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     await adapters.saveEvidence(evidence)
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex
       : currentCheckpoint?.stage === 'verification' ? evidence.length : reviews.length
-    for (let offset = reviewStart; offset < evidence.length; offset += 8) {
-      if (operationSignal?.aborted) break
-      const batch = evidence.slice(offset, offset + 8)
+    const reviewBatchSize = 24
+    const completed = new Map<number, number>()
+    let committedThrough = reviewStart
+    let nextOffset = reviewStart
+    let persistenceFailed = false
+    let saves = Promise.resolve()
+    const reviewBatch = async (offset: number): Promise<void> => {
+      const end = Math.min(offset + reviewBatchSize, evidence.length)
+      const batch = evidence.slice(offset, end).filter(item => !reviews.some(review => review.evidenceId === item.evidenceId))
       const admitReviews = (items: readonly ProductEvidence[], judged: readonly ProductSemanticReview[]): void => {
         const unresolved: string[] = []
         for (const item of items) {
@@ -406,23 +412,24 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         if (unresolved.length) throw new RangeError(`Missing or invalid semantic judgments: ${unresolved.join(', ')}`)
       }
       try {
+        if (batch.length === 0) return
         const batchReviews = await adapters.reviewEvidence(batch, input.plan.questions, operationSignal)
         operationSignal?.throwIfAborted()
         admitReviews(batch, batchReviews)
       } catch (error) {
-        if (operationSignal?.aborted) break
+        if (operationSignal?.aborted) return
         if (batch.length >= 2 && adapters.recoverReviewFailure?.(error)) {
           const middle = Math.ceil(batch.length / 2)
           for (const [childIndex, child] of [batch.slice(0, middle), batch.slice(middle)].entries()) {
-            if (operationSignal?.aborted) break
+            if (operationSignal?.aborted) return
             try {
               const judged = await adapters.reviewEvidence(child, input.plan.questions, operationSignal)
               operationSignal?.throwIfAborted()
               admitReviews(child, judged)
             } catch (childError) {
-              if (operationSignal?.aborted) break
+              if (operationSignal?.aborted) return
               failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'analysis',
-                category: 'unknown', message: `Review batch ${offset / 8 + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
+                category: 'unknown', message: `Review batch ${Math.floor(offset / reviewBatchSize) + 1}, recovery ${childIndex + 1}: ${childError instanceof Error
                   ? childError.message : String(childError)}`,
                 retryable: true, occurredAt: adapters.now() })
             }
@@ -433,9 +440,25 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             retryable: true, occurredAt: adapters.now() })
         }
       }
-      if (operationSignal?.aborted) break
-      await checkpoint('claims', offset + batch.length)
     }
+    const reviewWorker = async (): Promise<void> => {
+      while (nextOffset < evidence.length && !operationSignal?.aborted && !persistenceFailed) {
+        const offset = nextOffset
+        nextOffset += reviewBatchSize
+        await reviewBatch(offset)
+        if (!operationSignal?.aborted) completed.set(offset, Math.min(offset + reviewBatchSize, evidence.length))
+        let completedEnd = completed.get(committedThrough)
+        while (completedEnd !== undefined) {
+          committedThrough = completedEnd
+          completedEnd = completed.get(committedThrough)
+        }
+        const through = committedThrough
+        saves = saves.then(() => checkpoint('claims', through))
+        try { await saves } catch (error) { persistenceFailed = true; throw error }
+      }
+    }
+    const settledReviews = await Promise.allSettled(Array.from({ length: 3 }, () => reviewWorker()))
+    for (const result of settledReviews) if (result.status === 'rejected') throw result.reason
     await adapters.saveClaims(claims)
   }
   const gaps: ProductEvidenceGap[] = input.plan.questions.filter(question =>
@@ -605,8 +628,8 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
           .every(item => checkpoint.reviews.some(review => review.evidenceId === item.evidenceId))
         && checkpoint.verifications.length === 0
       : checkpoint.stage === 'claims'
-        ? checkpoint.nextIndex > 0 && checkpoint.nextIndex <= checkpoint.evidence.length
-          && checkpoint.reviews.length <= checkpoint.nextIndex && checkpoint.verifications.length === 0
+        ? checkpoint.nextIndex >= 0 && checkpoint.nextIndex <= checkpoint.evidence.length
+          && checkpoint.verifications.length === 0
         : checkpoint.nextIndex > 0 && checkpoint.nextIndex <= selected.length
           && checkpoint.verifications.length === checkpoint.nextIndex
           && checkpoint.verifications.every((item, index) => {

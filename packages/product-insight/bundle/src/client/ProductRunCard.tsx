@@ -116,7 +116,8 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
     const prior = [...state.trace ?? []]
     const requestType = event.type.replace('-result-', '-request-')
     const requestIndex = event.type.includes('-result-') ? prior.findLastIndex(entry => entry.type === requestType
-      && entry.status === 'running' && (typeof data.candidatePageId !== 'string' || entry.page === data.candidatePageId)) : -1
+      && entry.status === 'running' && (typeof data.requestSeq === 'number' ? entry.seq === data.requestSeq
+      : typeof data.candidatePageId !== 'string' || entry.page === data.candidatePageId)) : -1
     const request = prior[requestIndex]
     const duration = request === undefined ? undefined : Math.max(0, event.time - request.time)
     if (request !== undefined) prior[requestIndex] = { ...request, status, durationMilliseconds: duration ?? 0 }
@@ -129,6 +130,7 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       ...typeof data.text === 'string' ? { outputCharacters: data.text.length } : {},
       ...typeof data.error === 'string' ? { error: data.error } : {},
       ...Array.isArray(data.failures) ? { details: data.failures } : {},
+      ...record(data.validation) ? { details: data.validation } : {},
     }] }
   }
   const planId = typeof data.planId === 'string' ? data.planId : state.planId

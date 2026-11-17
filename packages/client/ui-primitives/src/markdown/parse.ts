@@ -8,7 +8,7 @@
  * math block once settled, by design).
  */
 
-import type { Root } from 'mdast'
+import type { Parent, Root, Text } from 'mdast'
 import { recoverLocalImages } from './local-image-syntax.ts'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
@@ -18,6 +18,37 @@ import { math } from 'micromark-extension-math'
 import { cjkFriendlyStrong } from './cjkFriendlyStrong.ts'
 import { mathCompatibility } from './mathCompatibility.ts'
 
+/** Keep prose punctuation outside GFM's bare-URL links; explicit Markdown links retain their destinations. */
+function delimitBareLinks(root: Root, source: string): Root {
+  const visit = (parent: Parent): void => {
+    for (const [index, node] of parent.children.entries()) {
+      if (node.type === 'link') {
+        const link = node
+        const raw = link.position === undefined ? undefined
+          : source.slice(link.position.start.offset, link.position.end.offset)
+        const label = link.children.length === 1 && link.children[0]?.type === 'text' ? link.children[0].value : undefined
+        // GFM's text-to-autolink transform produces unpositioned links; explicit links have positions.
+        const bare = raw === undefined ? label !== undefined
+          && (link.url === label || link.url === `http://${label}`)
+          : /^(?:www\.|https?:\/\/)/iu.test(raw)
+        if (label !== undefined && bare && /^(?:www\.|https?:\/\/)/iu.test(label)) {
+          const boundary = label.search(/[、，。；！？（）【】]/u)
+          if (boundary > 0) {
+            const prefix = label.slice(0, boundary)
+            link.url = /^www\./iu.test(prefix) ? `http://${prefix}` : prefix
+            link.children = [{ type: 'text', value: prefix }]
+            const suffix: Text = { type: 'text', value: label.slice(boundary) }
+            parent.children.splice(index + 1, 0, suffix)
+          }
+        }
+      }
+      if ('children' in node && Array.isArray(node.children)) visit(node)
+    }
+  }
+  visit(root)
+  return root
+}
+
 /**
  * Parse GFM markdown (the streaming arm's grammar: no math, so incomplete
  * TeX never flashes KaTeX errors mid-stream).
@@ -25,10 +56,10 @@ import { mathCompatibility } from './mathCompatibility.ts'
  * @returns The mdast root.
  */
 export function parseGfm(text: string): Root {
-  return recoverLocalImages(fromMarkdown(text, {
+  return delimitBareLinks(recoverLocalImages(fromMarkdown(text, {
     extensions: [gfm(), cjkFriendlyStrong()],
     mdastExtensions: [gfmFromMarkdown()],
-  }), text)
+  }), text), text)
 }
 
 /**
@@ -38,8 +69,8 @@ export function parseGfm(text: string): Root {
  * @returns The mdast root.
  */
 export function parseGfmWithMath(text: string): Root {
-  return recoverLocalImages(fromMarkdown(text, {
+  return delimitBareLinks(recoverLocalImages(fromMarkdown(text, {
     extensions: [gfm(), cjkFriendlyStrong(), mathCompatibility(), math()],
     mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()],
-  }), text)
+  }), text), text)
 }

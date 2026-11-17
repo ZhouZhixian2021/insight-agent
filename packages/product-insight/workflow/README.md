@@ -62,6 +62,8 @@ A wrong model offset is repaired only when the exact excerpt occurs once in its 
 <a id="model-experience"></a>
 ## Model Experience
 
+Source-support review uses batches of 24 with up to three calls in flight. It sees excerpts and statements, not research questions; supported statements do not require reviewer-assigned question IDs. Extraction question links remain discovery hints. Synthesis receives all eligible supported evidence for each question and chooses what to cite; unrelated material can remain unused, and an unanswered question uses the explicit no-answer response. Results carry their request sequence for replay and Trace pairing. Checkpoints save completed siblings while the cursor advances only across settled batches; resume skips saved reviews even when they completed out of order.
+
 ### Search recognition
 
 #### What the model sees
@@ -84,11 +86,11 @@ The reading model receives the source URL, approved questions and complete canon
 
 #### Token effect
 
-The workflow splits extraction, review and synthesis requests when context capacity requires it. It does not impose a product-specific output-token cap or an additional 60-second model deadline. Malformed synthesis output may be generated once more; network timeouts and cancellation still apply.
+The workflow splits extraction, review and synthesis requests when context capacity requires it. It does not impose a product-specific output-token cap or an additional 60-second model deadline. The [synthesis output handler](src/synthesis-output.ts) validates answers independently. It normalizes unambiguous wrappers, citation syntax, unique ID prefixes and redundant reference lists; E-number aliases resolve to saved evidence IDs. Valid answers survive malformed siblings, truncated output and transport failures. Only rejected questions receive one repair request with their existing drafts and precise errors. A transport failure with no usable answer retries the original request once. Unresolved questions show generation-failure notices rather than claiming evidence is absent. Coverage statuses permit natural gap explanations; they do not certify factual accuracy. Model context and cancellation still apply.
 
 #### KV Cache effect
 
-Extraction is page-local; review uses batches of at most eight evidence items. Each request and response is saved for trace and recovery, and a new user-directed follow-up runs under a new approved plan.
+Extraction is page-local; review uses batches of at most 24 evidence items with three concurrent batches. Each request and response is saved for trace and recovery, including accepted question IDs, repair reasons and normalization notes for synthesis; historical results without these optional diagnostics are re-inspected from raw output, and a new user-directed follow-up runs under a new approved plan.
 
 ## Known Limitations and Deferred Work
 
@@ -96,7 +98,7 @@ Extraction is page-local; review uses batches of at most eight evidence items. E
 
 - **Process-local jobs** — The task continues after its starting tool call ends while the owning Agent remains active. After a process restart, the live job is gone and its saved task record is reported as interrupted. A new explicit call can resume committed work for the same approved plan. An uncommitted model response may need another call; automatic continuation and an independent progress page are not implemented.
 - **Revalidation scope** — Resumption re-fetches selected URLs but retains saved snapshots, evidence and reviews even when a source changes or cannot be fetched. Reports disclose that they describe captured content, not necessarily the current page. Cancellation still interrupts resumption.
-- **Source limitations** — A focus plan no longer ties source eligibility to a registered domain: pages outside the official site are read, cited, and disclosed per question as unregistered sites. For legacy plans, domain approval, region, version, date and snapshot mismatches remain report disclosures rather than standalone draft reasons. Discovery still screens candidates before fetching. Statements without semantic support or a matching saved snapshot do not enter confirmed prose; a report with no supported statements explicitly leaves questions unanswered. No evidence still blocks report creation.
+- **Source limitations** — A focus plan no longer ties source eligibility to a registered domain: pages outside the official site are read and cited without an automatic unregistered-site notice. Missing independent corroboration also produces no boilerplate notice; synthesis explains concrete limitations from the material itself. For legacy plans, domain approval, region, version, date and snapshot mismatches remain report disclosures rather than standalone draft reasons. Discovery still screens candidates before fetching. Statements without semantic support or a matching saved snapshot do not enter confirmed prose; a report with no supported statements explicitly leaves questions unanswered. No evidence still blocks report creation.
 
 <a id="dev-note"></a>
 ### Dev Note
