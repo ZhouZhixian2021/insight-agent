@@ -312,7 +312,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       }
     }
   }
-  return { candidates: createProductBatchResult([...candidates.values()], failures), searches,
+  return { candidates: createProductBatchResult(dropRedundantNavigation([...candidates.values()]), failures), searches,
     cancelled: input.existing?.cancelled || signal?.aborted || false }
 }
 
@@ -378,6 +378,65 @@ const NAVIGATION_PATH = /^\/(?:support|help|login|signin|sign-in|account|cart|sh
 const NAVIGATION_HOST = /^(?:support|help|account|login|signin)\./iu
 /** A locale prefix alone addresses the site root of that market, not a page. */
 const LOCALE_ROOT_PATH = /^\/[a-z]{2}(?:[-_][a-z]{2,4})?\/?$/iu
+/** Account, cart and search-result hosts never carry product content, whatever their path. */
+const ACCOUNT_HOST = /^(?:account|login|signin|cart|checkout)\./iu
+/** Account, cart and search-result paths never carry product content, whatever their depth. */
+const ACCOUNT_PATH = /^\/(?:account|login|signin|sign-in|cart|checkout|bag|search)(?:\/|$)/iu
+/** A store or shop root lists products; a deeper path can describe one configuration. */
+const STORE_ROOT_PATH = /^\/(?:store|shop)(?:\/|$)/iu
+
+/**
+ * Whether a discovered page can only lead into the site.
+ * @param url - Parsed candidate address.
+ * @returns Whether the page is account, cart or search navigation that carries no product evidence.
+ */
+function isNavigationPage(url: URL): boolean {
+  return ACCOUNT_HOST.test(url.hostname) || ACCOUNT_PATH.test(url.pathname)
+}
+
+/**
+ * Whether a page addresses a store or shop root rather than one product configuration.
+ * @param url - Parsed candidate address.
+ * @returns Whether the page lists products instead of describing one.
+ */
+function isStoreIndex(url: URL): boolean {
+  return STORE_ROOT_PATH.test(url.pathname)
+    && url.pathname.split('/').filter(segment => segment.length > 0).length <= 1
+}
+
+/**
+ * Whether a page only names a site or market entry rather than a product page.
+ * @param url - Parsed candidate address.
+ * @returns Whether the page is a site root, a locale root, or a store index.
+ */
+function isEntryPoint(url: URL): boolean {
+  return url.pathname === '/' || LOCALE_ROOT_PATH.test(url.pathname) || isStoreIndex(url)
+}
+
+/**
+ * Exclude site entry points that only duplicate a deeper page on the same host.
+ * @param candidates - Final discovery candidates in discovery order.
+ * @returns Candidates with redundant entry points marked excluded.
+ */
+function dropRedundantNavigation(candidates: readonly CandidatePage[]): readonly CandidatePage[] {
+  const contentHosts = new Set(candidates
+    .map(page => ({ page, url: parseCandidateUrl(page.url) }))
+    .filter((entry): entry is { page: CandidatePage; url: URL } => entry.url !== null
+      && entry.page.screening.status !== 'excluded' && !isNavigationPage(entry.url) && !isEntryPoint(entry.url))
+    .map(entry => entry.url.hostname))
+  return candidates.map((page) => {
+    if (page.screening.status === 'excluded') return page
+    const url = parseCandidateUrl(page.url)
+    if (url === null) return page
+    const navigation = isNavigationPage(url)
+    const redundant = !navigation && isEntryPoint(url) && contentHosts.has(url.hostname)
+    if (!navigation && !redundant) return page
+    return { ...page, screening: { ...page.screening, status: 'excluded' as const,
+      reason: navigation
+        ? 'Search result addresses site navigation; the page carries no product evidence.'
+        : 'Site entry point duplicates a deeper page on the same host; the deeper page carries the content.' } }
+  })
+}
 
 /** Whether a planned link names site navigation, which costs a candidate slot and yields no evidence. */
 function isNavigationSeed(value: string): boolean {

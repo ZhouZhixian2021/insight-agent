@@ -288,3 +288,51 @@ it('requests sixty links before screening, keeping unapproved domains out of pag
   expect(result.candidates.items.find(page => page.url.includes('unapproved'))?.screening.status).toBe('excluded')
   expect(result.candidates.items.find(page => page.url === 'https://example.com/features')?.screening.status).toBe('selected')
 })
+
+describe('site navigation filtering', () => {
+  const focusPlan: ProductPlan = { ...plan, focus: { categories: ['performance'] } }
+  const discover = (urls: readonly string[]) => discoverCandidatePages({ product, plan: focusPlan, maxResultsPerQuery: 5 },
+    { now, web: { search: async () => ({ sources: urls.map(url => ({ url })), truncated: false }) } })
+  const statuses = (items: readonly { url: string; screening: { status: string } }[]) =>
+    items.map(page => [page.url, page.screening.status])
+
+  it('excludes account, cart and search pages whatever host serves them', async () => {
+    const result = await discover(['https://account.example.com/', 'https://example.com/cart',
+      'https://example.com/search?q=example', 'https://example.com/features'])
+    expect(statuses(result.candidates.items)).toEqual([
+      ['https://account.example.com/', 'excluded'],
+      ['https://example.com/cart', 'excluded'],
+      ['https://example.com/search?q=example', 'excluded'],
+      ['https://example.com/features', 'selected'],
+    ])
+  })
+
+  it('keeps a site root that is the only page read from its host', async () => {
+    const result = await discover(['https://example.com/'])
+    expect(statuses(result.candidates.items)).toEqual([['https://example.com/', 'selected']])
+  })
+
+  it('drops a site root or locale root that duplicates a deeper page on the same host', async () => {
+    const result = await discover(['https://example.com/', 'https://example.com/zh/',
+      'https://example.com/features'])
+    expect(statuses(result.candidates.items)).toEqual([
+      ['https://example.com/', 'excluded'],
+      ['https://example.com/zh/', 'excluded'],
+      ['https://example.com/features', 'selected'],
+    ])
+  })
+
+  it('drops a store index but keeps a store path describing one configuration', async () => {
+    const result = await discover(['https://example.com/store',
+      'https://example.com/shop/buy-mac/m6-chip-12-core'])
+    expect(statuses(result.candidates.items)).toEqual([
+      ['https://example.com/store', 'excluded'],
+      ['https://example.com/shop/buy-mac/m6-chip-12-core', 'selected'],
+    ])
+  })
+
+  it('keeps a support article that search results reach below the support host', async () => {
+    const result = await discover(['https://support.example.com/en-us/148300'])
+    expect(statuses(result.candidates.items)).toEqual([['https://support.example.com/en-us/148300', 'selected']])
+  })
+})
