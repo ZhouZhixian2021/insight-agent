@@ -82,7 +82,7 @@ Recognition is a separate model request using the selected route and does not re
 
 #### What the model sees
 
-The reading model receives the source URL, approved questions and complete canonical page text when it fits the configured context; larger pages are split without dropping text. Excerpts must match saved text, and semantic review admits only supported statements. Synthesis receives eligible evidence and must cite its identities; unanswered questions stay explicit.
+The reading model receives the source URL, approved questions and complete canonical page text when it fits the configured context; larger pages are split without dropping text. Excerpts must match saved text, statements are written in Simplified Chinese while excerpts keep the page's language, and semantic review admits only supported statements. Synthesis receives eligible evidence and must cite its identities; unanswered questions stay explicit.
 
 #### Token effect
 

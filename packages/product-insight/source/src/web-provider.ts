@@ -1,7 +1,7 @@
 /** Product-local free search and anonymous HTTP/browser page retrieval. */
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import { WebError, type WebFetchResult } from '@deepseek-ai/dsh-web'
+import { WebError, type WebFetchRequest, type WebFetchResult } from '@deepseek-ai/dsh-web'
 import { HttpFetchProvider } from '@deepseek-ai/dsh-web-fetch-http'
 import { parseSearchResults, searchMultiple, type SearchEngine } from './multi-search.ts'
 import { observeSearchPage, resolveSearchSelection } from './search-recovery.ts'
@@ -12,6 +12,11 @@ import { prepareProductPage, ProductPageEmptyError } from './page-content.ts'
 export const name = 'product-insight-source'
 /** Product preset supplies an isolated Web registry. */
 export const inject = ['web']
+
+/** Statuses that usually mean an automation block rather than a missing page. */
+const BLOCKED_PAGE_STATUSES = new Set([403, 405, 429, 503])
+/** Browser-like agent for one blocked-page retry; every transport limit still applies. */
+const BLOCKED_PAGE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
 /** Free-search and browser deployment settings; no credentials are required. */
 export interface Config {
@@ -69,6 +74,8 @@ export function apply(ctx: Context, config: Config): void {
     maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
   ctx.web.registerFetchProvider(http)
+  const browserAgent = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
+    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, userAgent: BLOCKED_PAGE_USER_AGENT })
   const searchHttp = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
     maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, http1Only: config.searchHttp1Only,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
@@ -99,9 +106,39 @@ export function apply(ctx: Context, config: Config): void {
       return result
     },
   })
+  /**
+   * Retry one blocked page with a browser-like agent.
+   * @param blocked - First acquisition, kept when the retry stays blocked or fails.
+   * @param request - Same public URL under the same transport limits.
+   * @param signal - Cancellation shared with the original acquisition.
+   * @returns The successful retry, or the original blocked result.
+   */
+  async function retryBlockedPage(blocked: WebFetchResult, request: WebFetchRequest,
+    signal?: AbortSignal): Promise<WebFetchResult> {
+    try {
+      const retried = await browserAgent.fetch(request, signal)
+      return retried.statusCode >= 200 && retried.statusCode < 300 ? retried : blocked
+    } catch { return blocked }
+  }
+  /**
+   * Acquire one public page, retrying once when the site answers the product agent with no usable content type.
+   * @param request - Public URL under the configured transport limits.
+   * @param signal - Cancellation shared with the retry.
+   * @returns The first usable acquisition.
+   */
+  async function acquirePage(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
+    try { return await http.fetch(request, signal) } catch (error) {
+      // Some sites answer the product agent with an empty, typeless response and read normally as a browser.
+      if (!(error instanceof WebError) || error.code !== 'WEB_UNSUPPORTED_CONTENT_TYPE') throw error
+      try { return await browserAgent.fetch(request, signal) } catch { throw error }
+    }
+  }
   ctx.web.registerFetchProvider({ id: 'product-public-page', available: () => true,
     async fetch(request, signal): Promise<WebFetchResult> {
-      const result = await http.fetch(request, signal)
+      const first = await acquirePage(request, signal)
+      // A blocked page often answers a browser-like agent; the retry keeps the same guarded transport.
+      const result = BLOCKED_PAGE_STATUSES.has(first.statusCode)
+        ? await retryBlockedPage(first, request, signal) : first
       if (!config.browserEnabled || result.body.kind !== 'html' || result.truncated
         || result.statusCode < 200 || result.statusCode >= 300) return result
       if (/anomaly-modal|challenge-form|cf-chl-/iu.test(result.body.content)) {
