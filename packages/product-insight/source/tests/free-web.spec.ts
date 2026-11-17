@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import WebRuntime, { type WebFetchResult } from '@deepseek-ai/dsh-web'
+import WebRuntime, { WebError, type WebFetchResult } from '@deepseek-ai/dsh-web'
 import { HttpFetchProvider } from '@deepseek-ai/dsh-web-fetch-http'
 import * as provider from '../src/web-provider.ts'
 import { parseDuckDuckGoResults } from '../src/free-search.ts'
@@ -50,5 +50,61 @@ describe('free product search', () => {
       await fiber.dispose()
       await expect(ctx.web.search({ query: 'Example' })).rejects.toThrow()
     } finally { mock.mockRestore(); await ctx.fiber.dispose() }
+  })
+
+  it('retries one blocked page with a browser-like agent and keeps the blocked status when it stays blocked', async () => {
+    for (const retryStatus of [200, 403]) {
+      const ctx = new Context()
+      await ctx.plugin(WebRuntime, { searchProvider: 'product-free-search', fetchProvider: 'product-public-page' })
+      const fiber = await ctx.plugin(provider, {
+        searchHttp1Only: true,
+        browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
+        browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
+        timeoutMs: 25000, maximumResponseBytes: 5_000_000,
+        maximumBodyCharacters: 500_000, maximumSearchResults: 10,
+      })
+      let calls = 0
+      const mock = vi.spyOn(HttpFetchProvider.prototype, 'fetch').mockImplementation(async (request) => {
+        calls += 1
+        const statusCode = calls === 1 ? 403 : retryStatus
+        return { ...result(statusCode === 200 ? '<article>Product specifications.</article>' : '<p>blocked</p>',
+          statusCode), url: request.url }
+      })
+      try {
+        const fetched = await ctx.web.fetch({ url: 'https://example.com/spec' })
+        expect(calls).toBe(2)
+        expect(fetched.statusCode).toBe(retryStatus)
+      } finally { mock.mockRestore(); await fiber.dispose(); await ctx.fiber.dispose() }
+    }
+  })
+
+  it('retries once when the site answers with no usable content type', async () => {
+    for (const retrySucceeds of [true, false]) {
+      const ctx = new Context()
+      await ctx.plugin(WebRuntime, { searchProvider: 'product-free-search', fetchProvider: 'product-public-page' })
+      const fiber = await ctx.plugin(provider, {
+        searchHttp1Only: true,
+        browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
+        browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
+        timeoutMs: 25000, maximumResponseBytes: 5_000_000,
+        maximumBodyCharacters: 500_000, maximumSearchResults: 10,
+      })
+      let calls = 0
+      const mock = vi.spyOn(HttpFetchProvider.prototype, 'fetch').mockImplementation(async (request) => {
+        calls += 1
+        if (calls === 1 || !retrySucceeds) throw new WebError('unsupported content type "unknown"',
+          'WEB_UNSUPPORTED_CONTENT_TYPE')
+        return { ...result('<article>Product specifications.</article>'), url: request.url }
+      })
+      try {
+        if (retrySucceeds) {
+          expect((await ctx.web.fetch({ url: 'https://example.com/spec' })).statusCode).toBe(200)
+        } else {
+          await expect(ctx.web.fetch({ url: 'https://example.com/spec' }))
+            .rejects.toThrow(expect.objectContaining({ code: 'WEB_UNSUPPORTED_CONTENT_TYPE' }))
+        }
+        expect(calls).toBe(2)
+      } finally { mock.mockRestore(); await fiber.dispose(); await ctx.fiber.dispose() }
+    }
   })
 })
