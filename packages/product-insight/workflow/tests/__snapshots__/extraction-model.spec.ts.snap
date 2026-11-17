@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`repairs only invalid siblings and persists short-ID requests and full-ID drafts 1`] = `
+[
+  {
+    "accepted": 1,
+    "error": null,
+    "issues": [
+      {
+        "index": 1,
+        "reason": "missing_statement",
+      },
+    ],
+    "kind": "validation",
+  },
+  {
+    "accepted": 1,
+    "error": null,
+    "issues": [],
+    "kind": "repair",
+  },
+]
+`;

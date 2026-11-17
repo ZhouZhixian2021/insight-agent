@@ -31,8 +31,12 @@ export function synthesisAliases(input: ProductSynthesisInput): ReadonlyMap<stri
   return new Map(ids.map((id, index) => [`E${index + 1}`, id]))
 }
 
-/** Read one unambiguous array, retaining only complete elements if its tail is truncated. */
-function readEntries(text: string): { entries: unknown[]; note?: string } {
+/**
+ * Read one unambiguous array, retaining complete elements before a truncated tail.
+ * @param text - Model output, optionally wrapped in prose or a code fence.
+ * @returns Complete entries and any recovery notice.
+ */
+export function readEntries(text: string): { entries: unknown[]; note?: string } {
   try {
     const value: unknown = JSON.parse(text)
     return Array.isArray(value) ? { entries: value } : { entries: [], note: 'Expected an answer array.' }

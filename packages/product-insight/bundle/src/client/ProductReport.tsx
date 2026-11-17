@@ -14,7 +14,7 @@ function sentenceCitations(text: string): string {
   })
 }
 
-const appendixTitles = new Set(['证据附录', '检索与取证范围', '原始交付诊断'])
+const appendixTitles = new Set(['调查问题覆盖情况', '证据附录', '检索与取证范围', '原始交付诊断'])
 
 /** Render saved product prose first; keep evidence and diagnostics expandable without discarding them. */
 export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownText>) {
@@ -22,7 +22,28 @@ export function ProductReport({ text, labels }: ComponentProps<typeof MarkdownTe
   let current = ''
   let title: string | undefined
   let fence: string | undefined
-  for (const line of sentenceCitations(text).split('\n')) {
+  let legacyCoverage = false
+  let skip = -1
+  const lines = sentenceCitations(text).split('\n')
+  for (const [index, original] of lines.entries()) {
+    if (index === skip) continue
+    let line = original
+    // Recognize only our historical wrapper; never enable arbitrary report HTML.
+    if (fence === undefined && /^\s*\\?<details>\s*/u.test(line)) {
+      const rest = line.replace(/^\s*\\?<details>\s*/u, '')
+      const summary = /^\\?<summary>调查问题覆盖情况\\?<\/summary>\s*$/u
+      if (summary.test(rest) || !rest && summary.test((lines[index + 1] ?? '').trim())) {
+        if (!rest) skip = index + 1
+        line = '## 调查问题覆盖情况'
+        legacyCoverage = true
+      }
+    } else if (fence === undefined && legacyCoverage && /^\s*\\?<\/details>\s*(?:&#x20;\s*)?$/u.test(line)) {
+      if (current) sections.push({ text: current, ...(title === undefined ? {} : { title }) })
+      current = ''
+      title = undefined
+      legacyCoverage = false
+      continue
+    }
     const marker = /^\s*(`{3,}|~{3,})/u.exec(line)?.[1]
     if (marker !== undefined) {
       if (fence === undefined) fence = marker

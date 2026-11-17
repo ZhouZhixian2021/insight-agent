@@ -11,6 +11,30 @@ import { ProductReport } from '../src/client/ProductReport.tsx'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
+it.each([
+  '## 调查问题覆盖情况\n\n覆盖缺口。',
+  '<details>\n<summary>调查问题覆盖情况</summary>\n\n覆盖缺口。\n</details>',
+  '\\<details> \\<summary>调查问题覆盖情况\\</summary>\n\n覆盖缺口。\n\\</details> &#x20;',
+])('folds coverage with evidence and search appendices in chat and HTML: %s', (coverage) => {
+  const report = `# 报告\n\n正文结论。\n\n${coverage}\n\n## 证据附录\n\n### 证据 1\n\n> 原文摘录。\n\n## 检索与取证范围\n\n抓取记录。`
+  const { container } = render(<ProductReport text={report}
+    labels={{ code: { copyLabel: '复制', copiedLabel: '已复制' }, footnotes: '脚注' }} />)
+  const run = { callId: 'fold', title: '报告', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0, failures: 0,
+    elapsedMilliseconds: 10, deliveryStatus: 'final', reasons: [], report } as const
+  const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
+  for (const root of [container, doc.body]) {
+    const details = [...root.querySelectorAll('details')]
+    expect(details.map(node => node.querySelector('summary')?.textContent))
+      .toEqual(['调查问题覆盖情况', '证据附录', '检索与取证范围'])
+    expect(details.every(node => !node.hasAttribute('open'))).toBe(true)
+    expect(details[0]?.textContent).toContain('覆盖缺口。')
+    expect(details[1]?.querySelector('blockquote')?.textContent).toContain('原文摘录。')
+    expect(root.textContent).not.toContain('<details>')
+    expect(root.textContent).not.toContain('<summary>')
+  }
+})
+
 const plan = '# 华为产品调查计划\n\n```product-insight-plan-json\n{}\n```'
 const planId = 'session-1:approved-product-plan:product-call'
 const labels: Record<string, string> = { draft: '调查草稿', pages: '来源发现与网页抓取', evidence: '证据提取',
@@ -86,6 +110,25 @@ it('exposes per-question synthesis validation in Trace without requiring it on h
   expect(node.data).toMatchObject({ trace: [
     { seq: 2, durationMilliseconds: 10 }, { seq: 3, details: validation },
     { seq: 4, durationMilliseconds: 10 }, { seq: 5, status: 'completed' },
+  ] })
+})
+
+it('exposes item repair and same-text reuse diagnostics in product Trace', () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const issues = [{ index: 2, reason: 'missing_statement' }]
+  const events = [
+    { seq: 1, time: 0, type: 'tool/call', data: { name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
+    { seq: 2, time: 10, type: 'product/extraction-inspection-v1', data: { planId, candidatePageId: 'page1', kind: 'validation', accepted: 2, issues, error: null } },
+    { seq: 3, time: 20, type: 'product/extraction-inspection-v1', data: { planId, candidatePageId: 'page2', kind: 'reuse', accepted: 2, issues: [], reusedFrom: 'page1', error: null } },
+  ]
+  assembler.replaceWindow(events.map(event => ({ type: 'event', event })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+  expect(node.data).toMatchObject({ trace: [
+    { seq: 2, details: { kind: 'validation', accepted: 2, issues } },
+    { seq: 3, details: { kind: 'reuse', accepted: 2, reusedFrom: 'page1' } },
   ] })
 })
 
