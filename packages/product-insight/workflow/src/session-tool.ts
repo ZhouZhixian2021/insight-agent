@@ -17,7 +17,7 @@ import type {} from '@deepseek-ai/dsh-session-query'
 import { estimateContent, ROLE_OVERHEAD } from '@deepseek-ai/dsh-token-meter/estimate'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 
-import { extractionQuestions, extractionReuseKey, inspectExtraction, type DraftInspection, type DraftIssue } from './extraction-output.ts'
+import { extractionQuestions, extractionReuseKey, inspectExtraction, readEvidenceContext, type DraftInspection, type DraftIssue } from './extraction-output.ts'
 import { latestApprovedProductPlan, productPlanFromApproval } from './approved-plan.ts'
 import { latestProductBackgroundRun, type ProductBackgroundRunState } from './background-run.ts'
 import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, ProductInvestigationResult,
@@ -28,7 +28,7 @@ import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
 import { type ProductSynthesisInput } from './report.ts'
 import { inspectInsight, insightRequest, insightRepairIssues, repairInsight, type ProductInsight } from './insight-output.ts'
 import { inspectProductSynthesis, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
-import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from './writing.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, productSynthesisInstruction } from './writing.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
   interface JobKindMap {
@@ -171,7 +171,7 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'or missing context requires uncertain; a different fact is unrelated. Do not infer publisher independence from URLs. '
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
 const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
-const SYNTHESIS_SYSTEM = PRODUCT_WRITING_INSTRUCTION
+const SYNTHESIS_SYSTEM = productSynthesisInstruction()
 
 class ProductTransientModelError extends Error {
   constructor(readonly code: 'TRANSPORT' | 'TIMEOUT', options?: ErrorOptions) {
@@ -635,7 +635,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
   }
   return repairInsight(input, async (user, ordinal, knownSections, target): Promise<SynthesisResponse> => {
     signal?.throwIfAborted()
-    const prepared = capacity
+    const prepared = ordinal === 1 ? capacity : await llm.prepareCall(config, signal)
     const { provider, model, maxTokens = 4096, reasoningEffort } = prepared.config
     const request = events.findLast(event => event.type === 'product/synthesis-request-v1'
       && event.data.planId === plan.planId && event.data.user === user && event.data.system === SYNTHESIS_SYSTEM
@@ -1131,7 +1131,9 @@ export function parseDrafts(text: string): readonly ProductEvidenceDraft[] {
         || !Number.isSafeInteger(item.startHint) || item.startHint < 0)) {
       throw new RangeError('Evidence model returned an invalid draft')
     }
+    const readingContext = readEvidenceContext(item.readingContext, item.verbatimExcerpt)
     return { verbatimExcerpt: item.verbatimExcerpt, sourcedStatement: item.sourcedStatement,
+      ...readingContext === undefined ? {} : { readingContext },
       questionIds: item.questionIds.map((id: string) => brandString<ProductQuestionId>(id)),
       ...item.startHint === undefined ? {} : { startHint: item.startHint } }
   })

@@ -3,7 +3,7 @@ export type {
   AvailableSourceSnapshot, CandidatePage, CandidatePageId, EvidenceGapId, ExecutableProductPlan,
   Product, ProductBatchResult, ProductBatchStatus, ProductClaim, ProductClaimEvidenceLink,
   ProductClaimEvidenceSnapshot, ProductClaimEvidenceSnapshotItem, ProductClaimId, ProductEvidence,
-  ProductEvidenceGap, ProductEvidenceId, ProductEvidenceRelation, ProductFailure, ProductFailureId,
+  ProductEvidenceGap, ProductEvidenceId, ProductEvidenceRelation, ProductReadingContext, ProductFailure, ProductFailureId,
   ProductFocusCategoryId, ProductId, ProductPlan, ProductPlanApproval, ProductPlanFocus, ProductPlanId,
   ProductPlanLimits, ProductQuestion, ProductQuestionId, ProductReport, ProductReportDelivery,
   ProductReportId, ProductRun, ProductRunId, ProductSourceCriteria, ProductSourceLocator,

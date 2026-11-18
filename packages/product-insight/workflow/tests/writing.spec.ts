@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createProductEvidenceId } from '@deepseek-ai/dsh-product-insight-model'
+import { createProductEvidenceId, createProductQuestionId } from '@deepseek-ai/dsh-product-insight-model'
 import { parseProductSynthesis } from '../src/session-tool.ts'
 import type { ProductSynthesisInput } from '../src/report.ts'
-import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, PRODUCT_WRITING_INSTRUCTION } from '../src/writing.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, productSynthesisInstruction } from '../src/writing.ts'
+import { inspectExtraction } from '../src/extraction-output.ts'
 
 const ids = [createProductEvidenceId(), createProductEvidenceId()]
 const input: ProductSynthesisInput = { scope: '企业版离线部署', questions: [{ questionId: 'deployment',
@@ -14,6 +15,13 @@ const output = (text: string, evidenceIds: readonly string[] = ids) => JSON.stri
 ])
 
 describe('product evidence-led writing', () => {
+  it('drops ungrounded attribution and conditions without dropping the reviewed material', () => {
+    const excerpt = 'We measured latency at 32 GB.'
+    const entry = { verbatimExcerpt: excerpt, sourcedStatement: '测量了延迟。', questionIds: ['Q1'],
+      readingContext: { origin: 'author_measurement', originQuote: 'an independent laboratory', conditionQuotes: ['32 GB', '16 GB'] } }
+    const result = inspectExtraction(JSON.stringify([entry]), [{ questionId: createProductQuestionId(), text: '条件' }])
+    expect(result.drafts[0]?.readingContext).toEqual({ origin: 'unknown', conditionQuotes: ['32 GB'] })
+  })
   it('permits an explicit unanswered question without fabricating references to available background', () => {
     expect(parseProductSynthesis(output('现有材料不足以形成有依据的回答。', []), input).get('deployment'))
       .toBe('现有材料不足以形成有依据的回答。')
@@ -43,6 +51,6 @@ describe('product evidence-led writing', () => {
 
   it('pins the product reading and writing instructions', () => {
     expect({ reading: PRODUCT_READING_INSTRUCTION, review: PRODUCT_REVIEW_INSTRUCTION,
-      writing: PRODUCT_WRITING_INSTRUCTION }).toMatchSnapshot()
+      writing: productSynthesisInstruction() }).toMatchSnapshot()
   })
 })
