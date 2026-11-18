@@ -15,6 +15,19 @@ const all = (node: Node): Node[] => [node, ...children(node).flatMap(all)]
 const text = (node: Node): string => ('value' in node ? node.value : children(node).map(text).join(' ')).replace(/\s+/gu, ' ').trim()
 const hasClass = (node: Node, name: string): boolean => attr(node, 'class').split(/\s/u).includes(name)
 const tag = (node: Node, name: string): boolean => 'tagName' in node && node.tagName === name
+/** Promoted containers; a Bing ad keeps its result markup, so class names alone do not separate it. */
+const AD_SLOTS = ['b_ad', 'b_adBlock', 'b_ads', 'b_ans'] as const
+const isAdSlot = (node: Node): boolean => AD_SLOTS.some(name => hasClass(node, name))
+/** Whether a result card sits inside a promoted container, at any depth. */
+const insideAdSlot = (node: Node): boolean => {
+  let current: Node | undefined = node
+  while (current !== undefined && 'parentNode' in current) {
+    const parent: Node | undefined = current.parentNode ?? undefined
+    if (parent === undefined || isAdSlot(parent)) return parent !== undefined
+    current = parent
+  }
+  return false
+}
 
 export function targetUrl(href: string, engine: SearchEngine): string | undefined {
   let url: URL
@@ -56,7 +69,8 @@ export function parseSearchResults(engine: SearchEngine, fetched: WebFetchResult
   const html = fetched.body.content
   if (/captcha|verify you are human|challenge-form|unusual traffic/iu.test(html)) throw new WebError('搜索来源要求人工验证。', 'WEB_PROVIDER_CHALLENGE')
   const nodes = all(parse(html))
-  const cards = nodes.filter(node => hasClass(node, engine === 'bing' ? 'b_algo' : 'algo-sr'))
+  const cards = nodes.filter(node => hasClass(node, engine === 'bing' ? 'b_algo' : 'algo-sr')
+    && !isAdSlot(node) && !insideAdSlot(node))
   const sources = new Map<string, WebSearchSource>()
   for (const card of cards) {
     const inside = all(card)

@@ -5,6 +5,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms } from './page-content.ts'
+import { relevanceSignals, scoreCandidateRelevance, type RelevanceVerdict } from './relevance.ts'
 import type { OfficialFeedResult, OfficialLink } from './official-feed.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
@@ -223,7 +224,13 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   const focusDriven = plan.focus !== undefined
   /** Legacy plans allowlist `sourcePublishers`; a focus plan only adds sites the user named. */
   const namedSites = focusDriven ? plan.additionalSites : plan.sourcePublishers
-  function screenSource(source: ProductSearchSource) {
+  /**
+   * Screen one link. Search results additionally need metadata that names the
+   * product or the question; seeds and official feed posts already carry that
+   * evidence, and user-named sites are trusted as approved leads.
+   */
+  function screenSource(source: ProductSearchSource, origin: 'seed' | 'feed' | 'search' = 'search',
+    question?: string) {
     const parsed = parseCandidateUrl(source.url)
     const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
     const registeredSite = parsed === null ? undefined : namedSites?.find(item => withinDomain(parsed.hostname, item.domain))
@@ -234,8 +241,13 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
       || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
         part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
-    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source), named,
-      screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven) }
+    const verdict = origin !== 'search' || officialPage || registeredSite !== undefined ? undefined
+      : scoreCandidateRelevance({ url: source.url,
+        ...source.title === undefined ? {} : { title: source.title },
+        ...source.snippet === undefined ? {} : { snippet: source.snippet } },
+      relevanceSignals(product, question ?? ''))
+    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source), named, verdict,
+      screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven, verdict) }
   }
   /** A site entry point sorts last, so a content page takes the candidate slot it would occupy. */
   const isEntrySource = (source: ReturnType<typeof screenSource>): boolean =>
@@ -273,7 +285,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     const seeds = [...official.pathname !== '/' ? [{ url: product.officialUrl }] : [], ...input.initialSources ?? []]
       .filter(seed => !isNavigationSeed(seed.url))
     for (const seed of seeds) {
-      const screened = screenSource(seed)
+      const screened = screenSource(seed, 'seed')
       if (screened.screening.status === 'excluded') continue
       for (const question of plan.questions) recordSource(screened, question.questionId)
     }
@@ -286,7 +298,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       const feed = await adapters.officialFeed(product.officialUrl, accept, signal)
       for (const link of feed.links) {
         if (!accept(link)) continue
-        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } })
+        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } }, 'feed')
         if (screened.screening.status === 'excluded') continue
         for (const question of plan.questions) recordSource(screened, question.questionId, 'official-feed')
       }
@@ -326,7 +338,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       const search = { questionId: question.questionId, query, status: 'success' as const,
         returnedCount: result.sources.length, recordedCount: 0, truncated: result.truncated,
         ...gap === undefined ? {} : { reason } }
-      const sources = result.sources.map(screenSource)
+      const sources = result.sources.map(source => screenSource(source, 'search', question.text))
       if (gap === undefined) {
         initialBatches.push({ search, sources })
       } else {
@@ -527,7 +539,7 @@ function searchSourceEngine(source: ProductSearchSource): string | undefined {
 }
 
 function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean,
-  registeredSite: boolean, focusDriven: boolean):
+  registeredSite: boolean, focusDriven: boolean, verdict?: RelevanceVerdict):
 { status: 'selected' | 'excluded'; reason: string } {
   if (parsed === null) return { status: 'excluded', reason: 'Search result URL is not a valid HTTP(S) URL.' }
   if (officialPage) {
@@ -539,6 +551,12 @@ function screenCandidate(parsed: URL | null, officialPage: boolean, named: boole
     }
     if (named) {
       return { status: 'selected', reason: 'Search metadata names the product; the page is read under the confirmed focus directions.' }
+    }
+    if (verdict !== undefined && !verdict.relevant) {
+      return { status: 'excluded', reason: verdict.reason }
+    }
+    if (verdict !== undefined) {
+      return { status: 'selected', reason: `${verdict.reason} The page is read under the confirmed focus directions.` }
     }
     return { status: 'selected', reason: 'Valid search result admitted for full-text product relevance checking.' }
   }

@@ -81811,7 +81811,7 @@
         "packages/product-insight/source/src/index.ts#ProductDiscoveryResult"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:36"
+        "packages/product-insight/source/src/index.ts:39"
       ]
     },
     {
@@ -90447,7 +90447,7 @@
         "packages/product-insight/source/src/index.ts#ProductSearchAttempt"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:24"
+        "packages/product-insight/source/src/index.ts:27"
       ]
     },
     {

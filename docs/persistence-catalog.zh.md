@@ -11711,7 +11711,7 @@ SHA-256: `993e9f919eff4878cd2c72db392c2ca7fb47d48d3a327a15f5801ddfcd22c530`
 
 SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
-来源：[`packages/product-insight/source/src/index.ts:36`](../packages/product-insight/source/src/index.ts)
+来源：[`packages/product-insight/source/src/index.ts:39`](../packages/product-insight/source/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11909,7 +11909,7 @@ SHA-256: `becc0a9e14300b0a07446ecc9dce246cb3b6be23b0bb8ff66b8d8e5bba6e0c92`
 
 SHA-256: `ee613650103fabc796f81f2141e7cc8235635e1485f0b2dbcecb4c29fa11b143`
 
-来源：[`packages/product-insight/source/src/index.ts:24`](../packages/product-insight/source/src/index.ts)
+来源：[`packages/product-insight/source/src/index.ts:27`](../packages/product-insight/source/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
