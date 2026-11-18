@@ -19,6 +19,8 @@ export { fetchProductPages, sameProductPageFacts } from './page-fetch.ts'
 export type { ProductPageFetchAdapters, ProductPageFetchResult } from './page-fetch.ts'
 export { discoverOfficialLinks, OFFICIAL_FEED_PATHS } from './official-feed.ts'
 export type { OfficialFeedOptions, OfficialFeedResult, OfficialLink } from './official-feed.ts'
+export { MINIMUM_QUESTION_TERM_HITS, relevanceSignals, scoreCandidateRelevance } from './relevance.ts'
+export type { RelevanceCandidate, RelevanceSignals, RelevanceVerdict } from './relevance.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */
 export interface ProductSearchAttempt {
