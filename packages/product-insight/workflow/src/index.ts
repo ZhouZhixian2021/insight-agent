@@ -15,7 +15,7 @@ import { discoverCandidatePages, extractProductPageEvidence, fetchProductPages,
   splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS,
   type ProductDiscoveryResult, type ProductEvidenceDraft, type ProductPageFetchAdapters, type ProductPageFetchResult,
-  type ProductPageFragment,
+  type OfficialFeedResult, type OfficialLink, type ProductPageFragment,
 } from '@deepseek-ai/dsh-product-insight-source'
 import type { WebSearchRequest, WebSearchResult } from '@deepseek-ai/dsh-web'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
@@ -120,6 +120,9 @@ export interface ProductInvestigationAdapters {
   readonly web: ProductPageFetchAdapters['web'] & {
     search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>
   }
+  /** Reads the official site's feed or sitemap; omission keeps discovery limited to search. */
+  readonly officialFeed?: (url: string, accept: (link: OfficialLink) => boolean,
+    signal?: AbortSignal) => Promise<OfficialFeedResult>
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
   readonly readText: (contentRef: string) => Promise<string>
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
@@ -230,7 +233,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const operationSignal = deadline === undefined ? signal : signal === undefined
     ? deadline : AbortSignal.any([signal, deadline])
   const discovery = input.checkpoint?.discovery
-    ?? await discoverCandidatePages(input, { web: adapters.web, now: adapters.now }, operationSignal)
+    ?? await discoverCandidatePages(input, { web: adapters.web, now: adapters.now,
+      ...adapters.officialFeed === undefined ? {} : { officialFeed: adapters.officialFeed } }, operationSignal)
   const pages = input.checkpoint?.pages
     ?? await fetchProductPages(discovery.candidates.items, adapters, operationSignal, maximumPageCharacters)
   const sourceRevalidation = input.sourceRevalidation

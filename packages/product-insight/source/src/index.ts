@@ -5,6 +5,7 @@ import { createCandidatePageId, createProductBatchResult, createProductFailureId
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms } from './page-content.ts'
+import type { OfficialFeedResult, OfficialLink } from './official-feed.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
 export type { SearchObservation } from './search-recovery.ts'
@@ -16,6 +17,8 @@ export type { PreparedProductPage, ProductEvidenceDraft, ProductEvidenceExtracti
   ProductPageFragment, RejectedProductEvidenceDraft } from './page-content.ts'
 export { fetchProductPages, sameProductPageFacts } from './page-fetch.ts'
 export type { ProductPageFetchAdapters, ProductPageFetchResult } from './page-fetch.ts'
+export { discoverOfficialLinks, OFFICIAL_FEED_PATHS } from './official-feed.ts'
+export type { OfficialFeedOptions, OfficialFeedResult, OfficialLink } from './official-feed.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */
 export interface ProductSearchAttempt {
@@ -77,6 +80,9 @@ export interface ProductSearchAdapter {
 export interface ProductDiscoveryAdapters {
   readonly web: ProductSearchAdapter
   readonly now: () => string
+  /** Reads links the official site publishes; omission keeps discovery limited to search. */
+  readonly officialFeed?: (url: string, accept: (link: OfficialLink) => boolean,
+    signal?: AbortSignal) => Promise<OfficialFeedResult>
 }
 
 /**
@@ -130,6 +136,35 @@ function capSearchQuery(query: string, maximum: number): string {
   if (text.length <= maximum) return text
   const boundary = text.lastIndexOf(' ', maximum)
   return (boundary > 0 ? text.slice(0, boundary) : text.slice(0, maximum)).trim()
+}
+
+/**
+ * Distinctive product tokens that separate a product post from its vendor's other news.
+ *
+ * A token carrying a digit names a product line (`m6`, `iphone18`) but not the company, so an
+ * official feed published in another language still matches the English post. A name without
+ * such a token falls back to the whole name.
+ *
+ * @param product - Investigated product with its aliases.
+ * @returns Lowercase tokens to look for in an official link title or path.
+ */
+function productDesignators(product: Product): readonly string[] {
+  const names = [product.name, ...product.aliases ?? []]
+    .map(name => name.trim().toLocaleLowerCase()).filter(name => name.length > 0)
+  const marked = names.flatMap(name => name.split(/[^\p{L}\p{N}]+/u))
+    .filter(token => token.length >= 2 && /\d/u.test(token))
+  return [...new Set(marked.length > 0 ? marked : names)]
+}
+
+/**
+ * Decide whether an official feed link is about the product rather than the vendor's other news.
+ * @param link - Feed or sitemap link from the official site.
+ * @param designators - Tokens returned by {@link productDesignators}.
+ * @returns Whether the link title or path names the product line.
+ */
+function namesProductLine(link: OfficialLink, designators: readonly string[]): boolean {
+  const candidate = `${link.title ?? ''} ${new URL(link.url).pathname}`.toLocaleLowerCase()
+  return designators.some(token => candidate.includes(token))
 }
 
 /**
@@ -197,14 +232,14 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
       || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
         part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
-    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source),
+    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source), named,
       screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven) }
   }
   /** A site entry point sorts last, so a content page takes the candidate slot it would occupy. */
   const isEntrySource = (source: ReturnType<typeof screenSource>): boolean =>
     source.parsed !== null && (isNavigationPage(source.parsed) || isEntryPoint(source.parsed))
   const recordSource = ({ source, parsed, officialPage, registeredSite, engine, screening }: ReturnType<typeof screenSource>,
-    questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' => {
+    questionId: ProductQuestionId, channel?: string): 'recorded' | 'ignored' | 'limit' => {
     const key = candidateKey(source.url, parsed)
     const prior = candidates.get(key)
     const promoted = gap !== undefined && prior !== undefined && prior.screening.status !== 'selected'
@@ -228,7 +263,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       questionIds: [...new Set([...prior?.questionIds ?? [], questionId])], screening: { ...screening, screenedAt: adapters.now() },
       ...(officialPage ? { publisher: product.developer }
         : registeredSite === undefined ? {} : { publisher: registeredSite.name }),
-      discoveryChannel: engine === undefined ? 'web' : `web:${engine}` })
+      discoveryChannel: channel ?? (engine === undefined ? 'web' : `web:${engine}`) })
     return prior === undefined ? 'recorded' : 'ignored'
   }
   if (gap === undefined && !signal?.aborted) {
@@ -239,6 +274,22 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       const screened = screenSource(seed)
       if (screened.screening.status === 'excluded') continue
       for (const question of plan.questions) recordSource(screened, question.questionId)
+    }
+  }
+  // An official site publishes company-wide posts, so only titles and paths naming the product enter the pool.
+  if (gap === undefined && !signal?.aborted && adapters.officialFeed !== undefined) {
+    try {
+      const designators = productDesignators(product)
+      const accept = (link: OfficialLink): boolean => namesProductLine(link, designators)
+      const feed = await adapters.officialFeed(product.officialUrl, accept, signal)
+      for (const link of feed.links) {
+        if (!accept(link)) continue
+        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } })
+        if (screened.screening.status === 'excluded') continue
+        for (const question of plan.questions) recordSource(screened, question.questionId, 'official-feed')
+      }
+    } catch (error: unknown) {
+      failures.push(productFailure('discovery', errorCategory(error), errorMessage(error), adapters.now()))
     }
   }
   for (const question of gap === undefined ? plan.questions
