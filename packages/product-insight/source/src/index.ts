@@ -22,6 +22,8 @@ export { discoverOfficialLinks, OFFICIAL_FEED_PATHS } from './official-feed.ts'
 export type { OfficialFeedOptions, OfficialFeedResult, OfficialLink } from './official-feed.ts'
 export { MINIMUM_QUESTION_TERM_HITS, relevanceSignals, scoreCandidateRelevance } from './relevance.ts'
 export type { RelevanceCandidate, RelevanceSignals, RelevanceVerdict } from './relevance.ts'
+export { BING_NEWS_MARKET, BING_NEWS_RSS, discoverNewsLinks, newsFeedUrl } from './news-feed.ts'
+export type { NewsFeedOptions, NewsFeedResult } from './news-feed.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */
 export interface ProductSearchAttempt {
@@ -86,6 +88,9 @@ export interface ProductDiscoveryAdapters {
   /** Reads links the official site publishes; omission keeps discovery limited to search. */
   readonly officialFeed?: (url: string, accept: (link: OfficialLink) => boolean,
     signal?: AbortSignal) => Promise<OfficialFeedResult>
+  /** Reads one keyless news feed for the product name; omission leaves only search and the official source. */
+  readonly newsFeed?: (query: string, accept: (link: OfficialLink) => boolean,
+    signal?: AbortSignal) => Promise<readonly OfficialLink[]>
 }
 
 /**
@@ -301,6 +306,21 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } }, 'feed')
         if (screened.screening.status === 'excluded') continue
         for (const question of plan.questions) recordSource(screened, question.questionId, 'official-feed')
+      }
+    } catch (error: unknown) {
+      failures.push(productFailure('discovery', errorCategory(error), errorMessage(error), adapters.now()))
+    }
+  }
+  // A news feed ranks general stories above the product, so the pipe filters before it truncates.
+  if (gap === undefined && !signal?.aborted && adapters.newsFeed !== undefined) {
+    try {
+      const designators = productDesignators(product)
+      const accept = (link: OfficialLink): boolean => namesProductLine(link, designators)
+      for (const link of await adapters.newsFeed(product.name, accept, signal)) {
+        if (!accept(link)) continue
+        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } }, 'feed')
+        if (screened.screening.status === 'excluded') continue
+        for (const question of plan.questions) recordSource(screened, question.questionId, 'news-feed')
       }
     } catch (error: unknown) {
       failures.push(productFailure('discovery', errorCategory(error), errorMessage(error), adapters.now()))

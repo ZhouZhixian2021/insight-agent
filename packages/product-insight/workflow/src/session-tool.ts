@@ -9,7 +9,8 @@ import { JobId, type JobOutcome, type JobRegistry } from '@deepseek-ai/dsh-jobs'
 import { BlockAssembler, LlmError, type LlmCallConfig, type RequestUserInput } from '@deepseek-ai/dsh-llm'
 import type { CandidatePage, ProductClaim, ProductEvidence, ProductPlan,
   ProductQuestionId, SourceSnapshot } from '@deepseek-ai/dsh-product-insight-model'
-import { discoverOfficialLinks, fetchProductPages, productTextRange, resolveProductPageCharacterLimit, sameProductPageFacts,
+import { discoverNewsLinks, discoverOfficialLinks, fetchProductPages, productTextRange, resolveProductPageCharacterLimit,
+  sameProductPageFacts,
   type ProductEvidenceDraft, type ProductPageFetchResult, type ProductPageFragment } from '@deepseek-ai/dsh-product-insight-source'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
@@ -453,6 +454,14 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     discoverOfficialLinks(url, { fetch: (target, inner) => web.fetch({ url: target }, inner ?? signal),
       maximumLinks: OFFICIAL_FEED_MAXIMUM_LINKS, maximumProbes: OFFICIAL_FEED_MAXIMUM_PROBES, accept,
       ...signal === undefined ? {} : { signal } })
+  /** One news feed read; the feed itself returns only its newest items, so the bound stays small. */
+  const NEWS_FEED_MAXIMUM_LINKS = 6
+  const newsFeed: ProductInvestigationAdapters['newsFeed'] = async (query, accept, signal) =>
+    (await discoverNewsLinks(query, accept, { maximumLinks: NEWS_FEED_MAXIMUM_LINKS,
+      read: async (target, inner) => {
+        const page = await web.fetch({ url: target }, inner ?? signal)
+        return page.body.kind === 'html' || page.body.kind === 'text' ? page.body.content : undefined
+      } }, signal)).links
   const maximumPageCharacters = resolveProductPageCharacterLimit(plan)
   const texts = new Map<string, string>()
   const saved = events.findLast(event => event.type === 'product/checkpoint-v1'
@@ -545,7 +554,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     maxResultsPerQuery: 60, extractionMethod: { name: 'product-model', version: '1' },
     ...activeCheckpoint === undefined ? {} : { checkpoint: activeCheckpoint },
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation } }, {
-    web: productWeb, now, saveText, officialFeed,
+    web: productWeb, now, saveText, officialFeed, newsFeed,
     readText: (ref) => {
       const text = texts.get(ref)
       if (text === undefined) throw new Error('Saved product source text is unavailable')
