@@ -1174,7 +1174,7 @@ Source: [`packages/product-insight/workflow/src/background-run.ts:19`](../packag
 'product/checkpoint-v1': ProductInvestigationCheckpoint
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:78`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:79`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-request-v1--log-only"></a>
 
@@ -1192,7 +1192,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:78`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:81`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaim-review-result-v1--log-only"></a>
 
@@ -1210,7 +1210,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:89`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:90`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productclaims-v1--log-only"></a>
 
@@ -1221,7 +1221,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:89`](../packages
 'product/claims-v1': { planId: string; items: readonly ProductClaim[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:98`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:99`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-request-v1--log-only"></a>
 
@@ -1242,7 +1242,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:98`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:100`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:101`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productcross-check-result-v1--log-only"></a>
 
@@ -1261,7 +1261,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:100`](../package
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:112`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:113`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productevidence-v1--log-only"></a>
 
@@ -1272,7 +1272,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:112`](../package
 'product/evidence-v1': { planId: string; items: readonly ProductEvidence[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:74`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:75`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productextraction-inspection-v1--log-only"></a>
 
@@ -1291,7 +1291,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:74`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:65`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-request-v1--log-only"></a>
 
@@ -1311,7 +1311,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:64`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:44`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:45`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productmodel-result-v1--log-only"></a>
 
@@ -1329,7 +1329,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:44`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:55`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productpages-v1--log-only"></a>
 
@@ -1340,7 +1340,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:55`](../packages
 'product/pages-v1': { planId: string; candidates: readonly CandidatePage[]; snapshots: readonly SourceSnapshot[] }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:76`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:77`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productreport-v1--log-only"></a>
 
@@ -1351,7 +1351,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:76`](../packages
 'product/report-v1': { contentRef: string; planId: string; markdown: string }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:150`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:151`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productrun-settlement-v1--log-only"></a>
 
@@ -1370,7 +1370,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:150`](../package
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:152`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:153`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsearch-recognition-request-v1--log-only"></a>
 
@@ -1415,7 +1415,7 @@ Source: [`packages/product-insight/workflow/src/search-recognition.ts:22`](../pa
 'product/source-text-v1': { contentRef: string; candidatePageId: string; contentHash: string; text: string }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:43`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-request-v1--log-only"></a>
 
@@ -1435,7 +1435,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:42`](../packages
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:125`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productsynthesis-result-v1--log-only"></a>
 
@@ -1459,7 +1459,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:124`](../package
 }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:135`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:136`](../packages/product-insight/workflow/src/session-tool.ts)
 
 <a id="productverification-v1--log-only"></a>
 
@@ -1470,7 +1470,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:135`](../package
 'product/verification-v1': { planId: string; verification: ProductQuestionVerification }
 ```
 
-Source: [`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+Source: [`packages/product-insight/workflow/src/session-tool.ts:123`](../packages/product-insight/workflow/src/session-tool.ts)
 
 ### `request/*`
 
@@ -11709,7 +11709,7 @@ Array of [`ProductCrossSourceJudgment`](#persistence-type-sha256-bc35be9f30420ec
 
 SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
-Sources: [`packages/product-insight/source/src/index.ts:39`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:41`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11907,7 +11907,7 @@ Sources: [`packages/product-insight/model/src/types.ts:207`](../packages/product
 
 SHA-256: `ee613650103fabc796f81f2141e7cc8235635e1485f0b2dbcecb4c29fa11b143`
 
-Sources: [`packages/product-insight/source/src/index.ts:27`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:29`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16139,7 +16139,7 @@ SHA-256: `f90ebf3057700a9ec32e0b189f2605b09b41e1ee92a82661f6e4cea2a10063b7`
 
 SHA-256: `7975486284f2851e9d8355e5c3386cd20351ae3515b6bb32ccc06bc2f4b21f6a`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:64`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:65`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16157,7 +16157,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:64`](../package
 
 SHA-256: `44064bb7cd1fcef329bdf987d8c2e47608a158cbcff1e54181f2d77b1a7854ab`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:143`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:144`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16340,7 +16340,7 @@ SHA-256: `864f086999955e4f3d1cca2f217c16607a61dc068c4ec5348b3eb5b0c562078b`
 
 SHA-256: `5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:125`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16359,7 +16359,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:124`](../packag
 
 SHA-256: `be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:112`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:113`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16377,7 +16377,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:112`](../packag
 
 SHA-256: `de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:100`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:101`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16449,7 +16449,7 @@ Sources: [`packages/product-insight/model/src/types.ts:157`](../packages/product
 
 SHA-256: `0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:42`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:43`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16464,7 +16464,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:42`](../package
 
 SHA-256: `c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:55`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:56`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16497,7 +16497,7 @@ Sources: [`packages/product-insight/model/src/types.ts:171`](../packages/product
 
 SHA-256: `e355ee6a1067e87964f49d7a20c43786074f771b10f30d20e565f89b78b19743`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:44`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:45`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16515,7 +16515,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:44`](../package
 
 SHA-256: `75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:76`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:77`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -16853,7 +16853,7 @@ Sources: [`packages/academic/workflow/src/progress.ts:110`](../packages/academic
 
 SHA-256: `5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:150`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:151`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17103,7 +17103,7 @@ Sources: [`packages/core/session/src/types.ts:465`](../packages/core/session/src
 
 SHA-256: `7b72679f88690cda9ff470a30adda6f8c9c3ce047ff8d2a44c2fad62bb916759`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:135`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:136`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17133,7 +17133,7 @@ Sources: [`packages/core/session/src/types.ts:213`](../packages/core/session/src
 
 SHA-256: `035a4f4cb153fa0ec652d4f792b28f132e7cbe3238d4174f06cebcd657fe6eaf`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:89`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:90`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17441,7 +17441,7 @@ SHA-256: `e3e77b26f0148755a505f5b8ea843a3be117827d4703bb5754d9dc8ddbef521f`
 
 SHA-256: `bd767c9c20e550f33fb58313e930037dae8d5b10705511262a135826fdeaf7e9`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:69`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:70`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17507,7 +17507,7 @@ Sources: [`packages/core/session/src/types.ts:342`](../packages/core/session/src
 
 SHA-256: `92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:98`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:99`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17520,7 +17520,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:98`](../package
 
 SHA-256: `f5cd6876ce148d5950cd6e56f89b00ce0789f9a7e9e366f9f0b95c0d1bf51ac6`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:74`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:75`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19088,7 +19088,7 @@ SHA-256: `bea6038fa31125506cec429e87223c135d6fc1b7dcadf495d4c4b4deba0e6990`
 
 SHA-256: `72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:80`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:81`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19247,7 +19247,7 @@ SHA-256: `d62eb3ce49a3c505f82b1e86f554e82764ad4badd8bc26dab2db216a402eabed`
 
 SHA-256: `f14ae6587bdefc0e2a6763d7adfcb1a3f5b6d4a89cb6d12f0763780b88515d7f`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:152`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:153`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19264,7 +19264,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:152`](../packag
 
 SHA-256: `8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:122`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:123`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19324,7 +19324,7 @@ Array of [`{ question, windowIndexes, workVersionId }`](#persistence-type-sha256
 
 SHA-256: `b584979e40bb5db4bb401cd31cbf903caf4fc9644f2c139dd559b9697788cc61`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:145`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:146`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19345,7 +19345,7 @@ Array of [`{ questionId, reasons }`](#persistence-type-sha256-b584979e40bb5db4bb
 
 SHA-256: `d90920b14d3d321466273fbe9cf903f9e4fcac8f4f1ab67a63e81330ad50565e`
 
-Sources: [`packages/product-insight/workflow/src/session-tool.ts:159`](../packages/product-insight/workflow/src/session-tool.ts)
+Sources: [`packages/product-insight/workflow/src/session-tool.ts:160`](../packages/product-insight/workflow/src/session-tool.ts)
 
 | Property | Presence | Type |
 |---|---|---|

@@ -74,6 +74,34 @@ describe('product page discovery', () => {
     expect(result.candidates.failures.some(failure => failure.message.includes('feed blocked'))).toBe(true)
   })
 
+  it('records product posts from the news feed and drops unrelated stories', async () => {
+    const result = await discoverCandidatePages({
+      product: { ...product, name: 'Example M6', officialUrl: 'https://example.com/product' },
+      plan: { ...plan, focus: { categories: ['performance'] } }, maxResultsPerQuery: 5,
+    }, {
+      now,
+      web: { search: async () => ({ sources: [], truncated: false }) },
+      newsFeed: async (_query, accept) => [
+        { url: 'https://review.test/example-m6-review', title: 'Example M6 review' },
+        { url: 'https://news.test/currency', title: 'MYR to USD' },
+      ].filter(accept),
+    })
+    expect(result.candidates.items.map(page => [page.url, page.discoveryChannel])).toEqual([
+      ['https://example.com/product', 'web'],
+      ['https://review.test/example-m6-review', 'news-feed'],
+    ])
+  })
+
+  it('keeps searching when the news feed fails and reports the failure', async () => {
+    const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
+      now,
+      web: { search: async () => ({ sources: [{ url: 'https://review.test/specs' }], truncated: false }) },
+      newsFeed: async () => { throw new Error('news feed blocked') },
+    })
+    expect(result.candidates.items.map(page => page.url)).toContain('https://review.test/specs')
+    expect(result.candidates.failures.some(failure => failure.message.includes('news feed blocked'))).toBe(true)
+  })
+
   it('ignores planned links that only lead into site navigation', async () => {
     const result = await discoverCandidatePages({
       product, plan, maxResultsPerQuery: 5,
