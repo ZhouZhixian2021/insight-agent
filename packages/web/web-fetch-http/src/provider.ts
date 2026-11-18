@@ -137,6 +137,7 @@ export class HttpFetchProvider implements WebFetchProvider {
       if (route.proxied && !isNonPublicIpLiteral(url.hostname)) {
         if (this.limits.http1Only) {
           const { ProxyAgent } = await import('undici')
+          // proxy-exempt: the HTTP/1.1-only hop builds its agent from the route resolved above.
           const dispatcher = new ProxyAgent({ uri: route.proxy, allowH2: false })
           try {
             const result = await publicHttpNetwork.requestVia(dispatcher, url, headers, signal)

@@ -12232,9 +12232,6 @@ importers:
       '@deepseek-ai/dsh-product-insight-source':
         specifier: workspace:*
         version: link:../source
-      '@deepseek-ai/dsh-product-insight-workflow':
-        specifier: workspace:*
-        version: link:../workflow
       '@deepseek-ai/dsh-tool-ask-user':
         specifier: workspace:*
         version: link:../../interaction/tool-ask-user
@@ -12266,6 +12263,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-slots':
         specifier: workspace:*
         version: link:../../client/ui-slots
+      '@deepseek-ai/dsh-product-insight-workflow':
+        specifier: workspace:*
+        version: link:../workflow
       '@deepseek-ai/dsh-tools':
         specifier: workspace:*
         version: link:../../core/tools
