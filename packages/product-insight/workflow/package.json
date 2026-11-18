@@ -11,7 +11,7 @@
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/types/**/*.d.ts", "skills/product-insight-writing/SKILL.md"],
+  "files": ["lib/index.js", "skills/product-insight-writing/SKILL.md", "lib/types/**/*.d.ts"],
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",

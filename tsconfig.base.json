@@ -370,6 +370,7 @@
       "@deepseek-ai/dsh-academic-model/trace": ["./packages/academic/model/src/trace.ts"],
       "@deepseek-ai/dsh-product-insight-model": ["./packages/product-insight/model/src"],
       "@deepseek-ai/dsh-product-insight-bundle": ["./packages/product-insight/bundle/src"],
+      "@deepseek-ai/dsh-product-insight-bundle/client": ["./packages/product-insight/bundle/src/client/index.ts"],
       "@deepseek-ai/dsh-product-insight-source": ["./packages/product-insight/source/src"],
       "@deepseek-ai/dsh-product-insight-workflow": ["./packages/product-insight/workflow/src"],
       "@deepseek-ai/dsh-academic-workflow": ["./packages/academic/workflow/src"],

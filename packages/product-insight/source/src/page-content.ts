@@ -244,7 +244,7 @@ export async function prepareProductPdf(fetched: WebFetchResult, maximumCharacte
       ['datepublished', custom.get('sourcepublishedat') ?? xmp?.get('dcterms:issued')],
       ['datemodified', custom.get('sourceupdatedat') ?? xmp?.get('dcterms:modified')],
     ] as [string, unknown][]) {
-      const entry = Array.isArray(value) && value.length === 1 ? value[0] as unknown : value
+      const entry: unknown = Array.isArray(value) && value.length === 1 ? value[0] : value
       if (typeof entry === 'string' && entry.trim() && entry.trim().length <= 200) values.set(name, entry.trim())
     }
     const text = `\f${pages.join('\f')}`

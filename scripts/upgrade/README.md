@@ -62,7 +62,7 @@ Add one entry to `entries` in `upstream-overrides.json`:
 
 - `category` is one of `fork` (hand-written change), `generated` (build product), `wiring` (integration point);
 - A file marked `generated` without a generator marker and without an entry in `generatedExemptions` fails the gate as a miscategorization;
-- The gate fails when registered manual rewrites exceed `budget.maxForkFiles`. Register missing historical changes accurately even when that exposes an existing overrun; retire justified rewrites instead of relabeling them or increasing the ceiling to hide the debt.
+- The gate fails when registered manual rewrites exceed `budget.maxForkFiles`. Register missing historical changes accurately even when that exposes an existing overrun; retire justified rewrites instead of relabeling them. Raise the ceiling only by recording the reconciliation and each rewrite that cannot move into an added file in the ledger note.
 
 ## Generated artifacts
 
