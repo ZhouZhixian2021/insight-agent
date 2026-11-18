@@ -24,8 +24,8 @@
   en: e386e19c24138a3c
   zh: 0d8c7e4fc80d4c57
 /deepseek-ai-dsh-product-insight-workflow/model-experience:
-  en: 36f7616cd019cd9c
-  zh: 142f065c0538092e
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
 /deepseek-ai-dsh-product-insight-workflow/model-experience/search-recognition:
   en: 23a1a0aca515e702
   zh: 80d7e1b672420102
@@ -42,14 +42,14 @@
   en: 9b9060bdf390e992
   zh: 41f5b686ec34d305
 /deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/what-the-model-sees:
-  en: 19c4c9242e18ca2b
-  zh: 5fdbd211de0c7b18
+  en: bf58131d80a63cbd
+  zh: 924dd220b5f59d75
 /deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/token-effect:
-  en: a41a7406e266b21b
-  zh: f5a8ab925207e34a
+  en: 37929802a4dfa436
+  zh: 96a6b5152fa571be
 /deepseek-ai-dsh-product-insight-workflow/model-experience/product-evidence-extraction-and-writing/kv-cache-effect:
-  en: 8e7d5d60ccbaec77
-  zh: 52eb3853598f3708
+  en: 86c02d05112cac78
+  zh: 712268a322eace65
 /deepseek-ai-dsh-product-insight-workflow/known-limitations-and-deferred-work:
   en: 01dc2fe89a0e28a7
   zh: bd6a0fdb85f27ff0
