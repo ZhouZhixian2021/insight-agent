@@ -371,6 +371,12 @@ flowchart TD
     pkg_agent_preset_registry["agent-preset-registry"]
     pkg_persona["persona"]
   end
+  subgraph group_product_insight["packages/product-insight"]
+    pkg_product_insight_bundle["product-insight-bundle"]
+    pkg_product_insight_model["product-insight-model"]
+    pkg_product_insight_source["product-insight-source"]
+    pkg_product_insight_workflow["product-insight-workflow"]
+  end
   subgraph group_ptc_runtime["packages/ptc-runtime"]
     pkg_ptc_runtime["ptc-runtime"]
     pkg_ptc_runtime_node["ptc-runtime-node"]
@@ -501,6 +507,8 @@ flowchart TD
   pkg_anonymous_user_id --> pkg_home_paths
   pkg_lsp --> pkg_brand
   pkg_lsp --> pkg_llm
+  pkg_product_insight_model --> pkg_brand
+  pkg_product_insight_model --> pkg_util_crypto
   pkg_storage_domain --> pkg_storage
   pkg_storage_json --> pkg_storage
   pkg_storage_sqlite --> pkg_storage
@@ -593,6 +601,9 @@ flowchart TD
   pkg_experimental_translator --> pkg_timeout
   pkg_experimental_translator --> pkg_util_values
   pkg_host_product_telemetry_otel --> pkg_otel
+  pkg_product_insight_source --> pkg_product_insight_model
+  pkg_product_insight_source --> pkg_web
+  pkg_product_insight_source --> pkg_web_fetch_http
   pkg_ptc_runtime --> pkg_sandbox
   pkg_sandbox_local --> pkg_llm
   pkg_sandbox_local --> pkg_sandbox
@@ -1298,6 +1309,16 @@ flowchart TD
   pkg_webhook_github --> pkg_host_webserver
   pkg_webhook_github --> pkg_session
   pkg_webhook_github --> pkg_webhook
+  pkg_product_insight_workflow --> pkg_brand
+  pkg_product_insight_workflow --> pkg_jobs
+  pkg_product_insight_workflow --> pkg_llm
+  pkg_product_insight_workflow --> pkg_product_insight_model
+  pkg_product_insight_workflow --> pkg_product_insight_source
+  pkg_product_insight_workflow --> pkg_session
+  pkg_product_insight_workflow --> pkg_session_query
+  pkg_product_insight_workflow --> pkg_token_meter
+  pkg_product_insight_workflow --> pkg_tools
+  pkg_product_insight_workflow --> pkg_web
   pkg_goal_round_driver --> pkg_agent
   pkg_goal_round_driver --> pkg_goal
   pkg_goal_round_driver --> pkg_llm
@@ -1632,6 +1653,7 @@ flowchart TD
 | [`host-directory-picker-native`](../packages/host/directory-picker-native) | `host` | — |
 | [`host-open-in-app`](../packages/host/open-in-app) | `host` | — |
 | [`host-webserver`](../packages/host/webserver) | `host` | — |
+| [`product-insight-bundle`](../packages/product-insight/bundle) | `product-insight` | — |
 | [`session-format`](../packages/session/session-format) | `session` | — |
 | [`session-format-v0-to-v1`](../packages/session/session-format-v0-to-v1) | `session` | — |
 | [`session-format-v1-to-v2`](../packages/session/session-format-v1-to-v2) | `session` | — |
@@ -1659,6 +1681,7 @@ flowchart TD
 | [`credentials-local`](../packages/credentials/credentials-local) | `credentials` | [`atomic-write`](../packages/util/atomic-write), [`credentials`](../packages/credentials/credentials), [`home-paths`](../packages/util/home-paths), [`launch-environment`](../packages/util/launch-environment) |
 | [`anonymous-user-id`](../packages/identity/anonymous-user-id) | `identity` | [`brand`](../packages/util/brand), [`home-paths`](../packages/util/home-paths) |
 | [`lsp`](../packages/lsp/lsp) | `lsp` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm) |
+| [`product-insight-model`](../packages/product-insight/model) | `product-insight` | [`brand`](../packages/util/brand), [`util-crypto`](../packages/util/crypto) |
 | [`storage-domain`](../packages/storage/storage-domain) | `storage` | [`storage`](../packages/storage/storage) |
 | [`storage-json`](../packages/storage/storage-json) | `storage` | [`storage`](../packages/storage/storage) |
 | [`storage-sqlite`](../packages/storage/storage-sqlite) | `storage` | [`storage`](../packages/storage/storage) |
@@ -1708,6 +1731,7 @@ flowchart TD
 | [`experimental-speech-to-text`](../packages/experimental/speech-to-text) | `experimental` | [`settings`](../packages/settings/settings) |
 | [`experimental-translator`](../packages/experimental/translator) | `experimental` | [`credentials`](../packages/credentials/credentials), [`launch-environment`](../packages/util/launch-environment), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`timeout`](../packages/util/timeout), [`util-values`](../packages/util/values) |
 | [`host-product-telemetry-otel`](../packages/host/product-telemetry-otel) | `host` | [`otel`](../packages/telemetry/otel) |
+| [`product-insight-source`](../packages/product-insight/source) | `product-insight` | [`product-insight-model`](../packages/product-insight/model), [`web`](../packages/web/web), [`web-fetch-http`](../packages/web/web-fetch-http) |
 | [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime) | `ptc-runtime` | [`sandbox`](../packages/sandbox/sandbox) |
 | [`sandbox-local`](../packages/sandbox/sandbox-local) | `sandbox` | [`llm`](../packages/llm/llm), [`sandbox`](../packages/sandbox/sandbox), [`session`](../packages/core/session) |
 | [`session-persistence-jsonl`](../packages/session/session-persistence-jsonl) | `session` | [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence) |
@@ -1844,6 +1868,7 @@ flowchart TD
 | [`experimental-claude-code-mods`](../packages/experimental/claude-code-mods) | `experimental` | [`agent`](../packages/core/agent), [`commands`](../packages/interaction/commands), [`fs`](../packages/fs/fs), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`storage-domain`](../packages/storage/storage-domain), [`subprocess`](../packages/subprocess/subprocess), [`token-meter`](../packages/llm/token-meter), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol), [`user-questions`](../packages/interaction/user-questions), [`working-directory`](../packages/session/working-directory) |
 | [`tool-session-query`](../packages/experimental/tool-session-query) | `experimental` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`session-query`](../packages/session-query/session-query), [`system-prompt`](../packages/core/system-prompt), [`timeout`](../packages/util/timeout), [`tools`](../packages/core/tools) |
 | [`webhook-github`](../packages/experimental/webhook-github) | `experimental` | [`credentials`](../packages/credentials/credentials), [`host-webserver`](../packages/host/webserver), [`session`](../packages/core/session), [`webhook`](../packages/experimental/webhook) |
+| [`product-insight-workflow`](../packages/product-insight/workflow) | `product-insight` | [`brand`](../packages/util/brand), [`jobs`](../packages/jobs/jobs), [`llm`](../packages/llm/llm), [`product-insight-model`](../packages/product-insight/model), [`product-insight-source`](../packages/product-insight/source), [`session`](../packages/core/session), [`session-query`](../packages/session-query/session-query), [`token-meter`](../packages/llm/token-meter), [`tools`](../packages/core/tools), [`web`](../packages/web/web) |
 | [`goal-round-driver`](../packages/goal/goal-round-driver) | `goal` | [`agent`](../packages/core/agent), [`goal`](../packages/goal/goal), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent) |
 | [`subagent-acp`](../packages/subagent/subagent-acp) | `subagent` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`subagent-claude-code`](../packages/subagent/subagent-claude-code) | `subagent` | [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`subagent`](../packages/subagent/subagent), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
