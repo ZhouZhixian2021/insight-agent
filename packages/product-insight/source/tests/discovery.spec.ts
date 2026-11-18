@@ -46,6 +46,34 @@ describe('product page discovery', () => {
     expect(result.candidates.items.map(page => page.discoveryChannel)).toEqual(['web', 'web:yahoo'])
   })
 
+  it('records product posts from the official feed and drops the vendor\'s other news', async () => {
+    const result = await discoverCandidatePages({
+      product: { ...product, name: 'Example M6', officialUrl: 'https://example.com/product' },
+      plan, maxResultsPerQuery: 5,
+    }, {
+      now,
+      web: { search: async () => ({ sources: [], truncated: false }) },
+      officialFeed: async () => ({ notes: [], links: [
+        { url: 'https://example.com/newsroom/2026/11/example-introduces-m6/', title: 'Example introduces M6' },
+        { url: 'https://example.com/newsroom/2026/11/formula-1-this-weekend/', title: 'Formula 1 streams this weekend' },
+      ] }),
+    })
+    expect(result.candidates.items.map(page => [page.url, page.discoveryChannel])).toEqual([
+      ['https://example.com/product', 'web'],
+      ['https://example.com/newsroom/2026/11/example-introduces-m6/', 'official-feed'],
+    ])
+  })
+
+  it('keeps searching when the official feed fails and reports the failure', async () => {
+    const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
+      now,
+      web: { search: async () => ({ sources: [{ url: 'https://review.test/specs' }], truncated: false }) },
+      officialFeed: async () => { throw new Error('feed blocked') },
+    })
+    expect(result.candidates.items.map(page => page.url)).toContain('https://review.test/specs')
+    expect(result.candidates.failures.some(failure => failure.message.includes('feed blocked'))).toBe(true)
+  })
+
   it('ignores planned links that only lead into site navigation', async () => {
     const result = await discoverCandidatePages({
       product, plan, maxResultsPerQuery: 5,
