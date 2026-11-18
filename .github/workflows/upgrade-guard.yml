@@ -3,8 +3,8 @@ name: Upgrade guard
 # This fork rewrites files that also exist upstream. Every such file is
 # registered in scripts/upgrade/upstream-overrides.json with an owner and a
 # reason. The recorded budget matches the already merged fork surface and may
-# only shrink after the 2026-11-04 ledger reconciliation. This job keeps a new
-# rewrite from landing silently.
+# only shrink, except for a reconciliation recorded in the ledger note. This job
+# keeps a new rewrite from landing silently.
 #
 # It is a separate workflow on purpose: .github/workflows/ci.yml is itself one
 # of the registered rewrites, so adding steps there would grow the very surface

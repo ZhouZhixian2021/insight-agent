@@ -62,7 +62,7 @@ node scripts/upgrade/impact.mjs --fail-on-overlap
 
 - `category` 只能是 `fork`（手工改写）、`generated`（构建产物）、`wiring`（接入点）；
 - 标成 `generated` 但文件里没有生成标记、也不在 `generatedExemptions` 里，门禁会判为分类错误；
-- 已登记人工改写超过 `budget.maxForkFiles` 时检查失败。补登历史遗漏时仍需如实分类，即使这会暴露既有超额；应审查并退役确有替代的改写，不能靠改分类或提高上限隐藏维护债务。
+- 已登记人工改写超过 `budget.maxForkFiles` 时检查失败。补登历史遗漏时仍需如实分类，即使这会暴露既有超额；应审查并退役确有替代的改写，不能靠改分类隐藏维护债务。提高上限只能作为一种和解，需在登记表 note 中写明理由和每个无法迁入新增文件的改写。
 
 ## 生成物清单
 
