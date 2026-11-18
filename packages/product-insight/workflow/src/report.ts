@@ -1,5 +1,5 @@
 /** Evaluate delivery separately from investigation settlement and render only cited records. */
-import { checkProductClaimFreshness, type CandidatePage, type Product, type ProductClaim,
+import { checkProductClaimFreshness, type AvailableSourceSnapshot, type CandidatePage, type Product, type ProductClaim,
   type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
 import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
@@ -34,14 +34,48 @@ export interface ProductReportInput {
 
 /** Approved questions with reviewed source evidence and disclosed limitations. */
 export interface ProductSynthesisInput {
+  readonly sources?: readonly WritingSource[]
   readonly scope: string
   readonly sourceCriteria?: NonNullable<ProductPlan['sourceCriteria']>
   readonly questions: readonly {
     readonly questionId: string
     readonly question: string
     readonly limitations?: readonly string[]
-    readonly evidence: readonly Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt'>[]
+    readonly evidence: readonly WritingEvidence[]
   }[]
+}
+
+type WritingSource = Pick<CandidatePage, 'url' | 'title' | 'sourceType'>
+  & Pick<AvailableSourceSnapshot, 'declaredPublisher' | 'sourcePublishedAt' | 'sourceUpdatedAt' | 'observedAt' | 'productVersionLabel' | 'sourceRegionLabel'>
+  & { readonly sourceId: string; readonly discoveryPublisher?: string }
+type WritingEvidence = Pick<ProductEvidence, 'evidenceId' | 'sourcedStatement' | 'verbatimExcerpt' | 'readingContext'>
+  & { readonly sourceId?: string }
+
+/** Join reviewed evidence to its exact captured source, once per snapshot. */
+export function writingSources(items: readonly ProductEvidence[], candidates: readonly CandidatePage[],
+  snapshots: ProductPageFetchResult['snapshots']['items']): { sources: WritingSource[]; evidence: WritingEvidence[] } {
+  const pages = new Map(candidates.map(page => [page.candidatePageId, page]))
+  const versions = new Map(snapshots.map(snapshot => [snapshot.sourceSnapshotId, snapshot]))
+  const sources = new Map<string, WritingSource>()
+  const evidence = items.map(({ evidenceId, sourcedStatement, verbatimExcerpt, readingContext,
+    candidatePageId, sourceSnapshotId, contentHash }) => {
+    const page = pages.get(candidatePageId), snapshot = versions.get(sourceSnapshotId)
+    const item = { evidenceId, sourcedStatement, verbatimExcerpt, readingContext: readingContext ?? { origin: 'unknown' as const, conditionQuotes: [] } }
+    if (!page || snapshot?.status !== 'available' || snapshot.candidatePageId !== candidatePageId || snapshot.contentHash !== contentHash) return item
+    let source = sources.get(sourceSnapshotId)
+    if (!source) {
+      source = { sourceId: `P${sources.size + 1}`, url: page.url, sourceType: page.sourceType, observedAt: snapshot.observedAt,
+        ...page.title && { title: page.title }, ...page.publisher && { discoveryPublisher: page.publisher },
+        ...snapshot.declaredPublisher && { declaredPublisher: snapshot.declaredPublisher },
+        ...snapshot.sourcePublishedAt && { sourcePublishedAt: snapshot.sourcePublishedAt },
+        ...snapshot.sourceUpdatedAt && { sourceUpdatedAt: snapshot.sourceUpdatedAt },
+        ...snapshot.productVersionLabel && { productVersionLabel: snapshot.productVersionLabel },
+        ...snapshot.sourceRegionLabel && { sourceRegionLabel: snapshot.sourceRegionLabel } }
+      sources.set(sourceSnapshotId, source)
+    }
+    return { ...item, sourceId: source.sourceId }
+  })
+  return { sources: [...sources.values()], evidence }
 }
 
 /** Build source-supported writing material independently of final delivery status. */
@@ -54,6 +88,8 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
     && checkProductClaimFreshness(claim, input.plan, evidence, snapshots).status === 'current',
   )
   const eligibleIds = new Set(claims.flatMap(claim => claim.evidenceLinks.map(link => link.evidenceId)))
+  const writing = writingSources(input.evidence.filter(item => eligibleIds.has(item.evidenceId)),
+    input.discovery.candidates.items, input.pages.snapshots.items)
   const keys = keyProductClaims(input.plan, claims, input.evidence, input.discovery.candidates.items)
   const questions = input.plan.questions.map((question) => {
     const claim = keys.find(item => item.questionId === question.questionId)?.claim
@@ -78,10 +114,9 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       }
     }
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
-      evidence: input.evidence.filter(item => eligibleIds.has(item.evidenceId))
-        .map(({ evidenceId, sourcedStatement, verbatimExcerpt }) => ({ evidenceId, sourcedStatement, verbatimExcerpt })) }
+      evidence: writing.evidence }
   })
-  return { scope: input.plan.scope, questions,
+  return { scope: input.plan.scope, questions, sources: writing.sources,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
 }
 

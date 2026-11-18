@@ -188,6 +188,8 @@ export type ProductSourceLocator =
 
 /** Original page text tied to the exact observed content and investigation question. */
 export interface ProductEvidence {
+  /** Optional excerpt-grounded attribution and measurement context for synthesis. */
+  readonly readingContext?: ProductReadingContext
   readonly schemaVersion: 1
   readonly evidenceId: ProductEvidenceId
   readonly candidatePageId: CandidatePageId
@@ -199,6 +201,13 @@ export interface ProductEvidence {
   readonly locator: ProductSourceLocator
   readonly extractionMethod: { readonly name: string; readonly version: string }
   readonly qualityNotes?: readonly string[]
+}
+
+/** Claim attribution and measurement conditions grounded in the saved excerpt. */
+export interface ProductReadingContext {
+  readonly origin: 'vendor_statement' | 'author_measurement' | 'secondary_reporting' | 'reference_summary' | 'user_experience' | 'estimate' | 'unknown'
+  readonly originQuote?: string
+  readonly conditionQuotes: readonly string[]
 }
 
 /** The role one evidence record plays for a conclusion. */

@@ -133,7 +133,7 @@ export function inspectInsight(text: string, input: ProductSynthesisInput,
 export function insightRequest(input: ProductSynthesisInput, aliases: ReadonlyMap<string, string>,
   correction?: { issue: InsightIssue; sections: readonly InsightSection[] }): string {
   const reverse = new Map([...aliases].map(([alias, id]) => [id, alias]))
-  return JSON.stringify({ scope: input.scope, sourceCriteria: input.sourceCriteria,
+  return JSON.stringify({ scope: input.scope, sourceCriteria: input.sourceCriteria, sources: input.sources,
     researchQuestions: input.questions.map(({ questionId, question, limitations }) => ({ questionId, question, limitations })),
     evidence: insightEvidence(input).map(item => ({ ...item, evidenceId: reverse.get(item.evidenceId) ?? item.evidenceId })),
     ...correction === undefined ? {} : { correction: {

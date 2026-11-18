@@ -1,6 +1,6 @@
 /** Per-item extraction validation and request-local question aliases. */
 import { createHash } from 'node:crypto'
-import type { CandidatePage, ProductQuestionId } from '@deepseek-ai/dsh-product-insight-model'
+import type { CandidatePage, ProductQuestionId, ProductReadingContext } from '@deepseek-ai/dsh-product-insight-model'
 import type { ProductEvidenceDraft } from '@deepseek-ai/dsh-product-insight-source'
 
 type Question = { readonly questionId: ProductQuestionId; readonly text: string }
@@ -29,6 +29,20 @@ export function extractionQuestions(questions: readonly Question[]): readonly { 
 
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** Keep only attribution and condition quotes found verbatim in this evidence item. */
+export function readEvidenceContext(value: unknown, excerpt: string): ProductReadingContext | undefined {
+  if (!record(value)) return undefined
+  const exact = (quote: unknown): quote is string =>
+    typeof quote === 'string' && quote.trim().length > 0 && excerpt.includes(quote)
+  const origin = value.origin
+  const known = origin === 'vendor_statement' || origin === 'author_measurement' || origin === 'secondary_reporting'
+    || origin === 'reference_summary' || origin === 'user_experience' || origin === 'estimate'
+  const attribution = known && exact(value.originQuote)
+    ? { origin, originQuote: value.originQuote } as const : { origin: 'unknown' } as const
+  return { ...attribution, conditionQuotes: Array.isArray(value.conditionQuotes)
+    ? [...new Set(value.conditionQuotes.filter(exact))] : [] }
 }
 
 /**
@@ -69,7 +83,9 @@ export function inspectExtraction(text: string, questions: readonly Question[], 
     if (reason !== undefined) { issues.push({ index: issueIndex, reason, value: item }); continue }
     // Narrow again at the construction boundary instead of casting model-controlled fields.
     if (record(item) && typeof item.verbatimExcerpt === 'string' && typeof item.sourcedStatement === 'string') {
+      const readingContext = readEvidenceContext(item.readingContext, item.verbatimExcerpt)
       drafts.push({ verbatimExcerpt: item.verbatimExcerpt, sourcedStatement: item.sourcedStatement,
+        ...readingContext === undefined ? {} : { readingContext },
         questionIds: [...new Set(questionIds)], ...typeof item.startHint === 'number' ? { startHint: item.startHint } : {} })
     }
   }

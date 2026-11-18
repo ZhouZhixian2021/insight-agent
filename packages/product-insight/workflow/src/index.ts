@@ -247,9 +247,6 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const claims: ProductClaim[] = [...input.checkpoint?.claims ?? []]
   const verifications: ProductQuestionVerification[] = [...input.checkpoint?.verifications ?? []]
   const priorVerifications = input.checkpoint?.priorVerifications
-  // Keep a bounded look-ahead window. Commit in page order so existing recovery cursors remain valid.
-  type PrefetchedDrafts = { drafts: readonly ProductEvidenceDraft[] } | { error: unknown }
-  const prefetched = new Map<string, Promise<PrefetchedDrafts>>()
   const checkpoint = async (stage: ProductInvestigationCheckpoint['stage'], nextIndex: number,
     fragment?: { index: number; order: readonly number[] }): Promise<void> => {
     const saved: ProductInvestigationCheckpoint = { schemaVersion: checkpointVersion,
@@ -266,45 +263,39 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     await adapters.saveCheckpoint(saved)
     currentCheckpoint = saved
   }
-  const admitDrafts = (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    drafts: readonly ProductEvidenceDraft[], range: ProductPageFragment, allowance: number, label: string): void => {
-    if (drafts.length > allowance) throw new RangeError('Fragment exceeded its evidence draft allowance')
-    const located = drafts.map(draft => locateProductDraft(draft, range))
-    const extracted = extractProductPageEvidence(page, snapshot, text, located, input.extractionMethod)
-    for (const item of extracted.evidence) {
+  const appendEvidence = (items: readonly ProductEvidence[]): void => {
+    for (const item of items) {
       const fingerprint = productEvidenceFingerprint(item)
       if (evidenceFingerprints.has(fingerprint)) continue
       evidenceFingerprints.add(fingerprint)
       evidence.push(item)
     }
-    for (const rejected of extracted.rejected) {
-      failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
-        category: 'parse_failed', message: `${label}, draft ${rejected.draftIndex}: ${rejected.reason}`,
-        retryable: false, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-    }
   }
+  type ExtractionResult = { evidence: ProductEvidence[]; failures: ProductFailure[] }
   const extractFragment = async ({ page, snapshot, text }: {
     page: CandidatePage
     snapshot: AvailableSourceSnapshot
     text: string
   }, questions: ProductPlan['questions'], fragment: ProductPageFragment,
-  maximumDrafts: number, label: string, recoveryBudget: { remaining: number }, allowSplit: boolean): Promise<void> => {
+  maximumDrafts: number, label: string, recoveryBudget: { remaining: number }, result: ExtractionResult): Promise<void> => {
     const propose = async (range: ProductPageFragment, allowance: number, rangeLabel: string): Promise<void> => {
       operationSignal?.throwIfAborted()
-      const pending = prefetched.get(page.candidatePageId)
-      prefetched.delete(page.candidatePageId)
-      const result = pending === undefined ? undefined : await pending
-      if (result !== undefined && 'error' in result) throw result.error
-      const drafts = result?.drafts
-        ?? await adapters.proposeEvidence(page, range.text, questions, operationSignal, range, allowance)
+      const drafts = await adapters.proposeEvidence(page, range.text, questions, operationSignal, range, allowance)
       operationSignal?.throwIfAborted()
-      admitDrafts(page, snapshot, text, drafts, range, allowance, rangeLabel)
+      if (drafts.length > allowance) throw new RangeError('Fragment exceeded its evidence draft allowance')
+      const located = drafts.map(draft => locateProductDraft(draft, range))
+      const extracted = extractProductPageEvidence(page, snapshot, text, located, input.extractionMethod)
+      for (const item of extracted.evidence) result.evidence.push(item)
+      for (const rejected of extracted.rejected) {
+        result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
+          category: 'parse_failed', message: `${rangeLabel}, draft ${rejected.draftIndex}: ${rejected.reason}`,
+          retryable: false, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
+      }
     }
     const recordFailure = (error: unknown, rangeLabel: string): void => {
       if (operationSignal?.aborted) return
-      failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
-        category: 'unknown', message: allowSplit ? `${rangeLabel}: ${error instanceof Error ? error.message : String(error)}`
-          : 'Targeted extraction from a saved source did not complete.',
+      result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
+        category: 'unknown', message: `${rangeLabel}: ${error instanceof Error ? error.message : String(error)}`,
         retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
     }
     try { await propose(fragment, maximumDrafts, label) }
@@ -319,7 +310,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         } catch (retryError) { recordFailure(retryError, label) }
         return
       }
-      const children = allowSplit && maximumDrafts >= 2 && recovery === true && recoveryBudget.remaining >= 2
+      const children = maximumDrafts >= 2 && recovery === true && recoveryBudget.remaining >= 2
         ? splitFailedProductFragment(fragment) : null
       if (children === null) { recordFailure(error, label); return }
       recoveryBudget.remaining -= children.length
@@ -340,95 +331,121 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     const byPage = new Map(discovery.candidates.items.map(page => [page.candidatePageId, page]))
     const extractionStart = currentCheckpoint === undefined || currentCheckpoint.stage === 'pages' ? 0
       : currentCheckpoint.stage === 'evidence' ? currentCheckpoint.nextIndex : pages.snapshots.items.length
-    const prefetchPages = (start: number): void => {
-      // Historical explicitly windowed plans keep their fragment-level cursor and dispatch order.
-      if (input.plan.limits?.maximumPageCharacters !== undefined || operationSignal?.aborted) return
-      for (let next = start; next < pages.snapshots.items.length && prefetched.size < PRODUCT_EXTRACTION_CONCURRENCY; next++) {
-        const snapshot = pages.snapshots.items[next]
-        if (snapshot?.status !== 'available' || prefetched.has(snapshot.candidatePageId)) continue
+    const extractPage = async (index: number, result: ExtractionResult,
+      saveFragment?: (index: number, order: readonly number[]) => Promise<void>): Promise<void> => {
+      const snapshot = pages.snapshots.items[index]
+      if (snapshot === undefined) throw new RangeError('Recovery page index exceeds captured snapshots')
+      if (snapshot.status === 'available') {
         const page = byPage.get(snapshot.candidatePageId)
         if (page === undefined) throw new RangeError('Saved page has no discovered candidate')
-        const request = async (): Promise<readonly ProductEvidenceDraft[]> => {
-          operationSignal?.throwIfAborted()
-          const text = await adapters.readText(snapshot.contentRef)
-          operationSignal?.throwIfAborted()
-          if (!text.length || text.length > maximumPageCharacters) throw new RangeError('Saved product page text is invalid')
-          const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
-          return adapters.proposeEvidence(page, text, questions, operationSignal,
-            { start: 0, end: text.length, text }, Number.MAX_SAFE_INTEGER)
+        let text: string
+        try {
+          text = await adapters.readText(snapshot.contentRef)
+          if (text.length > maximumPageCharacters) {
+            throw new RangeError('Saved product page exceeds the approved text limit')
+          }
+          if (text.length === 0) throw new RangeError('Saved product page has no readable text')
+        } catch (error) {
+          if (operationSignal?.aborted) return
+          result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
+            category: 'unknown', message: error instanceof Error ? error.message : String(error),
+            retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
+          return
         }
-        // Attach rejection handling immediately, including for results waiting behind a slower earlier page.
-        prefetched.set(page.candidatePageId, request().then(drafts => ({ drafts }), (error: unknown) => ({ error })))
+        const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
+        const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
+          ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
+        const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
+          ? currentCheckpoint : undefined
+        const fragmentStart = savedPage?.fragmentIndex ?? 0
+        let order = savedPage?.fragmentOrder
+        if (order === undefined && checkpointVersion === 3) {
+          const covered = new Set(evidence.flatMap(item => item.questionIds))
+          const priority = questions.toSorted((left, right) =>
+            Number(covered.has(left.questionId)) - Number(covered.has(right.questionId)))
+          order = rankProductPageFragments(sourceFragments, priority.map(question => question.text)).map(fragment => fragment.start)
+        }
+        order ??= sourceFragments.map(fragment => fragment.start)
+        if (order.length !== sourceFragments.length || new Set(order).size !== order.length) {
+          throw new RangeError('Recovery fragment order does not match captured source text')
+        }
+        if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
+        const fragments = order.map((start) => {
+          const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
+          const fragment = sourceFragments[sourceIndex]
+          if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
+          return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
+        })
+        // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
+        const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
+        const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
+        for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
+          if (operationSignal?.aborted) break
+          const current = fragments[fragmentIndex]
+          if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
+          const { fragment, maximumDrafts } = current
+          await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
+            `Fragment ${fragmentIndex + 1}`, recoveryBudget, result)
+          if (operationSignal?.aborted) break
+          if (fragmentIndex + 1 < fragments.length) await saveFragment?.(fragmentIndex + 1, order)
+        }
       }
     }
-    try {
-      for (let index = extractionStart; index < pages.snapshots.items.length; index++) {
-        if (operationSignal?.aborted) break
-        prefetchPages(index)
-        const snapshot = pages.snapshots.items[index]
-        if (snapshot === undefined) throw new RangeError('Recovery page index exceeds captured snapshots')
-        if (snapshot.status === 'available') {
-          const page = byPage.get(snapshot.candidatePageId)
-          if (page === undefined) throw new RangeError('Saved page has no discovered candidate')
-          let text: string
-          try {
-            text = await adapters.readText(snapshot.contentRef)
-            if (text.length > maximumPageCharacters) {
-              throw new RangeError('Saved product page exceeds the approved text limit')
-            }
-            if (text.length === 0) throw new RangeError('Saved product page has no readable text')
-          } catch (error) {
-            if (operationSignal?.aborted) break
-            failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
-              category: 'unknown', message: error instanceof Error ? error.message : String(error),
-              retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
-            await checkpoint('evidence', index + 1)
-            continue
-          }
-          const questions = input.plan.questions.filter(question => page.questionIds.includes(question.questionId))
-          const sourceFragments = input.plan.limits?.maximumPageCharacters === undefined
-            ? [{ start: 0, end: text.length, text }] : splitProductPageText(text, fragmentOverlapCharacters)
-          const savedPage = currentCheckpoint?.stage === 'evidence' && index === currentCheckpoint.nextIndex
-            ? currentCheckpoint : undefined
-          const fragmentStart = savedPage?.fragmentIndex ?? 0
-          let order = savedPage?.fragmentOrder
-          if (order === undefined && checkpointVersion === 3) {
-            const covered = new Set(evidence.flatMap(item => item.questionIds))
-            const priority = questions.toSorted((left, right) =>
-              Number(covered.has(left.questionId)) - Number(covered.has(right.questionId)))
-            order = rankProductPageFragments(sourceFragments, priority.map(question => question.text)).map(fragment => fragment.start)
-          }
-          order ??= sourceFragments.map(fragment => fragment.start)
-          if (order.length !== sourceFragments.length || new Set(order).size !== order.length) {
-            throw new RangeError('Recovery fragment order does not match captured source text')
-          }
-          if (fragmentStart >= order.length) throw new RangeError('Recovery fragment index exceeds captured source text')
-          const fragments = order.map((start) => {
-            const sourceIndex = sourceFragments.findIndex(fragment => fragment.start === start)
-            const fragment = sourceFragments[sourceIndex]
-            if (fragment === undefined) throw new RangeError('Recovery fragment order does not match captured source text')
-            return { fragment, maximumDrafts: Number.MAX_SAFE_INTEGER }
-          })
-          // Reserve the initial calls and the maximum recovery cost of earlier dispatched windows.
-          const spent = fragments.slice(0, fragmentStart).reduce((sum, { maximumDrafts }) => sum + (maximumDrafts >= 2 ? 2 : 1), 0)
-          const recoveryBudget = { remaining: MAXIMUM_PAGE_EXTRACTION_CALLS - fragments.length - spent }
-          for (let fragmentIndex = fragmentStart; fragmentIndex < fragments.length; fragmentIndex++) {
-            if (operationSignal?.aborted) break
-            const current = fragments[fragmentIndex]
-            if (current === undefined) throw new RangeError('Recovery fragment index exceeds captured source text')
-            const { fragment, maximumDrafts } = current
-            await extractFragment({ page, snapshot, text }, questions, fragment, maximumDrafts,
-              `Fragment ${fragmentIndex + 1}`, recoveryBudget, true)
-            if (operationSignal?.aborted) break
-            if (fragmentIndex + 1 < fragments.length) await checkpoint('evidence', index, { index: fragmentIndex + 1, order })
-            else await checkpoint('evidence', index + 1)
-          }
-        }
-        else await checkpoint('evidence', index + 1)
+    const commitPage = (result: ExtractionResult): void => {
+      appendEvidence(result.evidence)
+      failures.push(...result.failures)
+      result.evidence.length = 0
+      result.failures.length = 0
+    }
+    if (input.plan.limits?.maximumPageCharacters !== undefined || currentCheckpoint?.fragmentIndex !== undefined) {
+      for (let index = extractionStart; index < pages.snapshots.items.length && !operationSignal?.aborted; index++) {
+        const result: ExtractionResult = { evidence: [], failures: [] }
+        await extractPage(index, result, async (fragmentIndex, order) => {
+          commitPage(result)
+          await checkpoint('evidence', index, { index: fragmentIndex, order })
+        })
+        commitPage(result)
+        if (!operationSignal?.aborted) await checkpoint('evidence', index + 1)
       }
-    } finally {
-      await Promise.allSettled(prefetched.values())
-      prefetched.clear()
+    } else {
+      // In-flight pages control dispatch. Buffered results only control the durable cursor.
+      type PageResult = { result: ExtractionResult } | { error: unknown }
+      const pending = new Map<number, Promise<PageResult>>()
+      const active = new Set<Promise<PageResult>>()
+      let next = extractionStart
+      let stopped = false
+      const fill = (): void => {
+        while (!stopped && !operationSignal?.aborted
+          && next < pages.snapshots.items.length && active.size < PRODUCT_EXTRACTION_CONCURRENCY) {
+          const index = next++
+          const result: ExtractionResult = { evidence: [], failures: [] }
+          const task = extractPage(index, result).then(() => ({ result }), (error: unknown) => ({ error }))
+            .then((settled) => {
+              active.delete(task)
+              if ('error' in settled) stopped = true
+              fill()
+              return settled
+            })
+          pending.set(index, task)
+          active.add(task)
+        }
+      }
+      fill()
+      try {
+        for (let index = extractionStart; index < pages.snapshots.items.length && !operationSignal?.aborted; index++) {
+          const task = pending.get(index)
+          if (task === undefined) throw new RangeError('Missing scheduled extraction page')
+          const settled = await task
+          pending.delete(index)
+          if ('error' in settled) throw settled.error
+          commitPage(settled.result)
+          if (operationSignal?.aborted) break
+          await checkpoint('evidence', index + 1)
+        }
+      } finally {
+        stopped = true
+        await Promise.allSettled(active)
+      }
     }
     await adapters.saveEvidence(evidence)
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex

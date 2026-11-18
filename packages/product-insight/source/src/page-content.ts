@@ -425,6 +425,7 @@ function stripMarkdownDestinations(text: string): string {
 
 /** A proposed excerpt from a model or human reviewer; never treated as evidence until verified. */
 export interface ProductEvidenceDraft {
+  readonly readingContext?: ProductEvidence['readingContext']
   readonly verbatimExcerpt: string
   readonly sourcedStatement: string
   readonly questionIds: readonly ProductQuestionId[]
@@ -490,7 +491,7 @@ ProductEvidenceExtractionResult {
       candidatePageId: candidate.candidatePageId, sourceSnapshotId: snapshot.sourceSnapshotId,
       contentHash: snapshot.contentHash, questionIds: [...new Set(draft.questionIds)],
       verbatimExcerpt: excerpt, sourcedStatement: draft.sourcedStatement.trim(),
-      locator,
+      locator, ...draft.readingContext === undefined ? {} : { readingContext: draft.readingContext },
       extractionMethod, ...(draft.qualityNotes === undefined ? {} : { qualityNotes: draft.qualityNotes }) })
   }
   return { evidence, rejected }

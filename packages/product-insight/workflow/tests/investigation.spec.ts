@@ -54,7 +54,7 @@ const adapters: ProductInvestigationAdapters = { now: () => '2026-11-06T00:00:00
   saveReport: async (markdown) => { reports.push(markdown); return 'report:1' } }
 
 describe('approved product investigation', () => {
-  it('extracts three full pages concurrently and commits out-of-order results in page order', async () => {
+  it('refills extraction slots before a slow earlier page and commits results in page order', async () => {
     const urls = Array.from({ length: 5 }, (_, index) => `https://example.com/page${index}`)
     const gates = urls.map(() => Promise.withResolvers<undefined>())
     const started: string[] = []
@@ -75,11 +75,11 @@ describe('approved product investigation', () => {
     const running = runProductInvestigation(input, setup)
     await vi.waitFor(() => { expect(started).toHaveLength(3) })
     gates[2]?.resolve(undefined)
+    await vi.waitFor(() => { expect(started).toHaveLength(4) })
     gates[1]?.resolve(undefined)
-    await vi.waitFor(() => { expect(active).toBe(1) })
+    await vi.waitFor(() => { expect(started).toHaveLength(5) })
     expect(checkpoints.at(-1)?.stage).toBe('pages')
     gates[0]?.resolve(undefined)
-    await vi.waitFor(() => { expect(started).toHaveLength(5) })
     gates[3]?.resolve(undefined)
     gates[4]?.resolve(undefined)
     const result = await running
