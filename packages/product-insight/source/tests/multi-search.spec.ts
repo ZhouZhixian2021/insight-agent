@@ -14,6 +14,15 @@ describe('direct multiple-engine product search', () => {
     expect(parseSearchResults('bing', response(bing(`https://www.bing.com/ck/a?u=${encoded}`)), 10).sources[0]?.url).toBe('https://example.com/spec')
     expect(parseSearchResults('yahoo', response(yahoo), 10).sources[0]).toEqual({ url: 'https://example.org/permissions', title: 'Permissions', snippet: 'Access details' })
   })
+  it('drops promoted result containers that reuse the organic markup', () => {
+    const page = `<ul>
+      <li class="b_algo"><h2><a href="https://example.com/spec">Product</a></h2><p>Official features</p></li>
+      <li class="b_algo b_ad"><h2><a href="https://shop.example/promo">Sponsored</a></h2><p>Buy now</p></li>
+      <li class="b_adBlock"><ul><li class="b_algo"><h2><a href="https://ads.example/nested">Nested ad</a></h2><p>Offer</p></li></ul></li>
+    </ul>`
+    expect(parseSearchResults('bing', response(page), 10).sources.map(source => source.url))
+      .toEqual(['https://example.com/spec'])
+  })
   it('accepts usable result content on non-200 responses across engines', () => {
     for (const status of [202, 403, 429, 503]) {
       expect(parseSearchResults('bing', response(bing('https://example.com/spec'), status), 5).sources).toHaveLength(1)

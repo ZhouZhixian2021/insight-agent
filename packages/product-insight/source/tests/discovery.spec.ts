@@ -263,7 +263,7 @@ describe('product page discovery', () => {
 describe('focus-directed discovery', () => {
   const focusPlan: ProductPlan = { ...plan, focus: { categories: ['performance', 'commercial'] } }
 
-  it('admits valid external pages even without a product-name match', async () => {
+  it('excludes an external page whose metadata names neither the product nor the question', async () => {
     const result = await discoverCandidatePages({ product, plan: focusPlan, maxResultsPerQuery: 5 }, {
       now, web: { search: async () => ({ sources: [
         { url: 'https://review.test/example', title: 'Example review' },
@@ -271,10 +271,10 @@ describe('focus-directed discovery', () => {
     })
     expect(result.candidates.items).toMatchObject([
       { url: 'https://review.test/example', sourceType: 'other', screening: { status: 'selected' } },
-      { url: 'https://unknown.test/article', screening: { status: 'selected' } },
+      { url: 'https://unknown.test/article', screening: { status: 'excluded' } },
     ])
-    expect(result.candidates.items[0]?.screening.reason).toContain('confirmed focus directions')
-    expect(result.candidates.items[1]?.screening.reason).toContain('full-text product relevance checking')
+    expect(result.candidates.items[0]?.screening.reason).toContain('names the product')
+    expect(result.candidates.items[1]?.screening.reason).toContain('neither the product nor')
   })
 
   it('reads a site the user named without requiring a product-name match', async () => {

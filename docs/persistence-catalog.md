@@ -11709,7 +11709,7 @@ Array of [`ProductCrossSourceJudgment`](#persistence-type-sha256-bc35be9f30420ec
 
 SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
-Sources: [`packages/product-insight/source/src/index.ts:36`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:39`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11907,7 +11907,7 @@ Sources: [`packages/product-insight/model/src/types.ts:207`](../packages/product
 
 SHA-256: `ee613650103fabc796f81f2141e7cc8235635e1485f0b2dbcecb4c29fa11b143`
 
-Sources: [`packages/product-insight/source/src/index.ts:24`](../packages/product-insight/source/src/index.ts)
+Sources: [`packages/product-insight/source/src/index.ts:27`](../packages/product-insight/source/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
