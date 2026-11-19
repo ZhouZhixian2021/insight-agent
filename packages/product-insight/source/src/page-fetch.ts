@@ -56,8 +56,14 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
   const acquire = async (candidate: CandidatePage) => {
     const prepare = (fetched: WebFetchResult) => {
       signal?.throwIfAborted()
-      if (new URL(fetched.url).hostname !== new URL(candidate.url).hostname) {
-        throw new RangeError('Product page redirected to a different host; review the publisher before using it')
+      // A redirector or media link lands on the publisher that actually serves
+      // the page, so a discovered page need not keep the host it was found on.
+      // The official page keeps its host: a redirect out of it would attribute
+      // the vendor's own page to someone else. The transport validates every
+      // hop, and the cited URL stays the one discovery recorded.
+      if (candidate.sourceType === 'official_product_page'
+        && new URL(fetched.url).hostname !== new URL(candidate.url).hostname) {
+        throw new RangeError('Product official page redirected to a different host; review the publisher before using it')
       }
       return fetched.body.kind === 'pdf' ? prepareProductPdf(fetched, maximumCharacters, signal)
         : prepareProductPage(fetched, maximumCharacters)

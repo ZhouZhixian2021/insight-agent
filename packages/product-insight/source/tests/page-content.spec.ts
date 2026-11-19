@@ -276,6 +276,14 @@ See https://example.com/legal.` } }, 36_000)
     expect(result.snapshots.failures[0]?.message).toMatch(/different host/u)
   })
 
+  it('reads a discovered page from the host a redirector sends it to', async () => {
+    const result = await fetchProductPages([{ ...candidate, sourceType: 'other' }], { now: () => '2026-11-06T00:00:00Z',
+      web: { fetch: async () => ({ ...fetched, url: 'https://publisher.example/features' }) },
+      saveText: async () => 'saved:ref' })
+    expect(result.snapshots.items).toMatchObject([{ status: 'available', contentRef: 'saved:ref' }])
+    expect(result.snapshots.failures).toEqual([])
+  })
+
   it('requires a start hint when an excerpt occurs twice', () => {
     const prepared = prepareProductPage({ ...fetched, body: { kind: 'text', content: 'Same. Same.' } })
     const snapshot: AvailableSourceSnapshot = { schemaVersion: 1,
