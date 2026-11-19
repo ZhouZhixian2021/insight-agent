@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { WebError, type WebFetchResult } from '@deepseek-ai/dsh-web'
-import { parseSearchResults, searchMultiple } from '../src/multi-search.ts'
+import { parseSearchResults, rotationOf, SearchEngineHealth, searchMultiple } from '../src/multi-search.ts'
 
 const response = (content: string, statusCode = 200): WebFetchResult => ({ url: 'https://example.com',
   statusCode, body: { kind: 'html', content }, truncated: false })
@@ -58,5 +58,41 @@ describe('direct multiple-engine product search', () => {
     const controller = new AbortController()
     const reason = new Error('Cancelled')
     await expect(searchMultiple('q', 5, ['bing'], async () => { controller.abort(reason); return response(bing('https://example.com')) }, controller.signal)).rejects.toBe(reason)
+  })
+  it('takes a failing engine out of the rotation until its cooldown ends', async () => {
+    let clock = 1_000
+    const health = new SearchEngineHealth({ failureThreshold: 2, cooldownMs: 60_000 }, () => clock)
+    expect(health.skips('bing')).toBe(false)
+    health.record('bing', false)
+    expect(health.skips('bing')).toBe(false)
+    health.record('bing', false)
+    expect(health.skips('bing')).toBe(true)
+    clock += 60_000
+    expect(health.skips('bing')).toBe(false)
+  })
+  it('clears the failure streak when an engine answers again', () => {
+    const health = new SearchEngineHealth({ failureThreshold: 2, cooldownMs: 60_000 }, () => 0)
+    health.record('yahoo', false)
+    health.record('yahoo', true)
+    health.record('yahoo', false)
+    expect(health.skips('yahoo')).toBe(false)
+  })
+  it('queries every engine again when the whole rotation is cooling down', () => {
+    const health = new SearchEngineHealth({ failureThreshold: 1, cooldownMs: 60_000 }, () => 0)
+    health.record('bing', false)
+    health.record('yahoo', false)
+    expect(rotationOf(['bing', 'yahoo'], health)).toEqual({ active: ['bing', 'yahoo'], skipped: [] })
+  })
+  it('reports the engines it skipped and queries the rest', async () => {
+    const health = new SearchEngineHealth({ failureThreshold: 1, cooldownMs: 60_000 }, () => 0)
+    health.record('yahoo', false)
+    const requested: string[] = []
+    const result = await searchMultiple('q', 5, ['bing', 'yahoo'], async (url) => {
+      requested.push(new URL(url).hostname)
+      return response(bing('https://example.com/spec'))
+    }, undefined, undefined, health)
+    expect(requested).toEqual(['www.bing.com'])
+    expect(result.sources).toHaveLength(1)
+    expect(result.content).toContain('冷却中跳过：yahoo')
   })
 })
