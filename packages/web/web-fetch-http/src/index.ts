@@ -36,8 +36,13 @@ export interface Config {
   maxBodyChars?: number
   /** Default fetch timeout in milliseconds, within Node's timer range. */
   timeoutMs?: number
-  /** Maximum number of same-origin redirect hops to follow. */
+  /** Maximum number of redirect hops to follow. */
   maxRedirects?: number
+  /**
+   * Whether a hop may leave the current origin. Off by default; only a caller
+   * that owns its own publisher attribution should turn it on.
+   */
+  followCrossOriginRedirects?: boolean
   /** `User-Agent` header sent on every request. */
   userAgent?: string
 }
@@ -47,6 +52,7 @@ export const Config: z<Config> = z.object({
   maxBodyChars: z.number().default(100_000),
   timeoutMs: z.number().default(30_000),
   maxRedirects: z.number().default(5),
+  followCrossOriginRedirects: z.boolean().default(false),
   userAgent: z.string().default(DEFAULT_USER_AGENT),
 })
 
@@ -88,6 +94,7 @@ export function apply(ctx: Context, config: Config): void {
     maxBodyChars: resolved.maxBodyChars,
     timeoutMs: resolved.timeoutMs,
     maxRedirects: resolved.maxRedirects,
+    followCrossOriginRedirects: resolved.followCrossOriginRedirects,
     userAgent: resolved.userAgent,
   }
   ctx.web.registerFetchProvider(new HttpFetchProvider(limits))

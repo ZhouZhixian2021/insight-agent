@@ -25,7 +25,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount the provider in a composition that already loads the web service; it registers as the `http` fetch provider, so `ctx.web.fetch()` resolves it automatically when it is the only usable fetch backend — or pin it with `fetchProvider: http`.
+Mount the provider in a composition that already loads the web service; it registers as the `http` fetch provider, so `ctx.web.fetch()` resolves it automatically when it is the only usable fetch backend 鈥?or pin it with `fetchProvider: http`.
 
 ### When to choose it
 
@@ -44,9 +44,10 @@ Load the web service and the provider; configurable limits have safe defaults an
 |---|---|---|
 | `maxResponseBytes` | `5,000,000` | Maximum response body size in bytes |
 | `maxBodyChars` | `100,000` | Maximum decoded body length in characters |
-| `timeoutMs` | `30,000` | Fetch timeout — a resource backstop, not the model-facing tool budget |
-| `maxRedirects` | `5` | Maximum same-origin redirect hops (`0` follows none) |
-| `userAgent` | `deepseek-harness/…` | `User-Agent` header sent on every request |
+| `timeoutMs` | `30,000` | Fetch timeout 鈥?a resource backstop, not the model-facing tool budget |
+| `maxRedirects` | `5` | Maximum redirect hops (`0` follows none) |
+| `followCrossOriginRedirects` | `false` | Let a hop leave the current origin; a caller that owns its own publisher attribution turns it on |
+| `userAgent` | `deepseek-harness/鈥 | `User-Agent` header sent on every request |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-fetch-http) is the exhaustive source for every accepted field and its JSDoc.
 
@@ -73,7 +74,7 @@ Failures throw `WebError` with a machine-routable code: `WEB_INVALID_URL`, `WEB_
 ## Understand the implementation
 
 <details>
-<summary>Implementation internals — click to expand</summary>
+<summary>Implementation internals 鈥?click to expand</summary>
 
 This section explains the design decisions behind the provider; the observable behavior is fully covered in [Use this package](#use-this-package).
 
@@ -106,12 +107,12 @@ A fetch validates the URL, resolves the hostname once, rejects the complete answ
 
 Read these pages when the package-level contract is not enough. They move from the shared vocabulary to the service, the model-facing tools, and the design rationale.
 
-- [Web subsystem](../../../docs/subsystems/web.md) — the exhaustive fetch request/result vocabulary and error codes.
-- [Web package map](../README.md) — the six-package family and each role.
-- [dsh-web](../web/README.md) — the web service this provider registers into.
-- [dsh-tool-web](../tool-web/README.md) — the model-facing `web_fetch` tool that renders this provider's bodies.
-- [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-fetch-http) — every accepted config field and its source declaration.
-- [Web capability seam decision](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md) — why search and fetch share one provider-selection service.
+- [Web subsystem](../../../docs/subsystems/web.md) 鈥?the exhaustive fetch request/result vocabulary and error codes.
+- [Web package map](../README.md) 鈥?the six-package family and each role.
+- [dsh-web](../web/README.md) 鈥?the web service this provider registers into.
+- [dsh-tool-web](../tool-web/README.md) 鈥?the model-facing `web_fetch` tool that renders this provider's bodies.
+- [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-fetch-http) 鈥?every accepted config field and its source declaration.
+- [Web capability seam decision](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md) 鈥?why search and fetch share one provider-selection service.
 
 -----
 
@@ -131,14 +132,14 @@ No direct invalidation; the named consumer owns any request-prefix changes.
 
 These limits define when the provider is unsafe or a poor fit. They are current package constraints.
 
-- **PDF is not parsed here** — `application/pdf` returns bounded bytes; text extraction and scanned-document OCR belong to consumers. A missing `Content-Type` or any other binary type throws `WEB_UNSUPPORTED_CONTENT_TYPE`.
-- **Charset comes only from the `Content-Type` header** (UTF-8 default) — an HTML `<meta charset>` declaration is ignored, and a declared-but-unrecognized charset label throws rather than falling back.
+- **PDF is not parsed here** 鈥?`application/pdf` returns bounded bytes; text extraction and scanned-document OCR belong to consumers. A missing `Content-Type` or any other binary type throws `WEB_UNSUPPORTED_CONTENT_TYPE`.
+- **Charset comes only from the `Content-Type` header** (UTF-8 default) 鈥?an HTML `<meta charset>` declaration is ignored, and a declared-but-unrecognized charset label throws rather than falling back.
 
 <a id="dev-note"></a>
 ### Dev Note
 
 <details>
-<summary>Working context for maintainers — click to expand</summary>
+<summary>Working context for maintainers 鈥?click to expand</summary>
 
 None.
 

@@ -123,6 +123,9 @@ export interface ProductInvestigationAdapters {
   /** Reads the official site's feed or sitemap; omission keeps discovery limited to search. */
   readonly officialFeed?: (url: string, accept: (link: OfficialLink) => boolean,
     signal?: AbortSignal) => Promise<OfficialFeedResult>
+  /** Reads one keyless news feed for the product name; omission leaves search and the official source. */
+  readonly newsFeed?: (query: string, accept: (link: OfficialLink) => boolean,
+    signal?: AbortSignal) => Promise<readonly OfficialLink[]>
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
   readonly readText: (contentRef: string) => Promise<string>
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
@@ -234,7 +237,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     ? deadline : AbortSignal.any([signal, deadline])
   const discovery = input.checkpoint?.discovery
     ?? await discoverCandidatePages(input, { web: adapters.web, now: adapters.now,
-      ...adapters.officialFeed === undefined ? {} : { officialFeed: adapters.officialFeed } }, operationSignal)
+      ...adapters.officialFeed === undefined ? {} : { officialFeed: adapters.officialFeed },
+      ...adapters.newsFeed === undefined ? {} : { newsFeed: adapters.newsFeed } }, operationSignal)
   const pages = input.checkpoint?.pages
     ?? await fetchProductPages(discovery.candidates.items, adapters, operationSignal, maximumPageCharacters)
   const sourceRevalidation = input.sourceRevalidation

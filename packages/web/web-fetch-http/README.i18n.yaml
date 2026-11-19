@@ -15,14 +15,14 @@
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-web-fetch-http/use-this-package:
-  en: 630b12516d53e905
+  en: 932ac7a13b6c4599
   zh: eed124cfe9c8dc1f
 /deepseek-ai-dsh-web-fetch-http/use-this-package/when-to-choose-it:
   en: eb52e77279c21d6f
   zh: 0560e89caa377bfc
 /deepseek-ai-dsh-web-fetch-http/use-this-package/minimal-configuration:
-  en: e4534189d5230861
-  zh: 5905731d7b5d9c60
+  en: ed14f109bea332b2
+  zh: b4b4f4777985fa83
 /deepseek-ai-dsh-web-fetch-http/use-this-package/what-a-fetch-returns:
   en: 02c7875efd7e5f09
   zh: 4ab3dc08b389ad1b
@@ -33,7 +33,7 @@
   en: 35407f106dc65deb
   zh: 02118072fba68b8f
 /deepseek-ai-dsh-web-fetch-http/understand-the-implementation:
-  en: 9842c69ad3636bb3
+  en: 373fb05bdb25a4ee
   zh: 3cdc3f816cbdd0cb
 /deepseek-ai-dsh-web-fetch-http/understand-the-implementation/design-philosophy:
   en: 0a27b33f9ec2fd77
@@ -45,7 +45,7 @@
   en: cf3fcc77b84ad938
   zh: f1bcf0c6864e49f4
 /deepseek-ai-dsh-web-fetch-http/further-exploration:
-  en: eeaaf0b455673a1c
+  en: 6e628067c8aa40d0
   zh: 0874f9f44ff9a220
 /deepseek-ai-dsh-web-fetch-http/model-experience:
   en: 23b7aff191aeb78f
@@ -54,8 +54,8 @@
   en: 40294c1c31b74824
   zh: d75d48f485447a74
 /deepseek-ai-dsh-web-fetch-http/known-limitations-and-deferred-work:
-  en: 9f0f7d293bd4c05f
+  en: c9410fe8ae740963
   zh: 843def0ed7ce3090
 /deepseek-ai-dsh-web-fetch-http/known-limitations-and-deferred-work/dev-note:
-  en: e67f633dc6fe7773
+  en: 5f18572cc74d4428
   zh: 3bb0c20c93f16f98

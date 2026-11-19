@@ -36,7 +36,7 @@ describe('free product search', () => {
     const fiber = await ctx.plugin(provider, {
       searchHttp1Only: true,
       browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
-      browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
+      browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
       timeoutMs: 25000, maximumResponseBytes: 5_000_000,
       maximumBodyCharacters: 500_000, maximumSearchResults: 10,
     })
@@ -59,7 +59,7 @@ describe('free product search', () => {
       const fiber = await ctx.plugin(provider, {
         searchHttp1Only: true,
         browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
-        browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
+        browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
         timeoutMs: 25000, maximumResponseBytes: 5_000_000,
         maximumBodyCharacters: 500_000, maximumSearchResults: 10,
       })
@@ -85,7 +85,7 @@ describe('free product search', () => {
       const fiber = await ctx.plugin(provider, {
         searchHttp1Only: true,
         browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
-        browserMaximumRequests: 60, browserMinimumTextCharacters: 300,
+        browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
         timeoutMs: 25000, maximumResponseBytes: 5_000_000,
         maximumBodyCharacters: 500_000, maximumSearchResults: 10,
       })

@@ -74,6 +74,34 @@ describe('product page discovery', () => {
     expect(result.candidates.failures.some(failure => failure.message.includes('feed blocked'))).toBe(true)
   })
 
+  it('records product posts from the news feed and drops unrelated stories', async () => {
+    const result = await discoverCandidatePages({
+      product: { ...product, name: 'Example M6', officialUrl: 'https://example.com/product' },
+      plan: { ...plan, focus: { categories: ['performance'] } }, maxResultsPerQuery: 5,
+    }, {
+      now,
+      web: { search: async () => ({ sources: [], truncated: false }) },
+      newsFeed: async (_query, accept) => [
+        { url: 'https://review.test/example-m6-review', title: 'Example M6 review' },
+        { url: 'https://news.test/currency', title: 'MYR to USD' },
+      ].filter(accept),
+    })
+    expect(result.candidates.items.map(page => [page.url, page.discoveryChannel])).toEqual([
+      ['https://example.com/product', 'web'],
+      ['https://review.test/example-m6-review', 'news-feed'],
+    ])
+  })
+
+  it('keeps searching when the news feed fails and reports the failure', async () => {
+    const result = await discoverCandidatePages({ product, plan, maxResultsPerQuery: 5 }, {
+      now,
+      web: { search: async () => ({ sources: [{ url: 'https://review.test/specs' }], truncated: false }) },
+      newsFeed: async () => { throw new Error('news feed blocked') },
+    })
+    expect(result.candidates.items.map(page => page.url)).toContain('https://review.test/specs')
+    expect(result.candidates.failures.some(failure => failure.message.includes('news feed blocked'))).toBe(true)
+  })
+
   it('ignores planned links that only lead into site navigation', async () => {
     const result = await discoverCandidatePages({
       product, plan, maxResultsPerQuery: 5,
@@ -263,7 +291,7 @@ describe('product page discovery', () => {
 describe('focus-directed discovery', () => {
   const focusPlan: ProductPlan = { ...plan, focus: { categories: ['performance', 'commercial'] } }
 
-  it('admits valid external pages even without a product-name match', async () => {
+  it('excludes an external page whose metadata names neither the product nor the question', async () => {
     const result = await discoverCandidatePages({ product, plan: focusPlan, maxResultsPerQuery: 5 }, {
       now, web: { search: async () => ({ sources: [
         { url: 'https://review.test/example', title: 'Example review' },
@@ -271,10 +299,10 @@ describe('focus-directed discovery', () => {
     })
     expect(result.candidates.items).toMatchObject([
       { url: 'https://review.test/example', sourceType: 'other', screening: { status: 'selected' } },
-      { url: 'https://unknown.test/article', screening: { status: 'selected' } },
+      { url: 'https://unknown.test/article', screening: { status: 'excluded' } },
     ])
-    expect(result.candidates.items[0]?.screening.reason).toContain('confirmed focus directions')
-    expect(result.candidates.items[1]?.screening.reason).toContain('full-text product relevance checking')
+    expect(result.candidates.items[0]?.screening.reason).toContain('names the product')
+    expect(result.candidates.items[1]?.screening.reason).toContain('neither the product nor')
   })
 
   it('reads a site the user named without requiring a product-name match', async () => {
