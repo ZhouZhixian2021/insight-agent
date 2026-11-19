@@ -33,6 +33,8 @@ export interface Config {
   browserTimeoutMs: number
   browserMaximumRequests: number
   browserMinimumTextCharacters: number
+  /** Whether a page fetch may follow a redirect onto another host (redirector and media links do). */
+  followPageRedirects: boolean
 }
 
 export const Config: z<Config> = z.object({
@@ -49,6 +51,7 @@ export const Config: z<Config> = z.object({
   browserTimeoutMs: z.number().default(30000),
   browserMaximumRequests: z.number().default(60),
   browserMinimumTextCharacters: z.number().default(300),
+  followPageRedirects: z.boolean().default(true),
 })
 
 /**
@@ -71,11 +74,12 @@ export function apply(ctx: Context, config: Config): void {
     }
   }
   const http = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
-    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5,
+    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, followCrossOriginRedirects: config.followPageRedirects,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
   ctx.web.registerFetchProvider(http)
   const browserAgent = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
-    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, userAgent: BLOCKED_PAGE_USER_AGENT })
+    maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, followCrossOriginRedirects: config.followPageRedirects,
+    userAgent: BLOCKED_PAGE_USER_AGENT })
   const searchHttp = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
     maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, http1Only: config.searchHttp1Only,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })

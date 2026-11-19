@@ -375,6 +375,19 @@ describe('HttpFetchProvider redirects', () => {
     expect(result.url).toBe(`${base}/end`)
   })
 
+  it('follows a cross-origin redirect when the caller opted in', async () => {
+    let target = 0
+    handler = (req, res) => {
+      if (new URL(req.url ?? '/', base).pathname === '/jump') { res.writeHead(302, { location: '/landed' }); res.end(); return }
+      target++
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+      res.end('<p>landed</p>')
+    }
+    const page = await provider({ followCrossOriginRedirects: true }).fetch({ url: `${base.replace('127.0.0.1', 'localhost')}/jump` })
+    expect(target).toBe(1)
+    expect(page.url.endsWith('/landed')).toBe(true)
+  })
+
   it('blocks a cross-origin redirect with WEB_REDIRECT_BLOCKED', async () => {
     handler = (_req, res) => { res.writeHead(302, { location: 'https://example.com/' }); res.end() }
     await expect(provider().fetch({ url: base }))

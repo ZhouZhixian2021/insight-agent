@@ -25,8 +25,15 @@ export interface HttpFetchLimits {
   maxBodyChars: number
   /** Default fetch timeout in milliseconds. */
   timeoutMs: number
-  /** Maximum number of (same-origin) redirect hops to follow. */
+  /** Maximum number of redirect hops to follow. */
   maxRedirects: number
+  /**
+   * Whether a hop may leave the current origin. Off by default: a public fetch
+   * that silently lands on another publisher would misattribute what it read.
+   * Media and redirector links cross origins by design, so a caller that owns
+   * the citation policy enables it deliberately.
+   */
+  followCrossOriginRedirects?: boolean
   /** `User-Agent` header sent on every request. */
   userAgent: string
 }
@@ -93,7 +100,7 @@ export class HttpFetchProvider implements WebFetchProvider {
           let validatedTarget: URL
           try {
             validatedTarget = validateFetchUrl(target.toString())
-            if (!isSameOrigin(validatedTarget, currentUrl)) {
+            if (!isSameOrigin(validatedTarget, currentUrl) && this.limits.followCrossOriginRedirects !== true) {
               throw new WebError(
                 `cross-origin redirect to ${validatedTarget.origin} is not followed automatically; retry against that URL directly`,
                 'WEB_REDIRECT_BLOCKED',

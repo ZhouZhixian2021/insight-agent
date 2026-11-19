@@ -24,7 +24,10 @@ export interface BrowserReadOptions {
 export async function readProductBrowserPage(url: string, initial: WebFetchResult,
   fetch: (url: string, signal: AbortSignal) => Promise<WebFetchResult>, options: BrowserReadOptions,
   signal?: AbortSignal): Promise<WebFetchResult> {
-  const timeout = AbortSignal.timeout(options.timeoutMs)
+  // Navigation and the text wait run one after the other, so the budget that
+  // closes the browser covers both; a single phase timeout would otherwise end
+  // the read while the text wait is still running.
+  const timeout = AbortSignal.timeout(options.timeoutMs * 2)
   const active = signal ? AbortSignal.any([signal, timeout]) : timeout
   active.throwIfAborted()
   const browser = await chromium.launch({ channel: options.channel, headless: true, timeout: options.timeoutMs })
@@ -65,9 +68,18 @@ export async function readProductBrowserPage(url: string, initial: WebFetchResul
       return work
     })
     const page = await context.newPage()
-    await page.goto(url, { waitUntil: 'networkidle', timeout: options.timeoutMs })
-    await page.waitForFunction(`document.body && document.body.innerText.trim().length >= ${options.minimumTextCharacters}`,
-      undefined, { timeout: options.timeoutMs })
+    try {
+      // Content readiness is decided by the text wait below; 'networkidle' never
+      // settles on ad-heavy news sites and spends the whole budget waiting.
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.timeoutMs })
+      await page.waitForFunction(`document.body && document.body.innerText.trim().length >= ${options.minimumTextCharacters}`,
+        undefined, { timeout: options.timeoutMs })
+    } catch (error) {
+      // Our own abort closes the browser under the pending call, so Playwright
+      // reports "browser has been closed" instead of what actually stopped it.
+      if (active.aborted) throw active.reason ?? error
+      throw error
+    }
     active.throwIfAborted()
     if (resourceFailure) throw resourceFailure
     const visibleText = await page.locator('body').innerText()
