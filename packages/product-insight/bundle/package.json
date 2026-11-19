@@ -60,7 +60,6 @@
     "@deepseek-ai/dsh-tool-ask-user": "workspace:*",
     "@deepseek-ai/dsh-tool-web": "workspace:*",
     "@deepseek-ai/dsh-product-insight-source": "workspace:*",
-    "@deepseek-ai/dsh-product-insight-workflow": "workspace:*",
     "@deepseek-ai/dsh-web": "workspace:*"
   },
   "peerDependencies": {
