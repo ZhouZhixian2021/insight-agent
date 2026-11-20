@@ -18,6 +18,18 @@ const fetched = { url: candidate.url, statusCode: 200, truncated: false,
   body: { kind: 'html' as const, content: '<article><h1>Features</h1><p>Fast search &amp; export.</p><script>ignore</script></article>' } }
 
 describe('product page evidence', () => {
+  it('retains article figure context without changing the saved text', async () => {
+    const content = '<article><h2>Benchmark</h2><p>Three runs.</p><figure><img src="/chart.png">'
+      + '<figcaption>Seconds</figcaption></figure><nav><img src="/menu.png"></nav></article>'
+    const page = { ...fetched, body: { kind: 'html' as const, content } }
+    let saved = ''
+    const result = await fetchProductPages([candidate], { web: { fetch: async () => page },
+      now: () => candidate.discoveredAt, saveText: async (_page, text) => { saved = text; return 'stored' } })
+    expect(saved).toBe(prepareProductPage(page).text)
+    expect(result.images).toEqual([{ pageUrl: candidate.url, imageUrl: 'https://example.com/chart.png',
+      caption: 'Seconds', context: 'Benchmark\nThree runs.' }])
+  })
+
   it('rotates ranked windows across approved questions and leaves unmatched text in source order', () => {
     const windows = ['General context.', 'Export settings.', '价格为十元。', 'Export formats and settings.', 'Other details.']
       .map((text, index) => ({ start: index * 100, end: index * 100 + text.length, text }))

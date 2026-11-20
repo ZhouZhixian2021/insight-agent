@@ -366,6 +366,54 @@ function findReadingRoot(document: DefaultTreeAdapterTypes.Document): DefaultTre
   return main
 }
 
+/** Article image plus adjacent author-supplied context. */
+export interface ProductPageImage {
+  pageUrl: string
+  imageUrl: string
+  caption: string
+  context: string
+}
+
+/** Read article figures in document order, resolving public addresses against the fetched page. */
+export function productPageImages(html: string, pageUrl: string): ProductPageImage[] {
+  const doc = parse(html)
+  const root = findReadingRoot(doc)
+  const items: ProductPageImage[] = []
+  const seen = new Set<string>()
+  let heading = '', previous = ''
+  type Node = DefaultTreeAdapterTypes.ChildNode
+  function visible(node: Node): string {
+    if (defaultTreeAdapter.isTextNode(node)) return node.value
+    if (!defaultTreeAdapter.isElementNode(node) || isNonReadingElement(node)) return ''
+    return node.childNodes.map(visible).join(' ').replace(/\s+/gu, ' ').trim()
+  }
+  function visit(node: Node, caption = ''): void {
+    if (!defaultTreeAdapter.isElementNode(node) || isNonReadingElement(node)
+      || ['aside', 'header'].includes(node.tagName)) return
+    if (/^h[1-6]$/u.test(node.tagName)) { heading = visible(node); previous = '' }
+    if (node.tagName === 'figure') {
+      const label = node.childNodes.find(n => defaultTreeAdapter.isElementNode(n) && n.tagName === 'figcaption')
+      caption = label ? visible(label) : ''
+    }
+    if (node.tagName === 'img') {
+      const attrs = Object.fromEntries(node.attrs.map(a => [a.name, a.value]))
+      const raw = attrs['data-src'] || attrs['data-original'] || attrs.src || attrs.srcset?.split(',')[0]?.trim().split(/\s+/u)[0]
+      if (!raw || /(?:^|[\s/_.-])(logo|avatar|icon|pixel|tracking|advertisement)(?:$|[\s/_.-])/iu.test(raw + ' ' + (attrs.alt ?? ''))
+        || attrs.role === 'presentation' || Number(attrs.width ?? 100) <= 2 || Number(attrs.height ?? 100) <= 2) return
+      if (!URL.canParse(raw, pageUrl)) return
+      const url = new URL(raw, pageUrl)
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || seen.has(url.href)) return
+      seen.add(url.href)
+      items.push({ pageUrl, imageUrl: url.href, caption: caption || attrs.alt || '',
+        context: [heading, previous.slice(-800), attrs.alt].filter(Boolean).join('\n') })
+    }
+    for (const child of node.childNodes) visit(child, caption)
+    if (node.tagName === 'p') previous = visible(node)
+  }
+  for (const node of root ? [root] : doc.childNodes) visit(node)
+  return items
+}
+
 /** Keep the full reading region in document order, including lists, tables and captions. */
 function readableArticleText(html: string): string {
   const root = findReadingRoot(parse(html))

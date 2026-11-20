@@ -5,6 +5,7 @@ import { sameProductPageFacts, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
 import type { ProductSemanticReview } from './claim-review.ts'
 import { insightEvidence, type ProductInsight } from './insight-output.ts'
+import { sectionBlocks } from './section-layout.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -17,6 +18,7 @@ export interface ProductReportAssessment {
 
 /** Captured run facts and reviewed conclusions consumed by report assessment. */
 export interface ProductReportInput {
+  readonly images?: readonly ProductImageCard[]
   readonly product: Product
   readonly plan: ProductPlan
   readonly discovery: ProductDiscoveryResult
@@ -32,8 +34,21 @@ export interface ProductReportInput {
   readonly cancelled: boolean
 }
 
+/** Image observations are produced once, independently of the claim review workflow. */
+export interface ProductImageCard {
+  id: string
+  pageUrl: string
+  imageUrl: string
+  caption: string
+  context: string
+  summary: string
+  facts: string[]
+  dataUrl: string
+}
+
 /** Approved questions with reviewed source evidence and disclosed limitations. */
 export interface ProductSynthesisInput {
+  readonly images?: readonly ProductImageCard[]
   readonly sources?: readonly WritingSource[]
   readonly scope: string
   readonly sourceCriteria?: NonNullable<ProductPlan['sourceCriteria']>
@@ -97,7 +112,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
       && item.claimId === claim?.claimId && item.complete)
     const limitations = input.gaps.filter(gap => gap.questionId === question.questionId).map(gap => `提取阶段记录的待确认缺口（请根据本次全部材料重新判断）：${gap.missingContent}`)
     limitations.push(...sourceDisclosures(input, question.questionId))
-    if (eligibleIds.size === 0) limitations.push('当前没有通过原文支持审核的材料，尚不能回答本题。')
+    if (eligibleIds.size === 0 && !input.images?.length) limitations.push('当前没有通过原文支持审核的材料，尚不能回答本题。')
     for (const judgment of verification?.judgments ?? []) {
       if (judgment.relation === 'contradicts') limitations.push(`跨来源比较提示可能存在冲突：${judgment.rationale} 应保留各自的产品与测试条件，不能合并为一致结论。`)
       if (judgment.relation === 'uncertain') limitations.push(`跨来源比较尚不确定：${judgment.rationale} 未完整佐证不等于原始陈述错误。`)
@@ -116,7 +131,7 @@ export function productSynthesisInput(input: ProductReportInput): ProductSynthes
     return { questionId: question.questionId, question: question.text, limitations: [...new Set(limitations)],
       evidence: writing.evidence }
   })
-  return { scope: input.plan.scope, questions, sources: writing.sources,
+  return { ...(input.images?.length ? { images: input.images } : {}), scope: input.plan.scope, questions, sources: writing.sources,
     ...input.plan.sourceCriteria === undefined ? {} : { sourceCriteria: input.plan.sourceCriteria } }
 }
 
@@ -166,7 +181,7 @@ function reviewedSite(plan: ProductPlan, host: string) {
 }
 
 /** Insert validated prose with links resolved from the captured evidence. */
-export function renderProductSynthesis(input: ProductReportInput, material: ProductSynthesisInput,
+export function renderProductSynthesis(input: Pick<ProductReportInput, 'discovery' | 'evidence'>, material: ProductSynthesisInput,
   paragraphs: ReadonlyMap<string, string> | ProductInsight): string {
   const narrative = 'kind' in paragraphs ? paragraphs : undefined
   const prose = 'get' in paragraphs ? paragraphs : new Map(paragraphs.sections.map(section => [section.sectionId, section.text]))
@@ -174,31 +189,60 @@ export function renderProductSynthesis(input: ProductReportInput, material: Prod
     questionId: section.sectionId, question: section.title, evidence: insightEvidence(material), limitations: [],
   }))
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page.url]))
-  const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
+  const evidence = new Map<string, ProductEvidence>(input.evidence.map(item => [item.evidenceId, item]))
+  const images = new Map(material.images?.map(image => [image.id, image]))
+  const displayed = new Set<string>()
+  const choices = new Map(narrative?.sections.map(section => [section.sectionId, section.imageUse]))
+  const figure = (id: string): string => {
+    const image = images.get(id)
+    if (!image || displayed.has(image.dataUrl) || !safeSourceUrl(image.pageUrl)) return ''
+    displayed.add(image.dataUrl)
+    return '![' + id + '](' + image.dataUrl + ')\n\n' + escape(image.caption || image.summary)
+      + ' · [图片来源](' + safeLink(image.pageUrl) + ')'
+  }
   const footnotes = new Map<string, { number: number; url: string }>()
   const sections = units.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
     const text = references.length === 0 && narrative === undefined ? '现有材料不足以形成有依据的回答。' : prose.get(questionId)
       ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
-    const parts: string[] = []
-    let offset = 0
-    for (const match of text.matchAll(/\[\[cite:([^\]\s]+)\]\]/gu)) {
-      const id = match[1] ?? ''
-      const item = references.find(reference => reference.evidenceId === id)
-      const record = item === undefined ? undefined : evidence.get(item.evidenceId)
-      const url = record === undefined ? undefined : pages.get(record.candidatePageId)
-      if (!allowed.has(id) || record === undefined || url === undefined || !safeSourceUrl(url)) {
-        parts.push(escapeParagraphs(text.slice(offset, match.index)), '（该处引用记录或来源链接不可用，待核对）')
+    const choice = choices.get(questionId)
+    const inline = (value: string): string => {
+      const parts: string[] = []
+      let offset = 0
+      for (const match of value.matchAll(/\[\[(cite|figure):([^\]\s]+)\]\]/gu)) {
+        parts.push(escapeParagraphs(value.slice(offset, match.index)))
         offset = match.index + match[0].length
-        continue
+        const id = match[2] ?? ''
+        if (match[1] === 'figure') {
+          if (!choice) parts.push('\n\n' + figure(id) + '\n\n')
+          continue
+        }
+        const image = images.get(id)
+        const record = allowed.has(id) ? evidence.get(id) : undefined
+        const url = image?.pageUrl ?? (record && pages.get(record.candidatePageId))
+        if (!url || !safeSourceUrl(url)) {
+          parts.push('（该处引用记录或来源链接不可用，待核对）')
+          continue
+        }
+        const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: record ? citationLink(url, record) : safeLink(url) }
+        footnotes.set(id, citation)
+        parts.push(`[^product-source-${citation.number}]`)
       }
-      const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: citationLink(url, record) }
-      footnotes.set(id, citation)
-      parts.push(escapeParagraphs(text.slice(offset, match.index)), `[^product-source-${citation.number}]`)
-      offset = match.index + match[0].length
+      return parts.join('') + escapeParagraphs(value.slice(offset))
     }
-    parts.push(escapeParagraphs(text.slice(offset)))
-    return [`### ${escape(question)}`, '', parts.join(''), '', ...limitations.map(note => `资料限制：${escape(note)}`), '']
+    let paragraph = 0
+    const blocks = sectionBlocks(text).flatMap((block) => {
+      if (block.kind === 'table') {
+        const rows = block.rows.map(row => '| ' + row.map(inline).join(' | ') + ' |')
+        rows.splice(1, 0, '| ' + block.rows[0].map(() => '---').join(' | ') + ' |')
+        return [rows.join('\n')]
+      }
+      paragraph++
+      const figures = choice?.mode === 'display'
+        ? choice.placements.filter(item => item.afterParagraph === paragraph).map(item => figure(item.imageId)).filter(Boolean) : []
+      return [inline(block.text), ...figures]
+    })
+    return [`### ${escape(question)}`, '', blocks.join('\n\n'), '', ...limitations.map(note => `资料限制：${escape(note)}`), '']
   })
   const coverage = narrative === undefined || narrative.coverage.length === 0 ? [] : ['## 调查问题覆盖情况', '',
     ...narrative.coverage.flatMap((item) => {
@@ -225,7 +269,7 @@ function escapeParagraphs(value: string): string {
  * @returns Ready, cited draft, or blocked status with explicit reasons.
  */
 export function evaluateProductReport(input: ProductReportInput): ProductReportAssessment {
-  if (input.evidence.length === 0) {
+  if (input.evidence.length === 0 && !input.images?.length) {
     return { status: 'blocked', reasons: ['No verified product evidence was found.'] }
   }
   const reasons: string[] = []
@@ -277,8 +321,7 @@ export function evaluateProductReport(input: ProductReportInput): ProductReportA
     catch { reasons.push(`Cross-source check has invalid evidence links for: ${questionText}`); continue }
 
   }
-  return reasons.length ? { status: 'draft', reasons }
-    : { status: 'ready', reasons: ['Report structure checks passed; source limitations and unanswered questions are disclosed separately.'] }
+  return { status: reasons.length ? 'draft' : 'ready', reasons }
 }
 
 function validClaimLinks(plan: ProductPlan, claim: ProductClaim,
@@ -353,8 +396,9 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       return [`${claim.text}${claim.evidenceLinks.map(link => `[[cite:${link.evidenceId}]]`).join('')}`]
     })
     lines.push('连贯正文尚未完成；以下仅保留已核对的来源要点，不将其视为完整洞察。', '')
+    for (const image of input.images ?? []) points.push(image.summary + '[[cite:' + image.id + ']]')
     if (points.length) lines.push(renderProductSynthesis(input, material, {
-      kind: 'insight', sections: [{ sectionId: 'S1', title: '已核对的来源要点', status: 'partial', text: points.join('\n\n') }],
+      kind: 'insight', sections: [{ sectionId: 'S1', title: input.images?.length ? '已有来源要点' : '已核对的来源要点', status: 'partial', text: points.join('\n\n') }],
       coverage: [], notices: [],
     }), '')
   }
@@ -484,5 +528,5 @@ function safeLink(value: string): string {
 
 function escape(value: string): string {
   return value.replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;')
-    .replace(/[\\`*_{}\[\]()#+.!|~-]/gu, '\\$&').replace(/\r?\n/gu, ' ')
+    .replace(/[\\`*_{}\[\]#+.!|~-]|\$(?=\d)/gu, '\\$&').replace(/\r?\n/gu, ' ')
 }

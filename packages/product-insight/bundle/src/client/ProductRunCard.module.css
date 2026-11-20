@@ -1,4 +1,4 @@
-.card { display: grid; gap: 16px; margin-block: 16px; padding: 16px; min-width: 0; color: var(--dsw-alias-label-primary); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-sm); overflow-wrap: anywhere; }
+.card { display: grid; grid-template-columns: minmax(0, 1fr); box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; gap: 16px; margin-block: 16px; padding: 16px; color: var(--dsw-alias-label-primary); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-sm); overflow-wrap: anywhere; }
 .header, .reportHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .header h3, .header p { margin: 0; }
 .header p { margin-top: 6px; color: var(--dsw-alias-label-secondary); }
@@ -17,9 +17,11 @@
 .followUps { display: grid; gap: 12px; padding-left: 20px; }
 .followUps li { padding-left: 4px; }
 .followUps button { display: block; margin-top: 6px; padding: 6px 10px; color: inherit; background: var(--dsw-alias-bg-layer-1); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; font: inherit; cursor: pointer; }
-.reportHeader { margin-bottom: 10px; }
+.reportHeader { flex-wrap: wrap; margin-bottom: 10px; }
+.report, .report details, .prose { min-width: 0; }
+.report .prose :global(.md-table-wide) { width: 100%; max-width: 100%; margin-inline: 0; padding-inline: 0; padding-bottom: 0; overflow-x: auto; }
 .prose a[data-product-citation] { position: relative; top: -0.5em; font-size: 0.72em; line-height: 0; vertical-align: baseline; text-decoration: none; border-bottom: 0; white-space: nowrap; margin-inline: 0.08em; font-weight: 400; }
-.reportActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.reportActions { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; gap: 8px; }
 .report button { padding: 6px 10px; color: inherit; background: var(--dsw-alias-bg-layer-1); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; font: inherit; cursor: pointer; }
 .report pre { max-height: 520px; margin-bottom: 0; padding: 12px; overflow: auto; white-space: pre-wrap; background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
 @media (max-width: 720px) { .stages { grid-template-columns: 1fr; } }

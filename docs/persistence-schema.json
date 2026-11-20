@@ -66232,7 +66232,7 @@
       "kind": "event",
       "event": "product/checkpoint-v1",
       "surface": false,
-      "digest": "bbb9652a5a15177701e6a078bf34349fa8e6244ec333d40844943dbcbacebf24",
+      "digest": "60433b9e635edc2b4ea867e4baaa04f8884c913d7b1f19d9702ad16e9e16c9e1",
       "schema": {
         "root": 0,
         "nodes": [
@@ -66261,7 +66261,7 @@
               },
               {
                 "name": "type",
-                "type": 116,
+                "type": 118,
                 "optional": false
               }
             ],
@@ -66337,7 +66337,7 @@
               },
               {
                 "name": "priorVerifications",
-                "type": 96,
+                "type": 98,
                 "optional": true
               },
               {
@@ -66347,22 +66347,22 @@
               },
               {
                 "name": "reviews",
-                "type": 103,
+                "type": 105,
                 "optional": false
               },
               {
                 "name": "schemaVersion",
-                "type": 108,
+                "type": 110,
                 "optional": false
               },
               {
                 "name": "stage",
-                "type": 111,
+                "type": 113,
                 "optional": false
               },
               {
                 "name": "verifications",
-                "type": 96,
+                "type": 98,
                 "optional": false
               }
             ],
@@ -67247,8 +67247,43 @@
                 "optional": false
               },
               {
-                "name": "snapshots",
+                "name": "images",
                 "type": 90,
+                "optional": true
+              },
+              {
+                "name": "snapshots",
+                "type": 92,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 91
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "caption",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "context",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "imageUrl",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "pageUrl",
+                "type": 4,
                 "optional": false
               }
             ],
@@ -67264,7 +67299,7 @@
               },
               {
                 "name": "items",
-                "type": 91,
+                "type": 93,
                 "optional": false
               },
               {
@@ -67282,50 +67317,14 @@
           },
           {
             "kind": "array",
-            "element": 92
+            "element": 94
           },
           {
             "kind": "union",
             "types": [
-              93,
-              94
+              95,
+              97
             ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "candidatePageId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "failureId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "observedAt",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "schemaVersion",
-                "type": 22,
-                "optional": false
-              },
-              {
-                "name": "sourceSnapshotId",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "status",
-                "type": 61,
-                "optional": false
-              }
-            ],
-            "indices": []
           },
           {
             "kind": "object",
@@ -67387,7 +67386,7 @@
               },
               {
                 "name": "status",
-                "type": 95,
+                "type": 96,
                 "optional": false
               }
             ],
@@ -67398,8 +67397,44 @@
             "value": "available"
           },
           {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "candidatePageId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "failureId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "observedAt",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "schemaVersion",
+                "type": 22,
+                "optional": false
+              },
+              {
+                "name": "sourceSnapshotId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "status",
+                "type": 61,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
             "kind": "array",
-            "element": 97
+            "element": 99
           },
           {
             "kind": "object",
@@ -67416,7 +67451,7 @@
               },
               {
                 "name": "judgments",
-                "type": 98,
+                "type": 100,
                 "optional": false
               },
               {
@@ -67429,7 +67464,7 @@
           },
           {
             "kind": "array",
-            "element": 99
+            "element": 101
           },
           {
             "kind": "object",
@@ -67446,7 +67481,7 @@
               },
               {
                 "name": "relation",
-                "type": 100,
+                "type": 102,
                 "optional": false
               }
             ],
@@ -67457,8 +67492,8 @@
             "types": [
               14,
               15,
-              101,
-              102
+              103,
+              104
             ]
           },
           {
@@ -67471,7 +67506,7 @@
           },
           {
             "kind": "array",
-            "element": 104
+            "element": 106
           },
           {
             "kind": "object",
@@ -67493,7 +67528,7 @@
               },
               {
                 "name": "verdict",
-                "type": 105,
+                "type": 107,
                 "optional": false
               }
             ],
@@ -67502,9 +67537,9 @@
           {
             "kind": "union",
             "types": [
-              101,
-              106,
-              107
+              103,
+              108,
+              109
             ]
           },
           {
@@ -67519,8 +67554,8 @@
             "kind": "union",
             "types": [
               22,
-              109,
-              110
+              111,
+              112
             ]
           },
           {
@@ -67534,10 +67569,10 @@
           {
             "kind": "union",
             "types": [
-              112,
-              113,
               114,
-              115
+              115,
+              116,
+              117
             ]
           },
           {
@@ -68764,6 +68799,210 @@
           {
             "kind": "literal",
             "value": "product/extraction-inspection-v1"
+          }
+        ]
+      }
+    },
+    {
+      "key": "event:product/image-reading-v1",
+      "kind": "event",
+      "event": "product/image-reading-v1",
+      "surface": false,
+      "digest": "963a0b8e5f9b87f1eace891fd46a8a674d372d0cd305c0607e8f53355d187c93",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 8,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 10,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              7
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "card",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "provider",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "source",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "caption",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "context",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "dataUrl",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "facts",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "id",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "imageUrl",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "pageUrl",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "summary",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 4
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "caption",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "context",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "imageUrl",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "pageUrl",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "error",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "model",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "provider",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "source",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "product/image-reading-v1"
           }
         ]
       }
@@ -81760,7 +81999,7 @@
       "digest": "035a4f4cb153fa0ec652d4f792b28f132e7cbe3238d4174f06cebcd657fe6eaf",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:90"
+        "packages/product-insight/workflow/src/session-tool.ts:91"
       ]
     },
     {
@@ -81811,7 +82050,7 @@
         "packages/product-insight/source/src/index.ts#ProductDiscoveryResult"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:41"
+        "packages/product-insight/source/src/index.ts:42"
       ]
     },
     {
@@ -82039,7 +82278,7 @@
       "digest": "0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:43"
+        "packages/product-insight/workflow/src/session-tool.ts:44"
       ]
     },
     {
@@ -82315,6 +82554,11 @@
       "sources": []
     },
     {
+      "digest": "15027fe29fdda4bc06b9ce31f0096fe13b0e61bfdab657a6e3ad510e043414fb",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "15085ca7bb026dfff1438d71efdb7379141a3c934f35635a23c44baa3ca569d6",
       "names": [],
       "sources": []
@@ -82583,6 +82827,15 @@
       "digest": "1c5a58f4599bd4a9711712551ffe2442a5e5fcd0758bafe630cc4ead850bdaa7",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "1c66c7ea954e9616bdc9d8c4e9d30ec56a35cc00774bf93308b74d0a0fb6bbb0",
+      "names": [
+        "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
+      ],
+      "sources": [
+        "packages/product-insight/workflow/src/index.ts:88"
+      ]
     },
     {
       "digest": "1c7c7cc687edc913aec13c7bd2140b1f067873605aeb8284f767de67584854c1",
@@ -83335,6 +83588,11 @@
       ]
     },
     {
+      "digest": "2f24746391fd5446569316e3ddab09b9e34fbe9b5c9efdb3bcb37a4b63f07673",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "2f3c38671fc67619e39c156afb2cf0003ff9ede8f38e316635f89efc8e6ecaad",
       "names": [],
       "sources": []
@@ -83885,6 +84143,11 @@
       "sources": []
     },
     {
+      "digest": "3f5d64142309c31e87d3910fe7617291fe80b7a892de6892a8343c8ad90bfdf4",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "3f74ba74acd10644c1ed6947a411d8088bd2cfac74f61bb8540f96d68e31f004",
       "names": [],
       "sources": []
@@ -84034,7 +84297,7 @@
       "digest": "44064bb7cd1fcef329bdf987d8c2e47608a158cbcff1e54181f2d77b1a7854ab",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:144"
+        "packages/product-insight/workflow/src/session-tool.ts:145"
       ]
     },
     {
@@ -84684,7 +84947,7 @@
       "digest": "5183ba547fa98a16458531c8c5b06520436853bde203c06f24ed8539228d0265",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:125"
+        "packages/product-insight/workflow/src/session-tool.ts:126"
       ]
     },
     {
@@ -85047,7 +85310,7 @@
       "digest": "5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:151"
+        "packages/product-insight/workflow/src/session-tool.ts:152"
       ]
     },
     {
@@ -85318,6 +85581,11 @@
       "sources": []
     },
     {
+      "digest": "60433b9e635edc2b4ea867e4baaa04f8884c913d7b1f19d9702ad16e9e16c9e1",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "60534ed5b9a2e0caf98da2472f3b535deeb2445e355e3154645db4959af55f0c",
       "names": [],
       "sources": []
@@ -85420,6 +85688,15 @@
       "digest": "6347d91ed7de0ffd324893a5dbf212301bf232ed6428688ef3fefc3b00cd9683",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "63c5d64013b3daf9d82d17647d407cce0a6fcde972187728a3b82a00a3747ad5",
+      "names": [
+        "packages/product-insight/source/src/page-content.ts#ProductPageImage"
+      ],
+      "sources": [
+        "packages/product-insight/source/src/page-content.ts:370"
+      ]
     },
     {
       "digest": "6406a6639852813a40d46e21c1ce4bc32f680f73268f2b135c9ddd2f8050ec98",
@@ -85681,15 +85958,6 @@
       ],
       "sources": [
         "packages/academic/model/src/types.ts:440"
-      ]
-    },
-    {
-      "digest": "6ad10101086e7486560cdef63255de0ec6849c56291dbd6b5840592e88eedb74",
-      "names": [
-        "packages/product-insight/source/src/page-fetch.ts#ProductPageFetchResult"
-      ],
-      "sources": [
-        "packages/product-insight/source/src/page-fetch.ts:22"
       ]
     },
     {
@@ -86029,7 +86297,7 @@
       "digest": "72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:81"
+        "packages/product-insight/workflow/src/session-tool.ts:82"
       ]
     },
     {
@@ -86106,7 +86374,7 @@
       "digest": "75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:77"
+        "packages/product-insight/workflow/src/session-tool.ts:78"
       ]
     },
     {
@@ -86220,7 +86488,7 @@
       "digest": "7975486284f2851e9d8355e5c3386cd20351ae3515b6bb32ccc06bc2f4b21f6a",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:65"
+        "packages/product-insight/workflow/src/session-tool.ts:66"
       ]
     },
     {
@@ -86311,7 +86579,7 @@
       "digest": "7b72679f88690cda9ff470a30adda6f8c9c3ce047ff8d2a44c2fad62bb916759",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:136"
+        "packages/product-insight/workflow/src/session-tool.ts:137"
       ]
     },
     {
@@ -87125,7 +87393,7 @@
       "digest": "8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:123"
+        "packages/product-insight/workflow/src/session-tool.ts:124"
       ]
     },
     {
@@ -87255,7 +87523,7 @@
       "digest": "92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:99"
+        "packages/product-insight/workflow/src/session-tool.ts:100"
       ]
     },
     {
@@ -87380,6 +87648,11 @@
       ]
     },
     {
+      "digest": "963a0b8e5f9b87f1eace891fd46a8a674d372d0cd305c0607e8f53355d187c93",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "9645cf93769a6dfb227bd400bd6cb9fa7bab9140f4a851e4ae92514ade6e3114",
       "names": [],
       "sources": []
@@ -87446,6 +87719,15 @@
       "names": [],
       "sources": [
         "packages/sandbox/sandbox-policy/src/session-mode.ts:33"
+      ]
+    },
+    {
+      "digest": "98bed41104ed8c0dbf06956e608ed50ed3e8bc3c282d9931da963bb5059d7463",
+      "names": [
+        "packages/product-insight/source/src/page-fetch.ts#ProductPageFetchResult"
+      ],
+      "sources": [
+        "packages/product-insight/source/src/page-fetch.ts:22"
       ]
     },
     {
@@ -87863,6 +88145,15 @@
       "digest": "a4d21138b99957fe21a11536d529c5288b75a325ef360a930f29ff3f82e54333",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "a4d8ca18719a4713919d70d17933706cda88ca312610bac790b98cb1c049b114",
+      "names": [
+        "packages/product-insight/workflow/src/report.ts#ProductImageCard"
+      ],
+      "sources": [
+        "packages/product-insight/workflow/src/report.ts:38"
+      ]
     },
     {
       "digest": "a4effe1b3c3941def6b849e88a0eeaa4f297fc0d39ccffbe1774abb4cbdfd280",
@@ -88546,7 +88837,7 @@
       "digest": "b584979e40bb5db4bb401cd31cbf903caf4fc9644f2c139dd559b9697788cc61",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:146"
+        "packages/product-insight/workflow/src/session-tool.ts:147"
       ]
     },
     {
@@ -88760,11 +89051,6 @@
       "sources": []
     },
     {
-      "digest": "bbb9652a5a15177701e6a078bf34349fa8e6244ec333d40844943dbcbacebf24",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "bbc5696e3f13c758237b316e3cf08cda0b9fd51ffe672539883457769faa185d",
       "names": [],
       "sources": []
@@ -88819,7 +89105,7 @@
       "digest": "bd767c9c20e550f33fb58313e930037dae8d5b10705511262a135826fdeaf7e9",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:70"
+        "packages/product-insight/workflow/src/session-tool.ts:71"
       ]
     },
     {
@@ -88831,7 +89117,7 @@
       "digest": "be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:113"
+        "packages/product-insight/workflow/src/session-tool.ts:114"
       ]
     },
     {
@@ -88841,6 +89127,11 @@
     },
     {
       "digest": "be6c914abde62543d8175ff94b0af8a86aa6055a930e114ef0bfab10c96d7f8c",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "be96f0a7777951dfd01a0d3248654da6aa0c0767acac6551308a85db9446f934",
       "names": [],
       "sources": []
     },
@@ -88910,7 +89201,7 @@
       "digest": "c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:56"
+        "packages/product-insight/workflow/src/session-tool.ts:57"
       ]
     },
     {
@@ -88986,6 +89277,11 @@
     },
     {
       "digest": "c219efbdfd53b836786202ab4532913d555798f0a8615a4e9629736e3799fb70",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "c233636a3cb0b97fe579261a1a0227f951b90634b5b684e4aa4bc8e7e0402ccf",
       "names": [],
       "sources": []
     },
@@ -89531,7 +89827,7 @@
       "digest": "d90920b14d3d321466273fbe9cf903f9e4fcac8f4f1ab67a63e81330ad50565e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:160"
+        "packages/product-insight/workflow/src/session-tool.ts:161"
       ]
     },
     {
@@ -89654,15 +89950,6 @@
       "digest": "dab1765e3327dd89ee2a64eac4248e1e125ec28424abc2846959a654d19a6762",
       "names": [],
       "sources": []
-    },
-    {
-      "digest": "dac69bf0dfe6723c812e12d1f167fbfb3e90edd983b34559f28a94b5f3c02ee1",
-      "names": [
-        "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
-      ],
-      "sources": [
-        "packages/product-insight/workflow/src/index.ts:88"
-      ]
     },
     {
       "digest": "dacf3d5f3e4ff619c1320e64a48dec5e7ecd7870bece65fbd449a0e63adfa521",
@@ -89792,7 +90079,7 @@
       "digest": "de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:101"
+        "packages/product-insight/workflow/src/session-tool.ts:102"
       ]
     },
     {
@@ -90030,7 +90317,7 @@
       "digest": "e355ee6a1067e87964f49d7a20c43786074f771b10f30d20e565f89b78b19743",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:45"
+        "packages/product-insight/workflow/src/session-tool.ts:46"
       ]
     },
     {
@@ -90447,7 +90734,7 @@
         "packages/product-insight/source/src/index.ts#ProductSearchAttempt"
       ],
       "sources": [
-        "packages/product-insight/source/src/index.ts:29"
+        "packages/product-insight/source/src/index.ts:30"
       ]
     },
     {
@@ -90612,7 +90899,7 @@
       "digest": "f14ae6587bdefc0e2a6763d7adfcb1a3f5b6d4a89cb6d12f0763780b88515d7f",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:153"
+        "packages/product-insight/workflow/src/session-tool.ts:154"
       ]
     },
     {
@@ -90794,7 +91081,7 @@
       "digest": "f5cd6876ce148d5950cd6e56f89b00ce0789f9a7e9e366f9f0b95c0d1bf51ac6",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:75"
+        "packages/product-insight/workflow/src/session-tool.ts:76"
       ]
     },
     {

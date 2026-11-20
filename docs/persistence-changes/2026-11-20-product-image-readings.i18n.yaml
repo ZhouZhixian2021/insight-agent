@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-20-product-image-readings.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-20-product-image-readings.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-20-product-image-readings:
+  en: d97deeb3cb4e7ea6
+  zh: 0e91a8b029c326a2
+/2026-11-20-product-image-readings/summary:
+  en: aed5175f735dc430
+  zh: 0992d59d29572efa
+/2026-11-20-product-image-readings/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-20-product-image-readings/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-20-product-image-readings/compatibility:
+  en: 21a35ade319109ae
+  zh: d6ff4d3bc92396b1
+/2026-11-20-product-image-readings/verification:
+  en: 261ca3662aeeb783
+  zh: 65b68af2330a1cae
+/2026-11-20-product-image-readings/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

@@ -3,7 +3,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import { useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import { ProductReport } from './ProductReport.tsx'
+import { ProductReport, productRaster } from './ProductReport.tsx'
+import { productPriceMarkdown } from './report-prices.ts'
 import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatNode, ChatNodeViewProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -286,10 +287,15 @@ function downloadProductTrace(run: ProductChatRun): void {
 }
 
 function downloadMarkdown(markdown: string): void {
-  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
+  const url = URL.createObjectURL(new Blob([productPriceMarkdown(markdown)], { type: 'text/markdown;charset=utf-8' }))
   const anchor = document.createElement('a')
   anchor.href = url; anchor.download = 'product-insight-report.md'; anchor.click()
   setTimeout(() => { URL.revokeObjectURL(url) }, 1000)
+}
+
+/** Historical final settlements can carry a success message in their reasons list. */
+function deliveryBlockers(run: ProductChatRun): string[] {
+  return run.deliveryStatus === 'final' ? [] : [...new Set(run.reasons)]
 }
 
 const htmlTags = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY',
@@ -306,7 +312,7 @@ a{color:var(--accent);text-underline-offset:3px;overflow-wrap:anywhere}.header{m
 .notice{border-left:4px solid #bd833b;padding:8px 18px;background:#fff9ee;margin:18px 0}.layout{max-width:1120px;margin:auto;display:grid;grid-template-columns:210px minmax(0,1fr);gap:30px;padding:0 28px 60px}
 nav{position:sticky;top:24px;align-self:start;max-height:90vh;overflow:auto;font-size:13px}nav h2{font-size:15px}nav ul{list-style:none;padding:0}nav li{margin:9px 0}nav a{text-decoration:none;color:var(--muted)}
 a.product-citation{position:relative;top:-0.5em;font-size:0.72em;line-height:0;vertical-align:baseline;text-decoration:none;border-bottom:0;white-space:nowrap;margin-inline:0.08em;font-weight:400}
-article{min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:30px 40px 48px}h1,h2,h3,h4{line-height:1.5}h2{font-size:23px;margin:42px 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}
+article img{max-width:100%;height:auto}article{min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:30px 40px 48px}h1,h2,h3,h4{line-height:1.5}h2{font-size:23px;margin:42px 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}
 p{margin:14px 0;overflow-wrap:anywhere}li{margin:6px 0}ul,ol{padding-left:1.5em}table{border-collapse:collapse;display:block;overflow-x:auto;max-width:100%;font-size:14px;margin:22px 0}
 th,td{border-bottom:1px solid var(--line);padding:11px;vertical-align:top;min-width:100px}th{background:#edf3f2;text-align:left}tr:nth-child(even){background:#f8faf9}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:16px}blockquote{border-left:3px solid #93b6b4;margin:20px 0;padding:8px 18px;color:var(--muted);background:#f7faf9}
@@ -325,7 +331,10 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
     if (node.nodeType === Node.TEXT_NODE) return escapeHtml(node.textContent ?? '')
     if (!(node instanceof Element)) return ''
     if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'SVG', 'MATH', 'BUTTON'].includes(node.tagName)) return ''
-    if (node.tagName === 'IMG') return escapeHtml(node.getAttribute('alt') ?? '')
+    if (node.tagName === 'IMG') {
+      const src = node.getAttribute('src') ?? '', alt = escapeHtml(node.getAttribute('alt') ?? '')
+      return productRaster.test(src) ? '<img alt="' + alt + '" src="' + src + '">' : alt
+    }
     const children = [...node.childNodes].map(serialize).join('')
     if (!htmlTags.has(node.tagName)) return children
     const tag = node.tagName.toLowerCase()
@@ -354,12 +363,13 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
     ['failureCount', String(run.failures)], ['elapsed', `${Math.round(run.elapsedMilliseconds / 1000)} ${t('seconds')}`],
   ]
   const contents = headings.filter(heading => heading.level <= 2)
+  const blockers = deliveryBlockers(run)
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
     <title>${escapeHtml(title)}</title><style>${productHtmlStyles}</style></head><body>
     <header class="header"><span class="status">${escapeHtml(t(run.deliveryStatus ?? run.runState))}</span><h1>${escapeHtml(title)}</h1>
     <h2>${escapeHtml(t('htmlSummary'))}</h2><dl class="summary">${summary.map(([key, value]) => `<div><dt>${escapeHtml(t(key))}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl>
-    ${run.reasons.length === 0 ? '' : `<details class="notice"><summary>${escapeHtml(t('blockers'))}</summary>${list([...new Set(run.reasons)])}</details>`}</header>
+    ${blockers.length === 0 ? '' : `<details class="notice"><summary>${escapeHtml(t('blockers'))}</summary>${list(blockers)}</details>`}</header>
     <div class="layout"><nav aria-label="${escapeHtml(t('htmlContents'))}"><h2>${escapeHtml(t('htmlContents'))}</h2><ul>${contents.map(heading =>
       `<li><a href="#${heading.id}">${escapeHtml(heading.text)}</a></li>`).join('')}</ul></nav><article class="paper">${body}</article></div></body></html>`
 }
@@ -384,6 +394,7 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
   const [traceStatus, setTraceStatus] = useState('all')
   const stages: readonly (readonly [ProductRunKey, number])[] = [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
   const status = run.deliveryStatus ?? run.runState
+  const blockers = deliveryBlockers(run)
   return <section className={css.card} data-product-insight-run={node.id} aria-label={t('title')}>
     <header className={css.header}><div><h3>{run.title || t('title')}</h3><p>{t(status)}</p></div>
       {run.runState === 'running' && <span className={css.pulse} aria-hidden="true" />}</header>
@@ -412,8 +423,8 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
         <li key={entry.seq}><details><summary>{new Date(entry.time).toLocaleTimeString()} · {entry.type} · {entry.status}</summary>
           <pre>{JSON.stringify(entry, null, 2)}</pre></details></li>)}</ol>
     </details>
-    {run.reasons.length > 0 && <details className={css.details}>
-      <summary>{t('blockers')} · {run.reasons.length}</summary><ul>{run.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
+    {blockers.length > 0 && <details className={css.details}>
+      <summary>{t('blockers')} · {blockers.length}</summary><ul>{blockers.map(reason => <li key={reason}>{reason}</li>)}</ul>
     </details>}
     {run.runState === 'completed' && run.report !== undefined && run.unansweredQuestions?.length
       ? <ProductFollowUpQuestions run={run} t={t} useInput={useInput} inputActions={inputActions} /> : null}
@@ -423,7 +434,7 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
           <button type="button" onClick={() => { downloadMarkdown(run.report as string) }}>{t('download')}</button>
           <button type="button" onClick={() => { downloadProductHtml(exportProductHtml(run, t)) }}>{t('downloadHtml')}</button>
         </div></div>
-      <details open><summary>{t('reportContent')}</summary><ProductReport text={run.report}
+      <details><summary>{t('reportContent')}</summary><ProductReport text={run.report}
         labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} /></details>
     </section> : run.runState === 'completed' && <p role="note">{t('noReport')}</p>}
   </section>

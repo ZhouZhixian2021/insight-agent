@@ -68,16 +68,41 @@ export class HttpFetchProvider implements WebFetchProvider {
     // One signal stops both the request and body read. The deadline's TimeoutReason later
     // distinguishes this provider's timeout from caller or outer-deadline cancellation.
     using d = deadline(signal, this.limits.timeoutMs, 'WEB_FETCH_TIMEOUT')
-    return await this.followAndRead(request.url, d.signal)
+    return await this.followAndRead(request.url, d.signal, (response, url) => this.readBody(response, url, d.signal))
   }
 
-  /** Follow same-origin redirects up to the hop cap, then read the final response. */
-  private async followAndRead(initialUrl: string, signal: AbortSignal): Promise<WebFetchResult> {
+  /**
+   * Read a public raster image within the configured transport limits.
+   * @param url - Absolute HTTP(S) address of the original image.
+   * @param signal - Optional cancellation signal for the request and body read.
+   * @returns Complete image bytes and the supported media type declared by the response.
+   */
+  async fetchImage(url: string, signal?: AbortSignal): Promise<{
+    readonly data: Uint8Array
+    readonly mediaType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
+  }> {
+    using d = deadline(signal, this.limits.timeoutMs, 'WEB_FETCH_TIMEOUT')
+    return this.followAndRead(url, d.signal, async (response) => {
+      const mediaType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
+      if (!response.ok || !(mediaType === 'image/png' || mediaType === 'image/jpeg'
+        || mediaType === 'image/webp' || mediaType === 'image/gif')) {
+        await response.body?.cancel()
+        throw new WebError('Resource did not return a supported image', 'WEB_UNSUPPORTED_CONTENT_TYPE')
+      }
+      const body = await this.readCapped(response, d.signal)
+      if (body.truncatedByBytes) throw new WebError('Image was truncated', 'WEB_FETCH_TOO_LARGE')
+      return { data: body.bytes, mediaType } as const
+    }, 'image/png,image/jpeg,image/webp,image/gif')
+  }
+
+  /** Apply the redirect policy to each hop before reading the final response. */
+  private async followAndRead<T>(initialUrl: string, signal: AbortSignal,
+    read: (response: Response, url: URL) => Promise<T>, accept?: string): Promise<T> {
     let currentUrl = validateFetchUrl(initialUrl)
     let redirectsFollowed = 0
 
     for (;;) {
-      const request = await this.requestOnce(currentUrl, signal)
+      const request = await this.requestOnce(currentUrl, signal, accept)
       const { response } = request
       try {
         if (isRedirectStatus(response.status)) {
@@ -116,17 +141,17 @@ export class HttpFetchProvider implements WebFetchProvider {
           continue
         }
 
-        return await this.readBody(response, currentUrl, signal)
+        return await read(response, currentUrl)
       } finally {
         await request.close()
       }
     }
   }
 
-  private async requestOnce(url: URL, signal: AbortSignal) {
+  private async requestOnce(url: URL, signal: AbortSignal, accept?: string) {
     const headers = {
       'user-agent': this.limits.userAgent,
-      'accept': 'text/html,application/xhtml+xml,application/pdf,text/*;q=0.9,application/json;q=0.8',
+      'accept': accept ?? 'text/html,application/xhtml+xml,application/pdf,text/*;q=0.9,application/json;q=0.8',
     }
     try {
       // A proxied hop skips public-address resolution and pinning: the proxy performs the origin's

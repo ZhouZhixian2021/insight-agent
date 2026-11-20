@@ -14,8 +14,9 @@ export type { SearchObservation } from './search-recovery.ts'
 export { prepareProductPage, extractProductPageEvidence, productTextRange, selectProductGapFragment,
   rankProductPageFragments, splitProductPageText, splitFailedProductFragment,
   PRODUCT_PAGE_FRAGMENT_CHARACTERS, PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS } from './page-content.ts'
-export type { PreparedProductPage, ProductEvidenceDraft, ProductEvidenceExtractionResult,
+export type { ProductPageImage, PreparedProductPage, ProductEvidenceDraft, ProductEvidenceExtractionResult,
   ProductPageFragment, RejectedProductEvidenceDraft } from './page-content.ts'
+export { fetchProductImage } from './web-provider.ts'
 export { fetchProductPages, sameProductPageFacts } from './page-fetch.ts'
 export type { ProductPageFetchAdapters, ProductPageFetchResult } from './page-fetch.ts'
 export { discoverOfficialLinks, OFFICIAL_FEED_PATHS } from './official-feed.ts'

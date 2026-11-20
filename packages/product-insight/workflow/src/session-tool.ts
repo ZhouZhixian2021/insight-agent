@@ -26,6 +26,7 @@ import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, Prod
 import type { ProductSemanticReview } from './claim-review.ts'
 import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
+import { collectProductImages } from './visual-material.ts'
 import { type ProductSynthesisInput } from './report.ts'
 import { inspectInsight, insightRequest, insightRepairIssues, repairInsight, type ProductInsight } from './insight-output.ts'
 import { inspectProductSynthesis, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
@@ -561,6 +562,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       return Promise.resolve(text)
     },
     savePages, saveCheckpoint,
+    extractImages: (images, active) => collectProductImages(ctx, session, model, plan, images, events, persist, onProgress, active),
     proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
       proposeEvidence(ctx, session, model, page, text, questions, persist, events,
         requestSignal, fragment, maximumDrafts, extractionCache),
@@ -691,7 +693,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
         } else if (!state.finished || finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
           error = 'invalid_output'
         }
-        if (error === null && insightRepairIssues(inspectInsight(output, input, aliases, knownSections), target).length > 0) {
+        if (error === null && insightRepairIssues(inspectInsight(output, input, aliases, knownSections, target), target).length > 0) {
           error = 'invalid_output'
         }
       }
@@ -700,7 +702,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
       failureCode = signal?.aborted ? 'ABORTED' : cause instanceof ProductTransientModelError ? cause.code : undefined
     }
     const response: SynthesisResponse = { text: output, error, ...failureCode === undefined ? {} : { failureCode } }
-    const inspection = inspectInsight(output, input, aliases, knownSections)
+    const inspection = inspectInsight(output, input, aliases, knownSections, target)
     const issues = insightRepairIssues(inspection, target)
     session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, ...response,
       validation: { acceptedQuestionIds: inspection.coverage.map(item => item.questionId),

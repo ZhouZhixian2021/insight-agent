@@ -8,6 +8,7 @@ import { processGroupDefinition } from '../../../client/ui-chat/src/client/conve
 import { chatViewDefinition } from '../../../client/ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
 import { exportProductHtml, ProductRunCard, productChatDefinition } from '../src/client/index.ts'
 import { ProductReport } from '../src/client/ProductReport.tsx'
+import { productPriceMarkdown } from '../src/client/report-prices.ts'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
@@ -204,6 +205,10 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(screen.getByText('缺少独立佐证')).toBeTruthy()
   expect(screen.getByRole('button', { name: '下载 Markdown' })).toBeTruthy()
   expect(screen.getByRole('button', { name: '下载 HTML' })).toBeTruthy()
+  const preview = screen.getByText('报告正文')
+  expect(preview.closest('details')?.open).toBe(false)
+  fireEvent.click(preview)
+  expect(preview.closest('details')?.open).toBe(true)
   expect(screen.getByRole('heading', { name: '调查草稿' })).toBeTruthy()
   expect(screen.getByText('已保存正文。')).toBeTruthy()
   expect(screen.getAllByText('已完成').filter(element => element.tagName === 'SMALL')).toHaveLength(5)
@@ -226,6 +231,23 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect(doc.querySelector('table')?.textContent).toContain('有限')
   expect(doc.body.textContent).toContain('缺少独立佐证')
   expect(doc.querySelector('script,iframe,img,object,link')).toBeNull()
+  const data = 'data:image/png;base64,iVBORw0KGgo='
+  const illustratedReport = 'First.\n\n| Configuration | Time |\n| --- | --- |\n| A\\|B | 42 ms[^product-source-1] |'
+    + '\n\nSecond.\n\n![I1](' + data + ')\n\nAfter.\n\n[^product-source-1]: [查看来源原文](https://example.com/chart)'
+  const illustrated = new DOMParser().parseFromString(exportProductHtml({ ...run, report: illustratedReport }, t), 'text/html')
+  const preview = render(<ProductReport text={illustratedReport}
+    labels={{ code: { copyLabel: '复制', copiedLabel: '已复制' }, footnotes: '脚注' }} />)
+  for (const root of [preview.container, illustrated.querySelector('article')!]) {
+    expect(root.querySelectorAll('td')).toHaveLength(2)
+    expect(root.querySelector('td')?.textContent).toBe('A|B')
+    expect(root.querySelector('td a')?.getAttribute('href')).toBe('https://example.com/chart')
+    expect([...root.querySelectorAll('p, table, img')].map(node => node.tagName === 'P' ? node.textContent : node.tagName))
+      .toEqual(['First.', 'TABLE', 'Second.', 'IMG', 'After.'])
+  }
+  preview.unmount()
+  expect(illustrated.querySelector('article img')?.getAttribute('src')).toBe(data)
+  expect(illustrated.querySelector('article')?.textContent).toContain('After.')
+  expect(illustrated.querySelector('meta[http-equiv]')?.getAttribute('content')).toContain('img-src data:')
   expect(doc.querySelector('[onclick],[onerror]')).toBeNull()
   expect(doc.querySelector('meta[http-equiv]')?.getAttribute('content')).toContain("default-src 'none'")
   expect(doc.querySelector('a[href="https://example.com/a"]')?.getAttribute('rel')).toBe('noopener noreferrer')
@@ -246,6 +268,42 @@ it('exports and downloads a self-contained safe HTML report', () => {
   vi.runAllTimers()
 })
 
+
+it('reopens a settled M6 report with cited regional prices, literal dollars and no success message among blockers', () => {
+  const report = '# Apple M6 — 产品洞察报告\n\n| 机型 | 配置 | 美国起售价 | 中国大陆起售价 |\n| --- | --- | --- | --- |\n'
+    + '| MacBook Pro | 16GB | $1,999；教育 $1,899 [^product-source-16] | RMB15,999；教育 RMB15,199 [^product-source-17] |\n'
+    + '| Mac mini | 32GB | 官方摘录未给 | 官方摘录未给 |\n\n'
+    + '美国价格 $1,999 和 $1,899。公式 $x^2$；代码 `$6 和 $7`；[记录](https://example.test/$42)。\n\n'
+    + '[^product-source-16]: [查看来源原文](https://example.test/us)\n[^product-source-17]: [查看来源原文](https://example.test/cn)\n\n'
+    + '## 证据附录\n\n> starts at $1,999 \\(U\\.S\\.\\) and $1,899 \\(U\\.S\\.\\) with education savings.'
+  const run = { callId: 'prices', approved: true, title: 'M6', runState: 'completed', deliveryStatus: 'final',
+    stage: 6, elapsedMilliseconds: 0, candidatePages: 0, availablePages: 0, evidence: 0, claims: 0, verifications: 0, failures: 0,
+    reasons: ['Report structure checks passed; source limitations and unanswered questions are disclosed separately.'], report } as const
+  const markdown = productPriceMarkdown(report)
+  expect(markdown).toContain('美国价格 \\$1,999 和 \\$1,899。公式 $x^2$；代码 `$6 和 $7`')
+  expect(markdown).toContain('https://example.test/$42')
+  expect(productPriceMarkdown(markdown)).toBe(markdown)
+  const card = render(<ProductRunCard node={{ id: 'prices', data: run } as never} t={t} useInput={useInput} inputActions={inputActions} />)
+  const doc = new DOMParser().parseFromString(exportProductHtml(run, t), 'text/html')
+  expect(screen.queryByText(/未达标原因/u)).toBeNull()
+  expect(doc.querySelector('details.notice')).toBeNull()
+  fireEvent.click(screen.getByText('报告正文'))
+  for (const root of [card.container, doc.body]) {
+    const tables = root.querySelectorAll('table')
+    expect(tables[0]?.textContent).toContain('16GB')
+    const pricing = tables[1]
+    expect([...pricing!.querySelectorAll('th')].map(cell => cell.textContent))
+      .toEqual(['机型', '地区（币种）', '常规起售价', '教育优惠起售价'])
+    const rows = [...pricing!.querySelectorAll('tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(cell => cell.textContent))
+    expect(rows.slice(0, 2)).toEqual([['MacBook Pro', '美国（美元）', '1,999', '1,899 [16]'],
+      ['MacBook Pro', '中国大陆（人民币）', '15,999', '15,199 [17]']])
+    expect(rows[2]?.slice(2)).toEqual(['官方摘录未给', '官方摘录未给'])
+    expect([...pricing!.querySelectorAll('a')].map(a => a.getAttribute('href')))
+      .toEqual(['https://example.test/us', 'https://example.test/cn'])
+    expect(root.textContent).toContain('美国价格 $1,999 和 $1,899。')
+    expect(root.querySelector('blockquote')?.textContent?.trim()).toBe('starts at $1,999 (U.S.) and $1,899 (U.S.) with education savings.')
+  }
+})
 
 it('renders sentence citations as superscript links in exported HTML', () => {
   const run = { callId: 'cite', title: '报告', approved: true, runState: 'completed', stage: 6,

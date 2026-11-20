@@ -25,7 +25,7 @@ import { claimsFromSemanticReview, type ProductSemanticReview } from './claim-re
 import { checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
-  type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
+  type ProductImageCard, type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
 import { registerProductInvestigationTool } from './session-tool.ts'
 
 // Publish the Session event declarations consumed by the product transcript card.
@@ -127,6 +127,7 @@ export interface ProductInvestigationAdapters {
   readonly newsFeed?: (query: string, accept: (link: OfficialLink) => boolean,
     signal?: AbortSignal) => Promise<readonly OfficialLink[]>
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
+  readonly extractImages?: (images: NonNullable<ProductPageFetchResult['images']>, signal?: AbortSignal) => Promise<ProductImageCard[]>
   readonly readText: (contentRef: string) => Promise<string>
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
@@ -532,7 +533,10 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     questionId: question.questionId, missingContent: question.text,
     reason: 'No semantically reviewed source statement answers this question.', status: 'open',
   }))
+  const images = !operationSignal?.aborted && pages.images?.length && adapters.extractImages
+    ? await adapters.extractImages(pages.images, operationSignal) : []
   const reportInput: ProductReportInput = { product: input.product, plan: input.plan, discovery, pages,
+    ...(images.length ? { images } : {}),
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation },
     evidence, reviews, claims, verifications, gaps, failures, cancelled: operationSignal?.aborted ?? false }
   const initialAssessment = evaluateProductReport(reportInput)
@@ -540,7 +544,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   if (adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
     try {
       const material = productSynthesisInput(reportInput)
-      const paragraphs: ReadonlyMap<string, string> | ProductInsight = material.questions.every(question => question.evidence.length === 0)
+      const noMaterial = images.length === 0 && material.questions.every(question => question.evidence.length === 0)
+      const paragraphs: ReadonlyMap<string, string> | ProductInsight = noMaterial
         ? { kind: 'insight', sections: [{ sectionId: 'S1', title: '目前能够确认的范围', status: 'insufficient',
           text: '现有材料不足以形成有依据的产品判断。' }], coverage: material.questions.map(question => ({
           questionId: question.questionId, status: 'insufficient', sectionIds: ['S1'], gap: '尚无通过原文支持检查的陈述。',
@@ -595,9 +600,9 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const cancelled = signal?.aborted ?? false
   const run: ProductRun = cancelled
     ? { schemaVersion: 1, runId, planId: input.plan.planId, planVersion: input.plan.version,
-      startedAt, completedAt, state: 'cancelled', outcome: evidence.length ? 'partial_success' : 'failed',
+      startedAt, completedAt, state: 'cancelled', outcome: evidence.length || images.length ? 'partial_success' : 'failed',
       failures, reportId: delivery.report?.reportId ?? null }
-    : evidence.length === 0
+    : evidence.length === 0 && images.length === 0
       ? { schemaVersion: 1, runId, planId: input.plan.planId, planVersion: input.plan.version,
         startedAt, completedAt, state: 'failed', outcome: 'failed', failures,
         reportId: null }

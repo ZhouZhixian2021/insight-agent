@@ -4,7 +4,7 @@ import { createProductFailureId, createSourceSnapshotId,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebFetchResult } from '@deepseek-ai/dsh-web'
 
-import { prepareProductPage, prepareProductPdf, ProductPageTextLimitError } from './page-content.ts'
+import { productPageImages, type ProductPageImage, prepareProductPage, prepareProductPdf, ProductPageTextLimitError } from './page-content.ts'
 
 /** Web, durable text storage, and clock supplied by the owning investigation. */
 export interface ProductPageFetchAdapters {
@@ -21,6 +21,7 @@ export interface ProductPageFetchAdapters {
 /** Settled selected-page snapshots and cancellation state. */
 export interface ProductPageFetchResult {
   readonly snapshots: ProductBatchResult<SourceSnapshot>
+  readonly images?: readonly ProductPageImage[]
   readonly cancelled: boolean
 }
 
@@ -51,10 +52,11 @@ const PRODUCT_PAGE_FETCH_CONCURRENCY = 8
  */
 export async function fetchProductPages(candidates: readonly CandidatePage[], adapters: ProductPageFetchAdapters,
   signal?: AbortSignal, maximumCharacters?: number): Promise<ProductPageFetchResult> {
+  const images: ProductPageImage[] = []
   const snapshots: SourceSnapshot[] = []
   const failures: ProductFailure[] = []
   const acquire = async (candidate: CandidatePage) => {
-    const prepare = (fetched: WebFetchResult) => {
+    const prepare = async (fetched: WebFetchResult) => {
       signal?.throwIfAborted()
       // A redirector or media link lands on the publisher that actually serves
       // the page, so a discovered page need not keep the host it was found on.
@@ -65,8 +67,9 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
         && new URL(fetched.url).hostname !== new URL(candidate.url).hostname) {
         throw new RangeError('Product official page redirected to a different host; review the publisher before using it')
       }
-      return fetched.body.kind === 'pdf' ? prepareProductPdf(fetched, maximumCharacters, signal)
+      const prepared = fetched.body.kind === 'pdf' ? await prepareProductPdf(fetched, maximumCharacters, signal)
         : prepareProductPage(fetched, maximumCharacters)
+      return { ...prepared, images: fetched.body.kind === 'html' ? productPageImages(fetched.body.content, fetched.url) : [] }
     }
     try {
       signal?.throwIfAborted()
@@ -100,6 +103,7 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
         const contentRef = await adapters.saveText(candidate, prepared.text, prepared.contentHash)
         signal?.throwIfAborted()
         if (contentRef.trim().length === 0) throw new RangeError('Saved page content reference is empty')
+        images.push(...prepared.images)
         snapshots.push({ schemaVersion: 1, sourceSnapshotId: createSourceSnapshotId(),
           candidatePageId: candidate.candidatePageId, observedAt: adapters.now(), status: 'available',
           contentRef, contentHash: prepared.contentHash,
@@ -126,7 +130,7 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
     await Promise.all(pending.map(item => item.acquired))
   }
   const available = snapshots.some(snapshot => snapshot.status === 'available')
-  return { snapshots: { schemaVersion: 1,
+  return { ...(images.length ? { images } : {}), snapshots: { schemaVersion: 1,
     status: failures.length === 0 ? 'success' : available ? 'partial_success' : 'failed',
     items: snapshots, failures }, cancelled: signal?.aborted ?? false }
 }

@@ -6,12 +6,13 @@
     "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
   },
   "files": ["src/client/index.ts", "src/client/ProductRunCard.tsx",
-    "src/client/ProductReport.tsx", "src/css-modules.d.ts"],
+    "src/client/ProductReport.tsx", "src/client/report-prices.ts", "src/css-modules.d.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../client/locale/tsconfig.client.json" },
     { "path": "../../client/ui-chat/tsconfig.client.json" },
     { "path": "../../client/ui-conversation/tsconfig.client.json" },
+    { "path": "../../client/ui-primitives" },
     { "path": "../../client/ui-renderer" },
     { "path": "../../client/ui-slots" },
     { "path": "../workflow" },
