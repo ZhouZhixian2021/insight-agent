@@ -22,7 +22,7 @@ kind: "package-library"
 
 -----
 
-裸网址的自动链接在中文标点处结束，避免后续说明被吞入链接；显式 Markdown 链接保留完整网址。
+裸网址的自动链接在中文标点处结束，显式 Markdown 链接保留完整网址。`parseGfmWithMath(text)` 返回与已完成消息的渲染器一致的语法树和原文位置，供调用方排版已保存的 Markdown。
 
 <a id="use-this-package"></a>
 ## 使用本包

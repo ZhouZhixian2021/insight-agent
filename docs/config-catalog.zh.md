@@ -4735,8 +4735,13 @@ export interface Config {
   maxBodyChars?: number
   /** Default fetch timeout in milliseconds, within Node's timer range. */
   timeoutMs?: number
-  /** Maximum number of same-origin redirect hops to follow. */
+  /** Maximum number of redirect hops to follow. */
   maxRedirects?: number
+  /**
+   * Whether a hop may leave the current origin. Off by default; only a caller
+   * that owns its own publisher attribution should turn it on.
+   */
+  followCrossOriginRedirects?: boolean
   /** `User-Agent` header sent on every request. */
   userAgent?: string
 }

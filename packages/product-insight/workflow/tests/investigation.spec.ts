@@ -266,8 +266,7 @@ describe('approved product investigation', () => {
     expect(result.delivery.status).toBe('final')
     expect(reports.at(-1)).toContain('[来源](https://example.com/features)')
     expect(result.assessment.status).toBe('ready')
-    expect(result.delivery.reasons.some(reason => reason.startsWith('No admitted claim answers:'))).toBe(false)
-    expect(result.delivery.reasons.some(reason => reason.startsWith('Cross-site review does not prove'))).toBe(false)
+    expect(result.delivery.reasons).toEqual([])
     expect(result.delivery.report?.limitations).toContain('Cross-site judgments do not prove publisher independence or product behavior.')
     expect(reports.at(-1)).not.toContain('交付未达标原因')
     expect(reports.at(-1)).toContain('检索与取证范围')
@@ -378,7 +377,7 @@ describe('approved product investigation', () => {
     expect(reports.at(-1)).toContain('返回 1 条；新增候选 1 个；检索覆盖受限')
     expect(reports.at(-1)).toContain('What does it cost?：失败')
     expect(reports.at(-1)).not.toContain('private-token')
-    expect(reports.at(-1)).toContain('&lt;img src=x onerror=alert\\(1\\)&gt;')
+    expect(reports.at(-1)).toContain('&lt;img src=x onerror=alert(1)&gt;')
     expect(reports.at(-1)).not.toContain('<img')
   })
 

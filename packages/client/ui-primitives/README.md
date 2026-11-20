@@ -22,7 +22,7 @@ Use `dsh-client-ui-primitives` to build web-client controls and render agent out
 
 -----
 
-Bare URL autolinks stop at Chinese prose punctuation so following explanation does not become part of the destination. Explicit Markdown links retain their complete URLs.
+Bare URL autolinks stop at Chinese prose punctuation. Explicit Markdown links retain their complete URLs. `parseGfmWithMath(text)` exposes the settled renderer’s syntax tree and source positions to callers that format saved Markdown.
 
 <a id="use-this-package"></a>
 ## Use this package

@@ -83,4 +83,6 @@ Generated sentence citations render as clickable superscript numbers in chat and
 
 Synthesis Trace details expose accepted question IDs, per-question validation failures and automatic normalization notes when recorded. Older results without these diagnostics remain readable.
 
-Report coverage, evidence and search-scope appendices are collapsed in chat and HTML exports. New reports use Markdown section headings; the renderer also recognizes the historical coverage wrapper without enabling arbitrary HTML.
+The chat card opens with the report body collapsed and both downloads available. Wide tables scroll within the expanded preview. Draft and blocked deliveries show their reasons. Coverage, evidence and search-scope appendices are collapsed in both chat and HTML. Saved regional price pairs with explicit regular and education amounts are labelled separately on display and download, retaining their source links.
+
+New reports use Markdown section headings. The renderer also recognizes the historical coverage wrapper while keeping arbitrary HTML disabled.

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createProductEvidenceId } from '@deepseek-ai/dsh-product-insight-model'
-import type { ProductSynthesisInput } from '../src/report.ts'
+import { renderProductSynthesis, type ProductSynthesisInput } from '../src/report.ts'
 import { insightRequest, inspectInsight, insightRepairIssues, repairInsight } from '../src/insight-output.ts'
 import { synthesisAliases, type SynthesisResponse } from '../src/synthesis-output.ts'
 
@@ -13,8 +13,59 @@ const section = { kind: 'section', sectionId: 'S1', title: '部署方式决定�
 const coverage = input.questions.map(q => ({ kind: 'coverage', questionId: q.questionId,
   status: 'partial', sectionIds: ['S1'], gap: '尚缺具体条件。' }))
 const response = (entries: unknown[]): SynthesisResponse => ({ text: JSON.stringify(entries), error: null })
+const visual = { ...input, images: [{ id: 'I1', pageUrl: 'https://example.com/a', imageUrl: 'https://example.com/i',
+  caption: 'Latency', context: 'Three runs', summary: 'Summary', facts: ['42 ms'], dataUrl: 'data:image/png;base64,AAAA' }] }
+const sourceRecords = { evidence: [], discovery: { searches: [], cancelled: false,
+  candidates: { schemaVersion: 1, status: 'success', items: [], failures: [] } } } as const
 
 describe('material-led insight output', () => {
+  it('allows visual citations without a displayed figure and sends no binary data in writing requests', () => {
+    const text = '42 ms[[cite:I1]].\n\n[[figure:I1]]'
+    const check = inspectInsight(response([{ ...section, text, imageUse: { mode: 'cite_only' } }, ...coverage]).text, visual)
+    expect(check.issues).toEqual([])
+    const md = renderProductSynthesis(sourceRecords, visual, check)
+    expect(md).toContain('[^product-source-1]')
+    expect(md).not.toContain('data:image')
+    expect(md).not.toContain('[[figure:')
+    const prompt = insightRequest(visual, synthesisAliases(visual))
+    expect(prompt).toContain('42 ms')
+    expect(prompt).not.toContain('base64')
+  })
+
+  it('places selected originals after numbered prose paragraphs, retaining cited tables and escaped cell content', () => {
+    const text = '第一段。[[cite:I1]]\n\n| 条件 | 延迟 |\n| :--- | ---: |\n| A\\|B <tag> | 42 ms[[cite:I1]] |\n\n第二段。\n\n第三段。'
+    const display = { mode: 'display', placements: [{ imageId: 'I1', afterParagraph: 2 }] }
+    const check = inspectInsight(response([{ ...section, text, imageUse: display }, ...coverage]).text, visual)
+    expect(check.issues).toEqual([])
+    const md = renderProductSynthesis(sourceRecords, visual, check)
+    expect(md).toContain('| 条件 | 延迟 |\n| --- | --- |\n| A\\|B &lt;tag&gt; | 42 ms[^product-source-1] |')
+    expect(md).toContain('第二段。\n\n![I1](data:image/png;base64,AAAA)\n\nLatency')
+    expect(md.indexOf('[图片来源]')).toBeLessThan(md.indexOf('第三段。'))
+  })
+
+  it.each([undefined, { mode: 'display', placements: [{ imageId: 'X', afterParagraph: 1 }] },
+    { mode: 'display', placements: [{ imageId: 'I1', afterParagraph: 3 }] }])('repairs only an invalid illustration decision', async (imageUse) => {
+    const fix = { mode: 'display', placements: [{ imageId: 'I1', afterParagraph: 1 }] }
+    const invoke = vi.fn(async (_user: string, ordinal: number) => ordinal === 1
+      ? response([{ ...section, imageUse }, ...coverage])
+      : response([{ kind: 'imageUse', sectionId: 'S1', imageUse: fix, text: 'discard this rewrite' }]))
+    const out = await repairInsight(visual, invoke)
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(JSON.parse(invoke.mock.calls[1]![0])).toMatchObject({ correction: { unit: 'imageUse', id: 'S1' } })
+    expect(out.sections[0]?.imageUse).toEqual(fix)
+    expect(out.sections[0]?.text).toContain('支持本地部署')
+    expect(out.coverage).toHaveLength(4)
+  })
+
+  it('keeps accepted prose and source citations after an unsuccessful placement-only repair', async () => {
+    const first = response([{ ...section, text: '仅引用。[[cite:I1]]' }, ...coverage])
+    const out = await repairInsight(visual, async (_user, ordinal) => ordinal === 1 ? first : response([]))
+    expect(out.sections[0]?.imageUse).toEqual({ mode: 'cite_only' })
+    const markdown = renderProductSynthesis(sourceRecords, visual, out)
+    expect(markdown).toContain('仅引用。[^product-source-1]')
+    expect(markdown).not.toContain('data:image')
+  })
+
   it('uses one evidence pool and allows a section to cover multiple questions', () => {
     const request = insightRequest(input, synthesisAliases(input))
     expect(request.match(/Local deployment/g)).toHaveLength(1)

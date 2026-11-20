@@ -8,6 +8,19 @@ import { observeSearchPage, resolveSearchSelection } from './search-recovery.ts'
 import { readProductBrowserPage } from './browser-reader.ts'
 import { prepareProductPage, ProductPageEmptyError } from './page-content.ts'
 
+const imageReader = new HttpFetchProvider({ timeoutMs: 25_000, maxResponseBytes: 8 * 1024 * 1024,
+  maxBodyChars: 1, maxRedirects: 5, userAgent: 'deepseek-harness-product-insight/0.2' })
+
+/**
+ * Fetch an article's original raster image for the product investigation.
+ * @param url - Absolute image URL resolved from the article.
+ * @param signal - Optional cancellation signal for the download.
+ * @returns The downloaded bytes and their declared media type.
+ */
+export function fetchProductImage(url: string, signal?: AbortSignal): ReturnType<HttpFetchProvider['fetchImage']> {
+  return imageReader.fetchImage(url, signal)
+}
+
 /** Cordis registration name. */
 export const name = 'product-insight-source'
 /** Product preset supplies an isolated Web registry. */

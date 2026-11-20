@@ -798,6 +798,12 @@
       "upstreamChurn6mo": 443
     },
     {
+      "path": "packages/client/ui-primitives/src/index.ts",
+      "category": "wiring",
+      "owner": "ykxy11",
+      "reason": "从现有 Markdown 组件入口导出带公式的解析器，供产品报告预览与下载共同识别价格文字。"
+    },
+    {
       "path": "packages/client/ui-primitives/src/markdown/parse.ts",
       "category": "fork",
       "owner": "ZhouZhixian2021",
