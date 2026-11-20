@@ -3,7 +3,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { WebError, type WebFetchRequest, type WebFetchResult } from '@deepseek-ai/dsh-web'
 import { HttpFetchProvider } from '@deepseek-ai/dsh-web-fetch-http'
-import { parseSearchResults, searchMultiple, type SearchEngine } from './multi-search.ts'
+import { parseSearchResults, SearchEngineHealth, searchMultiple, type SearchEngine } from './multi-search.ts'
 import { observeSearchPage, resolveSearchSelection } from './search-recovery.ts'
 import { readProductBrowserPage } from './browser-reader.ts'
 import { prepareProductPage, ProductPageEmptyError } from './page-content.ts'
@@ -48,6 +48,10 @@ export interface Config {
   browserMinimumTextCharacters: number
   /** Whether a page fetch may follow a redirect onto another host (redirector and media links do). */
   followPageRedirects: boolean
+  /** Consecutive engine failures that take that engine out of the rotation. */
+  searchEngineFailureThreshold: number
+  /** How long a failed engine stays out before it is tried again. */
+  searchEngineCooldownMs: number
 }
 
 export const Config: z<Config> = z.object({
@@ -65,6 +69,8 @@ export const Config: z<Config> = z.object({
   browserMaximumRequests: z.number().default(60),
   browserMinimumTextCharacters: z.number().default(300),
   followPageRedirects: z.boolean().default(true),
+  searchEngineFailureThreshold: z.number().default(3),
+  searchEngineCooldownMs: z.number().default(600_000),
 })
 
 /**
@@ -96,6 +102,9 @@ export function apply(ctx: Context, config: Config): void {
   const searchHttp = new HttpFetchProvider({ timeoutMs: config.timeoutMs, maxResponseBytes: config.maximumResponseBytes,
     maxBodyChars: config.maximumBodyCharacters, maxRedirects: 5, http1Only: config.searchHttp1Only,
     userAgent: 'deepseek-harness-product-insight/0.2 (+https://github.com/ZhouZhixian2021/insight-agent)' })
+  /** One breaker per provider: a blocked engine stops costing a request per question. */
+  const health = new SearchEngineHealth({ failureThreshold: config.searchEngineFailureThreshold,
+    cooldownMs: config.searchEngineCooldownMs })
   ctx.web.registerSearchProvider({ id: 'product-free-search', available: () => true,
     async search(request, signal) {
       const maximum = Math.min(request.maxResults ?? config.maximumSearchResults, config.maximumSearchResults)
@@ -118,7 +127,7 @@ export function apply(ctx: Context, config: Config): void {
           const ids = await ctx.serial('product/search-recognize', observation, active)
           if (!ids) throw new WebError('当前会话没有可用的搜索识别模型。', 'WEB_PROVIDER_FAILED')
           return resolveSearchSelection(observation, ids)
-        } : undefined)
+        } : undefined, health)
       ctx.logger.info(result.content)
       return result
     },
