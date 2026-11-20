@@ -23,6 +23,8 @@ export type { OfficialFeedOptions, OfficialFeedResult, OfficialLink } from './of
 export { MINIMUM_QUESTION_TERM_HITS, relevanceSignals, scoreCandidateRelevance } from './relevance.ts'
 export type { RelevanceCandidate, RelevanceSignals, RelevanceVerdict } from './relevance.ts'
 export { BING_NEWS_MARKET, BING_NEWS_RSS, discoverNewsLinks, newsFeedUrl } from './news-feed.ts'
+export { rotationOf, SearchEngineHealth, searchMultiple } from './multi-search.ts'
+export type { SearchHealthOptions } from './multi-search.ts'
 export type { NewsFeedOptions, NewsFeedResult } from './news-feed.ts'
 
 /** One query and its observed outcome, including empty searches and unstarted queries. */

@@ -37,6 +37,7 @@ describe('free product search', () => {
       searchHttp1Only: true,
       browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
       browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
+      searchEngineFailureThreshold: 3, searchEngineCooldownMs: 600000,
       timeoutMs: 25000, maximumResponseBytes: 5_000_000,
       maximumBodyCharacters: 500_000, maximumSearchResults: 10,
     })
@@ -60,6 +61,7 @@ describe('free product search', () => {
         searchHttp1Only: true,
         browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
         browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
+        searchEngineFailureThreshold: 3, searchEngineCooldownMs: 600000,
         timeoutMs: 25000, maximumResponseBytes: 5_000_000,
         maximumBodyCharacters: 500_000, maximumSearchResults: 10,
       })
@@ -86,6 +88,7 @@ describe('free product search', () => {
         searchHttp1Only: true,
         browserEnabled: false, browserChannel: 'msedge', browserTimeoutMs: 30000,
         browserMaximumRequests: 60, browserMinimumTextCharacters: 300, followPageRedirects: true,
+        searchEngineFailureThreshold: 3, searchEngineCooldownMs: 600000,
         timeoutMs: 25000, maximumResponseBytes: 5_000_000,
         maximumBodyCharacters: 500_000, maximumSearchResults: 10,
       })

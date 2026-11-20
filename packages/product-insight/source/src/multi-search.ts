@@ -20,13 +20,73 @@ const AD_SLOTS = ['b_ad', 'b_adBlock', 'b_ads', 'b_ans'] as const
 const isAdSlot = (node: Node): boolean => AD_SLOTS.some(name => hasClass(node, name))
 /** Whether a result card sits inside a promoted container, at any depth. */
 const insideAdSlot = (node: Node): boolean => {
-  let current: Node | undefined = node
-  while (current !== undefined && 'parentNode' in current) {
-    const parent: Node | undefined = current.parentNode ?? undefined
-    if (parent === undefined || isAdSlot(parent)) return parent !== undefined
+  let current: Node = node
+  for (;;) {
+    if (!('parentNode' in current)) return false
+    const parent: Node | null = current.parentNode
+    if (parent === null) return false
+    if (isAdSlot(parent)) return true
     current = parent
   }
-  return false
+}
+
+/** Deployment limits for the engine circuit breaker. */
+export interface SearchHealthOptions {
+  /** Consecutive failures that take an engine out of the rotation. */
+  readonly failureThreshold: number
+  /** How long a tripped engine stays out before the next attempt. */
+  readonly cooldownMs: number
+}
+
+/**
+ * Failures per engine, so a blocked or changed engine stops costing a request
+ * per question. A success clears the streak; a tripped engine is retried once
+ * the cooldown ends, and the whole rotation is used again when every engine is
+ * out, because a run with no source at all is worse than a slow one.
+ */
+export class SearchEngineHealth {
+  private readonly failures = new Map<SearchEngine, number>()
+  private readonly trippedAt = new Map<SearchEngine, number>()
+
+  constructor(private readonly options: SearchHealthOptions, private readonly now: () => number = Date.now) {}
+
+  /**
+   * Whether this attempt should skip the engine.
+   * @param engine - Engine about to be queried.
+   * @returns True while the engine is cooling down.
+   */
+  skips(engine: SearchEngine): boolean {
+    const at = this.trippedAt.get(engine)
+    if (at === undefined) return false
+    if (this.now() - at >= this.options.cooldownMs) { this.trippedAt.delete(engine); this.failures.delete(engine); return false }
+    return true
+  }
+
+  /**
+   * Record one attempt.
+   * @param engine - Engine that was queried.
+   * @param ok - Whether it answered with a usable page.
+   */
+  record(engine: SearchEngine, ok: boolean): void {
+    if (ok) { this.failures.delete(engine); this.trippedAt.delete(engine); return }
+    const failures = (this.failures.get(engine) ?? 0) + 1
+    this.failures.set(engine, failures)
+    if (failures >= this.options.failureThreshold && !this.trippedAt.has(engine)) this.trippedAt.set(engine, this.now())
+  }
+}
+
+/**
+ * Split the configured engines into those to query now and those cooling down.
+ * @param engines - Unique configured sources.
+ * @param health - Per-engine failure record, or undefined to query them all.
+ * @returns The rotation to use and the engines it skipped.
+ */
+export function rotationOf(engines: readonly SearchEngine[], health: SearchEngineHealth | undefined):
+{ readonly active: readonly SearchEngine[]; readonly skipped: readonly SearchEngine[] } {
+  if (health === undefined) return { active: engines, skipped: [] }
+  const active = engines.filter(engine => !health.skips(engine))
+  const skipped = engines.filter(engine => health.skips(engine))
+  return active.length > 0 ? { active, skipped } : { active: engines, skipped: [] }
 }
 
 export function targetUrl(href: string, engine: SearchEngine): string | undefined {
@@ -101,13 +161,17 @@ export function parseSearchResults(engine: SearchEngine, fetched: WebFetchResult
  * @param engines - Unique configured sources.
  * @param fetchPage - Existing guarded HTTP transport with timeout and size limits.
  * @param signal - Shared cancellation signal.
+ * @param recover - Optional browser or model recovery for an unrecognized layout.
+ * @param health - Per-engine failure record; a cooling engine is skipped this round.
  * @returns Interleaved, deduplicated results and source outcome diagnostics.
  */
 export async function searchMultiple(query: string, maximum: number, engines: SearchEngine[],
   fetchPage: (url: string, signal?: AbortSignal) => Promise<WebFetchResult>, signal?: AbortSignal,
-  recover?: (engine: SearchEngine, page: WebFetchResult) => Promise<WebSearchResult>): Promise<WebSearchResult> {
+  recover?: (engine: SearchEngine, page: WebFetchResult) => Promise<WebSearchResult>,
+  health?: SearchEngineHealth): Promise<WebSearchResult> {
   signal?.throwIfAborted()
-  const outcomes = await Promise.allSettled(engines.map(async (engine) => {
+  const { active, skipped } = rotationOf(engines, health)
+  const outcomes = await Promise.allSettled(active.map(async (engine) => {
     const url = new URL(endpoints[engine])
     url.searchParams.set(engine === 'yahoo' ? 'p' : 'q', query)
     if (engine === 'yahoo') url.searchParams.set('iscqry', '')
@@ -118,11 +182,16 @@ export async function searchMultiple(query: string, maximum: number, engines: Se
     }
   }))
   signal?.throwIfAborted()
+  outcomes.forEach((outcome, index) => {
+    const engine = active[index]
+    if (engine !== undefined) health?.record(engine, outcome.status === 'fulfilled')
+  })
   const details = outcomes.map((outcome, i) => outcome.status === 'fulfilled'
-    ? `${engines[i]}: ${outcome.value.sources.length} 条${outcome.value.truncated ? '（已截断）' : ''}`
-    : `${engines[i]}: ${outcome.reason instanceof WebError ? outcome.reason.code : 'WEB_PROVIDER_FAILED'} (${outcome.reason instanceof Error ? outcome.reason.message.slice(0, 200) : 'Unknown failure'})`)
-  const successes = outcomes.flatMap((outcome, index) => outcome.status === 'fulfilled' && engines[index] !== undefined
-    ? [{ engine: engines[index], result: outcome.value }] : [])
+    ? `${active[i]}: ${outcome.value.sources.length} 条${outcome.value.truncated ? '（已截断）' : ''}`
+    : `${active[i]}: ${outcome.reason instanceof WebError ? outcome.reason.code : 'WEB_PROVIDER_FAILED'} (${outcome.reason instanceof Error ? outcome.reason.message.slice(0, 200) : 'Unknown failure'})`)
+  if (skipped.length > 0) details.push(`冷却中跳过：${skipped.join('、')}`)
+  const successes = outcomes.flatMap((outcome, index) => outcome.status === 'fulfilled' && active[index] !== undefined
+    ? [{ engine: active[index], result: outcome.value }] : [])
   if (!successes.length) throw new WebError(`搜索来源均失败：${details.join('；')}`, 'WEB_PROVIDER_FAILED')
   const sources = new Map<string, AttributedSearchSource>()
   const count = Math.max(0, ...successes.map(({ result }) => result.sources.length))
