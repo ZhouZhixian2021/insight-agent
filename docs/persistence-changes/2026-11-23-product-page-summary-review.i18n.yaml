@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-23-product-page-summary-review.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-23-product-page-summary-review.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-23-product-page-summary-review:
+  en: 8f621c9b3665a2aa
+  zh: 1edbee19c6ed6269
+/2026-11-23-product-page-summary-review/summary:
+  en: 1b11a804a1057b9e
+  zh: 09f0dc478988bedd
+/2026-11-23-product-page-summary-review/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-23-product-page-summary-review/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-23-product-page-summary-review/compatibility:
+  en: e8e3a771b850c067
+  zh: f4c8c86d6bb07fad
+/2026-11-23-product-page-summary-review/verification:
+  en: c191860640110c43
+  zh: a0e1b28a3651ee31
+/2026-11-23-product-page-summary-review/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

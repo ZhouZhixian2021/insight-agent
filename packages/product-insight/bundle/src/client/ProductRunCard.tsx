@@ -23,6 +23,7 @@ interface ProductTraceEntry {
   readonly type: string
   readonly status: 'running' | 'completed' | 'failed' | 'recorded'
   readonly page?: string
+  readonly phase?: 'reading' | 'review'
   readonly model?: string
   readonly inputCharacters?: number
   readonly durationMilliseconds?: number
@@ -42,6 +43,7 @@ export interface ProductChatRun {
   readonly candidatePages: number
   readonly availablePages: number
   readonly evidence: number
+  readonly summaryMode?: boolean
   readonly claims: number
   readonly verifications: number
   readonly failures: number
@@ -126,6 +128,7 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
       seq: event.seq, time: event.time, type: event.type, status,
       ...duration === undefined ? {} : { durationMilliseconds: duration },
       ...typeof data.candidatePageId === 'string' ? { page: data.candidatePageId } : {},
+      ...(data.phase === 'reading' || data.phase === 'review' ? { phase: data.phase } : {}),
       ...typeof data.model === 'string' ? { model: data.model } : {},
       ...typeof data.user === 'string' ? { inputCharacters: data.user.length } : {},
       ...typeof data.text === 'string' ? { outputCharacters: data.text.length } : {},
@@ -156,10 +159,19 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
           ? data.snapshots.filter(item => record(item) && item.status === 'available').length : state.availablePages }
     case 'product/checkpoint-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(stageNumber(data.stage), state.stage),
+        ...(data.schemaVersion === 4 ? { summaryMode: true, claims: Math.max(state.claims, count(data.pageSummaries)),
+          evidence: Math.max(state.evidence, count(data.pageSummaries)) } : {}),
         failures: count(data.failures), elapsedMilliseconds: typeof data.elapsedMilliseconds === 'number'
           ? data.elapsedMilliseconds : state.elapsedMilliseconds }
     case 'product/model-request-v1': case 'product/model-result-v1':
       return { ...state, stage: Math.max(2, state.stage) }
+    case 'product/page-summary-request-v1': case 'product/page-summary-result-v1': {
+      const done = (phase: 'reading' | 'review') => new Set((state.trace ?? [])
+        .filter(item => item.type === 'product/page-summary-result-v1' && item.status === 'completed' && item.phase === phase)
+        .map(item => item.page)).size
+      return { ...state, summaryMode: true, stage: Math.max(2, state.stage),
+        evidence: Math.max(state.evidence, done('reading')), claims: Math.max(state.claims, done('review')) }
+    }
     case 'product/evidence-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(2, state.stage), evidence: count(data.items) }
     case 'product/claim-review-request-v1': case 'product/claim-review-result-v1':
@@ -227,6 +239,7 @@ const zh = {
   title: '产品洞察调查', waiting: '计划已批准，等待调查启动', running: '调查进行中', completed: '调查已完成',
   failed: '调查失败', cancelled: '调查已取消', final: '正式报告', draft: '调查草稿', blocked: '报告受阻',
   pages: '来源发现与网页抓取', evidence: '证据提取', review: '语义审核', verification: '独立佐证', report: '报告生成',
+  summaryStage: '逐篇提要与全文审核', readingPhase: '逐篇提要', reviewPhase: '全文审核', summariesRead: '已生成提要（篇）', summariesReviewed: '已审核提要（篇）',
   pending: '待开始', active: '进行中', done: '已完成', sourcePages: '候选页 / 可用正文', evidenceCount: '有效证据',
   claimCount: '已审核结论', verificationCount: '跨来源核验', failureCount: '失败操作', elapsed: '已用时', seconds: '秒',
   blockers: '未达标原因', reportContent: '报告正文', download: '下载 Markdown', downloadHtml: '下载 HTML',
@@ -243,6 +256,7 @@ const en: Record<ProductRunKey, string> = {
   title: 'Product investigation', waiting: 'Plan approved; waiting to start', running: 'Investigation running', completed: 'Investigation completed',
   failed: 'Investigation failed', cancelled: 'Investigation cancelled', final: 'Final report', draft: 'Investigation draft', blocked: 'Report blocked',
   pages: 'Source discovery and page capture', evidence: 'Evidence extraction', review: 'Semantic review', verification: 'Independent corroboration', report: 'Report synthesis',
+  summaryStage: 'Page summaries and full-text review', readingPhase: 'Page summary', reviewPhase: 'Full-text review', summariesRead: 'Pages summarized', summariesReviewed: 'Pages reviewed',
   pending: 'Pending', active: 'Running', done: 'Completed', sourcePages: 'Candidates / captured pages', evidenceCount: 'Accepted evidence',
   claimCount: 'Reviewed claims', verificationCount: 'Cross-source checks', failureCount: 'Failed operations', elapsed: 'Elapsed', seconds: 'seconds',
   blockers: 'Delivery blockers', reportContent: 'Report content', download: 'Download Markdown', downloadHtml: 'Download HTML',
@@ -358,8 +372,9 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
   const title = run.title || t('title')
   const list = (items: readonly string[]) => `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
   const summary: readonly [ProductRunKey, string][] = [
-    ['sourcePages', `${run.candidatePages} / ${run.availablePages}`], ['evidenceCount', String(run.evidence)],
-    ['claimCount', String(run.claims)], ['verificationCount', String(run.verifications)],
+    ['sourcePages', `${run.candidatePages} / ${run.availablePages}`], [run.summaryMode ? 'summariesRead' : 'evidenceCount', String(run.evidence)],
+    [run.summaryMode ? 'summariesReviewed' : 'claimCount', String(run.claims)],
+    ...(run.summaryMode ? [] : [['verificationCount', String(run.verifications)] as [ProductRunKey, string]]),
     ['failureCount', String(run.failures)], ['elapsed', `${Math.round(run.elapsedMilliseconds / 1000)} ${t('seconds')}`],
   ]
   const contents = headings.filter(heading => heading.level <= 2)
@@ -392,7 +407,9 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
   'node' | 'useInput' | 'inputActions'> & PropsLocale<'productRun'>) {
   const run = node.data
   const [traceStatus, setTraceStatus] = useState('all')
-  const stages: readonly (readonly [ProductRunKey, number])[] = [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
+  const stages: readonly (readonly [ProductRunKey, number])[] = run.summaryMode
+    ? [['pages', 1], ['summaryStage', 2], ['report', 5]]
+    : [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
   const status = run.deliveryStatus ?? run.runState
   const blockers = deliveryBlockers(run)
   return <section className={css.card} data-product-insight-run={node.id} aria-label={t('title')}>
@@ -405,8 +422,8 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
     })}</ol>
     <dl className={css.stats}>
       <div><dt>{t('sourcePages')}</dt><dd>{run.candidatePages} / {run.availablePages}</dd></div>
-      <div><dt>{t('evidenceCount')}</dt><dd>{run.evidence}</dd></div>
-      <div><dt>{t('claimCount')}</dt><dd>{run.claims}</dd></div>
+      <div><dt>{t(run.summaryMode ? 'summariesRead' : 'evidenceCount')}</dt><dd>{run.evidence}</dd></div>
+      <div><dt>{t(run.summaryMode ? 'summariesReviewed' : 'claimCount')}</dt><dd>{run.claims}</dd></div>
       {run.verifications > 0 && <div><dt>{t('verificationCount')}</dt><dd>{run.verifications}</dd></div>}
       <div><dt>{t('failureCount')}</dt><dd>{run.failures}</dd></div>
       <div><dt>{t('elapsed')}</dt><dd>{Math.round(run.elapsedMilliseconds / 1000)} {t('seconds')}</dd></div>
@@ -420,7 +437,7 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
       </select></label>
       <button type="button" onClick={() => { downloadProductTrace(run) }}>{t('traceDownload')}</button>
       <ol>{(run.trace ?? []).filter(entry => traceStatus === 'all' || entry.status === traceStatus).map(entry =>
-        <li key={entry.seq}><details><summary>{new Date(entry.time).toLocaleTimeString()} · {entry.type} · {entry.status}</summary>
+        <li key={entry.seq}><details><summary>{new Date(entry.time).toLocaleTimeString()} · {entry.type}{entry.phase ? ' · ' + t(entry.phase === 'review' ? 'reviewPhase' : 'readingPhase') : ''} · {entry.status}</summary>
           <pre>{JSON.stringify(entry, null, 2)}</pre></details></li>)}</ol>
     </details>
     {blockers.length > 0 && <details className={css.details}>

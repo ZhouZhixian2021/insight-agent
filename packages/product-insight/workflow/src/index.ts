@@ -1,5 +1,6 @@
 /** Bounded product investigation from an approved plan through cited report delivery. */
 import type { ProductInsight } from './insight-output.ts'
+import { ProductPageReviewError, type ReviewedProductPage } from './page-summary.ts'
 import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
@@ -86,8 +87,9 @@ export interface ProductInvestigationInput {
 
 /** Complete retained work through one committed page, review batch, or question. */
 export interface ProductInvestigationCheckpoint {
-  /** Version 3 ranks overlapping windows. Versions 1 and 2 resume in source order. */
-  readonly schemaVersion: 1 | 2 | 3
+  /** Version 4 resumes page-level summaries; earlier versions resume their original evidence workflow. */
+  readonly schemaVersion: 1 | 2 | 3 | 4
+  readonly pageSummaries?: readonly ReviewedProductPage[]
   readonly planId: ProductPlan['planId']
   readonly planVersion: number
   readonly productId: Product['productId']
@@ -129,6 +131,9 @@ export interface ProductInvestigationAdapters {
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
   readonly extractImages?: (images: NonNullable<ProductPageFetchResult['images']>, signal?: AbortSignal) => Promise<ProductImageCard[]>
   readonly readText: (contentRef: string) => Promise<string>
+  /** New Session investigations read and independently review the complete captured page. */
+  readonly summarizePage?: (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
+    signal?: AbortSignal) => Promise<ReviewedProductPage>
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
     readonly text: string
@@ -164,6 +169,7 @@ export interface ProductInvestigationAdapters {
 
 /** Settled source, evidence, verification, and report outcomes for one run. */
 export interface ProductInvestigationResult {
+  readonly pageSummaries?: readonly ReviewedProductPage[]
   readonly run: ProductRun
   readonly discovery: ProductDiscoveryResult
   readonly pages: ProductPageFetchResult
@@ -213,7 +219,10 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   if (!isExecutableProductPlan(input.plan)) throw new RangeError('Product investigation requires the approved plan version')
   const maximumPageCharacters = resolveProductPageCharacterLimit(input.plan)
   if (input.checkpoint !== undefined) validateProductCheckpoint(input, input.checkpoint)
-  const checkpointVersion = input.checkpoint?.schemaVersion ?? 3
+  const checkpointVersion = input.checkpoint?.schemaVersion ?? (adapters.summarizePage ? 4 : 3)
+  const summarizePage = checkpointVersion === 4 ? adapters.summarizePage : undefined
+  if (checkpointVersion === 4 && !summarizePage) throw new RangeError('Resuming reviewed page summaries requires a full-page reviewer')
+  const pageSummaries = summarizePage ? [...input.checkpoint?.pageSummaries ?? []] : undefined
   const fragmentOverlapCharacters = input.checkpoint === undefined
     ? PRODUCT_PAGE_FRAGMENT_OVERLAP_CHARACTERS : input.checkpoint.fragmentOverlapCharacters ?? 0
   if (input.sourceRevalidation !== undefined && input.checkpoint === undefined) {
@@ -258,7 +267,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       planId: input.plan.planId, planVersion: input.plan.version,
       productId: input.product.productId, stage, nextIndex,
       ...fragment === undefined ? {} : { fragmentIndex: fragment.index },
-      ...fragmentOverlapCharacters === 0 ? {} : { fragmentOverlapCharacters },
+      ...fragmentOverlapCharacters === 0 || pageSummaries !== undefined ? {} : { fragmentOverlapCharacters },
+      ...(pageSummaries === undefined ? {} : { pageSummaries: [...pageSummaries] }),
       ...fragment === undefined || checkpointVersion !== 3 ? {} : { fragmentOrder: fragment.order },
       ...currentCheckpoint?.gapReadCompleted ? { gapReadCompleted: true } : {},
       ...priorVerifications === undefined ? {} : { priorVerifications },
@@ -276,7 +286,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       evidence.push(item)
     }
   }
-  type ExtractionResult = { evidence: ProductEvidence[]; failures: ProductFailure[] }
+  type ExtractionResult = { evidence: ProductEvidence[]; failures: ProductFailure[]; summary?: ReviewedProductPage }
   const extractFragment = async ({ page, snapshot, text }: {
     page: CandidatePage
     snapshot: AvailableSourceSnapshot
@@ -350,9 +360,13 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             throw new RangeError('Saved product page exceeds the approved text limit')
           }
           if (text.length === 0) throw new RangeError('Saved product page has no readable text')
+          if (summarizePage) {
+            result.summary = await summarizePage(page, snapshot, text, operationSignal)
+            return
+          }
         } catch (error) {
           if (operationSignal?.aborted) return
-          result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
+          result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: error instanceof ProductPageReviewError ? 'analysis' : 'extraction',
             category: 'unknown', message: error instanceof Error ? error.message : String(error),
             retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
           return
@@ -397,12 +411,13 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       }
     }
     const commitPage = (result: ExtractionResult): void => {
+      if (result.summary) pageSummaries?.push(result.summary)
       appendEvidence(result.evidence)
       failures.push(...result.failures)
       result.evidence.length = 0
       result.failures.length = 0
     }
-    if (input.plan.limits?.maximumPageCharacters !== undefined || currentCheckpoint?.fragmentIndex !== undefined) {
+    if (!summarizePage && (input.plan.limits?.maximumPageCharacters !== undefined || currentCheckpoint?.fragmentIndex !== undefined)) {
       for (let index = extractionStart; index < pages.snapshots.items.length && !operationSignal?.aborted; index++) {
         const result: ExtractionResult = { evidence: [], failures: [] }
         await extractPage(index, result, async (fragmentIndex, order) => {
@@ -452,6 +467,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         await Promise.allSettled(active)
       }
     }
+  }
+  if (pageSummaries === undefined) {
     await adapters.saveEvidence(evidence)
     const reviewStart = currentCheckpoint?.stage === 'claims' ? currentCheckpoint.nextIndex
       : currentCheckpoint?.stage === 'verification' ? evidence.length : reviews.length
@@ -527,7 +544,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     for (const result of settledReviews) if (result.status === 'rejected') throw result.reason
     await adapters.saveClaims(claims)
   }
-  const gaps: ProductEvidenceGap[] = input.plan.questions.filter(question =>
+  const gaps: ProductEvidenceGap[] = pageSummaries !== undefined ? [] : input.plan.questions.filter(question =>
     !claims.some(item => item.questionIds.includes(question.questionId))).map(question => ({
     schemaVersion: 1, gapId: createEvidenceGapId(), planId: input.plan.planId,
     questionId: question.questionId, missingContent: question.text,
@@ -536,6 +553,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   const images = !operationSignal?.aborted && pages.images?.length && adapters.extractImages
     ? await adapters.extractImages(pages.images, operationSignal) : []
   const reportInput: ProductReportInput = { product: input.product, plan: input.plan, discovery, pages,
+    ...(pageSummaries === undefined ? {} : { pageSummaries }),
     ...(images.length ? { images } : {}),
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation },
     evidence, reviews, claims, verifications, gaps, failures, cancelled: operationSignal?.aborted ?? false }
@@ -544,7 +562,8 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
   if (adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
     try {
       const material = productSynthesisInput(reportInput)
-      const noMaterial = images.length === 0 && material.questions.every(question => question.evidence.length === 0)
+      const noMaterial = images.length === 0 && !material.pageSummaries?.length
+        && material.questions.every(question => question.evidence.length === 0)
       const paragraphs: ReadonlyMap<string, string> | ProductInsight = noMaterial
         ? { kind: 'insight', sections: [{ sectionId: 'S1', title: '目前能够确认的范围', status: 'insufficient',
           text: '现有材料不足以形成有依据的产品判断。' }], coverage: material.questions.map(question => ({
@@ -553,13 +572,20 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
         : await adapters.synthesizeReport(material, operationSignal)
       operationSignal?.throwIfAborted()
       if ('kind' in paragraphs && paragraphs.sections.length === 0) throw new Error('No usable insight sections were generated')
+      if (pageSummaries && 'kind' in paragraphs) {
+        for (const item of paragraphs.coverage.filter(q => q.status === 'insufficient')) {
+          const question = input.plan.questions.find(q => q.questionId === item.questionId)
+          if (question) gaps.push({ schemaVersion: 1, gapId: createEvidenceGapId(), planId: input.plan.planId,
+            questionId: question.questionId, missingContent: question.text, reason: item.gap, status: 'open' })
+        }
+      }
       const synthesis = renderProductSynthesis(reportInput, material, paragraphs)
       const markdown = renderProductReport(reportInput, initialAssessment, synthesis)
       synthesizedMarkdown = markdown
-    } catch {
+    } catch (error) {
       if (!operationSignal?.aborted) {
         failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'report',
-          category: 'unknown', message: 'Product report synthesis did not produce a usable answer.',
+          category: 'unknown', message: pageSummaries && error instanceof Error ? error.message : 'Product report synthesis did not produce a usable answer.',
           retryable: false, occurredAt: adapters.now() })
       }
     }
@@ -598,18 +624,20 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     }
   }
   const cancelled = signal?.aborted ?? false
+  const hasMaterial = evidence.length > 0 || images.length > 0 || pageSummaries?.some(page => page.paragraphs.length > 0)
   const run: ProductRun = cancelled
     ? { schemaVersion: 1, runId, planId: input.plan.planId, planVersion: input.plan.version,
-      startedAt, completedAt, state: 'cancelled', outcome: evidence.length || images.length ? 'partial_success' : 'failed',
+      startedAt, completedAt, state: 'cancelled', outcome: hasMaterial ? 'partial_success' : 'failed',
       failures, reportId: delivery.report?.reportId ?? null }
-    : evidence.length === 0 && images.length === 0
+    : !hasMaterial
       ? { schemaVersion: 1, runId, planId: input.plan.planId, planVersion: input.plan.version,
         startedAt, completedAt, state: 'failed', outcome: 'failed', failures,
         reportId: null }
       : { schemaVersion: 1, runId, planId: input.plan.planId, planVersion: input.plan.version,
         startedAt, completedAt, state: 'completed', outcome: failures.length || gaps.length ? 'partial_success' : 'success',
         failures, reportId: delivery.report?.reportId ?? null }
-  return { run, discovery, pages, evidence, reviews, claims, verifications, gaps, assessment, delivery }
+  return { run, discovery, pages, evidence, reviews, claims, verifications, gaps, assessment, delivery,
+    ...(pageSummaries === undefined ? {} : { pageSummaries }) }
 }
 
 /** Pin each proposed excerpt to its supplied fragment before full-page source verification. */
@@ -639,7 +667,7 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
   checkpoint: ProductInvestigationCheckpoint): void {
   const version: unknown = checkpoint.schemaVersion
   const gapReadCompleted: unknown = checkpoint.gapReadCompleted
-  if ((version !== 1 && version !== 2 && version !== 3) || checkpoint.planId !== input.plan.planId
+  if ((version !== 1 && version !== 2 && version !== 3 && version !== 4) || checkpoint.planId !== input.plan.planId
     || checkpoint.planVersion !== input.plan.version || checkpoint.productId !== input.product.productId
     || gapReadCompleted !== undefined && (gapReadCompleted !== true || (input.plan.limits?.maximumGapReads ?? 0) <= 0)
     || !Number.isSafeInteger(checkpoint.nextIndex) || checkpoint.nextIndex < 0
@@ -656,6 +684,24 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
     || snapshots.some(snapshot => !pageIds.has(snapshot.candidatePageId))) {
     throw new RangeError('Product recovery checkpoint has inconsistent page identities')
   }
+  if (version === 4) {
+    const settled = new Set(snapshots.slice(0, checkpoint.nextIndex).map(s => s.candidatePageId))
+    if (!Array.isArray(checkpoint.pageSummaries) || !Number.isSafeInteger(checkpoint.nextIndex)
+      || checkpoint.nextIndex < 0 || checkpoint.nextIndex > snapshots.length
+      || !(checkpoint.stage === 'pages' && checkpoint.nextIndex === 0 || checkpoint.stage === 'evidence' && checkpoint.nextIndex > 0)
+      || checkpoint.fragmentIndex !== undefined || checkpoint.fragmentOrder !== undefined
+      || checkpoint.fragmentOverlapCharacters !== undefined
+      || checkpoint.gapReadCompleted || checkpoint.priorVerifications || checkpoint.evidence.length || checkpoint.claims.length
+      || checkpoint.reviews.length || checkpoint.verifications.length
+      || new Set(checkpoint.pageSummaries.map(s => s.candidatePageId)).size !== checkpoint.pageSummaries.length
+      || checkpoint.pageSummaries.some((s: ReviewedProductPage) => {
+        const snapshot = snapshotsByPage.get(s.candidatePageId)
+        return !settled.has(s.candidatePageId) || snapshot?.status !== 'available' || s.sourceSnapshotId !== snapshot.sourceSnapshotId
+          || s.contentHash !== snapshot.contentHash || !Array.isArray(s.paragraphs) || !s.paragraphs.every(p => typeof p === 'string' && p.trim())
+      })) throw new RangeError('Product recovery checkpoint has invalid reviewed page summaries')
+    return
+  }
+  if (checkpoint.pageSummaries !== undefined) throw new RangeError('Legacy evidence checkpoint cannot contain page summaries')
   const evidenceIds = new Set(checkpoint.evidence.map(item => item.evidenceId))
   if (evidenceIds.size !== checkpoint.evidence.length || checkpoint.evidence.some((item) => {
     const snapshot = snapshotsByPage.get(item.candidatePageId)
