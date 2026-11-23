@@ -89,6 +89,18 @@ describe('product page discovery', () => {
     expect(result.candidates.items.map(page => page.url)).toEqual(['https://review.test/example'])
   })
 
+  it('searches with the words the plan chose for that question', async () => {
+    const queries: string[] = []
+    await discoverCandidatePages({
+      product, maxResultsPerQuery: 5,
+      plan: { ...plan, questions: [{ ...plan.questions[0]!, searchTerms: ['逆向工程', 'ghidra', 'ai 反编译'] }] },
+    }, {
+      now,
+      web: { search: async (request) => { queries.push(request.query); return { sources: [], truncated: false } } },
+    })
+    expect(queries[0]).toBe('逆向工程 ghidra ai 反编译')
+  })
+
   it('records product posts from the news feed and drops unrelated stories', async () => {
     const result = await discoverCandidatePages({
       product: { ...product, name: 'Example M6', officialUrl: 'https://example.com/product' },

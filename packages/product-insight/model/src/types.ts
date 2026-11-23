@@ -45,6 +45,13 @@ export interface Product {
 export interface ProductQuestion {
   readonly questionId: ProductQuestionId
   readonly text: string
+  /**
+   * Words the planner would search for this question. They beat keywords cut
+   * out of the question sentence, which carry filler that matches nothing, and
+   * they name what a source page actually prints. Absent on plans that did not
+   * ask for them; discovery then derives terms from the question text.
+   */
+  readonly searchTerms?: readonly string[]
 }
 
 /** Approval belongs to one immutable plan version. */

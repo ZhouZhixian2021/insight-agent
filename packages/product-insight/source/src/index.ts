@@ -119,9 +119,16 @@ const PRODUCT_SEARCH_QUERY_TERMS = 4
  * Plan scope stays out of the query: engines match its prose instead of the product and return unrelated pages.
  * @param product - Investigated product; a trailing parenthetical is annotation, not a search term.
  * @param question - Approved question whose distinctive terms are ranked.
+ * @param searchTerms - Words the planner chose for this question; they replace the derived ones when present.
  * @returns A keyword query of at most {@link PRODUCT_SEARCH_QUERY_CHARACTERS} characters.
  */
-export function productSearchQuery(product: Product, question: string): string {
+export function productSearchQuery(product: Product, question: string,
+  searchTerms?: readonly string[]): string {
+  // A planner-chosen list knows what a source page prints; derived keywords fall
+  // back to the question's own wording, which carries filler no page contains.
+  if (searchTerms !== undefined && searchTerms.length > 0) {
+    return capSearchQuery(searchTerms.join(' '), PRODUCT_SEARCH_QUERY_CHARACTERS)
+  }
   const name = product.name.replace(/\s*[（(][^）)]*[）)]/gu, ' ').trim()
   const lowered = name.toLowerCase()
   const terms = [...productQuestionTerms(question)]
@@ -352,7 +359,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     if (primaryId !== undefined && primary === undefined) continue
     const reason = primaryId === undefined ? 'evidence_gap' : 'corroboration_gap'
     const terms = domain === undefined ? [] : [...productQuestionTerms(question.text)]
-    const query = domain === undefined ? productSearchQuery(product, question.text)
+    const query = domain === undefined ? productSearchQuery(product, question.text, question.searchTerms)
       : [product.name, terms.join(' ') || question.text, plan.sourceCriteria?.productVersion,
         plan.sourceCriteria?.region, `site:${domain}`].filter(Boolean).join(' ').trim()
     const elapsed = maximumElapsedMinutes !== undefined

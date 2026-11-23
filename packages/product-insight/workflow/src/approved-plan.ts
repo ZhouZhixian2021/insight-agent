@@ -29,6 +29,8 @@ export interface ReviewedProductPlan {
   readonly product: Pick<Product, 'name' | 'developer' | 'officialUrl'>
   readonly scope: string
   readonly questions: readonly string[]
+  /** Per-question search words, aligned with `questions`; absent when the plan gave none. */
+  readonly searchTerms?: readonly (readonly string[])[]
   readonly limits: ProductPlanLimits
   readonly focus?: ProductPlanFocus
   readonly sourcePublishers?: readonly ProductSourcePublisher[]
@@ -93,6 +95,7 @@ export function productPlanFromApproval(input: ApprovedProductPlanInput): Approv
       scope: payload.scope,
       questions: payload.questions.map((text, index) => ({
         questionId: brandString<ProductQuestionId>(`${planId}:question:${index + 1}`), text,
+        ...payload.searchTerms?.[index]?.length ? { searchTerms: payload.searchTerms[index] } : {},
       })),
       limits: payload.limits,
       ...payload.focus === undefined ? {} : { focus: payload.focus },
@@ -152,6 +155,27 @@ function parseQuestions(value: Record<string, unknown>): string[] {
   return questions
 }
 
+/**
+ * Read the optional per-question search words.
+ * @param value - Plan object that may carry `searchTerms`.
+ * @param questionCount - Question count the list must align with.
+ * @returns One term list per question, or undefined when the plan omitted them.
+ */
+function parseSearchTerms(value: Record<string, unknown>, questionCount: number): readonly (readonly string[])[] | undefined {
+  if (value.searchTerms === undefined) return undefined
+  if (!Array.isArray(value.searchTerms) || value.searchTerms.length !== questionCount) {
+    throw new RangeError('Product plan searchTerms must list one entry per question')
+  }
+  return value.searchTerms.map((entry: unknown) => {
+    if (!Array.isArray(entry) || entry.length > 4) {
+      throw new RangeError('Product plan searchTerms entries must be arrays of at most four terms')
+    }
+    const terms = entry.map((term: unknown) => nonEmpty(term, 'Product search term'))
+    if (terms.some(term => term.length > 40)) throw new RangeError('Product search term is too long')
+    return terms
+  })
+}
+
 function parseLimits(value: Record<string, unknown>, questionCount: number, legacyGapLimits: boolean):
 ProductPlanLimits & { readonly maximumCandidatePages: number } {
   if (!isRecord(value.limits)) throw new RangeError('Product plan limits must be an object')
@@ -186,7 +210,7 @@ ProductPlanLimits & { readonly maximumCandidatePages: number } {
 
 function parseLegacyPlan(value: Record<string, unknown>): ReviewedProductPlan {
   exactKeys(value, ['schemaVersion', 'product', 'scope', 'questions', 'limits',
-    'sourcePublishers', 'sourceCriteria'], 'Product plan')
+    'sourcePublishers', 'sourceCriteria', 'searchTerms'], 'Product plan')
   const { official, ...product } = parseIdentity(value)
   const scope = nonEmpty(value.scope, 'Product scope')
   const questions = parseQuestions(value)
@@ -197,14 +221,16 @@ function parseLegacyPlan(value: Record<string, unknown>): ReviewedProductPlan {
       official, product.developer, 'Source publisher')
   }
   const sourceCriteria = parseSourceCriteria(value)
+  const searchTerms = parseSearchTerms(value, questions.length)
   return { product, scope, questions, limits,
+    ...searchTerms === undefined ? {} : { searchTerms },
     ...sourcePublishers === undefined ? {} : { sourcePublishers },
     ...sourceCriteria === undefined ? {} : { sourceCriteria } }
 }
 
 function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
   exactKeys(value, ['schemaVersion', 'product', 'scope', 'focus', 'questions', 'limits',
-    'additionalSites', 'sourceCriteria'], 'Product plan')
+    'additionalSites', 'sourceCriteria', 'searchTerms'], 'Product plan')
   const { official, ...product } = parseIdentity(value)
   const scope = nonEmpty(value.scope, 'Product scope')
   const focus = parseFocus(value.focus)
@@ -216,7 +242,9 @@ function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
       official, product.developer, 'Additional site')
   }
   const sourceCriteria = parseSourceCriteria(value)
+  const searchTerms = parseSearchTerms(value, questions.length)
   return { product, scope, questions, limits, focus,
+    ...searchTerms === undefined ? {} : { searchTerms },
     ...additionalSites === undefined ? {} : { additionalSites },
     ...sourceCriteria === undefined ? {} : { sourceCriteria } }
 }
