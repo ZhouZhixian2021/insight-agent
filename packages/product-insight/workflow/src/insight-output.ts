@@ -105,6 +105,7 @@ export function inspectInsight(text: string, input: ProductSynthesisInput,
     // Only the structured section choice can place an original in a new report.
     const prose = typeof entry.text === 'string' ? entry.text.replace(/\[\[\s*figure\s*:[^\]\r\n]*\]\]/giu, '').trim() : entry.text
     const checked = inspectProductSynthesis(JSON.stringify([{ ...entry, text: prose, questionId: sectionId }]), {
+      ...(input.pageSummaries ? { pageSummaries: input.pageSummaries } : {}),
       ...(input.images ? { images: input.images } : {}), scope: input.scope, questions: [{ questionId: sectionId, question: '', evidence }],
     }, aliases)
     reasons.push(...checked.issues.flatMap(issue => issue.reasons))
@@ -160,7 +161,8 @@ export function insightRequest(input: ProductSynthesisInput, aliases: ReadonlyMa
   const layoutOnly = correction?.issue.kind === 'imageUse'
   const writingMaterial = layoutOnly ? {} : { sourceCriteria: input.sourceCriteria, sources: input.sources,
     researchQuestions: input.questions.map(({ questionId, question, limitations }) => ({ questionId, question, limitations })),
-    evidence: insightEvidence(input).map(item => ({ ...item, evidenceId: reverse.get(item.evidenceId) ?? item.evidenceId })) }
+    ...(input.pageSummaries ? { pageSummaries: input.pageSummaries }
+      : { evidence: insightEvidence(input).map(item => ({ ...item, evidenceId: reverse.get(item.evidenceId) ?? item.evidenceId })) }) }
   const repair = correction && {
     unit: correction.issue.kind, id: correction.issue.id, reasons: correction.issue.reasons, drafts: correction.issue.drafts,
     acceptedSections: correction.sections.filter(section => !layoutOnly || section.sectionId === correction.issue.id)

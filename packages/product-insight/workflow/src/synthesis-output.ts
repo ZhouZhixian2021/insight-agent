@@ -115,6 +115,7 @@ export function inspectProductSynthesis(text: string, input: ProductSynthesisInp
   for (const question of input.questions) {
     const entries = parsed.entries.filter(entry => object(entry) && entry.questionId === question.questionId)
     const allowed = new Set(question.evidence.map(item => String(item.evidenceId)))
+    for (const note of input.pageSummaries ?? []) allowed.add(note.source.sourceId)
     for (const image of input.images ?? []) allowed.add(image.id)
     const reasons: string[] = []
     const normalized: string[] = []

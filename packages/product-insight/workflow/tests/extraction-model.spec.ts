@@ -1,20 +1,24 @@
 import { Context } from '@deepseek-ai/cordis'
 import LlmRuntime, { LlmAdapter, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import SessionStore from '@deepseek-ai/dsh-session'
-import { createCandidatePageId, createProductId, createProductPlanId, createProductQuestionId, type CandidatePage } from '@deepseek-ai/dsh-product-insight-model'
+import { createCandidatePageId, createProductId, createProductPlanId, createProductQuestionId, createSourceSnapshotId, type CandidatePage, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
 import type { ProductEvidenceDraft } from '@deepseek-ai/dsh-product-insight-source'
-import { afterEach, expect, it } from 'vitest'
-import { proposeEvidence } from '../src/session-tool.ts'
+import { afterEach, expect, it, vi } from 'vitest'
+import { pageSummaryModel, proposeEvidence } from '../src/session-tool.ts'
+import { readReviewedProductPage, PAGE_REVIEW_INSTRUCTION } from '../src/page-summary.ts'
+
+type Responses = readonly string[] | ((options: GenerateOptions) => Promise<string>)
 
 class Adapter extends LlmAdapter {
   readonly calls: GenerateOptions[] = []
-  constructor(readonly outputs: readonly string[]) { super() }
+  constructor(readonly outputs: Responses) { super() }
   override resolveModel(provider: string, model: string) {
     return Promise.resolve({ provider, id: model, name: model, context: { contextWindow: 100000 } })
   }
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
-    const text = this.outputs[this.calls.length]
+    const index = this.calls.length
     this.calls.push(options)
+    const text = typeof this.outputs === 'function' ? await this.outputs(options) : this.outputs[index]
     if (text === undefined) throw new Error('Unexpected additional extraction call')
     yield { type: 'text-delta', index: 0, text }
     yield { type: 'finish', reason: { kind: 'stop' } }
@@ -28,7 +32,7 @@ const good = { verbatimExcerpt: 'Enterprise supports offline use.', sourcedState
 const bad = { verbatimExcerpt: 'Basic costs $10.', questionIds: ['Q2'] }
 const corrected = { ...bad, sourcedStatement: 'Basic costs $10.', repairIndex: 1 }
 
-async function fixture(outputs: readonly string[]) {
+async function fixture(outputs: Responses) {
   const ctx = new Context(); roots.push(ctx)
   await ctx.plugin(SessionStore); await ctx.plugin(LlmRuntime)
   const adapter = new Adapter(outputs); ctx.llm.registerAdapter(['fixture'], adapter)
@@ -41,8 +45,61 @@ async function fixture(outputs: readonly string[]) {
   const cache = new Map<string, { pageId: string; drafts: readonly ProductEvidenceDraft[] }>()
   const run = (candidate = page, body = text) => proposeEvidence(ctx, session, { provider: 'fixture', model: 'fixture' }, candidate,
     body, questions, async () => {}, session.snapshotEvents(), undefined, { start: 0, end: body.length, text: body }, undefined, cache)
-  return { session, questions, page, adapter, run }
+  return { ctx, session, questions, page, adapter, run }
 }
+
+it('pairs interleaved full-page reviews with their own drafts and replays both requests from Session', async () => {
+  const releaseFirst = Promise.withResolvers<undefined>()
+  const releaseOthers = Promise.withResolvers<undefined>()
+  let activeReviews = 0
+  const f = await fixture(async (options) => {
+    const block = options.messages[0]?.content[0]
+    if (block?.type !== 'text') throw new Error('Expected a complete text input')
+    const input = JSON.parse(block.text) as { pageText: string; paragraphs?: { id: number; text: string }[] }
+    const name = input.pageText.split(' ')[0]
+    if (options.system !== PAGE_REVIEW_INSTRUCTION) return '仅 ' + name + ' supports export.'
+    expect(input.paragraphs).toEqual([{ id: 1, text: '仅 ' + name + ' supports export.' }])
+    activeReviews++
+    await (name === 'First' ? releaseFirst : releaseOthers).promise
+    return JSON.stringify({ checked: [1], edits: [{ paragraph: 1, replacement: input.pageText, reason: 'The text does not exclude others.', quotes: [input.pageText] }] })
+  })
+  const plan: ProductPlan = { schemaVersion: 1, version: 1, productId: f.page.productId, planId: f.page.planId,
+    scope: 'Export behavior', questions: f.questions, approval: { status: 'approved', approvedPlanVersion: 1,
+      reviewedBy: 'user', reviewedAt: f.page.discoveredAt, comment: null } }
+  const pages = ['First', 'Second', 'Third'].map((name) => {
+    const body = name + ' supports export.'
+    const page = { ...f.page, candidatePageId: createCandidatePageId(), url: f.page.url + '/' + name }
+    const snapshot = { schemaVersion: 1, status: 'available', observedAt: page.discoveredAt, candidatePageId: page.candidatePageId,
+      sourceSnapshotId: createSourceSnapshotId(), contentHash: name, contentRef: name } as const
+    return () => readReviewedProductPage(page, snapshot, body, plan, pageSummaryModel(f.ctx, f.session,
+      { provider: 'fixture', model: 'fixture', maxTokens: 100000 }, plan.planId, page.candidatePageId, name, f.session.snapshotEvents(), async () => {}))
+  })
+  const running = pages.map(run => run())
+  const settled = Promise.allSettled(running)
+  try {
+    await vi.waitFor(() => expect(activeReviews).toBe(3))
+    releaseOthers.resolve(undefined)
+    await Promise.all(running.slice(1))
+  } finally {
+    releaseOthers.resolve(undefined)
+    releaseFirst.resolve(undefined)
+    await settled
+  }
+  const notes = await Promise.all(running)
+  expect(notes.map(note => note.paragraphs)).toEqual([['First supports export.'], ['Second supports export.'], ['Third supports export.']])
+  expect(await Promise.all(pages.map(run => run()))).toEqual(notes)
+  expect(f.adapter.calls).toHaveLength(6)
+  const events = f.session.snapshotEvents()
+  const results = events.filter(event => event.type === 'product/page-summary-result-v1')
+  expect(results).toHaveLength(6)
+  for (const result of results) {
+    expect(events.find(request => request.seq === result.data.requestSeq)).toMatchObject({ type: 'product/page-summary-request-v1',
+      data: { candidatePageId: result.data.candidatePageId, phase: result.data.phase, maxTokens: expect.any(Number) } })
+  }
+  expect(results.filter(r => r.data.phase === 'review').at(-1)?.data.candidatePageId).toBe(notes[0]?.candidatePageId)
+  expect(results.map(r => r.data.phase + '/' + r.data.status).join(' ')).toMatchInlineSnapshot(
+    '"reading/completed reading/completed reading/completed review/completed review/completed review/completed"')
+})
 
 it('repairs only invalid siblings and persists short-ID requests and full-ID drafts', async () => {
   const f = await fixture([JSON.stringify([good, bad]), JSON.stringify([corrected])])

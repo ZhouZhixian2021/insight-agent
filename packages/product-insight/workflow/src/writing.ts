@@ -1,11 +1,18 @@
 /** Product reading and evidence-led writing instructions; callers persist these before dispatch. */
 import { readFileSync } from 'node:fs'
 
-/** Load the package-owned writing method for synthesis and targeted repairs. */
-export function productSynthesisInstruction(): string {
+/**
+ * Load the package writing method for synthesis and targeted repairs.
+ * @param material - Use page citation IDs for reviewed summaries or evidence IDs for historical excerpt runs.
+ * @returns The complete system prompt for the writer.
+ */
+export function productSynthesisInstruction(material: 'excerpts' | 'summaries' = 'excerpts'): string {
   const manifest = import.meta.resolve('@deepseek-ai/dsh-product-insight-workflow/package.json')
   const skill = readFileSync(new URL('./skills/product-insight-writing/SKILL.md', manifest), 'utf8')
-  return PRODUCT_WRITING_INSTRUCTION + '\n\n' + skill.trim()
+  const instructions = writingInstruction(material) + '\n\n' + skill.trim()
+  if (material === 'excerpts') return instructions
+  return instructions + '\n\n本次写作的文字依据为逐篇对照全文审核过的提要。结合整篇提要理解数字、条件、归因与例外。'
+    + '提要是转述，引用页号指向对应来源。直接引语需要材料明确标为原文。'
 }
 
 export const PRODUCT_READING_INSTRUCTION = 'Extract evidence about the investigated subject from the supplied webpage. '
@@ -31,7 +38,8 @@ export const PRODUCT_READING_INSTRUCTION = 'Extract evidence about the investiga
   + 'Use only supplied short question IDs (Q1, Q2, etc.); copy them exactly. Missing information is unknown, not proof that a feature is absent. '
   + 'Return [] when the page does not answer a question. Do not infer facts.'
 
-export const PRODUCT_WRITING_INSTRUCTION = 'Write a coherent, evidence-led product insight report in Simplified Chinese. '
+function writingInstruction(material: 'excerpts' | 'summaries'): string {
+  return 'Write a coherent, evidence-led product insight report in Simplified Chinese. '
   + 'Research questions guide investigation and coverage checking; they are NOT chapter titles or a sequence of answers. '
   + 'Choose the number, order and descriptive titles of sections from the actual material and the reader decision. '
   + 'Open with the central supported judgment, then explain the product positioning, meaningful changes, mechanisms, '
@@ -56,7 +64,10 @@ export const PRODUCT_WRITING_INSTRUCTION = 'Write a coherent, evidence-led produ
   + 'Return only a JSON array. Section objects have kind:"section", sectionId (S1, S2, ...), title, '
   + 'status (answered, partial, insufficient), and text. Use as many sections as the material warrants, independent of question count. '
   + 'When image material is supplied, make an explicit imageUse decision for each section as specified in the request. '
-  + 'Place [[cite:E1]] using supplied evidence aliases immediately after the supported sentence or clause. '
+  + (material === 'summaries'
+    ? 'Read the reviewed pageSummaries as connected source notes. Preserve their original attribution, scope and exceptions. '
+      + 'Place [[cite:P1]] using the actual page sourceId immediately after the supported sentence or clause. '
+    : 'Place [[cite:E1]] using supplied evidence aliases immediately after the supported sentence or clause. ')
   + 'Use multiple markers if necessary; do not collect citations at the end of a whole paragraph. '
   + 'An insufficient section explains only a concrete gap without unsupported factual assertions. '
   + 'After the sections, include coverage objects with kind:"coverage", questionId (the supplied full ID), '
@@ -65,6 +76,9 @@ export const PRODUCT_WRITING_INSTRUCTION = 'Write a coherent, evidence-led produ
   + 'Coverage is separate bookkeeping for an appendix, not report prose or proof of factual correctness. '
   + 'If a correction is requested, return only that unit, preserve its identity and leave all accepted siblings unchanged. '
   + 'Keep the entire array complete within the available output budget; do not pad the report.'
+}
+
+export const PRODUCT_WRITING_INSTRUCTION = writingInstruction('excerpts')
 
 /** Review source entailment independently of research-question selection. */
 export const PRODUCT_REVIEW_INSTRUCTION = 'Judge only whether each supplied source statement follows from its exact webpage excerpt. '

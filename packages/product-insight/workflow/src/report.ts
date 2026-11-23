@@ -6,6 +6,7 @@ import { sameProductPageFacts, type ProductDiscoveryResult,
 import type { ProductSemanticReview } from './claim-review.ts'
 import { insightEvidence, type ProductInsight } from './insight-output.ts'
 import { sectionBlocks } from './section-layout.ts'
+import { pageSource, type ReviewedProductPage } from './page-summary.ts'
 import { assessProductSource, checkCrossSourceJudgments, comparisonEvidence,
   keyProductClaims, type ProductQuestionVerification } from './claim-verification.ts'
 
@@ -18,6 +19,7 @@ export interface ProductReportAssessment {
 
 /** Captured run facts and reviewed conclusions consumed by report assessment. */
 export interface ProductReportInput {
+  readonly pageSummaries?: readonly ReviewedProductPage[]
   readonly images?: readonly ProductImageCard[]
   readonly product: Product
   readonly plan: ProductPlan
@@ -48,6 +50,8 @@ export interface ProductImageCard {
 
 /** Approved questions with reviewed source evidence and disclosed limitations. */
 export interface ProductSynthesisInput {
+  /** Corrected notes with page-level citation IDs, shared once across sections. */
+  readonly pageSummaries?: readonly { source: WritingSource; summary: string; limitation?: string }[]
   readonly images?: readonly ProductImageCard[]
   readonly sources?: readonly WritingSource[]
   readonly scope: string
@@ -79,13 +83,7 @@ export function writingSources(items: readonly ProductEvidence[], candidates: re
     if (!page || snapshot?.status !== 'available' || snapshot.candidatePageId !== candidatePageId || snapshot.contentHash !== contentHash) return item
     let source = sources.get(sourceSnapshotId)
     if (!source) {
-      source = { sourceId: `P${sources.size + 1}`, url: page.url, sourceType: page.sourceType, observedAt: snapshot.observedAt,
-        ...page.title && { title: page.title }, ...page.publisher && { discoveryPublisher: page.publisher },
-        ...snapshot.declaredPublisher && { declaredPublisher: snapshot.declaredPublisher },
-        ...snapshot.sourcePublishedAt && { sourcePublishedAt: snapshot.sourcePublishedAt },
-        ...snapshot.sourceUpdatedAt && { sourceUpdatedAt: snapshot.sourceUpdatedAt },
-        ...snapshot.productVersionLabel && { productVersionLabel: snapshot.productVersionLabel },
-        ...snapshot.sourceRegionLabel && { sourceRegionLabel: snapshot.sourceRegionLabel } }
+      source = { sourceId: `P${sources.size + 1}`, ...pageSource(page, snapshot) }
       sources.set(sourceSnapshotId, source)
     }
     return { ...item, sourceId: source.sourceId }
@@ -93,8 +91,30 @@ export function writingSources(items: readonly ProductEvidence[], candidates: re
   return { sources: [...sources.values()], evidence }
 }
 
+function reviewedPageMaterials(input: ProductReportInput) {
+  return (input.pageSummaries ?? []).flatMap((note, index) => {
+    const page = input.discovery.candidates.items.find(p => p.candidatePageId === note.candidatePageId)
+    const snapshot = input.pages.snapshots.items.find(s => s.candidatePageId === note.candidatePageId)
+    if (!page || !note.paragraphs.length || snapshot?.status !== 'available' || snapshot.contentHash !== note.contentHash
+      || snapshot.sourceSnapshotId !== note.sourceSnapshotId) return []
+    const refreshed = input.sourceRevalidation?.snapshots.items.find(s => s.candidatePageId === note.candidatePageId)
+    const limitation = input.sourceRevalidation && !sameProductPageFacts(snapshot, refreshed)
+      ? '该页在恢复时已变化或无法再次确认。提要对应本次保存的原文版本。' : undefined
+    return [{ page, snapshot, note, sourceId: `P${index + 1}`, limitation }]
+  })
+}
+
 /** Build source-supported writing material independently of final delivery status. */
 export function productSynthesisInput(input: ProductReportInput): ProductSynthesisInput {
+  if (input.pageSummaries !== undefined) {
+    const pageSummaries = reviewedPageMaterials(input).map(({ page, snapshot, sourceId, note, limitation }) => ({
+      source: { sourceId, ...pageSource(page, snapshot) }, summary: note.paragraphs.join('\n\n'), ...(limitation ? { limitation } : {}),
+    }))
+    return { scope: input.plan.scope, pageSummaries,
+      ...(input.images?.length ? { images: input.images } : {}),
+      ...(input.plan.sourceCriteria ? { sourceCriteria: input.plan.sourceCriteria } : {}),
+      questions: input.plan.questions.map(q => ({ questionId: q.questionId, question: q.text, evidence: [] })) }
+  }
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page]))
   const evidence = new Map(input.evidence.map(item => [item.evidenceId, item]))
   const reviews = new Map(input.reviews.map(item => [item.evidenceId, item]))
@@ -191,6 +211,7 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
   const pages = new Map(input.discovery.candidates.items.map(page => [page.candidatePageId, page.url]))
   const evidence = new Map<string, ProductEvidence>(input.evidence.map(item => [item.evidenceId, item]))
   const images = new Map(material.images?.map(image => [image.id, image]))
+  const summaryUrls = new Map(material.pageSummaries?.map(({ source }) => [source.sourceId, source.url]))
   const displayed = new Set<string>()
   const choices = new Map(narrative?.sections.map(section => [section.sectionId, section.imageUse]))
   const figure = (id: string): string => {
@@ -202,7 +223,7 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
   }
   const footnotes = new Map<string, { number: number; url: string }>()
   const sections = units.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
-    const text = references.length === 0 && narrative === undefined ? '现有材料不足以形成有依据的回答。' : prose.get(questionId)
+    const text = references.length === 0 && !summaryUrls.size && narrative === undefined ? '现有材料不足以形成有依据的回答。' : prose.get(questionId)
       ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
     const choice = choices.get(questionId)
@@ -219,7 +240,7 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
         }
         const image = images.get(id)
         const record = allowed.has(id) ? evidence.get(id) : undefined
-        const url = image?.pageUrl ?? (record && pages.get(record.candidatePageId))
+        const url = image?.pageUrl ?? summaryUrls.get(id) ?? (record && pages.get(record.candidatePageId))
         if (!url || !safeSourceUrl(url)) {
           parts.push('（该处引用记录或来源链接不可用，待核对）')
           continue
@@ -269,8 +290,8 @@ function escapeParagraphs(value: string): string {
  * @returns Ready, cited draft, or blocked status with explicit reasons.
  */
 export function evaluateProductReport(input: ProductReportInput): ProductReportAssessment {
-  if (input.evidence.length === 0 && !input.images?.length) {
-    return { status: 'blocked', reasons: ['No verified product evidence was found.'] }
+  if (input.evidence.length === 0 && !input.images?.length && !reviewedPageMaterials(input).length) {
+    return { status: 'blocked', reasons: [input.pageSummaries ? '没有取得可用于报告的已审核网页提要或图片材料。' : 'No verified product evidence was found.'] }
   }
   const reasons: string[] = []
   if (input.product.productId !== input.plan.productId
@@ -395,6 +416,7 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       seen.add(claim.text)
       return [`${claim.text}${claim.evidenceLinks.map(link => `[[cite:${link.evidenceId}]]`).join('')}`]
     })
+    for (const note of material.pageSummaries ?? []) points.push(note.summary + `[[cite:${note.source.sourceId}]]`)
     lines.push('连贯正文尚未完成；以下仅保留已核对的来源要点，不将其视为完整洞察。', '')
     for (const image of input.images ?? []) points.push(image.summary + '[[cite:' + image.id + ']]')
     if (points.length) lines.push(renderProductSynthesis(input, material, {
@@ -410,6 +432,8 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       (question.limitations ?? []).map(note => `- ${escape(question.question)}：${escape(note)}`)) : []), '')
   lines.push('## 参考来源', '', '来源按实际获取记录列示；未获计划批准或适用范围未确认的材料另行说明。', '')
   const referenced = new Set(input.evidence.map(item => item.candidatePageId))
+  const summaryMaterials = reviewedPageMaterials(input)
+  for (const { note } of summaryMaterials) referenced.add(note.candidatePageId)
   for (const page of input.discovery.candidates.items.filter(page => referenced.has(page.candidatePageId))) {
     if (!safeSourceUrl(page.url)) continue
     const snapshot = input.pages.snapshots.items.find(item => item.candidatePageId === page.candidatePageId)
@@ -420,6 +444,12 @@ export function renderProductReport(input: ProductReportInput, assessment: Produ
       : '正文不可用'}`)
   }
   lines.push('', '## 证据附录', '')
+  for (const { note, page, limitation } of summaryMaterials) {
+    if (!safeSourceUrl(page.url)) continue
+    lines.push(`### ${escape(page.title ?? page.url)}`, '', `[查看提要对应的原文](${safeLink(page.url)})`, '',
+      ...(limitation ? [limitation, ''] : []),
+      ...note.paragraphs.flatMap(p => [escapeParagraphs(p), '']))
+  }
   const seen = new Set<string>()
   for (const item of input.evidence) {
     if (seen.has(item.evidenceId)) continue
@@ -482,8 +512,8 @@ function renderDiscoveryDisclosure(input: ProductReportInput): string[] {
     '搜索结果仅用于发现候选网页；下文引用来自已获取并核对的网页正文。检索未报告截断也不代表覆盖全部公开资料。', '',
     `候选网页 ${input.discovery.candidates.items.length} 个；入选 ${selected.length} 个；已获取正文 ${available} 个；获取失败 ${failed} 个；未完成获取 ${pending} 个。`, '']
   if (input.failures.length) {
-    const stages: Record<string, string> = { discovery: '网页发现', screening: '网页筛选', fetch: '正文获取', extraction: '证据提取',
-      analysis: '语义审核与分析', report: '报告生成' }
+    const stages: Record<string, string> = { discovery: '网页发现', screening: '网页筛选', fetch: '正文获取',
+      extraction: input.pageSummaries ? '逐篇提要' : '证据提取', analysis: input.pageSummaries ? '全文审核' : '语义审核与分析', report: '报告生成' }
     const counts = new Map<string, number>()
     for (const failure of input.failures) counts.set(failure.stage, (counts.get(failure.stage) ?? 0) + 1)
     lines.push(`部分操作失败：${[...counts].map(([stage, count]) => `${stages[stage] ?? '其他处理'} ${count} 次`).join('；')}。已保留可用结果；失败次数不单独决定交付状态，具体错误见运行追踪。`, '')

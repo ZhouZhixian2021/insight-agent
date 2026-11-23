@@ -93,6 +93,8 @@ export const KNOWN_SESSION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'product/image-reading-v1',
   'product/model-request-v1',
   'product/model-result-v1',
+  'product/page-summary-request-v1',
+  'product/page-summary-result-v1',
   'product/pages-v1',
   'product/report-v1',
   'product/run-settlement-v1',

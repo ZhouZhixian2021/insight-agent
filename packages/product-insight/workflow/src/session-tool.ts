@@ -6,7 +6,7 @@ import { isDeepStrictEqual } from 'node:util'
 import type { Context } from '@deepseek-ai/cordis'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { JobId, type JobOutcome, type JobRegistry } from '@deepseek-ai/dsh-jobs'
-import { BlockAssembler, LlmError, type LlmCallConfig, type RequestUserInput } from '@deepseek-ai/dsh-llm'
+import { BlockAssembler, LlmError, type LlmCallConfig, type PreparedLlmCall, type RequestUserInput } from '@deepseek-ai/dsh-llm'
 import type { CandidatePage, ProductClaim, ProductEvidence, ProductPlan,
   ProductQuestionId, SourceSnapshot } from '@deepseek-ai/dsh-product-insight-model'
 import { discoverNewsLinks, discoverOfficialLinks, fetchProductPages, productTextRange, resolveProductPageCharacterLimit,
@@ -31,6 +31,7 @@ import { type ProductSynthesisInput } from './report.ts'
 import { inspectInsight, insightRequest, insightRepairIssues, repairInsight, type ProductInsight } from './insight-output.ts'
 import { inspectProductSynthesis, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
 import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, productSynthesisInstruction } from './writing.ts'
+import { readReviewedProductPage, type PageSummaryCall } from './page-summary.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
   interface JobKindMap {
@@ -40,6 +41,29 @@ declare module '@deepseek-ai/dsh-jobs' {
 
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
+    /** Exact complete page and instructions for a reading or independent paragraph review. */
+    'product/page-summary-request-v1': {
+      planId: string
+      candidatePageId: string
+      contentHash: string
+      phase: 'reading' | 'review'
+      provider: string
+      model: string
+      system: string
+      user: string
+      maxTokens?: number
+      reasoningEffort?: LlmCallConfig['reasoningEffort']
+    }
+    /** Validated response or the failure paired with its own request, including overlapping pages. */
+    'product/page-summary-result-v1': {
+      planId: string
+      candidatePageId: string
+      phase: 'reading' | 'review'
+      requestSeq: number
+      status: 'completed' | 'failed'
+      text: string
+      error: string | null
+    }
     /** Canonical text saved before a source snapshot refers to it. */
     'product/source-text-v1': { contentRef: string; candidatePageId: string; contentHash: string; text: string }
     /** Exact request sent to the evidence model for one saved source. */
@@ -129,7 +153,7 @@ declare module '@deepseek-ai/dsh-session/types' {
       model: string
       system: string
       user: string
-      maxTokens: number
+      maxTokens?: number
       reasoningEffort?: LlmCallConfig['reasoningEffort']
       attempt?: 1 | 2
     }
@@ -174,6 +198,7 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
 const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
 const SYNTHESIS_SYSTEM = productSynthesisInstruction()
+const SUMMARY_SYNTHESIS_SYSTEM = productSynthesisInstruction('summaries')
 
 class ProductTransientModelError extends Error {
   constructor(readonly code: 'TRANSPORT' | 'TIMEOUT', options?: ErrorOptions) {
@@ -395,7 +420,10 @@ export function registerProductInvestigationTool(ctx: Context,
         && event.data.planId === plan.planId)
       const claims = events.findLast(event => event.type === 'product/claims-v1'
         && event.data.planId === plan.planId)
-      const retained = `已保存证据 ${evidence?.type === 'product/evidence-v1' ? evidence.data.items.length : 0} 条、结论 ${claims?.type === 'product/claims-v1' ? claims.data.items.length : 0} 条。`
+      const checkpoint = events.findLast(event => event.type === 'product/checkpoint-v1' && event.data.planId === plan.planId)
+      const retained = checkpoint?.type === 'product/checkpoint-v1' && checkpoint.data.pageSummaries
+        ? `已保存 ${checkpoint.data.pageSummaries.length} 篇完成全文审核的网页提要。`
+        : `已保存证据 ${evidence?.type === 'product/evidence-v1' ? evidence.data.items.length : 0} 条、结论 ${claims?.type === 'product/claims-v1' ? claims.data.items.length : 0} 条。`
       const savedReport = events.findLast(event => event.type === 'product/report-v1'
         && event.data.planId === plan.planId)
       return background.state === 'interrupted'
@@ -549,7 +577,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
   }
   if (recovered === undefined) onProgress('正在搜索和读取产品资料')
   else if (sourceRevalidation !== undefined) onProgress(
-    `正在依据保存快照从${({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
+    `正在依据保存快照从${recovered.schemaVersion === 4 ? '逐篇提要与全文审核' : ({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
   const extractionCache = new Map<string, { pageId: string; drafts: readonly ProductEvidenceDraft[] }>()
   const result = await runInvestigation({ sessionId: key, events,
     maxResultsPerQuery: 60, extractionMethod: { name: 'product-model', version: '1' },
@@ -562,6 +590,8 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       return Promise.resolve(text)
     },
     savePages, saveCheckpoint,
+    summarizePage: (page, snapshot, text, active) => readReviewedProductPage(page, snapshot, text, plan,
+      pageSummaryModel(ctx, session, model, plan.planId, page.candidatePageId, snapshot.contentHash, events, persist, active)),
     extractImages: (images, active) => collectProductImages(ctx, session, model, plan, images, events, persist, onProgress, active),
     proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
       proposeEvidence(ctx, session, model, page, text, questions, persist, events,
@@ -638,18 +668,21 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product synthesis model service is unavailable')
   const capacity = await llm.prepareCall(config, signal)
+  const system = input.pageSummaries === undefined ? SYNTHESIS_SYSTEM : SUMMARY_SYNTHESIS_SYSTEM
   const aliases = synthesisAliases(input)
   const serialized = insightRequest(input, aliases)
-  if (!fitsProductModelInput(SYNTHESIS_SYSTEM, serialized, capacity.context?.contextWindow,
+  if (input.pageSummaries === undefined && !fitsProductModelInput(system, serialized, capacity.context?.contextWindow,
     capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
     throw new RangeError('The deduplicated evidence pool exceeds report context capacity; no question-wise report is substituted')
   }
   return repairInsight(input, async (user, ordinal, knownSections, target): Promise<SynthesisResponse> => {
     signal?.throwIfAborted()
-    const prepared = ordinal === 1 ? capacity : await llm.prepareCall(config, signal)
-    const { provider, model, maxTokens = 4096, reasoningEffort } = prepared.config
+    const initial = ordinal === 1 ? capacity : await llm.prepareCall(config, signal)
+    const prepared = input.pageSummaries === undefined ? initial : await fitPageCall(llm, initial, system, user, signal)
+    const { provider, model, reasoningEffort } = prepared.config
+    const maxTokens = prepared.config.maxTokens ?? (input.pageSummaries === undefined ? 4096 : undefined)
     const request = events.findLast(event => event.type === 'product/synthesis-request-v1'
-      && event.data.planId === plan.planId && event.data.user === user && event.data.system === SYNTHESIS_SYSTEM
+      && event.data.planId === plan.planId && event.data.user === user && event.data.system === system
       && event.data.provider === provider && event.data.model === model && event.data.maxTokens === maxTokens
       && (event.data.attempt === ordinal || event.data.attempt === undefined && ordinal === 1)
       && event.data.reasoningEffort === reasoningEffort)
@@ -659,7 +692,7 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
       return replay.data
     }
     const { seq: requestSeq } = session.append('product/synthesis-request-v1', { planId: plan.planId,
-      provider, model, user, system: SYNTHESIS_SYSTEM, maxTokens, attempt: ordinal,
+      provider, model, user, system, ...maxTokens === undefined ? {} : { maxTokens }, attempt: ordinal,
       ...reasoningEffort === undefined ? {} : { reasoningEffort } })
     await persist()
     const messages: RequestUserInput[] = [{ role: 'user', content: [{ type: 'text', text: user }] }]
@@ -669,13 +702,13 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
     let error: SynthesisResponse['error'] = null
     let failureCode: SynthesisResponse['failureCode']
     try {
-      if (!fitsProductModelInput(SYNTHESIS_SYSTEM, user, capacity.context?.contextWindow, maxTokens)) {
+      if (input.pageSummaries === undefined && !fitsProductModelInput(system, user, prepared.context?.contextWindow, maxTokens ?? 4096)) {
         // Never silently trim repair evidence or exceed the model's context capacity.
         error = 'output_limit'
       } else {
         const operationSignal = signal ?? new AbortController().signal
         await awaitProductModel(async () => {
-          for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system: SYNTHESIS_SYSTEM,
+          for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
             messages, sessionId: session.id, signal: operationSignal }))) {
             operationSignal.throwIfAborted()
             assembler.push(chunk)
@@ -721,6 +754,73 @@ async function awaitProductModel<T>(run: () => Promise<T>, signal: AbortSignal):
   const listener = addAbortListener(signal, () => { aborted.reject(signal.reason) })
   try { return await Promise.race([run(), aborted.promise]) }
   finally { listener[Symbol.dispose]() }
+}
+
+/** Reserve the whole input first so the model's configured output maximum cannot displace the page. */
+async function fitPageCall(llm: Context['llm'], prepared: PreparedLlmCall, system: string, user: string,
+  signal?: AbortSignal): Promise<PreparedLlmCall> {
+  const window = prepared.context?.contextWindow
+  if (window === undefined) return prepared
+  const available = window - estimateContent([{ type: 'text', text: system }])
+    - estimateContent([{ type: 'text', text: user }]) - ROLE_OVERHEAD * 2
+  if (available < 1) throw new RangeError('完整材料加上提示词超过当前模型的上下文容量')
+  if (prepared.config.maxTokens === undefined || prepared.config.maxTokens <= available) return prepared
+  // The transport binds configuration at prepare time, including the requested output budget.
+  const fitted = await llm.prepareCall({ ...prepared.config, maxTokens: available }, signal)
+  if (!fitsProductModelInput(system, user, fitted.context?.contextWindow, fitted.config.maxTokens ?? 0)) {
+    throw new RangeError('当前模型线路无法容纳完整材料及输出')
+  }
+  return fitted
+}
+
+/** Bind full-page reading and review to the Session, page version and selected model. */
+export function pageSummaryModel(ctx: Context, session: Session, config: LlmCallConfig, planId: string,
+  candidatePageId: string, contentHash: string, events: readonly SessionEvent[], persist: () => Promise<void>,
+  signal = new AbortController().signal): PageSummaryCall {
+  return async (phase, system, user, accept) => {
+    const llm = ctx.get('llm')
+    if (!llm) throw new Error('网页提要所需的模型服务不可用')
+    const prepared = await awaitProductModel(async () =>
+      fitPageCall(llm, await llm.prepareCall(config, signal), system, user, signal), signal)
+    const { provider, model, reasoningEffort, maxTokens } = prepared.config
+    const prior = events.findLast(e => e.type === 'product/page-summary-request-v1' && e.data.planId === planId
+      && e.data.candidatePageId === candidatePageId && e.data.contentHash === contentHash && e.data.phase === phase
+      && e.data.system === system && e.data.user === user && e.data.provider === provider && e.data.model === model
+      && e.data.reasoningEffort === reasoningEffort && e.data.maxTokens === maxTokens)
+    const replay = prior && events.findLast(e => e.type === 'product/page-summary-result-v1' && e.data.requestSeq === prior.seq)
+    if (replay?.type === 'product/page-summary-result-v1' && replay.data.status === 'completed') return accept(replay.data.text)
+    const { seq: requestSeq } = session.append('product/page-summary-request-v1', { planId, candidatePageId, contentHash,
+      phase, system, user, provider, model, ...maxTokens === undefined ? {} : { maxTokens },
+      ...reasoningEffort === undefined ? {} : { reasoningEffort } })
+    await persist()
+    const base = { planId, candidatePageId, phase, requestSeq }
+    const assembler = new BlockAssembler()
+    const output = () => assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
+    let stopped = false
+    const value = await awaitProductModel(async () => {
+      for await (const chunk of prepared.stream({ ...prepared.config, system, sessionId: session.id, signal,
+        messages: [{ role: 'user', content: [{ type: 'text', text: user }] }] })) {
+        signal.throwIfAborted()
+        assembler.push(chunk)
+        if (chunk.type === 'finish') {
+          if (chunk.reason.kind === 'error') throw new Error(chunk.reason.failure.message)
+          if (chunk.reason.kind !== 'stop') throw new Error('模型输出未完成：' + chunk.reason.kind)
+          stopped = true
+        }
+      }
+      signal.throwIfAborted()
+      if (!stopped || assembler.blocks().some(block => block.type === 'tool-call')) throw new Error('未收到完整的纯文本模型输出')
+      return accept(output())
+    }, signal).catch(async (error: unknown) => {
+      session.append('product/page-summary-result-v1', { ...base, status: 'failed', text: output(),
+        error: error instanceof Error ? error.message : String(error) })
+      await persist()
+      throw error
+    })
+    session.append('product/page-summary-result-v1', { ...base, status: 'completed', text: output(), error: null })
+    await persist()
+    return value
+  }
 }
 
 /** Normalize complete report answers; partial recovery and targeted repair use the per-question inspector. */
