@@ -1,0 +1,19 @@
+{
+  "name": "dsh-profile-web",
+  "private": true,
+  "dependencies": {
+    "dsh-web-tools": "github:A3Boy/dsh-web-tools"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@deepseek-ai/dsh-academic-bundle",
+        "@deepseek-ai/dsh-product-insight-bundle",
+        "dsh-web-tools"
+      ],
+      "patchReload": "live"
+    }
+  }
+}

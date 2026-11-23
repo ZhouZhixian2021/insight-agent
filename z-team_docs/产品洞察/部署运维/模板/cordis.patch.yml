@@ -1,0 +1,59 @@
+# 产品洞察 profile 的 patch 层示例。
+#
+# 用法：复制到 <仓库>/.dsh-runtime/profiles/web/cordis.patch.yml，
+# 按本机情况修改 apiKeyEnv 与 baseURL 两处，密钥放环境变量而不是这里。
+#
+# 该文件在 bundle 层之后应用；模型清单在启动时读入，改完必须重启。
+
+# 学术洞察的并发上限，与产品洞察无关，可删。
+- id: academic-research-controller
+  config:
+    paperConcurrency: 1
+    candidateReviewConcurrency: 1
+
+# 模型网关。apiKeyEnv 指向环境变量名，不要写真实密钥。
+- id: llm-pi-ai
+  name: "@deepseek-ai/dsh-llm-pi-ai"
+  config:
+    providers:
+      wowei-gate:
+        displayName: wowei-gate
+        apiKeyEnv: WOWEI_GATE_API_KEY
+        api: openai-completions
+        # 默认推理档位；可选 off / low / medium / high / max。
+        # max 更充分但更慢，且需要足够的输出预算，见 03-配置参考.md。
+        reasoning: high
+        baseURL: <模型网关地址>
+        models:
+          - id: deepseek-v4.1-flash
+            name: DeepSeek-v4.1-flash
+            # 必须配：contextWindow 是输入加输出总和，maxTokens 是其中预留给输出的部分。
+            # 两者接近或相等会让产品洞察的证据提取全部失败（表现为 0 证据）。
+            contextWindow: 2000000
+            maxTokens: 1000000
+            input:
+              - text
+              - image
+            # 可选的推理档位映射；不列出的档位界面上无法选择。
+            reasoningEfforts:
+              off: null
+              minimal: minimal
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+
+# 会话默认模型。
+- id: agent-default-model
+  name: "@deepseek-ai/dsh-agent-default-model"
+  config:
+    provider: wowei-gate
+    model: deepseek-v4.1-flash
+    reasoningEffort: high
+
+# 界面字号，按显示器自行调整。
+- id: ui-theme
+  name: "@deepseek-ai/dsh-client-ui-theme"
+  config:
+    fontSize: 22
