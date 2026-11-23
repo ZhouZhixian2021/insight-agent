@@ -217,13 +217,13 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     search: { questionId: ProductQuestionId; recordedCount: number; truncated: boolean }
     sources: ReturnType<typeof screenSource>[]
   }[] = []
-  const official = new URL(product.officialUrl)
+  const official = product.officialUrl === undefined ? undefined : new URL(product.officialUrl)
   const startedAt = Date.parse(adapters.now())
   const maximumElapsedMinutes = plan.limits?.maximumElapsedMinutes
   if (maximumElapsedMinutes !== undefined && (!Number.isFinite(maximumElapsedMinutes) || maximumElapsedMinutes <= 0)) {
     throw new RangeError('maximumElapsedMinutes must be positive')
   }
-  if (official.protocol !== 'https:' && official.protocol !== 'http:') {
+  if (official !== undefined && official.protocol !== 'https:' && official.protocol !== 'http:') {
     throw new RangeError('Product officialUrl must be HTTP(S)')
   }
   const candidateLimit = maximum ?? Number.POSITIVE_INFINITY
@@ -240,7 +240,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   function screenSource(source: ProductSearchSource, origin: 'seed' | 'feed' | 'search' = 'search',
     question?: string) {
     const parsed = parseCandidateUrl(source.url)
-    const officialPage = parsed !== null && withinDomain(parsed.hostname, official.hostname)
+    const officialPage = parsed !== null && official !== undefined && withinDomain(parsed.hostname, official.hostname)
     const registeredSite = parsed === null ? undefined : namedSites?.find(item => withinDomain(parsed.hostname, item.domain))
     const leadingBrand = registeredSite === undefined ? undefined
       : /^[a-z][a-z0-9-]{2,}/iu.exec(product.name)?.[0].toLocaleLowerCase()
@@ -290,8 +290,11 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   }
   if (gap === undefined && !signal?.aborted) {
     // A concrete official page is an explicit reading lead, not only a host identity.
-    const seeds = [...official.pathname !== '/' ? [{ url: product.officialUrl }] : [], ...input.initialSources ?? []]
-      .filter(seed => !isNavigationSeed(seed.url))
+    const seeds = [
+      ...official !== undefined && official.pathname !== '/' && product.officialUrl !== undefined
+        ? [{ url: product.officialUrl }] : [],
+      ...input.initialSources ?? [],
+    ].filter(seed => !isNavigationSeed(seed.url))
     for (const seed of seeds) {
       const screened = screenSource(seed, 'seed')
       if (screened.screening.status === 'excluded') continue
@@ -299,7 +302,8 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     }
   }
   // An official site publishes company-wide posts, so only titles and paths naming the product enter the pool.
-  if (gap === undefined && !signal?.aborted && adapters.officialFeed !== undefined) {
+  if (gap === undefined && !signal?.aborted && adapters.officialFeed !== undefined
+    && product.officialUrl !== undefined) {
     try {
       const designators = productDesignators(product)
       const accept = (link: OfficialLink): boolean => namesProductLine(link, designators)
@@ -337,7 +341,10 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     const primaryHost = primary === undefined ? undefined : parseCandidateUrl(primary.url)?.hostname
     // A focus plan searches the open web; only a legacy plan searches inside its reviewed hosts.
     const domains = focusDriven ? []
-      : primaryId === undefined ? [official.hostname, ...plan.sourcePublishers?.map(item => item.domain) ?? []]
+      : primaryId === undefined ? [
+        ...official === undefined ? [] : [official.hostname],
+        ...plan.sourcePublishers?.map(item => item.domain) ?? [],
+      ]
         : primary === undefined ? [] : productCorroborationDomains(product, plan, primary)
     const domain = gap === undefined ? undefined : gapSearchDomain(domains,
       retained.filter(page => !input.unavailablePages?.has(page.candidatePageId)), triedDomains)
@@ -430,7 +437,10 @@ export function productCorroborationDomains(product: Product, plan: ProductPlan,
   const host = parseCandidateUrl(primary.url)?.hostname
   if (host === undefined || primary.publisher === undefined) return []
   const publisher = primary.publisher.toLocaleLowerCase()
-  const approved = [{ name: product.developer, domain: new URL(product.officialUrl).hostname }, ...plan.sourcePublishers ?? []]
+  const approved = [
+    ...product.officialUrl === undefined ? [] : [{ name: product.developer, domain: new URL(product.officialUrl).hostname }],
+    ...plan.sourcePublishers ?? [],
+  ]
   return approved.filter(({ name, domain }) => name.toLocaleLowerCase() !== publisher
     && !withinDomain(host, domain) && !withinDomain(domain, host)).map(({ domain }) => domain)
 }

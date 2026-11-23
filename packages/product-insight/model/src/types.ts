@@ -24,13 +24,19 @@ export type ProductReportId = Branded<'ProductInsightReportId'>
 /** Identity of one observed operation failure. */
 export type ProductFailureId = Branded<'ProductInsightFailureId'>
 
-/** Product identity and official home, without assuming a public version number. */
+/** Investigated subject's identity; the official site is present only when the subject has one. */
 export interface Product {
   readonly schemaVersion: 1
   readonly productId: ProductId
   readonly name: string
   readonly developer: string
-  readonly officialUrl: string
+  /**
+   * Official site of the subject, when it publishes one. A product, a vendor
+   * and a conference have one; a trend or a research topic has none, and then
+   * discovery runs on search and news sources alone instead of probing a site
+   * that would never mention it.
+   */
+  readonly officialUrl?: string
   readonly aliases?: readonly string[]
   readonly category?: string
 }

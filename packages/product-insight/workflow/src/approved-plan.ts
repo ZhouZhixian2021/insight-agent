@@ -84,7 +84,7 @@ export function productPlanFromApproval(input: ApprovedProductPlanInput): Approv
   const payload = parseProductPlanMarkdown(input.markdown)
   if (!input.sessionId.trim() || !input.identity.trim()) throw new RangeError('Approved plan identity is required')
   if (!Number.isFinite(Date.parse(input.reviewedAt))) throw new RangeError('Approved plan review time is invalid')
-  const productKey = [payload.product.name, payload.product.developer, payload.product.officialUrl].join('\n')
+  const productKey = [payload.product.name, payload.product.developer, payload.product.officialUrl ?? ''].join('\n')
   const productId = brandString<ProductId>(`product:${createHash('sha256').update(productKey).digest('hex')}`)
   const planId = brandString<ProductPlanId>(`${input.sessionId}:approved-product-plan:${input.identity}`)
   return {
@@ -125,11 +125,13 @@ export function parseProductPlanMarkdown(markdown: string): ReviewedProductPlan 
   throw new RangeError('Product plan schemaVersion must be 1 or 2')
 }
 
-function parseIdentity(value: Record<string, unknown>): Pick<Product, 'name' | 'developer' | 'officialUrl'> & { official: URL } {
+function parseIdentity(value: Record<string, unknown>): Pick<Product, 'name' | 'developer' | 'officialUrl'> & { official?: URL } {
   if (!isRecord(value.product)) throw new RangeError('Product identity must be an object')
   exactKeys(value.product, ['name', 'developer', 'officialUrl'], 'Product identity')
   const name = nonEmpty(value.product.name, 'Product name')
   const developer = nonEmpty(value.product.developer, 'Product developer')
+  // A trend or a topic has no site of its own; discovery then runs on search and news alone.
+  if (value.product.officialUrl === undefined) return { name, developer }
   const officialUrl = nonEmpty(value.product.officialUrl, 'Product officialUrl')
   let official: URL
   try { official = new URL(officialUrl) }
@@ -253,7 +255,7 @@ function parseFocus(value: unknown): ProductPlanFocus {
  * Validate user-named hosts: bare hostnames, distinct names and domains, no
  * overlap with the official host, and no more entries than the page limit.
  */
-function parseNamedHosts(value: unknown, maximumPages: number, official: URL, developer: string,
+function parseNamedHosts(value: unknown, maximumPages: number, official: URL | undefined, developer: string,
   label: string): ProductSourcePublisher[] {
   if (!Array.isArray(value) || value.length > maximumPages) {
     throw new RangeError(`${label} entries must fit the approved candidate-page limit`)
@@ -266,8 +268,8 @@ function parseNamedHosts(value: unknown, maximumPages: number, official: URL, de
     let normalizedHost: string | undefined
     try { normalizedHost = new URL(`https://${domain}`).hostname }
     catch { /* A malformed hostname is rejected below. */ }
-    if (domain === official.hostname || domain.endsWith(`.${official.hostname}`)
-      || official.hostname.endsWith(`.${domain}`)) {
+    if (official !== undefined && (domain === official.hostname || domain.endsWith(`.${official.hostname}`)
+      || official.hostname.endsWith(`.${domain}`))) {
       throw new RangeError(`${label} domain overlaps product.officialUrl; list other hosts only`)
     }
     if (name.length > 200 || name.toLocaleLowerCase() === developer.toLocaleLowerCase()

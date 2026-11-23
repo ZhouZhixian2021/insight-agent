@@ -127,8 +127,8 @@ export function assessProductSource(product: Product, plan: ProductPlan, page: C
   const focusDriven = plan.focus !== undefined
   try {
     const host = new URL(page.url).hostname.toLowerCase()
-    const official = new URL(product.officialUrl).hostname.toLowerCase()
-    if (host === official || host.endsWith(`.${official}`)) {
+    const official = product.officialUrl === undefined ? undefined : new URL(product.officialUrl).hostname.toLowerCase()
+    if (official !== undefined && (host === official || host.endsWith(`.${official}`))) {
       publisher = product.developer
       // The approved official host establishes attribution; site labels are not legal company names.
     } else if (focusDriven) {

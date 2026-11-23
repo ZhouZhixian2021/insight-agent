@@ -452,7 +452,7 @@ describe('approved product investigation', () => {
       verifications: result.verifications, gaps: result.gaps, failures: result.run.failures, cancelled: false }
     const officialSnapshots = result.pages.snapshots.items.map(snapshot => snapshot.status === 'available'
       && result.discovery.candidates.items.some(page => page.candidatePageId === snapshot.candidatePageId
-        && page.url.startsWith(product.officialUrl))
+        && page.url.startsWith(product.officialUrl ?? '\u0000'))
       ? { ...snapshot, declaredPublisher: 'Official Newsroom (China)' } : snapshot)
     expect(evaluateProductReport({ ...reportInput, pages: { ...result.pages,
       snapshots: { ...result.pages.snapshots, items: officialSnapshots } } }).status).toBe('ready')

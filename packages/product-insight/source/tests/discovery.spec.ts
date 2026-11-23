@@ -74,6 +74,21 @@ describe('product page discovery', () => {
     expect(result.candidates.failures.some(failure => failure.message.includes('feed blocked'))).toBe(true)
   })
 
+  it('skips the official source entirely when the subject has no site', async () => {
+    let probed = false
+    const { officialUrl: _site, ...subjectWithoutSite } = product
+    const result = await discoverCandidatePages({
+      product: subjectWithoutSite, plan, maxResultsPerQuery: 5,
+    }, {
+      now,
+      web: { search: async () => ({ sources: [{ url: 'https://review.test/example', title: 'Example review' }],
+        truncated: false }) },
+      officialFeed: async () => { probed = true; return { notes: [], links: [] } },
+    })
+    expect(probed).toBe(false)
+    expect(result.candidates.items.map(page => page.url)).toEqual(['https://review.test/example'])
+  })
+
   it('records product posts from the news feed and drops unrelated stories', async () => {
     const result = await discoverCandidatePages({
       product: { ...product, name: 'Example M6', officialUrl: 'https://example.com/product' },
