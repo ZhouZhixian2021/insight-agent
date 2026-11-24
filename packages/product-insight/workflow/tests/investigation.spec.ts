@@ -67,9 +67,12 @@ describe('approved product investigation', () => {
       web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false, body: { kind: 'text', content: source } }) },
       summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan, async (phase, _system, user, accept) => {
         phases.push(phase)
-        expect(JSON.parse(user)).toMatchObject({ source: { url: page.url }, pageText: text,
-          researchQuestions: plan.questions.map(q => q.text) })
-        if (phase === 'reading') return accept(original)
+        expect(JSON.parse(user)).toMatchObject({ source: { url: page.url }, pageText: text })
+        if (phase === 'reading') {
+          expect(JSON.parse(user).researchQuestions).toEqual(plan.questions.map(q => q.text))
+          return accept(original)
+        }
+        expect(JSON.parse(user)).not.toHaveProperty('scope')
         expect(JSON.parse(user).paragraphs).toEqual(original.split('\n\n').map((paragraph, i) => ({ id: i + 1, text: paragraph })))
         return accept(JSON.stringify({ checked: [3, 1, 2], edits: [{ paragraph: 1, replacement: corrected,
           reason: '原文未排除其他机型。', quotes: ['12 核机型可选配以太网。'] },
@@ -99,19 +102,63 @@ describe('approved product investigation', () => {
     expect(phases).toHaveLength(2)
   })
 
-  it('withholds an unreviewed page after incomplete coverage and a repair citing absent text', async () => {
+  it('withholds a page when every paragraph still lacks a valid decision after two repairs', async () => {
     let reviews = 0
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 5, extractionMethod: { name: 'test', version: '1' } },
       { ...adapters, summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan,
         async (phase, _system, _user, accept) => {
           if (phase === 'reading') return accept('ordinary description\n\nonly this product')
-          return accept(JSON.stringify(++reviews === 1 ? { checked: [2], edits: [] } : { checked: [1, 2],
+          return accept(JSON.stringify(++reviews === 1 ? { checked: [], edits: [] } : { checked: [2],
             edits: [{ paragraph: 2, replacement: 'corrected', reason: 'unsupported qualifier', quotes: ['not in the source'] }] }))
         }), synthesizeReport: async () => { throw new Error('Unexpected synthesis of an unchecked page') } })
-    expect(reviews).toBe(2)
+    expect(reviews).toBe(3)
     expect(result.pageSummaries).toEqual([])
     expect(result.run.failures).toContainEqual(expect.objectContaining({ stage: 'analysis', message: expect.stringContaining('全文审核') }))
     expect(result.delivery.status).toBe('blocked')
+  })
+
+  it('keeps grounded paragraphs in order when a sibling exhausts targeted repairs and resumes the partial report', async () => {
+    const saved: ProductInvestigationCheckpoint[] = [], rounds: number[][] = []
+    const body = '常规版可用。企业版支持导出。部分地区另行收费。'
+    const change = (paragraph: number, replacement: string, quote: string) =>
+      ({ paragraph, replacement, quotes: [quote], reason: '核对适用范围' })
+    const first = { checked: [1, 2, 3, 4, 5], edits: [
+      change(1, '常规版可用。', '常规版可用。'), change(2, '这条不能进入写作。', plan.scope),
+      change(4, '所有地区免费。', '全文均免费'), { paragraph: 5, replacement: '', reason: '导航', quotes: [] }] }
+    const inputs: ReturnType<typeof productSynthesisInput>[] = []
+    const request = { product, plan, maxResultsPerQuery: 5, extractionMethod: { name: 'test', version: '1' } }
+    const setup: ProductInvestigationAdapters = { ...adapters,
+      web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false, body: { kind: 'text', content: body } }) },
+      summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan, async (phase, _system, user, accept) => {
+        if (phase === 'reading') return accept('仅常规版可用。\n\n这条不能进入写作。\n\n企业版支持导出。\n\n免费。\n\n导航')
+        const input = JSON.parse(user)
+        expect(input.pageText).toBe(body)
+        rounds.push(input.paragraphs.map((p: { id: number }) => p.id))
+        if (!input.repairRound) return accept(JSON.stringify(first))
+        expect(input.paragraphs[0]).toMatchObject({ id: 2, correction: expect.stringContaining('引文'),
+          proposedReplacement: '这条不能进入写作。' })
+        return accept(JSON.stringify(input.repairRound === 1 ? { checked: [2, 4], edits: [
+          change(2, '这条不能进入写作。', '另一个无效引文'), change(4, '部分地区另行收费。', '部分地区另行收费。'),
+          change(1, '试图覆盖已通过段落。', body)] } : { checked: [], edits: [] }))
+      }), saveCheckpoint: async (c) => { saved.push(c) }, synthesizeReport: async (input) => {
+        inputs.push(input)
+        return repairInsight(input, async () => ({ error: null, text: JSON.stringify([
+          { kind: 'section', sectionId: 'S1', title: '适用条件', status: 'answered', text: '常规版可用。[[cite:P1]]' },
+          ...plan.questions.map(q => ({ kind: 'coverage', questionId: q.questionId, status: 'answered', sectionIds: ['S1'], gap: '' }))]) }))
+      } }
+    const result = await runProductInvestigation(request, setup)
+    expect(rounds).toEqual([[1, 2, 3, 4, 5], [2, 4], [2]])
+    const expected = ['常规版可用。', '企业版支持导出。', '部分地区另行收费。']
+    expect(result.pageSummaries).toMatchObject([{ paragraphs: expected, partialReview: { total: 5, unresolved: [2] } }])
+    expect(inputs[0]?.pageSummaries?.[0]).toMatchObject({ summary: expected.join('\n\n'), limitation: expect.stringContaining('第 2 段未完成核对') })
+    expect(result.delivery.status).toBe('final')
+    expect(reports.at(-1)).toContain('提要部分通过，原有 5 段，已核对 4 段，其中 3 段可用于写作。')
+    expect(reports.at(-1)).not.toContain('这条不能进入写作')
+    const checkpoint = saved.at(-1)!
+    expect((await runProductInvestigation({ ...request, checkpoint }, setup)).pageSummaries).toEqual(result.pageSummaries)
+    expect(rounds).toHaveLength(3)
+    await expect(runProductInvestigation({ ...request, checkpoint: { ...checkpoint, pageSummaries: [
+      { ...result.pageSummaries![0]!, partialReview: { total: 5, unresolved: [6] } }] } }, setup)).rejects.toThrow('invalid reviewed page summaries')
   })
 
   it('refills extraction slots before a slow earlier page and commits results in page order', async () => {

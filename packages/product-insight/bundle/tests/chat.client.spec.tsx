@@ -39,6 +39,7 @@ it.each([
 const plan = '# 华为产品调查计划\n\n```product-insight-plan-json\n{}\n```'
 const planId = 'session-1:approved-product-plan:product-call'
 const labels: Record<string, string> = { draft: '调查草稿', pages: '来源发现与网页抓取', evidence: '证据提取',
+  summaryStage: '逐篇提要与全文审核', summariesRead: '已生成提要（篇）', summariesReviewed: '已审核提要（篇）',
   review: '语义审核', verification: '独立佐证', report: '报告生成', done: '已完成', sourcePages: '候选页 / 可用正文',
   evidenceCount: '有效证据', claimCount: '已审核结论', verificationCount: '跨来源核验', failureCount: '失败操作',
   elapsed: '已用时', seconds: '秒', blockers: '未达标原因', reportContent: '报告正文', download: '下载 Markdown',
@@ -133,10 +134,53 @@ it('exposes item repair and same-text reuse diagnostics in product Trace', () =>
   ] })
 })
 
-it('shows four stages without an independent corroboration step for new investigations', () => {
-  render(<ProductRunCard t={t} useInput={useInput} inputActions={inputActions} node={{ id: 'run', data: { planId, callId: 'call', title: 'Product', approved: true, runState: 'running',
-    stage: 3, candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0,
-    failures: 0, elapsedMilliseconds: 1, reasons: [] } } as never} />)
+it('shows the same summary stages from plan approval through reading and full-text review', () => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const events = [
+    { type: 'turn/start', data: { turn: 1 } },
+    { type: 'step/start', data: { turn: 1, step: 1 } },
+    { type: 'tool/call', data: { turn: 1, step: 1, name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
+    { type: 'tool/result', data: { turn: 1, step: 1, message: { toolCallId: 'product-call', isError: false }, meta: { approved: true } } },
+    { type: 'product/background-run-v1', data: { planId, state: 'running' } },
+    { type: 'product/pages-v1', data: { planId, candidates: [{}], snapshots: [{ status: 'available' }] } },
+    { type: 'product/checkpoint-v1', data: { planId, stage: 'pages', schemaVersion: 4, pageSummaries: [] } },
+    { type: 'product/page-summary-request-v1', data: { planId, candidatePageId: 'p1', phase: 'reading' } },
+    { type: 'product/page-summary-result-v1', data: { planId, candidatePageId: 'p1', phase: 'reading', status: 'completed' } },
+    { type: 'product/page-summary-result-v1', data: { planId, candidatePageId: 'p1', phase: 'review', status: 'completed' } },
+  ].map((event, i) => ({ type: 'event', event: { ...event, seq: i + 1, time: i } })) as SessionLiveEventEntry[]
+  for (let length = 4; length <= events.length; length++) {
+    assembler.replaceWindow(events.slice(0, length), false)
+    assembler.activateTarget('chat')
+    assembler.flush()
+    const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+    expect(node, 'visible card after event ' + String(length)).toBeDefined()
+    const view = render(<ProductRunCard node={node as never} t={t} useInput={useInput} inputActions={inputActions} />)
+    expect(node.visibility).toBe('visible')
+    expect([...view.container.querySelectorAll('li[data-state] > span:nth-child(2)')].map(label => label.textContent))
+      .toEqual(['来源发现与网页抓取', '逐篇提要与全文审核', '报告生成'])
+    expect(screen.getByText('逐篇提要与全文审核').closest('li')?.dataset.state).toBe(length < 8 ? 'pending' : 'active')
+    expect(screen.getByText('已生成提要（篇）').nextElementSibling?.textContent).toBe(length < 9 ? '0' : '1')
+    expect(screen.getByText('已审核提要（篇）').nextElementSibling?.textContent).toBe(length < 10 ? '0' : '1')
+    view.unmount()
+  }
+})
+
+it.each([1, 2, 3])('shows excerpt stages when resuming a version %i checkpoint during discovery', (schemaVersion) => {
+  const assembler = new ConversationNodeAssembler({ entries: () => [productChatDefinition], fallbackEntry: () => undefined },
+    { entries: () => [chatViewDefinition] },
+    { entries: () => [processGroupDefinition], forTarget: () => processGroupDefinition })
+  const events = [
+    { type: 'turn/start', data: { turn: 1 } },
+    { type: 'product/checkpoint-v1', data: { planId, stage: 'pages', schemaVersion } },
+  ]
+  assembler.replaceWindow(events.map((event, i) =>
+    ({ type: 'event', event: { ...event, seq: i + 1, time: i } })) as SessionLiveEventEntry[], false)
+  assembler.activateTarget('chat')
+  const node = (assembler.snapshot('chat') as ChatSnapshot).nodes.values().find(item => item.kind === 'product-insight-run')!
+  render(<ProductRunCard t={t} useInput={useInput} inputActions={inputActions} node={node as never} />)
+  expect(screen.getByText('证据提取')).toBeTruthy()
   expect(screen.getByText('语义审核')).toBeTruthy()
   expect(screen.getByText('报告生成')).toBeTruthy()
   expect(screen.queryByText('独立佐证')).toBeNull()
@@ -220,6 +264,15 @@ it('projects approved product stages and the saved report into one Chat card', (
   expect(submit).not.toHaveBeenCalled()
 })
 
+it('downloads the authored document verbatim with the investigation state kept in chat', () => {
+  const html = '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; base-uri \'none\'; form-action \'none\'"><title>作者标题</title></head><body><h1>作者标题</h1></body></html>'
+  const run = { callId: 'html', title: '计划标题', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 30, availablePages: 19, evidence: 19, claims: 19, verifications: 0, failures: 0,
+    elapsedMilliseconds: 3200, deliveryStatus: 'final', reasons: [], report: '# 作者标题', reportHtml: html } as const
+  expect(exportProductHtml(run, t)).toBe(html)
+  expect(exportProductHtml({ ...run, reportHtml: '<html><body>未知文档</body></html>' }, t)).not.toContain('未知文档')
+})
+
 it('exports and downloads a self-contained safe HTML report', () => {
   const run = { callId: 'call', title: '<img src=x onerror=alert(1)>', approved: true, runState: 'completed', stage: 6,
     candidatePages: 3, availablePages: 2, evidence: 4, claims: 2, verifications: 1, failures: 1,
@@ -227,9 +280,9 @@ it('exports and downloads a self-contained safe HTML report', () => {
     report: '# 产品报告\n\n## 结论\n\n| 项目 | 结果 |\n|---|---|\n| A | 有限 |\n\n[来源](https://example.com/a)\n\n<script>alert(1)</script>\n\n![跟踪图](https://example.com/pixel)\n\n## 证据附录\n\n原文依据。' } as const
   const html = exportProductHtml(run, t)
   const doc = new DOMParser().parseFromString(html, 'text/html')
-  expect(doc.querySelector('h1')?.textContent).toBe(run.title)
+  expect(doc.querySelector('h1')?.textContent).toBe('产品报告')
   expect(doc.querySelector('table')?.textContent).toContain('有限')
-  expect(doc.body.textContent).toContain('缺少独立佐证')
+  expect(doc.body.textContent).not.toContain('缺少独立佐证')
   expect(doc.querySelector('script,iframe,img,object,link')).toBeNull()
   const data = 'data:image/png;base64,iVBORw0KGgo='
   const illustratedReport = 'First.\n\n| Configuration | Time |\n| --- | --- |\n| A\\|B | 42 ms[^product-source-1] |'
@@ -253,7 +306,7 @@ it('exports and downloads a self-contained safe HTML report', () => {
   expect(doc.querySelector('a[href="https://example.com/a"]')?.getAttribute('rel')).toBe('noopener noreferrer')
   const disclosures = [...doc.querySelectorAll('details')]
   expect(disclosures.every(item => !item.hasAttribute('open'))).toBe(true)
-  expect(disclosures[0]?.querySelector('summary')?.textContent).toBe('未达标原因')
+  expect(doc.querySelector('details.notice, dl.summary')).toBeNull()
   expect(disclosures.find(item => item.querySelector('summary')?.textContent === '证据附录')?.textContent).toContain('原文依据。')
 
   vi.useFakeTimers()

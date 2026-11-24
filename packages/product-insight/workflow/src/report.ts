@@ -98,8 +98,11 @@ function reviewedPageMaterials(input: ProductReportInput) {
     if (!page || !note.paragraphs.length || snapshot?.status !== 'available' || snapshot.contentHash !== note.contentHash
       || snapshot.sourceSnapshotId !== note.sourceSnapshotId) return []
     const refreshed = input.sourceRevalidation?.snapshots.items.find(s => s.candidatePageId === note.candidatePageId)
-    const limitation = input.sourceRevalidation && !sameProductPageFacts(snapshot, refreshed)
-      ? '该页在恢复时已变化或无法再次确认。提要对应本次保存的原文版本。' : undefined
+    const partial = note.partialReview
+    const limitation = [
+      partial && `提要部分通过，原有 ${partial.total} 段，已核对 ${partial.total - partial.unresolved.length} 段，其中 ${note.paragraphs.length} 段可用于写作。第 ${partial.unresolved.join('、')} 段未完成核对，已略去。`,
+      input.sourceRevalidation && !sameProductPageFacts(snapshot, refreshed) && '该页在恢复时已变化或无法再次确认。提要对应本次保存的原文版本。',
+    ].filter(Boolean).join(' ')
     return [{ page, snapshot, note, sourceId: `P${index + 1}`, limitation }]
   })
 }

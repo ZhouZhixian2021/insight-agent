@@ -7,6 +7,8 @@ export interface ReviewedProductPage {
   readonly contentHash: string
   /** Empty when the reviewer found no usable material on this page. */
   readonly paragraphs: readonly string[]
+  /** Original draft positions omitted after the other paragraphs were reviewed. */
+  readonly partialReview?: { readonly total: number; readonly unresolved: readonly number[] }
 }
 
 export const PAGE_SUMMARY_INSTRUCTION = '完整阅读这一份网页，为本次调研报告写一份连贯的简体中文提要。'
@@ -20,9 +22,10 @@ export const PAGE_REVIEW_INSTRUCTION = '逐段对照同一网页的完整正文�
   + '检查每一段的普通描述、数字、推断与归因，尤其是仅、最高、至少、全部、已证实、否定和适用范围。'
   + '可结合页首、表格、脚注和上下文，区分销售地区与网页语言、峰值与任务结果。来源未排除其他机型时不可增写“仅”。'
   + '补回足以改变判断的前提或例外，写入最相关的段落。保留已获支持的内容与叙述顺序。'
-  + '只输出 JSON 对象 {"checked":[1,2],"edits":[{"paragraph":2,"replacement":"修订后的该段正文","reason":"原因","quotes":["原文逐字依据","另一处依据"]}]}。'
-  + 'checked 列出全部已检查的段号，每段一次。只为要改的段落返回 edits；全部正确时返回空 edits。'
-  + 'quotes 可引用同一页不同位置的原句或已提供的页面元数据值，按原语言逐字抄录。每个保留内容的修订都要有依据。'
+  + '只输出含 checked 和 edits 两个数组的 JSON 对象。checked 使用本次 paragraphs 中的原段号，每段一次，局部修订时沿用原编号。'
+  + '只在 edits 中列出需要修改的段落，每项含 paragraph（原段号）、replacement（整段修订文本）、reason（理由）、quotes（逐字引文数组）。全部正确时 edits 为空。'
+  + 'quotes 只可逐字摘自 pageText 或 source 的页面元数据，可引用同一页的多处原文。每个保留内容的修订都要有依据。'
+  + '发现原文没有说明某件事，可把判断写进 reason。提要、上轮建议和核对提示中的话不能充当原文引文。'
   + '整段确无依据或只是说明页面无关时，replacement 为空字符串并说明原因，此时 quotes 可以为空。'
 
 /**
@@ -45,33 +48,71 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-/** An invalid review can be requested again against the same draft and full source. */
-class PageReviewOutputError extends Error {}
+interface ReviewParagraph {
+  readonly id: number
+  readonly text: string
+  readonly correction?: string
+  readonly proposedReplacement?: string
+}
+
+const MAX_PAGE_REVIEW_REPAIRS = 2
+
+/** Keep individually validated decisions, including deletions, when a model response needs repair. */
+export class PageReviewOutputError extends Error {
+  constructor(readonly pending: readonly ReviewParagraph[], readonly accepted = new Map<number, string>()) {
+    super(pending.map(p => `第 ${p.id} 段，${p.correction}`).join('。'))
+  }
+}
 
 /** Marks a page whose drafted summary never obtained a usable independent review. */
 export class ProductPageReviewError extends Error {}
 
-function reviseParagraphs(raw: string, paragraphs: readonly string[], grounds: readonly string[]): string[] {
+function reviewParagraphs(raw: string, requested: readonly ReviewParagraph[], total: number, grounds: readonly string[]) {
+  const invalidResponse = (correction: string) => new PageReviewOutputError(requested.map(p => ({ ...p, correction })))
   let review: unknown
   try { review = JSON.parse(raw.trim().replace(/^\x60\x60\x60(?:json)?\s*\n([\s\S]*?)\n\s*\x60\x60\x60$/iu, '$1')) }
-  catch (error) { throw new PageReviewOutputError('审核结果不是完整的 JSON 对象', { cause: error }) }
-  const validId = (id: unknown): id is number => typeof id === 'number' && Number.isSafeInteger(id) && id >= 1 && id <= paragraphs.length
-  if (!record(review) || !Array.isArray(review.checked) || review.checked.length !== paragraphs.length
-    || !review.checked.every(validId) || new Set(review.checked).size !== paragraphs.length || !Array.isArray(review.edits)) {
-    throw new PageReviewOutputError('审核结果必须覆盖每一个段号，并返回 edits 数组')
+  catch { throw invalidResponse('请返回完整的 JSON 对象') }
+  if (!record(review) || !Array.isArray(review.checked) || !Array.isArray(review.edits)) {
+    throw invalidResponse('审核结果缺少 checked 或 edits 数组')
   }
-  const output = [...paragraphs], edited = new Set<number>()
+  const checked = new Map<number, number>()
+  for (const id of review.checked) if (typeof id === 'number') checked.set(id, (checked.get(id) ?? 0) + 1)
+  const edits = new Map<number, Record<string, unknown>[]>()
+  let unassignedEdit = false
   for (const edit of review.edits) {
-    if (!record(edit) || !validId(edit.paragraph) || edited.has(edit.paragraph)
-      || typeof edit.replacement !== 'string' || typeof edit.reason !== 'string' || !edit.reason.trim()
-      || !Array.isArray(edit.quotes) || (edit.replacement.trim() && !edit.quotes.length)
-      || !edit.quotes.every(q => typeof q === 'string' && q.trim() && grounds.some(source => source.includes(q)))) {
-      throw new PageReviewOutputError('修订必须指向唯一的原段号，给出替换、原因及可在该页定位的原文依据')
+    if (!record(edit) || typeof edit.paragraph !== 'number' || !Number.isSafeInteger(edit.paragraph)
+      || edit.paragraph < 1 || edit.paragraph > total) {
+      unassignedEdit = true
+      continue
     }
-    edited.add(edit.paragraph)
-    output[edit.paragraph - 1] = edit.replacement.trim()
+    const matches = edits.get(edit.paragraph)
+    if (matches) matches.push(edit)
+    else edits.set(edit.paragraph, [edit])
   }
-  return output.filter(Boolean)
+  const accepted = new Map<number, string>(), pending: ReviewParagraph[] = []
+  for (const p of requested) {
+    const matches = edits.get(p.id) ?? [], edit = matches[0]
+    let correction: string
+    if (checked.get(p.id) !== 1) correction = '请在 checked 中确认该段一次'
+    else if (matches.length > 1) correction = '请将该段的修改合为一条'
+    else if (!edit && unassignedEdit) correction = '上轮有修订缺少有效段号，请明确该段是否需要修改'
+    else if (!edit) { accepted.set(p.id, p.text); continue }
+    else if (typeof edit.replacement !== 'string' || typeof edit.reason !== 'string' || !edit.reason.trim()
+      || !Array.isArray(edit.quotes) || (edit.replacement.trim() && !edit.quotes.length)) {
+      correction = '请提供整段替换文本、修订原因和原文引文，删除整段时可返回空文本与空引文数组'
+    } else {
+      const missing = edit.quotes.flatMap((quote: unknown, i: number) => {
+        if (typeof quote === 'string' && quote.trim() && grounds.some(source => source.includes(quote))) return []
+        return [typeof quote === 'string' ? `第 ${i + 1} 条「${quote.slice(0, 100)}」` : `第 ${i + 1} 条（非文本）`]
+      })
+      if (!missing.length) { accepted.set(p.id, edit.replacement.trim()); continue }
+      correction = `${missing.join('、')}的引文无法在本页定位，请从网页原文逐字引用`
+    }
+    pending.push({ ...p, correction, ...(matches.length === 1 && typeof edit?.replacement === 'string'
+      ? { proposedReplacement: edit.replacement } : {}) })
+  }
+  if (pending.length) throw new PageReviewOutputError(pending, accepted)
+  return accepted
 }
 
 /** One recorded model call, including validation before a response is published as successful. */
@@ -84,10 +125,11 @@ export type PageSummaryCall = <T>(phase: 'reading' | 'review', system: string, u
  * @param text - Whole canonical page body.
  * @param plan - Approved scope and questions guiding the reading.
  * @param call - Model transport with durable request/result pairing.
+ * @param signal - Cancellation of the investigation, including pending repairs.
  * @returns Reviewed material bound to the exact captured page.
  */
 export async function readReviewedProductPage(page: CandidatePage, snapshot: AvailableSourceSnapshot,
-  text: string, plan: ProductPlan, call: PageSummaryCall): Promise<ReviewedProductPage> {
+  text: string, plan: ProductPlan, call: PageSummaryCall, signal?: AbortSignal): Promise<ReviewedProductPage> {
   const source = pageSource(page, snapshot)
   const material = { source, pageText: text, scope: plan.scope, researchQuestions: plan.questions.map(q => q.text) }
   const draft = await call('reading', PAGE_SUMMARY_INSTRUCTION, JSON.stringify(material), (raw) => {
@@ -95,19 +137,31 @@ export async function readReviewedProductPage(page: CandidatePage, snapshot: Ava
     if (!paragraphs.length) throw new Error('模型没有返回网页提要')
     return paragraphs
   })
-  const reviewInput = { ...material, paragraphs: draft.map((paragraph, i) => ({ id: i + 1, text: paragraph })) }
   const grounds = [text, ...Object.values(source).filter((v): v is string => typeof v === 'string')]
-  const inspect = (raw: string) => reviseParagraphs(raw, draft, grounds)
-  const review = async () => {
-    try { return await call('review', PAGE_REVIEW_INSTRUCTION, JSON.stringify(reviewInput), inspect) }
-    catch (error) {
-      if (!(error instanceof PageReviewOutputError)) throw error
-      return call('review', PAGE_REVIEW_INSTRUCTION, JSON.stringify({ ...reviewInput, correction: error.message }), inspect)
+  const accepted = new Map<number, string>()
+  let pending: readonly ReviewParagraph[] = draft.map((paragraph, i) => ({ id: i + 1, text: paragraph }))
+  let lastError: unknown
+  for (let round = 0; pending.length && round <= MAX_PAGE_REVIEW_REPAIRS; round++) {
+    signal?.throwIfAborted()
+    const input = { source, pageText: text, paragraphs: pending, ...(round ? { repairRound: round } : {}) }
+    try {
+      const decisions = await call('review', PAGE_REVIEW_INSTRUCTION, JSON.stringify(input),
+        raw => reviewParagraphs(raw, input.paragraphs, draft.length, grounds))
+      for (const [id, value] of decisions) accepted.set(id, value)
+      pending = []
+    } catch (error) {
+      signal?.throwIfAborted()
+      lastError = error
+      if (!(error instanceof PageReviewOutputError)) break
+      for (const [id, value] of error.accepted) accepted.set(id, value)
+      pending = error.pending
     }
   }
-  const paragraphs = await review().catch((cause: unknown) => {
-    throw new ProductPageReviewError(`网页提要未完成全文审核：${cause instanceof Error ? cause.message : String(cause)}`, { cause })
-  })
+  const paragraphs = draft.map((_, i) => accepted.get(i + 1) ?? '').filter(Boolean)
+  if (pending.length && !paragraphs.length) {
+    throw new ProductPageReviewError(`网页提要未完成全文审核：${lastError instanceof Error ? lastError.message : String(lastError)}`, { cause: lastError })
+  }
   return { candidatePageId: page.candidatePageId, sourceSnapshotId: snapshot.sourceSnapshotId,
-    contentHash: snapshot.contentHash, paragraphs }
+    contentHash: snapshot.contentHash, paragraphs,
+    ...(pending.length ? { partialReview: { total: draft.length, unresolved: pending.map(p => p.id) } } : {}) }
 }

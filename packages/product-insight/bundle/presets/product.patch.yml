@@ -56,6 +56,8 @@
                   searchTimeoutMs: 60000
               - id: product-plan-validation
                 name: '@deepseek-ai/dsh-product-insight-workflow'
+                config:
+                  writingReferenceFile: m6-report.html
               - id: planning
                 name: cordis:group
                 group: true

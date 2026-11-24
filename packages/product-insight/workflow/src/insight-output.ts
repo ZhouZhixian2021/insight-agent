@@ -1,7 +1,10 @@
 /** Material-led report sections with a separate research coverage record. */
 import type { ProductSynthesisInput } from './report.ts'
+import type { ProductWritingReference } from './writing-reference.ts'
 import { sectionImageUse, type SectionImageUse } from './section-layout.ts'
 import { inspectProductSynthesis, readEntries, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
+
+type WritingInput = ProductSynthesisInput & { readonly styleReference?: ProductWritingReference }
 
 /** One independently validated report section, unrelated to question ordering. */
 export interface InsightSection {
@@ -155,7 +158,7 @@ export function inspectInsight(text: string, input: ProductSynthesisInput,
  * @param correction - The single rejected unit and accepted section context, if repairing.
  * @returns Exact model request without repeating evidence per question.
  */
-export function insightRequest(input: ProductSynthesisInput, aliases: ReadonlyMap<string, string>,
+export function insightRequest(input: WritingInput, aliases: ReadonlyMap<string, string>,
   correction?: { issue: InsightIssue; sections: readonly InsightSection[] }): string {
   const reverse = new Map([...aliases].map(([alias, id]) => [id, alias]))
   const layoutOnly = correction?.issue.kind === 'imageUse'
@@ -174,7 +177,7 @@ export function insightRequest(input: ProductSynthesisInput, aliases: ReadonlyMa
       + 'Do not rewrite accepted sections. Correct references by meaning, never by guessing. '
       + 'For a structure repair with no usable sections, create a material-led report and its coverage records.',
   }
-  return JSON.stringify({ ...(input.images?.length ? {
+  return JSON.stringify({ styleReference: input.styleReference, ...(input.images?.length ? {
     images: input.images.map(({ id, pageUrl, imageUrl, caption, context, summary, facts }) =>
       ({ id, pageUrl, imageUrl, caption, context, summary, facts })),
     imageUsage: 'Every section must include imageUse. Choose {"mode":"cite_only"} for prose, including sections using no image. '
@@ -193,7 +196,7 @@ export function insightRequest(input: ProductSynthesisInput, aliases: ReadonlyMa
  * @param signal - Cancellation; no correction starts after cancellation.
  * @returns Ordered sections and separate coverage, including explicit unresolved notices.
  */
-export async function repairInsight(input: ProductSynthesisInput,
+export async function repairInsight(input: WritingInput,
   invoke: (user: string, ordinal: 1 | 2, knownSections: readonly string[], target?: InsightIssue) => Promise<SynthesisResponse>,
   signal?: AbortSignal): Promise<ProductInsight> {
   const aliases = synthesisAliases(input)

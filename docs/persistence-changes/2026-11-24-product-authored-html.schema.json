@@ -1,0 +1,91 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {
+      "key": "event:product/report-v1",
+      "kind": "event",
+      "event": "product/report-v1",
+      "surface": false,
+      "digest": "960c119845fb739dfb0786e59d6b13a626475de8d0afa1866d70729582207e53",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 3,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "contentRef",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "html",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "markdown",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "planId",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "product/report-v1"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

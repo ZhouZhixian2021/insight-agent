@@ -28,10 +28,12 @@ import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
 import { collectProductImages } from './visual-material.ts'
 import { type ProductSynthesisInput } from './report.ts'
-import { inspectInsight, insightRequest, insightRepairIssues, repairInsight, type ProductInsight } from './insight-output.ts'
-import { inspectProductSynthesis, synthesisAliases, type SynthesisResponse } from './synthesis-output.ts'
-import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, productSynthesisInstruction } from './writing.ts'
-import { readReviewedProductPage, type PageSummaryCall } from './page-summary.ts'
+import { writeProductHtml, type AuthoredProductReport } from './html-report.ts'
+import { htmlWritingRequest, productHtmlInstruction } from './html-writing.ts'
+import { inspectProductSynthesis, type SynthesisResponse } from './synthesis-output.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION } from './writing.ts'
+import type { ProductWritingReference } from './writing-reference.ts'
+import { PageReviewOutputError, readReviewedProductPage, type PageSummaryCall } from './page-summary.ts'
 
 declare module '@deepseek-ai/dsh-jobs' {
   interface JobKindMap {
@@ -61,6 +63,8 @@ declare module '@deepseek-ai/dsh-session/types' {
       phase: 'reading' | 'review'
       requestSeq: number
       status: 'completed' | 'failed'
+      /** The complete response can be replayed to recover individual paragraph decisions. */
+      invalidReview?: true
       text: string
       error: string | null
     }
@@ -173,7 +177,7 @@ declare module '@deepseek-ai/dsh-session/types' {
       }
     }
     /** Cited evidence draft saved before its run settles. */
-    'product/report-v1': { contentRef: string; planId: string; markdown: string }
+    'product/report-v1': { contentRef: string; planId: string; markdown: string; html?: string }
     /** Terminal run outcome and the reference to its saved draft. */
     'product/run-settlement-v1': {
       planId: string
@@ -197,8 +201,7 @@ const CROSS_CHECK_SYSTEM = 'Compare the key product statement with each other ad
   + 'or missing context requires uncertain; a different fact is unrelated. Do not infer publisher independence from URLs. '
   + 'Keep each rationale under 180 characters. Do not invent sources or facts.'
 const MAX_EVIDENCE_OUTPUT_TOKENS = 8_192
-const SYNTHESIS_SYSTEM = productSynthesisInstruction()
-const SUMMARY_SYNTHESIS_SYSTEM = productSynthesisInstruction('summaries')
+const HTML_SYSTEM = productHtmlInstruction()
 
 class ProductTransientModelError extends Error {
   constructor(readonly code: 'TRANSPORT' | 'TIMEOUT', options?: ErrorOptions) {
@@ -215,7 +218,8 @@ class RecoverableProductComparisonOutputError extends Error {}
 
 /** Register start and result tools; execution rechecks durable approval. */
 export function registerProductInvestigationTool(ctx: Context,
-  runInvestigation: typeof runApprovedProductInvestigation): void {
+  runInvestigation: typeof runApprovedProductInvestigation,
+  readWritingReference: (signal?: AbortSignal) => Promise<ProductWritingReference>): void {
   const active = new Set<string>()
   ctx.inject(['jobs'], (scope) => { scope.jobs.attachController('product-investigation') })
   const start = async (agent: NonNullable<ToolExecution['agent']>, signal: AbortSignal, expectedPlanId?: string): Promise<string> => {
@@ -278,7 +282,7 @@ export function registerProductInvestigationTool(ctx: Context,
               const agents = ctx.get('agents')
               if (!agents) throw new Error('Product investigation requires agent attribution')
               const { result } = await agents.withInitiator(agent, () => performProductInvestigation(ctx, session, model, plan, key,
-                events, runInvestigation, controller.signal, (line) => { job.updateProgress(line) }))
+                events, runInvestigation, readWritingReference, controller.signal, (line) => { job.updateProgress(line) }))
               const cancelled = controller.signal.aborted
               await saveBackgroundState(ctx, session, { planId: plan.planId, jobId: String(job.id),
                 state: cancelled ? 'cancelled' : 'completed', startedAt, updatedAt: new Date().toISOString(),
@@ -465,7 +469,8 @@ async function saveBackgroundState(ctx: Context, session: Session, state: Produc
 
 async function performProductInvestigation(ctx: Context, session: Session, model: LlmCallConfig,
   plan: ProductPlan, key: string, events: readonly SessionEvent[],
-  runInvestigation: typeof runApprovedProductInvestigation, signal: AbortSignal,
+  runInvestigation: typeof runApprovedProductInvestigation,
+  readWritingReference: (signal?: AbortSignal) => Promise<ProductWritingReference>, signal: AbortSignal,
   onProgress: (line: string) => void): Promise<{ readonly result: ProductInvestigationResult }> {
   const sessions = ctx.get('sessions')
   const web = ctx.get('web')
@@ -591,7 +596,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     },
     savePages, saveCheckpoint,
     summarizePage: (page, snapshot, text, active) => readReviewedProductPage(page, snapshot, text, plan,
-      pageSummaryModel(ctx, session, model, plan.planId, page.candidatePageId, snapshot.contentHash, events, persist, active)),
+      pageSummaryModel(ctx, session, model, plan.planId, page.candidatePageId, snapshot.contentHash, events, persist, active), active),
     extractImages: (images, active) => collectProductImages(ctx, session, model, plan, images, events, persist, onProgress, active),
     proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
       proposeEvidence(ctx, session, model, page, text, questions, persist, events,
@@ -625,13 +630,14 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       await persist()
       onProgress('已完成一项调查问题的跨站来源核对')
     },
-    synthesizeReport: async (input, requestSignal) => {
+    writeHtmlReport: async (input, requestSignal) => {
       onProgress('正在综合已核对的产品资料')
-      return synthesizeProductReport(ctx, session, model, plan, input, persist, events, requestSignal)
+      const styleReference = await readWritingReference(requestSignal ?? signal)
+      return synthesizeProductReport(ctx, session, model, plan, { ...input, styleReference }, persist, events, requestSignal)
     },
-    saveReport: async (markdown) => {
+    saveReport: async (markdown, html) => {
       const contentRef = `${plan.planId}:report`
-      session.append('product/report-v1', { contentRef, planId: plan.planId, markdown })
+      session.append('product/report-v1', { contentRef, planId: plan.planId, markdown, ...(html === undefined ? {} : { html }) })
       await persist()
       return contentRef
     },
@@ -663,24 +669,17 @@ async function performProductInvestigation(ctx: Context, session: Session, model
 }
 
 async function synthesizeProductReport(ctx: Context, session: Session, config: LlmCallConfig, plan: ProductPlan,
-  input: ProductSynthesisInput, persist: () => Promise<void>, events: readonly SessionEvent[],
-  signal?: AbortSignal): Promise<ProductInsight> {
+  input: ProductSynthesisInput & { styleReference: ProductWritingReference }, persist: () => Promise<void>, events: readonly SessionEvent[],
+  signal?: AbortSignal): Promise<AuthoredProductReport> {
   const llm = ctx.get('llm')
   if (!llm) throw new Error('Product synthesis model service is unavailable')
-  const capacity = await llm.prepareCall(config, signal)
-  const system = input.pageSummaries === undefined ? SYNTHESIS_SYSTEM : SUMMARY_SYNTHESIS_SYSTEM
-  const aliases = synthesisAliases(input)
-  const serialized = insightRequest(input, aliases)
-  if (input.pageSummaries === undefined && !fitsProductModelInput(system, serialized, capacity.context?.contextWindow,
-    capacity.config.maxTokens ?? MAX_EVIDENCE_OUTPUT_TOKENS)) {
-    throw new RangeError('The deduplicated evidence pool exceeds report context capacity; no question-wise report is substituted')
-  }
-  return repairInsight(input, async (user, ordinal, knownSections, target): Promise<SynthesisResponse> => {
+  const material = htmlWritingRequest(input, input.styleReference)
+  return writeProductHtml(input, material, async (user, ordinal, correction, validate): Promise<SynthesisResponse> => {
     signal?.throwIfAborted()
-    const initial = ordinal === 1 ? capacity : await llm.prepareCall(config, signal)
-    const prepared = input.pageSummaries === undefined ? initial : await fitPageCall(llm, initial, system, user, signal)
+    const system = correction ? HTML_SYSTEM + '\n\n本次专门修订 repair 中的局部。只返回 JSON 数组，每项含 id 和 html。每项保留原 HTML 单元的标签和位置，修订后使用本轮来源，只返回指定单元。' : HTML_SYSTEM
+    const prepared = await fitPageCall(llm, await llm.prepareCall(config, signal), system, user, signal)
     const { provider, model, reasoningEffort } = prepared.config
-    const maxTokens = prepared.config.maxTokens ?? (input.pageSummaries === undefined ? 4096 : undefined)
+    const maxTokens = prepared.config.maxTokens
     const request = events.findLast(event => event.type === 'product/synthesis-request-v1'
       && event.data.planId === plan.planId && event.data.user === user && event.data.system === system
       && event.data.provider === provider && event.data.model === model && event.data.maxTokens === maxTokens
@@ -702,46 +701,34 @@ async function synthesizeProductReport(ctx: Context, session: Session, config: L
     let error: SynthesisResponse['error'] = null
     let failureCode: SynthesisResponse['failureCode']
     try {
-      if (input.pageSummaries === undefined && !fitsProductModelInput(system, user, prepared.context?.contextWindow, maxTokens ?? 4096)) {
-        // Never silently trim repair evidence or exceed the model's context capacity.
-        error = 'output_limit'
-      } else {
-        const operationSignal = signal ?? new AbortController().signal
-        await awaitProductModel(async () => {
-          for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
-            messages, sessionId: session.id, signal: operationSignal }))) {
-            operationSignal.throwIfAborted()
-            assembler.push(chunk)
-            if (chunk.type === 'finish') state.finished = true
-            output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
-          }
-        }, operationSignal)
-        const finish = assembler.finish
-        if (finish.kind === 'max-tokens') error = 'output_limit'
-        else if (finish.kind === 'error' || finish.kind === 'aborted') {
-          error = 'request_failed'
-          if (finish.kind === 'error' && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT')) {
-            failureCode = finish.failure.code
-          }
-        } else if (!state.finished || finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
-          error = 'invalid_output'
+      const operationSignal = signal ?? new AbortController().signal
+      await awaitProductModel(async () => {
+        for await (const chunk of prepared.stream(Object.freeze({ ...prepared.config, system,
+          messages, sessionId: session.id, signal: operationSignal }))) {
+          operationSignal.throwIfAborted()
+          assembler.push(chunk)
+          if (chunk.type === 'finish') state.finished = true
+          output = assembler.blocks().filter(block => block.type === 'text').map(block => block.text).join('')
         }
-        if (error === null && insightRepairIssues(inspectInsight(output, input, aliases, knownSections, target), target).length > 0) {
-          error = 'invalid_output'
+      }, operationSignal)
+      const finish = assembler.finish
+      if (finish.kind === 'max-tokens') error = 'output_limit'
+      else if (finish.kind === 'error' || finish.kind === 'aborted') {
+        error = 'request_failed'
+        if (finish.kind === 'error' && (finish.failure.code === 'TRANSPORT' || finish.failure.code === 'TIMEOUT')) {
+          failureCode = finish.failure.code
         }
+      } else if (!state.finished || finish.kind !== 'stop' || assembler.blocks().some(block => block.type === 'tool-call')) {
+        error = 'invalid_output'
       }
+      if (error === null && validate(output).length) error = 'invalid_output'
     } catch (cause) {
       error = 'request_failed'
       failureCode = signal?.aborted ? 'ABORTED' : cause instanceof ProductTransientModelError ? cause.code : undefined
     }
     const response: SynthesisResponse = { text: output, error, ...failureCode === undefined ? {} : { failureCode } }
-    const inspection = inspectInsight(output, input, aliases, knownSections, target)
-    const issues = insightRepairIssues(inspection, target)
     session.append('product/synthesis-result-v1', { planId: plan.planId, requestSeq, ...response,
-      validation: { acceptedQuestionIds: inspection.coverage.map(item => item.questionId),
-        issues: issues.filter(issue => issue.kind === 'coverage').map(({ id, reasons }) => ({ questionId: id, reasons })),
-        notes: [...inspection.notices, ...issues.filter(issue => issue.kind !== 'coverage')
-          .map(issue => `${issue.kind} ${issue.id}: ${issue.reasons.join(' ')}`)] } })
+      validation: { acceptedQuestionIds: [], issues: [], notes: error === 'invalid_output' ? validate(output) : [] } })
     await persist()
     signal?.throwIfAborted()
     return response
@@ -788,7 +775,8 @@ export function pageSummaryModel(ctx: Context, session: Session, config: LlmCall
       && e.data.system === system && e.data.user === user && e.data.provider === provider && e.data.model === model
       && e.data.reasoningEffort === reasoningEffort && e.data.maxTokens === maxTokens)
     const replay = prior && events.findLast(e => e.type === 'product/page-summary-result-v1' && e.data.requestSeq === prior.seq)
-    if (replay?.type === 'product/page-summary-result-v1' && replay.data.status === 'completed') return accept(replay.data.text)
+    if (replay?.type === 'product/page-summary-result-v1'
+      && (replay.data.status === 'completed' || phase === 'review' && replay.data.invalidReview)) return accept(replay.data.text)
     const { seq: requestSeq } = session.append('product/page-summary-request-v1', { planId, candidatePageId, contentHash,
       phase, system, user, provider, model, ...maxTokens === undefined ? {} : { maxTokens },
       ...reasoningEffort === undefined ? {} : { reasoningEffort } })
@@ -813,6 +801,7 @@ export function pageSummaryModel(ctx: Context, session: Session, config: LlmCall
       return accept(output())
     }, signal).catch(async (error: unknown) => {
       session.append('product/page-summary-result-v1', { ...base, status: 'failed', text: output(),
+        ...(error instanceof PageReviewOutputError ? { invalidReview: true as const } : {}),
         error: error instanceof Error ? error.message : String(error) })
       await persist()
       throw error

@@ -79,10 +79,12 @@ Keep product transcript presentation in this bundle and durable investigation st
 
 Product mode owns its job controller and does not mount the generic job-completion notifier. New approved plans start after the planning turn becomes idle; rejected or dismissed plans do not start. Restart the service and open a new product session to test the updated preset. Historical saved reports remain readable; unfinished historical plans are not silently restarted.
 
-Generated sentence citations render as clickable superscript numbers in chat and exported HTML, linking to the corresponding source. Markdown downloads retain numbered footnotes. The synthesis model supplies citation positions and the workflow validates their identities; historical paragraph-end links are not relocated automatically.
+From plan approval, new investigations show page capture, page summaries with full-text review, and report writing. The card shows summary and review counts even while discovery is running. Historical excerpt checkpoints and events display their recorded stages.
 
-Synthesis Trace details expose accepted question IDs, per-question validation failures and automatic normalization notes when recorded. Older results without these diagnostics remain readable.
+Sentence-end superscripts in the finished HTML link to the actual source. Sources are numbered on first citation. Each sentence lists its distinct source numbers in ascending order. The Markdown download projects the same authored text, tables and source links.
 
-The chat card opens with the report body collapsed and both downloads available. Wide tables scroll within the expanded preview. Draft and blocked deliveries show their reasons. Coverage, evidence and search-scope appendices are collapsed in both chat and HTML. Saved regional price pairs with explicit regular and education amounts are labelled separately on display and download, retaining their source links.
+The synthesis trace in the chat card records the writing call and any validation or local repair diagnostics. Older entries retain their recorded diagnostics.
 
-New reports use Markdown section headings. The renderer also recognizes the historical coverage wrapper while keeping arbitrary HTML disabled.
+The chat card initially collapses the report and offers both downloads. The isolated preview displays the saved HTML, including its typography, scrollable tables and embedded original images. Progress, timing and delivery reasons stay on the card.
+
+Markdown-only records from older investigations remain readable and downloadable.
