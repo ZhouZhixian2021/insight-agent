@@ -11,26 +11,34 @@
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/types/**/*.d.ts", "skills/product-insight-writing/SKILL.md"],
+  "files": ["lib/index.js", "lib/types/**/*.d.ts", "skills/product-insight-writing/SKILL.md", "references/m6-report.html"],
   "license": "MIT",
+  "dependencies": {
+    "parse5": "8.0.1",
+    "pdfjs-dist": "6.3.289"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-brand": "workspace:*",
     "@deepseek-ai/dsh-jobs": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
+    "@deepseek-ai/dsh-office-to-pdf": "workspace:*",
     "@deepseek-ai/dsh-product-insight-model": "workspace:*",
     "@deepseek-ai/dsh-product-insight-source": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-session-query": "workspace:*",
     "@deepseek-ai/dsh-token-meter": "workspace:*",
     "@deepseek-ai/dsh-tools": "workspace:*",
-    "@deepseek-ai/dsh-web": "workspace:*"
+    "@deepseek-ai/dsh-web": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
+  "peerDependenciesMeta": { "@deepseek-ai/dsh-office-to-pdf": { "optional": true } },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-brand": "workspace:*",
     "@deepseek-ai/dsh-jobs": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
+    "@deepseek-ai/dsh-office-to-pdf": "workspace:*",
     "@deepseek-ai/dsh-system-prompt": "workspace:*",
     "@deepseek-ai/dsh-product-insight-model": "workspace:*",
     "@deepseek-ai/dsh-product-insight-source": "workspace:*",
@@ -38,6 +46,7 @@
     "@deepseek-ai/dsh-session-query": "workspace:*",
     "@deepseek-ai/dsh-token-meter": "workspace:*",
     "@deepseek-ai/dsh-tools": "workspace:*",
-    "@deepseek-ai/dsh-web": "workspace:*"
+    "@deepseek-ai/dsh-web": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   }
 }

@@ -4,6 +4,8 @@
   "include": ["src/**/*.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../document/office-to-pdf" },
     { "path": "../../util/brand" },
     { "path": "../../jobs/jobs" },
     { "path": "../model" },

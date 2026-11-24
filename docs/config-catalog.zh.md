@@ -2826,6 +2826,23 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-plugin-package-inventory-deepseek -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-product-insight-workflow -->
+<a id="deepseek-aidsh-product-insight-workflow"></a>
+
+## `@deepseek-ai/dsh-product-insight-workflow`
+
+- `inject`: `tools`
+- `source`: [`packages/product-insight/workflow/src/index.ts:56`](../packages/product-insight/workflow/src/index.ts)
+
+```ts config-catalog
+/** Operator-owned style reference for the product report writer. */
+export interface Config {
+  /** Absolute file path or a name in the package references directory. */
+  writingReferenceFile?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-product-insight-workflow -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-ptc-runtime-node -->
 <a id="deepseek-aidsh-ptc-runtime-node"></a>
 
@@ -5018,7 +5035,6 @@ export interface Config {
 | `@deepseek-ai/dsh-mcp-resources` | `tools` | [`packages/mcp/mcp-resources/src/index.ts`](../packages/mcp/mcp-resources/src/index.ts) |
 | `@deepseek-ai/dsh-otel` | — | [`packages/telemetry/otel/src/index.ts`](../packages/telemetry/otel/src/index.ts) |
 | `@deepseek-ai/dsh-product-insight-bundle` | — | [`packages/product-insight/bundle/src/index.ts`](../packages/product-insight/bundle/src/index.ts) |
-| `@deepseek-ai/dsh-product-insight-workflow` | `tools` | [`packages/product-insight/workflow/src/index.ts`](../packages/product-insight/workflow/src/index.ts) |
 | `@deepseek-ai/dsh-sandbox-ssh` | `ssh` | [`packages/ssh/sandbox-ssh/src/index.ts`](../packages/ssh/sandbox-ssh/src/index.ts) |
 | `@deepseek-ai/dsh-session` | — | [`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts) |
 | `@deepseek-ai/dsh-session-checkpoint-policy` | `llm` · `sessionPersistence` · `sessions` · `tools` | [`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts) |

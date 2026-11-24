@@ -4,6 +4,7 @@ import { ProductPageReviewError, type ReviewedProductPage } from './page-summary
 import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-tools'
 import { createEvidenceGapId, createProductFailureId, createProductReportId, createProductRunId,
   isExecutableProductPlan, type AvailableSourceSnapshot, type CandidatePage, type Product,
@@ -27,7 +28,9 @@ import { checkCrossSourceJudgments, comparisonEvidence, keyProductClaims,
   type ProductCrossSourceJudgment, type ProductQuestionVerification } from './claim-verification.ts'
 import { evaluateProductReport, productSynthesisInput, renderProductReport, renderProductSynthesis,
   type ProductImageCard, type ProductReportAssessment, type ProductReportInput, type ProductSynthesisInput } from './report.ts'
+import { productHtmlDraft, type AuthoredProductReport } from './html-report.ts'
 import { registerProductInvestigationTool } from './session-tool.ts'
+import { readProductWritingReference } from './writing-reference.ts'
 
 // Publish the Session event declarations consumed by the product transcript card.
 export type {} from './session-tool.ts'
@@ -49,10 +52,18 @@ export const name = 'product-insight-workflow'
 /** The plan guard observes tool dispatch before the review is presented. */
 export const inject = ['tools']
 
+/** Operator-owned style reference for the product report writer. */
+export interface Config {
+  /** Absolute file path or a name in the package references directory. */
+  writingReferenceFile?: string
+}
+export const Config: z<Config> = z.object({ writingReferenceFile: z.string().min(1) })
+
 /** Reject malformed product execution blocks without changing approval state. */
-export function apply(ctx: Context): void {
+export function apply(ctx: Context, config: Config = {}): void {
   registerSearchRecognition(ctx)
-  registerProductInvestigationTool(ctx, runApprovedProductInvestigation)
+  registerProductInvestigationTool(ctx, runApprovedProductInvestigation,
+    signal => readProductWritingReference(config.writingReferenceFile, ctx.get('officeToPdf'), signal))
   ctx.on('tools/execute', async (exec, next) => {
     if (exec.name === 'web_search' && exec.agent) {
       const agents = ctx.get('agents')
@@ -163,7 +174,8 @@ export interface ProductInvestigationAdapters {
   readonly saveVerification: (verification: ProductQuestionVerification) => Promise<void>
   /** Generate material-led report sections; legacy question maps remain accepted by custom adapters. */
   readonly synthesizeReport?: (input: ProductSynthesisInput, signal?: AbortSignal) => Promise<ReadonlyMap<string, string> | ProductInsight>
-  readonly saveReport: (markdown: string) => Promise<string>
+  readonly writeHtmlReport?: (input: ProductSynthesisInput, signal?: AbortSignal) => Promise<AuthoredProductReport>
+  readonly saveReport: (markdown: string, html?: string) => Promise<string>
   readonly now: () => string
 }
 
@@ -558,8 +570,29 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation },
     evidence, reviews, claims, verifications, gaps, failures, cancelled: operationSignal?.aborted ?? false }
   const initialAssessment = evaluateProductReport(reportInput)
+  let authored: AuthoredProductReport | undefined
   let synthesizedMarkdown: string | undefined
-  if (adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
+  if (adapters.writeHtmlReport && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
+    try {
+      const material = productSynthesisInput(reportInput)
+      if (material.images?.length || material.pageSummaries?.length || material.questions.some(q => q.evidence.length)) {
+        authored = await adapters.writeHtmlReport(material, operationSignal)
+      } else {
+        authored = productHtmlDraft(input.product.name, material)
+      }
+      operationSignal?.throwIfAborted()
+      const unanswered = authored.unanswered
+      for (const q of input.plan.questions.filter(q => unanswered.includes(q.questionId))) {
+        if (!gaps.some(g => g.questionId === q.questionId)) gaps.push({ schemaVersion: 1, gapId: createEvidenceGapId(),
+          planId: input.plan.planId, questionId: q.questionId, missingContent: q.text, reason: '本轮材料未能回答该问题。', status: 'open' })
+      }
+      if (authored.repairNote) failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'report',
+        category: 'unknown', message: authored.repairNote, retryable: true, occurredAt: adapters.now() })
+    } catch (error) {
+      if (!operationSignal?.aborted) failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'report',
+        category: 'unknown', message: error instanceof Error ? error.message : String(error), retryable: true, occurredAt: adapters.now() })
+    }
+  } else if (!adapters.writeHtmlReport && adapters.synthesizeReport !== undefined && initialAssessment.status !== 'blocked' && !operationSignal?.aborted) {
     try {
       const material = productSynthesisInput(reportInput)
       const noMaterial = images.length === 0 && !material.pageSummaries?.length
@@ -605,9 +638,11 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     delivery = { status: 'blocked', reasons: assessment.reasons, report: null }
   } else {
     try {
-      const markdown = !operationSignal?.aborted && synthesizedMarkdown !== undefined
-        ? synthesizedMarkdown : renderProductReport(reportInput, assessment)
-      const contentRef = await adapters.saveReport(markdown)
+      if (adapters.writeHtmlReport && (!authored || operationSignal?.aborted)) {
+        authored = productHtmlDraft(input.product.name, productSynthesisInput(reportInput))
+      }
+      const markdown = authored?.markdown ?? synthesizedMarkdown ?? renderProductReport(reportInput, assessment)
+      const contentRef = await adapters.saveReport(markdown, authored?.html)
       if (contentRef.trim().length === 0) throw new RangeError('Saved report reference is empty')
       delivery = { status: assessment.status === 'ready' ? 'final' : 'draft', reasons: assessment.reasons,
         report: { schemaVersion: 1, reportId: createProductReportId(), planId: input.plan.planId,
@@ -696,8 +731,13 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
       || new Set(checkpoint.pageSummaries.map(s => s.candidatePageId)).size !== checkpoint.pageSummaries.length
       || checkpoint.pageSummaries.some((s: ReviewedProductPage) => {
         const snapshot = snapshotsByPage.get(s.candidatePageId)
+        const partial = s.partialReview
         return !settled.has(s.candidatePageId) || snapshot?.status !== 'available' || s.sourceSnapshotId !== snapshot.sourceSnapshotId
           || s.contentHash !== snapshot.contentHash || !Array.isArray(s.paragraphs) || !s.paragraphs.every(p => typeof p === 'string' && p.trim())
+          || partial !== undefined && (!partial || !Number.isSafeInteger(partial.total)
+            || !Array.isArray(partial.unresolved) || !partial.unresolved.length || !s.paragraphs.length
+            || s.paragraphs.length + partial.unresolved.length > partial.total
+            || !partial.unresolved.every((id, i, ids) => Number.isSafeInteger(id) && id > (ids[i - 1] ?? 0) && id <= partial.total))
       })) throw new RangeError('Product recovery checkpoint has invalid reviewed page summaries')
     return
   }

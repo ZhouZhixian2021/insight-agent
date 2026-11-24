@@ -101,6 +101,35 @@ it('pairs interleaved full-page reviews with their own drafts and replays both r
     '"reading/completed reading/completed reading/completed review/completed review/completed review/completed"')
 })
 
+it('replays settled paragraph decisions across an interrupted repair and accepts a grounded second repair', async () => {
+  const f = await fixture(['Enterprise only.\n\nBasic costs $10.', JSON.stringify({ checked: [1, 2],
+    edits: [{ paragraph: 1, replacement: 'Enterprise supports offline use.', reason: 'Scope', quotes: ['investigation scope'] }] }),
+  '{', JSON.stringify({ checked: [1], edits: [{ paragraph: 1, replacement: 'Enterprise supports offline use.',
+    reason: 'Source names the edition.', quotes: ['Enterprise supports offline use.'] }] })])
+  const plan: ProductPlan = { schemaVersion: 1, version: 1, productId: f.page.productId, planId: f.page.planId,
+    scope: 'investigation scope', questions: f.questions, approval: { status: 'approved', approvedPlanVersion: 1,
+      reviewedBy: 'user', reviewedAt: f.page.discoveredAt, comment: null } }
+  const snapshot = { schemaVersion: 1, status: 'available', observedAt: f.page.discoveredAt, candidatePageId: f.page.candidatePageId,
+    sourceSnapshotId: createSourceSnapshotId(), contentHash: 'same-source', contentRef: 'page' } as const
+  const run = (signal?: AbortSignal, persist = async () => {}) => readReviewedProductPage(f.page, snapshot, text, plan,
+    pageSummaryModel(f.ctx, f.session, { provider: 'fixture', model: 'fixture' }, plan.planId, f.page.candidatePageId,
+      snapshot.contentHash, f.session.snapshotEvents(), persist, signal), signal)
+  const stop = new AbortController()
+  await expect(run(stop.signal, async () => {
+    const last = f.session.snapshotEvents().at(-1)
+    if (last?.type === 'product/page-summary-result-v1' && last.data.invalidReview) stop.abort(new Error('Interrupted after first review'))
+  })).rejects.toThrow('Interrupted')
+  expect(f.adapter.calls).toHaveLength(2)
+  const page = await run()
+  expect(page.paragraphs).toEqual(['Enterprise supports offline use.', 'Basic costs $10.'])
+  expect(page.partialReview).toBeUndefined()
+  expect(await run()).toEqual(page)
+  expect(f.adapter.calls).toHaveLength(4)
+  const attempts = f.session.snapshotEvents().filter(e => e.type === 'product/page-summary-request-v1' && e.data.phase === 'review')
+  expect(attempts.map(e => e.type === 'product/page-summary-request-v1' && JSON.parse(e.data.user).paragraphs.map((p: { id: number }) => p.id)))
+    .toEqual([[1, 2], [1], [1]])
+})
+
 it('repairs only invalid siblings and persists short-ID requests and full-ID drafts', async () => {
   const f = await fixture([JSON.stringify([good, bad]), JSON.stringify([corrected])])
   const drafts = await f.run()

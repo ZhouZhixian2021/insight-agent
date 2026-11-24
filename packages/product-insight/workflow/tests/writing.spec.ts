@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createProductEvidenceId, createProductQuestionId } from '@deepseek-ai/dsh-product-insight-model'
 import { parseProductSynthesis } from '../src/session-tool.ts'
 import type { ProductSynthesisInput } from '../src/report.ts'
-import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION, productSynthesisInstruction } from '../src/writing.ts'
+import { PRODUCT_READING_INSTRUCTION, PRODUCT_REVIEW_INSTRUCTION } from '../src/writing.ts'
+import { productHtmlInstruction } from '../src/html-writing.ts'
 import { inspectExtraction } from '../src/extraction-output.ts'
 
 const ids = [createProductEvidenceId(), createProductEvidenceId()]
@@ -51,6 +52,6 @@ describe('product evidence-led writing', () => {
 
   it('pins the product reading and writing instructions', () => {
     expect({ reading: PRODUCT_READING_INSTRUCTION, review: PRODUCT_REVIEW_INSTRUCTION,
-      writing: productSynthesisInstruction() }).toMatchSnapshot()
+      writing: productHtmlInstruction() }).toMatchSnapshot()
   })
 })

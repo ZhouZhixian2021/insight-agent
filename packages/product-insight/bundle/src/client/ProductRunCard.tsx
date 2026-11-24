@@ -1,6 +1,6 @@
 /** Product investigation progress and saved reports in the Chat transcript. */
 import type { Context } from '@deepseek-ai/cordis'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import { ProductReport, productRaster } from './ProductReport.tsx'
@@ -52,6 +52,7 @@ export interface ProductChatRun {
   readonly reasons: readonly string[]
   readonly unansweredQuestions?: readonly { readonly questionId: string; readonly text: string }[]
   readonly trace?: readonly ProductTraceEntry[]
+  readonly reportHtml?: string | undefined
   readonly report?: string
 }
 
@@ -89,8 +90,9 @@ function submittedPlan(event: Parameters<ConversationNodeDefinition['match']>[0]
 }
 
 function initial(callId: string, title = '', approved = true): ProductChatRun {
+  // New DSH runs summarize pages. Older runs identify their excerpt flow on replay.
   return { callId, title, approved, runState: 'waiting', stage: 0, candidatePages: 0, availablePages: 0,
-    evidence: 0, claims: 0, verifications: 0, failures: 0, elapsedMilliseconds: 0, reasons: [] }
+    summaryMode: true, evidence: 0, claims: 0, verifications: 0, failures: 0, elapsedMilliseconds: 0, reasons: [] }
 }
 
 function callIdFromPlanId(planId: string): string | undefined {
@@ -160,11 +162,13 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
     case 'product/checkpoint-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(stageNumber(data.stage), state.stage),
         ...(data.schemaVersion === 4 ? { summaryMode: true, claims: Math.max(state.claims, count(data.pageSummaries)),
-          evidence: Math.max(state.evidence, count(data.pageSummaries)) } : {}),
+          evidence: Math.max(state.evidence, count(data.pageSummaries)) }
+          : data.schemaVersion === 1 || data.schemaVersion === 2 || data.schemaVersion === 3 ? { summaryMode: false } : {}),
         failures: count(data.failures), elapsedMilliseconds: typeof data.elapsedMilliseconds === 'number'
           ? data.elapsedMilliseconds : state.elapsedMilliseconds }
     case 'product/model-request-v1': case 'product/model-result-v1':
-      return { ...state, stage: Math.max(2, state.stage) }
+    case 'product/extraction-inspection-v1':
+      return { ...state, summaryMode: false, stage: Math.max(2, state.stage) }
     case 'product/page-summary-request-v1': case 'product/page-summary-result-v1': {
       const done = (phase: 'reading' | 'review') => new Set((state.trace ?? [])
         .filter(item => item.type === 'product/page-summary-result-v1' && item.status === 'completed' && item.phase === phase)
@@ -173,20 +177,22 @@ function applyEvent(state: ProductChatRun, event: Parameters<ConversationNodeDef
         evidence: Math.max(state.evidence, done('reading')), claims: Math.max(state.claims, done('review')) }
     }
     case 'product/evidence-v1':
-      return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(2, state.stage), evidence: count(data.items) }
+      return { ...state, summaryMode: false, ...(planId === undefined ? {} : { planId }),
+        stage: Math.max(2, state.stage), evidence: count(data.items) }
     case 'product/claim-review-request-v1': case 'product/claim-review-result-v1':
     case 'product/claims-v1':
-      return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(3, state.stage),
+      return { ...state, summaryMode: false, ...(planId === undefined ? {} : { planId }), stage: Math.max(3, state.stage),
         claims: event.type === 'product/claims-v1' ? count(data.items) : state.claims }
     case 'product/cross-check-request-v1': case 'product/cross-check-result-v1':
     case 'product/verification-v1':
-      return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(4, state.stage),
+      return { ...state, summaryMode: false, ...(planId === undefined ? {} : { planId }), stage: Math.max(4, state.stage),
         verifications: event.type === 'product/verification-v1' ? state.verifications + 1 : state.verifications }
     case 'product/synthesis-request-v1': case 'product/synthesis-result-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(5, state.stage) }
     case 'product/report-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), stage: Math.max(5, state.stage),
-        ...(typeof data.markdown === 'string' ? { report: data.markdown } : {}) }
+        ...(typeof data.markdown === 'string' ? { report: data.markdown,
+          reportHtml: typeof data.html === 'string' ? data.html : undefined } : {}) }
     case 'product/run-settlement-v1':
       return { ...state, ...(planId === undefined ? {} : { planId }), runState: 'completed', stage: 6,
         ...(data.status === 'blocked' || data.status === 'draft' || data.status === 'final'
@@ -222,7 +228,8 @@ export const productChatDefinition: ConversationNodeDefinition<ProductChatRun> =
   },
   update: (context, match) => {
     const plan = submittedPlan(match.event)
-    return plan === null ? applyEvent(context.state, match.event) : { ...context.state, ...plan }
+    return plan === null ? applyEvent(context.state, match.event)
+      : { ...context.state, title: plan.title || context.state.title, approved: context.state.approved || plan.approved }
   },
   buildViewNode: (context) => {
     const start = context.start ?? context.matches[0]
@@ -301,7 +308,7 @@ function downloadProductTrace(run: ProductChatRun): void {
 }
 
 function downloadMarkdown(markdown: string): void {
-  const url = URL.createObjectURL(new Blob([productPriceMarkdown(markdown)], { type: 'text/markdown;charset=utf-8' }))
+  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
   const anchor = document.createElement('a')
   anchor.href = url; anchor.download = 'product-insight-report.md'; anchor.click()
   setTimeout(() => { URL.revokeObjectURL(url) }, 1000)
@@ -334,8 +341,33 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:16px}
 @media print{body{background:#fff;font-size:11pt}.header{padding:0}.layout{display:block;padding:0}nav{display:none}article{border:0;padding:0}table{display:table;font-size:9pt}a{color:inherit}}
 `
 
+// Imported sessions may also contain a document. Check it in an inert template before exposing it as a download.
+function savedOfflineHtml(html?: string): string | undefined {
+  if (!html) return undefined
+  // The writer places the offline policy before any content that could request a resource.
+  const start = html.indexOf('<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy"')
+  if (start < 0 || !/^<!doctype html><html(?: [a-z-]+="[^"<>]*")*>$/iu.test(html.slice(0,start))) return undefined
+  const doc = document.createElement('template')
+  doc.innerHTML = html
+  const root = doc.content
+  const meta = [...root.querySelectorAll('meta[http-equiv]')]
+  if (meta.length !== 1 || meta[0]?.getAttribute('http-equiv')?.toLowerCase() !== 'content-security-policy'
+    || meta[0].getAttribute('content') !== "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'") return undefined
+  if (root.querySelector('script,link,base,iframe,object,embed,form,svg,math,template,video,audio,source,[srcset],[srcdoc]')) return undefined
+  for (const el of root.querySelectorAll('*')) {
+    for (const a of el.attributes) {
+      if (a.name.startsWith('on')) return undefined
+      if (a.name === 'src' && (el.tagName !== 'IMG' || !productRaster.test(a.value))) return undefined
+      if (a.name === 'href' && (el.tagName !== 'A' || !/^(?:#|https?:\/\/)/iu.test(a.value))) return undefined
+    }
+  }
+  return html
+}
+
 /** Produce a self-contained, script-free HTML report from the saved product Markdown. */
 export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRun'>['t']): string {
+  const authored = savedOfflineHtml(run.reportHtml)
+  if (authored) return authored
   if (run.report === undefined) throw new Error('Product HTML export requires a saved report')
   const template = document.createElement('template')
   template.innerHTML = renderToStaticMarkup(<ProductReport text={run.report}
@@ -367,24 +399,12 @@ export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRu
     return ['BR', 'HR'].includes(node.tagName) ? `<${tag}>` : `<${tag}${attributes}>${children}</${tag}>`
   }
   const reportTitle = template.content.querySelector('h1')
-  if (reportTitle?.textContent === run.title) reportTitle.remove()
   const body = [...template.content.childNodes].map(serialize).join('')
-  const title = run.title || t('title')
-  const list = (items: readonly string[]) => `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
-  const summary: readonly [ProductRunKey, string][] = [
-    ['sourcePages', `${run.candidatePages} / ${run.availablePages}`], [run.summaryMode ? 'summariesRead' : 'evidenceCount', String(run.evidence)],
-    [run.summaryMode ? 'summariesReviewed' : 'claimCount', String(run.claims)],
-    ...(run.summaryMode ? [] : [['verificationCount', String(run.verifications)] as [ProductRunKey, string]]),
-    ['failureCount', String(run.failures)], ['elapsed', `${Math.round(run.elapsedMilliseconds / 1000)} ${t('seconds')}`],
-  ]
+  const title = reportTitle?.textContent || run.title || t('title')
   const contents = headings.filter(heading => heading.level <= 2)
-  const blockers = deliveryBlockers(run)
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
     <title>${escapeHtml(title)}</title><style>${productHtmlStyles}</style></head><body>
-    <header class="header"><span class="status">${escapeHtml(t(run.deliveryStatus ?? run.runState))}</span><h1>${escapeHtml(title)}</h1>
-    <h2>${escapeHtml(t('htmlSummary'))}</h2><dl class="summary">${summary.map(([key, value]) => `<div><dt>${escapeHtml(t(key))}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl>
-    ${blockers.length === 0 ? '' : `<details class="notice"><summary>${escapeHtml(t('blockers'))}</summary>${list(blockers)}</details>`}</header>
     <div class="layout"><nav aria-label="${escapeHtml(t('htmlContents'))}"><h2>${escapeHtml(t('htmlContents'))}</h2><ul>${contents.map(heading =>
       `<li><a href="#${heading.id}">${escapeHtml(heading.text)}</a></li>`).join('')}</ul></nav><article class="paper">${body}</article></div></body></html>`
 }
@@ -406,6 +426,9 @@ function stageState(run: ProductChatRun, index: number): 'pending' | 'active' | 
 export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNodeViewProps<'product-insight-run'>,
   'node' | 'useInput' | 'inputActions'> & PropsLocale<'productRun'>) {
   const run = node.data
+  const markdown = run.report
+  const authored = useMemo(() => savedOfflineHtml(run.reportHtml), [run.reportHtml])
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [traceStatus, setTraceStatus] = useState('all')
   const stages: readonly (readonly [ProductRunKey, number])[] = run.summaryMode
     ? [['pages', 1], ['summaryStage', 2], ['report', 5]]
@@ -445,14 +468,17 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
     </details>}
     {run.runState === 'completed' && run.report !== undefined && run.unansweredQuestions?.length
       ? <ProductFollowUpQuestions run={run} t={t} useInput={useInput} inputActions={inputActions} /> : null}
-    {run.report !== undefined ? <section className={css.report}>
+    {markdown !== undefined ? <section className={css.report}>
       <div className={css.reportHeader}><strong>{t(run.deliveryStatus ?? 'draft')}</strong>
         <div className={css.reportActions}>
-          <button type="button" onClick={() => { downloadMarkdown(run.report as string) }}>{t('download')}</button>
+          <button type="button" onClick={() => { downloadMarkdown(authored ? markdown : productPriceMarkdown(markdown)) }}>{t('download')}</button>
           <button type="button" onClick={() => { downloadProductHtml(exportProductHtml(run, t)) }}>{t('downloadHtml')}</button>
         </div></div>
-      <details><summary>{t('reportContent')}</summary><ProductReport text={run.report}
-        labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} /></details>
+      <details onToggle={(e) => { setPreviewOpen(e.currentTarget.open) }}><summary>{t('reportContent')}</summary>
+        {authored ? previewOpen && <iframe className={css.reportFrame} sandbox="allow-popups allow-popups-to-escape-sandbox"
+          referrerPolicy="no-referrer" title={t('reportContent')} srcDoc={authored} />
+          : <ProductReport text={markdown} labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} />}
+      </details>
     </section> : run.runState === 'completed' && <p role="note">{t('noReport')}</p>}
   </section>
 }

@@ -3,7 +3,7 @@
 .header h3, .header p { margin: 0; }
 .header p { margin-top: 6px; color: var(--dsw-alias-label-secondary); }
 .pulse { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--dsw-alias-brand-primary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent); }
-.stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.stages { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .stages li { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; padding: 10px; color: var(--dsw-alias-label-secondary); background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
 .stages li[data-state="active"], .stages li[data-state="done"] { color: var(--dsw-alias-label-primary); }
 .stages small { grid-column: 2; color: var(--dsw-alias-label-secondary); }
@@ -21,7 +21,8 @@
 .report, .report details, .prose { min-width: 0; }
 .report .prose :global(.md-table-wide) { width: 100%; max-width: 100%; margin-inline: 0; padding-inline: 0; padding-bottom: 0; overflow-x: auto; }
 .prose a[data-product-citation] { position: relative; top: -0.5em; font-size: 0.72em; line-height: 0; vertical-align: baseline; text-decoration: none; border-bottom: 0; white-space: nowrap; margin-inline: 0.08em; font-weight: 400; }
+.reportFrame { display: block; width: 100%; height: min(75vh, 850px); margin-top: 12px; border: 0; background: white; }
 .reportActions { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; gap: 8px; }
 .report button { padding: 6px 10px; color: inherit; background: var(--dsw-alias-bg-layer-1); border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 6px; font: inherit; cursor: pointer; }
 .report pre { max-height: 520px; margin-bottom: 0; padding: 12px; overflow: auto; white-space: pre-wrap; background: var(--dsw-alias-bg-layer-1); border-radius: 8px; }
-@media (max-width: 720px) { .stages { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .stages { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); } }

@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="苹果 M6 中文芯片洞察报告。从 M5 对照实测、内存带宽与本地 AI 推理，到中国大陆机型和升级判断。资料截至 2026 年 11 月 23 日。">
+  <title>苹果 M6 芯片洞察报告｜哪些等待变短了？</title>
+  <style>
+    :root {
+      --paper: #f8f7f2;
+      --panel: #fffefa;
+      --ink: #172d28;
+      --body: #30423b;
+      --muted: #52665d;
+      --line: #ccd5cb;
+      --green: #006751;
+      --dark: #133b32;
+      --mint: #b9f1bf;
+      --tint: #e9f2e6;
+      --sans: "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+      --serif: "Baskervville", Georgia, "Songti SC", "STSong", "SimSun", serif;
+      --mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+    body { margin: 0; background: var(--paper); color: var(--body); font: 16px/1.85 var(--sans); }
+    a { color: var(--green); text-underline-offset: .23em; text-decoration-thickness: 1px; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #b76a19; outline-offset: 4px; }
+    h1, h2, h3, p, figure, ol { margin: 0; }
+    h1, h2, h3 { color: var(--ink); text-wrap: balance; }
+    h2 { font: 700 clamp(1.55rem, 2.6vw, 2.13rem)/1.45 var(--serif); }
+    h3 { font-size: 1.03rem; line-height: 1.6; }
+    strong { color: var(--ink); }
+    .wrap { width: min(calc(100% - 88px), 1140px); margin-inline: auto; }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .skip { position: absolute; top: 6px; left: 8px; z-index: 5; padding: 5px 14px; background: white; transform: translateY(-150%); }
+    .skip:focus { transform: none; }
+    .mast { border-top: 5px solid var(--dark); border-bottom: 1px solid var(--line); }
+    .mast-inner { min-height: 61px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .mast-title { color: var(--ink); font-weight: 700; letter-spacing: .055em; }
+    .mast-tools { display: flex; align-items: center; gap: 24px; color: var(--muted); font-size: .83rem; }
+    .print { border: 1px solid #9baea1; border-radius: 4px; padding: 4px 12px; background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+    .print:hover { background: var(--tint); }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.13fr) minmax(0, .87fr); align-items: center; gap: clamp(32px, 6vw, 78px); padding-block: clamp(42px, 5.5vw, 76px); }
+    .kicker { color: var(--green); font-size: .83rem; font-weight: 700; letter-spacing: .08em; }
+    h1 { margin: 9px 0 18px; font: 700 clamp(2.8rem, 5vw, 4.8rem)/1.13 var(--serif); letter-spacing: -.045em; }
+    h1 span { display: block; margin-top: 9px; font-size: .67em; letter-spacing: -.035em; }
+    .deck { max-width: 36em; font-size: 1.07rem; line-height: 1.94; }
+    .ref { display: inline-block; margin-left: .18em; text-decoration: none; font: 600 .7rem/1.2 var(--sans); vertical-align: super; white-space: nowrap; }
+    .hero-chart { background: var(--dark); color: #eff7ee; padding: clamp(23px, 2.5vw, 34px); border-radius: 12px; }
+    .chart-meta { margin-bottom: 9px; font-size: .8rem; color: #c3d6c8; }
+    .chart-title { color: white; font-size: clamp(1.32rem, 2.4vw, 1.78rem); line-height: 1.5; font-weight: 600; }
+    .chart-title b { color: var(--mint); font: 600 1.42em/1 var(--mono); }
+    .bars { margin-top: 21px; }
+    .bar-row { margin-top: 12px; }
+    .bar-header, .scale { display: flex; justify-content: space-between; align-items: baseline; }
+    .bar-header { font-size: .88rem; margin-bottom: 5px; }
+    .bar-header strong { color: #fff; font-weight: 600; }
+    .bar-track { height: 9px; overflow: hidden; background: #36574d; border-radius: 1px; }
+    .bar { display: block; height: 100%; width: var(--fill); }
+    .bar.m5 { background: #a7b8a9; }
+    .bar.m6 { background: var(--mint); }
+    .scale { margin-top: 6px; color: #c2d2c5; font-size: .7rem; }
+    .chart-foot { margin-top: 14px; border-top: 1px solid #416056; padding-top: 10px; color: #d1e0d3; font-size: .77rem; line-height: 1.6; }
+    .hero-chart .ref { color: var(--mint); }
+    .reading { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: clamp(30px, 6vw, 76px); border-top: 1px solid var(--line); }
+    .toc { align-self: start; position: sticky; top: 24px; padding-top: 34px; }
+    .toc p { margin-bottom: 13px; font-size: .8rem; font-weight: 700; color: var(--ink); }
+    .toc a { display: block; width: fit-content; margin: 6px 0; padding: 2px 0; color: var(--muted); text-decoration: none; font-size: .89rem; }
+    .toc a:hover { color: var(--green); text-decoration: underline; }
+    .sections { min-width: 0; }
+    .section { padding-block: 34px 39px; border-bottom: 1px solid var(--line); }
+    .section > p { margin-top: 13px; }
+    .table-wrap { margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; line-height: 1.55; font-size: .94rem; }
+    caption { padding: 0 0 9px; text-align: left; font-size: .79rem; color: var(--muted); }
+    thead { background: #e7ece3; }
+    th, td { padding: 11px 13px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--line); }
+    thead th { color: var(--muted); font-weight: 600; font-size: .82rem; }
+    tbody th { color: var(--ink); font-weight: 600; }
+    td small, th small { display: block; margin-top: 2px; color: var(--muted); font-size: .79rem; font-weight: 400; }
+    .spec .m6 { font-weight: 600; color: var(--green); }
+    .spec .m6 small { color: var(--muted); }
+    .spec th:first-child { width: 21%; }
+    .spec thead th:nth-child(2) { width: 32%; }
+    .note { font-size: .88rem; color: var(--muted); line-height: 1.8; }
+    .measure th:first-child { width: 46%; }
+    .measure td, .measure thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .delta { color: var(--green); font-weight: 700; }
+    .neutral { color: var(--muted); }
+    .power { margin-top: 20px; border-left: 3px solid var(--green); padding: 2px 0 2px 16px; }
+    .power p { margin-top: 4px; font-size: .94rem; }
+    .ai-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; border: 1px solid #b6c9b7; background: var(--tint); border-radius: 8px; }
+    .ai-stat { padding: 17px clamp(15px, 2.3vw, 28px) 19px; }
+    .ai-stat + .ai-stat { border-left: 1px solid #b6c9b7; }
+    .ai-stat h3 { font-size: .97rem; }
+    .ai-gain { display: block; margin: 6px 0 3px; color: var(--green); font: 600 clamp(1.9rem, 3.4vw, 2.75rem)/1.2 var(--mono); letter-spacing: -.055em; }
+    .ai-raw { font-size: .84rem; font-variant-numeric: tabular-nums; }
+    .ai-raw span { display: inline-block; }
+    .ai-figure figcaption { margin-top: 8px; }
+    .math { background: var(--panel); margin-top: 19px; border: 1px solid var(--line); padding: 14px 18px; border-radius: 5px; font-size: .94rem; }
+    .models { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .model { padding: 14px 15px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+    .model h3 { font-size: 1rem; }
+    .price { display: block; margin: 4px 0; color: var(--green); font: 600 1.38rem/1.5 var(--mono); }
+    .price small { font: 500 .78rem var(--sans); }
+    .model p { font-size: .85rem; color: var(--muted); line-height: 1.7; }
+    .decisions { margin: 20px 0 0; }
+    .decisions > div { display: grid; grid-template-columns: minmax(130px, .65fr) minmax(0, 2.35fr); gap: 16px; padding: 13px 0; border-bottom: 1px solid #dbe1d7; }
+    .decisions > div:last-child { border: 0; padding-bottom: 0; }
+    .decisions dt { color: var(--ink); font-weight: 700; }
+    .decisions dd { margin: 0; }
+    .source-grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 27px; margin-top: 13px; }
+    .source-grid li { display: grid; grid-template-columns: 2em minmax(0, 1fr); align-items: baseline; padding: 11px 0; border-top: 1px solid var(--line); line-height: 1.7; font-size: .86rem; scroll-margin-top: 24px; }
+    .source-grid li:target { background: var(--tint); }
+    .source-index { font: 600 .75rem var(--mono); color: var(--muted); }
+    .source-grid strong { display: block; font-size: .9rem; }
+    .source-grid a { display: inline-block; }
+    .sources { border-bottom: 0; }
+    footer { border-top: 1px solid var(--line); }
+    .foot-inner { padding-block: 17px 27px; display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: .8rem; }
+    @media (max-width: 900px) {
+      .wrap { width: min(calc(100% - 52px), 760px); }
+      .hero { gap: 26px; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); }
+      .reading { display: block; }
+      .toc { position: static; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 18px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .toc p, .toc a { margin: 0; }
+    }
+    @media (max-width: 660px) {
+      .wrap { width: calc(100% - 36px); }
+      .mast-inner { min-height: 53px; gap: 9px; }
+      .mast-title { font-size: .85rem; }
+      .mast-tools { font-size: .73rem; gap: 10px; }
+      .print { padding: 3px 7px; }
+      .hero { grid-template-columns: 1fr; gap: 23px; padding-block: 31px 26px; }
+      h1 { margin-block: 6px 12px; font-size: 3.45rem; }
+      .deck { font-size: 1rem; }
+      .hero-chart { padding: 19px 21px; }
+      .bars { margin-top: 12px; }
+      .toc { gap: 3px 15px; }
+      .toc p { width: 100%; }
+      .toc a { font-size: .83rem; }
+      .section { padding-block: 26px 29px; }
+      .table-wrap { margin-top: 15px; }
+      th, td { padding: 9px 6px; }
+      table { font-size: .84rem; }
+      thead th, caption, th small, td small { font-size: .73rem; }
+      .measure th:first-child { width: auto; }
+      .ai-stat { padding: 11px 12px 13px; }
+      .models { grid-template-columns: 1fr; gap: 8px; }
+      .model { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 4px 12px; padding: 12px 14px; }
+      .model p { grid-column: 1 / -1; }
+      .price { margin: 0; font-size: 1.15rem; }
+      .decisions > div { display: block; padding-block: 12px; }
+      .decisions dd { margin-top: 4px; }
+      .source-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 375px) {
+      .wrap { width: calc(100% - 28px); }
+      .mast-title { letter-spacing: 0; }
+      .mast-tools { gap: 7px; }
+      .measure td { font-size: .78rem; }
+      .ai-raw { font-size: .77rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @page { size: A4; margin: 13mm 15mm; }
+    @media print {
+      html { scroll-behavior: auto; }
+      body { background: white; color: #202b25; font-size: 10pt; line-height: 1.65; }
+      .wrap { width: 100%; max-width: none; }
+      .skip, .toc, .print, .foot-inner a { display: none; }
+      .mast { border-top-width: 2px; }
+      .mast-inner { min-height: 26px; }
+      .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 18px; padding: 18px 0; }
+      h1 { font-size: 32pt; margin: 5px 0 8px; }
+      h2 { font-size: 17pt; }
+      h3 { font-size: 11pt; }
+      .deck { font-size: 10pt; line-height: 1.65; }
+      .hero-chart { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px 16px; border-radius: 3px; }
+      .chart-title { font-size: 15pt; }
+      .bars, .chart-foot { margin-top: 6px; }
+      .bar-row { margin-top: 4px; }
+      .reading { display: block; }
+      .section { padding: 14px 0 15px; }
+      #tests { break-before: page; padding-top: 0; }
+      #buy > p { break-after: avoid; }
+      .section > p { margin-top: 7px; }
+      table, .power p, .math, .decisions { font-size: 9.5pt; }
+      .table-wrap, .ai-comparison, .models, .decisions, .math, .power { margin-top: 10px; }
+      th, td { padding: 4px 8px; }
+      #ai { padding-block: 10px; }
+      #ai .math { margin-top: 6px; padding: 7px 12px; }
+      .source-grid { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+      .source-grid li { padding-block: 5px; font-size: 8pt; }
+      .source-grid strong { font-size: 8.5pt; }
+      .ref, .note, caption, .model p, .chart-foot, .ai-raw { font-size: 8pt; }
+      .ai-stat, .model { padding: 8px 12px; }
+      .ai-gain { font-size: 21pt; }
+      .models { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .model { display: block; }
+      .decisions > div { display: grid; padding-block: 8px; }
+      .decisions dd { margin: 0; }
+      h2, h3, caption { break-after: avoid; }
+      thead { display: table-header-group; }
+      tr, figure, .models, .model, .math, .power, .decisions > div, .source-grid li { break-inside: avoid; }
+      p { orphans: 2; widows: 2; }
+      .foot-inner { padding: 7px 0 0; }
+    }
+  </style>
+</head>
+<body id="top">
+  <a class="skip" href="#chip">跳至报告正文</a>
+  <header class="mast">
+    <div class="wrap mast-inner">
+      <p class="mast-title">个人计算 · 芯片研究</p>
+      <div class="mast-tools"><time datetime="2026-11-23">2026 年 11 月 23 日</time><button class="print" type="button" onclick="window.print()">打印报告</button></div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="hero">
+      <div>
+        <p class="kicker">Apple Silicon 技术洞察</p>
+        <h1>苹果 M6<span>哪些等待变短了？</span></h1>
+        <p class="deck">从 M5 换到 M6，实测中视频转码耗时缩短约五分之一，大文件传输速度却几乎相同。想在 Mac 上跑本地 AI，选 16GB 还是 24GB，也会直接影响芯片可用的内存带宽。<a class="ref" href="#s4" aria-label="来源 4">[4]</a><a class="ref" href="#s5" aria-label="来源 5">[5]</a></p>
+      </div>
+      <figure class="hero-chart" aria-labelledby="hero-chart-title">
+        <p class="chart-meta">HandBrake 实测 · 4K 视频转为 1080p</p>
+        <figcaption id="hero-chart-title" class="chart-title">同一段视频，少等 <b>41</b> 秒</figcaption>
+        <div class="bars">
+          <div class="bar-row"><div class="bar-header"><span>M5</span><strong>3 分 31 秒</strong></div><div class="bar-track" aria-hidden="true"><span class="bar m5" style="--fill:87.9167%"></span></div></div>
+          <div class="bar-row"><div class="bar-header"><span>M6</span><strong>2 分 50 秒</strong></div><div class="bar-track" aria-hidden="true"><span class="bar m6" style="--fill:70.8333%"></span></div></div>
+          <div class="scale" aria-hidden="true"><span>0</span><span>用时越短越好</span><span>4 分钟</span></div>
+        </div>
+        <p class="chart-foot">Tom’s Hardware 测试的两台 14 英寸 MacBook Pro 均配备 1TB SSD。M5 样机为 32GB 内存，M6 样机为 16GB。<a class="ref" href="#s5" aria-label="来源 5">[5]</a></p>
+      </figure>
+    </div>
+    <div class="reading">
+      <nav class="toc" aria-label="报告目录">
+        <p>报告目录</p>
+        <a href="#chip">芯片变化</a><a href="#tests">整机实测</a><a href="#ai">本地 AI</a><a href="#buy">机型与换机判断</a><a href="#sources">资料来源</a>
+      </nav>
+      <div class="sections">
+        <section class="section" id="chip" aria-labelledby="chip-title">
+          <h2 id="chip-title">M6 把更多核心放进了基础款 Mac</h2>
+          <p>M6 是苹果首款采用 2 纳米制程的芯片。苹果在 8 月 25 日随 Mac mini 首次发布 M6，这款主机于 9 月 22 日在中国大陆开售。<a class="ref" href="#s1" aria-label="来源 1">[1]</a><a class="ref" href="#s2" aria-label="来源 2">[2]</a> 10 月 27 日，苹果将 M6 带到 14 英寸 MacBook Pro 和 24 英寸 iMac。两款新机均于 11 月 6 日开售。<a class="ref" href="#s3" aria-label="来源 3">[3]</a><a class="ref" href="#s4" aria-label="来源 4">[4]</a></p>
+          <div class="table-wrap">
+            <table class="spec">
+              <caption>两代 14 英寸 MacBook Pro 所用的标准版芯片。<a class="ref" href="#s1" aria-label="来源 1">[1]</a><a class="ref" href="#s4" aria-label="来源 4">[4]</a></caption>
+              <thead><tr><th scope="col">规格</th><th scope="col">M5</th><th scope="col">M6</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">制程</th><td>第三代 3 纳米</td><td class="m6">2 纳米</td></tr>
+                <tr><th scope="row">CPU</th><td>10 核</td><td class="m6">12 核<small>2 颗超级核心、4 颗性能核心、6 颗能效核心</small></td></tr>
+                <tr><th scope="row">GPU</th><td>10 核</td><td class="m6">12 核<small>两代均在每颗 GPU 核心内配备神经网络加速器</small></td></tr>
+                <tr><th scope="row">神经网络引擎</th><td>单组 16 核</td><td class="m6">双 16 核</td></tr>
+                <tr><th scope="row">统一内存</th><td>最高 32GB<small>带宽 153GB/s</small></td><td class="m6">最高 32GB<small>16GB 版为 153GB/s，24GB 和 32GB 版为 170GB/s</small></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>CPU 可以把彼此独立的编译任务分给更多核心。做本地 AI 时，MLX 等框架能调用 GPU 内的加速器做矩阵乘法，适配神经网络引擎的应用还可通过系统框架同时调用两组引擎。应用选择哪条路径，会影响最终能得到多少加速。<a class="ref" href="#s1" aria-label="来源 1">[1]</a><a class="ref" href="#s7" aria-label="来源 7">[7]</a></p>
+        </section>
+        <section class="section" id="tests" aria-labelledby="tests-title">
+          <h2 id="tests-title">同一代升级，收益随任务而变</h2>
+          <p>Tom’s Hardware 测得，M6 的 Geekbench 6 单核成绩比 M5 高约 11%，多核高约 18%。苹果标称的图形性能提升最高为 30%。在《赛博朋克 2077》实测中，同一预设下仅换一个分辨率，帧率增幅就从约 13% 收窄到约 4%。选机器时，自己常用画质下的帧率更有参考价值。<a class="ref" href="#s4" aria-label="来源 4">[4]</a><a class="ref" href="#s5" aria-label="来源 5">[5]</a></p>
+          <div class="table-wrap">
+            <table class="measure">
+              <caption>同一媒体的 14 英寸 MacBook Pro 对照。以下各行均为数值越高越好，变化按原始数值计算。<a class="ref" href="#s5" aria-label="来源 5">[5]</a></caption>
+              <thead><tr><th scope="col">测试项目</th><th scope="col">M5</th><th scope="col">M6</th><th scope="col">变化</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Geekbench 6 单核<small>分数</small></th><td>4,288</td><td>4,752</td><td class="delta">+10.8%</td></tr>
+                <tr><th scope="row">《赛博朋克 2077》<small>1800 × 1125，每秒帧数</small></th><td>47.65</td><td>53.70</td><td class="delta">+12.7%</td></tr>
+                <tr><th scope="row">《赛博朋克 2077》<small>3024 × 1890，每秒帧数</small></th><td>31.47</td><td>32.66</td><td class="delta">+3.8%</td></tr>
+                <tr><th scope="row">25GB 文件传输<small>MB/s</small></th><td>1,917.35</td><td>1,914.23</td><td class="neutral">−0.2%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">两组游戏测试均采用“For this Mac”预设。文件传输结果仅相差约 3MB/s，对经常拷贝素材的人来说，两台样机在这项任务上耗时相当。<a class="ref" href="#s5" aria-label="来源 5">[5]</a></p>
+          <aside class="power">
+            <h3>能效落到整机上，要看屏幕和负载</h3>
+            <p>Ars Technica 观察到，受测 M6 在负载下与 M5 功耗相近，完成任务却更快。Tom’s Hardware 将屏幕固定在 150 尼特，轮流浏览网页、运行 OpenGL 测试和播放流媒体，M6 笔记本坚持了 <strong>19 小时 05 分</strong>。苹果标称的最长 24 小时对应流媒体播放，无线上网的标称上限为 16 小时。<a class="ref" href="#s4" aria-label="来源 4">[4]</a><a class="ref" href="#s5" aria-label="来源 5">[5]</a><a class="ref" href="#s8" aria-label="来源 8">[8]</a></p>
+          </aside>
+        </section>
+        <section class="section" id="ai" aria-labelledby="ai-title">
+          <h2 id="ai-title">本地 AI 要看两种速度</h2>
+          <p>把长文交给模型总结，先要等它读完输入，再等它逐步写出回答。前一段的矩阵运算容易并行，后一段每次生成一个词元（模型处理文字的单位），单路生成时常受内存带宽限制。苹果测得 M6 在特定任务中给出首个词元的速度最高可达 M1 笔记本的 13 倍。换成 M5 作基线，同项测试最高为 1.3 倍。<a class="ref" href="#s4" aria-label="来源 4">[4]</a><a class="ref" href="#s7" aria-label="来源 7">[7]</a></p>
+          <figure class="ai-figure">
+            <div class="ai-comparison">
+              <div class="ai-stat"><h3>读取提示词</h3><strong class="ai-gain">+26%</strong><p class="ai-raw"><span>M5 为 1,580</span> → <span>M6 为 1,989 词元/秒</span></p></div>
+              <div class="ai-stat"><h3>逐步生成回答</h3><strong class="ai-gain">+14%</strong><p class="ai-raw"><span>M5 为 52.3</span> → <span>M6 为 59.5 词元/秒</span></p></div>
+            </div>
+            <figcaption class="note">DDay.it 采用 MLX 运行 Qwen3 4B，提示词测试长度为 2,048 个词元。M6 样机是 24GB Mac mini，对照机为 M5 MacBook Pro。这是跨机型实测，机身和内存带宽均有差异。<a class="ref" href="#s6" aria-label="来源 6">[6]</a></figcaption>
+          </figure>
+          <p><strong>24GB 是 M6 的带宽分界点。</strong>在 Mac mini 和 14 英寸 MacBook Pro 上，从 16GB 加到 24GB，带宽从 153 升至 170GB/s，约增 11%。再从 24GB 加到 32GB，收益主要是能装下更大的模型、更长的对话或更多并行应用。<a class="ref" href="#s2" aria-label="来源 2">[2]</a><a class="ref" href="#s4" aria-label="来源 4">[4]</a></p>
+          <div class="math"><strong>容量可以先算一遍。</strong>以 320 亿参数、每参数 4 位估算，单是权重就约 16GB（十进制）。实际运行还要为量化元数据、上下文缓存和系统留空间。评估自己的模型时，固定量化方式和提示词长度，记录峰值内存、首个词元等待时间和后续生成速度，才能判断加内存能解决哪一段等待。<a class="ref" href="#s7" aria-label="来源 7">[7]</a></div>
+        </section>
+        <section class="section" id="buy" aria-labelledby="buy-title">
+          <h2 id="buy-title">哪种配置值得买，哪台机器值得换？</h2>
+          <p>Mac mini 入门款和 14 英寸 MacBook Pro 都配备 12 核 CPU、12 核 GPU。选 iMac 时，同样的 M6 名称下有两种核心配置。以下价格为苹果在中国大陆公布的首发零售价。<a class="ref" href="#s2" aria-label="来源 2">[2]</a><a class="ref" href="#s3" aria-label="来源 3">[3]</a><a class="ref" href="#s4" aria-label="来源 4">[4]</a></p>
+          <div class="models">
+            <div class="model"><h3>Mac mini</h3><span class="price">¥6,999 <small>起</small></span><p>已有显示器和键鼠、主要在固定工位使用，整机投入最低。</p></div>
+            <div class="model"><h3>24 英寸 iMac</h3><span class="price">¥12,499 <small>起</small></span><p>入门款为 10 核 CPU、10 核 GPU。双 12 核配置从 13,999 元起。</p></div>
+            <div class="model"><h3>14 英寸 MacBook Pro</h3><span class="price">¥15,999 <small>起</small></span><p>适合需要带着工程移动工作的人。首发入门款带 16GB 内存。</p></div>
+          </div>
+          <dl class="decisions">
+            <div><dt>手头是基础款 M1 / M2</dt><dd>如果每天都在等大型项目编译或视频导出，跨代升级更容易收回时间。以苹果的 Xcode 编译测试为例，M6 的速度最高可达 M1 的 2.5 倍、M5 的 1.3 倍。可用自己最常编译的工程估算一周能省多久。<a class="ref" href="#s4" aria-label="来源 4">[4]</a></dd></div>
+            <div><dt>已有 M4 / M5，主要办公</dt><dd>文档、网页和会议都流畅时，可以继续用现有机器。如果经常批量转码，按本文样片从 M5 换到 M6、每周串行处理 10 次估算，机器一周少运行约 6 分 50 秒。能否换回同样多的工作时间，还看这些任务是否需要人在旁等待。<a class="ref" href="#s5" aria-label="来源 5">[5]</a></dd></div>
+            <div><dt>做本地 AI 或重型创作</dt><dd>先量模型、工程和常用应用同时打开时占多少内存。若经常超过 32GB，Mac mini 的 M5 Pro 机型提供最高 64GB 内存和 307GB/s 带宽，整机从 12,999 元起，最高内存需另行选配。对于要把整个模型或三维场景放进内存的用户，上一代的 Pro 型号反而有更大余量。<a class="ref" href="#s2" aria-label="来源 2">[2]</a></dd></div>
+          </dl>
+        </section>
+        <section class="section sources" id="sources" aria-labelledby="sources-title">
+          <h2 id="sources-title">资料来源</h2>
+          <p class="note">资料核对至 2026 年 11 月 23 日。规格和首发售价取自苹果，整机成绩与模型吞吐量引自各测试者原文。文中的差值和换算基于列出的原始数据。</p>
+          <ol class="source-grid">
+            <li id="s1"><span class="source-index">[1]</span><div><strong>苹果 · 两代芯片架构</strong><a href="https://www.apple.com.cn/newsroom/2026/08/apple-introduces-m6-and-m5-ultra-for-a-big-leap-in-performance-and-ai-compute/">M6 芯片发布稿</a> · <a href="https://www.apple.com.cn/newsroom/2025/10/apple-unleashes-m5-a-big-leap-in-ai/">M5 芯片发布稿</a></div></li>
+            <li id="s2"><span class="source-index">[2]</span><div><strong>苹果 · Mac mini</strong><a href="https://www.apple.com.cn/newsroom/2026/08/apple-unveils-powerful-mac-mini-with-m6-and-m5-pro/">上市时间与国行定价</a> · <a href="https://www.apple.com.cn/mac-mini/specs/">内存与带宽规格</a></div></li>
+            <li id="s3"><span class="source-index">[3]</span><div><strong>苹果 · 24 英寸 iMac</strong><a href="https://www.apple.com.cn/newsroom/2026/10/apple-unveils-new-imac-with-m6/">两档 M6 配置与国行定价</a></div></li>
+            <li id="s4"><span class="source-index">[4]</span><div><strong>苹果 · 14 英寸 MacBook Pro</strong><a href="https://www.apple.com.cn/newsroom/2026/10/apple-introduces-the-new-14-inch-macbook-pro-with-m6/">发布稿与厂商测试</a> · <a href="https://www.apple.com.cn/macbook-pro/liquid-retina-xdr-display/specs/">内存与续航规格</a></div></li>
+            <li id="s5"><span class="source-index">[5]</span><div><strong>Tom’s Hardware · 14 英寸笔记本实测</strong><a href="https://www.tomshardware.com/laptops/macbooks/apple-macbook-pro-14-inch-m6-review">M6 样机与对照成绩</a> · <a href="https://www.tomshardware.com/laptops/ultrabooks-ultraportables/apple-macbook-pro-14-inch-m5-late-2025-review">M5 样机配置</a></div></li>
+            <li id="s6"><span class="source-index">[6]</span><div><strong>DDay.it · Mac mini 实测</strong><a href="https://www.dday.it/redazione/58799/mac-mini-m6-recensione-il-primo-computer-con-processore-a-2-nanometri-va-fortissimo-e-consuma-poco-ma-costa-di-piu">Qwen3 等模型的输入与生成速度</a></div></li>
+            <li id="s7"><span class="source-index">[7]</span><div><strong>Apple 机器学习研究团队 · MLX</strong><a href="https://machinelearning.apple.com/research/exploring-llms-mlx-m5">GPU 加速器、首词延迟与生成带宽</a></div></li>
+            <li id="s8"><span class="source-index">[8]</span><div><strong>Ars Technica · 功耗与性能</strong><a href="https://arstechnica.com/gadgets/2026/11/review-apples-1999-m6-macbook-pro-feels-stuck-in-the-middle/">M6 MacBook Pro 的负载功耗观察</a></div></li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer><div class="wrap foot-inner"><span>苹果 M6 芯片洞察报告</span><a href="#top">返回顶部 ↑</a></div></footer>
+</body>
+</html>

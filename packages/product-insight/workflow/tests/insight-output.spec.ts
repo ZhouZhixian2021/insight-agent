@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+import { readFile } from 'node:fs/promises'
 import { createProductEvidenceId } from '@deepseek-ai/dsh-product-insight-model'
 import { renderProductSynthesis, type ProductSynthesisInput } from '../src/report.ts'
 import { insightRequest, inspectInsight, insightRepairIssues, repairInsight } from '../src/insight-output.ts'
 import { synthesisAliases, type SynthesisResponse } from '../src/synthesis-output.ts'
+import { readProductWritingReference } from '../src/writing-reference.ts'
 
 const evidenceId = createProductEvidenceId()
 const input: ProductSynthesisInput = { scope: '能力与适用范围', questions: ['功能', '条件', '价格', '风险'].map(question => ({
@@ -19,6 +21,34 @@ const sourceRecords = { evidence: [], discovery: { searches: [], cancelled: fals
   candidates: { schemaVersion: 1, status: 'success', items: [], failures: [] } } } as const
 
 describe('material-led insight output', () => {
+  it.each(['summaries', 'excerpts'] as const)('keeps the entire example outside citable %s during writing and repair', async (mode) => {
+    const html = await readFile(new URL('../references/m6-report.html', import.meta.url), 'utf8')
+    const styleReference = await readProductWritingReference()
+    expect(styleReference).toEqual({ fileName: 'm6-report.html', format: 'html', content: html })
+    expect(html).toContain('id="sources-title"')
+    const current: ProductSynthesisInput = mode === 'summaries'
+      ? { scope: input.scope, questions: input.questions.map(q => ({ ...q, evidence: [] })),
+        pageSummaries: [{ source: { sourceId: 'P1', title: '本轮产品文档', url: 'https://example.com/docs',
+          observedAt: '2026-11-23', sourceType: 'official_documentation' }, summary: '支持本地部署。' }] } : input
+    const material = { ...current, styleReference }
+    const accepted = mode === 'summaries' ? { ...section, text: '支持本地部署。[[cite:P1]]' } : section
+    const invoke = vi.fn(async (_user: string, ordinal: number) => ordinal === 1
+      ? response([{ ...section, text: '样稿中的结论。[[cite:m6-report.html]]' }, ...coverage])
+      : response([accepted]))
+    const result = await repairInsight(material, invoke)
+    expect(invoke).toHaveBeenCalledTimes(2)
+    for (const [user] of invoke.mock.calls) {
+      const { styleReference: reference, ...investigation } = JSON.parse(user)
+      expect(reference).toEqual(styleReference)
+      if (mode === 'summaries') {
+        expect(investigation.pageSummaries).toEqual(current.pageSummaries)
+        expect(investigation.evidence).toBeUndefined()
+      } else expect(investigation.evidence.map((item: { evidenceId: string }) => item.evidenceId)).toEqual(['E1'])
+    }
+    expect(result.sections[0]?.text).toContain(`[[cite:${mode === 'summaries' ? 'P1' : evidenceId}]]`)
+    expect(renderProductSynthesis(sourceRecords, current, result)).not.toContain('m6-report.html')
+  })
+
   it('allows visual citations without a displayed figure and sends no binary data in writing requests', () => {
     const text = '42 ms[[cite:I1]].\n\n[[figure:I1]]'
     const check = inspectInsight(response([{ ...section, text, imageUse: { mode: 'cite_only' } }, ...coverage]).text, visual)

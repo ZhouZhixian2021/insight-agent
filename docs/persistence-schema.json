@@ -66232,7 +66232,7 @@
       "kind": "event",
       "event": "product/checkpoint-v1",
       "surface": false,
-      "digest": "5376920d06b40dd51add940c71a41cc114d7c55993fcfc7cba111ea78900f78e",
+      "digest": "46ee65aa64278ef7db6d42b3eaa08d46d52fd95b776c9ded3376d7439f757ecf",
       "schema": {
         "root": 0,
         "nodes": [
@@ -66261,7 +66261,7 @@
               },
               {
                 "name": "type",
-                "type": 121,
+                "type": 122,
                 "optional": false
               }
             ],
@@ -66327,7 +66327,7 @@
               },
               {
                 "name": "pages",
-                "type": 91,
+                "type": 92,
                 "optional": false
               },
               {
@@ -66342,7 +66342,7 @@
               },
               {
                 "name": "priorVerifications",
-                "type": 100,
+                "type": 101,
                 "optional": true
               },
               {
@@ -66352,22 +66352,22 @@
               },
               {
                 "name": "reviews",
-                "type": 107,
+                "type": 108,
                 "optional": false
               },
               {
                 "name": "schemaVersion",
-                "type": 112,
+                "type": 113,
                 "optional": false
               },
               {
                 "name": "stage",
-                "type": 116,
+                "type": 117,
                 "optional": false
               },
               {
                 "name": "verifications",
-                "type": 100,
+                "type": 101,
                 "optional": false
               }
             ],
@@ -67213,6 +67213,14 @@
           },
           {
             "kind": "literal",
+            "value": "user_experience"
+          },
+          {
+            "kind": "literal",
+            "value": "vendor_statement"
+          },
+          {
+            "kind": "literal",
             "value": "estimate"
           },
           {
@@ -67226,14 +67234,6 @@
           {
             "kind": "literal",
             "value": "secondary_reporting"
-          },
-          {
-            "kind": "literal",
-            "value": "user_experience"
-          },
-          {
-            "kind": "literal",
-            "value": "vendor_statement"
           },
           {
             "kind": "array",
@@ -67266,8 +67266,29 @@
                 "optional": false
               },
               {
+                "name": "partialReview",
+                "type": 91,
+                "optional": true
+              },
+              {
                 "name": "sourceSnapshotId",
                 "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "total",
+                "type": 20,
+                "optional": false
+              },
+              {
+                "name": "unresolved",
+                "type": 87,
                 "optional": false
               }
             ],
@@ -67283,12 +67304,12 @@
               },
               {
                 "name": "images",
-                "type": 92,
+                "type": 93,
                 "optional": true
               },
               {
                 "name": "snapshots",
-                "type": 94,
+                "type": 95,
                 "optional": false
               }
             ],
@@ -67296,7 +67317,7 @@
           },
           {
             "kind": "array",
-            "element": 93
+            "element": 94
           },
           {
             "kind": "object",
@@ -67334,7 +67355,7 @@
               },
               {
                 "name": "items",
-                "type": 95,
+                "type": 96,
                 "optional": false
               },
               {
@@ -67352,13 +67373,13 @@
           },
           {
             "kind": "array",
-            "element": 96
+            "element": 97
           },
           {
             "kind": "union",
             "types": [
-              97,
-              99
+              98,
+              100
             ]
           },
           {
@@ -67421,7 +67442,7 @@
               },
               {
                 "name": "status",
-                "type": 98,
+                "type": 99,
                 "optional": false
               }
             ],
@@ -67469,7 +67490,7 @@
           },
           {
             "kind": "array",
-            "element": 101
+            "element": 102
           },
           {
             "kind": "object",
@@ -67486,7 +67507,7 @@
               },
               {
                 "name": "judgments",
-                "type": 102,
+                "type": 103,
                 "optional": false
               },
               {
@@ -67499,7 +67520,7 @@
           },
           {
             "kind": "array",
-            "element": 103
+            "element": 104
           },
           {
             "kind": "object",
@@ -67516,7 +67537,7 @@
               },
               {
                 "name": "relation",
-                "type": 104,
+                "type": 105,
                 "optional": false
               }
             ],
@@ -67527,8 +67548,8 @@
             "types": [
               14,
               15,
-              105,
-              106
+              106,
+              107
             ]
           },
           {
@@ -67541,7 +67562,7 @@
           },
           {
             "kind": "array",
-            "element": 108
+            "element": 109
           },
           {
             "kind": "object",
@@ -67563,7 +67584,7 @@
               },
               {
                 "name": "verdict",
-                "type": 109,
+                "type": 110,
                 "optional": false
               }
             ],
@@ -67572,9 +67593,9 @@
           {
             "kind": "union",
             "types": [
-              105,
-              110,
-              111
+              106,
+              111,
+              112
             ]
           },
           {
@@ -67589,9 +67610,9 @@
             "kind": "union",
             "types": [
               22,
-              113,
               114,
-              115
+              115,
+              116
             ]
           },
           {
@@ -67609,10 +67630,10 @@
           {
             "kind": "union",
             "types": [
-              117,
               118,
               119,
-              120
+              120,
+              121
             ]
           },
           {
@@ -69398,7 +69419,7 @@
       "kind": "event",
       "event": "product/page-summary-result-v1",
       "surface": false,
-      "digest": "27173cd185723a4e598b089503fe37c18931dd521f80273111510e263b061c7c",
+      "digest": "9c160f028c6d308225420d8316d6daeba19475d3e5dde971fbee760270348d53",
       "schema": {
         "root": 0,
         "nodes": [
@@ -69412,17 +69433,17 @@
               },
               {
                 "name": "ignorable",
-                "type": 12,
+                "type": 5,
                 "optional": true
               },
               {
                 "name": "seq",
-                "type": 8,
+                "type": 9,
                 "optional": false
               },
               {
                 "name": "time",
-                "type": 8,
+                "type": 9,
                 "optional": false
               },
               {
@@ -69447,8 +69468,13 @@
                 "optional": false
               },
               {
-                "name": "phase",
+                "name": "invalidReview",
                 "type": 5,
+                "optional": true
+              },
+              {
+                "name": "phase",
+                "type": 6,
                 "optional": false
               },
               {
@@ -69458,12 +69484,12 @@
               },
               {
                 "name": "requestSeq",
-                "type": 8,
+                "type": 9,
                 "optional": false
               },
               {
                 "name": "status",
-                "type": 9,
+                "type": 10,
                 "optional": false
               },
               {
@@ -69490,10 +69516,14 @@
             "type": "null"
           },
           {
+            "kind": "literal",
+            "value": true
+          },
+          {
             "kind": "union",
             "types": [
-              6,
-              7
+              7,
+              8
             ]
           },
           {
@@ -69511,8 +69541,8 @@
           {
             "kind": "union",
             "types": [
-              10,
-              11
+              11,
+              12
             ]
           },
           {
@@ -69522,10 +69552,6 @@
           {
             "kind": "literal",
             "value": "failed"
-          },
-          {
-            "kind": "literal",
-            "value": true
           },
           {
             "kind": "literal",
@@ -69884,7 +69910,7 @@
       "kind": "event",
       "event": "product/report-v1",
       "surface": false,
-      "digest": "4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597",
+      "digest": "960c119845fb739dfb0786e59d6b13a626475de8d0afa1866d70729582207e53",
       "schema": {
         "root": 0,
         "nodes": [
@@ -69926,6 +69952,11 @@
                 "name": "contentRef",
                 "type": 2,
                 "optional": false
+              },
+              {
+                "name": "html",
+                "type": 2,
+                "optional": true
               },
               {
                 "name": "markdown",
@@ -82310,7 +82341,7 @@
       "digest": "035a4f4cb153fa0ec652d4f792b28f132e7cbe3238d4174f06cebcd657fe6eaf",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:115"
+        "packages/product-insight/workflow/src/session-tool.ts:119"
       ]
     },
     {
@@ -82429,11 +82460,6 @@
     },
     {
       "digest": "06f826fd35a64c9a468b2097ad5255da85329532bd87143bce27a6ce75489020",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "07320adc9ef4e447f985c25339b87382b31d01d5e362c47d03b6e522c2fe76eb",
       "names": [],
       "sources": []
     },
@@ -82589,7 +82615,7 @@
       "digest": "0b9a2615753e95d015c2238b70047252abd8e52f751daee2f8d869ce083ee8d8",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:68"
+        "packages/product-insight/workflow/src/session-tool.ts:72"
       ]
     },
     {
@@ -83422,7 +83448,7 @@
       "digest": "21c14fcf2434ba80f8426a39d54c54ed97e9217614c8e080ddf13a0a82b33006",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:150"
+        "packages/product-insight/workflow/src/session-tool.ts:154"
       ]
     },
     {
@@ -83638,11 +83664,6 @@
       "sources": [
         "packages/academic/workflow/src/model-types.ts:183"
       ]
-    },
-    {
-      "digest": "27173cd185723a4e598b089503fe37c18931dd521f80273111510e263b061c7c",
-      "names": [],
-      "sources": []
     },
     {
       "digest": "2720caf01ae2eb3e4e6ffdb399ff0d17ddc7bc5a3bca0f6edff41485d1872fd4",
@@ -84616,7 +84637,7 @@
       "digest": "44064bb7cd1fcef329bdf987d8c2e47608a158cbcff1e54181f2d77b1a7854ab",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:169"
+        "packages/product-insight/workflow/src/session-tool.ts:173"
       ]
     },
     {
@@ -84698,6 +84719,11 @@
     },
     {
       "digest": "462a01bacd366377f61e73be1b1690b7f57a89d1995f916feadf9ee8c39f399f",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "46ee65aa64278ef7db6d42b3eaa08d46d52fd95b776c9ded3376d7439f757ecf",
       "names": [],
       "sources": []
     },
@@ -84960,11 +84986,6 @@
     },
     {
       "digest": "4bbc65df84c0a747f1fbdcfe9f0e0002081e49145c82d5d52eba05221035d0fc",
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "4bd74c7dfde3a1dc1a87413827ec3995af5ff234b90269fa53077afc0e070597",
       "names": [],
       "sources": []
     },
@@ -85361,11 +85382,6 @@
       "sources": []
     },
     {
-      "digest": "5376920d06b40dd51add940c71a41cc114d7c55993fcfc7cba111ea78900f78e",
-      "names": [],
-      "sources": []
-    },
-    {
       "digest": "53cf1704ae0709c7678bcf070c83c619fc48ca1b5c173b74cfa8702f22a8e492",
       "names": [],
       "sources": []
@@ -85629,13 +85645,6 @@
       "sources": []
     },
     {
-      "digest": "5950fa73f71cff0c4923756a923eb90b05fc1712ad5dcacd14aaefee06c417a3",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:176"
-      ]
-    },
-    {
       "digest": "5a0dac2cd2e54daaf4e11613ece68939e937e31947172906050906fb2ecec5a6",
       "names": [
         "packages/academic/research-controller/src/types.ts#AcademicQ6Section"
@@ -85712,6 +85721,15 @@
       "digest": "5b232a9b9bfcc0fc6794dab7865bcf203a65785c5de5aa647a51228bff628413",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "5b379876cdc80aeb2c87b789fe090e150b1825a814a0c2a18736d6ddafb8922b",
+      "names": [
+        "packages/product-insight/workflow/src/page-summary.ts#ReviewedProductPage"
+      ],
+      "sources": [
+        "packages/product-insight/workflow/src/page-summary.ts:4"
+      ]
     },
     {
       "digest": "5b432e0430758f09062b0c35a55e8b9854d73574ea7d74bd4b5abe5be8c998b2",
@@ -86614,7 +86632,7 @@
       "digest": "72f12daf03d2d6caa6182b36c22e1e357f86920dbb7b9c1965fb2d2178c05238",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:106"
+        "packages/product-insight/workflow/src/session-tool.ts:110"
       ]
     },
     {
@@ -86691,7 +86709,7 @@
       "digest": "75b5c8541893578ff2b17e0b33126ca7625e550518e84521ffbbb403e6c9cf38",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:102"
+        "packages/product-insight/workflow/src/session-tool.ts:106"
       ]
     },
     {
@@ -86805,7 +86823,7 @@
       "digest": "7975486284f2851e9d8355e5c3386cd20351ae3515b6bb32ccc06bc2f4b21f6a",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:90"
+        "packages/product-insight/workflow/src/session-tool.ts:94"
       ]
     },
     {
@@ -86896,7 +86914,7 @@
       "digest": "7b72679f88690cda9ff470a30adda6f8c9c3ce047ff8d2a44c2fad62bb916759",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:161"
+        "packages/product-insight/workflow/src/session-tool.ts:165"
       ]
     },
     {
@@ -87710,7 +87728,7 @@
       "digest": "8e6bbbe078d6fcf2afea465cacf71fe59f6d445d79a627d4fca1ecad8ca57a9e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:148"
+        "packages/product-insight/workflow/src/session-tool.ts:152"
       ]
     },
     {
@@ -87840,7 +87858,7 @@
       "digest": "92b921daca464e6896fed3ab77d61ae6abbc3c61f58e25f9b075746aa1a42dba",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:124"
+        "packages/product-insight/workflow/src/session-tool.ts:128"
       ]
     },
     {
@@ -87954,6 +87972,11 @@
     },
     {
       "digest": "95c0e88fcf0bafb2087f912ad9e2369de6ae6530cc0c4c2772c96205b57f7f60",
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "960c119845fb739dfb0786e59d6b13a626475de8d0afa1866d70729582207e53",
       "names": [],
       "sources": []
     },
@@ -88185,6 +88208,11 @@
       ]
     },
     {
+      "digest": "9c160f028c6d308225420d8316d6daeba19475d3e5dde971fbee760270348d53",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "9d119e9eee8388a851b8427ea6d10afab8f4ddb3749a846dd84b4d4621d51eda",
       "names": [],
       "sources": []
@@ -88240,7 +88268,7 @@
       "digest": "9ebaf160309f52d37686d7b2ce5608462152772bdd63f19ea80d4fa8cc83be3c",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:45"
+        "packages/product-insight/workflow/src/session-tool.ts:47"
       ]
     },
     {
@@ -88766,15 +88794,6 @@
       ]
     },
     {
-      "digest": "ac185d030f1cc08b147b8d8cea1c920bbb4d0f229a32b322b3fb3568e74e3f8c",
-      "names": [
-        "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
-      ],
-      "sources": [
-        "packages/product-insight/workflow/src/index.ts:89"
-      ]
-    },
-    {
       "digest": "acc22e76877e1da3f766d3600b7809710db7c78943d07de1d665415e9c8af830",
       "names": [
         "packages/academic/model/src/query-workflow.ts#CandidateMetadataSignal"
@@ -89178,7 +89197,7 @@
       "digest": "b584979e40bb5db4bb401cd31cbf903caf4fc9644f2c139dd559b9697788cc61",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:171"
+        "packages/product-insight/workflow/src/session-tool.ts:175"
       ]
     },
     {
@@ -89441,7 +89460,7 @@
       "digest": "bd767c9c20e550f33fb58313e930037dae8d5b10705511262a135826fdeaf7e9",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:95"
+        "packages/product-insight/workflow/src/session-tool.ts:99"
       ]
     },
     {
@@ -89453,7 +89472,7 @@
       "digest": "be41d4ddc516ea1ac2f8ecc310aafa22de3717d0283185c8d0a0c8384ba5920d",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:138"
+        "packages/product-insight/workflow/src/session-tool.ts:142"
       ]
     },
     {
@@ -89537,7 +89556,7 @@
       "digest": "c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:81"
+        "packages/product-insight/workflow/src/session-tool.ts:85"
       ]
     },
     {
@@ -89788,6 +89807,13 @@
       "digest": "c8e6f48878cc2a2f0dc59682280d81f407943fb503f32c64bf9ff3d9393c3eff",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "c94ad7099e75847b605d26b4709d068fceac3b4462edcf2dc0c74260efead64a",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:60"
+      ]
     },
     {
       "digest": "c99e20441bf15341e9db54385e558e5c03d21dff2eb1ac08ccbf47c2d8747954",
@@ -90063,6 +90089,15 @@
       "sources": []
     },
     {
+      "digest": "d56645ad9ae0c41c116f68cee27c1dccdd1170720d344b21595b52dd18f53744",
+      "names": [
+        "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
+      ],
+      "sources": [
+        "packages/product-insight/workflow/src/index.ts:100"
+      ]
+    },
+    {
       "digest": "d595ec73b32b016a6055333c67a5d646032b22e672da1d4a09c5b1ae398a093a",
       "names": [],
       "sources": []
@@ -90131,15 +90166,6 @@
       ]
     },
     {
-      "digest": "d7df0cdc0ec95ab01b8ac1336754c6f0f2c6e4e09ea9cadb9ca3fe1b6694d77b",
-      "names": [
-        "packages/product-insight/workflow/src/page-summary.ts#ReviewedProductPage"
-      ],
-      "sources": [
-        "packages/product-insight/workflow/src/page-summary.ts:4"
-      ]
-    },
-    {
       "digest": "d7f9a64a013427ce2f0c110b99ea00f92e52eb853d0edd4b7e4fca617018be1f",
       "names": [],
       "sources": []
@@ -90187,7 +90213,7 @@
       "digest": "d90920b14d3d321466273fbe9cf903f9e4fcac8f4f1ab67a63e81330ad50565e",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:185"
+        "packages/product-insight/workflow/src/session-tool.ts:189"
       ]
     },
     {
@@ -90278,6 +90304,13 @@
       "digest": "d9ff136ee5c282e800a9f674c4a6c799da45daabfbcc97a50d9b8fe769fd29c7",
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "da32c103425c64279975f40d6e3235b6b65c114c72748c9a344d6fa936533b70",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/page-summary.ts:11"
+      ]
     },
     {
       "digest": "da512f4975906cf2b64cef40f984604ab1ae3c6edc6288be792b3dd75bdc6b21",
@@ -90439,7 +90472,7 @@
       "digest": "de1ded7e50b1e320a8d8a6013c534fcecf25e920344291891044726e47296d55",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:126"
+        "packages/product-insight/workflow/src/session-tool.ts:130"
       ]
     },
     {
@@ -90677,7 +90710,7 @@
       "digest": "e355ee6a1067e87964f49d7a20c43786074f771b10f30d20e565f89b78b19743",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:70"
+        "packages/product-insight/workflow/src/session-tool.ts:74"
       ]
     },
     {
@@ -91141,6 +91174,13 @@
       "sources": []
     },
     {
+      "digest": "eef7d0b7e0d287af7db6c623f3dbde11f73fa7e9930705ffdc0c41951d7b34c9",
+      "names": [],
+      "sources": [
+        "packages/product-insight/workflow/src/session-tool.ts:180"
+      ]
+    },
+    {
       "digest": "eefbea819caeeea91ccb02dfafc16c68dd7f961cf9c1b2be25a2084509cf5c5a",
       "names": [],
       "sources": []
@@ -91264,7 +91304,7 @@
       "digest": "f14ae6587bdefc0e2a6763d7adfcb1a3f5b6d4a89cb6d12f0763780b88515d7f",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:178"
+        "packages/product-insight/workflow/src/session-tool.ts:182"
       ]
     },
     {
@@ -91446,7 +91486,7 @@
       "digest": "f5cd6876ce148d5950cd6e56f89b00ce0789f9a7e9e366f9f0b95c0d1bf51ac6",
       "names": [],
       "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:100"
+        "packages/product-insight/workflow/src/session-tool.ts:104"
       ]
     },
     {
@@ -91713,6 +91753,11 @@
       ]
     },
     {
+      "digest": "fc73373aeaabe5ec32d44a3f612e2222241adac2eacdac550b3cfa25ce3066b5",
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "fc914d39e902eba8ea86d3812d09f22b7d5b63a45243f6e248409d9ecb21a5e7",
       "names": [
         "packages/academic/model/src/query-workflow.ts#AcademicCandidateRankingResult"
@@ -91804,13 +91849,6 @@
       ],
       "sources": [
         "packages/academic/model/src/query-workflow.ts:182"
-      ]
-    },
-    {
-      "digest": "feaab15b8ae74f994ca112d21c66fe9453c9ed99cbbe5c49114d49fead5264bf",
-      "names": [],
-      "sources": [
-        "packages/product-insight/workflow/src/session-tool.ts:58"
       ]
     },
     {
