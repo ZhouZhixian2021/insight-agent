@@ -12238,9 +12238,6 @@ importers:
       '@deepseek-ai/dsh-tool-ask-user':
         specifier: workspace:*
         version: link:../../interaction/tool-ask-user
-      '@deepseek-ai/dsh-tool-web':
-        specifier: workspace:*
-        version: link:../../web/tool-web
       '@deepseek-ai/dsh-web':
         specifier: workspace:*
         version: link:../../web/web

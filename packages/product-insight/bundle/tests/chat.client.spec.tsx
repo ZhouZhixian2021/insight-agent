@@ -7,7 +7,7 @@ import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { processGroupDefinition } from '../../../client/ui-chat/src/client/conversation-nodes/process-groups.ts'
 import { chatViewDefinition } from '../../../client/ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
 import { exportProductHtml, ProductRunCard, productChatDefinition } from '../src/client/index.ts'
-import { ProductReport } from '../src/client/ProductReport.tsx'
+import { ProductReport, productReportMarkdown } from '../src/client/ProductReport.tsx'
 import { productPriceMarkdown } from '../src/client/report-prices.ts'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers() })
@@ -144,9 +144,9 @@ it('shows the same summary stages from plan approval through reading and full-te
     { type: 'tool/call', data: { turn: 1, step: 1, name: 'exit_plan_mode', callId: 'product-call', arguments: JSON.stringify({ plan }) } },
     { type: 'tool/result', data: { turn: 1, step: 1, message: { toolCallId: 'product-call', isError: false }, meta: { approved: true } } },
     { type: 'product/background-run-v1', data: { planId, state: 'running' } },
+    { type: 'product/page-summary-request-v1', data: { planId, candidatePageId: 'p1', phase: 'reading' } },
     { type: 'product/pages-v1', data: { planId, candidates: [{}], snapshots: [{ status: 'available' }] } },
     { type: 'product/checkpoint-v1', data: { planId, stage: 'pages', schemaVersion: 4, pageSummaries: [] } },
-    { type: 'product/page-summary-request-v1', data: { planId, candidatePageId: 'p1', phase: 'reading' } },
     { type: 'product/page-summary-result-v1', data: { planId, candidatePageId: 'p1', phase: 'reading', status: 'completed' } },
     { type: 'product/page-summary-result-v1', data: { planId, candidatePageId: 'p1', phase: 'review', status: 'completed' } },
   ].map((event, i) => ({ type: 'event', event: { ...event, seq: i + 1, time: i } })) as SessionLiveEventEntry[]
@@ -160,7 +160,12 @@ it('shows the same summary stages from plan approval through reading and full-te
     expect(node.visibility).toBe('visible')
     expect([...view.container.querySelectorAll('li[data-state] > span:nth-child(2)')].map(label => label.textContent))
       .toEqual(['来源发现与网页抓取', '逐篇提要与全文审核', '报告生成'])
-    expect(screen.getByText('逐篇提要与全文审核').closest('li')?.dataset.state).toBe(length < 8 ? 'pending' : 'active')
+    expect(screen.getByText('逐篇提要与全文审核').closest('li')?.dataset.state).toBe(length < 6 ? 'pending' : 'active')
+    if (length === 6) {
+      expect(screen.getByText('来源发现与网页抓取').closest('li')?.dataset.state).toBe('active')
+      expect(screen.getByText('— / ≥1')).toBeDefined()
+    }
+    if (length >= 7) expect(screen.getByText('来源发现与网页抓取').closest('li')?.dataset.state).toBe('done')
     expect(screen.getByText('已生成提要（篇）').nextElementSibling?.textContent).toBe(length < 9 ? '0' : '1')
     expect(screen.getByText('已审核提要（篇）').nextElementSibling?.textContent).toBe(length < 10 ? '0' : '1')
     view.unmount()
@@ -273,6 +278,40 @@ it('downloads the authored document verbatim with the investigation state kept i
   expect(exportProductHtml({ ...run, reportHtml: '<html><body>未知文档</body></html>' }, t)).not.toContain('未知文档')
 })
 
+it('opens cited pages from a saved authored report in the preview and both downloads', async () => {
+  const site = 'https://example.test/docs?model=m6&edition=pro'
+  const html = '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy"'
+    + ' content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; base-uri \'none\'; form-action \'none\'">'
+    + '<title>报告</title></head><body><nav><a href="#chapter">目录</a></nav><h1 id="chapter">报告</h1><p>正文<sup><a href="#s1">[1]</a></sup></p>'
+    + '<p>旧编号<sup><a href="#missing">[9]</a></sup></p><ol><li id="s1"><a href="' + site + '">规格页</a></li></ol></body></html>'
+  const run = { callId: 'old', title: '报告', approved: true, runState: 'completed', stage: 6,
+    candidatePages: 1, availablePages: 1, evidence: 1, claims: 1, verifications: 0, failures: 0, elapsedMilliseconds: 1,
+    deliveryStatus: 'final', reasons: [], report: '正文[\\[1\\]](<#s1>)。旧编号[\\[9\\]](<#missing>)。', reportHtml: html } as const
+  const { container } = render(<ProductRunCard node={{ id: 'old', data: run } as never} t={t} useInput={useInput} inputActions={inputActions} />)
+  const details = screen.getByText('报告正文').closest('details')!
+  details.open = true
+  fireEvent(details, new Event('toggle'))
+  const frame = await vi.waitFor(() => { const iframe = container.querySelector('iframe')!; expect(iframe).toBeTruthy(); return iframe })
+  for (const page of [frame.srcdoc, exportProductHtml(run, t)]) {
+    const doc = new DOMParser().parseFromString(page, 'text/html')
+    expect(doc.querySelector('p a')?.getAttribute('href')).toBe(site)
+    expect(doc.querySelector('p a')?.getAttribute('target')).toBe('_blank')
+    expect(doc.querySelector('nav a')?.getAttribute('href')).toBe('#chapter')
+    expect(doc.querySelector('[href="#missing"]')).toBeNull()
+  }
+  const download = vi.fn().mockReturnValue('blob:local')
+  vi.stubGlobal('URL', Object.assign(class extends URL {}, { createObjectURL: download, revokeObjectURL: vi.fn() }))
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  vi.useFakeTimers()
+  fireEvent.click(screen.getByRole('button', { name: '下载 Markdown' }))
+  vi.runAllTimers()
+  vi.useRealTimers()
+  const reader = new FileReader()
+  const loaded = new Promise<string | ArrayBuffer | null>((resolve) => { reader.onload = () => { resolve(reader.result) } })
+  reader.readAsText(download.mock.calls[0]![0] as Blob)
+  expect(await loaded).toBe('正文[\\[1\\]](<' + site + '>)。旧编号\\[9\\]。')
+})
+
 it('exports and downloads a self-contained safe HTML report', () => {
   const run = { callId: 'call', title: '<img src=x onerror=alert(1)>', approved: true, runState: 'completed', stage: 6,
     candidatePages: 3, availablePages: 2, evidence: 4, claims: 2, verifications: 1, failures: 1,
@@ -380,4 +419,12 @@ it('keeps adjacent and multi-digit citations at the sentence end without styling
   expect(citation.parentElement?.textContent).toContain('支持导出[5][12]。另一句。')
   expect(screen.getByRole('link', { name: '[12]' }).getAttribute('href')).toBe('https://example.com/b')
   expect(screen.getByRole('link', { name: '产品官网' }).hasAttribute('data-product-citation')).toBe(false)
+})
+
+it('downloads old Markdown with direct source URLs, including parentheses and PDF page fragments', () => {
+  const url = 'https://example.com/a_(m6).pdf#page=7'
+  const body = '对照。[^product-source-2][^product-source-12]\n\n`[^product-source-2]`\n\n'
+    + '[^product-source-2]: [查看来源原文](' + url + ')\n[^product-source-12]: [查看来源原文](https://example.com/b)'
+  expect(productReportMarkdown(body)).toContain('对照[\\[2\\]](<' + url + '>)[\\[12\\]](<https://example.com/b>)。')
+  expect(productReportMarkdown(body)).toContain('`[^product-source-2]`')
 })

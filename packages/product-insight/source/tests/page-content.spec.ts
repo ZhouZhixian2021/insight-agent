@@ -136,6 +136,24 @@ describe('product page evidence', () => {
       .toThrow(/saved snapshot/u)
   })
 
+  it('keeps table rows with their cells for review and recognizes the saved historical layout on revalidation', () => {
+    const response = { ...fetched, body: { kind: 'html' as const, content: '<article><h1>Prices</h1>'
+      + '<table><tr><th>Market</th><th>Education</th></tr><tr><td>US</td><td><p>$999</p></td></tr></table>'
+      + '<p>1. Requires eligibility.</p></article>' } }
+    const limit = Number.MAX_SAFE_INTEGER
+    const previous = prepareProductPage(response, limit)
+    const current = prepareProductPage(response, limit, {})
+    expect(current.text).toBe('Prices\nMarket\tEducation\nUS\t$999\n1. Requires eligibility.')
+    expect(prepareProductPage(response, limit, { previousHash: previous.contentHash })).toEqual(previous)
+    expect(prepareProductPage(response, limit, { previousHash: current.contentHash })).toEqual(current)
+    const changed = { ...response, body: { ...response.body, content: response.body.content.replace('$999', '$998') } }
+    expect(prepareProductPage(changed, limit, { previousHash: previous.contentHash }).contentHash).not.toBe(previous.contentHash)
+    const standalone = { ...response, body: { ...response.body, content: response.body.content.replaceAll('article>', 'body>') } }
+    const historical = prepareProductPage(standalone, limit)
+    expect(prepareProductPage(standalone, limit, {}).text).toBe('Prices\n\nMarket | Education\nUS | $999\n1. Requires eligibility.')
+    expect(prepareProductPage(standalone, limit, { previousHash: historical.contentHash })).toEqual(historical)
+  })
+
   it('rejects partial fetches while retaining another page and a failed attempt', async () => {
     const second = { ...candidate, candidatePageId: brandString<CandidatePageId>('second'), url: 'https://example.com/second' }
     const secondFetched = Promise.withResolvers<undefined>()
@@ -252,17 +270,18 @@ See https://example.com/legal.` } }, 36_000)
     }, abort.signal)
     try {
       expect(started).toEqual(pages.slice(0, 8).map(page => page.url))
-      gates.get(started[0]!)?.resolve(undefined)
+      // The eighth response frees a slot even while the first seven are still outstanding.
+      gates.get(started[7]!)?.resolve(undefined)
       await ninthStarted.promise
       abort.abort()
       for (const gate of gates.values()) gate.resolve(undefined)
       const result = await run
       expect(result.cancelled).toBe(true)
       expect(started).toEqual(pages.slice(0, 9).map(page => page.url))
-      expect(finished).toEqual(started)
-      expect(saved).toEqual(started.slice(0, 1))
+      expect(finished.toSorted()).toEqual(started.toSorted())
+      expect(saved).toEqual([started[7]])
       expect(result.snapshots.items).toMatchObject([
-        { candidatePageId: pages[0]?.candidatePageId, status: 'available' },
+        { candidatePageId: pages[7]?.candidatePageId, status: 'available' },
       ])
       expect(result.snapshots.failures).toEqual([])
     } finally {

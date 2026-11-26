@@ -198,8 +198,14 @@ export async function searchMultiple(query: string, maximum: number, engines: Se
   for (let rank = 0; rank < count; rank++) for (const { engine, result } of successes) {
     const source = result.sources[rank]
     if (!source) continue
-    const url = targetUrl(source.url, 'duckduckgo')
-    if (url && !sources.has(url)) sources.set(url, { ...source, url, engine })
+    const url = targetUrl(source.url, engine)
+    if (!url) continue
+    const previous = sources.get(url)
+    if (!previous) { sources.set(url, { ...source, url, engine }); continue }
+    const title = previous.title || source.title
+    const details = new Set([previous.snippet, source.snippet, source.title !== title ? source.title : undefined])
+    const snippet = [...details].filter(Boolean).join('\n')
+    sources.set(url, { ...previous, ...(title && { title }), ...(snippet && { snippet }) })
   }
   return { sources: [...sources.values()].slice(0, maximum),
     truncated: sources.size > maximum || successes.length < engines.length

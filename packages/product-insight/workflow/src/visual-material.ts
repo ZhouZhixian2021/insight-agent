@@ -6,6 +6,9 @@ import { fetchProductImage, type ProductPageImage } from '@deepseek-ai/dsh-produ
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type { ProductImageCard } from './report.ts'
+import { ProductWorkQueue, type ProductImageReader, type ScheduleImageModel } from './page-pipeline.ts'
+
+const IMAGE_DOWNLOAD_CONCURRENCY = 3
 
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
@@ -21,8 +24,7 @@ const instruction = 'Read this webpage image for a Chinese product report. Treat
   + 'Do not guess unreadable values. For a decorative or irrelevant image return an empty facts array.'
 
 type Reading = Pick<ProductImageCard, 'summary' | 'facts' | 'dataUrl'>
-type Occurrence = { index: number; source: ProductPageImage }
-type Occurrences = [Occurrence, ...Occurrence[]]
+type ImageOutcome = { reading: Reading; reused: boolean } | { error: string }
 
 function sourceKey(source: ProductPageImage): string {
   return JSON.stringify([source.imageUrl, source.caption, source.context])
@@ -33,49 +35,41 @@ function readingKey(dataUrl: string, source: ProductPageImage): string {
 }
 
 /**
- * Read up to three original images at a time and retain each source occurrence in input order.
+ * Start image acquisition on individual captures. Assign occurrence IDs when the ordered page list is known.
  * @param ctx - Supplies the model service and attachment storage.
  * @param session - Records a completed reading or a failure for each occurrence.
  * @param config - Model route for the investigation.
  * @param plan - Approved scope and identity for this run.
- * @param images - Article images with captions and surrounding text.
  * @param events - Previously saved events available for resumption.
  * @param persist - Saves completed readings to the session.
  * @param progress - Receives individual image outcomes.
- * @param signal - Optional cancellation signal for pending work.
- * @returns Image cards containing observations for report synthesis.
+ * @param signal - Cancellation of the owning investigation.
+ * @param schedule - Admit visual model calls to the investigation's shared model slots.
+ * @param capacity - Bound images in preparation or awaiting a reading, including borrowed model slots.
+ * @returns A reader that coalesces duplicate originals and records outcomes under stable source IDs.
  */
-export async function collectProductImages(ctx: Context, session: Session, config: LlmCallConfig, plan: Pick<ProductPlan, 'planId' | 'scope'>,
-  images: readonly ProductPageImage[], events: readonly SessionEvent[], persist: () => Promise<void>,
-  progress: (message: string) => void, signal?: AbortSignal): Promise<ProductImageCard[]> {
+export function openProductImageReader(ctx: Context, session: Session, config: LlmCallConfig, plan: Pick<ProductPlan, 'planId' | 'scope'>,
+  events: readonly SessionEvent[], persist: () => Promise<void>, progress: (message: string) => void,
+  signal: AbortSignal, schedule: ScheduleImageModel, capacity = IMAGE_DOWNLOAD_CONCURRENCY): ProductImageReader {
   const llm = ctx.get('llm'), store = ctx.get('attachments')
   const provider = config.provider
   const model = /(?:^|\/)deepseek-v4\.1-flash$/iu.test(config.model) ? config.model : 'deepseek-v4.1-flash'
-  const cards: (ProductImageCard | undefined)[] = []
   const completed = new Map<string, ProductImageCard>()
-  const byContent = new Map<string, Reading | { waiting: Occurrences[] }>()
-  const pending = new Map<string, Occurrences>()
+  const byContent = new Map<string, Promise<Reading>>()
+  const pending = new Map<string, Promise<ImageOutcome>>()
+  let published = Promise.resolve()
   for (const event of events) {
     if (event.type !== 'product/image-reading-v1' || event.data.planId !== plan.planId
       || event.data.provider !== provider || event.data.model !== model || !('card' in event.data)) continue
     const { source, card } = event.data
     const key = sourceKey(source)
     completed.set(JSON.stringify([source.pageUrl, key]), card)
-    byContent.set(readingKey(card.dataUrl, source), card)
-  }
-  for (const [index, source] of images.entries()) {
-    const key = sourceKey(source)
-    const prior = completed.get(JSON.stringify([source.pageUrl, key]))
-    if (prior) {
-      if (prior.facts.length) cards[index] = { ...prior, ...source, id: `I${index + 1}` }
-    } else {
-      const group = pending.get(key)
-      if (group) group.push({ index, source })
-      else pending.set(key, [{ index, source }])
-    }
+    byContent.set(readingKey(card.dataUrl, source), Promise.resolve(card))
   }
   const controller = new AbortController()
-  const active = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+  const active = AbortSignal.any([signal, controller.signal])
+  const inFlight = new ProductWorkQueue(capacity, active)
+  const downloads = new ProductWorkQueue(IMAGE_DOWNLOAD_CONCURRENCY, active)
   async function read(source: ProductPageImage, prepared: PreparedLlmCall, attachment: ImageBlock['attachment'], dataUrl: string): Promise<Reading> {
     active.throwIfAborted()
     let output = '', stopped = false
@@ -96,69 +90,80 @@ export async function collectProductImages(ctx: Context, session: Session, confi
       || !value.facts.every((fact: unknown) => typeof fact === 'string' && fact.trim())) throw new Error('Invalid image observation fields')
     return { summary: value.summary.trim(), facts: value.facts as string[], dataUrl }
   }
-  const queue = pending.values()
-  let writes = Promise.resolve()
-  async function worker(): Promise<void> {
-    for (const group of queue) {
-      const { source } = group[0]
-      let outcome: { reading: Reading } | { error: string }
-      let reused = false
-      const waiting: Occurrences[] = []
-      try {
-        active.throwIfAborted()
+  function enqueue(images: readonly ProductPageImage[]): void {
+    for (const source of images) {
+      const key = sourceKey(source)
+      if (active.aborted || pending.has(key) || completed.has(JSON.stringify([source.pageUrl, key]))) continue
+      const result = Promise.withResolvers<ImageOutcome>()
+      pending.set(key, result.promise)
+      const fail = (error: unknown) => { result.resolve({ error: error instanceof Error ? error.message : String(error) }) }
+      void inFlight.run('image', async () => {
         if (!llm || !store) throw new Error('Image model or attachment storage unavailable')
         const prepared = await llm.prepareCall({ provider, model }, active)
         if (!prepared.inputModalities?.includes('image')) throw new Error('Image input disabled for ' + model)
         active.throwIfAborted()
-        const file = await fetchProductImage(source.imageUrl, active)
+        const file = await downloads.run('image', () => fetchProductImage(source.imageUrl, active))
         active.throwIfAborted()
         const dataUrl = 'data:' + file.mediaType + ';base64,' + Buffer.from(file.data).toString('base64')
-        const key = readingKey(dataUrl, source)
-        const cached = byContent.get(key)
-        if (cached && 'waiting' in cached) {
-          cached.waiting.push(group)
-          continue
-        }
+        const identity = readingKey(dataUrl, source)
+        const cached = byContent.get(identity)
         if (cached) {
-          outcome = { reading: cached }
-          reused = true
-        } else {
-          byContent.set(key, { waiting })
-          try {
-            const reading = await read(source, prepared, await store.saveImage(file), dataUrl)
-            byContent.set(key, reading)
-            outcome = { reading }
-          } catch (error) {
-            byContent.delete(key)
-            throw error
-          }
+          // A mirror shares the pending reading and releases its preparation slot.
+          void cached.then((reading) => { result.resolve({ reading, reused: true }) }, fail)
+          return
         }
-      } catch (error) {
-        outcome = { error: error instanceof Error ? error.message : String(error) }
-      }
-      if (active.aborted) return
-      for (const occurrence of group.concat(...waiting)) {
-        const id = `I${occurrence.index + 1}`
-        const base = { planId: plan.planId, provider, model, source: occurrence.source }
-        if ('reading' in outcome) {
-          const card = { ...outcome.reading, ...occurrence.source, id }
-          session.append('product/image-reading-v1', { ...base, card })
-          if (card.facts.length) cards[occurrence.index] = card
-          progress('图片材料 ' + id + (reused ? ' 已复用' : ' 已读取'))
-          reused = true
-        } else {
-          session.append('product/image-reading-v1', { ...base, error: outcome.error })
-          progress('图片材料 ' + id + ' 未取得：' + outcome.error)
-        }
-      }
-      writes = writes.then(persist)
-      void writes.catch((error: unknown) => { controller.abort(error) })
+        const original = (async () => {
+          const attachment = await store.saveImage(file)
+          active.throwIfAborted()
+          return schedule(() => read(source, prepared, attachment, dataUrl))
+        })()
+        byContent.set(identity, original)
+        try { result.resolve({ reading: await original, reused: false }) }
+        catch (error) { byContent.delete(identity); throw error }
+      }).catch(fail)
     }
   }
-  const workers = Array.from({ length: Math.min(3, pending.size) }, () =>
-    worker().catch((error: unknown) => { controller.abort(error); throw error }))
-  const settled = await Promise.allSettled(workers)
-  await writes
-  for (const result of settled) if (result.status === 'rejected') throw result.reason
-  return cards.filter((card): card is ProductImageCard => card !== undefined)
+
+  async function collect(images: readonly ProductPageImage[]): Promise<ProductImageCard[]> {
+    enqueue(images)
+    const reported = new Set<string>()
+    let writes = Promise.resolve()
+    const publications = images.map(async (source, index) => {
+      const id = 'I' + String(index + 1), key = sourceKey(source)
+      const prior = completed.get(JSON.stringify([source.pageUrl, key]))
+      if (prior) return prior.facts.length ? { ...prior, ...source, id } : undefined
+      const outcome = await pending.get(key)
+      if (active.aborted || !outcome) return undefined
+      const base = { planId: plan.planId, provider, model, source }
+      let card: ProductImageCard | undefined
+      if ('reading' in outcome) {
+        card = { ...outcome.reading, ...source, id }
+        session.append('product/image-reading-v1', { ...base, card })
+        progress('图片材料 ' + id + (outcome.reused || reported.has(key) ? ' 已复用' : ' 已读取'))
+        reported.add(key)
+      } else {
+        session.append('product/image-reading-v1', { ...base, error: outcome.error })
+        progress('图片材料 ' + id + ' 未取得：' + outcome.error)
+      }
+      writes = writes.then(persist)
+      await writes
+      return card?.facts.length ? card : undefined
+    })
+    published = Promise.allSettled(publications).then(() => {})
+    try {
+      return (await Promise.all(publications)).filter((card): card is ProductImageCard => card !== undefined)
+    } catch (error) {
+      controller.abort(error)
+      throw error
+    }
+  }
+  return { enqueue, collect, drain: async () => { await Promise.all([...pending.values(), published]) } }
+}
+
+/** Collect a fixed list for legacy investigations that read images after text processing. */
+export async function collectProductImages(ctx: Context, session: Session, config: LlmCallConfig, plan: Pick<ProductPlan, 'planId' | 'scope'>,
+  images: readonly ProductPageImage[], events: readonly SessionEvent[], persist: () => Promise<void>,
+  progress: (message: string) => void, signal = new AbortController().signal): Promise<ProductImageCard[]> {
+  const reader = openProductImageReader(ctx, session, config, plan, events, persist, progress, signal, read => read())
+  try { return await reader.collect(images) } finally { await reader.drain() }
 }

@@ -1,4 +1,4 @@
-import { parse, parseFragment, type DefaultTreeAdapterTypes as Tree } from 'parse5'
+import { parse, parseFragment, Parser, type DefaultTreeAdapterTypes as Tree, type Token } from 'parse5'
 import type { ProductSynthesisInput } from './report.ts'
 import { synthesisAliases } from './synthesis-output.ts'
 
@@ -29,6 +29,7 @@ function httpUrl(value: string): boolean {
 }
 const cleanCss = (v: string) => /[<\\]|@import\b|url\s*\(|image-set\s*\(|expression\s*\(/iu.test(v) ? '' : v
 const marker = /\[\[\s*cite\s*:\s*([^\]]+?)\s*\]\]/giu
+const citationLabel = /^(?:\[\s*\d+(?:\s*[,，、–-]\s*\d+)*\s*\]\s*)+$/u
 const contentPolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"
 const mechanics = '.dsh-cited-end{white-space:nowrap}sup.dsh-cite{font-size:.72em;line-height:0;vertical-align:super;white-space:nowrap}sup.dsh-cite a{color:inherit;text-decoration:none;border:0}img{max-width:100%;height:auto}.dsh-table-scroll{max-width:100%;overflow-x:auto}'
 
@@ -71,15 +72,49 @@ function attributes(node: Element): string {
 export interface HtmlRepairUnit { id: string; original: string; reason: string; start: number; end: number }
 export interface HtmlInspection { report?: AuthoredProductReport; issues: HtmlRepairUnit[]; problem?: string }
 
+// Track explicit document boundaries before HTML tree correction merges adjacent documents.
+// The parser ignores apparent tags in comments, scripts, styles and quoted attributes.
+class ReportEnvelope extends Parser<Tree.DefaultTreeAdapterMap> {
+  readonly opens = new Set<number>()
+  readonly closes = new Set<number>()
+  readonly doctypes: Token.Location[] = []
+
+  override onStartTag(token: Token.TagToken): void {
+    if (token.tagName === 'html' && token.location) this.opens.add(token.location.startOffset)
+    super.onStartTag(token)
+  }
+  override onEndTag(token: Token.TagToken): void {
+    if (token.tagName === 'html' && token.location) this.closes.add(token.location.endOffset)
+    super.onEndTag(token)
+  }
+  override onDoctype(token: Token.DoctypeToken): void {
+    if (token.location) this.doctypes.push(token.location)
+    super.onDoctype(token)
+  }
+}
+
 /** Bind actual captured sources and images, preserving the author's static layout. */
 export function inspectProductHtml(raw: string, input: ProductSynthesisInput): HtmlInspection {
-  const doc = parse(raw, { sourceCodeLocationInfo: true })
+  const envelope = new ReportEnvelope({ sourceCodeLocationInfo: true })
+  envelope.tokenizer.write(raw, true)
+  const [open] = envelope.opens, [end] = envelope.closes
+  if (envelope.opens.size !== 1 || envelope.closes.size !== 1 || open === undefined || end === undefined || end <= open) {
+    return { issues: [], problem: '写作响应必须包含唯一且完整的 HTML 文档。' }
+  }
+  const doctype = envelope.doctypes.find(d => d.endOffset <= open && !raw.slice(d.endOffset, open).trim())
+  const start = doctype?.startOffset ?? open
+  const doc = start === 0 && end === raw.length ? envelope.document : parse(raw.slice(start,end), { sourceCodeLocationInfo: true })
   const root = matches(doc, 'html')[0], head = matches(doc, 'head')[0], body = matches(doc, 'body')[0]
   if (!root || !head || !body) return { issues: [], problem: '写作响应缺少完整的 HTML 正文。' }
   const title = matches(head, 'title').map(textOf).find(t => t.trim())
-  if (!/<\/html\s*>/iu.test(raw) || !title || !matches(body, 'h1').some(h => textOf(h).trim())
+  if (!title || !matches(body, 'h1').some(h => textOf(h).trim())
     || !textOf(body).trim()) return { issues: [], problem: '需要完整的 HTML 文档、文档标题和有内容的正文标题。' }
   const catalog = sourceCatalog(input)
+  const sourceIdForUrl = (href: string) => {
+    if (!httpUrl(href)) return undefined
+    const url = publicationUrl(href)
+    return [...catalog].find(([, source]) => source.url === url)?.[0]
+  }
   const images = new Map((input.images ?? []).map(image => [image.id, image]))
   const used = new Map<string, { number: number; source: Source; imageIds: Set<string> }>()
   const issues = new Map<number, HtmlRepairUnit>()
@@ -108,8 +143,8 @@ export function inspectProductHtml(raw: string, input: ProductSynthesisInput): H
     if (!loc) return
     const existing = issues.get(loc.startOffset)
     if (existing) existing.reason += ' ' + why
-    else issues.set(loc.startOffset, { id: 'R' + String(issues.size + 1), start: loc.startOffset,
-      end: loc.endOffset, original: raw.slice(loc.startOffset, loc.endOffset), reason: why })
+    else issues.set(loc.startOffset, { id: 'R' + String(issues.size + 1), start: start + loc.startOffset,
+      end: start + loc.endOffset, original: raw.slice(start + loc.startOffset, start + loc.endOffset), reason: why })
   }
   // Keep the citation group and the last character of its sentence together even on a narrow screen.
   const citedText = (value: string, owner: Element): string => {
@@ -128,7 +163,7 @@ export function inspectProductHtml(raw: string, input: ProductSynthesisInput): H
     if (/\[\[\s*cite\b/iu.test(result)) issue(owner, '引用标记不完整，请保留对应句子并更正材料编号。')
     return result
   }
-  const render = (n: Node, owner: Element): string => {
+  const render = (n: Node, owner: Element, inNavigation = false, inLink = false): string => {
     if ('value' in n) return citedText(n.value, owner)
     if (!element(n) || discard.has(n.tagName)) return ''
     const tag = n.tagName
@@ -148,17 +183,38 @@ export function inspectProductHtml(raw: string, input: ProductSynthesisInput): H
       return '<img alt="' + esc(attr(n,'alt') || image.caption || image.summary) + '" src="' + image.dataUrl + '"'
         + (httpUrl(image.imageUrl) ? ' data-original="' + esc(image.imageUrl) + '"' : '') + '>' + citationsFor([image.id])
     }
-    const children = n.childNodes.map(c => render(c, n)).join('')
+    const navigation = inNavigation || tag === 'nav' || attr(n, 'role') === 'navigation'
+    const children = n.childNodes.map(c => render(c, n, navigation, inLink || tag === 'a')).join('')
     if (!allowed.has(tag)) return children
     let attrs = attributes(n)
+    if (tag === 'sup') {
+      if (children.includes('<sup class="dsh-cite">')) return children
+      if (!inLink && !navigation && !matches(n, 'a').length && citationLabel.test(textOf(n).trim())) {
+        issue(n, '这个数字上标没有对应的本轮材料。请在原句写入对应材料标记。')
+        return ''
+      }
+    }
     if (tag === 'a') {
       const href = attr(n, 'href') ?? ''
+      // An author can wrap a material marker in a link copied from the style example.
+      if (children.includes('<sup class="dsh-cite">')) return children
+      const label = textOf(n).trim()
+      const numbered = !navigation && (citationLabel.test(label)
+        || /^\d+$/u.test(label) && (owner.tagName === 'sup' || matches(n, 'sup').length > 0 || attr(n, 'role') === 'doc-noteref'))
+      if (numbered && (!href || href.startsWith('#'))) {
+        const entries = href.length > 1 ? matches(body, 'li').filter(li => attr(li, 'id') === href.slice(1)) : []
+        const entry = entries.length === 1 ? entries[0] : undefined
+        const links = entry ? matches(entry, 'a').map(a => attr(a, 'href') ?? '').filter(u => !u.startsWith('#')) : []
+        const ids = links.map(sourceIdForUrl)
+        if (ids.length && ids.every((id): id is string => Boolean(id))) return citationsFor(ids)
+        issue(n, '这个数字角标缺少可确认的来源网址。请在原句使用本轮材料编号 [[cite:P…]]、[[cite:I…]] 或 [[cite:E…]]。')
+        return ''
+      }
       if (/^#[^\s"'<>]+$/u.test(href)) attrs += ' href="' + esc(href) + '"'
       else if (href) {
-        const url = httpUrl(href) ? publicationUrl(href) : undefined
-        const known = [...catalog.entries()].find(([,s]) => s.url === url)
-        if (!known) { issue(n, '链接不在本轮来源中，请改为有依据的句末引用或去掉未经提供的链接。'); return children }
-        return children + citationsFor([known[0]])
+        const id = sourceIdForUrl(href)
+        if (!id) { issue(n, '链接不在本轮来源中，请改为有依据的句末引用或去掉未经提供的链接。'); return children }
+        return (numbered ? '' : children) + citationsFor([id])
       }
     }
     if (['br','hr','col'].includes(tag)) return '<' + tag + attrs + '>'
@@ -255,11 +311,16 @@ type HtmlCall = (user: string, attempt: 1 | 2, correction: boolean,
 
 export async function writeProductHtml(input: ProductSynthesisInput, material: string, call: HtmlCall,
   signal?: AbortSignal): Promise<AuthoredProductReport> {
+  let last: { raw: string; inspected: HtmlInspection } | undefined
+  const inspect = (raw: string) => {
+    if (last?.raw !== raw) last = { raw, inspected: inspectProductHtml(raw,input) }
+    return last.inspected
+  }
   const reasons = (v: HtmlInspection) => v.problem ? [v.problem] : v.issues.map(i => i.id + ': ' + i.reason)
-  const validate = (raw: string) => reasons(inspectProductHtml(raw,input))
+  const validate = (raw: string) => reasons(inspect(raw))
   const first = await call(material,1,false,validate)
   signal?.throwIfAborted()
-  const inspected = inspectProductHtml(first.text,input)
+  const inspected = inspect(first.text)
   if (first.error === null && inspected.report) return inspected.report
   if (inspected.issues.length && (first.error === null || first.error === 'invalid_output')) {
     const units = inspected.issues
@@ -285,23 +346,23 @@ export async function writeProductHtml(input: ProductSynthesisInput, material: s
       return draft
     }
     const user = JSON.stringify({ ...JSON.parse(material), repair: units.map(({ id,original,reason }) => ({ id,original,reason })) })
-    const second = await call(user,2,true,text => reasons(inspectProductHtml(merge(text),input)))
+    const second = await call(user,2,true,text => validate(merge(text)))
     signal?.throwIfAborted()
     let draft = second.error === null || second.error === 'invalid_output' ? merge(second.text) : first.text
-    const repaired = inspectProductHtml(draft,input)
+    const repaired = inspect(draft)
     if (repaired.report) return repaired.report
     for (const unit of [...repaired.issues].reverse()) {
       const tag = unit.original.match(/^<([a-z0-9]+)/iu)?.[1]?.toLowerCase() ?? 'p'
       const gap = tag === 'img' ? '' : '<' + tag + '>本轮资料未能核实此处内容。</' + tag + '>'
       draft = draft.slice(0,unit.start) + gap + draft.slice(unit.end)
     }
-    const partial = inspectProductHtml(draft,input)
+    const partial = inspect(draft)
     if (partial.report) return { ...partial.report, repairNote: '个别引用或配图未能修复，对应位置已标明资料缺口。' }
     throw Error(reasons(repaired).join(' ') || '局部修订未能形成可溯源的报告。')
   }
   const retry = await call(JSON.stringify({ ...JSON.parse(material), correction: inspected.problem ?? '前次文档未完整交付，请完成 HTML 成稿。' }),2,false,validate)
   signal?.throwIfAborted()
-  const final = inspectProductHtml(retry.text,input)
+  const final = inspect(retry.text)
   if (retry.error === null && final.report) return final.report
   throw Error(reasons(final).join(' ') || '写作调用未交付完整 HTML。')
 }

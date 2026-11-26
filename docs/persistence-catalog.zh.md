@@ -1308,7 +1308,7 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
   & ({ card: ProductImageCard } | { error: string })
 ```
 
-来源：[`packages/product-insight/workflow/src/visual-material.ts:13`](../packages/product-insight/workflow/src/visual-material.ts)
+来源：[`packages/product-insight/workflow/src/visual-material.ts:16`](../packages/product-insight/workflow/src/visual-material.ts)
 
 <a id="productmodel-request-v1--log-only"></a>
 
@@ -8349,7 +8349,7 @@ SHA-256: `84bbfdce7d2eab5b0c53e72ff7406db856c8bfd621b965b72fd86598ba493bf7`
 
 SHA-256: `a26b684b0c4d6af8b025d10039675b7a74dd2e405bf531dd41c42bb305544fa1`
 
-来源：[`packages/product-insight/model/src/types.ts:170`](../packages/product-insight/model/src/types.ts) · [`packages/product-insight/model/src/types.ts:194`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:172`](../packages/product-insight/model/src/types.ts) · [`packages/product-insight/model/src/types.ts:196`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -8380,7 +8380,7 @@ SHA-256: `a26b684b0c4d6af8b025d10039675b7a74dd2e405bf531dd41c42bb305544fa1`
 
 SHA-256: `5ceb25eb81e1ff9c42745e76028de42ee3f3471799e9bff59a739596983c390d`
 
-来源：[`packages/academic/model/src/results.ts:35`](../packages/academic/model/src/results.ts) · [`packages/product-insight/model/src/types.ts:278`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/academic/model/src/results.ts:35`](../packages/academic/model/src/results.ts) · [`packages/product-insight/model/src/types.ts:280`](../packages/product-insight/model/src/types.ts)
 
 以下类型之一：
 
@@ -8629,7 +8629,7 @@ SHA-256: `9b3c8e19ba14f9829035af7245a4281387d3861a2816c562ce204d3205221da8`
 
 SHA-256: `406f20a5d25c78c8675c021be2a3993c36e156f2ae4c820b326f5c5639a04206`
 
-来源：[`packages/product-insight/model/src/types.ts:137`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:139`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11698,7 +11698,7 @@ SHA-256: `b9c6cdc05732497d79057a4b7f1d8e543759ae830ef8f2ba8f7e9458a318c4cf`
 
 SHA-256: `21258d61d5525f302e91dcff31041e077d21b6570650643cdfec594025ad595a`
 
-来源：[`packages/product-insight/model/src/types.ts:251`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:253`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11724,7 +11724,7 @@ SHA-256: `21258d61d5525f302e91dcff31041e077d21b6570650643cdfec594025ad595a`
 
 SHA-256: `86ee6135566d767a2ead9098de46259a7ec49c3a2a6d90e53214dc77ed4a625b`
 
-来源：[`packages/product-insight/model/src/types.ts:230`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:232`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11750,7 +11750,7 @@ SHA-256: `18d1e47280da689001e1eda9ff147159d73316751f3f035626b867098bca4d23`
 
 SHA-256: `ebe559b2a5dfbcbc4b3ccd648908aee2ca48b92fd012084c74f30b23b183bb30`
 
-来源：[`packages/product-insight/model/src/types.ts:244`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:246`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11768,7 +11768,7 @@ SHA-256: `ebe559b2a5dfbcbc4b3ccd648908aee2ca48b92fd012084c74f30b23b183bb30`
 
 SHA-256: `e18fd9fdfc42909c5decbdbbf0bceba55117352461097d41ff29be25e59d7446`
 
-来源：[`packages/product-insight/model/src/types.ts:237`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:239`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11846,7 +11846,7 @@ SHA-256: `0492559f991af814c5c1f574d55b6b52ad55c63e4e1db6374d34e3d71f3e1f94`
 
 SHA-256: `8c826864551b6bcca85a1dff3b6da04cb8aac803a03b9ca9ae6603039b53d12c`
 
-来源：[`packages/product-insight/model/src/types.ts:203`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:205`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11873,7 +11873,7 @@ SHA-256: `8c826864551b6bcca85a1dff3b6da04cb8aac803a03b9ca9ae6603039b53d12c`
 
 SHA-256: `52ef9c5de81c4fb760080a21bef7780f631562aaabe30fa55899d276fa96d8a9`
 
-来源：[`packages/product-insight/model/src/types.ts:227`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:229`](../packages/product-insight/model/src/types.ts)
 
 以下类型之一：
 
@@ -11899,7 +11899,7 @@ SHA-256: `21997f71569b67a2dd995dd26b48f6f979a5b5b67e942494111c19858dce9e6d`
 
 SHA-256: `a092d293caa314b76c41ebe6796cc4ee0d263767fe1c0040b494aac6acdd1eda`
 
-来源：[`packages/product-insight/model/src/types.ts:157`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:159`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11953,7 +11953,7 @@ SHA-256: `a4d8ca18719a4713919d70d17933706cda88ca312610bac790b98cb1c049b114`
 
 SHA-256: `d56645ad9ae0c41c116f68cee27c1dccdd1170720d344b21595b52dd18f53744`
 
-来源：[`packages/product-insight/workflow/src/index.ts:100`](../packages/product-insight/workflow/src/index.ts)
+来源：[`packages/product-insight/workflow/src/index.ts:108`](../packages/product-insight/workflow/src/index.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -11988,7 +11988,7 @@ SHA-256: `d56645ad9ae0c41c116f68cee27c1dccdd1170720d344b21595b52dd18f53744`
 
 SHA-256: `98bed41104ed8c0dbf06956e608ed50ed3e8bc3c282d9931da963bb5059d7463`
 
-来源：[`packages/product-insight/source/src/page-fetch.ts:22`](../packages/product-insight/source/src/page-fetch.ts)
+来源：[`packages/product-insight/source/src/page-fetch.ts:26`](../packages/product-insight/source/src/page-fetch.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -12006,7 +12006,7 @@ SHA-256: `98bed41104ed8c0dbf06956e608ed50ed3e8bc3c282d9931da963bb5059d7463`
 
 SHA-256: `63c5d64013b3daf9d82d17647d407cce0a6fcde972187728a3b82a00a3747ad5`
 
-来源：[`packages/product-insight/source/src/page-content.ts:370`](../packages/product-insight/source/src/page-content.ts)
+来源：[`packages/product-insight/source/src/page-content.ts:387`](../packages/product-insight/source/src/page-content.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -12060,7 +12060,7 @@ SHA-256: `8c89902dbcffc89c263693479a2d8936cf77e9b0910fd8f6fb8b25d28186ccb4`
 
 SHA-256: `becc0a9e14300b0a07446ecc9dce246cb3b6be23b0bb8ff66b8d8e5bba6e0c92`
 
-来源：[`packages/product-insight/model/src/types.ts:220`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:222`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -12136,7 +12136,7 @@ SHA-256: `d03c08cb2aba7c9615a6d0d8443b6e4813cf383d9b07f7968af2212d3b4d7aa2`
 
 SHA-256: `d7c01dd80243410ad612e8d65f42126a0805fd2bb95c2d1e7b701f987e732794`
 
-来源：[`packages/product-insight/model/src/types.ts:197`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:199`](../packages/product-insight/model/src/types.ts)
 
 | kind | form 属性 | 其他必需字段 | 完整定义 |
 |---|---|---|---|
@@ -12154,7 +12154,7 @@ SHA-256: `d7c01dd80243410ad612e8d65f42126a0805fd2bb95c2d1e7b701f987e732794`
 
 SHA-256: `ee2e2eac578f47c3fd60d1ccfff45e497708991f003fa103ab349ec8518738bd`
 
-来源：[`packages/product-insight/model/src/types.ts:134`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:136`](../packages/product-insight/model/src/types.ts)
 
 以下类型之一：
 
@@ -13348,7 +13348,7 @@ SHA-256: `b8e4e0fc2d06eeb1bcd33f783c06cce961390f889fe5b1d3a3112c96f12225ba`
 
 SHA-256: `cb438617659dc6723564f0a9d25e338eea47640449835842735d0a22757439e9`
 
-来源：[`packages/product-insight/model/src/types.ts:169`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:171`](../packages/product-insight/model/src/types.ts)
 
 以下类型之一：
 
@@ -16719,7 +16719,7 @@ SHA-256: `c09d92628a3cfaab86f6107e462361f4308c9ea0a633eba4f4b9bc40110d5d48`
 
 SHA-256: `c33c929c3bb145bdf84e467ffe3c4161e50ce2392ac0dd9c50a356ae37aabd5b`
 
-来源：[`packages/product-insight/model/src/types.ts:184`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:186`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17582,7 +17582,7 @@ SHA-256: `77b6e9c77d02a0a13ca3b09a8389b53403b507e60dd50dba70c85ac13b0321f1`
 
 SHA-256: `0b566b05f068127a0e5bbf225a6f2c40d0b4b4038a1e3f735cc278f80a89ee78`
 
-来源：[`packages/product-insight/model/src/types.ts:281`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:283`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -17597,7 +17597,7 @@ SHA-256: `0b566b05f068127a0e5bbf225a6f2c40d0b4b4038a1e3f735cc278f80a89ee78`
 
 SHA-256: `175fcbdb2ffc67b3474adb63547ab2fb550a80e99bc1155150afc320121a26be`
 
-来源：[`packages/product-insight/model/src/types.ts:281`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:283`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -18041,7 +18041,7 @@ SHA-256: `ec8b5ff7c77ca6893ac7ba5a0c5b2aefeb52f12c64450b7359660c2a7e8a53d7`
 
 SHA-256: `b940f803b7c850c5bd8958f093816b11e5514eaf3d589881dd7a84106bda5ff7`
 
-来源：[`packages/product-insight/model/src/types.ts:199`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:201`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -18807,7 +18807,7 @@ SHA-256: `1d76406cbb2ddadb0dbbb51e9d8bc6cf678fed455cf8eb512f36f7c86d37a62f`
 
 SHA-256: `64581f8323d5b472439c99ee61823f888cb200bd6f573d16aabe1e0a00c8df0e`
 
-来源：[`packages/product-insight/model/src/types.ts:200`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:202`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -19158,7 +19158,7 @@ SHA-256: `8fcb0b44a575e998665c053643d1ab04c82f39253ebd190ac0c975b78e40b543`
 
 SHA-256: `f0870bf448096c844f730b0e624ad7fcb7c8c4ba0feb03515ecd7d38a2eb56bd`
 
-来源：[`packages/product-insight/model/src/types.ts:198`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:200`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -19490,7 +19490,7 @@ SHA-256: `9890113e97dd3541787bfe6704f2b223d3a890b5325ca0acae2b0398909b413e`
 
 SHA-256: `267999acf534edb20dacd57a7bd713812021f71fbf3458aad03263342ca348fa`
 
-来源：[`packages/product-insight/model/src/types.ts:215`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:217`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -19649,7 +19649,7 @@ SHA-256: `fa47f96898f93339d16f9c03c1dc2ec058f1d70fcda83b59f60b4c86f85633f6`
 
 SHA-256: `11f3073383e223a0b3e02c769513b5ee839d074e41a3085739cfc3288781b932`
 
-来源：[`packages/product-insight/model/src/types.ts:147`](../packages/product-insight/model/src/types.ts)
+来源：[`packages/product-insight/model/src/types.ts:149`](../packages/product-insight/model/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

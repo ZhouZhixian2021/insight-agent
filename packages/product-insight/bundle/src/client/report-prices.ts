@@ -3,12 +3,17 @@ import { parseGfmWithMath } from '@deepseek-ai/dsh-client-ui-primitives'
 type Block = ReturnType<typeof parseGfmWithMath>['children'][number]
 type Table = Extract<Block, { type: 'table' }>
 
+function withoutPriceCitations(value: string): string {
+  return value.trim().replace(/(?:\s*(?:\[\^product-source-\d+\]|\[\\\[\d+\\\]\]\(<https?:\/\/[^<>\s]+>\)))+$/gu, '')
+}
+
 function amount(value: string, market: string) {
-  const match = /^(US\\?\$|\\?\$|USD|RMB|CNY|人民币|美元)\s*(\d+(?:,\d{3})*(?:\\?\.\d+)?(?:\s*\[\^product-source-\d+\])*)$/u.exec(value.trim())
+  const bare = withoutPriceCitations(value)
+  const match = /^(US\\?\$|\\?\$|USD|RMB|CNY|人民币|美元)\s*(\d+(?:,\d{3})*(?:\\?\.\d+)?)$/u.exec(bare)
   if (!match?.[1] || !match[2]) return undefined
   const [, unit, price] = match
   if ((unit === '$' || unit === '\\$') && market !== '美国') return undefined
-  return { currency: /^(?:RMB|CNY|人民币)$/u.test(unit) ? '人民币' : '美元', price }
+  return { currency: /^(?:RMB|CNY|人民币)$/u.test(unit) ? '人民币' : '美元', price: price + value.trim().slice(bare.length) }
 }
 
 /** Expand explicitly labelled pairs in older Chinese regional price tables, retaining their original source markers. */
@@ -30,7 +35,7 @@ function regionalPrices(rows: string[][]): string | undefined {
       if (pair.length === 2 && regular && education?.currency === regular.currency) {
         hasPair = true
         priceRows.push([row[0] ?? '', `${region}（${regular.currency}）`, regular.price, education.price])
-      } else if (/^(?:官方摘录未给|未披露|未提供|未注明)(?:\s*\[\^product-source-\d+\])*$/u.test(value)) {
+      } else if (/^(?:官方摘录未给|未披露|未提供|未注明)$/u.test(withoutPriceCitations(value))) {
         priceRows.push([row[0] ?? '', region + '（币种未列）', value, value])
       } else return undefined
     }

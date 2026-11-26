@@ -38,12 +38,16 @@ describe('material-led insight output', () => {
     const result = await repairInsight(material, invoke)
     expect(invoke).toHaveBeenCalledTimes(2)
     for (const [user] of invoke.mock.calls) {
-      const { styleReference: reference, ...investigation } = JSON.parse(user)
+      const { styleReference: reference, ...investigation } = JSON.parse(user) as {
+        styleReference: typeof styleReference
+        pageSummaries?: unknown
+        evidence?: { evidenceId: string }[]
+      }
       expect(reference).toEqual(styleReference)
       if (mode === 'summaries') {
         expect(investigation.pageSummaries).toEqual(current.pageSummaries)
         expect(investigation.evidence).toBeUndefined()
-      } else expect(investigation.evidence.map((item: { evidenceId: string }) => item.evidenceId)).toEqual(['E1'])
+      } else expect(investigation.evidence?.map(item => item.evidenceId)).toEqual(['E1'])
     }
     expect(result.sections[0]?.text).toContain(`[[cite:${mode === 'summaries' ? 'P1' : evidenceId}]]`)
     expect(renderProductSynthesis(sourceRecords, current, result)).not.toContain('m6-report.html')
@@ -54,7 +58,7 @@ describe('material-led insight output', () => {
     const check = inspectInsight(response([{ ...section, text, imageUse: { mode: 'cite_only' } }, ...coverage]).text, visual)
     expect(check.issues).toEqual([])
     const md = renderProductSynthesis(sourceRecords, visual, check)
-    expect(md).toContain('[^product-source-1]')
+    expect(md).toContain('[\\[1\\]](<https://example.com/a>)')
     expect(md).not.toContain('data:image')
     expect(md).not.toContain('[[figure:')
     const prompt = insightRequest(visual, synthesisAliases(visual))
@@ -68,7 +72,10 @@ describe('material-led insight output', () => {
     const check = inspectInsight(response([{ ...section, text, imageUse: display }, ...coverage]).text, visual)
     expect(check.issues).toEqual([])
     const md = renderProductSynthesis(sourceRecords, visual, check)
-    expect(md).toContain('| 条件 | 延迟 |\n| --- | --- |\n| A\\|B &lt;tag&gt; | 42 ms[^product-source-1] |')
+    expect(md).toContain('| 条件 | 延迟 |\n| --- | --- |\n| A\\|B &lt;tag&gt; | 42 ms[\\[1\\]](<https://example.com/a>) |')
+    const encoded = { ...visual, images: [{ ...visual.images[0]!, pageUrl: 'https://example.com/%E8%8A%AF_(M6)|test.pdf#page=7' }] }
+    expect(renderProductSynthesis(sourceRecords, encoded, check)).toContain(
+      '42 ms[\\[1\\]](<https://example.com/%E8%8A%AF_%28M6%29%7Ctest.pdf#page=7>) |')
     expect(md).toContain('第二段。\n\n![I1](data:image/png;base64,AAAA)\n\nLatency')
     expect(md.indexOf('[图片来源]')).toBeLessThan(md.indexOf('第三段。'))
   })
@@ -92,7 +99,7 @@ describe('material-led insight output', () => {
     const out = await repairInsight(visual, async (_user, ordinal) => ordinal === 1 ? first : response([]))
     expect(out.sections[0]?.imageUse).toEqual({ mode: 'cite_only' })
     const markdown = renderProductSynthesis(sourceRecords, visual, out)
-    expect(markdown).toContain('仅引用。[^product-source-1]')
+    expect(markdown).toContain('仅引用[\\[1\\]](<https://example.com/a>)。')
     expect(markdown).not.toContain('data:image')
   })
 

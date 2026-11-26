@@ -26,7 +26,7 @@ import type { ProductInvestigationAdapters, ProductInvestigationCheckpoint, Prod
 import type { ProductSemanticReview } from './claim-review.ts'
 import { checkCrossSourceJudgments, type ProductCrossSourceJudgment,
   type ProductQuestionVerification } from './claim-verification.ts'
-import { collectProductImages } from './visual-material.ts'
+import { collectProductImages, openProductImageReader } from './visual-material.ts'
 import { type ProductSynthesisInput } from './report.ts'
 import { writeProductHtml, type AuthoredProductReport } from './html-report.ts'
 import { htmlWritingRequest, productHtmlInstruction } from './html-writing.ts'
@@ -482,16 +482,14 @@ async function performProductInvestigation(ctx: Context, session: Session, model
   }
   /** Official-feed budget: the page, four well-known feed paths, two sitemap probes, and one index child. */
   const OFFICIAL_FEED_MAXIMUM_PROBES = 8
-  /** Enough official posts to seed the pool without crowding out search results. */
-  const OFFICIAL_FEED_MAXIMUM_LINKS = 6
+  // Transport bounds the leads from each query or feed. Reading slots are assigned across the pooled results.
+  const maximumDiscoveryResults = 60
   const officialFeed: ProductInvestigationAdapters['officialFeed'] = (url, accept, signal) =>
     discoverOfficialLinks(url, { fetch: (target, inner) => web.fetch({ url: target }, inner ?? signal),
-      maximumLinks: OFFICIAL_FEED_MAXIMUM_LINKS, maximumProbes: OFFICIAL_FEED_MAXIMUM_PROBES, accept,
+      maximumLinks: maximumDiscoveryResults, maximumProbes: OFFICIAL_FEED_MAXIMUM_PROBES, accept,
       ...signal === undefined ? {} : { signal } })
-  /** One news feed read; the feed itself returns only its newest items, so the bound stays small. */
-  const NEWS_FEED_MAXIMUM_LINKS = 6
   const newsFeed: ProductInvestigationAdapters['newsFeed'] = async (query, accept, signal) =>
-    (await discoverNewsLinks(query, accept, { maximumLinks: NEWS_FEED_MAXIMUM_LINKS,
+    (await discoverNewsLinks(query, accept, { maximumLinks: maximumDiscoveryResults,
       read: async (target, inner) => {
         const page = await web.fetch({ url: target }, inner ?? signal)
         return page.body.kind === 'html' || page.body.kind === 'text' ? page.body.content : undefined
@@ -566,8 +564,10 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       signal, AbortSignal.timeout(Math.min(Math.ceil(remaining), 2_147_483_647)),
     ])
     onProgress('正在重新核对已保存的产品来源')
-    const fresh = await fetchProductPages(recovered.discovery.candidates.items, { web: productWeb, now, saveText },
-      deadline, maximumPageCharacters)
+    const fresh = await fetchProductPages(recovered.discovery.candidates.items, {
+      web: productWeb, now, saveText,
+      ...(recovered.schemaVersion === 4 && { reviewLayout: { previousSnapshots: recovered.pages.snapshots.items } }),
+    }, deadline, maximumPageCharacters)
     await savePages(recovered.discovery.candidates.items, fresh.snapshots.items)
     const elapsedMilliseconds = recovered.elapsedMilliseconds + Math.max(0, performance.now() - started)
     if (deadline.aborted || fresh.cancelled || fresh.snapshots.failures.length > 0) {
@@ -585,7 +585,7 @@ async function performProductInvestigation(ctx: Context, session: Session, model
     `正在依据保存快照从${recovered.schemaVersion === 4 ? '逐篇提要与全文审核' : ({ pages: '网页读取', evidence: '证据提取', claims: '结论审核', verification: '跨站核对' })[recovered.stage]}检查点续跑`)
   const extractionCache = new Map<string, { pageId: string; drafts: readonly ProductEvidenceDraft[] }>()
   const result = await runInvestigation({ sessionId: key, events,
-    maxResultsPerQuery: 60, extractionMethod: { name: 'product-model', version: '1' },
+    maxResultsPerQuery: maximumDiscoveryResults, extractionMethod: { name: 'product-model', version: '1' },
     ...activeCheckpoint === undefined ? {} : { checkpoint: activeCheckpoint },
     ...sourceRevalidation === undefined ? {} : { sourceRevalidation } }, {
     web: productWeb, now, saveText, officialFeed, newsFeed,
@@ -595,8 +595,11 @@ async function performProductInvestigation(ctx: Context, session: Session, model
       return Promise.resolve(text)
     },
     savePages, saveCheckpoint,
-    summarizePage: (page, snapshot, text, active) => readReviewedProductPage(page, snapshot, text, plan,
-      pageSummaryModel(ctx, session, model, plan.planId, page.candidatePageId, snapshot.contentHash, events, persist, active), active),
+    summarizePage: (page, snapshot, text, active, beforeNextRequest) => readReviewedProductPage(page, snapshot, text, plan,
+      pageSummaryModel(ctx, session, model, plan.planId, page.candidatePageId, snapshot.contentHash, events, persist, active),
+      active, beforeNextRequest),
+    openImageReader: (active, schedule, capacity) =>
+      openProductImageReader(ctx, session, model, plan, events, persist, onProgress, active, schedule, capacity),
     extractImages: (images, active) => collectProductImages(ctx, session, model, plan, images, events, persist, onProgress, active),
     proposeEvidence: (page, text, questions, requestSignal, fragment, maximumDrafts) =>
       proposeEvidence(ctx, session, model, page, text, questions, persist, events,

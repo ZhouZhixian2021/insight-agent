@@ -3,8 +3,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { useMemo, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import { ProductReport, productRaster } from './ProductReport.tsx'
-import { productPriceMarkdown } from './report-prices.ts'
+import { ProductReport, productRaster, productReportMarkdown } from './ProductReport.tsx'
 import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatNode, ChatNodeViewProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -342,7 +341,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:16px}
 `
 
 // Imported sessions may also contain a document. Check it in an inert template before exposing it as a download.
-function savedOfflineHtml(html?: string): string | undefined {
+function savedOfflineReport(html?: string, markdown = ''): { html: string; markdown: string } | undefined {
   if (!html) return undefined
   // The writer places the offline policy before any content that could request a resource.
   const start = html.indexOf('<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy"')
@@ -361,13 +360,54 @@ function savedOfflineHtml(html?: string): string | undefined {
       if (a.name === 'href' && (el.tagName !== 'A' || !/^(?:#|https?:\/\/)/iu.test(a.value))) return undefined
     }
   }
-  return html
+  const internal = 'a[href^="#"]'
+  const citationNumber = (a: Element) => {
+    if (a.closest('nav,[role="navigation"]')) return undefined
+    const label = a.textContent.trim()
+    return /^\[(\d+)\]$/u.exec(label)?.[1] ?? ((a.closest('sup') || a.querySelector('sup') || a.getAttribute('role') === 'doc-noteref')
+      && /^\d+$/u.test(label) ? label : undefined)
+  }
+  if (![...root.querySelectorAll(internal)].some(citationNumber)) return { html, markdown }
+  const report = new DOMParser().parseFromString(html, 'text/html')
+  const targets = new Map<string, string | undefined>()
+  for (const a of report.querySelectorAll(internal)) {
+    const number = citationNumber(a)
+    if (!number) continue
+    const hash = a.getAttribute('href') ?? ''
+    const target = report.getElementById(hash.slice(1))
+    const list = target?.matches('ol') ? target : target?.querySelector(':scope > ol:only-of-type')
+    const numberedEntry = list && !list.matches('[start],[reversed]') && !list.querySelector(':scope > li[value]')
+      ? list.querySelectorAll(':scope > li')[Number(number) - 1] : undefined
+    const entry = target?.closest('li,dd,p,a[href]') ?? numberedEntry
+    const links = entry?.matches('a') ? [entry] : [...entry?.querySelectorAll('a[href]') ?? []]
+    const urls = new Set(links.map(link => link.getAttribute('href') ?? '').filter(href => /^https?:\/\//iu.test(href)))
+    const [url] = urls.size === 1 ? urls : []
+    const source = url && URL.canParse(url) ? new URL(url) : undefined
+    const href = source && !source.username && !source.password ? source.href : undefined
+    targets.set(number + hash, href)
+    if (href) {
+      a.setAttribute('href', href)
+      a.setAttribute('target', '_blank')
+      a.setAttribute('rel', 'noopener noreferrer')
+    } else {
+      a.removeAttribute('href')
+      a.setAttribute('title', '此编号缺少可确认的来源网址')
+    }
+  }
+  const direct = markdown.replace(/\[(?:\\\[(\d+)\\\]|(\d+))\]\(<(#[^<>\s]+)>\)/gu,
+    (whole, bracketed: string | undefined, bare: string | undefined, hash: string) => {
+      const number = bracketed ?? bare
+      if (number === undefined || !targets.has(number + hash)) return whole
+      const href = targets.get(number + hash)
+      return href ? `[\\[${number}\\]](<${href}>)` : `\\[${number}\\]`
+    })
+  return { html: '<!doctype html>' + report.documentElement.outerHTML, markdown: direct }
 }
 
 /** Produce a self-contained, script-free HTML report from the saved product Markdown. */
 export function exportProductHtml(run: ProductChatRun, t: PropsLocale<'productRun'>['t']): string {
-  const authored = savedOfflineHtml(run.reportHtml)
-  if (authored) return authored
+  const authored = savedOfflineReport(run.reportHtml)
+  if (authored) return authored.html
   if (run.report === undefined) throw new Error('Product HTML export requires a saved report')
   const template = document.createElement('template')
   template.innerHTML = renderToStaticMarkup(<ProductReport text={run.report}
@@ -427,7 +467,7 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
   'node' | 'useInput' | 'inputActions'> & PropsLocale<'productRun'>) {
   const run = node.data
   const markdown = run.report
-  const authored = useMemo(() => savedOfflineHtml(run.reportHtml), [run.reportHtml])
+  const authored = useMemo(() => savedOfflineReport(run.reportHtml, markdown), [run.reportHtml, markdown])
   const [previewOpen, setPreviewOpen] = useState(false)
   const [traceStatus, setTraceStatus] = useState('all')
   const stages: readonly (readonly [ProductRunKey, number])[] = run.summaryMode
@@ -435,16 +475,20 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
     : [['pages', 1], ['evidence', 2], ['review', 3], ...(run.verifications > 0 ? [['verification', 4] as const] : []), ['report', 5]]
   const status = run.deliveryStatus ?? run.runState
   const blockers = deliveryBlockers(run)
+  const capturingDuringReview = run.summaryMode && run.runState === 'running' && run.stage === 2
+    && !run.trace?.some(event => event.type === 'product/pages-v1' || event.type === 'product/checkpoint-v1')
+  const readingPages = capturingDuringReview ? new Set(run.trace?.flatMap(event =>
+    event.type === 'product/page-summary-request-v1' && event.page ? [event.page] : [])).size : 0
   return <section className={css.card} data-product-insight-run={node.id} aria-label={t('title')}>
     <header className={css.header}><div><h3>{run.title || t('title')}</h3><p>{t(status)}</p></div>
       {run.runState === 'running' && <span className={css.pulse} aria-hidden="true" />}</header>
     <ol className={css.stages}>{stages.map(([label, index]) => {
-      const state = stageState(run, index)
+      const state = index === 1 && capturingDuringReview ? 'active' : stageState(run, index)
       return <li key={label} data-state={state}><span aria-hidden="true">{state === 'done' ? '✓' : state === 'active' ? '●' : '○'}</span>
         <span>{t(label)}</span><small>{t(state)}</small></li>
     })}</ol>
     <dl className={css.stats}>
-      <div><dt>{t('sourcePages')}</dt><dd>{run.candidatePages} / {run.availablePages}</dd></div>
+      <div><dt>{t('sourcePages')}</dt><dd>{capturingDuringReview ? `— / ≥${readingPages}` : `${run.candidatePages} / ${run.availablePages}`}</dd></div>
       <div><dt>{t(run.summaryMode ? 'summariesRead' : 'evidenceCount')}</dt><dd>{run.evidence}</dd></div>
       <div><dt>{t(run.summaryMode ? 'summariesReviewed' : 'claimCount')}</dt><dd>{run.claims}</dd></div>
       {run.verifications > 0 && <div><dt>{t('verificationCount')}</dt><dd>{run.verifications}</dd></div>}
@@ -471,12 +515,12 @@ export function ProductRunCard({ node, t, useInput, inputActions }: Pick<ChatNod
     {markdown !== undefined ? <section className={css.report}>
       <div className={css.reportHeader}><strong>{t(run.deliveryStatus ?? 'draft')}</strong>
         <div className={css.reportActions}>
-          <button type="button" onClick={() => { downloadMarkdown(authored ? markdown : productPriceMarkdown(markdown)) }}>{t('download')}</button>
+          <button type="button" onClick={() => { downloadMarkdown(authored?.markdown ?? productReportMarkdown(markdown)) }}>{t('download')}</button>
           <button type="button" onClick={() => { downloadProductHtml(exportProductHtml(run, t)) }}>{t('downloadHtml')}</button>
         </div></div>
       <details onToggle={(e) => { setPreviewOpen(e.currentTarget.open) }}><summary>{t('reportContent')}</summary>
         {authored ? previewOpen && <iframe className={css.reportFrame} sandbox="allow-popups allow-popups-to-escape-sandbox"
-          referrerPolicy="no-referrer" title={t('reportContent')} srcDoc={authored} />
+          referrerPolicy="no-referrer" title={t('reportContent')} srcDoc={authored.html} />
           : <ProductReport text={markdown} labels={{ code: { copyLabel: t('htmlCopy'), copiedLabel: t('htmlCopied') }, footnotes: t('htmlFootnotes') }} />}
       </details>
     </section> : run.runState === 'completed' && <p role="note">{t('noReport')}</p>}

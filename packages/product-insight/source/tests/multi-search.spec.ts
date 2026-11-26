@@ -36,6 +36,7 @@ describe('direct multiple-engine product search', () => {
     const result = await searchMultiple('Notion team permissions', 2, ['duckduckgo', 'bing', 'yahoo'], fetch)
     expect(result.sources.map(source => source.url)).toEqual(['https://example.com/spec', 'https://example.org/permissions'])
     expect(result.sources.map(source => 'engine' in source ? source.engine : undefined)).toEqual(['duckduckgo', 'yahoo'])
+    expect(result.sources[0]?.snippet).toBe('Official features')
     expect(result.truncated).toBe(true)
     expect(result.content).toContain('合并去重 3 条，保留 2 条')
     expect(result).toMatchSnapshot()

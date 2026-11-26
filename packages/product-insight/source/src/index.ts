@@ -1,11 +1,11 @@
 /** Bounded product-page discovery over the provider-neutral DSH Web search API. */
-import { createCandidatePageId, createProductBatchResult, createProductFailureId,
+import { createProductBatchResult, createProductFailureId,
   isExecutableProductPlan, type CandidatePage, type Product, type ProductBatchResult,
   type ProductFailure, type ProductFailureId, type ProductPlan, type ProductQuestionId,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { productQuestionTerms } from './page-content.ts'
-import { relevanceSignals, scoreCandidateRelevance, type RelevanceVerdict } from './relevance.ts'
+import { candidateKey, parseCandidateUrl, ProductCandidatePool, queryKey, screenNavigation, withinDomain } from './candidate-pool.ts'
 import type { OfficialFeedResult, OfficialLink } from './official-feed.ts'
 
 export { name, inject, Config, apply } from './web-provider.ts'
@@ -71,6 +71,17 @@ export interface ProductDiscoveryInput {
  */
 export function isProductGapSearch(search: ProductSearchAttempt): boolean {
   return search.reason === 'evidence_gap' || search.reason === 'corroboration_gap'
+}
+
+/**
+ * Match a search attempt to the approved question it helps answer.
+ * @param search - Recorded discovery or follow-up search.
+ * @param question - Approved question and its standalone queries.
+ * @returns Whether the question owns this attempt or shares its original discovery query.
+ */
+export function searchAppliesToProductQuestion(search: ProductSearchAttempt, question: ProductPlan['questions'][number]): boolean {
+  return search.questionId === question.questionId || (!isProductGapSearch(search)
+    && (question.searchQueries?.some(query => queryKey(query) === queryKey(search.query)) ?? false))
 }
 
 /** Discovery link a provider may attribute to the anonymous engine that returned it. */
@@ -157,36 +168,7 @@ function capSearchQuery(query: string, maximum: number): string {
 }
 
 /**
- * Distinctive product tokens that separate a product post from its vendor's other news.
- *
- * A token carrying a digit names a product line (`m6`, `iphone18`) but not the company, so an
- * official feed published in another language still matches the English post. A name without
- * such a token falls back to the whole name.
- *
- * @param product - Investigated product with its aliases.
- * @returns Lowercase tokens to look for in an official link title or path.
- */
-function productDesignators(product: Product): readonly string[] {
-  const names = [product.name, ...product.aliases ?? []]
-    .map(name => name.trim().toLocaleLowerCase()).filter(name => name.length > 0)
-  const marked = names.flatMap(name => name.split(/[^\p{L}\p{N}]+/u))
-    .filter(token => token.length >= 2 && /\d/u.test(token))
-  return [...new Set(marked.length > 0 ? marked : names)]
-}
-
-/**
- * Decide whether an official feed link is about the product rather than the vendor's other news.
- * @param link - Feed or sitemap link from the official site.
- * @param designators - Tokens returned by {@link productDesignators}.
- * @returns Whether the link title or path names the product line.
- */
-function namesProductLine(link: OfficialLink, designators: readonly string[]): boolean {
-  const candidate = `${link.title ?? ''} ${new URL(link.url).pathname}`.toLocaleLowerCase()
-  return designators.some(token => candidate.includes(token))
-}
-
-/**
- * Search each approved question once and merge initial candidates in question order at each result rank.
+ * Run the approved search intents and allocate reading slots after screening all discovery channels.
  * An optional follow-up searches approved unresolved questions within the remaining candidate allowance.
  * @param input - Product, exact approved plan, and explicit result bound.
  * @param adapters - Provider-neutral Web search and the run clock.
@@ -217,13 +199,11 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     || [...input.corroborationFor?.keys() ?? []].some(id => !gap?.includes(id))) {
     throw new RangeError('Product gap search exceeds the approved questions or search allowance')
   }
-  const candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url), page]))
+  let candidates = new Map(input.existing?.candidates.items.map(page => [candidateKey(page.url), page]))
   const failures: ProductFailure[] = [...input.existing?.candidates.failures ?? []]
   const searches: ProductSearchAttempt[] = [...input.existing?.searches ?? []]
-  const initialBatches: {
-    search: { questionId: ProductQuestionId; recordedCount: number; truncated: boolean }
-    sources: ReturnType<typeof screenSource>[]
-  }[] = []
+  const pool = new ProductCandidatePool(product, plan, adapters.now)
+  const batches: { search: { recordedCount: number; truncated: boolean }; keys: Set<string> }[] = []
   const official = product.officialUrl === undefined ? undefined : new URL(product.officialUrl)
   const startedAt = Date.parse(adapters.now())
   const maximumElapsedMinutes = plan.limits?.maximumElapsedMinutes
@@ -234,66 +214,26 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     throw new RangeError('Product officialUrl must be HTTP(S)')
   }
   const candidateLimit = maximum ?? Number.POSITIVE_INFINITY
-  const priorities = ['selected', 'excluded'] as const
   /** Plans that carry confirmed focus directions search every site, not a reviewed host list. */
   const focusDriven = plan.focus !== undefined
-  /** Legacy plans allowlist `sourcePublishers`; a focus plan only adds sites the user named. */
-  const namedSites = focusDriven ? plan.additionalSites : plan.sourcePublishers
-  /**
-   * Screen one link. Search results additionally need metadata that names the
-   * product or the question; seeds and official feed posts already carry that
-   * evidence, and user-named sites are trusted as approved leads.
-   */
-  function screenSource(source: ProductSearchSource, origin: 'seed' | 'feed' | 'search' = 'search',
-    question?: string) {
-    const parsed = parseCandidateUrl(source.url)
-    const officialPage = parsed !== null && official !== undefined && withinDomain(parsed.hostname, official.hostname)
-    const registeredSite = parsed === null ? undefined : namedSites?.find(item => withinDomain(parsed.hostname, item.domain))
-    const leadingBrand = registeredSite === undefined ? undefined
-      : /^[a-z][a-z0-9-]{2,}/iu.exec(product.name)?.[0].toLocaleLowerCase()
-    const named = [source.title, source.snippet, parsed?.hostname, parsed?.pathname].some(part =>
-      part !== undefined && [product.name, ...product.aliases ?? []].some(name =>
-        name.trim().length > 0 && part.toLocaleLowerCase().includes(name.toLocaleLowerCase())))
-      || leadingBrand !== undefined && [source.title, source.snippet, parsed?.pathname].some(part =>
-        part !== undefined && part.toLocaleLowerCase().split(/[^a-z0-9]+/u).includes(leadingBrand))
-    const verdict = origin !== 'search' || officialPage || registeredSite !== undefined ? undefined
-      : scoreCandidateRelevance({ url: source.url,
-        ...source.title === undefined ? {} : { title: source.title },
-        ...source.snippet === undefined ? {} : { snippet: source.snippet } },
-      relevanceSignals(product, question ?? ''))
-    return { source, parsed, officialPage, registeredSite, engine: searchSourceEngine(source), named, verdict,
-      screening: screenCandidate(parsed, officialPage, named, registeredSite !== undefined, focusDriven, verdict) }
-  }
-  /** A site entry point sorts last, so a content page takes the candidate slot it would occupy. */
-  const isEntrySource = (source: ReturnType<typeof screenSource>): boolean =>
-    source.parsed !== null && (isNavigationPage(source.parsed) || isEntryPoint(source.parsed))
-  const recordSource = ({ source, parsed, officialPage, registeredSite, engine, screening }: ReturnType<typeof screenSource>,
-    questionId: ProductQuestionId, channel?: string): 'recorded' | 'ignored' | 'limit' => {
-    const key = candidateKey(source.url, parsed)
+  function recordGap(page: CandidatePage, questionId: ProductQuestionId): 'recorded' | 'ignored' | 'limit' {
+    const key = candidateKey(page.url)
     const prior = candidates.get(key)
-    const promoted = gap !== undefined && prior !== undefined && prior.screening.status !== 'selected'
-      && screening.status === 'selected'
-    if (prior !== undefined && !promoted) {
-      if (gap === undefined && !prior.questionIds.includes(questionId)) {
-        candidates.set(key, { ...prior, questionIds: [...prior.questionIds, questionId] })
-      }
-      return 'ignored'
-    }
-    if (prior === undefined && candidates.size >= candidateLimit) {
-      if (gap === undefined || screening.status !== 'selected') return 'limit'
-      const replaced = [...candidates].findLast(([, page]) => page.screening.status !== 'selected')
-      if (replaced === undefined) return 'limit'
+    if (prior && (prior.screening.status === 'selected' || page.screening.status !== 'selected')) return 'ignored'
+    if (!prior && candidates.size >= candidateLimit) {
+      if (page.screening.status !== 'selected') return 'limit'
+      const replaced = [...candidates].findLast(([, entry]) => entry.screening.status !== 'selected')
+      if (!replaced) return 'limit'
       candidates.delete(replaced[0])
     }
-    const title = source.title || prior?.title
-    candidates.set(key, { schemaVersion: 1, candidatePageId: prior?.candidatePageId ?? createCandidatePageId(), planId: plan.planId,
-      productId: product.productId, url: prior?.url ?? source.url, ...(title ? { title } : {}),
-      sourceType: officialPage ? 'official_product_page' : 'other', discoveredAt: prior?.discoveredAt ?? adapters.now(),
-      questionIds: [...new Set([...prior?.questionIds ?? [], questionId])], screening: { ...screening, screenedAt: adapters.now() },
-      ...(officialPage ? { publisher: product.developer }
-        : registeredSite === undefined ? {} : { publisher: registeredSite.name }),
-      discoveryChannel: channel ?? (engine === undefined ? 'web' : `web:${engine}`) })
-    return prior === undefined ? 'recorded' : 'ignored'
+    candidates.set(key, {
+      ...page,
+      ...(prior && {
+        candidatePageId: prior.candidatePageId, url: prior.url, discoveredAt: prior.discoveredAt, title: page.title ?? prior.title,
+      }),
+      questionIds: [...new Set([...(prior?.questionIds ?? []), questionId])],
+    })
+    return prior ? 'ignored' : 'recorded'
   }
   if (gap === undefined && !signal?.aborted) {
     // A concrete official page is an explicit reading lead, not only a host identity.
@@ -301,26 +241,16 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       ...official !== undefined && official.pathname !== '/' && product.officialUrl !== undefined
         ? [{ url: product.officialUrl }] : [],
       ...input.initialSources ?? [],
-    ].filter(seed => !isNavigationSeed(seed.url))
-    for (const seed of seeds) {
-      const screened = screenSource(seed, 'seed')
-      if (screened.screening.status === 'excluded') continue
-      for (const question of plan.questions) recordSource(screened, question.questionId)
-    }
+    ]
+    seeds.forEach((seed, rank) => pool.observe(seed, rank, 'web'))
   }
-  // An official site publishes company-wide posts, so only titles and paths naming the product enter the pool.
+  // Skip unrelated entries when a provider reads a bounded feed. Retained links still compete in the common pool.
+  const acceptFeedLink = (link: OfficialLink): boolean => pool.matchesFeed(link)
   if (gap === undefined && !signal?.aborted && adapters.officialFeed !== undefined
     && product.officialUrl !== undefined) {
     try {
-      const designators = productDesignators(product)
-      const accept = (link: OfficialLink): boolean => namesProductLine(link, designators)
-      const feed = await adapters.officialFeed(product.officialUrl, accept, signal)
-      for (const link of feed.links) {
-        if (!accept(link)) continue
-        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } }, 'feed')
-        if (screened.screening.status === 'excluded') continue
-        for (const question of plan.questions) recordSource(screened, question.questionId, 'official-feed')
-      }
+      const feed = await adapters.officialFeed(product.officialUrl, acceptFeedLink, signal)
+      feed.links.filter(acceptFeedLink).forEach((link, rank) => pool.observe(link, rank, 'official-feed'))
     } catch (error: unknown) {
       failures.push(productFailure('discovery', errorCategory(error), errorMessage(error), adapters.now()))
     }
@@ -328,20 +258,23 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
   // A news feed ranks general stories above the product, so the pipe filters before it truncates.
   if (gap === undefined && !signal?.aborted && adapters.newsFeed !== undefined) {
     try {
-      const designators = productDesignators(product)
-      const accept = (link: OfficialLink): boolean => namesProductLine(link, designators)
-      for (const link of await adapters.newsFeed(product.name, accept, signal)) {
-        if (!accept(link)) continue
-        const screened = screenSource({ url: link.url, ...link.title === undefined ? {} : { title: link.title } }, 'feed')
-        if (screened.screening.status === 'excluded') continue
-        for (const question of plan.questions) recordSource(screened, question.questionId, 'news-feed')
-      }
+      const links = await adapters.newsFeed(product.name, acceptFeedLink, signal)
+      links.filter(acceptFeedLink).forEach((link, rank) => pool.observe(link, rank, 'news-feed'))
     } catch (error: unknown) {
       failures.push(productFailure('discovery', errorCategory(error), errorMessage(error), adapters.now()))
     }
   }
-  for (const question of gap === undefined ? plan.questions
-    : plan.questions.filter(item => gap.includes(item.questionId))) {
+  const queryGroups = new Map<string, { query: string; question: ProductPlan['questions'][number]; ids: Set<ProductQuestionId> }>()
+  for (const question of plan.questions.filter(item => gap === undefined || gap.includes(item.questionId))) {
+    const fallback = productSearchQuery(product, question.text, question.searchTerms)
+    for (const query of gap === undefined && question.searchQueries?.length ? question.searchQueries : [fallback]) {
+      const key = gap === undefined && question.searchQueries?.length ? `query:${queryKey(query)}` : `question:${question.questionId}`
+      const group = queryGroups.get(key) ?? { query, question, ids: new Set<ProductQuestionId>() }
+      group.ids.add(question.questionId)
+      queryGroups.set(key, group)
+    }
+  }
+  for (const { question, query: firstPassQuery, ids } of queryGroups.values()) {
     const primaryId = input.corroborationFor?.get(question.questionId)
     const retained = [...candidates.values()]
     const primary = primaryId === undefined ? undefined : retained.find(page => page.candidatePageId === primaryId)
@@ -359,7 +292,7 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
     if (primaryId !== undefined && primary === undefined) continue
     const reason = primaryId === undefined ? 'evidence_gap' : 'corroboration_gap'
     const terms = domain === undefined ? [] : [...productQuestionTerms(question.text)]
-    const query = domain === undefined ? productSearchQuery(product, question.text, question.searchTerms)
+    const query = domain === undefined ? firstPassQuery
       : [product.name, terms.join(' ') || question.text, plan.sourceCriteria?.productVersion,
         plan.sourceCriteria?.region, `site:${domain}`].filter(Boolean).join(' ').trim()
     const elapsed = maximumElapsedMinutes !== undefined
@@ -375,15 +308,16 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
       const search = { questionId: question.questionId, query, status: 'success' as const,
         returnedCount: result.sources.length, recordedCount: 0, truncated: result.truncated,
         ...gap === undefined ? {} : { reason } }
-      const sources = result.sources.map(source => screenSource(source, 'search', question.text))
       if (gap === undefined) {
-        initialBatches.push({ search, sources })
+        const keys = new Set(result.sources.map((source, rank) => pool.observe(source, rank, searchChannel(source), ids)))
+        batches.push({ search, keys })
       } else {
-        for (const source of sources.toSorted((left, right) => priorities.indexOf(left.screening.status)
-          - priorities.indexOf(right.screening.status))) {
-          if (domain !== undefined && !withinDomain(source.parsed?.hostname, domain)) continue
-          if (focusDriven && primaryHost !== undefined && !distinctHosts(primaryHost, source.parsed?.hostname)) continue
-          const outcome = recordSource(source, question.questionId)
+        const pages = result.sources.map(source => pool.screen(source, ids, searchChannel(source)).page)
+        for (const page of pages.toSorted((a, b) => Number(b.screening.status === 'selected') - Number(a.screening.status === 'selected'))) {
+          const host = parseCandidateUrl(page.url)?.hostname
+          if (domain !== undefined && !withinDomain(host, domain)) continue
+          if (focusDriven && primaryHost !== undefined && !distinctHosts(primaryHost, host)) continue
+          const outcome = recordGap(page, question.questionId)
           if (outcome === 'limit') { search.truncated = true; break }
           if (outcome === 'recorded') search.recordedCount += 1
         }
@@ -402,23 +336,16 @@ export async function discoverCandidatePages(input: ProductDiscoveryInput,
         ...gap === undefined ? {} : { reason } })
     }
   }
-  // Keep scanning settled results after reaching the limit so duplicate pages retain every question link.
-  for (const status of priorities) {
-    const batches = initialBatches.map(({ search, sources }) => ({ search,
-      sources: sources.filter(source => source.screening.status === status)
-        .toSorted((left, right) => Number(isEntrySource(left)) - Number(isEntrySource(right))) }))
-    const ranks = Math.max(0, ...batches.map(({ sources }) => sources.length))
-    for (let rank = 0; rank < ranks; rank += 1) {
-      for (const { search, sources } of batches) {
-        const source = sources[rank]
-        if (source === undefined) continue
-        const outcome = recordSource(source, search.questionId)
-        if (outcome === 'recorded') search.recordedCount += 1
-        if (outcome === 'limit') search.truncated = true
-      }
+  if (gap === undefined) {
+    candidates = pool.allocate(candidateLimit)
+    const counted = new Set<string>()
+    for (const { search, keys } of batches) for (const key of keys) {
+      if (!candidates.has(key)) search.truncated = true
+      else if (!counted.has(key)) { search.recordedCount++; counted.add(key) }
     }
   }
-  return { candidates: createProductBatchResult(dropRedundantNavigation([...candidates.values()]), failures), searches,
+  const pages = [...candidates.values()]
+  return { candidates: createProductBatchResult(gap === undefined ? pages : pages.map(screenNavigation(pages)), failures), searches,
     cancelled: input.existing?.cancelled || signal?.aborted || false }
 }
 
@@ -452,10 +379,6 @@ export function productCorroborationDomains(product: Product, plan: ProductPlan,
     && !withinDomain(host, domain) && !withinDomain(domain, host)).map(({ domain }) => domain)
 }
 
-function withinDomain(host: string | undefined, domain: string): boolean {
-  return host === domain || (host?.endsWith(`.${domain}`) ?? false)
-}
-
 /** Prefer an approved host with the fewest selected pages, breaking ties in favor of untried hosts. */
 function gapSearchDomain(domains: readonly string[], candidates: readonly CandidatePage[],
   tried: ReadonlySet<string>): string | undefined {
@@ -474,137 +397,9 @@ function gapSearchDomain(domains: readonly string[], candidates: readonly Candid
   return best
 }
 
-function parseCandidateUrl(value: string): URL | null {
-  try {
-    const url = new URL(value)
-    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username || url.password) return null
-    return url
-  } catch { return null }
-}
-
-/** Navigation paths and hosts whose pages lead a reader into the site rather than to product content. */
-const NAVIGATION_PATH = /^\/(?:support|help|login|signin|sign-in|account|cart|shop|store|search)(?:\/|$)/iu
-const NAVIGATION_HOST = /^(?:support|help|account|login|signin)\./iu
-/** A locale prefix alone addresses the site root of that market, not a page. */
-const LOCALE_ROOT_PATH = /^\/[a-z]{2}(?:[-_][a-z]{2,4})?\/?$/iu
-/** Account, cart and search-result hosts never carry product content, whatever their path. */
-const ACCOUNT_HOST = /^(?:account|login|signin|cart|checkout)\./iu
-/** Account, cart and search-result paths never carry product content, whatever their depth. */
-const ACCOUNT_PATH = /^\/(?:account|login|signin|sign-in|cart|checkout|bag|search)(?:\/|$)/iu
-/** A store or shop root lists products; a deeper path can describe one configuration. */
-const STORE_ROOT_PATH = /^\/(?:store|shop)(?:\/|$)/iu
-
-/**
- * Whether a discovered page can only lead into the site.
- * @param url - Parsed candidate address.
- * @returns Whether the page is account, cart or search navigation that carries no product evidence.
- */
-function isNavigationPage(url: URL): boolean {
-  return ACCOUNT_HOST.test(url.hostname) || ACCOUNT_PATH.test(url.pathname)
-}
-
-/**
- * Whether a page addresses a store or shop root rather than one product configuration.
- * @param url - Parsed candidate address.
- * @returns Whether the page lists products instead of describing one.
- */
-function isStoreIndex(url: URL): boolean {
-  return STORE_ROOT_PATH.test(url.pathname)
-    && url.pathname.split('/').filter(segment => segment.length > 0).length <= 1
-}
-
-/**
- * Whether a page only names a site or market entry rather than a product page.
- * @param url - Parsed candidate address.
- * @returns Whether the page is a site root, a locale root, or a store index.
- */
-function isEntryPoint(url: URL): boolean {
-  return url.pathname === '/' || LOCALE_ROOT_PATH.test(url.pathname) || isStoreIndex(url)
-}
-
-/**
- * Exclude site entry points that only duplicate a deeper page on the same host.
- * @param candidates - Final discovery candidates in discovery order.
- * @returns Candidates with redundant entry points marked excluded.
- */
-function dropRedundantNavigation(candidates: readonly CandidatePage[]): readonly CandidatePage[] {
-  const contentHosts = new Set(candidates
-    .map(page => ({ page, url: parseCandidateUrl(page.url) }))
-    .filter((entry): entry is { page: CandidatePage; url: URL } => entry.url !== null
-      && entry.page.screening.status !== 'excluded' && !isNavigationPage(entry.url) && !isEntryPoint(entry.url))
-    .map(entry => entry.url.hostname))
-  return candidates.map((page) => {
-    if (page.screening.status === 'excluded') return page
-    const url = parseCandidateUrl(page.url)
-    if (url === null) return page
-    const navigation = isNavigationPage(url)
-    const redundant = !navigation && isEntryPoint(url) && contentHosts.has(url.hostname)
-    if (!navigation && !redundant) return page
-    return { ...page, screening: { ...page.screening, status: 'excluded' as const,
-      reason: navigation
-        ? 'Search result addresses site navigation; the page carries no product evidence.'
-        : 'Site entry point duplicates a deeper page on the same host; the deeper page carries the content.' } }
-  })
-}
-
-/** Whether a planned link names site navigation, which costs a candidate slot and yields no evidence. */
-function isNavigationSeed(value: string): boolean {
-  const url = parseCandidateUrl(value)
-  if (url === null) return false
-  return url.pathname === '/' || LOCALE_ROOT_PATH.test(url.pathname)
-    || NAVIGATION_HOST.test(url.hostname) || NAVIGATION_PATH.test(url.pathname)
-}
-
-function dedupUrl(url: URL): string {
-  const normalized = new URL(url)
-  normalized.hash = ''
-  for (const key of [...normalized.searchParams.keys()]) {
-    if (/^utm_/iu.test(key) || key === 'gclid' || key === 'fbclid') normalized.searchParams.delete(key)
-  }
-  return normalized.href
-}
-
-function candidateKey(url: string, parsed = parseCandidateUrl(url)): string {
-  return parsed === null ? `invalid:${url}` : dedupUrl(parsed)
-}
-
-/**
- * Screen one search result. A focus plan keeps every reachable page and judges
- * it by product relevance, because the user approved directions rather than a
- * host list; a legacy plan still drops hosts outside its reviewed allowlist.
- */
 /** Engine that returned one search source, when the provider attributes it; planning links carry none. */
-function searchSourceEngine(source: ProductSearchSource): string | undefined {
-  return typeof source.engine === 'string' ? source.engine : undefined
-}
-
-function screenCandidate(parsed: URL | null, officialPage: boolean, named: boolean,
-  registeredSite: boolean, focusDriven: boolean, verdict?: RelevanceVerdict):
-{ status: 'selected' | 'excluded'; reason: string } {
-  if (parsed === null) return { status: 'excluded', reason: 'Search result URL is not a valid HTTP(S) URL.' }
-  if (officialPage) {
-    return { status: 'selected', reason: 'URL matches the approved official host; check product relevance against the page text.' }
-  }
-  if (focusDriven) {
-    if (registeredSite) {
-      return { status: 'selected', reason: 'Host was named for this investigation; read it under the confirmed focus directions.' }
-    }
-    if (named) {
-      return { status: 'selected', reason: 'Search metadata names the product; the page is read under the confirmed focus directions.' }
-    }
-    if (verdict !== undefined && !verdict.relevant) {
-      return { status: 'excluded', reason: verdict.reason }
-    }
-    if (verdict !== undefined) {
-      return { status: 'selected', reason: `${verdict.reason} The page is read under the confirmed focus directions.` }
-    }
-    return { status: 'selected', reason: 'Valid search result admitted for full-text product relevance checking.' }
-  }
-  if (!registeredSite) return { status: 'excluded', reason: 'Host is not an approved official or external source; not fetched.' }
-  if (named) {
-    return { status: 'selected', reason: 'Search metadata names the product and its host matches a user-approved publisher domain.' }
-  }
-  return { status: 'selected', reason: 'Approved publisher admitted for full-text product relevance checking.' }
+function searchChannel(source: ProductSearchSource): string {
+  return source.engine ? `web:${source.engine}` : 'web'
 }
 
 /** Two hosts are distinct sites when neither names the other as a parent domain. */

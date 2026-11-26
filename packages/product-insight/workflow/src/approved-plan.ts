@@ -31,6 +31,8 @@ export interface ReviewedProductPlan {
   readonly questions: readonly string[]
   /** Per-question search words, aligned with `questions`; absent when the plan gave none. */
   readonly searchTerms?: readonly (readonly string[])[]
+  /** Standalone post-approval search queries, grouped by approved question. */
+  readonly searchQueries?: readonly (readonly string[])[]
   readonly limits: ProductPlanLimits
   readonly focus?: ProductPlanFocus
   readonly sourcePublishers?: readonly ProductSourcePublisher[]
@@ -96,6 +98,7 @@ export function productPlanFromApproval(input: ApprovedProductPlanInput): Approv
       questions: payload.questions.map((text, index) => ({
         questionId: brandString<ProductQuestionId>(`${planId}:question:${index + 1}`), text,
         ...payload.searchTerms?.[index]?.length ? { searchTerms: payload.searchTerms[index] } : {},
+        ...payload.searchQueries?.[index] ? { searchQueries: payload.searchQueries[index] } : {},
       })),
       limits: payload.limits,
       ...payload.focus === undefined ? {} : { focus: payload.focus },
@@ -176,6 +179,24 @@ function parseSearchTerms(value: Record<string, unknown>, questionCount: number)
   })
 }
 
+function parseSearchQueries(value: Record<string, unknown>, questionCount: number): string[][] | undefined {
+  if (value.searchQueries === undefined) return undefined
+  if (value.searchTerms !== undefined) throw new RangeError('Use searchQueries or legacy searchTerms, not both')
+  if (!Array.isArray(value.searchQueries) || value.searchQueries.length !== questionCount) {
+    throw new RangeError('Product plan searchQueries must list one entry per question')
+  }
+  return value.searchQueries.map((entry: unknown) => {
+    if (!Array.isArray(entry) || !entry.length || entry.length > 4) {
+      throw new RangeError('Each question requires one to four standalone search queries')
+    }
+    return entry.map((item: unknown) => {
+      const query = nonEmpty(item, 'Product search query').replace(/\s+/gu, ' ')
+      if (query.length > 60) throw new RangeError('Product search query exceeds 60 characters')
+      return query
+    })
+  })
+}
+
 function parseLimits(value: Record<string, unknown>, questionCount: number, legacyGapLimits: boolean):
 ProductPlanLimits & { readonly maximumCandidatePages: number } {
   if (!isRecord(value.limits)) throw new RangeError('Product plan limits must be an object')
@@ -230,7 +251,7 @@ function parseLegacyPlan(value: Record<string, unknown>): ReviewedProductPlan {
 
 function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
   exactKeys(value, ['schemaVersion', 'product', 'scope', 'focus', 'questions', 'limits',
-    'additionalSites', 'sourceCriteria', 'searchTerms'], 'Product plan')
+    'additionalSites', 'sourceCriteria', 'searchTerms', 'searchQueries'], 'Product plan')
   const { official, ...product } = parseIdentity(value)
   const scope = nonEmpty(value.scope, 'Product scope')
   const focus = parseFocus(value.focus)
@@ -243,7 +264,9 @@ function parseFocusPlan(value: Record<string, unknown>): ReviewedProductPlan {
   }
   const sourceCriteria = parseSourceCriteria(value)
   const searchTerms = parseSearchTerms(value, questions.length)
+  const searchQueries = parseSearchQueries(value, questions.length)
   return { product, scope, questions, limits, focus,
+    ...searchQueries === undefined ? {} : { searchQueries },
     ...searchTerms === undefined ? {} : { searchTerms },
     ...additionalSites === undefined ? {} : { additionalSites },
     ...sourceCriteria === undefined ? {} : { sourceCriteria } }

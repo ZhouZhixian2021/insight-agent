@@ -10,7 +10,9 @@ import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
 import { WorkspaceTypertGenerator } from '../packages/typert/generator/src/workspace.ts'
+import type { DshBundleManifest } from '../packages/util/package-manifest/src/types.ts'
 import { writeModuleGraph } from './gen-module-graph.ts'
+import { readBundlePluginDependencies } from './verify-cordis-config.ts'
 import {
   hasClientDeclaration,
   PACKAGE_DEPENDENCY_POLICY,
@@ -54,7 +56,7 @@ export interface PackageDependencyManifest {
   optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
   peerDependenciesMeta?: Record<string, unknown>
-  dsh?: { client?: { inject?: string[] } }
+  dsh?: { client?: { inject?: string[] }; bundle?: DshBundleManifest }
 }
 
 /** One workspace package and its source location. */
@@ -562,6 +564,13 @@ export async function readPackageDependencyFacts(
   const hostRuntime = role === 'client-only'
     ? { packageUses: new Map<string, string[]>(), exportUses: [] }
     : readHostRuntimeUses(root, pkg, await readHostBuildEntries(root, pkg), generatedHostSource)
+  const bundle = pkg.manifest.dsh?.bundle
+  if (bundle) {
+    for (const [name, files] of readBundlePluginDependencies(root, pkg.dir, bundle)) {
+      if (name === pkg.name) continue
+      for (const file of files) addUse(hostRuntime.packageUses, name, file)
+    }
+  }
   const servicePeers = policy.requiredServicePeers?.[pkg.name] ?? []
   const allSourceUses = readAllSourceUses(root, pkg)
   for (const name of servicePeers) {

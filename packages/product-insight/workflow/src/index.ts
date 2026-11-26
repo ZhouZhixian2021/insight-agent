@@ -1,6 +1,7 @@
 /** Bounded product investigation from an approved plan through cited report delivery. */
 import type { ProductInsight } from './insight-output.ts'
 import { ProductPageReviewError, type ReviewedProductPage } from './page-summary.ts'
+import { DEFAULT_MATERIAL_MODEL_CONCURRENCY, reviewCapturedPages, type ProductImageReader, type ScheduleImageModel } from './page-pipeline.ts'
 import { setTimeout as delay } from 'node:timers/promises'
 import { registerSearchRecognition } from './search-recognition.ts'
 import type { Context } from '@deepseek-ai/cordis'
@@ -52,31 +53,36 @@ export const name = 'product-insight-workflow'
 /** The plan guard observes tool dispatch before the review is presented. */
 export const inject = ['tools']
 
-/** Operator-owned style reference for the product report writer. */
+/** Operator settings for product research and report writing. */
 export interface Config {
   /** Absolute file path or a name in the package references directory. */
   writingReferenceFile?: string
+  /** Total text and image model slots per investigation, shared equally while both branches have work. */
+  materialModelConcurrency?: number
 }
-export const Config: z<Config> = z.object({ writingReferenceFile: z.string().min(1) })
+export const Config: z<Config> = z.object({
+  writingReferenceFile: z.string().min(1),
+  materialModelConcurrency: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(DEFAULT_MATERIAL_MODEL_CONCURRENCY),
+})
 
 /** Reject malformed product execution blocks without changing approval state. */
 export function apply(ctx: Context, config: Config = {}): void {
   registerSearchRecognition(ctx)
-  registerProductInvestigationTool(ctx, runApprovedProductInvestigation,
+  const materialModelConcurrency = config.materialModelConcurrency ?? DEFAULT_MATERIAL_MODEL_CONCURRENCY
+  registerProductInvestigationTool(ctx,
+    (input, adapters, signal) => runApprovedProductInvestigation({ ...input, materialModelConcurrency }, adapters, signal),
     signal => readProductWritingReference(config.writingReferenceFile, ctx.get('officeToPdf'), signal))
   ctx.on('tools/execute', async (exec, next) => {
-    if (exec.name === 'web_search' && exec.agent) {
-      const agents = ctx.get('agents')
-      if (!agents) throw new Error('Product search requires agent attribution')
-      return agents.withInitiator(exec.agent, next)
-    }
     if (exec.name === 'exit_plan_mode') {
       if (exec.agent && ctx.get('jobs')?.list(exec.agent.session.id).some(job =>
         job.kind === 'product-insight' && (job.status === 'running' || job.status === 'stopping'))) {
         throw new Error('当前产品调查仍在运行，请等待完成或明确取消后再批准新的计划。')
       }
       const args = exec.arguments as { readonly plan?: unknown } | null
-      parseProductPlanMarkdown(typeof args?.plan === 'string' ? args.plan : '')
+      const proposal = parseProductPlanMarkdown(typeof args?.plan === 'string' ? args.plan : '')
+      if (proposal.focus && !proposal.searchQueries) {
+        throw new Error('请在 searchQueries 中为每个问题列出独立的简短查询，分别查证不同内容，再提交审批。')
+      }
     }
     return next()
   })
@@ -87,6 +93,8 @@ export interface ProductInvestigationInput {
   readonly product: Product
   readonly plan: ProductPlan
   readonly maxResultsPerQuery: number
+  /** Per-investigation concurrency for page reading, review and visual model requests. */
+  readonly materialModelConcurrency?: number
   /** Observed preliminary search links from the same planning turn. */
   readonly initialSources?: WebSearchResult['sources']
   readonly extractionMethod: ProductEvidence['extractionMethod']
@@ -140,11 +148,13 @@ export interface ProductInvestigationAdapters {
   readonly newsFeed?: (query: string, accept: (link: OfficialLink) => boolean,
     signal?: AbortSignal) => Promise<readonly OfficialLink[]>
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
+  /** Stage captured images early and bind their report IDs after source order is known. */
+  readonly openImageReader?: (signal: AbortSignal, schedule: ScheduleImageModel, capacity: number) => ProductImageReader
   readonly extractImages?: (images: NonNullable<ProductPageFetchResult['images']>, signal?: AbortSignal) => Promise<ProductImageCard[]>
   readonly readText: (contentRef: string) => Promise<string>
-  /** New Session investigations read and independently review the complete captured page. */
+  /** Read and review the complete page, yielding borrowed capacity before another model request. */
   readonly summarizePage?: (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string,
-    signal?: AbortSignal) => Promise<ReviewedProductPage>
+    signal?: AbortSignal, beforeNextRequest?: () => Promise<void>) => Promise<ReviewedProductPage>
   readonly proposeEvidence: (page: CandidatePage, text: string, questions: readonly {
     readonly questionId: ProductQuestionId
     readonly text: string
@@ -204,19 +214,14 @@ export interface ProductInvestigationResult {
 export async function runApprovedProductInvestigation(input: {
   readonly sessionId: string
   readonly events: readonly SessionEvent[]
-  readonly maxResultsPerQuery: number
-  readonly extractionMethod: ProductEvidence['extractionMethod']
-  readonly checkpoint?: ProductInvestigationCheckpoint
-  readonly sourceRevalidation?: ProductPageFetchResult
-}, adapters: ProductInvestigationAdapters, signal?: AbortSignal): Promise<ProductInvestigationResult> {
-  const approved = latestApprovedProductPlan(input.events)
+} & Pick<ProductInvestigationInput, 'maxResultsPerQuery' | 'extractionMethod' | 'checkpoint' | 'sourceRevalidation' | 'materialModelConcurrency'>,
+adapters: ProductInvestigationAdapters, signal?: AbortSignal): Promise<ProductInvestigationResult> {
+  const { sessionId, events, ...options } = input
+  const approved = latestApprovedProductPlan(events)
   if (approved === undefined) throw new RangeError('Product investigation requires explicit plan approval')
-  const { product, plan } = productPlanFromApproval({ sessionId: input.sessionId, ...approved })
-  return runProductInvestigation({ product, plan, maxResultsPerQuery: input.maxResultsPerQuery,
-    initialSources: planningSearchSources(input.events, approved.identity),
-    extractionMethod: input.extractionMethod,
-    ...input.checkpoint === undefined ? {} : { checkpoint: input.checkpoint },
-    ...input.sourceRevalidation === undefined ? {} : { sourceRevalidation: input.sourceRevalidation } }, adapters, signal)
+  const { product, plan } = productPlanFromApproval({ sessionId, ...approved })
+  const initialSources = planningSearchSources(events, approved.identity)
+  return runProductInvestigation({ ...options, product, plan, initialSources }, adapters, signal)
 }
 
 /**
@@ -261,14 +266,12 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     ?? await discoverCandidatePages(input, { web: adapters.web, now: adapters.now,
       ...adapters.officialFeed === undefined ? {} : { officialFeed: adapters.officialFeed },
       ...adapters.newsFeed === undefined ? {} : { newsFeed: adapters.newsFeed } }, operationSignal)
-  const pages = input.checkpoint?.pages
-    ?? await fetchProductPages(discovery.candidates.items, adapters, operationSignal, maximumPageCharacters)
+  let pages: ProductPageFetchResult
   const sourceRevalidation = input.sourceRevalidation
   let currentCheckpoint = input.checkpoint
   const evidence: ProductEvidence[] = [...input.checkpoint?.evidence ?? []]
   const evidenceFingerprints = new Set(evidence.map(productEvidenceFingerprint))
-  const failures: ProductFailure[] = [...input.checkpoint?.failures
-    ?? [...discovery.candidates.failures, ...pages.snapshots.failures]]
+  const failures: ProductFailure[] = [...input.checkpoint?.failures ?? discovery.candidates.failures]
   const reviews: ProductSemanticReview[] = [...input.checkpoint?.reviews ?? []]
   const claims: ProductClaim[] = [...input.checkpoint?.claims ?? []]
   const verifications: ProductQuestionVerification[] = [...input.checkpoint?.verifications ?? []]
@@ -298,7 +301,7 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       evidence.push(item)
     }
   }
-  type ExtractionResult = { evidence: ProductEvidence[]; failures: ProductFailure[]; summary?: ReviewedProductPage }
+  type ExtractionResult = { evidence: ProductEvidence[]; failures: ProductFailure[] }
   const extractFragment = async ({ page, snapshot, text }: {
     page: CandidatePage
     snapshot: AvailableSourceSnapshot
@@ -350,11 +353,35 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       }
     }
   }
-  if (input.checkpoint === undefined) {
-    await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
-    if (!discovery.cancelled && !pages.cancelled && !operationSignal?.aborted) await checkpoint('pages', 0)
+  const onCaptured = async (captured: ProductPageFetchResult): Promise<void> => {
+    pages = captured
+    if (!input.checkpoint) {
+      failures.push(...pages.snapshots.failures)
+      await adapters.savePages(discovery.candidates.items, pages.snapshots.items)
+      if (!discovery.cancelled && !pages.cancelled && !operationSignal?.aborted) await checkpoint('pages', 0)
+    }
   }
-  {
+  let images: ProductImageCard[] = []
+  if (summarizePage && pageSummaries) {
+    const reviewed = await reviewCapturedPages({ candidates: discovery.candidates.items, adapters,
+      ...(input.materialModelConcurrency !== undefined && { modelConcurrency: input.materialModelConcurrency }),
+      summarize: summarizePage, maximumCharacters: maximumPageCharacters, onCaptured,
+      ...(input.checkpoint && { checkpoint: input.checkpoint }), ...(operationSignal && { signal: operationSignal }),
+      onSettled: async (next, outcome) => {
+        if (outcome && 'summary' in outcome) pageSummaries.push(outcome.summary)
+        else if (outcome) {
+          const { page, error } = outcome
+          failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: error instanceof ProductPageReviewError ? 'analysis' : 'extraction',
+            category: 'unknown', message: error instanceof Error ? error.message : String(error),
+            retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
+        }
+        await checkpoint('evidence', next)
+      } })
+    pages = reviewed.pages
+    images = reviewed.images
+  } else {
+    pages = input.checkpoint?.pages ?? await fetchProductPages(discovery.candidates.items, adapters, operationSignal, maximumPageCharacters)
+    await onCaptured(pages)
     const byPage = new Map(discovery.candidates.items.map(page => [page.candidatePageId, page]))
     const extractionStart = currentCheckpoint === undefined || currentCheckpoint.stage === 'pages' ? 0
       : currentCheckpoint.stage === 'evidence' ? currentCheckpoint.nextIndex : pages.snapshots.items.length
@@ -372,13 +399,9 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
             throw new RangeError('Saved product page exceeds the approved text limit')
           }
           if (text.length === 0) throw new RangeError('Saved product page has no readable text')
-          if (summarizePage) {
-            result.summary = await summarizePage(page, snapshot, text, operationSignal)
-            return
-          }
         } catch (error) {
           if (operationSignal?.aborted) return
-          result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: error instanceof ProductPageReviewError ? 'analysis' : 'extraction',
+          result.failures.push({ schemaVersion: 1, failureId: createProductFailureId(), stage: 'extraction',
             category: 'unknown', message: error instanceof Error ? error.message : String(error),
             retryable: true, occurredAt: adapters.now(), candidatePageId: page.candidatePageId })
           return
@@ -423,13 +446,12 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
       }
     }
     const commitPage = (result: ExtractionResult): void => {
-      if (result.summary) pageSummaries?.push(result.summary)
       appendEvidence(result.evidence)
       failures.push(...result.failures)
       result.evidence.length = 0
       result.failures.length = 0
     }
-    if (!summarizePage && (input.plan.limits?.maximumPageCharacters !== undefined || currentCheckpoint?.fragmentIndex !== undefined)) {
+    if (input.plan.limits?.maximumPageCharacters !== undefined || currentCheckpoint?.fragmentIndex !== undefined) {
       for (let index = extractionStart; index < pages.snapshots.items.length && !operationSignal?.aborted; index++) {
         const result: ExtractionResult = { evidence: [], failures: [] }
         await extractPage(index, result, async (fragmentIndex, order) => {
@@ -562,8 +584,9 @@ export async function runProductInvestigation(input: ProductInvestigationInput,
     questionId: question.questionId, missingContent: question.text,
     reason: 'No semantically reviewed source statement answers this question.', status: 'open',
   }))
-  const images = !operationSignal?.aborted && pages.images?.length && adapters.extractImages
-    ? await adapters.extractImages(pages.images, operationSignal) : []
+  if (!pageSummaries && !operationSignal?.aborted && pages.images?.length && adapters.extractImages) {
+    images = await adapters.extractImages(pages.images, operationSignal)
+  }
   const reportInput: ProductReportInput = { product: input.product, plan: input.plan, discovery, pages,
     ...(pageSummaries === undefined ? {} : { pageSummaries }),
     ...(images.length ? { images } : {}),
@@ -728,13 +751,13 @@ export function validateProductCheckpoint(input: ProductInvestigationInput,
       || checkpoint.fragmentOverlapCharacters !== undefined
       || checkpoint.gapReadCompleted || checkpoint.priorVerifications || checkpoint.evidence.length || checkpoint.claims.length
       || checkpoint.reviews.length || checkpoint.verifications.length
-      || new Set(checkpoint.pageSummaries.map(s => s.candidatePageId)).size !== checkpoint.pageSummaries.length
+      || new Set(checkpoint.pageSummaries.map((s: ReviewedProductPage) => s.candidatePageId)).size !== checkpoint.pageSummaries.length
       || checkpoint.pageSummaries.some((s: ReviewedProductPage) => {
         const snapshot = snapshotsByPage.get(s.candidatePageId)
-        const partial = s.partialReview
+        const partial = s.partialReview as ReviewedProductPage['partialReview'] | null
         return !settled.has(s.candidatePageId) || snapshot?.status !== 'available' || s.sourceSnapshotId !== snapshot.sourceSnapshotId
           || s.contentHash !== snapshot.contentHash || !Array.isArray(s.paragraphs) || !s.paragraphs.every(p => typeof p === 'string' && p.trim())
-          || partial !== undefined && (!partial || !Number.isSafeInteger(partial.total)
+          || partial !== undefined && (partial === null || !Number.isSafeInteger(partial.total)
             || !Array.isArray(partial.unresolved) || !partial.unresolved.length || !s.paragraphs.length
             || s.paragraphs.length + partial.unresolved.length > partial.total
             || !partial.unresolved.every((id, i, ids) => Number.isSafeInteger(id) && id > (ids[i - 1] ?? 0) && id <= partial.total))
