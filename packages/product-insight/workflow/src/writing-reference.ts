@@ -48,7 +48,12 @@ async function readPdfPages(bytes: Uint8Array, signal?: AbortSignal): Promise<Re
       for (const item of items) {
         if (!('str' in item)) continue
         if (!line && item.str) {
-          line = { left: Math.round(item.transform[4]), baseline: Math.round(item.transform[5]),
+          const left: unknown = item.transform[4]
+          const baseline: unknown = item.transform[5]
+          if (typeof left !== 'number' || !Number.isFinite(left) || typeof baseline !== 'number' || !Number.isFinite(baseline)) {
+            throw new Error(`PDF 第 ${number} 页的文字坐标无效。`)
+          }
+          line = { left: Math.round(left), baseline: Math.round(baseline),
             height: Math.round(item.height), text: '' }
           lines.push(line)
         }

@@ -1,6 +1,6 @@
 /** Acquire selected product pages and persist their canonical text before publishing snapshots. */
 import { createProductFailureId, createSourceSnapshotId,
-  type CandidatePage, type ProductBatchResult, type ProductFailure, type SourceSnapshot,
+  type AvailableSourceSnapshot, type CandidatePage, type ProductBatchResult, type ProductFailure, type SourceSnapshot,
 } from '@deepseek-ai/dsh-product-insight-model'
 import type { WebFetchResult } from '@deepseek-ai/dsh-web'
 
@@ -15,6 +15,10 @@ export interface ProductPageFetchAdapters {
   }
   /** Must return only after the complete canonical text is durably available at the reference. */
   readonly saveText: (page: CandidatePage, text: string, contentHash: string) => Promise<string>
+  /** Enqueue downstream work once this individual capture has been saved. */
+  readonly onPageSaved?: (page: CandidatePage, snapshot: AvailableSourceSnapshot, text: string, images: readonly ProductPageImage[]) => void
+  /** Preserve HTML row boundaries for summary review, recognizing the previous representation on resume. */
+  readonly reviewLayout?: { previousSnapshots?: readonly SourceSnapshot[] }
   readonly now: () => string
 }
 
@@ -42,7 +46,7 @@ export function sameProductPageFacts(saved: SourceSnapshot | undefined, fetched:
 const PRODUCT_PAGE_FETCH_CONCURRENCY = 8
 
 /**
- * Fetch up to eight selected pages concurrently, then persist text and settle snapshots in candidate order.
+ * Refill up to eight capture slots as each page settles. Publish the batch in candidate order.
  * A failed page retains its own failed snapshot and successful siblings remain available.
  * @param candidates - Discovered pages; selected pages and legacy needs-review pages are fetched.
  * @param adapters - Web fetch, durable text storage, and clock.
@@ -52,9 +56,9 @@ const PRODUCT_PAGE_FETCH_CONCURRENCY = 8
  */
 export async function fetchProductPages(candidates: readonly CandidatePage[], adapters: ProductPageFetchAdapters,
   signal?: AbortSignal, maximumCharacters?: number): Promise<ProductPageFetchResult> {
-  const images: ProductPageImage[] = []
-  const snapshots: SourceSnapshot[] = []
-  const failures: ProductFailure[] = []
+  const settled: { snapshot: SourceSnapshot; images?: readonly ProductPageImage[]; failure?: ProductFailure }[] = []
+  const previousHashes = new Map(adapters.reviewLayout?.previousSnapshots?.flatMap(s =>
+    s.status === 'available' ? [[s.candidatePageId, s.contentHash] as const] : []))
   const acquire = async (candidate: CandidatePage) => {
     const prepare = async (fetched: WebFetchResult) => {
       signal?.throwIfAborted()
@@ -67,68 +71,65 @@ export async function fetchProductPages(candidates: readonly CandidatePage[], ad
         && new URL(fetched.url).hostname !== new URL(candidate.url).hostname) {
         throw new RangeError('Product official page redirected to a different host; review the publisher before using it')
       }
+      const previousHash = previousHashes.get(candidate.candidatePageId)
       const prepared = fetched.body.kind === 'pdf' ? await prepareProductPdf(fetched, maximumCharacters, signal)
-        : prepareProductPage(fetched, maximumCharacters)
+        : prepareProductPage(fetched, maximumCharacters, adapters.reviewLayout && (previousHash ? { previousHash } : {}))
       return { ...prepared, images: fetched.body.kind === 'html' ? productPageImages(fetched.body.content, fetched.url) : [] }
     }
+    signal?.throwIfAborted()
+    const request = { url: candidate.url }
+    const fetched = await adapters.web.fetch(request, signal)
     try {
-      signal?.throwIfAborted()
-      const request = { url: candidate.url }
-      const fetched = await adapters.web.fetch(request, signal)
-      try {
-        return { prepared: await prepare(fetched) }
-      } catch (error) {
-        if (fetched.body.kind !== 'text' || !(error instanceof ProductPageTextLimitError) || !adapters.web.fetchFullText) throw error
-        signal?.throwIfAborted()
-        return { prepared: await prepare(await adapters.web.fetchFullText(request, signal)) }
-      }
+      return await prepare(fetched)
     } catch (error) {
-      return { error }
+      if (fetched.body.kind !== 'text' || !(error instanceof ProductPageTextLimitError) || !adapters.web.fetchFullText) throw error
+      signal?.throwIfAborted()
+      return prepare(await adapters.web.fetchFullText(request, signal))
     }
   }
   const selected = candidates.filter(candidate => candidate.screening.status !== 'excluded')
-  const start = (candidate: CandidatePage) => ({ candidate, acquired: acquire(candidate) })
-  const pending = selected.slice(0, PRODUCT_PAGE_FETCH_CONCURRENCY).map(start)
-  let nextIndex = pending.length
-  try {
-    while (!signal?.aborted) {
-      const next = pending.shift()
-      if (next === undefined) break
-      const { candidate } = next
+  const entries = selected.entries()
+  let stopped = false
+  const stopping = () => stopped || signal?.aborted
+  async function worker(): Promise<void> {
+    for (const [index, candidate] of entries) {
+      if (stopping()) return
+      let prepared: Awaited<ReturnType<typeof acquire>>, snapshot: AvailableSourceSnapshot
       try {
-        const outcome = await next.acquired
+        prepared = await acquire(candidate)
         signal?.throwIfAborted()
-        if ('error' in outcome) throw outcome.error
-        const { prepared } = outcome
         const contentRef = await adapters.saveText(candidate, prepared.text, prepared.contentHash)
         signal?.throwIfAborted()
         if (contentRef.trim().length === 0) throw new RangeError('Saved page content reference is empty')
-        images.push(...prepared.images)
-        snapshots.push({ schemaVersion: 1, sourceSnapshotId: createSourceSnapshotId(),
+        snapshot = { schemaVersion: 1, sourceSnapshotId: createSourceSnapshotId(),
           candidatePageId: candidate.candidatePageId, observedAt: adapters.now(), status: 'available',
           contentRef, contentHash: prepared.contentHash,
           ...prepared.sourcePublishedAt === undefined ? {} : { sourcePublishedAt: prepared.sourcePublishedAt },
           ...prepared.sourceUpdatedAt === undefined ? {} : { sourceUpdatedAt: prepared.sourceUpdatedAt },
           ...prepared.productVersionLabel === undefined ? {} : { productVersionLabel: prepared.productVersionLabel },
           ...prepared.sourceRegionLabel === undefined ? {} : { sourceRegionLabel: prepared.sourceRegionLabel },
-          ...prepared.declaredPublisher === undefined ? {} : { declaredPublisher: prepared.declaredPublisher } })
+          ...prepared.declaredPublisher === undefined ? {} : { declaredPublisher: prepared.declaredPublisher } }
       } catch (error) {
-        if (signal?.aborted) break
+        if (signal?.aborted) return
         const failure: ProductFailure = { schemaVersion: 1, failureId: createProductFailureId(),
           stage: 'fetch', category: category(error), message: error instanceof Error ? error.message : String(error),
           retryable: !(error instanceof RangeError), occurredAt: adapters.now(),
           candidatePageId: candidate.candidatePageId }
-        failures.push(failure)
-        snapshots.push({ schemaVersion: 1, sourceSnapshotId: createSourceSnapshotId(),
+        settled[index] = { failure, snapshot: { schemaVersion: 1, sourceSnapshotId: createSourceSnapshotId(),
           candidatePageId: candidate.candidatePageId, observedAt: adapters.now(), status: 'failed',
-          failureId: failure.failureId })
+          failureId: failure.failureId } }
+        continue
       }
-      const replacement = selected[nextIndex++]
-      if (replacement !== undefined && !signal?.aborted) pending.push(start(replacement))
+      settled[index] = { snapshot, images: prepared.images }
+      if (!stopping()) adapters.onPageSaved?.(candidate, snapshot, prepared.text, prepared.images)
     }
-  } finally {
-    await Promise.all(pending.map(item => item.acquired))
   }
+  const workers = Array.from({ length: Math.min(selected.length, PRODUCT_PAGE_FETCH_CONCURRENCY) }, () =>
+    worker().catch((error: unknown) => { stopped = true; throw error }))
+  for (const outcome of await Promise.allSettled(workers)) if (outcome.status === 'rejected') throw outcome.reason
+  const snapshots = settled.flatMap(item => [item.snapshot])
+  const images = settled.flatMap(item => item.images ?? [])
+  const failures = settled.flatMap(item => item.failure ?? [])
   const available = snapshots.some(snapshot => snapshot.status === 'available')
   return { ...(images.length ? { images } : {}), snapshots: { schemaVersion: 1,
     status: failures.length === 0 ? 'success' : available ? 'partial_success' : 'failed',

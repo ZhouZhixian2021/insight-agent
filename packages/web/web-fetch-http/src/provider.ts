@@ -82,7 +82,7 @@ export class HttpFetchProvider implements WebFetchProvider {
     readonly mediaType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
   }> {
     using d = deadline(signal, this.limits.timeoutMs, 'WEB_FETCH_TIMEOUT')
-    return this.followAndRead(url, d.signal, async (response) => {
+    return await this.followAndRead(url, d.signal, async (response) => {
       const mediaType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()
       if (!response.ok || !(mediaType === 'image/png' || mediaType === 'image/jpeg'
         || mediaType === 'image/webp' || mediaType === 'image/gif')) {

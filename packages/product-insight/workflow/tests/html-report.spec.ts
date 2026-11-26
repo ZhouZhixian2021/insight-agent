@@ -46,8 +46,38 @@ it('sorts each sentence’s citations by their bibliography numbers and links du
   expect(html).toContain('来源 2</a>（图 I2）')
 })
 
-it('changes only the rejected HTML unit and keeps previously supported prose', async () => {
-  const authored = doc('<p>第一段。[[cite:P1]]</p><p>第二段。[[cite:P9]]</p>')
+it('binds numbered bibliography links to captured webpages and preserves chapter navigation', () => {
+  const raw = doc('<nav><a href="#chapter">[1]</a></nav><section id="chapter"><p>结论<sup><a href="#s7">[7]</a></sup>。'
+    + '图示<a href="#sources">[[cite:I2]]</a>。</p><table><tr><td>条件<a href="' + url + '">[7]</a></td></tr></table></section>'
+    + '<ol data-report-sources><li id="s7"><a href="' + url + '">本轮网页</a></li></ol>')
+  const { html, markdown } = inspectProductHtml(raw, material).report!
+  expect(html).toContain('<nav><a href="#chapter">[1]</a></nav>')
+  const citation = '<sup class="dsh-cite"><a href="' + url + '" target="_blank" rel="noopener noreferrer">[1]</a></sup>'
+  expect(html.split(citation)).toHaveLength(4)
+  expect(html).not.toMatch(/href="#s7"|href="#sources"|<sup><sup|\[7\]/u)
+  expect(markdown.match(/\[\\\[1\\\]\]\(<https:\/\/example\.com\/test>\)/gu)).toHaveLength(3)
+  const bad = raw.replace('<a href="' + url + '">本轮网页', '<a href="https://unobserved.test/">样稿网页')
+  const rejected = inspectProductHtml(bad, material)
+  expect(rejected.report).toBeUndefined()
+  expect(rejected.issues.map(i => i.original)).toEqual([expect.stringContaining('结论')])
+})
+
+it('accepts one complete document inside prose and fences while rejecting ambiguous or incomplete replies', async () => {
+  const complete = doc('<p>首稿。[[cite:P1]]</p><img data-image="I2"><!-- </html> -->')
+  const wrapped = ['这是报告。', '```html', complete, '```', '生成完成。'].join('\n')
+  const report = await writeProductHtml(material, '{}', async (_request, attempt, _repair, check) => {
+    expect(attempt).toBe(1)
+    expect(check(wrapped)).toEqual([])
+    return { text: wrapped, error: null }
+  })
+  expect(report.html).toBe(inspectProductHtml(complete, material).report?.html)
+  for (const bad of [complete + complete, complete.slice(0,-7), '<script>' + complete + '</script>']) {
+    expect(inspectProductHtml(bad, material).report).toBeUndefined()
+  }
+})
+
+it('changes only the rejected HTML unit inside a wrapped draft and keeps previously supported prose', async () => {
+  const authored = '为您生成以下文档。\n```html\n' + doc('<p>第一段。[[cite:P1]]</p><p>第二段。[[cite:P9]]</p>') + '\n```'
   const report = await writeProductHtml(material,'{}',async (request, attempt, repair, validate) => {
     if (attempt === 1) return { text:authored,error:validate(authored).length ? 'invalid_output' : null }
     expect(repair).toBe(true)

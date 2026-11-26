@@ -519,6 +519,15 @@ describe('HttpFetchProvider invalid URLs and abort', () => {
       .rejects.toThrow(expect.objectContaining({ code: 'WEB_FETCH_TIMEOUT' }))
   })
 
+  it('keeps the image deadline active until the response body is complete', async () => {
+    handler = (_req, res) => {
+      res.writeHead(200, { 'content-type': 'image/png', 'content-length': '100' })
+      res.write('partial')
+    }
+    await expect(provider({ timeoutMs: 80 }).fetchImage(base, AbortSignal.timeout(2_000)))
+      .rejects.toThrow(expect.objectContaining({ code: 'WEB_FETCH_TIMEOUT' }))
+  })
+
   it('classifies a timeout DURING the body read as WEB_FETCH_TIMEOUT, not WEB_ABORTED', async () => {
     // Promise body that resolves headers (so fetch() returns) but a content-length
     // that outlasts the bytes sent, so readCapped()'s reader awaits more and the

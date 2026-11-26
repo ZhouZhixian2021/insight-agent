@@ -52,6 +52,8 @@ export interface ProductQuestion {
    * ask for them; discovery then derives terms from the question text.
    */
   readonly searchTerms?: readonly string[]
+  /** Standalone approved queries, one per search intent. Older plans use searchTerms. */
+  readonly searchQueries?: readonly string[]
 }
 
 /** Approval belongs to one immutable plan version. */

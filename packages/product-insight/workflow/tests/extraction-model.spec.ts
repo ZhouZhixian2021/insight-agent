@@ -55,13 +55,19 @@ it('pairs interleaved full-page reviews with their own drafts and replays both r
   const f = await fixture(async (options) => {
     const block = options.messages[0]?.content[0]
     if (block?.type !== 'text') throw new Error('Expected a complete text input')
-    const input = JSON.parse(block.text) as { pageText: string; paragraphs?: { id: number; text: string }[] }
-    const name = input.pageText.split(' ')[0]
+    const input = JSON.parse(block.text) as {
+      pageText?: string
+      passages?: Record<string, string>
+      paragraphs?: { id: number; text: string }[]
+    }
+    const body = input.pageText ?? Object.values(input.passages!).join('')
+    const name = body.split(' ')[0]!
     if (options.system !== PAGE_REVIEW_INSTRUCTION) return '仅 ' + name + ' supports export.'
     expect(input.paragraphs).toEqual([{ id: 1, text: '仅 ' + name + ' supports export.' }])
     activeReviews++
     await (name === 'First' ? releaseFirst : releaseOthers).promise
-    return JSON.stringify({ checked: [1], edits: [{ paragraph: 1, replacement: input.pageText, reason: 'The text does not exclude others.', quotes: [input.pageText] }] })
+    return JSON.stringify({ checked: [1], edits: [{ paragraph: 1, replacement: body, reason: 'The text does not exclude others.',
+      anchors: [{ id: 'P1', phrase: 'supports export' }] }] })
   })
   const plan: ProductPlan = { schemaVersion: 1, version: 1, productId: f.page.productId, planId: f.page.planId,
     scope: 'Export behavior', questions: f.questions, approval: { status: 'approved', approvedPlanVersion: 1,
@@ -77,7 +83,7 @@ it('pairs interleaved full-page reviews with their own drafts and replays both r
   const running = pages.map(run => run())
   const settled = Promise.allSettled(running)
   try {
-    await vi.waitFor(() => expect(activeReviews).toBe(3))
+    await vi.waitFor(() => { expect(activeReviews).toBe(3) })
     releaseOthers.resolve(undefined)
     await Promise.all(running.slice(1))
   } finally {
@@ -94,7 +100,9 @@ it('pairs interleaved full-page reviews with their own drafts and replays both r
   expect(results).toHaveLength(6)
   for (const result of results) {
     expect(events.find(request => request.seq === result.data.requestSeq)).toMatchObject({ type: 'product/page-summary-request-v1',
-      data: { candidatePageId: result.data.candidatePageId, phase: result.data.phase, maxTokens: expect.any(Number) } })
+      data: { candidatePageId: result.data.candidatePageId, phase: result.data.phase } })
+    const request = events.find(event => event.seq === result.data.requestSeq)
+    expect(request?.type === 'product/page-summary-request-v1' && typeof request.data.maxTokens).toBe('number')
   }
   expect(results.filter(r => r.data.phase === 'review').at(-1)?.data.candidatePageId).toBe(notes[0]?.candidatePageId)
   expect(results.map(r => r.data.phase + '/' + r.data.status).join(' ')).toMatchInlineSnapshot(
@@ -103,9 +111,9 @@ it('pairs interleaved full-page reviews with their own drafts and replays both r
 
 it('replays settled paragraph decisions across an interrupted repair and accepts a grounded second repair', async () => {
   const f = await fixture(['Enterprise only.\n\nBasic costs $10.', JSON.stringify({ checked: [1, 2],
-    edits: [{ paragraph: 1, replacement: 'Enterprise supports offline use.', reason: 'Scope', quotes: ['investigation scope'] }] }),
+    edits: [{ paragraph: 1, replacement: 'Enterprise supports offline use.', reason: 'Scope', anchors: [{ id: 'P1', phrase: 'investigation scope' }] }] }),
   '{', JSON.stringify({ checked: [1], edits: [{ paragraph: 1, replacement: 'Enterprise supports offline use.',
-    reason: 'Source names the edition.', quotes: ['Enterprise supports offline use.'] }] })])
+    reason: 'Source names the edition.', anchors: [{ id: 'P1', phrase: 'Enterprise supports offline' }] }] })])
   const plan: ProductPlan = { schemaVersion: 1, version: 1, productId: f.page.productId, planId: f.page.planId,
     scope: 'investigation scope', questions: f.questions, approval: { status: 'approved', approvedPlanVersion: 1,
       reviewedBy: 'user', reviewedAt: f.page.discoveredAt, comment: null } }
@@ -126,8 +134,13 @@ it('replays settled paragraph decisions across an interrupted repair and accepts
   expect(await run()).toEqual(page)
   expect(f.adapter.calls).toHaveLength(4)
   const attempts = f.session.snapshotEvents().filter(e => e.type === 'product/page-summary-request-v1' && e.data.phase === 'review')
-  expect(attempts.map(e => e.type === 'product/page-summary-request-v1' && JSON.parse(e.data.user).paragraphs.map((p: { id: number }) => p.id)))
-    .toEqual([[1, 2], [1], [1]])
+  const first = attempts[0]
+  expect(first?.type === 'product/page-summary-request-v1' && first.data.system).toMatchSnapshot('full-page review using numbered source passages')
+  expect(attempts.map((e) => {
+    if (e.type !== 'product/page-summary-request-v1') throw new Error('Expected a review request')
+    const request = JSON.parse(e.data.user) as { paragraphs: { id: number }[] }
+    return request.paragraphs.map(p => p.id)
+  })).toEqual([[1, 2], [1], [1]])
 })
 
 it('repairs only invalid siblings and persists short-ID requests and full-ID drafts', async () => {

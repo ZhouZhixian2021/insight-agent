@@ -2832,13 +2832,15 @@ export interface Config {
 ## `@deepseek-ai/dsh-product-insight-workflow`
 
 - `inject`: `tools`
-- `source`: [`packages/product-insight/workflow/src/index.ts:56`](../packages/product-insight/workflow/src/index.ts)
+- `source`: [`packages/product-insight/workflow/src/index.ts:57`](../packages/product-insight/workflow/src/index.ts)
 
 ```ts config-catalog
-/** Operator-owned style reference for the product report writer. */
+/** Operator settings for product research and report writing. */
 export interface Config {
   /** Absolute file path or a name in the package references directory. */
   writingReferenceFile?: string
+  /** Total text and image model slots per investigation, shared equally while both branches have work. */
+  materialModelConcurrency?: number
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-product-insight-workflow -->

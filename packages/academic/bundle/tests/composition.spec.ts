@@ -42,12 +42,12 @@ describe('Academic profile composition', () => {
       maxResponseBytes: 10000000, maxBodyChars: 5000000, timeoutMs: 120000,
     })
     expect(entries.find(entry => entry.id === 'preset-product-insight')?.config).toMatchObject({
-      plugins: [
+      plugins: [{ id: 'product-web-context', isolate: { web: true }, config: [
+        { id: 'product-web' },
+        { id: 'product-free-web' },
         { id: 'persona' },
         { id: 'agent-instructions' },
         { id: 'tool-ask-user' },
-        { id: 'tool-web' },
-        { id: 'tool-jobs' },
         { id: 'product-plan-validation', name: '@deepseek-ai/dsh-product-insight-workflow' },
         {
           id: 'planning', isolate: { planMode: true }, config: [{
@@ -55,7 +55,7 @@ describe('Academic profile composition', () => {
             config: { initialActive: true, reenterOnUserMessage: true, missingExitRetries: 1 },
           }],
         },
-      ],
+      ] }],
     })
   })
 

@@ -1,7 +1,7 @@
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { describe, expect, it } from 'vitest'
 import type { Product, ProductId, ProductPlan, ProductPlanId, ProductQuestionId } from '@deepseek-ai/dsh-product-insight-model'
-import { discoverCandidatePages, productSearchQuery } from '../src/index.ts'
+import { discoverCandidatePages, productSearchQuery, searchAppliesToProductQuestion } from '../src/index.ts'
 
 const productId = brandString<ProductId>('product')
 const planId = brandString<ProductPlanId>('plan')
@@ -59,8 +59,8 @@ describe('product page discovery', () => {
       ] }),
     })
     expect(result.candidates.items.map(page => [page.url, page.discoveryChannel])).toEqual([
-      ['https://example.com/product', 'web'],
       ['https://example.com/newsroom/2026/11/example-introduces-m6/', 'official-feed'],
+      ['https://example.com/product', 'web'],
     ])
   })
 
@@ -114,8 +114,8 @@ describe('product page discovery', () => {
       ].filter(accept),
     })
     expect(result.candidates.items.map(page => [page.url, page.discoveryChannel])).toEqual([
-      ['https://example.com/product', 'web'],
       ['https://review.test/example-m6-review', 'news-feed'],
+      ['https://example.com/product', 'web'],
     ])
   })
 
@@ -135,7 +135,8 @@ describe('product page discovery', () => {
       initialSources: [{ url: 'https://support.google.com/chrome' }, { url: 'https://example.com/' },
         { url: 'https://example.com/sg/' }, { url: 'https://example.com/m6-specs' }],
     }, { now, web: { search: async () => ({ sources: [], truncated: false }) } })
-    expect(result.candidates.items.map(page => page.url)).toEqual(['https://example.com/m6-specs'])
+    expect(result.candidates.items.filter(page => page.screening.status === 'selected').map(page => page.url))
+      .toEqual(['https://example.com/m6-specs'])
   })
 
   it('merges planning links and the concrete official page with new results within the shared cap', async () => {
@@ -149,11 +150,11 @@ describe('product page discovery', () => {
       { url: 'https://review.test/article#section' }, { url: 'https://example.com/specs' },
       { url: 'https://example.com/extra' },
     ], truncated: false }) } })
-    expect(result.candidates.items.map(page => page.url)).toEqual([
-      'https://example.com/release', 'https://review.test/article', 'https://example.com/specs',
+    expect(result.candidates.items.map(page => page.url).sort()).toEqual([
+      'https://example.com/extra', 'https://example.com/release', 'https://example.com/specs',
     ])
     expect(result.candidates.items.every(page => page.screening.status === 'selected')).toBe(true)
-    expect(result.candidates.items[0]?.questionIds).toEqual([first, second])
+    expect(result.candidates.items.find(page => page.url.endsWith('/release'))?.questionIds).toEqual([])
     expect(result.searches).toHaveLength(2)
     expect(result.searches.every(search => search.truncated)).toBe(true)
   })
@@ -164,6 +165,92 @@ describe('product page discovery', () => {
       { now, web: { search: async () => { called = true; return { sources: [], truncated: false } } } }))
       .rejects.toThrow(/approval/u)
     expect(called).toBe(false)
+  })
+
+  it('pools feeds, historical leads and separate search intents before giving each topic a reading slot', async () => {
+    const review = 'https://lab.test/reviews/123'
+    const price = 'https://shop.test/uk/m6'
+    const approved = { ...plan, focus: { categories: ['performance', 'commercial'] as const },
+      limits: { maximumCandidatePages: 2 }, questions: [
+        { questionId: first, text: 'Independent benchmark and sustained load?', searchQueries: ['Apple M6 Geekbench', 'Apple M6 sustained load'] },
+        { questionId: second, text: 'What is the UK price?', searchQueries: ['apple m6 geekbench', 'Apple M6 UK price'] },
+      ] }
+    const queries: string[] = []
+    const found = await discoverCandidatePages({ product: { ...product, name: 'Apple M6', officialUrl: 'https://apple.com/' },
+      plan: approved, maxResultsPerQuery: 60,
+      initialSources: [{ url: 'https://asw.apple.com/home', title: 'Sign In - Apple' },
+        { url: 'https://canvas.test/posts/42', title: 'Canvas course forum' },
+        { url: 'https://database.test/download', title: 'Download the medical device database' }],
+    }, { now, officialFeed: async () => ({ notes: [], links: [{ url: 'https://apple.com/m6', title: 'M6 announcement' }] }),
+      newsFeed: async () => [{ url: 'https://www.bing.com/news/apiclick.aspx?url=' + encodeURIComponent(review),
+        title: 'Apple M6 independent Geekbench benchmark' }],
+      web: { search: async ({ query }) => {
+        queries.push(query)
+        if (query.includes('sustained')) throw new Error('Search unavailable')
+        return { sources: query.includes('Geekbench') ? [
+          { url: 'https://lab.test/general', title: 'Independent Geekbench benchmark and sustained load primer' },
+          { url: review + '?utm_source=search#scores' }]
+          : [{ url: price, title: 'M6 UK price' }], truncated: false }
+      } } })
+    expect(queries).toEqual(['Apple M6 Geekbench', 'Apple M6 sustained load', 'Apple M6 UK price'])
+    expect(found.candidates.items.map(page => [page.url, page.questionIds])).toEqual([[review, [first, second]], [price, [second]]])
+    expect(found.searches.map(attempt => attempt.status)).toEqual(['success', 'failed', 'success'])
+    expect(searchAppliesToProductQuestion(found.searches[0]!, approved.questions[1]!)).toBe(true)
+    expect(found.candidates.items[0]?.title).toContain('independent Geekbench')
+  })
+
+  it('uses a feed for its matching topic and keeps distinct regional pages separate', async () => {
+    const result = await discoverCandidatePages({ product: { ...product, name: 'Example M6' },
+      plan: { ...plan, focus: { categories: ['commercial'] } }, maxResultsPerQuery: 5 }, { now,
+      newsFeed: async () => [{ url: 'https://review.test/spec', title: 'M6 price in the US' }],
+      web: { search: async ({ query }) => ({ sources: query.includes('price')
+        ? [{ url: 'https://example.com/config?region=uk', title: 'M6 price UK' },
+          { url: 'https://example.com/config?region=de', title: 'M6 price DE' }] : [], truncated: false }) } })
+    expect(result.candidates.items).toHaveLength(3)
+    expect(result.candidates.items.every(page => page.questionIds.length === 1 && page.questionIds[0] === second)).toBe(true)
+  })
+
+  it.each([
+    { hasThermal: true, limit: 2, expected: ['first', 'thermal'] },
+    { hasThermal: true, limit: 3, expected: ['first', 'thermal', 'second'] },
+    { hasThermal: false, limit: 2, expected: ['first', 'second'] },
+  ])('allocates material missing from the reading list with limit $limit and thermal coverage $hasThermal', async ({
+    hasThermal, limit, expected,
+  }) => {
+    const subject = { ...product, name: 'M6' }
+    const findScores = 'Mac mini M6 Geekbench CPU score'
+    const findThermal = 'Mac mini M6 sustained load temperature review'
+    const scores = ['first', 'second', 'third'].map(name => ({
+      url: 'https://lab.test/' + name, title: 'Mac mini M6 Geekbench CPU score review',
+    }))
+    const result = await discoverCandidatePages({ product: subject, maxResultsPerQuery: 10, plan: {
+      ...plan, focus: { categories: ['performance'] }, limits: { maximumCandidatePages: limit },
+      questions: [{ questionId: first, text: 'Will those gains hold up over a long session?',
+        searchQueries: [findScores, findThermal] }],
+    } }, { now,
+      newsFeed: async () => hasThermal ? [{ url: 'https://media.test/thermal', title: 'M6 temperature readings' }] : [],
+      web: { search: async ({ query }) => ({ truncated: false, sources: query === findScores ? scores : [
+        scores[0]!, { url: 'https://general.test/guide', title: 'Sustained load temperature review methods' },
+      ] }) },
+    })
+    expect(result.candidates.items.map(p => new URL(p.url).pathname.slice(1))).toEqual(expected)
+    expect(result.candidates.items.every(p => p.screening.status === 'selected')).toBe(true)
+    if (hasThermal) expect(result.candidates.items[1]?.screening.reason).toContain(findThermal)
+    else expect(result.candidates.items[1]?.screening.reason).not.toContain('unrepresented material')
+  })
+
+  it('recognizes a material by a combination of terms shared with other searches', async () => {
+    const cpu = 'M6 Geekbench CPU', gpu = 'M6 Geekbench GPU', heat = 'M6 GPU temperature'
+    const result = await discoverCandidatePages({ product: { ...product, name: 'M6' }, maxResultsPerQuery: 10,
+      plan: { ...plan, focus: { categories: ['performance'] }, limits: { maximumCandidatePages: 3 },
+        questions: [{ questionId: first, text: 'How does performance vary with workload?',
+          searchQueries: [cpu, gpu, gpu.toLowerCase(), heat] }] } }, { now, web: { search: async ({ query }) => ({
+      truncated: false, sources: (query === cpu ? ['cpu1', 'cpu2'] : query === gpu ? ['gpu'] : ['heat']).map(id => ({
+        url: 'https://lab.test/' + id, title: id.startsWith('cpu') ? cpu : id === 'gpu' ? gpu : heat,
+      })),
+    }) } })
+    expect(result.candidates.items.map(p => new URL(p.url).pathname)).toEqual(['/cpu1', '/gpu', '/heat'])
+    expect(result.searches).toHaveLength(3)
   })
 
   it('merges repeated pages across questions without inventing a missing title', async () => {

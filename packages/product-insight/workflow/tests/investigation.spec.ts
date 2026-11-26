@@ -6,7 +6,7 @@ import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import { describe, expect, it, vi } from 'vitest'
 import { createProductId, createProductPlanId, createProductQuestionId,
   type Product, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
-import { latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval,
+import { Config, latestApprovedProductPlan, parseProductPlanMarkdown, productPlanFromApproval,
   evaluateProductReport, runApprovedProductInvestigation, runProductInvestigation,
   type ProductInvestigationAdapters, type ProductInvestigationCheckpoint } from '../src/index.ts'
 import { productSynthesisInput, renderProductReport } from '../src/report.ts'
@@ -32,6 +32,11 @@ const pageHtml = (content: string, publisher: string) => `<head><meta name="publ
 <article>${content}</article>`
 const texts = new Map<string, string>()
 const reports: string[] = []
+interface ReviewRequest {
+  passages: Record<string, string>
+  paragraphs: { id: number; text: string; correction?: string; proposedReplacement?: string }[]
+  repairRound?: number
+}
 const adapters: ProductInvestigationAdapters = { now: () => '2026-11-06T00:00:00Z',
   web: { search: async () => ({ sources: [{ url: 'https://example.com/features', title: 'Example features' }], truncated: false }),
     fetch: async () => ({ url: 'https://example.com/features', statusCode: 200,
@@ -56,6 +61,12 @@ const adapters: ProductInvestigationAdapters = { now: () => '2026-11-06T00:00:00
   saveReport: async (markdown) => { reports.push(markdown); return 'report:1' } }
 
 describe('approved product investigation', () => {
+  it('defaults to six material model slots and accepts positive integer overrides', () => {
+    expect(Config({}).materialModelConcurrency).toBe(6)
+    expect(Config({ materialModelConcurrency: 2 }).materialModelConcurrency).toBe(2)
+    for (const value of [0, 1.5]) expect(() => Config({ materialModelConcurrency: value })).toThrow()
+  })
+
   it('reviews whole pages, applies grounded paragraph edits and resumes the cited report from reviewed notes', async () => {
     const unchanged = '机身可选银色。'
     const source = '中国大陆定价。\n\n12 核机型可选配以太网。\n\n' + unchanged + '\n\n教育优惠起售价为 12,099 元。'
@@ -67,22 +78,25 @@ describe('approved product investigation', () => {
       web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false, body: { kind: 'text', content: source } }) },
       summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan, async (phase, _system, user, accept) => {
         phases.push(phase)
-        expect(JSON.parse(user)).toMatchObject({ source: { url: page.url }, pageText: text })
+        expect(JSON.parse(user)).toMatchObject({ source: { url: page.url } })
         if (phase === 'reading') {
-          expect(JSON.parse(user).researchQuestions).toEqual(plan.questions.map(q => q.text))
+          expect(JSON.parse(user)).toMatchObject({ pageText: text, researchQuestions: plan.questions.map(q => q.text) })
           return accept(original)
         }
-        expect(JSON.parse(user)).not.toHaveProperty('scope')
-        expect(JSON.parse(user).paragraphs).toEqual(original.split('\n\n').map((paragraph, i) => ({ id: i + 1, text: paragraph })))
+        const input = JSON.parse(user) as ReviewRequest
+        expect(input).not.toHaveProperty('scope')
+        expect(input).not.toHaveProperty('pageText')
+        expect(Object.values(input.passages).join('')).toBe(text)
+        expect(input.paragraphs).toEqual(original.split('\n\n').map((paragraph, i) => ({ id: i + 1, text: paragraph })))
         return accept(JSON.stringify({ checked: [3, 1, 2], edits: [{ paragraph: 1, replacement: corrected,
-          reason: '原文未排除其他机型。', quotes: ['12 核机型可选配以太网。'] },
+          reason: '原文未排除其他机型。', anchors: [{ id: 'P2', phrase: '可选配以太网' }] },
         { paragraph: 3, replacement: '中国大陆教育优惠起售价为 12,099 元。', reason: '地区见页首，价格见定价段。',
-          quotes: ['中国大陆定价。', '教育优惠起售价为 12,099 元。'] }] }))
+          anchors: [['P1', '中国大陆定价'], ['P4', '教育优惠起售价为 12,099 元']] }] }))
       }),
       proposeEvidence: async () => { throw new Error('Unexpected historical extraction') },
       reviewEvidence: async () => { throw new Error('Unexpected historical review') },
       synthesizeReport: input => repairInsight(input, async (user) => {
-        const body = JSON.parse(user)
+        const body = JSON.parse(user) as { pageSummaries: unknown[] }
         expect(body.pageSummaries[0]).toMatchObject({ source: { sourceId: 'P1' }, summary: [corrected, unchanged, '中国大陆教育优惠起售价为 12,099 元。'].join('\n\n') })
         expect(user).not.toContain('仅 12 核')
         expect(body).not.toHaveProperty('pageText')
@@ -94,8 +108,7 @@ describe('approved product investigation', () => {
     expect(run.delivery.status).toBe('final')
     expect(run.gaps).toEqual([])
     expect(phases).toEqual(['reading', 'review'])
-    expect(reports.at(-1)).toContain('12 核机型可选配以太网。[^product-source-1]')
-    expect(reports.at(-1)).toContain('[查看来源原文](https://example.com/features)')
+    expect(reports.at(-1)).toContain('12 核机型可选配以太网[\\[1\\]](<https://example.com/features>)。')
     const checkpoint = saved.at(-1)!
     expect(checkpoint).toMatchObject({ schemaVersion: 4, nextIndex: 1, pageSummaries: [{ paragraphs: [corrected, unchanged, '中国大陆教育优惠起售价为 12,099 元。'] }] })
     expect((await runProductInvestigation({ ...request, checkpoint }, setup)).delivery.status).toBe('final')
@@ -104,16 +117,18 @@ describe('approved product investigation', () => {
 
   it('withholds a page when every paragraph still lacks a valid decision after two repairs', async () => {
     let reviews = 0
+    const requestBoundary = vi.fn(async () => {})
     const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 5, extractionMethod: { name: 'test', version: '1' } },
       { ...adapters, summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan,
         async (phase, _system, _user, accept) => {
           if (phase === 'reading') return accept('ordinary description\n\nonly this product')
           return accept(JSON.stringify(++reviews === 1 ? { checked: [], edits: [] } : { checked: [2],
-            edits: [{ paragraph: 2, replacement: 'corrected', reason: 'unsupported qualifier', quotes: ['not in the source'] }] }))
-        }), synthesizeReport: async () => { throw new Error('Unexpected synthesis of an unchecked page') } })
+            edits: [{ paragraph: 2, replacement: 'corrected', reason: 'unsupported qualifier', anchors: [{ id: 'P1', phrase: 'not in the source' }] }] }))
+        }, undefined, requestBoundary), synthesizeReport: async () => { throw new Error('Unexpected synthesis of an unchecked page') } })
     expect(reviews).toBe(3)
+    expect(requestBoundary).toHaveBeenCalledTimes(3)
     expect(result.pageSummaries).toEqual([])
-    expect(result.run.failures).toContainEqual(expect.objectContaining({ stage: 'analysis', message: expect.stringContaining('全文审核') }))
+    expect(result.run.failures.some(f => f.stage === 'analysis' && f.message.includes('全文审核'))).toBe(true)
     expect(result.delivery.status).toBe('blocked')
   })
 
@@ -121,22 +136,22 @@ describe('approved product investigation', () => {
     const saved: ProductInvestigationCheckpoint[] = [], rounds: number[][] = []
     const body = '常规版可用。企业版支持导出。部分地区另行收费。'
     const change = (paragraph: number, replacement: string, quote: string) =>
-      ({ paragraph, replacement, quotes: [quote], reason: '核对适用范围' })
+      ({ paragraph, replacement, anchors: [{ id: 'P1', phrase: quote }], reason: '核对适用范围' })
     const first = { checked: [1, 2, 3, 4, 5], edits: [
       change(1, '常规版可用。', '常规版可用。'), change(2, '这条不能进入写作。', plan.scope),
-      change(4, '所有地区免费。', '全文均免费'), { paragraph: 5, replacement: '', reason: '导航', quotes: [] }] }
+      change(4, '所有地区免费。', '全文均免费'), { paragraph: 5, replacement: '', reason: '导航', anchors: [] }] }
     const inputs: ReturnType<typeof productSynthesisInput>[] = []
     const request = { product, plan, maxResultsPerQuery: 5, extractionMethod: { name: 'test', version: '1' } }
     const setup: ProductInvestigationAdapters = { ...adapters,
       web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false, body: { kind: 'text', content: body } }) },
       summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan, async (phase, _system, user, accept) => {
         if (phase === 'reading') return accept('仅常规版可用。\n\n这条不能进入写作。\n\n企业版支持导出。\n\n免费。\n\n导航')
-        const input = JSON.parse(user)
-        expect(input.pageText).toBe(body)
+        const input = JSON.parse(user) as ReviewRequest
+        expect(Object.values(input.passages).join('')).toBe(body)
         rounds.push(input.paragraphs.map((p: { id: number }) => p.id))
         if (!input.repairRound) return accept(JSON.stringify(first))
-        expect(input.paragraphs[0]).toMatchObject({ id: 2, correction: expect.stringContaining('引文'),
-          proposedReplacement: '这条不能进入写作。' })
+        expect(input.paragraphs[0]).toMatchObject({ id: 2, proposedReplacement: '这条不能进入写作。' })
+        expect(input.paragraphs[0]?.correction).toContain('引文')
         return accept(JSON.stringify(input.repairRound === 1 ? { checked: [2, 4], edits: [
           change(2, '这条不能进入写作。', '另一个无效引文'), change(4, '部分地区另行收费。', '部分地区另行收费。'),
           change(1, '试图覆盖已通过段落。', body)] } : { checked: [], edits: [] }))
@@ -150,7 +165,8 @@ describe('approved product investigation', () => {
     expect(rounds).toEqual([[1, 2, 3, 4, 5], [2, 4], [2]])
     const expected = ['常规版可用。', '企业版支持导出。', '部分地区另行收费。']
     expect(result.pageSummaries).toMatchObject([{ paragraphs: expected, partialReview: { total: 5, unresolved: [2] } }])
-    expect(inputs[0]?.pageSummaries?.[0]).toMatchObject({ summary: expected.join('\n\n'), limitation: expect.stringContaining('第 2 段未完成核对') })
+    expect(inputs[0]?.pageSummaries?.[0]?.summary).toBe(expected.join('\n\n'))
+    expect(inputs[0]?.pageSummaries?.[0]?.limitation).toContain('第 2 段未完成核对')
     expect(result.delivery.status).toBe('final')
     expect(reports.at(-1)).toContain('提要部分通过，原有 5 段，已核对 4 段，其中 3 段可用于写作。')
     expect(reports.at(-1)).not.toContain('这条不能进入写作')
@@ -159,6 +175,30 @@ describe('approved product investigation', () => {
     expect(rounds).toHaveLength(3)
     await expect(runProductInvestigation({ ...request, checkpoint: { ...checkpoint, pageSummaries: [
       { ...result.pageSummaries![0]!, partialReview: { total: 5, unresolved: [6] } }] } }, setup)).rejects.toThrow('invalid reviewed page summaries')
+  })
+
+  it('repairs only edits with a missing or ambiguous anchor and distinguishes metadata names from observed values', async () => {
+    const body = '市场与定价\r\n美国\t$999 普通，$999 限时优惠\n英国\t£899\f仅在学期内。'
+    const rounds: number[][] = []
+    const result = await runProductInvestigation({ product, plan, maxResultsPerQuery: 5,
+      extractionMethod: { name: 'test', version: '1' } }, { ...adapters,
+      web: { ...adapters.web, fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false, body: { kind: 'text', content: body } }) },
+      summarizePage: (page, snapshot, text) => readReviewedProductPage(page, snapshot, text, plan, async (phase, _system, user, accept) => {
+        if (phase === 'reading') return accept('普通描述。\n\n价格。\n\n时间。\n\n资格。')
+        const { passages, paragraphs, repairRound } = JSON.parse(user) as ReviewRequest
+        expect(Object.values(passages).join('')).toBe(body)
+        rounds.push(paragraphs.map((p: { id: number }) => p.id))
+        const edit = (paragraph: number, id: string, phrase: string) =>
+          ({ paragraph, reason: '校正适用条件', replacement: `修订${paragraph}`, anchors: [[id, phrase]] })
+        return accept(JSON.stringify(repairRound ? { checked: [2, 3, 4], edits: [
+          edit(2, 'P2', '$999 限时优惠'), edit(3, 'M.observedAt', '2026-11-06'), edit(4, 'P4', '仅在学期内'),
+        ] } : { checked: [1, 2, 3, 4], edits: [
+          edit(2, 'P2', '$999'), edit(3, 'M.observedAt', 'observedAt'), edit(4, 'P3', '仅在学期内'),
+        ] }))
+      }),
+    })
+    expect(rounds).toEqual([[1, 2, 3, 4], [2, 3, 4]])
+    expect(result.pageSummaries?.[0]?.paragraphs).toEqual(['普通描述。', '修订2', '修订3', '修订4'])
   })
 
   it('refills extraction slots before a slow earlier page and commits results in page order', async () => {
@@ -232,8 +272,7 @@ describe('approved product investigation', () => {
     expect(result.delivery.status).toBe('final')
     const report = reports.at(-1)!
     expect(report).toContain('### 能力与使用边界')
-    expect(report).toContain('支持导出。[^product-source-1]\n\n成本条件仍需核对。')
-    expect(report).toContain('[^product-source-1]: [查看来源原文](https://example.com/features)')
+    expect(report).toContain('支持导出[\\[1\\]](<https://example.com/features>)。\n\n成本条件仍需核对。')
     expect(report).toContain('## 调查问题覆盖情况')
     expect(report).not.toContain('### What does it do?')
     expect(report).not.toContain('### What does it cost?')
@@ -253,7 +292,7 @@ describe('approved product investigation', () => {
       extractionMethod: { name: 'review', version: '1' } }, { ...adapters,
       synthesizeReport: async material => new Map([[String(questionId),
         `保留已有回答。[[cite:${material.questions[0]?.evidence[0]?.evidenceId}]]另一个引用待核对。[[cite:missing]]`]]) })
-    expect(reports.at(-1)).toContain('保留已有回答。')
+    expect(reports.at(-1)).toContain('保留已有回答[\\[1\\]](<https://example.com/features>)。')
     expect(reports.at(-1)).toContain('该处引用记录或来源链接不可用')
     expect(reports.at(-1)).toContain('本题报告生成未完成')
     expect(reports.at(-1)).not.toContain('[[cite:missing]]')
@@ -421,8 +460,7 @@ describe('approved product investigation', () => {
     expect(markdown).toContain('产品资料说明支持导出')
     expect(markdown).toContain('### What does it cost?')
     expect(markdown).toContain('现有材料不足以形成有依据的回答')
-    expect(markdown).toContain('保存已有内容。[^product-source-1]当前')
-    expect(markdown).toContain('[^product-source-1]: [查看来源原文](https://example.com/features)')
+    expect(markdown).toContain('保存已有内容[\\[1\\]](<https://example.com/features>)。当前')
     expect(markdown).not.toContain('## 产品分析')
   })
 
@@ -810,11 +848,11 @@ describe('approved product investigation', () => {
     ])
     let saved: ProductInvestigationCheckpoint | undefined
     const setup: ProductInvestigationAdapters = { ...adapters, proposeEvidence,
-      web: { search: async () => ({ sources: [{ url: official }, { url: review }], truncated: false }),
+      web: { search: async () => ({ sources: [{ url: official, title: 'Example export features' }, { url: review }], truncated: false }),
         fetch: async ({ url }) => ({ url, statusCode: 200, truncated: false,
           body: { kind: 'text', content: url === official ? feature : body } }) },
       saveCheckpoint: async (checkpoint) => {
-        if (checkpoint.nextIndex === 1 && checkpoint.fragmentIndex === 1) {
+        if (checkpoint.fragmentIndex === 1) {
           saved = checkpoint
           throw new Error('Interrupted after the first ranked window')
         }
@@ -822,6 +860,8 @@ describe('approved product investigation', () => {
     const input = { product, plan: rankedPlan, maxResultsPerQuery: 4, extractionMethod: { name: 'review', version: '1' } }
     await expect(runProductInvestigation(input, setup)).rejects.toThrow('Interrupted after the first ranked window')
     if (saved === undefined) throw new Error('Ranked checkpoint was not saved')
+    expect(saved.discovery.candidates.items.map(page => page.url)).toEqual([official, review])
+    expect(saved.evidence.map(item => item.verbatimExcerpt)).toEqual([feature, price])
     expect(saved.fragmentOrder).toEqual([42_004, 0, 10_501, 21_002, 31_503])
     const fresh = { ...saved.pages, snapshots: { ...saved.pages.snapshots, items: saved.pages.snapshots.items.map((snapshot, index) =>
       index === 0 && snapshot.status === 'available' ? { ...snapshot, sourceRegionLabel: 'EU' } : snapshot) } }
@@ -1315,6 +1355,17 @@ describe('product plan approval handoff', () => {
   const focusPayload = { ...payload, schemaVersion: 2,
     focus: { categories: ['performance', 'commercial'], custom: ['弱网下的稳定性'] } }
 
+  it('hands separate search intents to their approved questions and validates the alignment', () => {
+    const searchQueries = [['Example CPU benchmark', 'Example sustained load'], ['Example UK price']]
+    const approved = productPlanFromApproval({ sessionId: 'session', identity: 'approval',
+      markdown: markdown({ ...focusPayload, searchQueries }), reviewedAt: '2026-11-25T00:00:00Z' })
+    expect(approved.plan.questions.map(q => q.searchQueries)).toEqual(searchQueries)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, searchQueries: searchQueries.slice(1) })))
+      .toThrow(/per question/u)
+    expect(() => parseProductPlanMarkdown(markdown({ ...focusPayload, searchQueries: [[], ['Example price']] })))
+      .toThrow(/standalone/u)
+  })
+
   it('accepts a version 2 focus plan and records the confirmed directions', () => {
     const approved = productPlanFromApproval({ sessionId: 'session-1', identity: 'call-focus',
       markdown: markdown(focusPayload), reviewedAt: '2026-11-15T00:00:00Z' })
@@ -1398,7 +1449,9 @@ describe('product plan approval handoff', () => {
       expect(rejected.content[0]).toHaveProperty('text', expect.stringContaining('maximumCandidatePages'))
       expect((await call('# No executable plan')).isError).toBe(true)
       expect(review).not.toHaveBeenCalled()
-      expect((await call(markdown(payload))).isError).not.toBe(true)
+      expect((await call(markdown(focusPayload))).content[0]).toHaveProperty('text', expect.stringContaining('searchQueries'))
+      expect(review).not.toHaveBeenCalled()
+      expect((await call(markdown({ ...focusPayload, searchQueries: [['Example features'], ['Example price']] }))).isError).not.toBe(true)
       expect(review).toHaveBeenCalledTimes(1)
       await validation.dispose()
       expect(ctx.tools.get('run_product_investigation')).toBeUndefined()

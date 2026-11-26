@@ -98,10 +98,7 @@ export function verifyCordisConfigs(repoRoot: string = root): ConfigValidation &
     return isUnknownArray(document) ? document : []
   }
   if (result.files.length === 0) result.errors.push('Loader config scan found no configuration files')
-  for (const file of result.files) {
-    const entries = loadEntries(file)
-    for (let index = 0; index < entries.length; index++) validateEntry(entries[index], file, `[${index}]`, result)
-  }
+  for (const file of result.files) validateEntries(loadEntries(file), file, result)
   result.errors.push(...validateAppResolution(repoRoot, result.pluginReferences))
   result.errors.push(...validatePackageTestResolution(repoRoot, result.pluginReferences))
   result.errors.push(...packageTestFixtureDependencyErrors(repoRoot))
@@ -242,6 +239,10 @@ function collectRowIds(rows: unknown): Set<string> {
   }
   walk(rows)
   return ids
+}
+
+function validateEntries(entries: readonly unknown[], file: string, result: ConfigValidation): void {
+  for (const [index, entry] of entries.entries()) validateEntry(entry, file, `[${index}]`, result)
 }
 
 function validateEntry(value: unknown, file: string, path: string, result: ConfigValidation): void {
@@ -502,11 +503,27 @@ function validateSourcePlaneResolution(repoRoot: string, pluginReferences: reado
   return violations
 }
 
-function missingPluginDependencies(
-  references: readonly PluginReference[],
-  dependencies: Readonly<Record<string, string>>,
-  dependencyOwner: string,
-): string[] {
+/**
+ * Read the plugins a bundle's published patches require at runtime.
+ * @param repoRoot - Workspace containing the bundle.
+ * @param packageDir - Repository-relative directory of the declaring package.
+ * @param bundle - Patch files declared in its manifest.
+ * @returns Required package names and the patch files that reference them.
+ */
+export function readBundlePluginDependencies(repoRoot: string, packageDir: string, bundle: DshBundleManifest): Map<string, Set<string>> {
+  const read = cordisConfigReader(repoRoot)
+  const result: ConfigValidation = { errors: [], pluginReferences: [] }
+  for (const absolute of bundlePatchPaths(resolve(repoRoot, packageDir), bundle)) {
+    const file = relative(repoRoot, absolute).replaceAll('\\', '/')
+    const entries = read(file)
+    if (!isUnknownArray(entries)) throw new Error(`${file}: root must be a Loader entry array`)
+    validateEntries(entries, file, result)
+  }
+  if (result.errors.length) throw new Error(result.errors.join('\n'))
+  return pluginDependencyLocations(result.pluginReferences)
+}
+
+function pluginDependencyLocations(references: readonly PluginReference[]): Map<string, Set<string>> {
   const requiredPackages = new Map<string, Set<string>>()
   const require = (packageName: string, file: string): void => {
     const locations = requiredPackages.get(packageName) ?? new Set<string>()
@@ -521,7 +538,15 @@ function missingPluginDependencies(
       for (const backend of CHOOSER_BACKEND_PACKAGES) require(backend, reference.file)
     }
   }
-  return [...requiredPackages].flatMap(([packageName, locations]) => packageName in dependencies
+  return requiredPackages
+}
+
+function missingPluginDependencies(
+  references: readonly PluginReference[],
+  dependencies: Readonly<Record<string, string>>,
+  dependencyOwner: string,
+): string[] {
+  return [...pluginDependencyLocations(references)].flatMap(([packageName, locations]) => packageName in dependencies
     ? []
     : `${[...locations].join(', ')}: ${packageName} must be declared in ${dependencyOwner}`)
 }

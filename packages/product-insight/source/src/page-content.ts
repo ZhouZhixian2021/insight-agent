@@ -166,10 +166,12 @@ export class ProductPageEmptyError extends RangeError {
  * Prepare complete HTML or plain text for source evidence.
  * @param fetched - Completed Web response, including body and truncation status.
  * @param maximumCharacters - Approved bound after optional HTML or Markdown cleanup.
+ * @param reviewLayout - Keep HTML table rows together. Revalidation recognizes a matching historical layout.
  * @returns Canonical text, its hash, and available HTML scope declarations.
  * @throws {RangeError} If the response is incomplete, unreadable, or still exceeds the bound after preparation.
  */
-export function prepareProductPage(fetched: WebFetchResult, maximumCharacters?: number): PreparedProductPage {
+export function prepareProductPage(fetched: WebFetchResult, maximumCharacters?: number,
+  reviewLayout?: { previousHash?: string }): PreparedProductPage {
   if (fetched.statusCode < 200 || fetched.statusCode >= 300) {
     throw new RangeError(`Product page fetch returned HTTP ${fetched.statusCode}`)
   }
@@ -177,14 +179,24 @@ export function prepareProductPage(fetched: WebFetchResult, maximumCharacters?: 
   let text: string
   let metadata: Omit<PreparedProductPage, 'url' | 'text' | 'contentHash'> = {}
   switch (fetched.body.kind) {
-    case 'html':
+    case 'html': {
       metadata = pageMetadata(fetched.body.content)
       text = htmlText(fetched.body.content)
       // Keep the canonical string of pages that already fit, including sources cited by saved evidence.
-      if (maximumCharacters === Number.MAX_SAFE_INTEGER || maximumCharacters !== undefined && text.length > maximumCharacters) {
-        text = readableArticleText(fetched.body.content) || text
+      const useArticle = maximumCharacters === Number.MAX_SAFE_INTEGER || maximumCharacters !== undefined && text.length > maximumCharacters
+      if (reviewLayout || useArticle) {
+        const root = useArticle ? findReadingRoot(parse(fetched.body.content)) : undefined
+        if (root || reviewLayout) {
+          let article = root ? readableArticleText(root, Boolean(reviewLayout)) || text : htmlText(fetched.body.content, true)
+          if (reviewLayout?.previousHash && pageTextHash(article) !== reviewLayout.previousHash) {
+            const priorLayout = root ? readableArticleText(root, false) || text : text
+            if (pageTextHash(priorLayout) === reviewLayout.previousHash) article = priorLayout
+          }
+          text = article
+        }
       }
       break
+    }
     case 'text':
       text = fetched.body.content.trim()
       if (text.includes('](')) {
@@ -321,11 +333,16 @@ function decodeMetadata(value: string): string {
 
 function assertNever(value: never): never { throw new TypeError(`Unsupported web body: ${String(value)}`) }
 
-function htmlText(html: string): string {
+function htmlText(html: string, tableRows = false): string {
   const article = html.match(/<article\b[^>]*>([\s\S]*?)<\/article\s*>/iu)?.[1] ?? html
-  return article
+  let visible = article
     .replace(/<(script|style|noscript|template|iframe|object|embed)\b[^>]*>[\s\S]*?<\/\1\s*>/giu, ' ')
     .replace(/<!--[\s\S]*?-->/gu, ' ')
+  // Keep the established fallback's complete reading scope when the page has no article region.
+  if (tableRows) visible = visible.replace(/<tr\b[^>]*>([\s\S]*?)<\/tr\s*>/giu, (_row, cells: string) =>
+    '\n' + cells.replace(/<(?:br|\/p|\/div|\/li)\b[^>]*>/giu, ' ')
+      .replace(/<\/t[dh]\s*>\s*(?=<t[dh]\b)/giu, ' | ') + '\n')
+  return visible
     .replace(/<(br|\/p|\/div|\/section|\/li|\/h[1-6])\b[^>]*>/giu, '\n')
     .replace(/<[^>]+>/gu, ' ')
     .replace(/&(?:nbsp|amp|lt|gt|quot|#39);/giu, entity => ({
@@ -415,9 +432,7 @@ export function productPageImages(html: string, pageUrl: string): ProductPageIma
 }
 
 /** Keep the full reading region in document order, including lists, tables and captions. */
-function readableArticleText(html: string): string {
-  const root = findReadingRoot(parse(html))
-  if (root === undefined) return ''
+function readableArticleText(root: DefaultTreeAdapterTypes.Element, tableRows: boolean): string {
   const pending: (DefaultTreeAdapterTypes.ChildNode | '\n')[] = [root]
   const text: string[] = []
   while (pending.length > 0) {
@@ -429,6 +444,14 @@ function readableArticleText(html: string): string {
       if (isNonReadingElement(node)) {
         text.push('\n')
         continue
+      }
+      if (tableRows && node.tagName === 'tr') {
+        const cells = node.childNodes.filter(child => defaultTreeAdapter.isElementNode(child))
+          .filter(child => (child.tagName === 'td' || child.tagName === 'th') && !isNonReadingElement(child))
+        if (cells.length) {
+          text.push('\n', cells.map(cell => readableArticleText(cell, false).replace(/\s+/gu, ' ')).join('\t'), '\n')
+          continue
+        }
       }
       if (readingBlockTags.has(node.tagName)) {
         text.push('\n')

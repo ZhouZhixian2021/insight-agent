@@ -6,6 +6,7 @@ exports[`direct multiple-engine product search > merges sources by rank, dedupli
   "sources": [
     {
       "engine": "duckduckgo",
+      "snippet": "Official features",
       "title": "Product",
       "url": "https://example.com/spec",
     },

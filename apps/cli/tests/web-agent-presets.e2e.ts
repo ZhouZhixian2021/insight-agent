@@ -436,18 +436,15 @@ describe('the shipped Web composition', () => {
       agentOptions: { provider: 'search-recovery-test', model: 'search-recovery-test' },
       setup: agentCtx => productCtx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined) })
     onTestFinished(() => handle.dispose())
-    const search = await productCtx.tools.execute({ callId: ToolCallId('recovery-search'), name: 'web_search',
-      arguments: { queries: ['Example specifications'] }, signal: new AbortController().signal, agent: handle.agent })
-    expect(search.isError).toBe(false)
+    const web = productCtx.agentPresets.serviceFor(handle.agent, 'web')!
+    const search = await productCtx.agents.withInitiator(handle.agent, () => web.search({ query: 'Example specifications' }))
     expect(JSON.stringify(search)).toContain('https://example.com/product')
     expect(model.requests).toHaveLength(1)
     expect(JSON.stringify(model.requests[0]?.messages)).toContain('Example product specifications')
-    const page = await productCtx.tools.execute({ callId: ToolCallId('recovery-read'), name: 'web_fetch',
-      arguments: { url: 'https://example.com/product' }, signal: new AbortController().signal, agent: handle.agent })
-    expect(page.isError).toBe(false)
+    const page = await web.fetch({ url: 'https://example.com/product' })
     expect(JSON.stringify(page)).toContain('Example supports offline export')
   }, 60000)
-  it('uses product-local free search instead of the global search plugin', async () => {
+  it('keeps web tools out of product planning and supplies free search to the background workflow', async () => {
     const home = await mkdtemp(join(tmpdir(), 'dsh-product-free-web-'))
     onTestFinished(() => rm(home, { recursive: true, force: true }))
     const ctx = await bootWeb(home, [{ id: 'web', config: { searchProvider: 'missing-external-plugin', fetchProvider: 'missing-external-plugin' } }])
@@ -456,19 +453,22 @@ describe('the shipped Web composition', () => {
     const network = vi.spyOn(HttpFetchProvider.prototype, 'fetch').mockImplementation(async request => ({
       url: request.url, statusCode: 200, truncated: false, body: { kind: 'html', content: request.url.includes('duckduckgo.com')
         ? '<div class="result"><a class="result__a" href="https://example.com/product">Example specifications</a><a class="result__snippet">Public product documentation</a></div>'
-        : `<article>${'Example public specifications. '.repeat(20)}</article>` },
+        : request.url.includes('bing.com') || request.url.includes('yahoo.com') ? '<p>No results found</p>'
+          : `<article>${'Example public specifications. '.repeat(20)}</article>` },
     }))
     onTestFinished(() => { network.mockRestore() })
     const handle = await ctx.agents.create({ sessionId: SessionId(`product-free-${randomUUID()}`),
       setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined) })
     onTestFinished(() => handle.dispose())
-    const search = await ctx.tools.execute({ callId: ToolCallId('free-search-check'), name: 'web_search', arguments: { queries: ['Example specifications'] },
-      signal: new AbortController().signal, agent: handle.agent })
-    expect(search.isError).toBe(false)
+    const tools = toolNames(ctx, handle.agent)
+    expect(tools).toContain('ask_user_question')
+    expect(tools).not.toContain('web_search')
+    expect(tools).not.toContain('web_fetch')
+    expect(network).not.toHaveBeenCalled()
+    const web = ctx.agentPresets.serviceFor(handle.agent, 'web')!
+    const search = await web.search({ query: 'Example specifications' })
     expect(JSON.stringify(search)).toContain('https://example.com/product')
-    const page = await ctx.tools.execute({ callId: ToolCallId('public-page-check'), name: 'web_fetch', arguments: { url: 'https://example.com/product' },
-      signal: new AbortController().signal, agent: handle.agent })
-    expect(page.isError).toBe(false)
+    const page = await web.fetch({ url: 'https://example.com/product' })
     expect(JSON.stringify(page)).toContain('Example public specifications')
     expect(network.mock.calls.length).toBe(4)
     expect(network.mock.calls.some(([request]) => request.url.startsWith('https://www.bing.com/search'))).toBe(true)
@@ -520,6 +520,10 @@ describe('the shipped Web composition', () => {
       setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'product-insight').then(() => undefined),
     })
     try {
+      const prompt = await ctx.systemPrompt.assemble({ scope: handle.agent, agent: handle.agent })
+      const planning = prompt.sections.find(section => section.name === 'plan:policy')?.text
+      expect(planning?.split('\n').find(line => line.startsWith('**Keep the reader')))
+        .toMatchInlineSnapshot('"**Keep the reader\'s question in the plan.** Preserve the comparison, decision or uncertainty the user wants to resolve, even when answering it takes several sources. A question such as “M6 的短时跑分表现能在持续负载下保持吗？这对长时间任务有什么影响？” belongs in the readable plan and in questions. Keep a simple lookup as a simple question. Derive the separate searchQueries from the material needed to answer each question."')
       expect(toolNames(ctx, handle.agent)).toContain('run_product_investigation')
       expect(toolNames(ctx, handle.agent)).toContain('get_product_investigation')
       expect(toolNames(ctx, handle.agent)).not.toContain('job_output')
@@ -557,7 +561,7 @@ describe('the shipped Web composition', () => {
       })
       expect(overlapping.isError).toBe(true)
       expect(overlapping.content.some(item => item.type === 'text'
-        && item.text.includes('overlaps product.officialUrl; list external publishers only'))).toBe(true)
+        && item.text.includes('Source publisher domain overlaps product.officialUrl'))).toBe(true)
     } finally {
       await handle.dispose()
     }

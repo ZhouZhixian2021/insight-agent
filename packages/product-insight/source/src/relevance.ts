@@ -46,8 +46,10 @@ export function relevanceSignals(product: Product, question: string): RelevanceS
     .map(name => name.trim().toLocaleLowerCase()).filter(name => name.length > 0)
   const designators = names.flatMap(name => name.split(/[^\p{L}\p{N}]+/u))
     .filter(token => token.length >= 2 && /\d/u.test(token))
+  const identity = [...names, product.developer.toLocaleLowerCase()]
   return { names, designators: [...new Set(designators)],
-    questionTerms: new Set([...productQuestionTerms(question)].filter(term => term.length > 1)) }
+    questionTerms: new Set([...productQuestionTerms(question)].filter(term => term.length > 1
+      && !identity.some(name => contains(name, term)))) }
 }
 
 /**
@@ -57,8 +59,26 @@ export function relevanceSignals(product: Product, question: string): RelevanceS
  * @returns Whether the term occurs.
  */
 function contains(haystack: string, term: string): boolean {
-  if (!/^[a-z0-9]+$/u.test(term)) return haystack.includes(term)
-  return new RegExp(`(?:^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}(?:$|[^a-z0-9])`, 'u').test(haystack)
+  let start = haystack.indexOf(term)
+  if (start < 0) return false
+  if (!/^[a-z0-9]+$/u.test(term)) return true
+  while (start >= 0) {
+    if (!/[a-z0-9]/u.test(haystack.charAt(start - 1)) && !/[a-z0-9]/u.test(haystack.charAt(start + term.length))) return true
+    start = haystack.indexOf(term, start + 1)
+  }
+  return false
+}
+
+/** Count topic terms independently of the product name so a mention alone never covers every question. */
+export function questionTermHits(candidate: RelevanceCandidate, signals: RelevanceSignals): string[] {
+  const haystack = candidateText(candidate)
+  return [...signals.questionTerms].filter(term => contains(haystack, term))
+}
+
+function candidateText(candidate: RelevanceCandidate): string {
+  let path = ''
+  try { path = new URL(candidate.url).pathname; path = decodeURIComponent(path) } catch { /* Use the readable part. */ }
+  return `${candidate.title ?? ''} ${candidate.snippet ?? ''} ${path}`.toLocaleLowerCase()
 }
 
 /**
@@ -73,21 +93,19 @@ function contains(haystack: string, term: string): boolean {
  * @returns Whether the result is relevant, with the evidence that decided it.
  */
 export function scoreCandidateRelevance(candidate: RelevanceCandidate, signals: RelevanceSignals): RelevanceVerdict {
-  let path = ''
-  try { path = new URL(candidate.url).pathname } catch { path = '' }
-  const haystack = `${candidate.title ?? ''} ${candidate.snippet ?? ''} ${path}`.toLocaleLowerCase()
+  const haystack = candidateText(candidate)
   if (haystack.trim() === '') return { relevant: false, score: 0, reason: 'Result carries no title, snippet, or readable path.' }
   const designator = signals.designators.find(token => contains(haystack, token))
   if (designator !== undefined) {
     return { relevant: true, score: 20 + designator.length, reason: `Metadata names the product line token "${designator}".` }
   }
   const name = signals.names.find(item => contains(haystack, item))
-    ?? signals.names.flatMap(item => item.split(/[^\p{L}\p{N}]+/u))
-      .find(token => token.length >= MINIMUM_NAME_TOKEN && contains(haystack, token))
+    ?? (signals.designators.length ? undefined : signals.names.flatMap(item => item.split(/[^\p{L}\p{N}]+/u))
+      .find(token => token.length >= MINIMUM_NAME_TOKEN && contains(haystack, token)))
   if (name !== undefined) {
     return { relevant: true, score: 10 + name.length, reason: `Metadata names the product as "${name}".` }
   }
-  const hits = [...signals.questionTerms].filter(term => contains(haystack, term))
+  const hits = questionTermHits(candidate, signals)
   if (hits.length >= MINIMUM_QUESTION_TERM_HITS) {
     return { relevant: true, score: hits.length, reason: `Metadata matches approved question terms: ${hits.join(', ')}.` }
   }

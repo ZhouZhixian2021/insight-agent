@@ -596,6 +596,31 @@ describe('face-aware source classification', () => {
     expect(expected.get('shared-runtime')?.section).toBe('dependencies')
   })
 
+  it('keeps published preset plugins in dependencies when the client only imports their types', async () => {
+    const subject = await sourceFacts({
+      'src/index.ts': 'export function apply() {}',
+      'src/client/index.ts': "import type {} from '@f/workflow'; import type {} from '@f/client-types'",
+      'preset.yml': [
+        '- insert:',
+        "    - name: '@deepseek-ai/dsh-agent-preset'",
+        '      config:',
+        '        id: product',
+        '        plugins:',
+        '          - name: cordis:group',
+        '            group: true',
+        '            config:',
+        "              - name: '@f/workflow/reader'",
+      ].join('\n'),
+      'web.yml': "- name: '@f/probe'\n- name: './local.js'\n",
+      'fixture.yml': "- name: '@f/client-types'\n",
+    }, { dsh: { bundle: { patch: ['./web.yml', './preset.yml'] } } })
+    const expected = expectedPackageDependencies(subject)
+    expect(expected.get('@f/workflow')).toEqual({ section: 'dependencies',
+      origins: ['packages/g/probe/preset.yml', 'packages/g/probe/src/client/index.ts'] })
+    expect(expected.get('@f/client-types')?.section).toBe('devDependencies')
+    expect([...subject.hostRuntimeSourceUses.keys()].sort()).toEqual(['@deepseek-ai/dsh-agent-preset', '@f/workflow'])
+  })
+
   it('uses declared DefinitelyTyped providers only for erased source references', async () => {
     const subject = await sourceFacts({
       'src/index.ts': "import type { ParseResult } from 'papaparse'",

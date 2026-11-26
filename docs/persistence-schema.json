@@ -82594,7 +82594,7 @@
         "packages/product-insight/model/src/types.ts#ProductBatchResult"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:281"
+        "packages/product-insight/model/src/types.ts:283"
       ]
     },
     {
@@ -82789,7 +82789,7 @@
       "digest": "11f3073383e223a0b3e02c769513b5ee839d074e41a3085739cfc3288781b932",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:147"
+        "packages/product-insight/model/src/types.ts:149"
       ]
     },
     {
@@ -82972,7 +82972,7 @@
         "packages/product-insight/model/src/types.ts#ProductBatchResult"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:281"
+        "packages/product-insight/model/src/types.ts:283"
       ]
     },
     {
@@ -83422,7 +83422,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaim"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:251"
+        "packages/product-insight/model/src/types.ts:253"
       ]
     },
     {
@@ -83639,7 +83639,7 @@
       "digest": "267999acf534edb20dacd57a7bd713812021f71fbf3458aad03263342ca348fa",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:215"
+        "packages/product-insight/model/src/types.ts:217"
       ]
     },
     {
@@ -84531,7 +84531,7 @@
         "packages/product-insight/model/src/types.ts#CandidatePage"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:137"
+        "packages/product-insight/model/src/types.ts:139"
       ]
     },
     {
@@ -85330,7 +85330,7 @@
         "packages/product-insight/model/src/types.ts#ProductEvidenceRelation"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:227"
+        "packages/product-insight/model/src/types.ts:229"
       ]
     },
     {
@@ -85814,7 +85814,7 @@
       ],
       "sources": [
         "packages/academic/model/src/results.ts:35",
-        "packages/product-insight/model/src/types.ts:278"
+        "packages/product-insight/model/src/types.ts:280"
       ]
     },
     {
@@ -86030,7 +86030,7 @@
         "packages/product-insight/source/src/page-content.ts#ProductPageImage"
       ],
       "sources": [
-        "packages/product-insight/source/src/page-content.ts:370"
+        "packages/product-insight/source/src/page-content.ts:387"
       ]
     },
     {
@@ -86060,7 +86060,7 @@
       "digest": "64581f8323d5b472439c99ee61823f888cb200bd6f573d16aabe1e0a00c8df0e",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:200"
+        "packages/product-insight/model/src/types.ts:202"
       ]
     },
     {
@@ -87422,7 +87422,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceLink"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:230"
+        "packages/product-insight/model/src/types.ts:232"
       ]
     },
     {
@@ -87623,7 +87623,7 @@
         "packages/product-insight/model/src/types.ts#ProductEvidence"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:203"
+        "packages/product-insight/model/src/types.ts:205"
       ]
     },
     {
@@ -88067,7 +88067,7 @@
         "packages/product-insight/source/src/page-fetch.ts#ProductPageFetchResult"
       ],
       "sources": [
-        "packages/product-insight/source/src/page-fetch.ts:22"
+        "packages/product-insight/source/src/page-fetch.ts:26"
       ]
     },
     {
@@ -88316,7 +88316,7 @@
         "packages/product-insight/model/src/types.ts#ProductFailure"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:157"
+        "packages/product-insight/model/src/types.ts:159"
       ]
     },
     {
@@ -88425,8 +88425,8 @@
         "packages/product-insight/model/src/types.ts#AvailableSourceSnapshot"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:170",
-        "packages/product-insight/model/src/types.ts:194"
+        "packages/product-insight/model/src/types.ts:172",
+        "packages/product-insight/model/src/types.ts:196"
       ]
     },
     {
@@ -89324,7 +89324,7 @@
       "digest": "b940f803b7c850c5bd8958f093816b11e5514eaf3d589881dd7a84106bda5ff7",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:199"
+        "packages/product-insight/model/src/types.ts:201"
       ]
     },
     {
@@ -89501,7 +89501,7 @@
         "packages/product-insight/model/src/types.ts#ProductReadingContext"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:220"
+        "packages/product-insight/model/src/types.ts:222"
       ]
     },
     {
@@ -89674,7 +89674,7 @@
       "digest": "c33c929c3bb145bdf84e467ffe3c4161e50ce2392ac0dd9c50a356ae37aabd5b",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:184"
+        "packages/product-insight/model/src/types.ts:186"
       ]
     },
     {
@@ -89867,7 +89867,7 @@
         "packages/product-insight/model/src/types.ts#SourceSnapshot"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:169"
+        "packages/product-insight/model/src/types.ts:171"
       ]
     },
     {
@@ -90094,7 +90094,7 @@
         "packages/product-insight/workflow/src/index.ts#ProductInvestigationCheckpoint"
       ],
       "sources": [
-        "packages/product-insight/workflow/src/index.ts:100"
+        "packages/product-insight/workflow/src/index.ts:108"
       ]
     },
     {
@@ -90162,7 +90162,7 @@
         "packages/product-insight/model/src/types.ts#ProductSourceLocator"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:197"
+        "packages/product-insight/model/src/types.ts:199"
       ]
     },
     {
@@ -90627,7 +90627,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceSnapshotItem"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:237"
+        "packages/product-insight/model/src/types.ts:239"
       ]
     },
     {
@@ -91002,7 +91002,7 @@
         "packages/product-insight/model/src/types.ts#ProductClaimEvidenceSnapshot"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:244"
+        "packages/product-insight/model/src/types.ts:246"
       ]
     },
     {
@@ -91103,7 +91103,7 @@
         "packages/product-insight/model/src/types.ts#ProductSourceType"
       ],
       "sources": [
-        "packages/product-insight/model/src/types.ts:134"
+        "packages/product-insight/model/src/types.ts:136"
       ]
     },
     {
@@ -91268,7 +91268,7 @@
       "digest": "f0870bf448096c844f730b0e624ad7fcb7c8c4ba0feb03515ecd7d38a2eb56bd",
       "names": [],
       "sources": [
-        "packages/product-insight/model/src/types.ts:198"
+        "packages/product-insight/model/src/types.ts:200"
       ]
     },
     {

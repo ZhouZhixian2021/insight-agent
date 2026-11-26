@@ -1306,7 +1306,7 @@ Source: [`packages/product-insight/workflow/src/session-tool.ts:94`](../packages
   & ({ card: ProductImageCard } | { error: string })
 ```
 
-Source: [`packages/product-insight/workflow/src/visual-material.ts:13`](../packages/product-insight/workflow/src/visual-material.ts)
+Source: [`packages/product-insight/workflow/src/visual-material.ts:16`](../packages/product-insight/workflow/src/visual-material.ts)
 
 <a id="productmodel-request-v1--log-only"></a>
 
@@ -8347,7 +8347,7 @@ Array of [`AssistantStreamRecord`](#persistence-type-sha256-33341aac09312300de5a
 
 SHA-256: `a26b684b0c4d6af8b025d10039675b7a74dd2e405bf531dd41c42bb305544fa1`
 
-Sources: [`packages/product-insight/model/src/types.ts:170`](../packages/product-insight/model/src/types.ts) · [`packages/product-insight/model/src/types.ts:194`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:172`](../packages/product-insight/model/src/types.ts) · [`packages/product-insight/model/src/types.ts:196`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8378,7 +8378,7 @@ Sources: [`packages/product-insight/model/src/types.ts:170`](../packages/product
 
 SHA-256: `5ceb25eb81e1ff9c42745e76028de42ee3f3471799e9bff59a739596983c390d`
 
-Sources: [`packages/academic/model/src/results.ts:35`](../packages/academic/model/src/results.ts) · [`packages/product-insight/model/src/types.ts:278`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/academic/model/src/results.ts:35`](../packages/academic/model/src/results.ts) · [`packages/product-insight/model/src/types.ts:280`](../packages/product-insight/model/src/types.ts)
 
 One of:
 
@@ -8627,7 +8627,7 @@ Array of [`CandidateMetadataSignal`](#persistence-type-sha256-acc22e76877e1da3f7
 
 SHA-256: `406f20a5d25c78c8675c021be2a3993c36e156f2ae4c820b326f5c5639a04206`
 
-Sources: [`packages/product-insight/model/src/types.ts:137`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:139`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11696,7 +11696,7 @@ Sources: [`packages/product-insight/workflow/src/background-run.ts:5`](../packag
 
 SHA-256: `21258d61d5525f302e91dcff31041e077d21b6570650643cdfec594025ad595a`
 
-Sources: [`packages/product-insight/model/src/types.ts:251`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:253`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11722,7 +11722,7 @@ Sources: [`packages/product-insight/model/src/types.ts:251`](../packages/product
 
 SHA-256: `86ee6135566d767a2ead9098de46259a7ec49c3a2a6d90e53214dc77ed4a625b`
 
-Sources: [`packages/product-insight/model/src/types.ts:230`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:232`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11748,7 +11748,7 @@ Array of [`ProductClaimEvidenceLink`](#persistence-type-sha256-86ee6135566d767a2
 
 SHA-256: `ebe559b2a5dfbcbc4b3ccd648908aee2ca48b92fd012084c74f30b23b183bb30`
 
-Sources: [`packages/product-insight/model/src/types.ts:244`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:246`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11766,7 +11766,7 @@ Sources: [`packages/product-insight/model/src/types.ts:244`](../packages/product
 
 SHA-256: `e18fd9fdfc42909c5decbdbbf0bceba55117352461097d41ff29be25e59d7446`
 
-Sources: [`packages/product-insight/model/src/types.ts:237`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:239`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11844,7 +11844,7 @@ Sources: [`packages/product-insight/source/src/index.ts:44`](../packages/product
 
 SHA-256: `8c826864551b6bcca85a1dff3b6da04cb8aac803a03b9ca9ae6603039b53d12c`
 
-Sources: [`packages/product-insight/model/src/types.ts:203`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:205`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11871,7 +11871,7 @@ Sources: [`packages/product-insight/model/src/types.ts:203`](../packages/product
 
 SHA-256: `52ef9c5de81c4fb760080a21bef7780f631562aaabe30fa55899d276fa96d8a9`
 
-Sources: [`packages/product-insight/model/src/types.ts:227`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:229`](../packages/product-insight/model/src/types.ts)
 
 One of:
 
@@ -11897,7 +11897,7 @@ Array of [`ProductEvidence`](#persistence-type-sha256-8c826864551b6bcca85a1dff3b
 
 SHA-256: `a092d293caa314b76c41ebe6796cc4ee0d263767fe1c0040b494aac6acdd1eda`
 
-Sources: [`packages/product-insight/model/src/types.ts:157`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:159`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11951,7 +11951,7 @@ Sources: [`packages/product-insight/workflow/src/report.ts:40`](../packages/prod
 
 SHA-256: `d56645ad9ae0c41c116f68cee27c1dccdd1170720d344b21595b52dd18f53744`
 
-Sources: [`packages/product-insight/workflow/src/index.ts:100`](../packages/product-insight/workflow/src/index.ts)
+Sources: [`packages/product-insight/workflow/src/index.ts:108`](../packages/product-insight/workflow/src/index.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -11986,7 +11986,7 @@ Sources: [`packages/product-insight/workflow/src/index.ts:100`](../packages/prod
 
 SHA-256: `98bed41104ed8c0dbf06956e608ed50ed3e8bc3c282d9931da963bb5059d7463`
 
-Sources: [`packages/product-insight/source/src/page-fetch.ts:22`](../packages/product-insight/source/src/page-fetch.ts)
+Sources: [`packages/product-insight/source/src/page-fetch.ts:26`](../packages/product-insight/source/src/page-fetch.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -12004,7 +12004,7 @@ Sources: [`packages/product-insight/source/src/page-fetch.ts:22`](../packages/pr
 
 SHA-256: `63c5d64013b3daf9d82d17647d407cce0a6fcde972187728a3b82a00a3747ad5`
 
-Sources: [`packages/product-insight/source/src/page-content.ts:370`](../packages/product-insight/source/src/page-content.ts)
+Sources: [`packages/product-insight/source/src/page-content.ts:387`](../packages/product-insight/source/src/page-content.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -12058,7 +12058,7 @@ Array of [`ProductQuestionVerification`](#persistence-type-sha256-7afd252587ac1f
 
 SHA-256: `becc0a9e14300b0a07446ecc9dce246cb3b6be23b0bb8ff66b8d8e5bba6e0c92`
 
-Sources: [`packages/product-insight/model/src/types.ts:220`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:222`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -12134,7 +12134,7 @@ Array of [`ProductSemanticReview`](#persistence-type-sha256-418c7e7549e45fc9e89d
 
 SHA-256: `d7c01dd80243410ad612e8d65f42126a0805fd2bb95c2d1e7b701f987e732794`
 
-Sources: [`packages/product-insight/model/src/types.ts:197`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:199`](../packages/product-insight/model/src/types.ts)
 
 | kind | Form property | Other required fields | Full definition |
 |---|---|---|---|
@@ -12152,7 +12152,7 @@ Sources: [`packages/product-insight/model/src/types.ts:197`](../packages/product
 
 SHA-256: `ee2e2eac578f47c3fd60d1ccfff45e497708991f003fa103ab349ec8518738bd`
 
-Sources: [`packages/product-insight/model/src/types.ts:134`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:136`](../packages/product-insight/model/src/types.ts)
 
 One of:
 
@@ -13346,7 +13346,7 @@ Array of [`SourceLocator`](#persistence-type-sha256-2add0edfb10263b03a6b3ad22318
 
 SHA-256: `cb438617659dc6723564f0a9d25e338eea47640449835842735d0a22757439e9`
 
-Sources: [`packages/product-insight/model/src/types.ts:169`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:171`](../packages/product-insight/model/src/types.ts)
 
 One of:
 
@@ -16717,7 +16717,7 @@ Sources: [`packages/product-insight/workflow/src/session-tool.ts:85`](../package
 
 SHA-256: `c33c929c3bb145bdf84e467ffe3c4161e50ce2392ac0dd9c50a356ae37aabd5b`
 
-Sources: [`packages/product-insight/model/src/types.ts:184`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:186`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17580,7 +17580,7 @@ Sources: [`packages/academic/model/src/types.ts:68`](../packages/academic/model/
 
 SHA-256: `0b566b05f068127a0e5bbf225a6f2c40d0b4b4038a1e3f735cc278f80a89ee78`
 
-Sources: [`packages/product-insight/model/src/types.ts:281`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:283`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -17595,7 +17595,7 @@ Sources: [`packages/product-insight/model/src/types.ts:281`](../packages/product
 
 SHA-256: `175fcbdb2ffc67b3474adb63547ab2fb550a80e99bc1155150afc320121a26be`
 
-Sources: [`packages/product-insight/model/src/types.ts:281`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:283`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -18039,7 +18039,7 @@ Sources: [`packages/core/session/src/types.ts:229`](../packages/core/session/src
 
 SHA-256: `b940f803b7c850c5bd8958f093816b11e5514eaf3d589881dd7a84106bda5ff7`
 
-Sources: [`packages/product-insight/model/src/types.ts:199`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:201`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -18805,7 +18805,7 @@ Sources: [`packages/llm/llm/src/types.ts:157`](../packages/llm/llm/src/types.ts)
 
 SHA-256: `64581f8323d5b472439c99ee61823f888cb200bd6f573d16aabe1e0a00c8df0e`
 
-Sources: [`packages/product-insight/model/src/types.ts:200`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:202`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19156,7 +19156,7 @@ Sources: [`packages/core/tools/src/index.ts:35`](../packages/core/tools/src/inde
 
 SHA-256: `f0870bf448096c844f730b0e624ad7fcb7c8c4ba0feb03515ecd7d38a2eb56bd`
 
-Sources: [`packages/product-insight/model/src/types.ts:198`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:200`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19488,7 +19488,7 @@ Sources: [`packages/sandbox/sandbox-policy/src/session-mode.ts:33`](../packages/
 
 SHA-256: `267999acf534edb20dacd57a7bd713812021f71fbf3458aad03263342ca348fa`
 
-Sources: [`packages/product-insight/model/src/types.ts:215`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:217`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -19647,7 +19647,7 @@ Sources: [`packages/academic/model/src/query-workflow.ts:222`](../packages/acade
 
 SHA-256: `11f3073383e223a0b3e02c769513b5ee839d074e41a3085739cfc3288781b932`
 
-Sources: [`packages/product-insight/model/src/types.ts:147`](../packages/product-insight/model/src/types.ts)
+Sources: [`packages/product-insight/model/src/types.ts:149`](../packages/product-insight/model/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|

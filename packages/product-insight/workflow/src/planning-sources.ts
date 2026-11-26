@@ -1,4 +1,4 @@
-/** Carry observed search links from the planning turn into background discovery. */
+/** Recover observed links from historical or explicitly customized planning sessions. */
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type { WebSearchResult } from '@deepseek-ai/dsh-web'
 

@@ -1,7 +1,7 @@
 /** Evaluate delivery separately from investigation settlement and render only cited records. */
 import { checkProductClaimFreshness, type AvailableSourceSnapshot, type CandidatePage, type Product, type ProductClaim,
   type ProductEvidence, type ProductEvidenceGap, type ProductFailure, type ProductPlan } from '@deepseek-ai/dsh-product-insight-model'
-import { sameProductPageFacts, type ProductDiscoveryResult,
+import { sameProductPageFacts, searchAppliesToProductQuestion, type ProductDiscoveryResult,
   type ProductPageFetchResult } from '@deepseek-ai/dsh-product-insight-source'
 import type { ProductSemanticReview } from './claim-review.ts'
 import { insightEvidence, type ProductInsight } from './insight-output.ts'
@@ -224,13 +224,14 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
     return '![' + id + '](' + image.dataUrl + ')\n\n' + escape(image.caption || image.summary)
       + ' · [图片来源](' + safeLink(image.pageUrl) + ')'
   }
-  const footnotes = new Map<string, { number: number; url: string }>()
+  const citations = new Map<string, { number: number; url: string }>()
   const sections = units.flatMap(({ questionId, question, evidence: references, limitations = [] }) => {
     const text = references.length === 0 && !summaryUrls.size && narrative === undefined ? '现有材料不足以形成有依据的回答。' : prose.get(questionId)
       ?? '本题报告生成未完成，暂未形成可交付回答；这不表示没有相关资料，其他回答已保留。'
     const allowed = new Set(references.map(item => String(item.evidenceId)))
     const choice = choices.get(questionId)
     const inline = (value: string): string => {
+      value = value.replace(/([。！？；.!?;])((?:\[\[cite:[^\]\s]+\]\])+)/gu, '$2$1')
       const parts: string[] = []
       let offset = 0
       for (const match of value.matchAll(/\[\[(cite|figure):([^\]\s]+)\]\]/gu)) {
@@ -248,9 +249,9 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
           parts.push('（该处引用记录或来源链接不可用，待核对）')
           continue
         }
-        const citation = footnotes.get(id) ?? { number: footnotes.size + 1, url: record ? citationLink(url, record) : safeLink(url) }
-        footnotes.set(id, citation)
-        parts.push(`[^product-source-${citation.number}]`)
+        const citation = citations.get(id) ?? { number: citations.size + 1, url: record ? citationLink(url, record) : safeLink(url) }
+        citations.set(id, citation)
+        parts.push(`[\\[${citation.number}\\]](<${citation.url}>)`)
       }
       return parts.join('') + escapeParagraphs(value.slice(offset))
     }
@@ -278,8 +279,7 @@ export function renderProductSynthesis(input: Pick<ProductReportInput, 'discover
     }), '']
   return [narrative === undefined ? '## 综合回答' : '## 产品洞察', '', ...sections,
     ...(narrative?.notices.filter(note => /[\u4e00-\u9fff]/u.test(note)).map(note => `生成说明：${escape(note)}`) ?? []),
-    ...coverage,
-    ...[...footnotes.values()].map(({ number, url }) => `[^product-source-${number}]: [查看来源原文](${url})`), ''].join('\n')
+    ...coverage, ''].join('\n')
 }
 
 /** Preserve model-authored paragraph boundaries while escaping untrusted Markdown and HTML. */
@@ -522,7 +522,7 @@ function renderDiscoveryDisclosure(input: ProductReportInput): string[] {
     lines.push(`部分操作失败：${[...counts].map(([stage, count]) => `${stages[stage] ?? '其他处理'} ${count} 次`).join('；')}。已保留可用结果；失败次数不单独决定交付状态，具体错误见运行追踪。`, '')
   }
   for (const question of input.plan.questions) {
-    const attempts = input.discovery.searches.filter(search => search.questionId === question.questionId)
+    const attempts = input.discovery.searches.filter(search => searchAppliesToProductQuestion(search, question))
     if (attempts.length === 0) {
       lines.push(`- ${escape(question.text)}：未执行搜索。`)
       continue
@@ -556,7 +556,7 @@ function citationLink(value: string, evidence: ProductEvidence): string {
 }
 
 function safeLink(value: string): string {
-  return encodeURI(new URL(value).href).replace(/\(/gu, '%28').replace(/\)/gu, '%29')
+  return new URL(value).href.replace(/[()|\\]/gu, c => '%' + c.charCodeAt(0).toString(16).toUpperCase())
 }
 
 function escape(value: string): string {

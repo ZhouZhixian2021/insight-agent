@@ -1,10 +1,11 @@
 import { Context } from '@deepseek-ai/cordis'
 import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
-import { createProductPlanId } from '@deepseek-ai/dsh-product-insight-model'
+import { createCandidatePageId, createProductId, createProductPlanId, type CandidatePage } from '@deepseek-ai/dsh-product-insight-model'
 import { fetchProductImage, type ProductPageImage } from '@deepseek-ai/dsh-product-insight-source'
 import SessionStore from '@deepseek-ai/dsh-session'
 import { afterEach, expect, it, vi } from 'vitest'
-import { collectProductImages } from '../src/visual-material.ts'
+import { collectProductImages, openProductImageReader } from '../src/visual-material.ts'
+import { ProductWorkQueue, reviewCapturedPages } from '../src/page-pipeline.ts'
 
 vi.mock('@deepseek-ai/dsh-product-insight-source', async importOriginal => ({
   ...await importOriginal<typeof import('@deepseek-ai/dsh-product-insight-source')>(), fetchProductImage: vi.fn(),
@@ -37,8 +38,125 @@ async function fixture(stream: (source: ProductPageImage, signal?: AbortSignal) 
   const persist = vi.fn(async () => {})
   const run = (images: ProductPageImage[], signal?: AbortSignal) => collectProductImages(ctx, session, model, plan,
     images, session.snapshotEvents(), persist, () => {}, signal)
-  return { run, persist, session }
+  return { run, persist, session, ctx }
 }
+
+it('lends six model slots in either direction, reclaims them as work finishes and commits in candidate order', async () => {
+  const urls = Array.from({ length: 9 }, (_, i) => 'https://example.test/page' + String(i))
+  const photos = Array.from({ length: 8 }, (_, i) => 'photo' + String(i + 1))
+  const productId = createProductId(), date = '2026-11-24T00:00:00Z'
+  const candidates: CandidatePage[] = urls.map(url => ({ schemaVersion: 1, planId: plan.planId, productId,
+    candidatePageId: createCandidatePageId(), url, sourceType: 'other', discoveredAt: date, questionIds: [],
+    screening: { status: 'selected', reason: 'research', screenedAt: date } }))
+  const fetches = urls.map(() => Promise.withResolvers<undefined>())
+  const saved = new Set<string>(), active = new Set<string>(), releases = new Map<string, () => void>()
+  let peak = 0, releasing = false
+  const hold = async (name: string) => {
+    active.add(name)
+    peak = Math.max(peak, active.size)
+    if (!releasing) await new Promise<void>(resolve => releases.set(name, resolve))
+    active.delete(name)
+  }
+  const expectActive = async (texts: number, images: number) => vi.waitFor(() => {
+    expect([...active].filter(id => urls.includes(id))).toHaveLength(texts)
+    expect(active.size).toBe(texts + images)
+  })
+  const allowDownloads = Promise.withResolvers<undefined>()
+  vi.mocked(fetchProductImage).mockImplementation(async (url) => {
+    await allowDownloads.promise
+    return { mediaType: 'image/png', data: Buffer.from(url) }
+  })
+  const f = await fixture(async (source) => { await hold(source.caption); return [source.caption] })
+  const committed: string[] = []
+  let captured = false
+  const run = reviewCapturedPages({ candidates, maximumCharacters: Number.MAX_SAFE_INTEGER,
+    adapters: { now: () => date, web: { fetch: async ({ url }) => {
+      const index = urls.indexOf(url)
+      await fetches[index]!.promise
+      const pictures = (index === 0 ? ['slow-image'] : index === 1 ? photos : [])
+        .map(id => '<figure><img src="/' + id + '.png"><figcaption>' + id + '</figcaption></figure>').join('')
+      return { url, statusCode: 200, truncated: false, body: { kind: 'html', content: '<article><p>Article</p>' + pictures + '</article>' } }
+    } }, saveText: async (page) => { saved.add(page.url); return page.url }, readText: async () => { throw Error('capture already in memory') },
+    openImageReader: (signal, schedule, capacity) =>
+      openProductImageReader(f.ctx, f.session, model, plan, [], f.persist, () => {}, signal, schedule, capacity),
+    },
+    summarize: async (page, snapshot) => {
+      expect(saved.has(page.url)).toBe(true)
+      await hold(page.url)
+      return { sourceSnapshotId: snapshot.sourceSnapshotId, candidatePageId: page.candidatePageId,
+        contentHash: snapshot.contentHash, paragraphs: [page.url] }
+    },
+    onCaptured: async () => { captured = true },
+    onSettled: async (_next, outcome) => { if (outcome && 'summary' in outcome) committed.push(...outcome.summary.paragraphs) },
+  })
+  try {
+    fetches[1]!.resolve(undefined)
+    await vi.waitFor(() => { expect(fetchProductImage).toHaveBeenCalledTimes(3) })
+    allowDownloads.resolve(undefined)
+    await expectActive(1, 5)
+    expect(captured).toBe(false)
+    releases.get(urls[1]!)!()
+    await expectActive(0, 6)
+    for (const gate of fetches.slice(2)) gate.resolve(undefined)
+    await vi.waitFor(() => { expect(saved.size).toBe(8) })
+    await expectActive(0, 6)
+    for (const name of photos.slice(0, 3)) releases.get(name)!()
+    await expectActive(3, 3)
+    const finishedText = [...active].find(id => urls.includes(id))!
+    releases.get(finishedText)!()
+    await vi.waitFor(() => { expect(active.has(finishedText)).toBe(false) })
+    await expectActive(3, 3)
+    for (const name of photos.slice(3, 5)) releases.get(name)!()
+    await vi.waitFor(() => { expect(active.has(photos[7]!)).toBe(true) })
+    await expectActive(3, 3)
+    for (const name of photos.slice(5, 7)) releases.get(name)!()
+    await expectActive(5, 1)
+    releases.get(photos[7]!)!()
+    await expectActive(6, 0)
+  } finally {
+    releasing = true
+    allowDownloads.resolve(undefined)
+    for (const gate of fetches) gate.resolve(undefined)
+    for (const release of releases.values()) release()
+    await run
+  }
+  const result = await run
+  expect(committed).toEqual(urls)
+  expect(peak).toBe(6)
+  expect(result.images.map(card => [card.id, card.caption])).toEqual(['slow-image', ...photos].map((caption, i) => ['I' + String(i + 1), caption]))
+})
+
+it('returns a borrowed slot between model requests and wakes a suspended review after an image fails', async () => {
+  const queue = new ProductWorkQueue(2, new AbortController().signal)
+  const reading = Promise.withResolvers<undefined>()
+  const releaseImage = Promise.withResolvers<undefined>(), nextText = Promise.withResolvers<undefined>()
+  const order: string[] = []
+  const first = queue.run('text', async () => nextText.promise)
+  const page = queue.run('text', async (beforeReview) => {
+    order.push('reading')
+    await reading.promise
+    await beforeReview()
+    order.push('review')
+  })
+  const imageWork = queue.run('image', async () => {
+    order.push('image')
+    await releaseImage.promise
+    throw Error('image failed')
+  })
+  const failed = expect(imageWork).rejects.toThrow('image failed')
+  try {
+    reading.resolve(undefined)
+    await vi.waitFor(() => { expect(order).toEqual(['reading', 'image']) })
+    releaseImage.resolve(undefined)
+    await failed
+    await page
+    expect(order).toEqual(['reading', 'image', 'review'])
+  } finally {
+    nextText.resolve(undefined)
+    releaseImage.resolve(undefined)
+    await Promise.allSettled([first, page, failed])
+  }
+})
 
 it('refills three slots as reads finish, coalesces matching originals and retains source IDs on resume', async () => {
   const sources = [image('slow'), image('second'), image('third'), image('mirror', 'slow'), image('fourth'),
@@ -105,4 +223,27 @@ it('stops starting new images on cancellation and waits for in-flight reads', as
   expect(await running).toEqual([])
   expect(fetchProductImage).toHaveBeenCalledTimes(3)
   expect(f.persist).not.toHaveBeenCalled()
+})
+
+it('interrupts sibling reads and drains them when image persistence fails', async () => {
+  const writing = Promise.withResolvers<undefined>()
+  const active = new Set<string>()
+  vi.mocked(fetchProductImage).mockImplementation(async url => ({ mediaType: 'image/png', data: Buffer.from(url) }))
+  const f = await fixture(async (source, signal) => {
+    if (source.caption === 'ready') { await writing.promise; return ['ready'] }
+    active.add(source.caption)
+    try {
+      await new Promise<void>((_resolve, reject) => {
+        signal!.throwIfAborted()
+        signal!.addEventListener('abort', () => { reject(new Error('Image read aborted')) }, { once: true })
+      })
+    } finally { active.delete(source.caption) }
+    return []
+  })
+  f.persist.mockRejectedValueOnce(new Error('image storage unavailable'))
+  const attempt = f.run(['ready','second','third'].map(id => image(id)))
+  const stopped = expect(attempt).rejects.toThrow('image storage unavailable')
+  try { await vi.waitFor(() => { expect(active.size).toBe(2) }) }
+  finally { writing.resolve(undefined); await stopped }
+  expect(active.size).toBe(0)
 })
